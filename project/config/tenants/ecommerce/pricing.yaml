@@ -1,0 +1,60 @@
+pricing:
+  plans:  # Lista de planes o paquetes disponibles
+    - id: checkout_flow  # Identificador interno del plan
+      name: Checkout Flow  # Nombre visible del plan
+      description: Cierre con datos de envio y pago.
+      pricing:  # Precios por moneda
+        COP:
+          implementation: 160000  # Cobro inicial de implementacion o arranque
+          monthly: 190000  # Cobro mensual recurrente
+      includes:  # Lo que si trae este plan
+        - flujo de checkout
+        - guia a pago
+      not_included:  # Lo que no esta incluido en este plan
+        - costos de plataformas externas
+
+      payment:
+        # ------------------------------
+        # EJECUCIÓN DE PAGO
+        # ------------------------------
+        # Define cómo el cliente paga.
+        # Este link es el que la IA puede enviar si decide cerrar.
+        link: "https://checkout.aisalesengine.com/ecommerce/checkout-flow"
+        transfer:
+          enabled: true
+          methods:
+            - type: nequi
+              number: "3001234567"
+            - type: daviplata
+              number: "3009876543"
+            - type: bank
+              bank: "Bancolombia"
+              account_type: "ahorros"
+              account_number: "1234567890"
+            - type: breb
+              reference: "usuario@correo.com"
+  conditions:  # Reglas comerciales que se deben respetar
+    - pago mensual
+  price_framing:
+    type: comparativo  # Forma de presentar el precio: directo | comparativo
+  roi:  # Referencia simple para medir retorno esperado
+    break_even_sales: 2
+
+  business_offers:  # Mapa simple de oferta principal, upsell y cross-sell
+    core:  # Oferta principal que mas se vende
+      - producto_principal
+    upsell:  # Oferta para subir valor de la venta
+      - version_premium
+      - garantia_extendida
+    cross_sell:  # Oferta complementaria que suma al cierre
+      - accesorios
+      - productos_relacionados
+    financing:
+      available: true  # true = permite financiacion / false = no ofrece financiacion
+      providers:
+        - addi
+        - sistecredito
+      options:
+        - pago_contra_entrega
+        - cuotas
+

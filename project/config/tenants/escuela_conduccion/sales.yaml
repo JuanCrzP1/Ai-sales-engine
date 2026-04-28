@@ -1,0 +1,86 @@
+sales:
+  discovery:  # Lo que se busca entender al inicio de la conversacion
+    objectives:  # Objetivos de descubrimiento
+      - identificar que licencia necesita el prospecto
+      - detectar urgencia por trabajo, estudio o tramite
+
+  pain:
+    clusters:  # Problemas frecuentes que justifican mover la conversacion
+      proceso_confuso:
+        signals:
+          - no se que licencia necesito
+          - no entiendo el tramite
+          - que requisitos piden
+        impacts:
+          - retrasos en inscripcion y documentacion
+        monetization:
+          - demorar el tramite retrasa oportunidades laborales
+
+  support:
+    info_handling:
+      explain_first: true  # true = primero aclara la duda / false = vende directo
+      sell_after: true  # true = despues de explicar, vuelve a llevar a avance
+
+  solution:
+    framing:  # Formas simples de explicar la solucion
+      - explicamos el proceso por pasos segun tipo de licencia
+      - validamos requisitos antes de agendar para evitar rechazos
+      - guiamos inscripcion y documentacion de forma progresiva
+    process_steps:  # Pasos operativos que el negocio sigue con el prospecto
+      - identificar tipo de licencia segun necesidad
+      - revisar requisitos y documentos
+      - registrar datos y agendar inicio
+      - iniciar curso y seguimiento de tramite
+    requirements:  # Requisitos minimos para avanzar sin errores
+      - documento de identidad vigente
+      - examen medico vigente
+      - datos de contacto activos
+
+  closing:
+    strategy: booking  # Tipo de cierre: direct_sale | checkout | booking
+    next_step:
+      action: dynamic  # dynamic = la accion final cambia segun el momento de la conversacion
+    required_data:  # Datos minimos que se necesitan para cerrar
+      - name
+      - phone
+      - license_type
+    behavior:  # Objetivo esperado segun el tipo de cierre
+      direct_sale:
+        goal: confirmar_compra  # Objetivo cuando el usuario ya quiere avanzar
+      lead_capture:
+        goal: capturar_datos  # Objetivo cuando aun falta informacion basica
+      booking:
+        goal: agendar  # Objetivo cuando hay que coordinar una reserva o agenda
+      checkout:
+        goal: enviar_pago  # Objetivo cuando toca llevar al pago
+    triggers:  # Frases que indican intencion de compra o avance
+      - quiero sacar licencia
+      - quiero licencia
+      - me interesa licencia
+      - quiero licencia b1
+      - quiero licencia a1
+      - quiero empezar
+    next_steps:  # Pasos que debe seguir la IA para cerrar
+      - explicar proceso segun licencia
+      - confirmar datos y agendar asesoria
+    hard_rules:  # Reglas que no se deben romper al cerrar
+      - seguir strategy booking como regla principal de cierre
+      - cuando haya trigger de licencia, guiar proceso y pedir datos para agenda
+      - no vender planes ni mensualidades
+
+  conversation_flow:
+    steps:  # Pasos que idealmente sigue la conversacion
+      - detect_pain
+      - present_solution
+      - validate_requirements
+      - guide_next_step
+    rules:  # Reglas del flujo para no saltarse partes importantes
+      no_skip_steps: true
+      guided_process: true
+
+  progression_rules:
+    required_flow:  # Secuencia minima que debe respetar la conversacion
+      - detect_pain
+      - amplify_impact
+      - present_solution
+      - guide_next_step

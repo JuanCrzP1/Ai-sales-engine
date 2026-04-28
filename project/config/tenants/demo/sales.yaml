@@ -1,0 +1,204 @@
+sales:
+  discovery:  # Lo que se busca entender al inicio de la conversacion
+    objectives:  # Objetivos de descubrimiento
+      - entender principal cuello de botella comercial
+
+  support:
+    info_handling:
+      explain_first: true  # true = primero aclara la duda / false = vende directo
+      sell_after: true  # true = despues de explicar, vuelve a llevar a avance
+
+  closing:
+    strategy: direct_sale  # Tipo de cierre: direct_sale | checkout | booking
+    next_step:
+      action: dynamic  # dynamic = la accion final cambia segun el momento de la conversacion
+    required_data: []  # Datos minimos que se necesitan para cerrar
+    behavior:  # Objetivo esperado segun el tipo de cierre
+      direct_sale:
+        goal: confirmar_compra  # Objetivo cuando el usuario ya quiere avanzar
+      lead_capture:
+        goal: capturar_datos  # Objetivo cuando aun falta informacion basica
+      booking:
+        goal: agendar  # Objetivo cuando hay que coordinar agenda o demo
+      checkout:
+        goal: enviar_pago  # Objetivo cuando toca llevar al pago
+    triggers:  # Frases que indican intencion de compra o avance
+      - quiero empezar
+      - quiero comprar
+      - arrancamos
+    next_steps:  # Pasos que debe seguir la IA para cerrar
+      - avanzar con activacion
+    hard_rules:  # Reglas que no se deben romper al cerrar
+      - ejecutar cierre sin respuesta generica
+
+  progression_rules:
+    required_flow:  # Secuencia minima que debe respetar la conversacion
+      - detect_pain
+      - amplify_impact
+      - present_solution
+      - guide_next_step
+sales:
+  discovery:  # Lo que se busca entender al inicio de la conversacion
+    objectives:  # Objetivos de descubrimiento
+      - entender volumen de conversaciones
+      - identificar fallas en seguimiento
+      - detectar impacto en ventas
+    questions:  # Preguntas sugeridas para abrir la conversacion
+      - "Por donde te entran mas mensajes hoy?"
+      - "Que pasa despues del primer mensaje, haces seguimiento o se queda ahi?"
+      - "Cuantas conversaciones sientes que se pierden por no responder a tiempo?"
+
+  qualification:
+    detect_offer_fit: true  # true = valida si la oferta encaja antes de empujar cierre
+
+  support:
+    info_handling:
+      explain_first: true  # true = primero aclara la duda / false = vende directo
+      sell_after: true  # true = despues de explicar, vuelve a llevar a avance
+
+  pain:
+    clusters:  # Problemas frecuentes que justifican mover la conversacion
+      gestion_mensajes:
+        signals:
+          - "muchos mensajes"
+          - "no me da el tiempo"
+          - "no alcanzo a responder"
+        impacts:
+          - "cada mensaje que no respondes es un cliente que se va con otro"
+          - "el cliente se enfria y termina comprando en otro lado"
+          - "pierdes ventas sin darte cuenta"
+        monetization:
+          - "cada lead sin respuesta es dinero perdido"
+          - "cada demora baja la probabilidad de cierre"
+        urgency_levels:
+          alto:
+            - "ya estas perdiendo dinero"
+          medio:
+            - "estas dejando oportunidades"
+        recommended_angles:
+          - tiempo
+          - dinero
+      falta_seguimiento:
+        signals:
+          - "no hago seguimiento"
+          - "se me olvidan los clientes"
+        impacts:
+          - "el cliente se enfria y termina comprando en otro lado"
+          - "pierdes ventas que ya estaban avanzadas"
+        monetization:
+          - "cada seguimiento perdido reduce cierres"
+        urgency_levels:
+          alto:
+            - "hay ventas en riesgo por falta de continuidad"
+          medio:
+            - "el pipeline se enfria mas rapido"
+        recommended_angles:
+          - dinero
+
+  angles:  # Angulos comerciales para conectar problema con valor
+    tiempo:
+      when:
+        - "no me da el tiempo"
+        - "muchos mensajes"
+      execution:
+        - "no es solo responder, es que no te alcanza el tiempo"
+    dinero:
+      when:
+        - "pierdo clientes"
+        - "no vendo"
+      execution:
+        - "cada lead que se enfria es dinero que ya estaba cerca"
+
+  conversation_flow:
+    steps:  # Pasos que idealmente sigue la conversacion
+      - detect_pain
+      - amplify_impact
+      - present_solution
+      - guide_next_step
+    rules:
+      no_skip_steps: true
+
+  solution:
+    framing:  # Formas simples de explicar la solucion
+      - "No se trata solo de responder, sino de sostener el seguimiento."
+      - "La idea es que no dependas de estar pegado al celular."
+      - "El sistema responde y tambien retoma conversaciones automaticamente."
+    mapping:
+      gestion_mensajes:
+        - automatizar_respuesta
+        - seguimiento
+      falta_seguimiento:
+        - seguimiento_automatico
+
+  offer:
+    strategy:  # Forma de presentar la oferta segun el contexto
+      single:
+        - "explicar directo y conectar con valor"
+        - "no sobrecargar con informacion"
+      multi:
+        - "recomendar segun problema"
+        - "no listar todos los planes"
+        - "guiar a mejor opcion"
+    recommendation_rules:  # Reglas simples para sugerir la mejor opcion
+      - condition: "gestion_mensajes"
+        recommend: "plan_pro"
+      - condition: "seguimiento"
+        recommend: "plan_basico"
+
+  objection:  # Respuestas sugeridas cuando el cliente duda por precio
+    price:
+      layers:  # Capas para manejar la objecion sin sonar robotico
+        acknowledge:
+          - "Te entiendo, es una inversion importante."
+          - "Es normal verlo asi al inicio."
+        reframe:
+          - "Lo que suele salir caro es perder conversaciones que ya estaban interesadas."
+          - "Cuando empiezas a recuperar leads, se paga solo."
+        proof:
+          - "cuando recuperas ventas se paga solo"
+        redirect:
+          - "Hoy que te esta afectando mas?"
+
+  closing:
+    strategy: booking  # Tipo de cierre: direct_sale | checkout | booking
+    next_step:
+      action: dynamic  # dynamic = la accion final cambia segun el momento de la conversacion
+    required_data:  # Datos minimos que se necesitan para cerrar
+      - name
+      - phone
+      - day
+      - hour
+    behavior:  # Objetivo esperado segun el tipo de cierre
+      direct_sale:
+        goal: confirmar_compra  # Objetivo cuando el usuario ya quiere avanzar
+      lead_capture:
+        goal: capturar_datos  # Objetivo cuando aun falta informacion basica
+      booking:
+        goal: agendar  # Objetivo cuando hay que coordinar agenda o demo
+      checkout:
+        goal: enviar_pago  # Objetivo cuando toca llevar al pago
+    triggers:  # Frases que indican intencion de compra o avance
+      - "quiero empezar"
+      - "me interesa"
+      - "como arrancamos"
+    actions:
+      high_intent:  # Acciones permitidas cuando el usuario ya quiere avanzar
+        - "agendar"
+        - "activar"
+    next_steps:  # Pasos que debe seguir la IA para cerrar
+      - "agendar implementacion"
+      - "configurar sistema"
+      - "activar prueba"
+    micro_commitments:  # Pequenos avances para mover la decision sin friccion
+      - "te muestro como seria en tu caso"
+      - "vemos el siguiente paso practico"
+
+  progression_rules:
+    required_flow:  # Secuencia minima que debe respetar la conversacion
+      - detect_pain
+      - amplify_impact
+      - present_solution
+      - guide_next_step
+    forbid:  # Cosas que la IA no debe hacer en este tenant
+      - responder_sin_direccion
+      - responder_sin_solucion

@@ -1,0 +1,12 @@
+media:
+  hero_catalogo:
+    type: image
+    url: https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1200&q=80
+    caption: "Aquí tienes una referencia visual para orientarte mejor. Si quieres, te guío con la opción que más te convenga."
+    alt_text: "Vista previa profesional de catálogo o portafolio"
+
+  propuesta_visual:
+    type: image
+    url: https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1200&q=80
+    caption: "Te dejo una referencia visual del tipo de propuesta que solemos aterrizar cuando el cliente ya viene avanzado."
+    alt_text: "Dashboard o propuesta visual"

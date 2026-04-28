@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+.env
+project/logs/
+project/app/logs/
+.git
+node_modules/
+tmp/

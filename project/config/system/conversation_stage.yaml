@@ -1,0 +1,94 @@
+conversation_stage:
+  social:
+    objective: "responder humano antes de dirigir"
+    response_mode: "sin venta, con guía opcional"
+  info:
+    objective: "responder primero con el dato confirmado"
+    response_mode: "dirección suave sin cierre duro"
+  objection:
+    objective: "reconocer, reencuadrar y avanzar"
+    response_mode: "empatía con siguiente paso útil"
+  closing:
+    objective: "mover al siguiente paso con claridad"
+    response_mode: "cierre breve con pregunta concreta"
+
+response_style:
+  social:
+    no_selling: true
+    ask_optional: true
+    must_feel_human: true
+  info:
+    must_answer_first: true
+    ask_optional: true
+    allow_soft_direction: true
+    hard_close_forbidden: true
+  objection:
+    must_recognize: true
+    must_reframe: true
+    must_advance: true
+  closing:
+    must_advance: true
+    ask_for_commitment: true
+
+stage_behavior:
+  max_sentences: 3
+  max_questions: 1
+  force_cta_steps:
+    - ask_close_step
+    - close
+  urgency_stages:
+    - considerando
+    - listo_para_cerrar
+  urgency_phrase: "Si quieres, lo dejamos listo hoy mismo y ya te queda funcionando."
+  defaults:
+    fallback_stage: "explorando"
+  language_by_usage:
+    business:
+      - clientes
+      - ventas
+      - automatizar
+    personal:
+      - uso personal
+      - facilitar
+      - ahorrar tiempo
+    generic:
+      - resolver
+      - avanzar
+      - dejarlo claro
+  stages:
+    frio:
+      tone: "curioso_relajado"
+      goal: "enganchar"
+      rhythm: "suave"
+      cta: "pregunta_abierta"
+      allow_no_question: false
+    explorando:
+      tone: "consultivo"
+      goal: "entender_necesidad"
+      rhythm: "fluido"
+      cta: "pregunta_dirigida"
+      allow_no_question: false
+    considerando:
+      tone: "seguro"
+      goal: "reducir_duda"
+      rhythm: "medio"
+      cta: "micro_cierre"
+      allow_no_question: false
+    objecion:
+      tone: "empatico_seguro"
+      goal: "reencuadrar"
+      rhythm: "calmo"
+      cta: "avance_suave"
+      allow_no_question: false
+    listo_para_cerrar:
+      tone: "directo_confianza"
+      goal: "accion"
+      rhythm: "rapido"
+      cta: "cierre_directo"
+      allow_no_question: false
+    escalado:
+      tone: "claro_humano"
+      goal: "transferir"
+      rhythm: "breve"
+      cta: "handoff"
+      allow_no_question: true

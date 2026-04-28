@@ -1,0 +1,61 @@
+pricing:
+  plans:  # Lista de planes o paquetes disponibles
+    - id: agenda_plus  # Identificador interno del plan
+      name: Agenda Plus  # Nombre visible del plan
+      description: Gestion y confirmacion de citas.
+      pricing:  # Precios por moneda
+        COP:
+          implementation: 140000  # Cobro inicial de implementacion o arranque
+          monthly: 170000  # Cobro mensual recurrente
+      includes:  # Lo que si trae este plan
+        - gestion de agenda
+        - confirmacion de cita
+      not_included:  # Lo que no esta incluido en este plan
+        - costos de plataformas externas
+
+      payment:
+        # ------------------------------
+        # EJECUCIÓN DE PAGO
+        # ------------------------------
+        # Define cómo el cliente paga.
+        # Este link es el que la IA puede enviar si decide cerrar.
+        link: "https://checkout.aisalesengine.com/clinic/agenda-plus"
+        transfer:
+          enabled: true
+          methods:
+            - type: nequi
+              number: "3001234567"
+            - type: daviplata
+              number: "3009876543"
+            - type: bank
+              bank: "Bancolombia"
+              account_type: "ahorros"
+              account_number: "1234567890"
+            - type: breb
+              reference: "usuario@correo.com"
+  conditions:  # Reglas comerciales que se deben respetar
+    - pago mensual
+  price_framing:
+    type: comparativo  # Forma de presentar el precio: directo | comparativo
+  roi:  # Referencia simple para medir retorno esperado
+    break_even_sales: 2
+
+  business_offers:  # Mapa simple de oferta principal, upsell y cross-sell
+    core:  # Oferta principal que mas se vende
+      - limpieza
+      - blanqueamiento
+    upsell:  # Oferta para subir valor de la venta
+      - tratamiento_completo
+      - seguimiento
+    cross_sell:  # Oferta complementaria que suma al cierre
+      - valoracion
+      - radiografia
+    financing:
+      available: true  # true = permite financiacion / false = no ofrece financiacion
+      providers:
+        - addi
+        - sistecredito
+      options:
+        - pago_por_fases
+        - financiamiento
+

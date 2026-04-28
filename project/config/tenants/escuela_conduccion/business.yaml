@@ -1,0 +1,61 @@
+business:
+  name: Escuela de Conduccion
+  brand_name: Escuela de Conduccion
+  industry: educacion vial colombia
+  description: >
+    Escuela que forma conductores y gestiona el proceso completo
+    para obtener licencias A1, A2, B1, B2, C1, C2.
+  tone: humano, claro y orientado a proceso
+  voice: cercano y practico
+  city: Medellin
+  promise: guiar al alumno hasta su licencia con pasos claros.
+  positioning: acompanamiento comercial para convertir interes en inscripcion y agenda.
+  pain_points:
+    - no saben que licencia necesitan
+    - proceso confuso
+    - demoras en tramites
+  desired_outcomes:
+    - sacar licencia rapido
+    - entender requisitos
+
+  location:
+    type: fisico
+    address: "Cra 52 #49-20"
+    city: Medellin
+    coverage:
+      type: local
+      zones:
+        - medellin
+
+  service_modes:
+    - presencial
+
+  logistics:
+    delivery:
+      available: false
+      type: tercero
+      zones: []
+      cost:
+        type: variable
+        value: 0
+      time:
+        min: ""
+        max: ""
+
+    shipping:
+      available: false
+      scope: local
+      providers: []
+      cost:
+        type: variable
+        value: 0
+      time:
+        min: ""
+        max: ""
+
+    pickup:
+      available: false
+      instructions: ""
+
+    scheduling:
+      required: true

@@ -1,0 +1,87 @@
+pricing:
+  model: catalog  # Tipo de precios: catalog = items con precio directo / plans = planes o servicio
+
+  catalog:  # Oferta tipo catalogo con categorias e items
+    categories:  # Grupos para ordenar lo que se vende
+      - id: destinos  # Identificador interno de la categoria
+        name: Destinos  # Nombre visible de la categoria
+      - id: excursiones  # Identificador interno de la categoria
+        name: Excursiones  # Nombre visible de la categoria
+
+    items:  # Productos o servicios que se pueden ofrecer uno a uno
+      - id: cartagena_3_noches  # Identificador interno del item
+        name: Cartagena 3 noches  # Nombre visible del item
+        category: destinos
+        description: Paquete con vuelo, hotel y traslados compartidos.
+        price:  # Precio por moneda
+          COP: 850000  # Precio en pesos colombianos
+
+      - id: san_andres_4_noches  # Identificador interno del item
+        name: San Andres 4 noches  # Nombre visible del item
+        category: destinos
+        description: Paquete con vuelo, hotel y asistencia al viajero.
+        price:  # Precio por moneda
+          COP: 1250000  # Precio en pesos colombianos
+
+      - id: tour_guatape  # Identificador interno del item
+        name: Tour Guatape  # Nombre visible del item
+        category: excursiones
+        description: Excursion de un dia con transporte y guia.
+        price:  # Precio por moneda
+          COP: 120000  # Precio en pesos colombianos
+
+    payment:
+      # ------------------------------
+      # EJECUCIÓN DE PAGO
+      # ------------------------------
+      # Define cómo el cliente paga.
+      # Este link es el que la IA puede enviar si decide cerrar.
+      link: ""
+      transfer:
+        enabled: true
+        methods:
+          - type: nequi
+            number: "3001234567"
+          - type: daviplata
+            number: "3009876543"
+          - type: bank
+            bank: "Bancolombia"
+            account_type: "ahorros"
+            account_number: "1234567890"
+          - type: breb
+            reference: "usuario@correo.com"
+
+  conditions:  # Reglas comerciales que se deben respetar
+    - precios sujetos a temporada y disponibilidad
+
+  price_framing:
+    type: directo  # Forma de presentar el precio: directo | comparativo
+
+  roi:  # Referencia simple para medir retorno esperado
+    break_even_reservas: 1
+
+  roi_hints:  # Ideas simples para explicar el retorno de la inversion
+    - una reserva cerrada puede cubrir el costo del sistema
+    - responder y retomar cotizaciones eleva conversion de reservas
+
+  note: >  # Nota operativa que la IA puede usar sin inventar condiciones
+    La reserva se confirma segun destino, fechas y disponibilidad.
+
+  business_offers:  # Mapa simple de oferta principal, upsell y cross-sell
+    core:  # Oferta principal que mas se vende
+      - paquetes_destino
+    upsell:  # Oferta para subir valor de la venta
+      - hotel_superior
+      - actividades_premium
+    cross_sell:  # Oferta complementaria que suma al cierre
+      - tour_adicional
+      - seguro_viajero
+    financing:
+      available: true  # true = permite financiacion / false = no ofrece financiacion
+      providers:
+        - addi
+        - sistecredito
+      options:
+        - reserva_con_abono
+        - pago_en_cuotas
+

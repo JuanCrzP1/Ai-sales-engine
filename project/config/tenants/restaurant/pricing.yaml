@@ -1,0 +1,86 @@
+pricing:
+  model: catalog  # Tipo de precios: catalog = items con precio directo / plans = planes o servicio
+
+  catalog:  # Oferta tipo catalogo con categorias e items
+    categories:  # Grupos para ordenar lo que se vende
+      - id: hamburguesas  # Identificador interno de la categoria
+        name: Hamburguesas  # Nombre visible de la categoria
+      - id: bebidas  # Identificador interno de la categoria
+        name: Bebidas  # Nombre visible de la categoria
+
+    items:  # Productos o servicios que se pueden ofrecer uno a uno
+      - id: hamburguesa_sencilla  # Identificador interno del item
+        name: Hamburguesa Sencilla  # Nombre visible del item
+        category: hamburguesas
+        description: Carne artesanal, queso y vegetales frescos.
+        price:  # Precio por moneda
+          COP: 18000  # Precio en pesos colombianos
+
+      - id: hamburguesa_doble  # Identificador interno del item
+        name: Hamburguesa Doble  # Nombre visible del item
+        category: hamburguesas
+        description: Doble carne, doble queso y salsa especial.
+        price:  # Precio por moneda
+          COP: 24000  # Precio en pesos colombianos
+
+      - id: gaseosa  # Identificador interno del item
+        name: Gaseosa  # Nombre visible del item
+        category: bebidas
+        description: Bebida gaseosa fria para acompanar el pedido.
+        price:  # Precio por moneda
+          COP: 5000  # Precio en pesos colombianos
+
+      - id: jugo_natural  # Identificador interno del item
+        name: Jugo Natural  # Nombre visible del item
+        category: bebidas
+        description: Jugo del dia sin azucar adicionada.
+        price:  # Precio por moneda
+          COP: 7000  # Precio en pesos colombianos
+
+    payment:
+      # ------------------------------
+      # EJECUCIÓN DE PAGO
+      # ------------------------------
+      # Define cómo el cliente paga.
+      # Este link es el que la IA puede enviar si decide cerrar.
+      link: ""
+      transfer:
+        enabled: true
+        methods:
+          - type: nequi
+            number: "3001234567"
+          - type: daviplata
+            number: "3009876543"
+          - type: bank
+            bank: "Bancolombia"
+            account_type: "ahorros"
+            account_number: "1234567890"
+          - type: breb
+            reference: "usuario@correo.com"
+
+  conditions:  # Reglas comerciales que se deben respetar
+    - precios de menu sujetos a disponibilidad diaria
+
+  price_framing:
+    type: directo  # Forma de presentar el precio: directo | comparativo
+
+  roi:  # Referencia simple para medir retorno esperado
+    break_even_sales: 2
+
+  business_offers:  # Mapa simple de oferta principal, upsell y cross-sell
+    core:  # Oferta principal que mas se vende
+      - hamburguesa_sencilla
+      - hamburguesa_doble
+    upsell:  # Oferta para subir valor de la venta
+      - combo_agrandado
+      - doble_carne
+      - papas_grandes
+    cross_sell:  # Oferta complementaria que suma al cierre
+      - gaseosa
+      - jugo
+      - postre
+    financing:
+      available: false  # true = permite financiacion / false = no ofrece financiacion
+      providers: []
+      options: []
+

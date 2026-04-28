@@ -1,0 +1,32 @@
+[
+  {
+    "tenant": "tienda_ropa",
+    "channel": "whatsapp",
+    "intent": "buy",
+    "inventory_loaded": true,
+    "pricing_loaded": true,
+    "business_loaded": true,
+    "sales_loaded": true,
+    "reply": "si, la variante color negro, talla L esta disponible, te la dejo lista hoy mismo, avanzamos con envio o recogida"
+  },
+  {
+    "tenant": "saas",
+    "channel": "whatsapp",
+    "intent": "buy",
+    "inventory_loaded": true,
+    "pricing_loaded": true,
+    "business_loaded": true,
+    "sales_loaded": true,
+    "reply": "Activamos tu implementación rapida y movemos oportunidades a cierre. Avanzamos al siguiente paso: configuración de la plataforma para tu equipo SaaS."
+  },
+  {
+    "tenant": "tienda_ropa",
+    "channel": "telegram",
+    "intent": "buy",
+    "inventory_loaded": true,
+    "pricing_loaded": true,
+    "business_loaded": true,
+    "sales_loaded": true,
+    "reply": "si, la variante color negro, talla L esta disponible, te la dejo lista hoy mismo, avanzamos con envio o recogida"
+  }
+]

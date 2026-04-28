@@ -1,0 +1,47 @@
+sales:
+  discovery:  # Lo que se busca entender al inicio de la conversacion
+    objectives:  # Objetivos de descubrimiento
+      - entender cuello de botella comercial
+  support:
+    info_handling:
+      explain_first: true  # true = primero aclara la duda / false = vende directo
+      sell_after: true  # true = despues de explicar, vuelve a llevar a avance
+  objection:  # Respuestas sugeridas cuando el cliente duda por precio
+    price:
+      layers:  # Capas para manejar la objecion sin sonar robotico
+        acknowledge:
+          - es normal verlo como inversion inicial
+        reframe:
+          - perder oportunidades por no implementar tambien cuesta dinero
+        redirect:
+          - avanzamos con implementacion hoy
+  closing:
+    strategy: direct_sale  # Tipo de cierre: direct_sale | checkout | booking
+    next_step:
+      action: dynamic  # dynamic = la accion final cambia segun el momento de la conversacion
+    required_data: []  # Datos minimos que se necesitan para cerrar
+    behavior:  # Objetivo esperado segun el tipo de cierre
+      direct_sale:
+        goal: confirmar_compra  # Objetivo cuando el usuario ya quiere avanzar
+      lead_capture:
+        goal: capturar_datos  # Objetivo cuando aun falta informacion basica
+      booking:
+        goal: agendar  # Objetivo cuando hay que coordinar agenda o demo
+      checkout:
+        goal: enviar_pago  # Objetivo cuando toca llevar al pago
+    triggers:  # Frases que indican intencion de compra o avance
+      - quiero empezar
+      - quiero comprar
+      - arranquemos
+    next_steps:  # Pasos que debe seguir la IA para cerrar
+      - activar implementacion
+      - iniciar arranque
+    hard_rules:  # Reglas que no se deben romper al cerrar
+      - ejecutar cierre sin preguntas cuando haya intencion alta
+      - no frenar compra con respuestas genericas
+  progression_rules:
+    required_flow:  # Secuencia minima que debe respetar la conversacion
+      - detect_pain
+      - amplify_impact
+      - present_solution
+      - guide_next_step

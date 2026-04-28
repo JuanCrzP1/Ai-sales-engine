@@ -1,0 +1,9 @@
+channels:
+  whatsapp:
+    webhook_enabled: true
+    simulate_enabled: true
+    twilio_enabled: true
+  instagram:
+    enabled: true
+  web:
+    enabled: true

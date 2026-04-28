@@ -1,0 +1,65 @@
+business:
+  name: SaaS Growth Engine
+  brand_name: SaaS Growth Engine
+  description: Plataforma de automatizacion comercial para equipos SaaS que venden por chat.
+  industry: saas b2b
+  tone: humano, directo y comercial
+  voice: cercano y orientado a ejecucion
+  city: Medellin
+  promise: activar implementacion rapido y mover oportunidades a cierre.
+  positioning: no es un bot de soporte, es ejecucion comercial para ventas SaaS.
+  differentiators:
+    - activacion guiada
+    - implementacion rapida
+    - seguimiento automatico
+  customer_profile:
+    segment: pymes SaaS
+    company_size: 2 a 30 personas
+  pain_points:
+    - seguimiento lento
+    - oportunidades frias
+  desired_outcomes:
+    - activar rapido
+    - implementar sin friccion
+
+  location:
+    type: virtual
+    address: ""
+    city: Medellin
+    coverage:
+      type: nacional
+      zones:
+        - colombia
+
+  service_modes:
+    - virtual
+
+  logistics:
+    delivery:
+      available: false
+      type: tercero
+      zones: []
+      cost:
+        type: variable
+        value: 0
+      time:
+        min: ""
+        max: ""
+
+    shipping:
+      available: false
+      scope: nacional
+      providers: []
+      cost:
+        type: variable
+        value: 0
+      time:
+        min: ""
+        max: ""
+
+    pickup:
+      available: false
+      instructions: ""
+
+    scheduling:
+      required: false

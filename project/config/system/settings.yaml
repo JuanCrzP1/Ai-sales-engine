@@ -1,0 +1,106 @@
+app:
+  name: AI Sales Engine multicanal para WhatsApp, Instagram y web
+  version: 1.0.0
+  environment: development
+  api_prefix: /api/v1
+  debug: false
+  public_base_url: http://localhost:8082
+
+llm:
+  provider: openrouter
+  request_timeout_seconds: 15
+  allow_provider_fallback: false
+  openrouter:
+    base_url: https://openrouter.ai/api/v1
+    default_model: meta-llama/llama-3.1-8b-instruct
+    advanced_model: openai/gpt-4.1-mini
+  embedding_model: text-embedding-3-small
+
+features:
+  seed_default_data: true
+  enable_multi_tenant: true
+  enable_ai_responses: true
+  enable_rule_based_fallback: true
+  enable_intent_shortcuts: true
+  enable_faq_search: true
+  enable_human_handoff: true
+  enable_audit_logs: true
+  enable_audit_alerts: true
+  enable_simulation_endpoint: true
+  enable_webhook_processing: true
+
+behavior:
+  semantic_threshold: 0.22
+  conversation_context_limit: 8
+  social:
+    respond_then_guide: true
+    response_keys:
+      greeting: smalltalk_saludo_calido
+      checkin: smalltalk_estado
+      thanks: gracias
+      repair: smalltalk_repair
+  info:
+    add_soft_direction: true
+    forbid_hard_close: true
+    require:
+      - responder
+      - grounding
+      - direccion_suave
+    response_keys:
+      payment: formas_pago
+      delivery: tiempo_entrega
+      hours: horarios_atencion
+      location: ubicacion
+      warranty: garantia
+      services: servicios_disponibles
+      identity: servicios_disponibles
+  objection:
+    require_advance: true
+    require:
+      - reconocimiento
+      - reencuadre
+      - avance
+    response_keys:
+      price: objection_price
+  closing:
+    require_question: false
+    response_keys:
+      next_step: ask_close_step
+
+conversation:
+  history_limit: 8
+  max_message_length: 2000
+  truncate_long_messages: true
+  ask_one_question_only: true
+
+faq_policy:
+  default_limit: 3
+  semantic_threshold: 0.22
+  require_significant_overlap: true
+  merge_yaml_and_db: true
+  deduplicate_by_question: true
+  exact_match_boost: 0.15
+
+grounding:
+  enable_strict_grounding: true
+  enable_sensitive_validation: true
+  enable_retry_on_unsupported_reply: true
+  block_unverified_prices: true
+  block_unverified_locations: true
+  block_unverified_delivery_times: true
+
+handoff:
+  enabled: true
+  trigger_on_user_request: true
+  trigger_on_outside_hours: false
+  trigger_on_validator_blocks: true
+  trigger_on_high_buy_intent: false
+  trigger_on_repeat_confusion: false
+  message_before_handoff: Si quieres, dejo tu caso listo para que continue un asesor con el contexto ya organizado.
+
+audit:
+  enabled: true
+  alert_on_blocked_response: true
+  log_faq_matches: true
+  log_prompt_source: true
+  redact_pii_in_logs: false

@@ -1,0 +1,69 @@
+business:
+  name: Tienda Ropa
+  brand_name: Tienda Ropa
+  description: Sistema comercial para tienda de ropa que cierra pedidos por chat.
+  industry: moda y retail
+  tone: cercano, directo y comercial
+  voice: claro y orientado a cierre
+  city: Medellin
+  promise: convertir interes en compra con entrega o recogida segun preferencia.
+  positioning: ejecucion comercial para cerrar pedidos de ropa por chat.
+  differentiators:
+    - cierre de compra por chat
+    - envio y recogida en tienda
+    - recomendacion de complementos
+  customer_profile:
+    segment: tiendas de ropa
+    company_size: 2 a 20 personas
+  pain_points:
+    - conversaciones que no cierran compra
+    - demora para confirmar entrega
+  desired_outcomes:
+    - cerrar pedidos rapido
+    - mejorar conversion de chat a venta
+
+  location:
+    type: mixto
+    address: "Centro Comercial Ejemplo"
+    city: Medellin
+    coverage:
+      type: nacional
+      zones:
+        - colombia
+
+  service_modes:
+    - presencial
+    - envio
+
+  logistics:
+    delivery:
+      available: true
+      type: propio
+      zones:
+        - medellin
+      cost:
+        type: fijo
+        value: 6000
+      time:
+        min: "1 hora"
+        max: "3 horas"
+
+    shipping:
+      available: true
+      scope: nacional
+      providers:
+        - servientrega
+        - interrapidisimo
+      cost:
+        type: variable
+        value: 0
+      time:
+        min: "1 dia"
+        max: "3 dias"
+
+    pickup:
+      available: true
+      instructions: "recoge en tienda"
+
+    scheduling:
+      required: false

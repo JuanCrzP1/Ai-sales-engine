@@ -1,0 +1,307 @@
+# Archivo canónico de configuración general del proyecto.
+#
+# Qué se configura aquí:
+# - parámetros globales de la app
+# - proveedor y modelo LLM por defecto
+# - flags de comportamiento del sistema
+# - valores por defecto que se persisten al crear un BotConfig nuevo
+# - prompts base de respaldo cuando la base de datos todavía no tiene configuración
+#
+# Qué NO va aquí:
+# - secretos reales (usar config/system/secrets.yaml)
+# - overrides locales de una máquina
+# - FAQs, respuestas y flujos conversacionales (tienen sus propios YAML)
+
+# Sistema inteligente de ventas automatizadas para negocios
+
+app:
+  name: "AI Sales Engine multicanal para WhatsApp, Instagram y web"
+  version: "1.0.0"
+  mode: "production"
+  environment: "production"
+  api_prefix: "/api/v1"
+  debug: false
+  public_base_url: "http://localhost:8082"
+
+# Parámetros técnicos del proveedor LLM.
+# Aquí se define el proveedor por defecto, timeouts y modelos base.
+# El modelo final puede ser sobreescrito por tenant desde BotConfig en DB.
+
+llm:
+  provider: "openrouter"
+  request_timeout_seconds: 15
+  allow_provider_fallback: false
+  openrouter:
+    base_url: "https://openrouter.ai/api/v1"
+    default_model: "meta-llama/llama-3.1-8b-instruct"
+    advanced_model: "openai/gpt-4.1-mini"
+  embedding_model: "text-embedding-3-small"
+
+# Switches globales de plataforma.
+# Solo usar booleanos aquí cuando el comportamiento sea verdaderamente binario.
+features:
+  seed_default_data: true
+  enable_multi_tenant: true
+  enable_ai_responses: true
+  enable_rule_based_fallback: true
+  enable_intent_shortcuts: true
+  enable_faq_search: true
+  enable_human_handoff: true
+  enable_audit_logs: true
+  enable_audit_alerts: true
+  enable_simulation_endpoint: true
+  enable_webhook_processing: true
+
+# Ajustes operativos generales del backend.
+# Mantener aquí valores transversales que afectan rendimiento y experiencia base.
+behavior:
+  semantic_threshold: 0.22
+  conversation_context_limit: 8
+  social:
+    respond_then_guide: true
+    response_keys:
+      greeting: smalltalk_saludo_calido
+      checkin: smalltalk_estado
+      thanks: gracias
+      repair: smalltalk_repair
+  info:
+    add_soft_direction: true
+    forbid_hard_close: true
+    require:
+      - responder
+      - grounding
+      - direccion_suave
+    response_keys:
+      payment: formas_pago
+      delivery: tiempo_entrega
+      hours: horarios_atencion
+      location: ubicacion
+      warranty: garantia
+      services: servicios_disponibles
+      identity: servicios_disponibles
+  objection:
+    require_advance: true
+    require:
+      - reconocimiento
+      - reencuadre
+      - avance
+    response_keys:
+      price: objection_price
+  closing:
+    require_question: false
+    response_keys:
+      next_step: ask_close_step
+
+# Política de conversación.
+# Todo lo que defina cómo se recorta, resume o mantiene contexto debe vivir aquí.
+conversation:
+  history_limit: 8
+  max_message_length: 2000
+  truncate_long_messages: true
+  ask_one_question_only: true
+
+# Política de recuperación de FAQ.
+# Controla cómo mezclar DB + YAML y qué tan estricta debe ser la búsqueda.
+faq_policy:
+  default_limit: 3
+  semantic_threshold: 0.22
+  require_significant_overlap: true
+  merge_yaml_and_db: true
+  deduplicate_by_question: true
+  exact_match_boost: 0.15
+
+# Política de grounding y anti alucinación.
+# Estos flags protegen la operación comercial frente a respuestas inventadas.
+grounding:
+  source_guard_mode: "strict"
+  enable_strict_grounding: true
+  enable_sensitive_validation: true
+  enable_retry_on_unsupported_reply: true
+  block_unverified_prices: true
+  block_unverified_locations: true
+  block_unverified_delivery_times: true
+
+# Política de handoff humano.
+# Esta sección queda lista para crecimiento aunque no todos los campos se usen todavía.
+handoff:
+  enabled: true
+  trigger_on_user_request: true
+  trigger_on_outside_hours: false
+  trigger_on_validator_blocks: true
+  trigger_on_high_buy_intent: false
+  trigger_on_repeat_confusion: false
+  message_before_handoff: "Si quieres, dejo tu caso listo para que continúe un asesor con el contexto ya organizado."
+
+# Política de auditoría y cumplimiento.
+# Si se endurece operación o compliance, este bloque es la fuente de verdad.
+audit:
+  enabled: true
+  alert_on_blocked_response: true
+  log_faq_matches: true
+  log_prompt_source: true
+  redact_pii_in_logs: false
+
+# Configuración por canal.
+# Dejar aquí la activación por canal, no en responses ni en flows.
+channels:
+  whatsapp:
+    webhook_enabled: true
+    simulate_enabled: true
+    twilio_enabled: true
+  instagram:
+    enabled: false
+
+# Política horaria del negocio.
+# Estructura preparada para futuros controles de disponibilidad.
+business_hours:
+  enabled: false
+  timezone: "America/Bogota"
+  outside_hours_mode: "reply_limited"
+  weekdays:
+    start: "09:00"
+    end: "18:00"
+  saturday:
+    enabled: false
+    start: "09:00"
+    end: "13:00"
+  sunday:
+    enabled: false
+
+# Política comercial base.
+# Útil para alinear CRM, cierres y orden de preguntas por negocio.
+sales_policy:
+  lead_scoring_enabled: true
+  budget_segmentation_enabled: true
+  auto_start_sales_flow: true
+  ask_budget_early: true
+  ask_timeline_early: true
+  allow_quote_without_budget: true
+  require_contact_before_quote: false
+
+commercial_orchestrator:
+  enabled: true
+  default_goal: "discover"
+  force_follow_up_strategies:
+    - manejar_objecion
+    - persuadir
+    - cerrar
+  objection_strategy: "reframe_then_advance"
+  close_strategy: "answer_then_next_step"
+
+lead_state_policy:
+  default_stage: "explorando"
+  cold_stage: "frio"
+  objection_stage: "objecion"
+  close_stage: "listo_para_cerrar"
+  handoff_stage: "escalado"
+
+# stage_behavior vive ahora en conversation_stage.yaml
+
+commercial_profile:
+  persist_enabled: true
+  tracked_fields:
+    - usage
+    - need
+    - budget
+    - budget_segment
+    - urgency
+    - objeciones
+    - interest
+    - next_best_step
+
+# assistant_persona vive ahora en personality.yaml
+
+greeting_policy:
+  personalized_enabled: true
+  use_first_name: true
+  menu_after_greeting: true
+  returning_contact_enabled: true
+  name_usage_intents:
+    - saludo
+    - smalltalk_estado
+    - gracias
+    - asesor_humano
+  name_cooldown_turns: 2
+
+conversation_memory:
+  capture_profile_name_from_channel: true
+  capture_name_from_message: true
+  capture_business_entities: true
+
+# humanization y style viven ahora en personality.yaml
+
+# Defaults usados cuando se crea la configuración inicial de un tenant.
+# Ojo: después del bootstrap, el tenant activo lee estos valores desde BotConfig en DB.
+# Si cambias el saludo aquí, solo afecta nuevos tenants o resiembras controladas.
+bot_defaults:
+  company_name: "Tu empresa"
+  system_prompt: "Eres una asesora comercial humana para WhatsApp, Instagram y web. Nunca respondas solo informacion: conecta con lo que dijo el cliente, explica breve y avanza al siguiente paso en cada turno."
+  greeting_message: "Hola {client_name_prefix}qué bueno leerte. Cuéntame qué necesitas revisar y te ayudo con información clara."
+  fallback_message: "Te ayudo encantada. Cuéntame qué producto, servicio o tema quieres revisar y lo vemos por aquí."
+  sensitive_fallback: "Para ubicarte bien, dime exactamente qué producto, servicio o caso estás viendo y te lo explico claro."
+  model_name: "openai/gpt-4.1-mini"
+  temperature: 0.0
+
+# Ejemplos de referencia para nuevos tenants.
+tenants_examples:
+  tenant_base:
+    company_name: "Tu empresa"
+    system_prompt: "Eres un asesor comercial humano en canales digitales. Responde simple, claro y orientado a avanzar con micro-cierre."
+
+# Definiciones base de prompts para runtime.
+prompts:
+  system_base: |
+    Eres un asesor comercial humano que atiende por WhatsApp.
+    Responde en español, con tono natural, cercano y profesional. Sé breve y orientado a avanzar.
+  rules: |
+    - No inventes datos ni políticas.
+    - Usa el historial de la conversación para mantener coherencia.
+    - Si solicitas información al usuario, haz una sola pregunta clara.
+    - Intenta detectar intención de compra y guía la conversación hacia la conversión cuando aplique.
+  system_template: |
+    {system_base}
+    Negocio: {company_name}.
+    Objetivo: resolver dudas, detectar intención de compra y mover la conversación a conversión cuando aplique.
+    Reglas:
+    {rules}
+  defaults:
+    system_prompt: "Eres un asesor comercial humano para WhatsApp, Instagram y web. Responde con tono humano, claro, breve y orientado a guiar la conversacion."
+    greeting_message: "Hola, cuéntame qué necesitas revisar y te ayudo por aquí."
+    fallback_message: "Cuéntame qué producto, servicio o tema quieres revisar y te doy la información exacta que tengo cargada."
+
+# Keywords de intención de referencia para bootstrap.
+intents:
+  cold:
+    - hola
+    - info
+    - informacion
+    - horario
+    - ubicacion
+  warm:
+    - precio
+    - coste
+    - cotizacion
+    - interesa
+    - catalogo
+    - servicio
+  hot:
+    - comprar
+    - pagar
+    - agendar
+    - reservar
+    - hoy
+    - ya
+    - contratar
+
+templates:
+  emails:
+    welcome: |
+      Hola {name},
+
+      Gracias por registrarte en {company}.
+
+      Saludos,
+      Equipo {company}
+  endpoints:
+    whatsapp_simulate_success: "Mensaje enviado correctamente (simulado)."
+    bootstrap_seeded: "Datos iniciales sembrados con éxito."

@@ -1,0 +1,146 @@
+config:
+  conversation:
+    active_window_minutes: 15  # Tiempo en minutos para mantener contexto activo
+    reset_hours: 4  # Reinicia la conversacion despues de inactividad
+
+  initial_message:
+    enabled: true  # true = envia mensaje inicial automatico / false = no lo envia
+    text: >  # Mensaje de apertura que recibe el usuario
+      Hola, ya estamos listos para ayudarte con tus pedidos.
+      Cuentame, quieres tomar una orden ahora?
+
+  features:
+    pricing_enabled: true  # true = permite usar precios en la conversacion
+    multi_currency: false  # true = permite manejar mas de una moneda
+    multi_plan: false  # true = permite ofrecer varios planes
+    catalog_mode: true  # true = vende opciones tipo catalogo / false = vende servicio o plan
+    business_model: catalog  # Tipo de negocio: saas | catalog | checkout | service_booking | process
+
+  flags:
+    ai_first: true  # true = prioriza respuesta generada por IA
+    allow_fallback: false  # true = permite fallback automatico / false = lo evita
+    log_level: info  # Nivel de logs: debug | info | warning | error
+
+  response:
+    length: short  # Tamano de respuesta: short | medium | long
+    max_words: 60  # Maximo de palabras por respuesta
+
+  post_payment:
+
+    on_user_report:
+      # Cuando el usuario dice "ya pagué" o envía comprobante
+      message: >
+        Perfecto, ya lo reviso y te confirmo en un momento para continuar.
+
+    on_payment_confirmed:
+      # Cuando el pago está confirmado (manual o futuro webhook)
+      message: >
+        Listo, ya quedó confirmado. Ahora seguimos con el siguiente paso.
+
+  # ==============================
+  # CAPACIDADES OPERATIVAS DEL NEGOCIO
+  # ==============================
+  # Define lo que el negocio puede hacer en la realidad.
+  # La IA SOLO puede usar esta informacion.
+  # No es marketing, es operacion real.
+  capabilities:
+
+    # ------------------------------
+    # COMPATIBILIDAD (LEGACY)
+    # ------------------------------
+    # ⚠️ Campo antiguo.
+    # Se mantiene para no romper el sistema actual.
+    # En el futuro puede eliminarse.
+    channels:
+      - whatsapp  # canales definidos previamente (no eliminar aun)
+
+    # ------------------------------
+    # CANALES DEL NEGOCIO
+    # ------------------------------
+    # Por donde atiende el negocio a sus clientes.
+    # Responde a: "por donde atienden?"
+    business_channels:
+      allowed:
+        - whatsapp
+
+    # ------------------------------
+    # CANALES DEL SISTEMA (SOLO SAAS)
+    # ------------------------------
+    # Donde funciona el sistema que se vende (NO el negocio).
+    # Solo aplica en SaaS.
+    system_channels:
+      allowed: []  # ejemplo: whatsapp, instagram, web
+
+    # ------------------------------
+    # ACCIONES DEL NEGOCIO
+    # ------------------------------
+    # Que puede hacer el negocio dentro de la conversacion.
+    actions:
+
+      # Acciones que generan ingreso directo
+      # Ejemplo: cerrar_venta, enviar_pago, agendar_cita
+      primary:
+        - tomar_pedido
+        - cerrar_venta
+
+      # Acciones de apoyo durante la conversacion
+      # Ejemplo: responder_dudas, seguimiento, enviar_info
+      support:
+        - responder_dudas
+        - seguimiento
+        - confirmar_datos
+
+    # ------------------------------
+    # MÉTODOS DE CIERRE DEL NEGOCIO
+    # ------------------------------
+    # Define cómo este negocio puede cerrar una venta o avanzar con un cliente.
+    # La IA SOLO puede usar lo que esté activo aquí.
+    closing_methods:
+
+      link_payment:
+        enabled: true
+        # Permite enviar un enlace de pago directo al cliente.
+        # Se usa cuando el cliente ya está listo para comprar.
+
+      human_handoff:
+        enabled: true
+        # Permite escalar la conversación a una persona real.
+        # Se usa cuando el cliente necesita ayuda, tiene dudas o requiere atención personalizada.
+
+      data_collection:
+        enabled: true
+        # Permite pedir información al cliente antes de avanzar.
+        # SOLO se usa cuando faltan datos necesarios (no es obligatorio ni siempre).
+        # Ejemplo: nombre, dirección, detalles del pedido, etc.
+
+    data_collection:
+      enabled: true
+
+      # ------------------------------
+      # DATOS DISPONIBLES
+      # ------------------------------
+      # Define qué información se puede pedir al cliente.
+      # La IA SOLO puede usar estos campos.
+      fields:
+        - nombre
+        - telefono
+        - direccion
+        - detalles
+
+    # ------------------------------
+    # RESTRICCIONES (MUY IMPORTANTE)
+    # ------------------------------
+    # Define lo que el negocio NO hace.
+    # Evita que la IA invente cosas.
+    constraints:
+
+      # Canales que NO deben mencionarse
+      disallowed_channels:
+        - instagram
+        - messenger
+        - telegram
+        - web
+
+      # Acciones que el negocio NO realiza
+      disallowed_actions:
+        - llamadas

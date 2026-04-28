@@ -1,0 +1,62 @@
+business:
+  name: Demo Comercial
+  brand_name: Demo Comercial
+  description: Entorno demo para validar comportamiento comercial multi-tenant.
+  industry: servicios
+  tone: humano y comercial
+  voice: cercano y directo
+  city: Medellin
+  promise: mover conversaciones a una accion concreta.
+  positioning: demostracion de ejecucion comercial por chat.
+  differentiators:
+    - seguimiento automatico
+    - cierre guiado
+  customer_profile:
+    segment: pymes
+    company_size: 1 a 20 personas
+  pain_points:
+    - conversaciones sin seguimiento
+  desired_outcomes:
+    - cerrar mas oportunidades
+
+  location:
+    type: virtual
+    address: ""
+    city: Medellin
+    coverage:
+      type: nacional
+      zones:
+        - colombia
+
+  service_modes:
+    - virtual
+
+  logistics:
+    delivery:
+      available: false
+      type: tercero
+      zones: []
+      cost:
+        type: variable
+        value: 0
+      time:
+        min: ""
+        max: ""
+
+    shipping:
+      available: false
+      scope: nacional
+      providers: []
+      cost:
+        type: variable
+        value: 0
+      time:
+        min: ""
+        max: ""
+
+    pickup:
+      available: false
+      instructions: ""
+
+    scheduling:
+      required: false

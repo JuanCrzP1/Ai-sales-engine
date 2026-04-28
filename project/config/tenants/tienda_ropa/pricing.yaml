@@ -1,0 +1,73 @@
+pricing:
+  model: catalog  # Tipo de precios: catalog = items con precio directo / plans = planes o servicio
+
+  catalog:  # Oferta tipo catalogo con categorias e items
+    categories:  # Grupos para ordenar lo que se vende
+      - id: camisetas  # Identificador interno de la categoria
+        name: Camisetas  # Nombre visible de la categoria
+      - id: jeans  # Identificador interno de la categoria
+        name: Jeans  # Nombre visible de la categoria
+
+    items:  # Productos o servicios que se pueden ofrecer uno a uno
+      - id: camiseta_basica  # Identificador interno del item
+        name: Camiseta Basica  # Nombre visible del item
+        category: camisetas
+        description: Camiseta de algodon de uso diario.
+        price:  # Precio por moneda
+          COP: 45000  # Precio en pesos colombianos
+
+      - id: jean_clasico  # Identificador interno del item
+        name: Jean Clasico  # Nombre visible del item
+        category: jeans
+        description: Jean azul de corte regular.
+        price:  # Precio por moneda
+          COP: 95000  # Precio en pesos colombianos
+
+    payment:
+      # ------------------------------
+      # EJECUCIÓN DE PAGO
+      # ------------------------------
+      # Define cómo el cliente paga.
+      # Este link es el que la IA puede enviar si decide cerrar.
+      link: ""
+      transfer:
+        enabled: true
+        methods:
+          - type: nequi
+            number: "3001234567"
+          - type: daviplata
+            number: "3009876543"
+          - type: bank
+            bank: "Bancolombia"
+            account_type: "ahorros"
+            account_number: "1234567890"
+          - type: breb
+            reference: "usuario@correo.com"
+
+  conditions:  # Reglas comerciales que se deben respetar
+    - cambios segun politica de la tienda
+
+  price_framing:
+    type: directo  # Forma de presentar el precio: directo | comparativo
+
+  roi:  # Referencia simple para medir retorno esperado
+    break_even_sales: 2
+
+  business_offers:  # Mapa simple de oferta principal, upsell y cross-sell
+    core:  # Oferta principal que mas se vende
+      - camiseta_basica
+      - jean_clasico
+    upsell:  # Oferta para subir valor de la venta
+      - look_completo
+      - prenda_premium
+    cross_sell:  # Oferta complementaria que suma al cierre
+      - accesorios
+      - cinturon
+    financing:
+      available: true  # true = permite financiacion / false = no ofrece financiacion
+      providers:
+        - addi
+        - sistecredito
+      options:
+        - cuotas
+        - pago_inicial

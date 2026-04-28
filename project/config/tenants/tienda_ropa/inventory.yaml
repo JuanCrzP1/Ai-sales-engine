@@ -1,0 +1,37 @@
+inventory:
+  track_stock: true
+
+  items:
+    - product_id: camiseta_basica
+      variants:
+        - sku: camiseta_basica_s_blanco
+          attributes:
+            size: S
+            color: blanco
+          stock: 5
+
+        - sku: camiseta_basica_m_blanco
+          attributes:
+            size: M
+            color: blanco
+          stock: 0
+
+        - sku: camiseta_basica_l_negro
+          attributes:
+            size: L
+            color: negro
+          stock: 3
+
+    - product_id: jean_clasico
+      variants:
+        - sku: jean_30_azul
+          attributes:
+            size: 30
+            color: azul
+          stock: 4
+
+        - sku: jean_32_azul
+          attributes:
+            size: 32
+            color: azul
+          stock: 2

@@ -1,0 +1,65 @@
+business:
+  name: Agenda Clinica Pro
+  brand_name: Agenda Clinica Pro
+  description: Motor comercial para clinicas que convierten chats en citas.
+  industry: clinica y salud
+  tone: humano, claro y profesional
+  voice: cercano y ordenado
+  city: Medellin
+  promise: agendar citas rapido sin perder pacientes por demora.
+  positioning: ejecucion comercial para agenda, no respuesta generica.
+  differentiators:
+    - agenda asistida
+    - confirmacion de dia y hora
+    - seguimiento de pacientes
+  customer_profile:
+    segment: clinicas y consultorios
+    company_size: 2 a 25 personas
+  pain_points:
+    - pacientes sin cita confirmada
+    - seguimiento inconsistente
+  desired_outcomes:
+    - agendar mas citas
+    - ordenar disponibilidad
+
+  location:
+    type: fisico
+    address: "Cra 70 #30-10"
+    city: Medellin
+    coverage:
+      type: local
+      zones:
+        - medellin
+
+  service_modes:
+    - presencial
+
+  logistics:
+    delivery:
+      available: false
+      type: tercero
+      zones: []
+      cost:
+        type: variable
+        value: 0
+      time:
+        min: ""
+        max: ""
+
+    shipping:
+      available: false
+      scope: local
+      providers: []
+      cost:
+        type: variable
+        value: 0
+      time:
+        min: ""
+        max: ""
+
+    pickup:
+      available: false
+      instructions: ""
+
+    scheduling:
+      required: true

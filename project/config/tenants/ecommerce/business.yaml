@@ -1,0 +1,66 @@
+business:
+  name: Checkout Conversacional
+  brand_name: Checkout Conversacional
+  description: Motor de cierre para ecommerce que vende por chat.
+  industry: ecommerce
+  tone: directo y orientado a conversion
+  voice: cercano y accionable
+  city: Medellin
+  promise: convertir interes en compra con direccion, envio y pago.
+  positioning: ejecucion comercial de checkout segun contexto del comprador.
+  differentiators:
+    - cierre por chat
+    - captura de direccion y envio
+    - guia a pago
+  customer_profile:
+    segment: tiendas ecommerce
+    company_size: 2 a 50 personas
+  pain_points:
+    - carritos abandonados
+    - compras sin cerrar
+  desired_outcomes:
+    - cerrar pago
+    - confirmar envio
+
+  location:
+    type: virtual
+    address: ""
+    city: Medellin
+    coverage:
+      type: nacional
+      zones:
+        - colombia
+
+  service_modes:
+    - envio
+
+  logistics:
+    delivery:
+      available: false
+      type: tercero
+      zones: []
+      cost:
+        type: variable
+        value: 0
+      time:
+        min: ""
+        max: ""
+
+    shipping:
+      available: true
+      scope: nacional
+      providers:
+        - coordinadora
+      cost:
+        type: variable
+        value: 0
+      time:
+        min: "2 dias"
+        max: "5 dias"
+
+    pickup:
+      available: false
+      instructions: ""
+
+    scheduling:
+      required: false

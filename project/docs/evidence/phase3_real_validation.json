@@ -1,0 +1,98 @@
+﻿[
+    {
+        "input":  "tengo muchos mensajes",
+        "response":  "Entiendo que tienes muchos mensajes. Eso significa que hay oportunidades que se pueden perder si no se siguen correctamente. ¿Quieres saber cómo podemos ayudarte a gestionar esas conversaciones y sostener esas oportunidades?",
+        "channel":  "whatsapp",
+        "tenant":  "asesor_ai_prod"
+    },
+    {
+        "input":  "tengo muchos mensajes",
+        "response":  "Lo siento, la cantidad de mensajes es alta y esto te está generando problemas. ¿Quieres seguir con la conversación y resolverlo de una vez para sostener esas oportunidades?",
+        "channel":  "telegram",
+        "tenant":  "asesor_ai_prod"
+    },
+    {
+        "input":  "como funciona",
+        "response":  "Nuestro sistema gestiona conversaciones de forma automática para que no pierdas ventas por falta de tiempo o desorden en los canales. ¿Quieres empezar con la activación y recuperar conversaciones pendientes?",
+        "channel":  "whatsapp",
+        "tenant":  "asesor_ai_prod"
+    },
+    {
+        "input":  "como funciona",
+        "response":  "Nuestro sistema es un vendedor IA que responde a tiempo, mantiene continuidad comercial y te ayuda a convertir más conversaciones en ventas. Funciona como una suscripción con activación inicial y puede ayudarte a resolver tus problemas de gestión de mensajes y seguimiento.",
+        "channel":  "telegram",
+        "tenant":  "asesor_ai_prod"
+    },
+    {
+        "input":  "esta caro",
+        "response":  "Entiendo que piensas que es un poco caro, pero piensa en todas las conversaciones que se te van a enfriar si no tienes un sistema que te ayude a seguirlas. La verdad es que es una inversion a largo plazo, y te va a ayudar a recuperar ventas que ya estaban cerca de cerrarse. Avanzamos hoy y te dejo el plan basico listo para que puedas empezar a recuperar esas oportunidades perdidas.",
+        "channel":  "whatsapp",
+        "tenant":  "asesor_ai_prod"
+    },
+    {
+        "input":  "esta caro",
+        "response":  "Entiendo que te parece caro. Lo que suele salir caro es perder conversaciones que ya estaban interesadas. Cuando empiezas a recuperar leads, se paga solo. Avanzamos hoy con activacion y recuperacion de conversaciones.",
+        "channel":  "telegram",
+        "tenant":  "asesor_ai_prod"
+    },
+    {
+        "input":  "quiero empezar",
+        "response":  "Avanzamos ahora y te dejo el pedido listo.",
+        "channel":  "whatsapp",
+        "tenant":  "asesor_ai_prod"
+    },
+    {
+        "input":  "quiero empezar",
+        "response":  "Avanzamos ahora y te dejo el sistema listo para tu negocio.",
+        "channel":  "telegram",
+        "tenant":  "asesor_ai_prod"
+    },
+    {
+        "input":  "quiero camiseta negra talla L",
+        "response":  "Revisa nuestra colección de camisetas negras y te recomiendo la 'Camiseta Básica' de talla L, disponible en stock. ¿Te gustaría agregarla a tu pedido?",
+        "channel":  "whatsapp",
+        "tenant":  "tienda_ropa"
+    },
+    {
+        "input":  "quiero pedir",
+        "response":  "Avanzamos a confirmar tu pedido, necesito tu nombre y direccion para poder proceder.",
+        "channel":  "telegram",
+        "tenant":  "restaurant"
+    },
+    {
+        "input":  "quiero comprar",
+        "response":  "De una, avanzamos ahora y te dejo el pedido listo. ¿Quieres pagar con tarjeta de crédito o transferencia bancaria?",
+        "channel":  "whatsapp",
+        "tenant":  "asesor_ai_prod"
+    },
+    {
+        "input":  "quiero comprar",
+        "response":  "De una, avanzamos ahora y te dejo el pedido listo.",
+        "channel":  "whatsapp",
+        "tenant":  "asesor_ai_prod"
+    },
+    {
+        "input":  "quiero comprar",
+        "response":  "De una, avanzamos ahora y te dejo el pedido listo. ¿Quieres activar la cuenta para empezar a vender sin depender del tiempo?",
+        "channel":  "whatsapp",
+        "tenant":  "asesor_ai_prod"
+    },
+    {
+        "input":  "quiero comprar",
+        "response":  "De una, avanzamos ahora y te dejo el pedido listo. ¿Te gustaría activar y empezar a utilizar el sistema hoy?",
+        "channel":  "telegram",
+        "tenant":  "asesor_ai_prod"
+    },
+    {
+        "input":  "quiero comprar",
+        "response":  "De una, avanzamos ahora y te dejo el pedido listo. ¿Quieres activar la suscripción y empezar a utilizar el sistema?",
+        "channel":  "telegram",
+        "tenant":  "asesor_ai_prod"
+    },
+    {
+        "input":  "quiero comprar",
+        "response":  "De una, avanzamos ahora y te dejo el pedido listo.",
+        "channel":  "telegram",
+        "tenant":  "asesor_ai_prod"
+    }
+]

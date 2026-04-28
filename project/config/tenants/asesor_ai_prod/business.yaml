@@ -1,0 +1,107 @@
+business:
+  name: Asesor Comercial
+  brand_name: Asesor Comercial
+  description: >
+    Negocios que reciben muchos mensajes y no alcanzan a responder a tiempo, perdiendo clientes
+    y oportunidades de venta sin darse cuenta.
+  industry: automatizacion comercial para negocios que venden por chat
+  tone: humano, cercano, directo y comercial de cierre
+  voice: cercano, directo y orientado a resultados
+  city: Medellin
+  promise: >
+   Convierte tu WhatsApp en un vendedor automático 24/7 con un asistente comercial inteligente que responde al instante, da seguimiento a cada prospecto y transforma conversaciones en ventas sin que tengas que estar pendiente.
+  positioning: >
+    Para negocios que pierden ventas porque no alcanzan a responder a tiempo y el seguimiento
+    se pierde despues del primer contacto.
+  differentiators:
+    - seguimiento automatico con contexto
+    - integracion con WhatsApp
+    - enfoque en ventas, no solo respuestas
+    - implementacion guiada paso a paso
+  customer_profile:
+    segment: pymes de servicios y ventas
+    company_size: 2 a 25 personas
+    maturity: venden por chat pero sin proceso de seguimiento consistente
+    roles:
+      - dueno
+      - asesor comercial
+      - community manager
+  pain_points:
+    - no alcanzan a responder todos los mensajes
+    - el seguimiento se pierde despues del primer contacto
+    - conversaciones dispersas en multiples canales
+    - oportunidades que se enfrian por demora
+  desired_outcomes:
+    - responder rapido sin depender del tiempo humano
+    - mantener seguimiento constante
+    - aumentar conversion de chats a ventas
+    - tener orden en el proceso comercial
+  credibility:
+    - implementaciones reales en negocios similares
+    - casos donde se recuperan conversaciones perdidas
+  value_drivers:
+    tiempo:
+      description: ahorro de tiempo en respuesta y seguimiento
+      triggers:
+        - "no me da el tiempo"
+        - "muchos mensajes"
+    dinero:
+      description: recuperacion de oportunidades perdidas
+      triggers:
+        - "pierdo clientes"
+        - "no vendo"
+  buying_motivation:
+    primary: tiempo
+    secondary: dinero
+  use_cases:
+    - nombre: negocio saturado
+      senales:
+        - "muchos mensajes"
+        - "no alcanzo a responder"
+      enfoque: automatizar_respuesta
+    - nombre: seguimiento perdido
+      senales:
+        - "no hago seguimiento"
+      enfoque: seguimiento_automatico
+
+  location:
+    type: virtual
+    address: ""
+    city: Medellin
+    coverage:
+      type: nacional
+      zones:
+        - colombia
+
+  service_modes:
+    - virtual
+
+  logistics:
+    delivery:
+      available: false
+      type: tercero
+      zones: []
+      cost:
+        type: variable
+        value: 0
+      time:
+        min: ""
+        max: ""
+
+    shipping:
+      available: false
+      scope: nacional
+      providers: []
+      cost:
+        type: variable
+        value: 0
+      time:
+        min: ""
+        max: ""
+
+    pickup:
+      available: false
+      instructions: ""
+
+    scheduling:
+      required: false

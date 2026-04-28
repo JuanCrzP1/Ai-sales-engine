@@ -1,0 +1,38 @@
+[
+  {
+    "tenant": "saas",
+    "has_business_model_context": true,
+    "has_sales_context": true,
+    "has_pricing_context": true
+  },
+  {
+    "tenant": "restaurant",
+    "has_business_model_context": true,
+    "has_sales_context": true,
+    "has_pricing_context": true
+  },
+  {
+    "tenant": "clinic",
+    "has_business_model_context": true,
+    "has_sales_context": true,
+    "has_pricing_context": true
+  },
+  {
+    "tenant": "ecommerce",
+    "has_business_model_context": true,
+    "has_sales_context": true,
+    "has_pricing_context": true
+  },
+  {
+    "tenant": "agencia_viajes",
+    "has_business_model_context": true,
+    "has_sales_context": true,
+    "has_pricing_context": true
+  },
+  {
+    "tenant": "escuela_conduccion",
+    "has_business_model_context": true,
+    "has_sales_context": true,
+    "has_pricing_context": true
+  }
+]

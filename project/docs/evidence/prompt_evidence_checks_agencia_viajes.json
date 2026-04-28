@@ -1,0 +1,17 @@
+{
+  "SALES_CONTEXT": true,
+  "discovery": true,
+  "pain": true,
+  "objection": true,
+  "closing": true,
+  "PRICING_CONTEXT": true,
+  "payment_methods": true,
+  "conditions": true,
+  "price_framing": true,
+  "roi": true,
+  "BUSINESS_CONTEXT": true,
+  "pain_points": true,
+  "customer_profile": true,
+  "use_cases": true,
+  "roi_non_empty": true
+}

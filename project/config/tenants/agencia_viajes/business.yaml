@@ -1,0 +1,109 @@
+business:
+  name: Viajes Demo
+  brand_name: Viajes Demo
+  description: >
+    Sistema que responde prospectos, retoma cotizaciones y sostiene seguimiento para que
+    la agencia no pierda reservas por demora o falta de continuidad.
+  industry: automatizacion comercial para agencias de viajes que venden por chat
+  tone: humano, claro y consultivo
+  voice: cercano, directo y orientado a cierres
+  city: Medellin
+  promise: >
+    Responder rapido, retomar cotizaciones frias y convertir mas conversaciones en reservas cerradas.
+  positioning: >
+    No es solo responder mensajes. Es orden comercial para que la agencia cierre mas viajes
+    sin depender de perseguir cada chat manualmente.
+  differentiators:
+    - seguimiento automatico de cotizaciones y reservas
+    - recomendacion de plan segun volumen y momento comercial
+    - integracion multicanal para captacion y seguimiento
+    - implementacion guiada con enfoque en cierre
+  customer_profile:
+    segment: agencias de viajes pequenas y medianas que venden por WhatsApp e Instagram
+    company_size: 2 a 25 personas
+    maturity: reciben cotizaciones por chat pero pierden seguimiento y reservas
+    roles:
+      - dueno
+      - asesor comercial
+      - agente de viajes
+  pain_points:
+    - no alcanzan a responder todas las cotizaciones a tiempo
+    - el seguimiento se cae despues del primer contacto
+    - reservas que se enfrian por demora o falta de orden
+    - conversaciones dispersas entre varios canales
+  desired_outcomes:
+    - responder mas rapido sin depender del tiempo humano
+    - recuperar cotizaciones que se estaban perdiendo
+    - aumentar conversion de chats a reservas
+    - ordenar el proceso comercial del equipo
+  credibility:
+    - implementaciones reales en negocios que venden por chat
+    - casos donde se retoman conversaciones que ya estaban frias
+  value_drivers:
+    tiempo:
+      description: ahorro de tiempo en respuesta y seguimiento comercial
+      triggers:
+        - "no me da el tiempo"
+        - "muchos mensajes"
+    dinero:
+      description: recuperacion de cotizaciones y reservas perdidas
+      triggers:
+        - "pierdo reservas"
+        - "no cierro"
+  buying_motivation:
+    primary: dinero
+    secondary: tiempo
+  use_cases:
+    - nombre: cotizaciones acumuladas
+      senales:
+        - "muchas cotizaciones"
+        - "no alcanzo a responder"
+      enfoque: automatizar_respuesta
+    - nombre: seguimiento perdido
+      senales:
+        - "no hago seguimiento"
+        - "se enfria la reserva"
+      enfoque: seguimiento_automatico
+
+  location:
+    type: virtual
+    address: ""
+    city: Medellin
+    coverage:
+      type: internacional
+      zones:
+        - colombia
+        - internacional
+
+  service_modes:
+    - virtual
+
+  logistics:
+    delivery:
+      available: false
+      type: tercero
+      zones: []
+      cost:
+        type: variable
+        value: 0
+      time:
+        min: ""
+        max: ""
+
+    shipping:
+      available: false
+      scope: internacional
+      providers: []
+      cost:
+        type: variable
+        value: 0
+      time:
+        min: ""
+        max: ""
+
+    pickup:
+      available: false
+      instructions: ""
+
+    scheduling:
+      required: true

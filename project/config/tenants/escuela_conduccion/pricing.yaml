@@ -1,0 +1,99 @@
+pricing:
+  model: catalog  # Tipo de precios: catalog = items con precio directo / plans = planes o servicio
+
+  catalog:  # Oferta tipo catalogo con categorias e items
+    categories:  # Grupos para ordenar lo que se vende
+      - id: motos  # Identificador interno de la categoria
+        name: Motos  # Nombre visible de la categoria
+      - id: carros  # Identificador interno de la categoria
+        name: Carros  # Nombre visible de la categoria
+      - id: servicio_publico  # Identificador interno de la categoria
+        name: Servicio Publico  # Nombre visible de la categoria
+
+    items:  # Productos o servicios que se pueden ofrecer uno a uno
+      - id: licencia_a1  # Identificador interno del item
+        name: Licencia A1  # Nombre visible del item
+        category: motos
+        description: Formacion y tramite para moto de bajo cilindraje.
+        price:  # Precio por moneda
+          COP: 800000  # Precio en pesos colombianos
+
+      - id: licencia_a2  # Identificador interno del item
+        name: Licencia A2  # Nombre visible del item
+        category: motos
+        description: Formacion y tramite para moto de alto cilindraje.
+        price:  # Precio por moneda
+          COP: 950000  # Precio en pesos colombianos
+
+      - id: licencia_b1  # Identificador interno del item
+        name: Licencia B1  # Nombre visible del item
+        category: carros
+        description: Formacion y tramite para carro particular.
+        price:  # Precio por moneda
+          COP: 1200000  # Precio en pesos colombianos
+
+      - id: licencia_b2  # Identificador interno del item
+        name: Licencia B2  # Nombre visible del item
+        category: carros
+        description: Formacion y tramite para camiones livianos.
+        price:  # Precio por moneda
+          COP: 1450000  # Precio en pesos colombianos
+
+      - id: licencia_c1  # Identificador interno del item
+        name: Licencia C1  # Nombre visible del item
+        category: servicio_publico
+        description: Formacion y tramite para servicio publico liviano.
+        price:  # Precio por moneda
+          COP: 1550000  # Precio en pesos colombianos
+
+      - id: licencia_c2  # Identificador interno del item
+        name: Licencia C2  # Nombre visible del item
+        category: servicio_publico
+        description: Formacion y tramite para vehiculos de carga pesada.
+        price:  # Precio por moneda
+          COP: 1850000  # Precio en pesos colombianos
+
+    payment:
+      # ------------------------------
+      # EJECUCIÓN DE PAGO
+      # ------------------------------
+      # Define cómo el cliente paga.
+      # Este link es el que la IA puede enviar si decide cerrar.
+      link: ""
+      transfer:
+        enabled: true
+        methods:
+          - type: nequi
+            number: "3001234567"
+          - type: daviplata
+            number: "3009876543"
+          - type: bank
+            bank: "Bancolombia"
+            account_type: "ahorros"
+            account_number: "1234567890"
+          - type: breb
+            reference: "usuario@correo.com"
+
+  conditions:  # Reglas comerciales que se deben respetar
+    - valores sujetos a evaluacion y documentacion del alumno
+
+  price_framing:
+    type: directo  # Forma de presentar el precio: directo | comparativo
+
+  business_offers:  # Mapa simple de oferta principal, upsell y cross-sell
+    core:  # Oferta principal que mas se vende
+      - licencias
+    upsell:  # Oferta para subir valor de la venta
+      - paquete_intensivo
+      - clases_adicionales
+    cross_sell:  # Oferta complementaria que suma al cierre
+      - examen_medico
+      - asesoria_tramites
+    financing:
+      available: true  # true = permite financiacion / false = no ofrece financiacion
+      providers:
+        - sistecredito
+      options:
+        - separacion_cupo
+        - cuotas
+

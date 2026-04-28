@@ -1,0 +1,71 @@
+business:
+  type: restaurant
+  name: Mesa Activa
+  brand_name: Mesa Activa
+  description: Sistema comercial para restaurantes que toman pedidos por chat.
+  industry: restaurante y domicilios
+  tone: cercano, agil y orientado a orden
+  voice: claro y rapido
+  city: Medellin
+  promise: tomar pedidos rapido y reducir perdidas por demora.
+  positioning: asistencia comercial para convertir chats en pedidos confirmados.
+  differentiators:
+    - toma de pedido por chat
+    - confirmacion de orden
+    - seguimiento de entrega
+  customer_profile:
+    segment: restaurantes
+    company_size: 3 a 40 personas
+  pain_points:
+    - pedidos sin confirmar
+    - demoras en toma de orden
+  desired_outcomes:
+    - confirmar pedido rapido
+    - mejorar flujo de ordenes
+
+  location:
+    type: fisico
+    address: "Cra 45 #10-20"
+    city: Medellin
+    coverage:
+      type: local
+      zones:
+        - poblado
+        - laureles
+
+  service_modes:
+    - domicilio
+    - presencial
+    - recoger
+
+  logistics:
+    delivery:
+      available: true
+      type: propio
+      zones:
+        - poblado
+        - laureles
+      cost:
+        type: fijo
+        value: 4000
+      time:
+        min: "30 min"
+        max: "50 min"
+
+    shipping:
+      available: false
+      scope: local
+      providers: []
+      cost:
+        type: variable
+        value: 0
+      time:
+        min: ""
+        max: ""
+
+    pickup:
+      available: true
+      instructions: "puedes recoger en el local"
+
+    scheduling:
+      required: false

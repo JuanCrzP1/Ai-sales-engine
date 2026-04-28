@@ -1,0 +1,159 @@
+pricing:
+  currencies:  # Monedas disponibles para mostrar precios
+    primary: COP
+    supported:
+      - COP
+      - USD
+
+  model: hybrid  # Tipo de precios: catalog = items con precio directo / plans = planes o servicio
+
+  plans:  # Lista de planes o paquetes disponibles
+    - id: demo_base  # Identificador interno del plan
+      name: Plan Demo Base  # Nombre visible del plan
+      description: Configuracion comercial inicial para entorno demo.
+      pricing:  # Precios por moneda
+        COP:
+          implementation: 120000  # Cobro inicial de implementacion o arranque
+          monthly: 150000  # Cobro mensual recurrente
+        USD:
+          implementation: 30  # Cobro inicial de implementacion o arranque
+          monthly: 38  # Cobro mensual recurrente
+      includes:  # Lo que si trae este plan
+        - configuracion inicial
+        - seguimiento comercial
+      not_included:  # Lo que no esta incluido en este plan
+        - costos de plataformas externas
+
+      payment:
+        # ------------------------------
+        # EJECUCIÓN DE PAGO
+        # ------------------------------
+        # Define cómo el cliente paga.
+        # Este link es el que la IA puede enviar si decide cerrar.
+        link: "https://checkout.aisalesengine.com/demo/demo-base"
+        transfer:
+          enabled: true
+          methods:
+            - type: nequi
+              number: "3001234567"
+            - type: daviplata
+              number: "3009876543"
+            - type: bank
+              bank: "Bancolombia"
+              account_type: "ahorros"
+              account_number: "1234567890"
+            - type: breb
+              reference: "usuario@correo.com"
+
+  conditions:  # Reglas comerciales que se deben respetar
+    - sin permanencia obligatoria
+
+  price_framing:
+    type: comparativo  # Forma de presentar el precio: directo | comparativo
+
+  roi:  # Referencia simple para medir retorno esperado
+    break_even_sales: 2
+
+  business_offers:  # Mapa simple de oferta principal, upsell y cross-sell
+    core:  # Oferta principal que mas se vende
+      - demo_base
+    upsell:  # Oferta para subir valor de la venta
+      - acompanamiento_prioritario
+    cross_sell:  # Oferta complementaria que suma al cierre
+      - integracion_extra
+    financing:
+      available: false  # true = permite financiacion / false = no ofrece financiacion
+      providers: []
+      options: []
+
+pricing:
+  plans:  # Lista de planes o paquetes disponibles
+    - id: basico  # Identificador interno del plan
+      name: Plan Basico  # Nombre visible del plan
+      description: Estructura inicial para bajo volumen.
+      target: negocios con bajo volumen
+      pricing:  # Precios por moneda
+        COP:
+          implementation: 100000  # Cobro inicial de implementacion o arranque
+          monthly: 120000  # Cobro mensual recurrente
+        USD:
+          implementation: 30  # Cobro inicial de implementacion o arranque
+          monthly: 35  # Cobro mensual recurrente
+      includes:  # Lo que si trae este plan
+        - configuracion inicial
+        - integracion con canales
+        - seguimiento automatico
+      not_included:  # Lo que no esta incluido en este plan
+        - costos de plataformas externas
+        - inversion publicitaria
+
+      payment:
+        # ------------------------------
+        # EJECUCIÓN DE PAGO
+        # ------------------------------
+        # Define cómo el cliente paga.
+        # Este link es el que la IA puede enviar si decide cerrar.
+        link: "https://checkout.aisalesengine.com/demo/basico"
+        transfer:
+          enabled: true
+          methods:
+            - type: nequi
+              number: "3001234567"
+            - type: daviplata
+              number: "3009876543"
+            - type: bank
+              bank: "Bancolombia"
+              account_type: "ahorros"
+              account_number: "1234567890"
+            - type: breb
+              reference: "usuario@correo.com"
+
+    - id: pro  # Identificador interno del plan
+      name: Plan Pro  # Nombre visible del plan
+      description: Operacion activa con mayor volumen y seguimiento.
+      target: negocios con alto volumen y seguimiento activo
+      pricing:  # Precios por moneda
+        COP:
+          implementation: 200000  # Cobro inicial de implementacion o arranque
+          monthly: 250000  # Cobro mensual recurrente
+        USD:
+          implementation: 50  # Cobro inicial de implementacion o arranque
+          monthly: 65  # Cobro mensual recurrente
+      includes:  # Lo que si trae este plan
+        - configuracion avanzada
+        - integracion multicanal
+        - seguimiento automatizado con prioridad
+      not_included:  # Lo que no esta incluido en este plan
+        - costos de plataformas externas
+        - inversion publicitaria
+
+      payment:
+        # ------------------------------
+        # EJECUCIÓN DE PAGO
+        # ------------------------------
+        # Define cómo el cliente paga.
+        # Este link es el que la IA puede enviar si decide cerrar.
+        link: "https://checkout.aisalesengine.com/demo/pro"
+        transfer:
+          enabled: true
+          methods:
+            - type: nequi
+              number: "3001234567"
+            - type: daviplata
+              number: "3009876543"
+            - type: bank
+              bank: "Bancolombia"
+              account_type: "ahorros"
+              account_number: "1234567890"
+            - type: breb
+              reference: "usuario@correo.com"
+
+  price_framing:
+    type: comparativo  # Forma de presentar el precio: directo | comparativo
+
+  roi:  # Referencia simple para medir retorno esperado
+    break_even_sales: 3
+
+  conditions:  # Reglas comerciales que se deben respetar
+    - sin permanencia obligatoria
+    - se puede cancelar mensual
