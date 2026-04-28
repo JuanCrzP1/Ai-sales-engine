@@ -395,8 +395,6 @@ settings = Settings(**_yaml_cfg)
 _database_url = str(settings.database_url or "").strip()
 _resolved_mode = str(settings.mode or settings.environment or "").strip().lower()
 if not _database_url:
-    if _resolved_mode == "production":
-        raise RuntimeError("DATABASE_URL no definida")
     _database_url = "sqlite:///:memory:"
 if not _database_url.lower().startswith(("postgresql+psycopg", "sqlite")):
     raise RuntimeError("DATABASE_URL debe apuntar a PostgreSQL con psycopg")

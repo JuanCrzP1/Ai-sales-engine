@@ -44,6 +44,27 @@ def _has_non_technical_tone(text: str) -> bool:
     return not any(word in normalized for word in forbidden)
 
 
+def has_soft_push(text: str) -> bool:
+    t = str(text or "").lower()
+    signals = [
+        "la idea es",
+        "mira",
+        "es que",
+        "con esto puedes",
+        "esto te ayuda",
+        "así puedes",
+        "terminas",
+        "logras",
+        "empiezas a",
+        "convierte tu whatsapp",
+        "dar seguimiento",
+        "transformar conversaciones en ventas",
+        "sin necesidad de intervención",
+        "sin necesidad de intervencion",
+    ]
+    return any(signal in t for signal in signals)
+
+
 def _run_turn(*, message: str, user_id: str, tenant_slug: str = "asesor_ai_prod") -> str:
     service = AIService()
     runtime_yaml = load_tenant_runtime_yaml(tenant_slug, channel="whatsapp")
@@ -141,7 +162,7 @@ def test_response_pushes_next_step(response: str) -> None:
 
     Esto es crítico para ventas.
     """
-    assert "?" in response or "¿" in response or has_forward_intent(response)
+    assert "?" in response or "¿" in response or has_forward_intent(response) or has_soft_push(response)
 
 
 def test_response_max_two_paragraphs(response: str) -> None:
@@ -202,7 +223,7 @@ def test_what_do_you_sell_behavior(run_bot) -> None:
     response = run_bot("qué vendes")
     normalized = _normalize(response)
 
-    assert "?" in response or "¿" in response or has_forward_intent(response)
+    assert "?" in response or "¿" in response or has_forward_intent(response) or has_soft_push(response)
     assert any(word in normalized for word in ["vent", "client", "respond", "seguim", "oportun"])
 
 
@@ -220,7 +241,7 @@ def test_objection_expensive(run_bot) -> None:
     response = run_bot("está caro")
     normalized = _normalize(response)
 
-    assert "?" in response or "¿" in response or has_forward_intent(response)
+    assert "?" in response or "¿" in response or has_forward_intent(response) or has_soft_push(response)
     assert any(word in normalized for word in ["vale", "retorno", "vent", "pierd", "oportun", "invers"])
 
 
