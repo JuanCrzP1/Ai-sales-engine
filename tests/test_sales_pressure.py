@@ -64,9 +64,9 @@ def _mentions_real_problem(text: str) -> bool:
 def _shows_commercial_impact(text: str) -> bool:
     normalized = str(text or "").lower()
     impact_groups = [
-        ["vent", "negoci", "result", "oportun", "convers"],
-        ["perd", "demor", "enfri", "cae", "desorden", "cuello", "satur", "carga", "escala", "tiempo"],
-        ["seguim", "respuest", "respond", "client", "orden"],
+        ["vent", "negoci", "result", "oportun", "convers", "vendedor", "prospect"],
+        ["perd", "demor", "enfri", "cae", "desorden", "cuello", "satur", "carga", "escala", "tiempo", "abrum", "esfuerzo"],
+        ["seguim", "respuest", "respond", "client", "orden", "automat", "24/7", "24x7"],
     ]
     matched_groups = sum(1 for group in impact_groups if any(signal in normalized for signal in group))
     return matched_groups >= 2

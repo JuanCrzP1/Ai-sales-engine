@@ -1,5 +1,11 @@
 <p align="center">
-  <img src="assets/logo.png" alt="AI Sales Engine" width="180"/>
+  <img src="assets/logo.png" alt="AI Sales Engine" width="320"/>
+</p>
+
+<h1 align="center">AI Sales Engine</h1>
+
+<p align="center">
+  Motor conversacional AI-first para ventas SaaS multi-tenant
 </p>
 
 # AI Sales Engine — Vendedor Conversacional por WhatsApp
