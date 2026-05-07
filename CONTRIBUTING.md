@@ -6,13 +6,26 @@ Este repositorio prioriza estabilidad operativa, configuración explícita y pru
 
 ## Setup Local
 
+**Windows (PowerShell):**
+
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install --upgrade pip
 pip install -r project/requirements.txt
 Copy-Item project/.env.example project/.env
-Set-Location project
+cd project
+```
+
+**macOS / Linux:**
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install --upgrade pip
+pip install -r project/requirements.txt
+cp project/.env.example project/.env
+cd project
 ```
 
 ## Como Probar Tus Cambios

@@ -25,6 +25,7 @@ Es un sistema de ventas.
 Levantar el sistema:
 
 ```bash
+cd project
 uvicorn app.main:app --reload
 ```
 

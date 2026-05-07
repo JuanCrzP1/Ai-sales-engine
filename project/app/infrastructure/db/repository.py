@@ -8,8 +8,11 @@ from app.infrastructure.db.connection import get_engine
 class DBRepository:
 
     @staticmethod
-    def _mock_tenant_without_db():
-        if os.getenv("DATABASE_URL") is None:
+    def _test_mock_tenant():
+        if not os.getenv("PYTEST_CURRENT_TEST"):
+            return None
+        from app.config import settings
+        if str(settings.database_url or "").strip().lower().startswith("sqlite"):
             return {
                 "id": "asesor_ai_prod",
                 "slug": "asesor_ai_prod",
@@ -18,9 +21,9 @@ class DBRepository:
         return None
 
     def get_tenant_by_id(self, tenant_id: str):
-        mock_tenant = self._mock_tenant_without_db()
-        if mock_tenant is not None:
-            return mock_tenant
+        mock = self._test_mock_tenant()
+        if mock is not None:
+            return mock
 
         engine = get_engine()
 
@@ -43,9 +46,9 @@ class DBRepository:
             return dict(result._mapping)
 
     def get_tenant_by_slug(self, slug: str):
-        mock_tenant = self._mock_tenant_without_db()
-        if mock_tenant is not None:
-            return mock_tenant
+        mock = self._test_mock_tenant()
+        if mock is not None:
+            return mock
 
         engine = get_engine()
 
@@ -68,9 +71,9 @@ class DBRepository:
             return dict(result._mapping)
 
     def get_tenant_by_key(self, tenant_key: str):
-        mock_tenant = self._mock_tenant_without_db()
-        if mock_tenant is not None:
-            return mock_tenant
+        mock = self._test_mock_tenant()
+        if mock is not None:
+            return mock
 
         normalized = str(tenant_key or "").strip().lower()
         if not normalized:

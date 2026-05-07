@@ -19,23 +19,23 @@ Su salida no busca sonar tecnológica. Busca cerrar, avanzar o activar.
 
 ## Ejecución
 
-Entorno:
+**Windows (PowerShell):**
 
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
+pip install -r project/requirements.txt
+cd project
+uvicorn app.main:app --reload
 ```
 
-Dependencias:
+**macOS / Linux:**
 
-```powershell
-Set-Location project
-pip install -r requirements.txt
-```
-
-Levantar el sistema:
-
-```powershell
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -r project/requirements.txt
+cd project
 uvicorn app.main:app --reload
 ```
 

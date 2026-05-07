@@ -394,10 +394,20 @@ settings = Settings(**_yaml_cfg)
 
 _database_url = str(settings.database_url or "").strip()
 _resolved_mode = str(settings.mode or settings.environment or "").strip().lower()
+_is_test = _resolved_mode == "test" or bool(os.getenv("PYTEST_CURRENT_TEST"))
+
 if not _database_url:
-    _database_url = "sqlite:///:memory:"
+    if _is_test:
+        _database_url = "sqlite:///:memory:"
+    else:
+        raise RuntimeError("DATABASE_URL es obligatorio")
+
+if _database_url.lower().startswith("sqlite") and not _is_test:
+    raise RuntimeError("sqlite solo está permitido en entorno de test")
+
 if not _database_url.lower().startswith(("postgresql+psycopg", "sqlite")):
     raise RuntimeError("DATABASE_URL debe apuntar a PostgreSQL con psycopg")
+
 settings.database_url = _database_url
 
 

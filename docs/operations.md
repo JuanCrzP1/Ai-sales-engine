@@ -12,9 +12,20 @@ No reemplaza el README. El README posiciona el producto; este documento describe
 
 Desde la raíz del repositorio:
 
+**Windows (PowerShell):**
+
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
+pip install --upgrade pip
+pip install -r project/requirements.txt
+```
+
+**macOS / Linux:**
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
 pip install --upgrade pip
 pip install -r project/requirements.txt
 ```
@@ -23,8 +34,8 @@ pip install -r project/requirements.txt
 
 El runtime activo corre desde `project/`:
 
-```powershell
-Set-Location project
+```bash
+cd project
 uvicorn app.main:app --reload
 ```
 
