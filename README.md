@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/logo.png" alt="AI Sales Engine" width="320"/>
+  <img src="assets/logo.jpg" alt="AI Sales Engine" width="320"/>
 </p>
 
 <h1 align="center">AI Sales Engine</h1>
