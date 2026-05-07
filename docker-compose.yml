@@ -6,6 +6,8 @@ services:
       POSTGRES_DB: ai_sales_engine
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
+    ports:
+      - '5432:5432'
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s

@@ -14,6 +14,7 @@ project/.env
 .pytest_cache/
 tmp/
 *.log
+.run_local/
 
 .DS_Store
 .vscode/

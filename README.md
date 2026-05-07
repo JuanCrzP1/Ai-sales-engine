@@ -8,7 +8,7 @@
   Motor conversacional AI-first para ventas SaaS multi-tenant
 </p>
 
-# AI Sales Engine — Vendedor Conversacional por WhatsApp
+## AI Sales Engine — Vendedor Conversacional por WhatsApp
 
 Convierte conversaciones en ventas reales sin depender de disponibilidad humana.
 
