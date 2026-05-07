@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from app.infrastructure.config.config_service import ConfigService
+from app.utils.logger import logger
 
 
 FALLBACK_COMMERCIAL_MINIMO = (
@@ -55,7 +56,18 @@ def _context_anchor(*, user_message: str, runtime_yaml: dict) -> str:
 def build_fallback_response(user_message: str, tenant_config: dict) -> str:
     safe_tenant = tenant_config if isinstance(tenant_config, dict) else {}
     tenant_slug = _text(safe_tenant.get("tenant_slug")).lower()
+    user_id = _text(safe_tenant.get("user_id")).lower()
+    source = _text(safe_tenant.get("source")).lower()
     runtime_yaml = safe_tenant.get("runtime_yaml") if isinstance(safe_tenant.get("runtime_yaml"), dict) else {}
+
+    logger.info(
+        {
+            "event": "commercial_fallback_used",
+            "tenant": tenant_slug,
+            "user_id": user_id,
+            "source": source or "fallback_runtime",
+        }
+    )
 
     yaml_fallback = _resolve_yaml_fallback(tenant_slug=tenant_slug, runtime_yaml=runtime_yaml)
     if yaml_fallback:

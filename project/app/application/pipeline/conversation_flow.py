@@ -456,7 +456,14 @@ class ConversationFlow:
             )
         if initial_message:
             initial_text, initial_source = initial_message
-            logger.info("initial_message_triggered")
+            logger.info(
+                {
+                    "event": "backend_initial_message",
+                    "tenant": str(tenant_slug or "").strip().lower(),
+                    "user_id": normalized_user_id,
+                    "conversation_state": str(runtime_yaml.get("conversation_state") or "").strip().lower(),
+                }
+            )
             return ConversationResult(
                 runtime_yaml=runtime_yaml,
                 user_id=normalized_user_id,

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from app.domain.ai.prompt_context import build_prompt_context
 from app.infrastructure.config.config_service import ConfigService
+from app.utils.logger import logger
 
 IDENTITY_BLOCK = """
 Estás hablando con una persona real por chat.
@@ -626,6 +627,16 @@ Estado de la conversación: {conversation_state}
     @staticmethod
     def build_business_model_context(yaml_config: dict) -> str:
         business_model = detect_business_model(yaml_config)
+        memory = yaml_config.get("memory_context", {}) if isinstance(yaml_config.get("memory_context"), dict) else {}
+        logger.info(
+            {
+                "event": "backend_prompt_steering",
+                "type": "business_model_inference",
+                "tenant": str(yaml_config.get("tenant_slug") or yaml_config.get("client_config_id") or "").strip().lower(),
+                "user_id": str(memory.get("user_id") or yaml_config.get("user_id") or "").strip().lower(),
+                "business_model": business_model,
+            }
+        )
         return f"modelo: {business_model}"
 
     @staticmethod
@@ -637,6 +648,15 @@ Estado de la conversación: {conversation_state}
         ) or detect_business_model(yaml_config) == "catalog"
         if not is_catalog:
             return ""
+        memory = yaml_config.get("memory_context", {}) if isinstance(yaml_config.get("memory_context"), dict) else {}
+        logger.info(
+            {
+                "event": "backend_prompt_steering",
+                "type": "catalog_steering",
+                "tenant": str(yaml_config.get("tenant_slug") or yaml_config.get("client_config_id") or "").strip().lower(),
+                "user_id": str(memory.get("user_id") or yaml_config.get("user_id") or "").strip().lower(),
+            }
+        )
         return "Si es catálogo, nombra 1 o 2 productos o categorías reales y guía a elegir."
 
     def _resolve_runtime_yaml(self, *, client_config_id: str | None, yaml_config: dict) -> dict:
@@ -700,6 +720,7 @@ Estado de la conversación: {conversation_state}
 
         safe_yaml = self._resolve_runtime_yaml(client_config_id=client_config_id, yaml_config=yaml_config if isinstance(yaml_config, dict) else {})
         safe_yaml = self._hydrate_runtime_yaml(client_config_id=client_config_id, runtime_yaml=safe_yaml)
+        safe_yaml.setdefault("tenant_slug", str(client_config_id or "").strip().lower())
         memory = safe_yaml.get("memory_context") if isinstance(safe_yaml.get("memory_context"), dict) else {}
 
         context = build_prompt_context(
@@ -721,6 +742,15 @@ Estado de la conversación: {conversation_state}
         # Si es new/cold siempre inyectar. Si es active/warm pero no hubo
         # respuesta previa, también inyectar (primer turno real de la IA).
         _suppress_intro = _ai_already_spoke and not (_is_new or _is_cold)
+        if _suppress_intro:
+            logger.info(
+                {
+                    "event": "backend_prompt_steering",
+                    "type": "intro_suppression",
+                    "tenant": str(client_config_id or safe_yaml.get("tenant_slug") or "").strip().lower(),
+                    "user_id": str(memory.get("user_id") or safe_yaml.get("user_id") or "").strip().lower(),
+                }
+            )
         if _suppress_intro:
             business_context = ""
             customer_context = ""

@@ -32,6 +32,7 @@ from app.domain.conversation.memory import MemoryDomainService
 from app.infrastructure.persistence.memory_repository import MemoryRepository
 from app.infrastructure.persistence.subscription_repository import SubscriptionRepository
 from app.infrastructure.persistence.usage_repository import UsageRepository
+from app.utils.logger import logger
 
 
 GLOBAL_MEMORY_REPOSITORY = MemoryRepository()
@@ -188,9 +189,17 @@ class AIService:
         raw_response = str(response or "")
         conversation_state = str((metadata or {}).get("conversation_state") or "").strip().lower()
         is_first_turn = conversation_state == "new"
+        tenant_slug = str((metadata or {}).get("tenant_slug") or getattr(tenant, "slug", "") or "").strip().lower()
+        normalized_user_id = str(user_id or "").strip().lower()
 
         if ai_used and is_first_turn:
-            final_response = ensure_micro_greeting(raw_response, user_message=user_message)
+            final_response = ensure_micro_greeting(
+                raw_response,
+                user_message=user_message,
+                tenant=tenant_slug,
+                user_id=normalized_user_id,
+                conversation_state=conversation_state,
+            )
         else:
             final_response = raw_response
 
@@ -200,6 +209,15 @@ class AIService:
             str(response or ""),
             yaml_config if isinstance(yaml_config, dict) else {},
         )
+        if str(response or "") != raw_response and ai_used and is_first_turn:
+            logger.info(
+                {
+                    "event": "backend_greeting_postprocess_applied",
+                    "tenant": tenant_slug,
+                    "user_id": normalized_user_id,
+                    "conversation_state": conversation_state,
+                }
+            )
         _print_response_audit(response, metadata)
 
         if include_metadata:

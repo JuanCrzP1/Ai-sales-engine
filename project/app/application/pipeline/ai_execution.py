@@ -500,6 +500,18 @@ def _persist_ai_metadata(
     memory_service.set_conversation_state(tenant_slug=tenant_slug, user_id=user_id, state=state)
 
 
+def _log_payment_override(*, tenant_slug: str, user_id: str, payment_method: str, payment_status: str) -> None:
+    logger.info(
+        {
+            "event": "backend_payment_override",
+            "tenant": str(tenant_slug or "").strip().lower(),
+            "user_id": str(user_id or "").strip().lower(),
+            "payment_method": str(payment_method or "").strip().lower(),
+            "payment_status": str(payment_status or "").strip().lower(),
+        }
+    )
+
+
 class AIExecution:
     def run(
         self,
@@ -614,13 +626,30 @@ class AIExecution:
             intent = str(ai_metadata.get("intent") or "").strip().lower()
 
             if payment_status == "reportado":
+                _log_payment_override(
+                    tenant_slug=tenant_slug_value,
+                    user_id=user_key,
+                    payment_method=payment_method,
+                    payment_status=payment_status,
+                )
                 response_text = _resolve_post_payment_message(runtime_yaml_with_memory) or response_text
             elif payment_method and intent == "buy":
+                _log_payment_override(
+                    tenant_slug=tenant_slug_value,
+                    user_id=user_key,
+                    payment_method=payment_method,
+                    payment_status=payment_status,
+                )
                 response_text = ejecutar_pago(runtime_yaml_with_memory, payment_method) or response_text
 
             raw_response = response_text
             persisted_response = raw_response
-            final_response = enforce_max_words(raw_response, _max_words)
+            final_response = enforce_max_words(
+                raw_response,
+                _max_words,
+                tenant=tenant_slug_value,
+                user_id=user_key,
+            )
             logger.info(
                 {
                     "tenant": tenant_slug_value,
