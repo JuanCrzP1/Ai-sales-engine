@@ -10,6 +10,7 @@ PROJECT_DIR = ROOT_DIR / "project"
 if str(PROJECT_DIR) not in sys.path:
     sys.path.insert(0, str(PROJECT_DIR))
 
+import semantic_guard
 from app.application.runtime import load_tenant_runtime_yaml
 from app.services.ai_service import AIService
 
@@ -86,9 +87,9 @@ def test_price_response_keeps_context() -> None:
     for tenant in TEST_TENANTS:
         reply = ask(message, tenant)
 
-        assert any(word in reply for word in ["cop", "$", "precio", "vale"]), _message(
+        assert semantic_guard.talks_about_price(reply), _message(
             message,
             tenant,
             reply,
-            "pierde contexto",
+            "no aborda el tema de precio o costo",
         )

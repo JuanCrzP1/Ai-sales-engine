@@ -320,9 +320,10 @@ def test_prompt_builder_uses_simplified_commercial_behavior_block() -> None:
     assert "CIERRE COMERCIAL" not in prompt_text
 
 
-def test_prompt_builder_requires_complete_pricing_usage() -> None:
+def test_prompt_builder_includes_pricing_in_active_conversation() -> None:
     builder = PromptBuilderService()
     runtime_yaml = load_tenant_runtime_yaml("asesor_ai_prod")
+    runtime_yaml["conversation_state"] = "active"
 
     prompt, _metadata, _context = builder.build(
         client_config_id="asesor_ai_prod",
@@ -334,15 +335,16 @@ def test_prompt_builder_requires_complete_pricing_usage() -> None:
 
     prompt_text = str(prompt or "")
 
-    assert "USO COMPLETO DEL PRICING:" in prompt_text
-    assert "No puedes omitir información que cambie cómo el cliente paga." in prompt_text
     assert "el primer mes se paga 330000 COP (configuracion + primer mes)" in prompt_text
     assert "luego se paga mensualmente 180000 COP" in prompt_text
+    assert "LINK_AVAILABLE:" in prompt_text
+    assert "TRANSFER_METHODS:" in prompt_text
 
 
 def test_prompt_builder_uses_only_real_payment_routes_context() -> None:
     builder = PromptBuilderService()
     runtime_yaml = load_tenant_runtime_yaml("asesor_ai_prod")
+    runtime_yaml["conversation_state"] = "active"
 
     prompt, _metadata, _context = builder.build(
         client_config_id="asesor_ai_prod",

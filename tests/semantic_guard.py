@@ -41,3 +41,15 @@ def has_forward_intent(text: str) -> bool:
     has_action = any(a in t for a in action_signals)
 
     return has_outcome or (has_action and is_not_passive(t))
+
+
+def talks_about_price(text: str) -> bool:
+    """True si la respuesta aborda el tema de precio o costo en cualquier forma natural."""
+    t = normalize(text)
+    price_tokens = [
+        "cop", "$", "precio", "vale", "costo", "valor",
+        "tarifa", "inversión", "inversion", "mensual",
+        "implementación", "implementacion", "cobr", "pag",
+        "cuánto", "cuanto",
+    ]
+    return any(token in t for token in price_tokens)

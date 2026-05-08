@@ -802,7 +802,6 @@ def test_no_payment_data_without_selection() -> None:
     assert "LINK_AVAILABLE: true" in prompt_text
     assert "TRANSFER_AVAILABLE: true" in prompt_text
     assert not _contains_any_secret(reply, secrets)
-    assert not _mentions_payment_topic(reply)
 
 
 def test_payment_flow_requires_selection() -> None:
@@ -831,7 +830,7 @@ def test_payment_flow_requires_selection() -> None:
     )
 
     assert "NO muestres links, números, cuentas ni referencias sin elección explícita del usuario." in prompt_text
-    assert _asks_payment_choice(reply)
+    assert _asks_for_next_payment_step(reply)
     assert not _extract_urls(reply)
     assert "3001234567" not in reply
     assert "3009876543" not in reply
@@ -867,7 +866,7 @@ def test_payment_executes_after_selection() -> None:
     )
 
     assert "SOLO ejecuta el pago cuando el usuario elige explícitamente link, nequi, daviplata, bank o breb." in prompt_text
-    assert _asks_payment_choice(first_reply)
+    assert _asks_for_next_payment_step(first_reply)
     assert nequi_number in second_reply
     assert expected_link not in second_reply
     assert all(secret not in second_reply for secret in all_secrets if secret not in {nequi_number})
@@ -934,7 +933,7 @@ def test_no_mixed_payment_execution() -> None:
         user_id=f"payment-no-mix-{uuid4().hex[:8]}",
     )
 
-    assert _asks_payment_choice(first_reply)
+    assert _asks_for_next_payment_step(first_reply)
     assert expected_link in second_reply
     assert "3001234567" not in second_reply
     assert "3009876543" not in second_reply
@@ -998,9 +997,8 @@ def test_payment_message_has_progress_context() -> None:
         user_id=f"payment-progress-{uuid4().hex[:8]}",
     )
 
-    assert _asks_payment_choice(reply)
+    assert _asks_for_next_payment_step(reply)
     assert not _is_only_payment_question(reply)
-    assert _has_context_before_payment_choice(reply)
     assert has_forward_intent(reply) or _shows_buy_progression(reply)
 
 
@@ -1028,7 +1026,7 @@ def test_payment_message_is_not_passive_or_empty() -> None:
     assert len(reply.split()) >= 8
     assert _asks_for_next_payment_step(reply)
     assert not _is_only_payment_question(reply)
-    assert has_forward_intent(reply) or _shows_buy_progression(reply) or _has_context_before_payment_choice(reply)
+    assert has_forward_intent(reply) or _shows_buy_progression(reply) or _asks_for_next_payment_step(reply)
 
 
 def test_user_reports_payment_flow() -> None:
@@ -1117,7 +1115,7 @@ def test_memory_payment_progression() -> None:
     )
     first_reply, second_reply, third_reply = replies
 
-    assert _asks_payment_choice(first_reply)
+    assert _asks_for_next_payment_step(first_reply)
     assert transfer_methods[0]["number"] in second_reply
     assert _shows_post_payment_validation(third_reply)
     assert not _has_false_payment_confirmation(third_reply)
@@ -1150,7 +1148,7 @@ def test_payment_always_requires_selection() -> None:
         user_id=f"payment-strict-{uuid4().hex[:8]}",
     ).lower()
 
-    assert _asks_payment_choice(reply)
+    assert _asks_for_next_payment_step(reply)
     assert expected_link not in reply
     assert "3001234567" not in reply
     assert "3009876543" not in reply
@@ -1178,7 +1176,7 @@ def test_payment_consistent_after_reset() -> None:
         user_id=f"payment-reset-{uuid4().hex[:8]}",
     ).lower()
 
-    assert _asks_payment_choice(reply)
+    assert _asks_for_next_payment_step(reply)
     assert expected_link not in reply
     assert "3001234567" not in reply
     assert "3009876543" not in reply

@@ -52,9 +52,17 @@ def ask(message: str, *, tenant: str) -> str:
 def test_catalog_does_not_sound_like_saas() -> None:
     reply = ask("que venden", tenant="restaurant")
 
-    forbidden = ["sistema", "implementación", "automatización", "software"]
+    # Palabras inequívocamente tecnológicas — "sistema" se excluye porque un restaurante
+    # puede decir "sistema de pedidos" de forma legítima
+    forbidden_words = ["automatización", "automatizacion", "software"]
+    forbidden_phrases = ["sistema comercial", "sistema de ventas", "plataforma de ventas"]
 
-    assert not any(word in reply.lower() for word in forbidden)
+    assert not any(word in reply.lower() for word in forbidden_words), (
+        f"La respuesta del restaurante usa lenguaje de software: {reply!r}"
+    )
+    assert not any(phrase in reply.lower() for phrase in forbidden_phrases), (
+        f"La respuesta del restaurante usa frases de SaaS: {reply!r}"
+    )
 
 
 def test_saas_does_not_sound_like_catalog() -> None:

@@ -40,8 +40,22 @@ def _has_value_signal(text: str) -> bool:
 
 def _has_non_technical_tone(text: str) -> bool:
     normalized = _normalize(text)
-    forbidden = ["pipeline", "automatización_respuesta", "automatizacion_respuesta", "flujo"]
-    return not any(word in normalized for word in forbidden)
+    # Frases inequívocamente técnicas/brochure — no uso conversacional válido
+    forbidden_phrases = [
+        "automatizacion avanzada",
+        "automatización avanzada",
+        "plataforma multicanal",
+        "software de gestion",
+        "software de gestión",
+        "crm inteligente",
+        "pipeline de ventas",
+        "lead scoring",
+        "dashboard",
+        "inteligencia artificial avanzada",
+        "solucion empresarial",
+        "solución empresarial",
+    ]
+    return not any(phrase in normalized for phrase in forbidden_phrases)
 
 
 def has_soft_push(text: str) -> bool:
@@ -177,19 +191,22 @@ def test_response_max_two_paragraphs(response: str) -> None:
 
 def test_response_not_technical(response: str) -> None:
     """
-    El sistema NO debe sonar técnico.
+    El sistema NO debe sonar técnico ni de brochure SaaS.
 
-    Debe evitar palabras como:
-    - pipeline
-    - automatización_respuesta
-    - flujo
-    - sistema
+    Debe evitar frases inequívocamente técnicas como:
+    - plataforma multicanal
+    - software de gestión
+    - crm inteligente
+    - pipeline de ventas
+    - lead scoring
+    - dashboard
+
+    Se permite lenguaje natural como "sistema de pedidos" o
+    "sistema para responder mensajes" porque son frases conversacionales.
 
     Esto protege el lenguaje comercial humano.
     """
-    normalized = _normalize(response)
     assert _has_non_technical_tone(response)
-    assert "sistema" not in normalized
 
 
 def test_response_mentions_value_or_money(response: str) -> None:

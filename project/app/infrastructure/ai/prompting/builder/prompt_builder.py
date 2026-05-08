@@ -147,39 +147,16 @@ class PromptBuilderService:
     @staticmethod
     def build_business_context(yaml_config: dict) -> str:
         business = yaml_config.get("business", {}) if isinstance(yaml_config.get("business"), dict) else {}
-        pricing = yaml_config.get("pricing", {}) if isinstance(yaml_config.get("pricing"), dict) else {}
-        inventory = yaml_config.get("inventory", {}) if isinstance(yaml_config.get("inventory"), dict) else {}
-        plans = pricing.get("plans", []) if isinstance(pricing.get("plans"), list) else []
-        catalog = pricing.get("catalog", {}) if isinstance(pricing.get("catalog"), dict) else {}
-        catalog_items = catalog.get("items", []) if isinstance(catalog.get("items"), list) else []
-        inventory_items = inventory.get("items", []) if isinstance(inventory.get("items"), list) else []
-
-        offer_names = [
-            PromptBuilderService._as_text(plan.get("name") or plan.get("id"))
-            for plan in plans[:2]
-            if isinstance(plan, dict) and PromptBuilderService._as_text(plan.get("name") or plan.get("id"))
-        ]
-        if not offer_names:
-            offer_names = [
-                PromptBuilderService._as_text(item.get("name") or item.get("id"))
-                for item in catalog_items[:2]
-                if isinstance(item, dict) and PromptBuilderService._as_text(item.get("name") or item.get("id"))
-            ]
-        if not offer_names:
-            offer_names = [
-                PromptBuilderService._as_text(item.get("name") or item.get("id"))
-                for item in inventory_items[:2]
-                if isinstance(item, dict) and PromptBuilderService._as_text(item.get("name") or item.get("id"))
-            ]
 
         industry = PromptBuilderService._shorten_text(business.get("industry", ""), max_words=8)
+        description = PromptBuilderService._shorten_text(business.get("description", ""), max_words=20)
         promise = PromptBuilderService._shorten_text(business.get("promise", ""), max_words=30)
-        offer_text = ", ".join(offer_names) or industry or "oferta definida en YAML"
+        what_it_does = industry or description or "servicio definido en YAML"
 
         return "\n".join(
             [
-                f"Industria del negocio: {industry or offer_text}.",
-                f"Qué vende: {offer_text}.",
+                f"Industria del negocio: {industry or what_it_does}.",
+                f"Qué hace: {what_it_does}.",
                 f"Promesa comercial: {promise or 'resultado comercial definido en YAML'}.",
             ]
         )
@@ -467,20 +444,22 @@ class PromptBuilderService:
         if not pricing_enabled and not plan_price_summaries and not payment_links and not transfer_method_lines:
             return ""
 
-        lines = [
-            "USO COMPLETO DEL PRICING:",
-            "No puedes omitir información que cambie cómo el cliente paga.",
-            f"Qué se cobra: {offer_reference_text}.",
-            f"Precios: {pricing_structure_text}.",
-            f"Condiciones: {conditions_text}.",
+        conversation_state = str(yaml_config.get("conversation_state") or "new").strip().lower() or "new"
+        is_catalog_model = bool(
+            features.get("catalog_mode")
+            or str(features.get("business_model", "")).lower() == "catalog"
+        )
+
+        # Bloque operacional — siempre presente (controla ejecución de pago)
+        operational_lines: list[str] = [
             f"LINK_AVAILABLE: {link_available_text}",
             f"TRANSFER_AVAILABLE: {transfer_available_text}",
         ]
         if payment_links:
-            lines.append(f"PAYMENT_LINKS: {payment_links_text}")
+            operational_lines.append(f"PAYMENT_LINKS: {payment_links_text}")
         else:
-            lines.append("sin links de pago definidos")
-        lines.extend(
+            operational_lines.append("sin links de pago definidos")
+        operational_lines.extend(
             [
                 "TRANSFER_METHODS:",
                 transfer_methods_text,
@@ -490,7 +469,19 @@ class PromptBuilderService:
             ]
         )
         if payment_links and transfer_method_lines:
-            lines.append("Si hay link y transferencia disponibles, pregunta: prefieres link o transferencia.")
+            operational_lines.append("Si hay link y transferencia disponibles, pregunta: prefieres link o transferencia.")
+
+        # Bloque narrativo — gateado: solo en conversaciones activas o modelos catálogo
+        if conversation_state == "new" and not is_catalog_model:
+            lines = ["Tiene opciones de servicio disponibles con pricing definido."] + operational_lines
+        else:
+            narrative_lines = [
+                f"Qué se cobra: {offer_reference_text}.",
+                f"Precios: {pricing_structure_text}.",
+                f"Condiciones: {conditions_text}.",
+            ]
+            lines = narrative_lines + operational_lines
+
         return "\n".join(lines)
 
     @staticmethod

@@ -348,18 +348,29 @@ def _build_memory_context(memory_service: MemoryDomainService | None, *, tenant_
         "next_step": getattr(conversation_state, "last_cta", None),
     }
 
+    # Conectar sales_memory_usage → sales_memory_hint para que llegue al prompt.
+    # build_sales_memory_usage() ya genera el anchor comercial natural ("eso que me dijiste de que...").
+    sales_memory_hint = ""
+    build_sales_memory_usage = getattr(memory_service, "build_sales_memory_usage", None)
+    if callable(build_sales_memory_usage):
+        try:
+            sales_memory_hint = str(build_sales_memory_usage(tenant_slug=tenant_slug, user_id=user_id) or "").strip()
+        except Exception:
+            sales_memory_hint = ""
+
     return {
         "last_message": last_message,
         "last_user_message": last_message,
         "last_response": last_response,
         "last_ai_response": last_response,
         "history_summary": history_summary,
+        "sales_memory_hint": sales_memory_hint,
 
         "last_intent": memory.get("last_intent"),
-    "intent_detectado": memory.get("intent_detectado"),
+        "intent_detectado": memory.get("intent_detectado"),
         "last_pain": memory.get("active_pain"),
-    "metodo_pago_elegido": memory.get("metodo_pago_elegido"),
-    "estado_pago": memory.get("estado_pago"),
+        "metodo_pago_elegido": memory.get("metodo_pago_elegido"),
+        "estado_pago": memory.get("estado_pago"),
 
         "stage": memory.get("stage"),
         "mode": memory.get("mode"),
