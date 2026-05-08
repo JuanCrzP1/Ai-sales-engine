@@ -9,20 +9,62 @@ RUNTIME_DIR="$SCRIPT_DIR/.run_local"
 APP_PORT=8082
 
 # -------------------------
-# Activar entorno virtual
+# Resolver entorno virtual
 # -------------------------
 if [ -f ".venv/bin/activate" ]; then
-    VENV_ACTIVATE="$PROJECT_DIR/.venv/bin/activate"
+    VENV_DIR="$PROJECT_DIR/.venv"
 elif [ -f "../.venv/bin/activate" ]; then
-    VENV_ACTIVATE="$SCRIPT_DIR/.venv/bin/activate"
+    VENV_DIR="$SCRIPT_DIR/.venv"
 else
     echo "[ERROR] No se pudo encontrar el entorno virtual."
     exit 1
 fi
 
-source "$VENV_ACTIVATE"
+PYTHON_BIN="$VENV_DIR/bin/python"
+
+if [ ! -x "$PYTHON_BIN" ]; then
+    echo "[ERROR] No se pudo encontrar el ejecutable de Python en $PYTHON_BIN"
+    exit 1
+fi
 
 mkdir -p "$RUNTIME_DIR"
+
+check_database_connection() {
+    "$PYTHON_BIN" - <<'PY'
+import os
+import sys
+from pathlib import Path
+
+from dotenv import load_dotenv
+from sqlalchemy import create_engine, text
+
+project_dir = Path.cwd()
+workspace_root = project_dir.parent
+for candidate in (workspace_root / ".env", project_dir / ".env"):
+    if candidate.exists():
+        load_dotenv(dotenv_path=candidate, override=False)
+
+database_url = str(os.getenv("DATABASE_URL") or "").strip()
+if not database_url:
+    print("[ERROR] DATABASE_URL no esta definido.")
+    sys.exit(1)
+
+try:
+    engine = create_engine(database_url, pool_pre_ping=True)
+    with engine.connect() as connection:
+        connection.execute(text("SELECT 1"))
+except Exception as exc:
+    print(f"[ERROR] No se pudo conectar a DATABASE_URL: {exc}")
+    sys.exit(1)
+PY
+}
+
+if ! check_database_connection; then
+    echo "[INFO] Telegram y el backend necesitan PostgreSQL disponible antes de iniciar."
+    echo "[INFO] Si usas Docker Desktop, abre Docker y luego ejecuta: docker compose up -d db"
+    echo "[INFO] Si usas Postgres local, confirma que este escuchando en el puerto configurado por DATABASE_URL."
+    exit 1
+fi
 
 if lsof -nP -iTCP:"$APP_PORT" -sTCP:LISTEN >/dev/null 2>&1; then
     echo "[ERROR] El puerto $APP_PORT ya esta en uso."
@@ -69,7 +111,7 @@ fi
 
 if [ -n "$TELEGRAM_POLLING_ENABLED" ]; then
     echo "[INFO] Iniciando Telegram polling..."
-    start_background_process "telegram-polling" "source \"$VENV_ACTIVATE\" && python -m app.connectors.telegram.polling"
+    start_background_process "telegram-polling" "\"$PYTHON_BIN\" -m app.connectors.telegram.polling"
 else
     echo "[INFO] TELEGRAM_TOKEN no definido. Telegram polling no se inicia."
 fi
@@ -78,4 +120,4 @@ fi
 # BACKEND (puerto 8082)
 # -------------------------
 echo "[INFO] Iniciando backend en puerto 8082..."
-uvicorn app.main:app --reload --port "$APP_PORT"
+"$PYTHON_BIN" -m uvicorn app.main:app --reload --port "$APP_PORT"
