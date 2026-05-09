@@ -72,12 +72,9 @@
 ################################
 from __future__ import annotations
 
-import sys
-
 from app.application.pipeline.fallback import build_fallback_response
 from app.application.pipeline.response_postprocessor import enforce_max_words
 from app.application.pipeline.response_router import route_response
-from app.infrastructure.config.config_service import ConfigService
 from app.domain.conversation.demo import DemoDomainService
 from app.domain.conversation.memory import ConversationState, MemoryDomainService
 from app.utils.logger import logger
@@ -122,83 +119,6 @@ def validate_runtime_yaml(runtime_yaml: dict) -> None:
         if not isinstance(value, dict):
             raise RuntimeError(f"{key} not loaded in runtime")
 
-
-def _extract_named_root(payload: dict, root_key: str) -> dict:
-    if not isinstance(payload, dict):
-        return {}
-    nested = payload.get(root_key)
-    if isinstance(nested, dict):
-        return dict(nested)
-    return dict(payload)
-
-
-def _load_raw_yaml(tenant_slug: str, channel: str | None = None) -> dict:
-    service = ConfigService()
-    sales_payload = service._load_raw_section("sales.yaml", tenant_slug)
-    business_payload = service._load_raw_section("business.yaml", tenant_slug)
-    pricing_payload = service._load_raw_section("pricing.yaml", tenant_slug)
-    inventory_payload = service._load_raw_section("inventory.yaml", tenant_slug)
-    config_payload = service._load_yaml(service.tenants_root / tenant_slug / "config.yaml")
-
-    config_section = _extract_named_root(config_payload, "config")
-    raw_yaml = {
-        "sales": _extract_named_root(sales_payload, "sales"),
-        "business": _extract_named_root(business_payload, "business"),
-        "pricing": _extract_named_root(pricing_payload, "pricing"),
-        "config": dict(config_section),
-        "capabilities": dict(config_section.get("capabilities") or {}),
-        "inventory": _extract_named_root(inventory_payload, "inventory"),
-        "post_payment": dict(config_section.get("post_payment") or {}),
-    }
-    normalized_channel = str(channel or "").strip().lower()
-    if normalized_channel:
-        raw_yaml["channel"] = normalized_channel
-    return raw_yaml
-
-
-def _section_status(runtime_value, raw_value: object) -> str:
-    if raw_value in (None, {}):
-        return "missing_in_raw"
-    if runtime_value in (None, {}):
-        return "missing_in_runtime"
-    if runtime_value == raw_value:
-        return "match"
-    return "structurally_different"
-
-
-def _print_runtime_audit(runtime_yaml: dict, raw_yaml: dict) -> None:
-    safe_runtime = runtime_yaml if isinstance(runtime_yaml, dict) else {}
-    safe_raw = raw_yaml if isinstance(raw_yaml, dict) else {}
-    stdout_encoding = getattr(sys.stdout, "encoding", None) or "utf-8"
-
-    print("=== RUNTIME_YAML ===")
-    try:
-        print(str(safe_runtime))
-    except UnicodeEncodeError:
-        print(str(safe_runtime).encode(stdout_encoding, errors="ignore").decode(stdout_encoding, errors="ignore"))
-    print("=== YAML ORIGINAL ===")
-    try:
-        print(str(safe_raw))
-    except UnicodeEncodeError:
-        print(str(safe_raw).encode(stdout_encoding, errors="ignore").decode(stdout_encoding, errors="ignore"))
-    print("=== RUNTIME_COMPARISON ===")
-
-    for key in ("sales", "business", "pricing", "config", "capabilities", "inventory", "channel", "post_payment"):
-        runtime_value = safe_runtime.get(key)
-        raw_value = safe_raw.get(key)
-        print(f"{key}={_section_status(runtime_value, raw_value)}")
-
-    sales_runtime = safe_runtime.get("sales") if isinstance(safe_runtime.get("sales"), dict) else {}
-    sales_raw = safe_raw.get("sales") if isinstance(safe_raw.get("sales"), dict) else {}
-    print("=== SALES_VALIDATION ===")
-    for key in ("progression_rules", "closing", "objection"):
-        print(f"raw.sales.{key}={'present' if sales_raw.get(key) not in (None, {}) else 'missing'}")
-        print(f"runtime.sales.{key}={'present' if sales_runtime.get(key) not in (None, {}) else 'missing'}")
-
-    raw_flow_present = bool(sales_raw.get("conversation_flow")) or bool((sales_raw.get("flow") or {}).get("steps"))
-    runtime_flow_present = bool(sales_runtime.get("conversation_flow")) or bool((sales_runtime.get("flow") or {}).get("steps"))
-    print(f"raw.sales.flow_or_steps={'present' if raw_flow_present else 'missing'}")
-    print(f"runtime.sales.flow_or_steps={'present' if runtime_flow_present else 'missing'}")
 
 
 def _safe_history(memory_service: MemoryDomainService | None, *, tenant_slug: str, user_id: str) -> list[dict]:
@@ -310,23 +230,29 @@ def _build_memory_context(memory_service: MemoryDomainService | None, *, tenant_
     prior_history = history[:-1] if len(history) > 1 else history
     last_message = ""
     if prior_history:
-        last_entry = prior_history[-1]
-        if isinstance(last_entry, dict):
-            last_message = str(last_entry.get("text") or "").strip()
-        else:
-            last_message = str(last_entry or "").strip()
+        # Buscar el último mensaje del usuario (no del asistente)
+        for entry in reversed(prior_history):
+            if isinstance(entry, dict):
+                if entry.get("role", "user") == "user":
+                    last_message = str(entry.get("text") or "").strip()
+                    break
+            else:
+                last_message = str(entry or "").strip()
+                break
 
     history_summary = ""
     if prior_history:
         compact_history = []
         for entry in prior_history[-10:]:
             if isinstance(entry, dict):
+                role = str(entry.get("role") or "user").strip().lower() or "user"
                 sample = str(entry.get("text") or "").strip()
             else:
+                role = "user"
                 sample = str(entry or "").strip()
             if sample:
-                compact_history.append(sample)
-        history_summary = " | ".join(compact_history)
+                compact_history.append(f"{role}: {sample}")
+        history_summary = "\n".join(compact_history)
 
     last_response = None
     get_last_response = getattr(memory_service, "get_last_response", None)
@@ -377,11 +303,6 @@ def _build_memory_context(memory_service: MemoryDomainService | None, *, tenant_
 
         "last_cta": memory.get("next_step"),
     }
-
-
-def _filter_memory_context(memory_context: dict | None) -> dict:
-    safe_memory = memory_context if isinstance(memory_context, dict) else {}
-    return dict(safe_memory)
 
 
 def _persist_conversation_state(
@@ -437,6 +358,14 @@ def _persist_final_response(
             set_last_response(tenant_slug=tenant_slug, user_id=user_id, response=text)
         except Exception:
             return
+
+    # Guardar respuesta IA en historial estructurado (5C)
+    save_msg = getattr(memory_service, "save_message", None)
+    if callable(save_msg):
+        try:
+            save_msg(tenant_slug=tenant_slug, user_id=user_id, message_text=text, role="assistant")
+        except Exception:
+            pass
 
     _persist_conversation_state(
         memory_service,
@@ -558,7 +487,6 @@ class AIExecution:
 
         memory_context = _build_memory_context(memory_service, tenant_slug=tenant_slug_value, user_id=user_key)
         if memory_context:
-            memory_context = _filter_memory_context(memory_context)
             conv_state = str(safe_runtime_yaml.get("conversation_state") or "new").strip() or "new"
             memory_context["conversation_state"] = conv_state
             runtime_yaml_with_memory["memory_context"] = memory_context
@@ -571,18 +499,6 @@ class AIExecution:
         runtime_yaml_with_memory["response_max_words"] = _max_words
 
         validate_runtime_yaml(runtime_yaml_with_memory)
-
-        raw_yaml = _load_raw_yaml(
-            tenant_slug_value,
-            channel=str(runtime_yaml_with_memory.get("channel") or "").strip().lower() or None,
-        )
-        _print_runtime_audit(runtime_yaml_with_memory, raw_yaml)
-
-        print(
-            f"[AI_EXEC] tenant={tenant_slug_value}"
-            f" | conversation_state={str(runtime_yaml_with_memory.get('conversation_state') or 'new')}"
-            f" | last_intent={str(runtime_yaml_with_memory.get('last_intent') or 'unknown')}"
-        )
 
         original_generate = runtime.generate
 

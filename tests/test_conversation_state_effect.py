@@ -169,3 +169,124 @@ def test_cold_state_direct_intent_uses_ai_with_micro_greeting() -> None:
     _reply_second, ai_used_second, metadata_second = _run_turn(service, user_id=uid, message="precio")
     assert ai_used_second is True
     assert str(metadata_second.get("source") or "") != "initial_message"
+
+
+## ----------------------------------------
+## QUÉ HACE ESTE TEST:
+## Verifica que cold preserva last_pain y pain_timeline pero limpia el resto.
+##
+## POR QUÉ ES IMPORTANTE:
+## 5B: sales_memory_hint debe seguir funcionando después de un corte temporal.
+## El anchor comercial no debe perderse por inactividad.
+##
+## QUÉ PROTEGE:
+## build_sales_memory_usage() → sales_memory_hint tras estado cold.
+## ----------------------------------------
+def test_cold_preserves_commercial_memory() -> None:
+    service = AIService()
+    uid = "effect-cold-commercial-memory-1"
+    flow = service.pipeline.conversation_flow
+
+    # Establecer estado comercial previo
+    flow.memory.set_last_pain(tenant_slug="asesor_ai_prod", user_id=uid, pain="muchos mensajes sin responder")
+    from app.domain.conversation.memory import ConversationState
+    flow.memory.set_conversation_state(
+        tenant_slug="asesor_ai_prod",
+        user_id=uid,
+        state=ConversationState(
+            pain_timeline=["muchos mensajes sin responder", "clientes perdidos"],
+            last_intent="price",
+            stage="closing",
+        ),
+    )
+    flow.memory.save_message(tenant_slug="asesor_ai_prod", user_id=uid, message_text="mensaje de historial")
+    flow.memory.set_last_intent(tenant_slug="asesor_ai_prod", user_id=uid, intent="price")
+    flow.memory.set_stage(tenant_slug="asesor_ai_prod", user_id=uid, stage="closing")
+    flow.memory.set_payment_method(tenant_slug="asesor_ai_prod", user_id=uid, method="transferencia")
+    flow.memory.set_payment_status(tenant_slug="asesor_ai_prod", user_id=uid, status="pendiente")
+    flow.memory.set_last_user_message_at(
+        tenant_slug="asesor_ai_prod",
+        user_id=uid,
+        sent_at=datetime.now(timezone.utc) - timedelta(hours=5),
+    )
+
+    # Disparar cold via process()
+    from app.application.runtime import load_tenant_runtime_yaml
+    from types import SimpleNamespace
+    runtime_yaml = load_tenant_runtime_yaml("asesor_ai_prod", channel="whatsapp")
+    flow.process(
+        tenant=SimpleNamespace(name="asesor_ai_prod", slug="asesor_ai_prod", id="asesor_ai_prod"),
+        tenant_slug="asesor_ai_prod",
+        user_id=uid,
+        user_message="de que hablas",
+        conversation_history=[],
+        runtime_yaml=runtime_yaml,
+    )
+
+    # DEBE PRESERVARSE: last_pain y pain_timeline
+    assert flow.memory.get_last_pain(tenant_slug="asesor_ai_prod", user_id=uid) == "muchos mensajes sin responder"
+    preserved_state = flow.memory.get_conversation_state(tenant_slug="asesor_ai_prod", user_id=uid)
+    assert "muchos mensajes sin responder" in (preserved_state.pain_timeline or [])
+    assert "clientes perdidos" in (preserved_state.pain_timeline or [])
+
+    # DEBE BORRARSE: historial previo, intent, stage, payment
+    assert flow.memory.get_last_intent(tenant_slug="asesor_ai_prod", user_id=uid) == ""
+    assert flow.memory.get_stage(tenant_slug="asesor_ai_prod", user_id=uid) == ""
+    assert flow.memory.get_payment_method(tenant_slug="asesor_ai_prod", user_id=uid) == ""
+    # El historial previo se elimina; process() añade solo el mensaje actual
+    history = flow.memory.get_history(tenant_slug="asesor_ai_prod", user_id=uid)
+    assert all("mensaje de historial" not in item.get("text", "") for item in history)
+
+    # DEBE MARCAR COMO NEW
+    assert runtime_yaml.get("conversation_state") == "new"
+
+    # sales_memory_hint debe poder generarse con los datos preservados
+    hint = flow.memory.build_sales_memory_usage(tenant_slug="asesor_ai_prod", user_id=uid)
+    assert hint, "sales_memory_hint debe seguir siendo generado tras cold"
+    assert "muchos mensajes sin responder" in hint
+
+
+## ----------------------------------------
+## QUÉ HACE ESTE TEST:
+## Regresión: en active y warm no cambia nada del comportamiento de memoria.
+##
+## POR QUÉ ES IMPORTANTE:
+## El reset selectivo solo debe operar en cold, no en sesiones activas.
+##
+## QUÉ PROTEGE:
+## Que el cambio de 5B no introduce efectos laterales en active/warm.
+## ----------------------------------------
+def test_active_and_warm_do_not_alter_pain_memory() -> None:
+    service = AIService()
+    flow = service.pipeline.conversation_flow
+
+    for state_name, delta_minutes in [("active", 3), ("warm", 30)]:
+        uid = f"effect-regression-{state_name}-1"
+        flow.memory.set_last_pain(tenant_slug="asesor_ai_prod", user_id=uid, pain="demoras en entregas")
+        from app.domain.conversation.memory import ConversationState
+        flow.memory.set_conversation_state(
+            tenant_slug="asesor_ai_prod",
+            user_id=uid,
+            state=ConversationState(pain_timeline=["demoras en entregas"]),
+        )
+        flow.memory.set_last_user_message_at(
+            tenant_slug="asesor_ai_prod",
+            user_id=uid,
+            sent_at=datetime.now(timezone.utc) - timedelta(minutes=delta_minutes),
+        )
+
+        from app.application.runtime import load_tenant_runtime_yaml
+        from types import SimpleNamespace
+        runtime_yaml = load_tenant_runtime_yaml("asesor_ai_prod", channel="whatsapp")
+        flow.process(
+            tenant=SimpleNamespace(name="asesor_ai_prod", slug="asesor_ai_prod", id="asesor_ai_prod"),
+            tenant_slug="asesor_ai_prod",
+            user_id=uid,
+            user_message="cuanto vale",
+            conversation_history=[],
+            runtime_yaml=runtime_yaml,
+        )
+
+        # En active/warm, last_pain sigue igual y conversation_state no es new
+        assert flow.memory.get_last_pain(tenant_slug="asesor_ai_prod", user_id=uid) == "demoras en entregas"
+        assert runtime_yaml.get("conversation_state") != "new", f"Estado {state_name} no debe marcar new"

@@ -45,7 +45,7 @@ class ConversationState:
 
 
 class MemoryRepositoryPort(Protocol):
-    def save_message(self, *, tenant_slug: str, user_id: str, message_text: str) -> None:
+    def save_message(self, *, tenant_slug: str, user_id: str, message_text: str, role: str = "user") -> None:
         ...
 
     def get_history(self, *, tenant_slug: str, user_id: str) -> list[dict[str, str]]:
@@ -134,8 +134,8 @@ class MemoryDomainService:
     def repository(self) -> MemoryRepositoryPort:
         return self._repository
 
-    def save_message(self, *, tenant_slug: str, user_id: str, message_text: str) -> None:
-        self._repository.save_message(tenant_slug=tenant_slug, user_id=user_id, message_text=message_text)
+    def save_message(self, *, tenant_slug: str, user_id: str, message_text: str, role: str = "user") -> None:
+        self._repository.save_message(tenant_slug=tenant_slug, user_id=user_id, message_text=message_text, role=role)
 
     def get_history(self, *, tenant_slug: str, user_id: str) -> list[dict[str, str]]:
         return self._repository.get_history(tenant_slug=tenant_slug, user_id=user_id)

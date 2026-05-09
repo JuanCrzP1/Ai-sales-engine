@@ -4,12 +4,6 @@ from app.domain.ai.prompt_context import build_prompt_context
 from app.infrastructure.config.config_service import ConfigService
 from app.utils.logger import logger
 
-IDENTITY_BLOCK = """
-Estás hablando con una persona real por chat.
-
-Tu trabajo es guiarle a una decisión y hacer avanzar la conversación según lo que necesita en este momento.
-"""
-
 
 GROUNDING_BLOCK = """
 REGLA CRÍTICA:
@@ -51,10 +45,8 @@ ON_PAYMENT_CONFIRMED_MESSAGE: {on_payment_confirmed_message}
 
 MEMORY_BEHAVIOR_BLOCK = """
 COMPORTAMIENTO CON MEMORIA:
-INTENT_DETECTADO_PREVIO: {intent_detectado}
 METODO_PAGO_ELEGIDO_PREVIO: {metodo_pago_elegido}
 ESTADO_PAGO_PREVIO: {estado_pago}
-- Usa esta memoria solo para continuar mejor la conversación.
 - Para pago y post-pago manda SOLO el mensaje actual del usuario.
 - No inventes confirmaciones ni acciones no confirmadas.
 """.strip()
@@ -267,6 +259,16 @@ class PromptBuilderService:
         data_collection_fields_text = ", ".join(data_collection_fields) or "sin campos definidos"
         del data_collection_status
 
+        conv_state = str(yaml_config.get("conversation_state") or "new").strip().lower() or "new"
+        if conv_state in ("active", "warm"):
+            compact_lines = []
+            if closing_method_names:
+                compact_lines.append(f"Métodos de cierre: {closing_methods_text}")
+            if data_collection_enabled and data_collection_fields:
+                compact_lines.append(f"Datos a recopilar: {data_collection_fields_text}")
+            compact_lines.append(f"Acciones: {actions}")
+            return "\n".join(compact_lines)
+
         return "\n".join(
             [
                 "TIPOS DE CANALES:",
@@ -281,6 +283,12 @@ class PromptBuilderService:
 
     @staticmethod
     def build_post_payment_context(yaml_config: dict) -> str:
+        memory = yaml_config.get("memory_context", {}) if isinstance(yaml_config.get("memory_context"), dict) else {}
+        metodo_pago = str(memory.get("metodo_pago_elegido") or "").strip()
+        estado_pago = str(memory.get("estado_pago") or "").strip()
+        if not metodo_pago and not estado_pago:
+            return ""
+
         post_payment = yaml_config.get("post_payment") if isinstance(yaml_config.get("post_payment"), dict) else {}
         if not post_payment:
             config_section = yaml_config.get("config") if isinstance(yaml_config.get("config"), dict) else {}
@@ -534,8 +542,6 @@ class PromptBuilderService:
         del history
         del user_message
 
-        last_intent = PromptBuilderService._as_text(memory.get("last_intent", ""))
-        last_pain = PromptBuilderService._as_text(memory.get("last_pain", ""))
         summary = memory.get("history_summary", "")
         price_anchor = memory.get("price_anchor", "")
 
@@ -549,15 +555,11 @@ Estado de la conversación: {conversation_state}
 {state_legend}
 Este cliente ya conoce el precio: {price_anchor}.
 Contexto previo: {summary}
-Última intención detectada: {last_intent}
-Dolor detectado: {last_pain}
 """
 
         return f"""
 Estado de la conversación: {conversation_state}
     Contexto previo: {summary}
-    Última intención detectada: {last_intent}
-    Dolor detectado: {last_pain}
 {state_legend}
 """.strip()
 
@@ -565,9 +567,8 @@ Estado de la conversación: {conversation_state}
     def build_recent_customer_context(yaml_config: dict) -> str:
         memory = yaml_config.get("memory_context", {}) if isinstance(yaml_config.get("memory_context"), dict) else {}
 
-        last_user_message = PromptBuilderService._as_text(memory.get("last_user_message") or memory.get("last_message"))
         last_intent = PromptBuilderService._as_text(memory.get("last_intent", ""))
-        detected_intent = PromptBuilderService._as_text(memory.get("intent_detectado", ""))
+        last_pain = PromptBuilderService._as_text(memory.get("last_pain", ""))
         payment_method = PromptBuilderService._as_text(memory.get("metodo_pago_elegido", ""))
         payment_status = PromptBuilderService._as_text(memory.get("estado_pago", ""))
         last_ai_response = PromptBuilderService._as_text(memory.get("last_ai_response") or memory.get("last_response"))
@@ -575,8 +576,8 @@ Estado de la conversación: {conversation_state}
         lines = ["Contexto reciente del cliente:"]
         if last_intent:
             lines.append(f"- Última intención detectada: {last_intent}")
-        if detected_intent:
-            lines.append(f"- Intento comercial recordado: {detected_intent}")
+        if last_pain:
+            lines.append(f"- Dolor detectado: {last_pain}")
         if payment_method:
             lines.append(f"- Método de pago elegido: {payment_method}")
         if payment_status:
@@ -602,15 +603,13 @@ Estado de la conversación: {conversation_state}
     @staticmethod
     def build_memory_behavior_context(yaml_config: dict) -> str:
         memory = yaml_config.get("memory_context", {}) if isinstance(yaml_config.get("memory_context"), dict) else {}
-        intent_detectado = PromptBuilderService._as_text(memory.get("intent_detectado", "")) or "none"
         metodo_pago_elegido = PromptBuilderService._as_text(memory.get("metodo_pago_elegido", "")) or "none"
         estado_pago = PromptBuilderService._as_text(memory.get("estado_pago", "")) or "none"
 
-        if intent_detectado == "none" and metodo_pago_elegido == "none" and estado_pago == "none":
+        if metodo_pago_elegido == "none" and estado_pago == "none":
             return ""
 
         return MEMORY_BEHAVIOR_BLOCK.format(
-            intent_detectado=intent_detectado,
             metodo_pago_elegido=metodo_pago_elegido,
             estado_pago=estado_pago,
         )

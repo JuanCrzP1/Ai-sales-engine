@@ -4,6 +4,7 @@ import unicodedata
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 
+from app.domain.conversation.memory import ConversationState
 from app.infrastructure.config.config_service import ConfigService
 from app.utils.logger import logger
 
@@ -249,9 +250,14 @@ class ConversationFlow:
         runtime_yaml["user_id"] = user_id
 
         previous_user_message = ""
-        if history:
-            last_item = history[-1]
-            previous_user_message = str(last_item.get("text") or "").strip() if isinstance(last_item, dict) else str(last_item or "").strip()
+        for item in reversed(history):
+            if isinstance(item, dict):
+                if item.get("role", "user") == "user":
+                    previous_user_message = str(item.get("text") or "").strip()
+                    break
+            else:
+                previous_user_message = str(item or "").strip()
+                break
         if previous_user_message:
             runtime_yaml["previous_user_message"] = previous_user_message
         return previous_user_message
@@ -429,7 +435,28 @@ class ConversationFlow:
             }
         )
         if temporal_state == "cold":
+            # 5B: preservar memoria comercial durable antes del reset total
+            _cold_pain = str(
+                self.memory.get_last_pain(tenant_slug=tenant_slug, user_id=normalized_user_id) or ""
+            ).strip()
+            _cold_state = self.memory.get_conversation_state(
+                tenant_slug=tenant_slug, user_id=normalized_user_id
+            )
+            _cold_timeline = list(getattr(_cold_state, "pain_timeline", None) or [])
+
             self.memory.reset_conversation(tenant_slug=tenant_slug, user_id=normalized_user_id)
+
+            # Restaurar únicamente last_pain y pain_timeline para sales_memory_hint
+            if _cold_pain:
+                self.memory.set_last_pain(
+                    tenant_slug=tenant_slug, user_id=normalized_user_id, pain=_cold_pain
+                )
+            if _cold_timeline:
+                self.memory.set_conversation_state(
+                    tenant_slug=tenant_slug,
+                    user_id=normalized_user_id,
+                    state=ConversationState(pain_timeline=_cold_timeline),
+                )
             runtime_yaml["conversation_state"] = "new"
         else:
             runtime_yaml["conversation_state"] = temporal_state

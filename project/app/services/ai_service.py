@@ -38,54 +38,6 @@ GLOBAL_MEMORY_REPOSITORY = MemoryRepository()
 GLOBAL_MEMORY_SERVICE = MemoryDomainService(GLOBAL_MEMORY_REPOSITORY)
 
 
-def _print_response_audit(response: str, metadata: dict | None) -> None:
-    response_text = str(response or "")
-    word_count = len(response_text.split())
-    char_count = len(response_text)
-    lower_text = response_text.lower()
-
-    print(
-        {
-            "audit_type": "response_metrics",
-            "words": word_count,
-            "chars": char_count,
-            "intent": (metadata or {}).get("intent"),
-        }
-    )
-
-    dense_signals = 0
-
-    if "precio" in lower_text or "cop" in lower_text:
-        dense_signals += 1
-
-    if "te ayuda" in lower_text or "beneficio" in lower_text:
-        dense_signals += 1
-
-    if "incluye" in lower_text or "funciona" in lower_text:
-        dense_signals += 1
-
-    print(
-        {
-            "audit_type": "density_signals",
-            "score": dense_signals,
-        }
-    )
-
-    phrases = [
-        "responder rápido",
-        "no perder ventas",
-        "seguimiento",
-    ]
-    repeat_count = sum(1 for phrase in phrases if phrase in lower_text)
-
-    print(
-        {
-            "audit_type": "repetition",
-            "count": repeat_count,
-        }
-    )
-
-
 def _extract_price_anchor(text: str, runtime_yaml: dict) -> str:
     pricing = runtime_yaml.get("pricing", {})
     plans = pricing.get("plans", [])
@@ -189,25 +141,7 @@ class AIService:
             str(response or ""),
             yaml_config if isinstance(yaml_config, dict) else {},
         )
-        _print_response_audit(response, metadata)
 
         if include_metadata:
             return str(response or ""), bool(ai_used), metadata
         return str(response or ""), bool(ai_used)
-
-    def _mock_business_reply(
-        self,
-        *,
-        tenant,
-        bot_config,
-        user_message: str,
-        faq_results: list[dict],
-        yaml_config: dict | None = None,
-    ) -> tuple[str, bool]:
-        return self.pipeline.run_mock(
-            tenant=tenant,
-            bot_config=bot_config,
-            user_message=user_message,
-            faq_results=faq_results,
-            yaml_config=yaml_config,
-        )

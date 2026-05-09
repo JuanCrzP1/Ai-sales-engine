@@ -64,7 +64,7 @@ class MemoryRepository:
         self._initial_message_last_sent_by_user.pop(key, None)
         self._last_user_message_at_by_user.pop(key, None)
 
-    def save_message(self, *, tenant_slug: str, user_id: str, message_text: str) -> None:
+    def save_message(self, *, tenant_slug: str, user_id: str, message_text: str, role: str = "user") -> None:
         # Hoy: in-memory. Manana: persistencia en DB por tenant/user.
         key = self._key(tenant_slug=tenant_slug, user_id=user_id)
         if not key:
@@ -72,10 +72,12 @@ class MemoryRepository:
         text = str(message_text or "").strip()
         if not text:
             return
+        normalized_role = str(role or "user").strip().lower() or "user"
         history = self._messages_by_user.get(key, [])
-        history.append({"text": text, "timestamp": datetime.now(timezone.utc)})
+        history.append({"text": text, "timestamp": datetime.now(timezone.utc), "role": normalized_role})
         self._messages_by_user[key] = history[-20:]
-        self._last_user_message_by_user[key] = text
+        if normalized_role == "user":
+            self._last_user_message_by_user[key] = text
 
     def get_history(self, *, tenant_slug: str, user_id: str) -> list[dict[str, str]]:
         key = self._key(tenant_slug=tenant_slug, user_id=user_id)
@@ -85,10 +87,12 @@ class MemoryRepository:
         for entry in self._messages_by_user.get(key, []):
             if isinstance(entry, dict):
                 text = str(entry.get("text") or "").strip()
+                role_val = str(entry.get("role") or "user").strip().lower() or "user"
             else:
                 text = str(entry or "").strip()
+                role_val = "user"
             if text:
-                items.append({"text": text})
+                items.append({"role": role_val, "text": text})
         return items
 
     def set_last_intent(self, *, tenant_slug: str, user_id: str, intent: str) -> None:
