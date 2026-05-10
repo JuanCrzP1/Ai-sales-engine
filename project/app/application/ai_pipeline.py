@@ -56,7 +56,7 @@ from app.application.runtime import load_tenant_runtime_yaml
 from app.domain.conversation.demo import DemoDomainService
 from app.domain.conversation.memory import MemoryDomainService
 from app.infrastructure.persistence.demo_repository import DemoRepository
-from app.infrastructure.persistence.memory_repository import MemoryRepository
+from app.infrastructure.persistence.memory_repository import MemoryRepository, SQLMemoryRepository
 from app.infrastructure.persistence.subscription_repository import SubscriptionRepository
 from app.infrastructure.persistence.usage_repository import UsageRepository
 from app.services.ai_runtime.runtime_core import AIService as AIRuntimeService
@@ -82,7 +82,7 @@ class AIPipeline:
             message_repository=message_repository,
         )
         if memory_service is None:
-            memory_repository = MemoryRepository()
+            memory_repository = SQLMemoryRepository()
             memory = MemoryDomainService(memory_repository)
         else:
             memory = memory_service

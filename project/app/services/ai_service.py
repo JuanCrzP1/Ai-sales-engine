@@ -28,13 +28,13 @@ from __future__ import annotations
 from app.application.ai_pipeline import AIPipeline
 from app.application.response_guard import validate_response_against_yaml
 from app.domain.conversation.memory import MemoryDomainService
-from app.infrastructure.persistence.memory_repository import MemoryRepository
+from app.infrastructure.persistence.memory_repository import MemoryRepository, SQLMemoryRepository
 from app.infrastructure.persistence.subscription_repository import SubscriptionRepository
 from app.infrastructure.persistence.usage_repository import UsageRepository
 from app.utils.logger import logger
 
 
-GLOBAL_MEMORY_REPOSITORY = MemoryRepository()
+GLOBAL_MEMORY_REPOSITORY = SQLMemoryRepository()
 GLOBAL_MEMORY_SERVICE = MemoryDomainService(GLOBAL_MEMORY_REPOSITORY)
 
 
