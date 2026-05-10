@@ -353,6 +353,13 @@ class SQLMemoryRepository(MemoryRepository):
     so all existing tests remain green without modification.
     """
 
+    def __init__(self) -> None:
+        super().__init__()
+        # Per-instance cache: (normalized_slug, normalized_user) → (tenant_db_id, client_db_id).
+        # Eliminates redundant SQL lookups across the multiple set_*/get_* calls that
+        # a single conversation turn triggers on the same identity pair.
+        self._ids_cache: dict[tuple[str, str], tuple[str, str]] = {}
+
     # ------------------------------------------------------------------ #
     # Internal helpers                                                     #
     # ------------------------------------------------------------------ #
@@ -375,7 +382,11 @@ class SQLMemoryRepository(MemoryRepository):
         )
 
     def _resolve_ids(self, tenant_slug: str, user_id: str) -> tuple[str, str] | None:
-        """Return (tenant_db_id, client_db_id) or None if resolution fails."""
+        """Return (tenant_db_id, client_db_id) or None if resolution fails.
+
+        Caches the result per (slug, user_id) pair to avoid redundant SQL
+        lookups when multiple memory fields are written in a single turn.
+        """
         from app.infrastructure.db.repository import DBRepository
         from app.infrastructure.persistence.client_repository import ClientRepository
 
@@ -383,6 +394,11 @@ class SQLMemoryRepository(MemoryRepository):
         normalized_user = str(user_id or "").strip().lower()
         if not normalized_slug or not normalized_user:
             return None
+
+        cache_key = (normalized_slug, normalized_user)
+        cached = self._ids_cache.get(cache_key)
+        if cached is not None:
+            return cached
 
         tenant = DBRepository().get_tenant_by_key(normalized_slug)
         if not tenant:
@@ -396,7 +412,9 @@ class SQLMemoryRepository(MemoryRepository):
         if not client_id:
             return None
 
-        return tenant_db_id, client_id
+        result = (tenant_db_id, client_id)
+        self._ids_cache[cache_key] = result
+        return result
 
     @staticmethod
     def _engine():

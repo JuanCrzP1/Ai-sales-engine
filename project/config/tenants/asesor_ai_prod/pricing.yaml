@@ -6,8 +6,8 @@ pricing:
 
       pricing:  # Precios por moneda
         COP:
-          implementation: 150000  # Cobro inicial de implementacion o arranque
-          monthly: 180000  # Cobro mensual recurrente
+          implementation: 100000  # Cobro inicial de implementacion o arranque
+          monthly: 110000  # Cobro mensual recurrente
 
         USD:
           implementation: 40  # Cobro inicial de implementacion o arranque
@@ -22,7 +22,7 @@ pricing:
 
       not_included:  # Lo que no esta incluido en este plan
         - Costos de Meta (WhatsApp Business API)
-        - costos de plataformas externas 
+        - costos de plataformas externas (token de IA, hosting, etc)
         - inversion publicitaria
         - Desarrollos o integraciones avanzadas
 
@@ -50,8 +50,8 @@ pricing:
   conditions:  # Reglas comerciales que se deben respetar
     - sin permanencia obligatoria
     - se puede cancelar mensual
-    - el primer mes se paga 330000 COP (configuracion + primer mes)
-    - luego se paga mensualmente 180000 COP
+    - el primer mes se paga 210000 COP (configuracion + primer mes)
+    - luego se paga mensualmente 110000 COP
 
   price_framing:
     type: comparativo  # Forma de presentar el precio: directo | comparativo

@@ -18,6 +18,8 @@ from pathlib import Path
 from types import SimpleNamespace
 from uuid import uuid4
 
+import yaml
+
 from app.application.runtime import load_tenant_runtime_yaml
 from app.infrastructure.ai.prompting.builder.prompt_builder import PromptBuilderService
 from app.services.ai.structured_output import parse_structured_output
@@ -335,8 +337,12 @@ def test_prompt_builder_includes_pricing_in_active_conversation() -> None:
 
     prompt_text = str(prompt or "")
 
-    assert "el primer mes se paga 330000 COP (configuracion + primer mes)" in prompt_text
-    assert "luego se paga mensualmente 180000 COP" in prompt_text
+    _pricing_path = PROJECT_DIR / "config" / "tenants" / "asesor_ai_prod" / "pricing.yaml"
+    _pricing_data = yaml.safe_load(_pricing_path.read_text(encoding="utf-8"))
+    _conditions = _pricing_data.get("pricing", {}).get("conditions", [])
+    assert _conditions, "pricing.yaml no tiene conditions definidas"
+    for condition in _conditions:
+        assert str(condition) in prompt_text, f"Condición no encontrada en prompt: {condition!r}"
     assert "LINK_AVAILABLE:" in prompt_text
     assert "TRANSFER_METHODS:" in prompt_text
 

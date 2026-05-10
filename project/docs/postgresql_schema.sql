@@ -34,6 +34,10 @@ CREATE TABLE admin_users (
   tenant_id UUID REFERENCES tenants(id) ON DELETE CASCADE,
   email TEXT UNIQUE,
   password_hash TEXT,
+  name TEXT,
+  phone TEXT,
+  document_number TEXT,
+  company_name TEXT,
   created_at TIMESTAMPTZ DEFAULT now()
 );
 
@@ -43,7 +47,8 @@ CREATE TABLE clients (
   tenant_id UUID REFERENCES tenants(id) ON DELETE CASCADE,
   external_id TEXT,
   name TEXT,
-  created_at TIMESTAMPTZ DEFAULT now()
+  created_at TIMESTAMPTZ DEFAULT now(),
+  UNIQUE (tenant_id, external_id)
 );
 
 -- MENSAJES (AGREGAMOS FK)

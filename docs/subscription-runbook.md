@@ -199,4 +199,40 @@ python scripts/sync_tenants_to_db.py
 
 El script detecta todos los slugs en disco, crea los que faltan en PostgreSQL con `status = 'active'` y deja intactos los existentes. Es idempotente: puede ejecutarse varias veces sin efectos secundarios.
 
+---
+
+## Bootstrap inicial del SaaS
+
+Usar cuando se clona el proyecto por primera vez o cuando se añaden tenants nuevos y se necesita garantizar la estructura mínima en PostgreSQL para todos ellos.
+
+```bash
+python scripts/bootstrap_saas_data.py
+```
+
+El script recorre todos los subdirectorios de `project/config/tenants/` y garantiza que cada tenant tenga exactamente una fila en:
+
+| Tabla | Valores iniciales |
+|---|---|
+| `tenants` | `name=slug`, `status='active'` |
+| `admin_users` | `name=slug`, resto `NULL` |
+| `subscriptions` | `plan_code='starter'`, `status='trialing'`, vigente 30 días |
+| `tenant_settings` | `settings='{}'` |
+
+Nunca sobreescribe ni modifica registros existentes. Cada tenant se procesa en su propia transacción. Salida esperada:
+
+```text
+[existing] asesor_ai_prod
+[created]  agencia_viajes -> tenant, admin_user, subscription, tenant_settings
+[created]  clinic -> tenant, admin_user, subscription, tenant_settings
+...
+
+Summary:
+  tenants processed: 9
+  records created:   32
+  records existing:  4
+  errors:            0
+```
+
+Si todos los tenants ya existen correctamente, el script reporta `[existing]` para cada uno y termina con `records created: 0`.
+
 > **Nota:** el script no crea suscripciones. Después de sincronizar, crear la suscripción manualmente con el SQL de la sección 1.

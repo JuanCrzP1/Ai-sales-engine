@@ -443,3 +443,72 @@ def test_upsert_blob_is_valid_json_with_correct_key():
             assert "last_intent" in parsed, f"Expected 'last_intent' key in blob: {parsed}"
             assert parsed["last_intent"] == "pain"
 
+
+# ===========================================================================
+# Phase 9B — identity cache tests
+# ===========================================================================
+
+# ---------------------------------------------------------------------------
+# 17. múltiples set_* para el mismo par (tenant, user) resuelven IDs una sola vez
+# ---------------------------------------------------------------------------
+
+def test_identity_cache_avoids_redundant_db_lookups():
+    """After the first resolution, subsequent set_* calls for the same (tenant, user)
+    must NOT hit DBRepository or ClientRepository again."""
+    mock_db_instance = MagicMock()
+    mock_db_instance.get_tenant_by_key.return_value = _MOCK_TENANT
+    mock_cr_instance = MagicMock()
+    mock_cr_instance.get_or_create.return_value = _CLIENT_DB_ID
+
+    engine, mock_conn = _make_engine_begin()
+
+    with patch("app.infrastructure.db.repository.DBRepository", return_value=mock_db_instance), \
+         patch("app.infrastructure.persistence.client_repository.ClientRepository", return_value=mock_cr_instance), \
+         patch.object(SQLMemoryRepository, "_engine", return_value=engine):
+        repo = SQLMemoryRepository()
+        repo.set_last_intent(tenant_slug=_TENANT_SLUG, user_id=_USER_ID, intent="buy")
+        repo.set_detected_intent(tenant_slug=_TENANT_SLUG, user_id=_USER_ID, intent="close")
+        repo.set_last_pain(tenant_slug=_TENANT_SLUG, user_id=_USER_ID, pain="precio")
+        repo.set_payment_status(tenant_slug=_TENANT_SLUG, user_id=_USER_ID, status="none")
+
+    assert mock_db_instance.get_tenant_by_key.call_count == 1, (
+        f"Expected 1 tenant DB lookup, got {mock_db_instance.get_tenant_by_key.call_count}"
+    )
+    assert mock_cr_instance.get_or_create.call_count == 1, (
+        f"Expected 1 client DB lookup, got {mock_cr_instance.get_or_create.call_count}"
+    )
+
+
+# ---------------------------------------------------------------------------
+# 18. pares distintos tienen entradas de cache independientes
+# ---------------------------------------------------------------------------
+
+def test_identity_cache_is_isolated_per_user_pair():
+    """Two distinct (tenant_slug, user_id) pairs each resolve once; a repeated
+    call for the first pair uses the cache and does NOT issue additional DB queries."""
+    mock_db_instance = MagicMock()
+    mock_db_instance.get_tenant_by_key.return_value = _MOCK_TENANT
+    mock_cr_instance = MagicMock()
+    mock_cr_instance.get_or_create.side_effect = lambda tenant_slug, external_id: f"client-{external_id}"
+
+    engine, mock_conn = _make_engine_begin()
+
+    with patch("app.infrastructure.db.repository.DBRepository", return_value=mock_db_instance), \
+         patch("app.infrastructure.persistence.client_repository.ClientRepository", return_value=mock_cr_instance), \
+         patch.object(SQLMemoryRepository, "_engine", return_value=engine):
+        repo = SQLMemoryRepository()
+        repo.set_last_intent(tenant_slug=_TENANT_SLUG, user_id="user_a", intent="buy")
+        repo.set_last_intent(tenant_slug=_TENANT_SLUG, user_id="user_b", intent="info")
+        # Third call — same pair as first — should come from cache
+        repo.set_last_intent(tenant_slug=_TENANT_SLUG, user_id="user_a", intent="close")
+
+    # 2 distinct pairs → exactly 2 lookups, not 3
+    assert mock_db_instance.get_tenant_by_key.call_count == 2, (
+        f"Expected 2 tenant lookups (one per distinct user pair), "
+        f"got {mock_db_instance.get_tenant_by_key.call_count}"
+    )
+    assert mock_cr_instance.get_or_create.call_count == 2, (
+        f"Expected 2 client lookups (one per distinct user pair), "
+        f"got {mock_cr_instance.get_or_create.call_count}"
+    )
+
