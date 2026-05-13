@@ -1,0 +1,4869 @@
+{
+  "label": "baseline",
+  "storage_slot": "baseline",
+  "tenant_slug": "asesor_ai_prod",
+  "channel": "whatsapp",
+  "user_id": "pricing-lab-user",
+  "run_at": "2026-05-13T07:51:45+00:00",
+  "commit": "f5dc965",
+  "seed_message": "Hola amigo",
+  "prompt_metrics": {
+    "chars": 2658,
+    "lines": 61,
+    "estimated_tokens": 661,
+    "pricing_block_chars": 708
+  },
+  "prompt_metadata": {
+    "prompt_path": "",
+    "prompt_text": "",
+    "prompt_hash": "",
+    "prompt_version": "single-source-v1",
+    "prompt_source": "single_contract_blocks"
+  },
+  "prompt_context": {
+    "last_intent": "",
+    "last_pain": "",
+    "stage": "",
+    "history_summary": "",
+    "recent_messages": [],
+    "force_initial_context": false,
+    "first_message_with_user_intent": false
+  },
+  "conversation": [
+    {
+      "turn": 1,
+      "user_message": "Hola amigo",
+      "assistant_reply": "Hola, ¿qué más? 👋 soy Juan un gusto tenerte por aquí.",
+      "ai_used": false,
+      "metadata": {
+        "source": "initial_message",
+        "intent": "info",
+        "tenant_slug": "asesor_ai_prod",
+        "memory_context": {}
+      }
+    },
+    {
+      "turn": 2,
+      "user_message": "Dame más información de lo que venden",
+      "assistant_reply": "Ofrecemos una solución de automatización comercial que convierte tu WhatsApp en un vendedor automático 24/7. Con un asistente inteligente, podrás responder al instante, dar seguimiento a prospectos y transformar conversaciones en ventas sin esfuerzo. Ideal para negocios que buscan optimizar su atención al cliente y aumentar sus ventas. ¿Te gustaría saber más sobre cómo empezar?",
+      "ai_used": true,
+      "metadata": {
+        "mode": "",
+        "tenant_slug": "asesor_ai_prod",
+        "memory_state": {
+          "last_message": "Hola amigo",
+          "last_user_message": "Hola amigo",
+          "last_response": "",
+          "last_ai_response": "",
+          "history_summary": "user: Hola amigo",
+          "sales_memory_hint": "",
+          "last_intent": "",
+          "intent_detectado": "",
+          "last_pain": "",
+          "metodo_pago_elegido": "",
+          "estado_pago": "none",
+          "stage": "",
+          "mode": "",
+          "last_cta": "",
+          "conversation_state": "active"
+        },
+        "source": "ai_raw",
+        "intent": "info",
+        "intent_missing": false,
+        "ai_metadata": {
+          "intent": "info",
+          "stage": "",
+          "pain_detected": false,
+          "pain": "",
+          "next_step": "",
+          "urgency": "",
+          "last_cta": "",
+          "objection_count": 0,
+          "mode": "",
+          "payment_method": "",
+          "payment_status": "",
+          "response": "Ofrecemos una solución de automatización comercial que convierte tu WhatsApp en un vendedor automático 24/7. Con un asistente inteligente, podrás responder al instante, dar seguimiento a prospectos y transformar conversaciones en ventas sin esfuerzo. Ideal para negocios que buscan optimizar su atención al cliente y aumentar sus ventas. ¿Te gustaría saber más sobre cómo empezar?",
+          "user_message": "Dame más información de lo que venden"
+        },
+        "sales": {
+          "discovery": {
+            "objectives": [
+              "entender volumen de conversaciones",
+              "identificar fallas en seguimiento",
+              "detectar impacto en ventas"
+            ],
+            "questions": [
+              "Por donde te entran mas mensajes hoy?",
+              "Que pasa despues del primer mensaje, haces seguimiento o se queda ahi?",
+              "Cuantas conversaciones sientes que se pierden por no responder a tiempo?"
+            ]
+          },
+          "qualification": {
+            "detect_offer_fit": true
+          },
+          "support": {
+            "info_handling": {
+              "explain_first": false,
+              "sell_after": true
+            },
+            "hard_rules": [
+              "si el usuario pide informacion, evita saludo generico y conecta con dolor comercial real",
+              "prohibido preguntas consultivas vacias",
+              "si respondes informacion, avanza la conversacion desde un problema real"
+            ]
+          },
+          "pain": {
+            "clusters": {
+              "gestion_mensajes": {
+                "signals": [
+                  "muchos mensajes",
+                  "no me da el tiempo",
+                  "no alcanzo a responder"
+                ],
+                "impacts": [
+                  "cada mensaje que no respondes es un cliente que se va con otro",
+                  "el cliente se enfria y termina comprando en otro lado",
+                  "pierdes ventas sin darte cuenta"
+                ],
+                "monetization": [
+                  "cada lead sin respuesta es dinero perdido",
+                  "cada demora baja la probabilidad de cierre"
+                ],
+                "urgency_levels": {
+                  "alto": [
+                    "ya estas perdiendo dinero"
+                  ],
+                  "medio": [
+                    "estas dejando oportunidades"
+                  ]
+                },
+                "recommended_angles": [
+                  "tiempo",
+                  "dinero"
+                ]
+              },
+              "falta_seguimiento": {
+                "signals": [
+                  "no hago seguimiento",
+                  "se me olvidan los clientes"
+                ],
+                "impacts": [
+                  "el cliente se enfria y termina comprando en otro lado",
+                  "pierdes ventas que ya estaban avanzadas"
+                ],
+                "monetization": [
+                  "cada seguimiento perdido reduce cierres"
+                ],
+                "urgency_levels": {
+                  "alto": [
+                    "hay ventas en riesgo por falta de continuidad"
+                  ],
+                  "medio": [
+                    "el pipeline se enfria mas rapido"
+                  ]
+                },
+                "recommended_angles": [
+                  "dinero"
+                ]
+              }
+            }
+          },
+          "angles": {
+            "tiempo": {
+              "when": [
+                "no me da el tiempo",
+                "muchos mensajes"
+              ],
+              "execution": [
+                "no es solo responder, es que no te alcanza el tiempo"
+              ]
+            },
+            "dinero": {
+              "when": [
+                "pierdo clientes",
+                "no vendo"
+              ],
+              "execution": [
+                "cada lead que se enfria es dinero que ya estaba cerca"
+              ]
+            }
+          },
+          "conversation_flow": {
+            "steps": [
+              "detect_pain",
+              "amplify_impact",
+              "present_solution",
+              "guide_next_step"
+            ],
+            "rules": {
+              "no_skip_steps": true
+            }
+          },
+          "solution": {
+            "framing": [
+              "No se trata solo de responder, sino de sostener el seguimiento.",
+              "La idea es que no dependas de estar pegado al celular.",
+              "El sistema responde y tambien retoma conversaciones automaticamente."
+            ],
+            "mapping": {
+              "gestion_mensajes": [
+                "automatizar_respuesta",
+                "seguimiento"
+              ],
+              "falta_seguimiento": [
+                "seguimiento_automatico"
+              ]
+            }
+          },
+          "offer": {
+            "strategy": {
+              "single": [
+                "explicar directo y conectar con valor",
+                "no sobrecargar con informacion"
+              ],
+              "multi": [
+                "recomendar segun problema",
+                "no listar todos los planes",
+                "guiar a mejor opcion"
+              ]
+            },
+            "recommendation_rules": [
+              {
+                "condition": "gestion_mensajes",
+                "recommend": "plan_pro"
+              },
+              {
+                "condition": "seguimiento",
+                "recommend": "plan_basico"
+              }
+            ]
+          },
+          "objection": {
+            "price": {
+              "layers": {
+                "acknowledge": [
+                  "Te entiendo, es una inversion importante.",
+                  "Es normal verlo asi al inicio."
+                ],
+                "reframe": [
+                  "Lo que suele salir caro es perder conversaciones que ya estaban interesadas.",
+                  "Cuando empiezas a recuperar leads, se paga solo."
+                ],
+                "proof": [
+                  "cuando recuperas ventas se paga solo"
+                ],
+                "redirect": [
+                  "avancemos hoy con activacion y recuperacion de conversaciones"
+                ]
+              },
+              "hard_rules": [
+                "no terminar objecion con 'quieres saber'",
+                "cerrar objecion con siguiente paso concreto"
+              ]
+            }
+          },
+          "closing": {
+            "strategy": "direct_sale",
+            "next_step": {
+              "action": "dynamic"
+            },
+            "required_data": [],
+            "behavior": {
+              "direct_sale": {
+                "goal": "confirmar_compra"
+              },
+              "lead_capture": {
+                "goal": "capturar_datos"
+              },
+              "booking": {
+                "goal": "agendar"
+              },
+              "checkout": {
+                "goal": "enviar_pago"
+              }
+            },
+            "triggers": [
+              "quiero empezar",
+              "me interesa",
+              "como arrancamos",
+              "quiero comprar",
+              "arranquemos"
+            ],
+            "actions": {
+              "high_intent": [
+                "agendar",
+                "activar",
+                "iniciar ahora"
+              ]
+            },
+            "next_steps": [
+              "agendar implementacion",
+              "configurar sistema",
+              "activar prueba"
+            ],
+            "micro_commitments": [
+              "te muestro como seria en tu caso",
+              "vemos el siguiente paso practico"
+            ],
+            "hard_rules": [
+              "si hay intencion de compra, confirmar y ejecutar cierre sin preguntas",
+              "no pedir mas contexto ni disponibilidad en buy",
+              "entregar accion concreta de arranque inmediato",
+              "prohibido cerrar buy con pregunta abierta",
+              "respuesta buy invalida si contiene '?' o '¿'",
+              "respuesta objection invalida si contiene la frase 'quieres saber'",
+              "en objection incluir literalmente 'avanzamos' o 'siguiente paso'"
+            ]
+          },
+          "progression_rules": {
+            "required_flow": [
+              "detect_pain",
+              "amplify_impact",
+              "present_solution",
+              "guide_next_step"
+            ],
+            "forbid": [
+              "responder_sin_direccion",
+              "responder_sin_solucion"
+            ]
+          }
+        },
+        "business": {
+          "name": "Asesor Comercial",
+          "brand_name": "Asesor Comercial",
+          "description": "Negocios que reciben muchos mensajes y no alcanzan a responder a tiempo, perdiendo clientes y oportunidades de venta sin darse cuenta.\n",
+          "industry": "automatizacion comercial para negocios que venden por chat",
+          "tone": "humano, cercano, directo y comercial de cierre",
+          "voice": "cercano, directo y orientado a resultados",
+          "city": "Medellin",
+          "promise": "Convierte tu WhatsApp en un vendedor automático 24/7 con un asistente comercial inteligente que responde al instante, da seguimiento a cada prospecto y transforma conversaciones en ventas sin que tengas que estar pendiente.\n",
+          "positioning": "Para negocios que pierden ventas porque no alcanzan a responder a tiempo y el seguimiento se pierde despues del primer contacto.\n",
+          "differentiators": [
+            "seguimiento automatico con contexto",
+            "integracion con WhatsApp",
+            "enfoque en ventas, no solo respuestas",
+            "implementacion guiada paso a paso"
+          ],
+          "customer_profile": {
+            "segment": "pymes de servicios y ventas",
+            "company_size": "2 a 25 personas",
+            "maturity": "venden por chat pero sin proceso de seguimiento consistente",
+            "roles": [
+              "dueno",
+              "asesor comercial",
+              "community manager"
+            ]
+          },
+          "pain_points": [
+            "no alcanzan a responder todos los mensajes",
+            "el seguimiento se pierde despues del primer contacto",
+            "conversaciones dispersas en multiples canales",
+            "oportunidades que se enfrian por demora"
+          ],
+          "desired_outcomes": [
+            "responder rapido sin depender del tiempo humano",
+            "mantener seguimiento constante",
+            "aumentar conversion de chats a ventas",
+            "tener orden en el proceso comercial"
+          ],
+          "credibility": [
+            "implementaciones reales en negocios similares",
+            "casos donde se recuperan conversaciones perdidas"
+          ],
+          "value_drivers": {
+            "tiempo": {
+              "description": "ahorro de tiempo en respuesta y seguimiento",
+              "triggers": [
+                "no me da el tiempo",
+                "muchos mensajes"
+              ]
+            },
+            "dinero": {
+              "description": "recuperacion de oportunidades perdidas",
+              "triggers": [
+                "pierdo clientes",
+                "no vendo"
+              ]
+            }
+          },
+          "buying_motivation": {
+            "primary": "tiempo",
+            "secondary": "dinero"
+          },
+          "use_cases": [
+            {
+              "nombre": "negocio saturado",
+              "senales": [
+                "muchos mensajes",
+                "no alcanzo a responder"
+              ],
+              "enfoque": "automatizar_respuesta"
+            },
+            {
+              "nombre": "seguimiento perdido",
+              "senales": [
+                "no hago seguimiento"
+              ],
+              "enfoque": "seguimiento_automatico"
+            }
+          ],
+          "location": {
+            "type": "virtual",
+            "address": "",
+            "city": "Medellin",
+            "coverage": {
+              "type": "nacional",
+              "zones": [
+                "colombia"
+              ]
+            }
+          },
+          "service_modes": [
+            "virtual"
+          ],
+          "logistics": {
+            "delivery": {
+              "available": false,
+              "type": "tercero",
+              "zones": [],
+              "cost": {
+                "type": "variable",
+                "value": 0
+              },
+              "time": {
+                "min": "",
+                "max": ""
+              }
+            },
+            "shipping": {
+              "available": false,
+              "scope": "nacional",
+              "providers": [],
+              "cost": {
+                "type": "variable",
+                "value": 0
+              },
+              "time": {
+                "min": "",
+                "max": ""
+              }
+            },
+            "pickup": {
+              "available": false,
+              "instructions": ""
+            },
+            "scheduling": {
+              "required": false
+            }
+          }
+        },
+        "pricing": {
+          "plans": [
+            {
+              "id": "plan_basico",
+              "name": "Plan Basico",
+              "description": "Configuracion inicial + sistema mensual",
+              "pricing": {
+                "COP": {
+                  "implementation": 100000,
+                  "monthly": 110000
+                },
+                "USD": {
+                  "implementation": 40,
+                  "monthly": 45
+                }
+              },
+              "includes": [
+                "configuracion inicial",
+                "Integración con WhatsApp",
+                "Asistente conversacional inteligente",
+                "Soporte inicial",
+                "Seguimiento automático de clientes"
+              ],
+              "not_included": [
+                "Costos de Meta (WhatsApp Business API)",
+                "costos de plataformas externas (token de IA, hosting, etc)",
+                "inversion publicitaria",
+                "Desarrollos o integraciones avanzadas"
+              ],
+              "payment": {
+                "link": "https://checkout.aisalesengine.com/asesor-ai-prod/plan-basico",
+                "transfer": {
+                  "enabled": true,
+                  "methods": [
+                    {
+                      "type": "nequi",
+                      "number": "3001234567"
+                    },
+                    {
+                      "type": "daviplata",
+                      "number": "3009876543"
+                    },
+                    {
+                      "type": "bank",
+                      "bank": "Bancolombia",
+                      "account_type": "ahorros",
+                      "account_number": "1234567890"
+                    },
+                    {
+                      "type": "breb",
+                      "reference": "usuario@correo.com"
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "conditions": [
+            "sin permanencia obligatoria",
+            "se puede cancelar mensual",
+            "el primer mes se paga 210000 COP (configuracion + primer mes)",
+            "luego se paga mensualmente 110000 COP"
+          ],
+          "price_framing": {
+            "type": "comparativo"
+          },
+          "roi": {
+            "break_even_sales": 3
+          },
+          "business_offers": {
+            "core": [
+              "plan_basico",
+              "plan_pro"
+            ],
+            "upsell": [
+              "plan_pro",
+              "prioridad_soporte"
+            ],
+            "cross_sell": [
+              "integraciones",
+              "setup_operativo"
+            ],
+            "financing": {
+              "available": false,
+              "providers": [],
+              "options": []
+            }
+          }
+        },
+        "features": {
+          "pricing_enabled": true,
+          "multi_currency": true,
+          "multi_plan": true,
+          "catalog_mode": false,
+          "business_model": "saas"
+        },
+        "inventory": {
+          "track_stock": false,
+          "items": []
+        },
+        "channel": "whatsapp",
+        "conversation_state": "active",
+        "memory_context": {}
+      }
+    },
+    {
+      "turn": 3,
+      "user_message": "Yo recibo muchos mensajes y no alcanzo a responder",
+      "assistant_reply": "Entiendo que manejar muchos mensajes puede ser abrumador. Nuestra solución automatiza tus respuestas en WhatsApp, permitiendo que un asistente inteligente responda instantáneamente a tus clientes y dé seguimiento a los prospectos. Así, podrás enfocarte en lo que realmente importa. ¿Te gustaría saber cómo implementar esta solución y aliviar esa carga?",
+      "ai_used": true,
+      "metadata": {
+        "mode": "",
+        "tenant_slug": "asesor_ai_prod",
+        "memory_state": {
+          "last_message": "Dame más información de lo que venden",
+          "last_user_message": "Dame más información de lo que venden",
+          "last_response": "Ofrecemos una solución de automatización comercial que convierte tu WhatsApp en un vendedor automático 24/7. Con un asistente inteligente, podrás responder al instante, dar seguimiento a prospectos y transformar conversaciones en ventas sin esfuerzo. Ideal para negocios que buscan optimizar su atención al cliente y aumentar sus ventas. ¿Te gustaría saber más sobre cómo empezar?",
+          "last_ai_response": "Ofrecemos una solución de automatización comercial que convierte tu WhatsApp en un vendedor automático 24/7. Con un asistente inteligente, podrás responder al instante, dar seguimiento a prospectos y transformar conversaciones en ventas sin esfuerzo. Ideal para negocios que buscan optimizar su atención al cliente y aumentar sus ventas. ¿Te gustaría saber más sobre cómo empezar?",
+          "history_summary": "user: Hola amigo\nuser: Dame más información de lo que venden\nassistant: Ofrecemos una solución de automatización comercial que convierte tu WhatsApp en un vendedor automático 24/7. Con un asistente inteligente, podrás responder al instante, dar seguimiento a prospectos y transformar conversaciones en ventas sin esfuerzo. Ideal para negocios que buscan optimizar su atención al cliente y aumentar sus ventas. ¿Te gustaría saber más sobre cómo empezar?",
+          "sales_memory_hint": "",
+          "last_intent": "info",
+          "intent_detectado": "info",
+          "last_pain": "",
+          "metodo_pago_elegido": "",
+          "estado_pago": "none",
+          "stage": "",
+          "mode": "",
+          "last_cta": "",
+          "conversation_state": "active"
+        },
+        "source": "ai_raw",
+        "intent": "info",
+        "intent_missing": false,
+        "ai_metadata": {
+          "intent": "info",
+          "stage": "",
+          "pain_detected": false,
+          "pain": "",
+          "next_step": "",
+          "urgency": "",
+          "last_cta": "",
+          "objection_count": 0,
+          "mode": "",
+          "payment_method": "",
+          "payment_status": "",
+          "response": "Entiendo que manejar muchos mensajes puede ser abrumador. Nuestra solución automatiza tus respuestas en WhatsApp, permitiendo que un asistente inteligente responda instantáneamente a tus clientes y dé seguimiento a los prospectos. Así, podrás enfocarte en lo que realmente importa. ¿Te gustaría saber cómo implementar esta solución y aliviar esa carga?",
+          "user_message": "Yo recibo muchos mensajes y no alcanzo a responder"
+        },
+        "sales": {
+          "discovery": {
+            "objectives": [
+              "entender volumen de conversaciones",
+              "identificar fallas en seguimiento",
+              "detectar impacto en ventas"
+            ],
+            "questions": [
+              "Por donde te entran mas mensajes hoy?",
+              "Que pasa despues del primer mensaje, haces seguimiento o se queda ahi?",
+              "Cuantas conversaciones sientes que se pierden por no responder a tiempo?"
+            ]
+          },
+          "qualification": {
+            "detect_offer_fit": true
+          },
+          "support": {
+            "info_handling": {
+              "explain_first": false,
+              "sell_after": true
+            },
+            "hard_rules": [
+              "si el usuario pide informacion, evita saludo generico y conecta con dolor comercial real",
+              "prohibido preguntas consultivas vacias",
+              "si respondes informacion, avanza la conversacion desde un problema real"
+            ]
+          },
+          "pain": {
+            "clusters": {
+              "gestion_mensajes": {
+                "signals": [
+                  "muchos mensajes",
+                  "no me da el tiempo",
+                  "no alcanzo a responder"
+                ],
+                "impacts": [
+                  "cada mensaje que no respondes es un cliente que se va con otro",
+                  "el cliente se enfria y termina comprando en otro lado",
+                  "pierdes ventas sin darte cuenta"
+                ],
+                "monetization": [
+                  "cada lead sin respuesta es dinero perdido",
+                  "cada demora baja la probabilidad de cierre"
+                ],
+                "urgency_levels": {
+                  "alto": [
+                    "ya estas perdiendo dinero"
+                  ],
+                  "medio": [
+                    "estas dejando oportunidades"
+                  ]
+                },
+                "recommended_angles": [
+                  "tiempo",
+                  "dinero"
+                ]
+              },
+              "falta_seguimiento": {
+                "signals": [
+                  "no hago seguimiento",
+                  "se me olvidan los clientes"
+                ],
+                "impacts": [
+                  "el cliente se enfria y termina comprando en otro lado",
+                  "pierdes ventas que ya estaban avanzadas"
+                ],
+                "monetization": [
+                  "cada seguimiento perdido reduce cierres"
+                ],
+                "urgency_levels": {
+                  "alto": [
+                    "hay ventas en riesgo por falta de continuidad"
+                  ],
+                  "medio": [
+                    "el pipeline se enfria mas rapido"
+                  ]
+                },
+                "recommended_angles": [
+                  "dinero"
+                ]
+              }
+            }
+          },
+          "angles": {
+            "tiempo": {
+              "when": [
+                "no me da el tiempo",
+                "muchos mensajes"
+              ],
+              "execution": [
+                "no es solo responder, es que no te alcanza el tiempo"
+              ]
+            },
+            "dinero": {
+              "when": [
+                "pierdo clientes",
+                "no vendo"
+              ],
+              "execution": [
+                "cada lead que se enfria es dinero que ya estaba cerca"
+              ]
+            }
+          },
+          "conversation_flow": {
+            "steps": [
+              "detect_pain",
+              "amplify_impact",
+              "present_solution",
+              "guide_next_step"
+            ],
+            "rules": {
+              "no_skip_steps": true
+            }
+          },
+          "solution": {
+            "framing": [
+              "No se trata solo de responder, sino de sostener el seguimiento.",
+              "La idea es que no dependas de estar pegado al celular.",
+              "El sistema responde y tambien retoma conversaciones automaticamente."
+            ],
+            "mapping": {
+              "gestion_mensajes": [
+                "automatizar_respuesta",
+                "seguimiento"
+              ],
+              "falta_seguimiento": [
+                "seguimiento_automatico"
+              ]
+            }
+          },
+          "offer": {
+            "strategy": {
+              "single": [
+                "explicar directo y conectar con valor",
+                "no sobrecargar con informacion"
+              ],
+              "multi": [
+                "recomendar segun problema",
+                "no listar todos los planes",
+                "guiar a mejor opcion"
+              ]
+            },
+            "recommendation_rules": [
+              {
+                "condition": "gestion_mensajes",
+                "recommend": "plan_pro"
+              },
+              {
+                "condition": "seguimiento",
+                "recommend": "plan_basico"
+              }
+            ]
+          },
+          "objection": {
+            "price": {
+              "layers": {
+                "acknowledge": [
+                  "Te entiendo, es una inversion importante.",
+                  "Es normal verlo asi al inicio."
+                ],
+                "reframe": [
+                  "Lo que suele salir caro es perder conversaciones que ya estaban interesadas.",
+                  "Cuando empiezas a recuperar leads, se paga solo."
+                ],
+                "proof": [
+                  "cuando recuperas ventas se paga solo"
+                ],
+                "redirect": [
+                  "avancemos hoy con activacion y recuperacion de conversaciones"
+                ]
+              },
+              "hard_rules": [
+                "no terminar objecion con 'quieres saber'",
+                "cerrar objecion con siguiente paso concreto"
+              ]
+            }
+          },
+          "closing": {
+            "strategy": "direct_sale",
+            "next_step": {
+              "action": "dynamic"
+            },
+            "required_data": [],
+            "behavior": {
+              "direct_sale": {
+                "goal": "confirmar_compra"
+              },
+              "lead_capture": {
+                "goal": "capturar_datos"
+              },
+              "booking": {
+                "goal": "agendar"
+              },
+              "checkout": {
+                "goal": "enviar_pago"
+              }
+            },
+            "triggers": [
+              "quiero empezar",
+              "me interesa",
+              "como arrancamos",
+              "quiero comprar",
+              "arranquemos"
+            ],
+            "actions": {
+              "high_intent": [
+                "agendar",
+                "activar",
+                "iniciar ahora"
+              ]
+            },
+            "next_steps": [
+              "agendar implementacion",
+              "configurar sistema",
+              "activar prueba"
+            ],
+            "micro_commitments": [
+              "te muestro como seria en tu caso",
+              "vemos el siguiente paso practico"
+            ],
+            "hard_rules": [
+              "si hay intencion de compra, confirmar y ejecutar cierre sin preguntas",
+              "no pedir mas contexto ni disponibilidad en buy",
+              "entregar accion concreta de arranque inmediato",
+              "prohibido cerrar buy con pregunta abierta",
+              "respuesta buy invalida si contiene '?' o '¿'",
+              "respuesta objection invalida si contiene la frase 'quieres saber'",
+              "en objection incluir literalmente 'avanzamos' o 'siguiente paso'"
+            ]
+          },
+          "progression_rules": {
+            "required_flow": [
+              "detect_pain",
+              "amplify_impact",
+              "present_solution",
+              "guide_next_step"
+            ],
+            "forbid": [
+              "responder_sin_direccion",
+              "responder_sin_solucion"
+            ]
+          }
+        },
+        "business": {
+          "name": "Asesor Comercial",
+          "brand_name": "Asesor Comercial",
+          "description": "Negocios que reciben muchos mensajes y no alcanzan a responder a tiempo, perdiendo clientes y oportunidades de venta sin darse cuenta.\n",
+          "industry": "automatizacion comercial para negocios que venden por chat",
+          "tone": "humano, cercano, directo y comercial de cierre",
+          "voice": "cercano, directo y orientado a resultados",
+          "city": "Medellin",
+          "promise": "Convierte tu WhatsApp en un vendedor automático 24/7 con un asistente comercial inteligente que responde al instante, da seguimiento a cada prospecto y transforma conversaciones en ventas sin que tengas que estar pendiente.\n",
+          "positioning": "Para negocios que pierden ventas porque no alcanzan a responder a tiempo y el seguimiento se pierde despues del primer contacto.\n",
+          "differentiators": [
+            "seguimiento automatico con contexto",
+            "integracion con WhatsApp",
+            "enfoque en ventas, no solo respuestas",
+            "implementacion guiada paso a paso"
+          ],
+          "customer_profile": {
+            "segment": "pymes de servicios y ventas",
+            "company_size": "2 a 25 personas",
+            "maturity": "venden por chat pero sin proceso de seguimiento consistente",
+            "roles": [
+              "dueno",
+              "asesor comercial",
+              "community manager"
+            ]
+          },
+          "pain_points": [
+            "no alcanzan a responder todos los mensajes",
+            "el seguimiento se pierde despues del primer contacto",
+            "conversaciones dispersas en multiples canales",
+            "oportunidades que se enfrian por demora"
+          ],
+          "desired_outcomes": [
+            "responder rapido sin depender del tiempo humano",
+            "mantener seguimiento constante",
+            "aumentar conversion de chats a ventas",
+            "tener orden en el proceso comercial"
+          ],
+          "credibility": [
+            "implementaciones reales en negocios similares",
+            "casos donde se recuperan conversaciones perdidas"
+          ],
+          "value_drivers": {
+            "tiempo": {
+              "description": "ahorro de tiempo en respuesta y seguimiento",
+              "triggers": [
+                "no me da el tiempo",
+                "muchos mensajes"
+              ]
+            },
+            "dinero": {
+              "description": "recuperacion de oportunidades perdidas",
+              "triggers": [
+                "pierdo clientes",
+                "no vendo"
+              ]
+            }
+          },
+          "buying_motivation": {
+            "primary": "tiempo",
+            "secondary": "dinero"
+          },
+          "use_cases": [
+            {
+              "nombre": "negocio saturado",
+              "senales": [
+                "muchos mensajes",
+                "no alcanzo a responder"
+              ],
+              "enfoque": "automatizar_respuesta"
+            },
+            {
+              "nombre": "seguimiento perdido",
+              "senales": [
+                "no hago seguimiento"
+              ],
+              "enfoque": "seguimiento_automatico"
+            }
+          ],
+          "location": {
+            "type": "virtual",
+            "address": "",
+            "city": "Medellin",
+            "coverage": {
+              "type": "nacional",
+              "zones": [
+                "colombia"
+              ]
+            }
+          },
+          "service_modes": [
+            "virtual"
+          ],
+          "logistics": {
+            "delivery": {
+              "available": false,
+              "type": "tercero",
+              "zones": [],
+              "cost": {
+                "type": "variable",
+                "value": 0
+              },
+              "time": {
+                "min": "",
+                "max": ""
+              }
+            },
+            "shipping": {
+              "available": false,
+              "scope": "nacional",
+              "providers": [],
+              "cost": {
+                "type": "variable",
+                "value": 0
+              },
+              "time": {
+                "min": "",
+                "max": ""
+              }
+            },
+            "pickup": {
+              "available": false,
+              "instructions": ""
+            },
+            "scheduling": {
+              "required": false
+            }
+          }
+        },
+        "pricing": {
+          "plans": [
+            {
+              "id": "plan_basico",
+              "name": "Plan Basico",
+              "description": "Configuracion inicial + sistema mensual",
+              "pricing": {
+                "COP": {
+                  "implementation": 100000,
+                  "monthly": 110000
+                },
+                "USD": {
+                  "implementation": 40,
+                  "monthly": 45
+                }
+              },
+              "includes": [
+                "configuracion inicial",
+                "Integración con WhatsApp",
+                "Asistente conversacional inteligente",
+                "Soporte inicial",
+                "Seguimiento automático de clientes"
+              ],
+              "not_included": [
+                "Costos de Meta (WhatsApp Business API)",
+                "costos de plataformas externas (token de IA, hosting, etc)",
+                "inversion publicitaria",
+                "Desarrollos o integraciones avanzadas"
+              ],
+              "payment": {
+                "link": "https://checkout.aisalesengine.com/asesor-ai-prod/plan-basico",
+                "transfer": {
+                  "enabled": true,
+                  "methods": [
+                    {
+                      "type": "nequi",
+                      "number": "3001234567"
+                    },
+                    {
+                      "type": "daviplata",
+                      "number": "3009876543"
+                    },
+                    {
+                      "type": "bank",
+                      "bank": "Bancolombia",
+                      "account_type": "ahorros",
+                      "account_number": "1234567890"
+                    },
+                    {
+                      "type": "breb",
+                      "reference": "usuario@correo.com"
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "conditions": [
+            "sin permanencia obligatoria",
+            "se puede cancelar mensual",
+            "el primer mes se paga 210000 COP (configuracion + primer mes)",
+            "luego se paga mensualmente 110000 COP"
+          ],
+          "price_framing": {
+            "type": "comparativo"
+          },
+          "roi": {
+            "break_even_sales": 3
+          },
+          "business_offers": {
+            "core": [
+              "plan_basico",
+              "plan_pro"
+            ],
+            "upsell": [
+              "plan_pro",
+              "prioridad_soporte"
+            ],
+            "cross_sell": [
+              "integraciones",
+              "setup_operativo"
+            ],
+            "financing": {
+              "available": false,
+              "providers": [],
+              "options": []
+            }
+          }
+        },
+        "features": {
+          "pricing_enabled": true,
+          "multi_currency": true,
+          "multi_plan": true,
+          "catalog_mode": false,
+          "business_model": "saas"
+        },
+        "inventory": {
+          "track_stock": false,
+          "items": []
+        },
+        "channel": "whatsapp",
+        "conversation_state": "active",
+        "memory_context": {}
+      }
+    },
+    {
+      "turn": 4,
+      "user_message": "¿Cómo funciona eso?",
+      "assistant_reply": "Funciona integrando un asistente inteligente en tu WhatsApp que automatiza las respuestas a tus clientes. Cuando alguien te envía un mensaje, el asistente responde de inmediato, ayudando a resolver dudas y a seguir con el proceso de compra. Así, tú puedes enfocarte en tareas más importantes mientras el asistente se encarga de la atención al cliente. ¿Te gustaría saber cómo implementarlo en tu negocio?",
+      "ai_used": true,
+      "metadata": {
+        "mode": "",
+        "tenant_slug": "asesor_ai_prod",
+        "memory_state": {
+          "last_message": "Yo recibo muchos mensajes y no alcanzo a responder",
+          "last_user_message": "Yo recibo muchos mensajes y no alcanzo a responder",
+          "last_response": "Entiendo que manejar muchos mensajes puede ser abrumador. Nuestra solución automatiza tus respuestas en WhatsApp, permitiendo que un asistente inteligente responda instantáneamente a tus clientes y dé seguimiento a los prospectos. Así, podrás enfocarte en lo que realmente importa. ¿Te gustaría saber cómo implementar esta solución y aliviar esa carga?",
+          "last_ai_response": "Entiendo que manejar muchos mensajes puede ser abrumador. Nuestra solución automatiza tus respuestas en WhatsApp, permitiendo que un asistente inteligente responda instantáneamente a tus clientes y dé seguimiento a los prospectos. Así, podrás enfocarte en lo que realmente importa. ¿Te gustaría saber cómo implementar esta solución y aliviar esa carga?",
+          "history_summary": "user: Hola amigo\nuser: Dame más información de lo que venden\nassistant: Ofrecemos una solución de automatización comercial que convierte tu WhatsApp en un vendedor automático 24/7. Con un asistente inteligente, podrás responder al instante, dar seguimiento a prospectos y transformar conversaciones en ventas sin esfuerzo. Ideal para negocios que buscan optimizar su atención al cliente y aumentar sus ventas. ¿Te gustaría saber más sobre cómo empezar?\nuser: Yo recibo muchos mensajes y no alcanzo a responder\nassistant: Entiendo que manejar muchos mensajes puede ser abrumador. Nuestra solución automatiza tus respuestas en WhatsApp, permitiendo que un asistente inteligente responda instantáneamente a tus clientes y dé seguimiento a los prospectos. Así, podrás enfocarte en lo que realmente importa. ¿Te gustaría saber cómo implementar esta solución y aliviar esa carga?",
+          "sales_memory_hint": "",
+          "last_intent": "info",
+          "intent_detectado": "info",
+          "last_pain": "",
+          "metodo_pago_elegido": "",
+          "estado_pago": "none",
+          "stage": "",
+          "mode": "",
+          "last_cta": "",
+          "conversation_state": "active"
+        },
+        "source": "ai_raw",
+        "intent": "info",
+        "intent_missing": false,
+        "ai_metadata": {
+          "intent": "info",
+          "stage": "",
+          "pain_detected": false,
+          "pain": "",
+          "next_step": "",
+          "urgency": "",
+          "last_cta": "",
+          "objection_count": 0,
+          "mode": "",
+          "payment_method": "",
+          "payment_status": "",
+          "response": "Funciona integrando un asistente inteligente en tu WhatsApp que automatiza las respuestas a tus clientes. Cuando alguien te envía un mensaje, el asistente responde de inmediato, ayudando a resolver dudas y a seguir con el proceso de compra. Así, tú puedes enfocarte en tareas más importantes mientras el asistente se encarga de la atención al cliente. ¿Te gustaría saber cómo implementarlo en tu negocio?",
+          "user_message": "¿Cómo funciona eso?"
+        },
+        "sales": {
+          "discovery": {
+            "objectives": [
+              "entender volumen de conversaciones",
+              "identificar fallas en seguimiento",
+              "detectar impacto en ventas"
+            ],
+            "questions": [
+              "Por donde te entran mas mensajes hoy?",
+              "Que pasa despues del primer mensaje, haces seguimiento o se queda ahi?",
+              "Cuantas conversaciones sientes que se pierden por no responder a tiempo?"
+            ]
+          },
+          "qualification": {
+            "detect_offer_fit": true
+          },
+          "support": {
+            "info_handling": {
+              "explain_first": false,
+              "sell_after": true
+            },
+            "hard_rules": [
+              "si el usuario pide informacion, evita saludo generico y conecta con dolor comercial real",
+              "prohibido preguntas consultivas vacias",
+              "si respondes informacion, avanza la conversacion desde un problema real"
+            ]
+          },
+          "pain": {
+            "clusters": {
+              "gestion_mensajes": {
+                "signals": [
+                  "muchos mensajes",
+                  "no me da el tiempo",
+                  "no alcanzo a responder"
+                ],
+                "impacts": [
+                  "cada mensaje que no respondes es un cliente que se va con otro",
+                  "el cliente se enfria y termina comprando en otro lado",
+                  "pierdes ventas sin darte cuenta"
+                ],
+                "monetization": [
+                  "cada lead sin respuesta es dinero perdido",
+                  "cada demora baja la probabilidad de cierre"
+                ],
+                "urgency_levels": {
+                  "alto": [
+                    "ya estas perdiendo dinero"
+                  ],
+                  "medio": [
+                    "estas dejando oportunidades"
+                  ]
+                },
+                "recommended_angles": [
+                  "tiempo",
+                  "dinero"
+                ]
+              },
+              "falta_seguimiento": {
+                "signals": [
+                  "no hago seguimiento",
+                  "se me olvidan los clientes"
+                ],
+                "impacts": [
+                  "el cliente se enfria y termina comprando en otro lado",
+                  "pierdes ventas que ya estaban avanzadas"
+                ],
+                "monetization": [
+                  "cada seguimiento perdido reduce cierres"
+                ],
+                "urgency_levels": {
+                  "alto": [
+                    "hay ventas en riesgo por falta de continuidad"
+                  ],
+                  "medio": [
+                    "el pipeline se enfria mas rapido"
+                  ]
+                },
+                "recommended_angles": [
+                  "dinero"
+                ]
+              }
+            }
+          },
+          "angles": {
+            "tiempo": {
+              "when": [
+                "no me da el tiempo",
+                "muchos mensajes"
+              ],
+              "execution": [
+                "no es solo responder, es que no te alcanza el tiempo"
+              ]
+            },
+            "dinero": {
+              "when": [
+                "pierdo clientes",
+                "no vendo"
+              ],
+              "execution": [
+                "cada lead que se enfria es dinero que ya estaba cerca"
+              ]
+            }
+          },
+          "conversation_flow": {
+            "steps": [
+              "detect_pain",
+              "amplify_impact",
+              "present_solution",
+              "guide_next_step"
+            ],
+            "rules": {
+              "no_skip_steps": true
+            }
+          },
+          "solution": {
+            "framing": [
+              "No se trata solo de responder, sino de sostener el seguimiento.",
+              "La idea es que no dependas de estar pegado al celular.",
+              "El sistema responde y tambien retoma conversaciones automaticamente."
+            ],
+            "mapping": {
+              "gestion_mensajes": [
+                "automatizar_respuesta",
+                "seguimiento"
+              ],
+              "falta_seguimiento": [
+                "seguimiento_automatico"
+              ]
+            }
+          },
+          "offer": {
+            "strategy": {
+              "single": [
+                "explicar directo y conectar con valor",
+                "no sobrecargar con informacion"
+              ],
+              "multi": [
+                "recomendar segun problema",
+                "no listar todos los planes",
+                "guiar a mejor opcion"
+              ]
+            },
+            "recommendation_rules": [
+              {
+                "condition": "gestion_mensajes",
+                "recommend": "plan_pro"
+              },
+              {
+                "condition": "seguimiento",
+                "recommend": "plan_basico"
+              }
+            ]
+          },
+          "objection": {
+            "price": {
+              "layers": {
+                "acknowledge": [
+                  "Te entiendo, es una inversion importante.",
+                  "Es normal verlo asi al inicio."
+                ],
+                "reframe": [
+                  "Lo que suele salir caro es perder conversaciones que ya estaban interesadas.",
+                  "Cuando empiezas a recuperar leads, se paga solo."
+                ],
+                "proof": [
+                  "cuando recuperas ventas se paga solo"
+                ],
+                "redirect": [
+                  "avancemos hoy con activacion y recuperacion de conversaciones"
+                ]
+              },
+              "hard_rules": [
+                "no terminar objecion con 'quieres saber'",
+                "cerrar objecion con siguiente paso concreto"
+              ]
+            }
+          },
+          "closing": {
+            "strategy": "direct_sale",
+            "next_step": {
+              "action": "dynamic"
+            },
+            "required_data": [],
+            "behavior": {
+              "direct_sale": {
+                "goal": "confirmar_compra"
+              },
+              "lead_capture": {
+                "goal": "capturar_datos"
+              },
+              "booking": {
+                "goal": "agendar"
+              },
+              "checkout": {
+                "goal": "enviar_pago"
+              }
+            },
+            "triggers": [
+              "quiero empezar",
+              "me interesa",
+              "como arrancamos",
+              "quiero comprar",
+              "arranquemos"
+            ],
+            "actions": {
+              "high_intent": [
+                "agendar",
+                "activar",
+                "iniciar ahora"
+              ]
+            },
+            "next_steps": [
+              "agendar implementacion",
+              "configurar sistema",
+              "activar prueba"
+            ],
+            "micro_commitments": [
+              "te muestro como seria en tu caso",
+              "vemos el siguiente paso practico"
+            ],
+            "hard_rules": [
+              "si hay intencion de compra, confirmar y ejecutar cierre sin preguntas",
+              "no pedir mas contexto ni disponibilidad en buy",
+              "entregar accion concreta de arranque inmediato",
+              "prohibido cerrar buy con pregunta abierta",
+              "respuesta buy invalida si contiene '?' o '¿'",
+              "respuesta objection invalida si contiene la frase 'quieres saber'",
+              "en objection incluir literalmente 'avanzamos' o 'siguiente paso'"
+            ]
+          },
+          "progression_rules": {
+            "required_flow": [
+              "detect_pain",
+              "amplify_impact",
+              "present_solution",
+              "guide_next_step"
+            ],
+            "forbid": [
+              "responder_sin_direccion",
+              "responder_sin_solucion"
+            ]
+          }
+        },
+        "business": {
+          "name": "Asesor Comercial",
+          "brand_name": "Asesor Comercial",
+          "description": "Negocios que reciben muchos mensajes y no alcanzan a responder a tiempo, perdiendo clientes y oportunidades de venta sin darse cuenta.\n",
+          "industry": "automatizacion comercial para negocios que venden por chat",
+          "tone": "humano, cercano, directo y comercial de cierre",
+          "voice": "cercano, directo y orientado a resultados",
+          "city": "Medellin",
+          "promise": "Convierte tu WhatsApp en un vendedor automático 24/7 con un asistente comercial inteligente que responde al instante, da seguimiento a cada prospecto y transforma conversaciones en ventas sin que tengas que estar pendiente.\n",
+          "positioning": "Para negocios que pierden ventas porque no alcanzan a responder a tiempo y el seguimiento se pierde despues del primer contacto.\n",
+          "differentiators": [
+            "seguimiento automatico con contexto",
+            "integracion con WhatsApp",
+            "enfoque en ventas, no solo respuestas",
+            "implementacion guiada paso a paso"
+          ],
+          "customer_profile": {
+            "segment": "pymes de servicios y ventas",
+            "company_size": "2 a 25 personas",
+            "maturity": "venden por chat pero sin proceso de seguimiento consistente",
+            "roles": [
+              "dueno",
+              "asesor comercial",
+              "community manager"
+            ]
+          },
+          "pain_points": [
+            "no alcanzan a responder todos los mensajes",
+            "el seguimiento se pierde despues del primer contacto",
+            "conversaciones dispersas en multiples canales",
+            "oportunidades que se enfrian por demora"
+          ],
+          "desired_outcomes": [
+            "responder rapido sin depender del tiempo humano",
+            "mantener seguimiento constante",
+            "aumentar conversion de chats a ventas",
+            "tener orden en el proceso comercial"
+          ],
+          "credibility": [
+            "implementaciones reales en negocios similares",
+            "casos donde se recuperan conversaciones perdidas"
+          ],
+          "value_drivers": {
+            "tiempo": {
+              "description": "ahorro de tiempo en respuesta y seguimiento",
+              "triggers": [
+                "no me da el tiempo",
+                "muchos mensajes"
+              ]
+            },
+            "dinero": {
+              "description": "recuperacion de oportunidades perdidas",
+              "triggers": [
+                "pierdo clientes",
+                "no vendo"
+              ]
+            }
+          },
+          "buying_motivation": {
+            "primary": "tiempo",
+            "secondary": "dinero"
+          },
+          "use_cases": [
+            {
+              "nombre": "negocio saturado",
+              "senales": [
+                "muchos mensajes",
+                "no alcanzo a responder"
+              ],
+              "enfoque": "automatizar_respuesta"
+            },
+            {
+              "nombre": "seguimiento perdido",
+              "senales": [
+                "no hago seguimiento"
+              ],
+              "enfoque": "seguimiento_automatico"
+            }
+          ],
+          "location": {
+            "type": "virtual",
+            "address": "",
+            "city": "Medellin",
+            "coverage": {
+              "type": "nacional",
+              "zones": [
+                "colombia"
+              ]
+            }
+          },
+          "service_modes": [
+            "virtual"
+          ],
+          "logistics": {
+            "delivery": {
+              "available": false,
+              "type": "tercero",
+              "zones": [],
+              "cost": {
+                "type": "variable",
+                "value": 0
+              },
+              "time": {
+                "min": "",
+                "max": ""
+              }
+            },
+            "shipping": {
+              "available": false,
+              "scope": "nacional",
+              "providers": [],
+              "cost": {
+                "type": "variable",
+                "value": 0
+              },
+              "time": {
+                "min": "",
+                "max": ""
+              }
+            },
+            "pickup": {
+              "available": false,
+              "instructions": ""
+            },
+            "scheduling": {
+              "required": false
+            }
+          }
+        },
+        "pricing": {
+          "plans": [
+            {
+              "id": "plan_basico",
+              "name": "Plan Basico",
+              "description": "Configuracion inicial + sistema mensual",
+              "pricing": {
+                "COP": {
+                  "implementation": 100000,
+                  "monthly": 110000
+                },
+                "USD": {
+                  "implementation": 40,
+                  "monthly": 45
+                }
+              },
+              "includes": [
+                "configuracion inicial",
+                "Integración con WhatsApp",
+                "Asistente conversacional inteligente",
+                "Soporte inicial",
+                "Seguimiento automático de clientes"
+              ],
+              "not_included": [
+                "Costos de Meta (WhatsApp Business API)",
+                "costos de plataformas externas (token de IA, hosting, etc)",
+                "inversion publicitaria",
+                "Desarrollos o integraciones avanzadas"
+              ],
+              "payment": {
+                "link": "https://checkout.aisalesengine.com/asesor-ai-prod/plan-basico",
+                "transfer": {
+                  "enabled": true,
+                  "methods": [
+                    {
+                      "type": "nequi",
+                      "number": "3001234567"
+                    },
+                    {
+                      "type": "daviplata",
+                      "number": "3009876543"
+                    },
+                    {
+                      "type": "bank",
+                      "bank": "Bancolombia",
+                      "account_type": "ahorros",
+                      "account_number": "1234567890"
+                    },
+                    {
+                      "type": "breb",
+                      "reference": "usuario@correo.com"
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "conditions": [
+            "sin permanencia obligatoria",
+            "se puede cancelar mensual",
+            "el primer mes se paga 210000 COP (configuracion + primer mes)",
+            "luego se paga mensualmente 110000 COP"
+          ],
+          "price_framing": {
+            "type": "comparativo"
+          },
+          "roi": {
+            "break_even_sales": 3
+          },
+          "business_offers": {
+            "core": [
+              "plan_basico",
+              "plan_pro"
+            ],
+            "upsell": [
+              "plan_pro",
+              "prioridad_soporte"
+            ],
+            "cross_sell": [
+              "integraciones",
+              "setup_operativo"
+            ],
+            "financing": {
+              "available": false,
+              "providers": [],
+              "options": []
+            }
+          }
+        },
+        "features": {
+          "pricing_enabled": true,
+          "multi_currency": true,
+          "multi_plan": true,
+          "catalog_mode": false,
+          "business_model": "saas"
+        },
+        "inventory": {
+          "track_stock": false,
+          "items": []
+        },
+        "channel": "whatsapp",
+        "conversation_state": "active",
+        "memory_context": {}
+      }
+    },
+    {
+      "turn": 5,
+      "user_message": "¿De verdad eso me puede ayudar a vender más?",
+      "assistant_reply": "Sí, definitivamente. Al automatizar las respuestas en WhatsApp, puedes atender a más clientes al mismo tiempo, resolver sus dudas de inmediato y guiarlos en el proceso de compra. Esto no solo mejora la experiencia del cliente, sino que también aumenta tus oportunidades de venta. ¿Te gustaría saber cómo podemos implementar esto en tu negocio?",
+      "ai_used": true,
+      "metadata": {
+        "mode": "",
+        "tenant_slug": "asesor_ai_prod",
+        "memory_state": {
+          "last_message": "¿Cómo funciona eso?",
+          "last_user_message": "¿Cómo funciona eso?",
+          "last_response": "Funciona integrando un asistente inteligente en tu WhatsApp que automatiza las respuestas a tus clientes. Cuando alguien te envía un mensaje, el asistente responde de inmediato, ayudando a resolver dudas y a seguir con el proceso de compra. Así, tú puedes enfocarte en tareas más importantes mientras el asistente se encarga de la atención al cliente. ¿Te gustaría saber cómo implementarlo en tu negocio?",
+          "last_ai_response": "Funciona integrando un asistente inteligente en tu WhatsApp que automatiza las respuestas a tus clientes. Cuando alguien te envía un mensaje, el asistente responde de inmediato, ayudando a resolver dudas y a seguir con el proceso de compra. Así, tú puedes enfocarte en tareas más importantes mientras el asistente se encarga de la atención al cliente. ¿Te gustaría saber cómo implementarlo en tu negocio?",
+          "history_summary": "user: Hola amigo\nuser: Dame más información de lo que venden\nassistant: Ofrecemos una solución de automatización comercial que convierte tu WhatsApp en un vendedor automático 24/7. Con un asistente inteligente, podrás responder al instante, dar seguimiento a prospectos y transformar conversaciones en ventas sin esfuerzo. Ideal para negocios que buscan optimizar su atención al cliente y aumentar sus ventas. ¿Te gustaría saber más sobre cómo empezar?\nuser: Yo recibo muchos mensajes y no alcanzo a responder\nassistant: Entiendo que manejar muchos mensajes puede ser abrumador. Nuestra solución automatiza tus respuestas en WhatsApp, permitiendo que un asistente inteligente responda instantáneamente a tus clientes y dé seguimiento a los prospectos. Así, podrás enfocarte en lo que realmente importa. ¿Te gustaría saber cómo implementar esta solución y aliviar esa carga?\nuser: ¿Cómo funciona eso?\nassistant: Funciona integrando un asistente inteligente en tu WhatsApp que automatiza las respuestas a tus clientes. Cuando alguien te envía un mensaje, el asistente responde de inmediato, ayudando a resolver dudas y a seguir con el proceso de compra. Así, tú puedes enfocarte en tareas más importantes mientras el asistente se encarga de la atención al cliente. ¿Te gustaría saber cómo implementarlo en tu negocio?",
+          "sales_memory_hint": "",
+          "last_intent": "info",
+          "intent_detectado": "info",
+          "last_pain": "",
+          "metodo_pago_elegido": "",
+          "estado_pago": "none",
+          "stage": "",
+          "mode": "",
+          "last_cta": "",
+          "conversation_state": "active"
+        },
+        "source": "ai_raw",
+        "intent": "info",
+        "intent_missing": false,
+        "ai_metadata": {
+          "intent": "info",
+          "stage": "",
+          "pain_detected": false,
+          "pain": "",
+          "next_step": "",
+          "urgency": "",
+          "last_cta": "",
+          "objection_count": 0,
+          "mode": "",
+          "payment_method": "",
+          "payment_status": "",
+          "response": "Sí, definitivamente. Al automatizar las respuestas en WhatsApp, puedes atender a más clientes al mismo tiempo, resolver sus dudas de inmediato y guiarlos en el proceso de compra. Esto no solo mejora la experiencia del cliente, sino que también aumenta tus oportunidades de venta. ¿Te gustaría saber cómo podemos implementar esto en tu negocio?",
+          "user_message": "¿De verdad eso me puede ayudar a vender más?"
+        },
+        "sales": {
+          "discovery": {
+            "objectives": [
+              "entender volumen de conversaciones",
+              "identificar fallas en seguimiento",
+              "detectar impacto en ventas"
+            ],
+            "questions": [
+              "Por donde te entran mas mensajes hoy?",
+              "Que pasa despues del primer mensaje, haces seguimiento o se queda ahi?",
+              "Cuantas conversaciones sientes que se pierden por no responder a tiempo?"
+            ]
+          },
+          "qualification": {
+            "detect_offer_fit": true
+          },
+          "support": {
+            "info_handling": {
+              "explain_first": false,
+              "sell_after": true
+            },
+            "hard_rules": [
+              "si el usuario pide informacion, evita saludo generico y conecta con dolor comercial real",
+              "prohibido preguntas consultivas vacias",
+              "si respondes informacion, avanza la conversacion desde un problema real"
+            ]
+          },
+          "pain": {
+            "clusters": {
+              "gestion_mensajes": {
+                "signals": [
+                  "muchos mensajes",
+                  "no me da el tiempo",
+                  "no alcanzo a responder"
+                ],
+                "impacts": [
+                  "cada mensaje que no respondes es un cliente que se va con otro",
+                  "el cliente se enfria y termina comprando en otro lado",
+                  "pierdes ventas sin darte cuenta"
+                ],
+                "monetization": [
+                  "cada lead sin respuesta es dinero perdido",
+                  "cada demora baja la probabilidad de cierre"
+                ],
+                "urgency_levels": {
+                  "alto": [
+                    "ya estas perdiendo dinero"
+                  ],
+                  "medio": [
+                    "estas dejando oportunidades"
+                  ]
+                },
+                "recommended_angles": [
+                  "tiempo",
+                  "dinero"
+                ]
+              },
+              "falta_seguimiento": {
+                "signals": [
+                  "no hago seguimiento",
+                  "se me olvidan los clientes"
+                ],
+                "impacts": [
+                  "el cliente se enfria y termina comprando en otro lado",
+                  "pierdes ventas que ya estaban avanzadas"
+                ],
+                "monetization": [
+                  "cada seguimiento perdido reduce cierres"
+                ],
+                "urgency_levels": {
+                  "alto": [
+                    "hay ventas en riesgo por falta de continuidad"
+                  ],
+                  "medio": [
+                    "el pipeline se enfria mas rapido"
+                  ]
+                },
+                "recommended_angles": [
+                  "dinero"
+                ]
+              }
+            }
+          },
+          "angles": {
+            "tiempo": {
+              "when": [
+                "no me da el tiempo",
+                "muchos mensajes"
+              ],
+              "execution": [
+                "no es solo responder, es que no te alcanza el tiempo"
+              ]
+            },
+            "dinero": {
+              "when": [
+                "pierdo clientes",
+                "no vendo"
+              ],
+              "execution": [
+                "cada lead que se enfria es dinero que ya estaba cerca"
+              ]
+            }
+          },
+          "conversation_flow": {
+            "steps": [
+              "detect_pain",
+              "amplify_impact",
+              "present_solution",
+              "guide_next_step"
+            ],
+            "rules": {
+              "no_skip_steps": true
+            }
+          },
+          "solution": {
+            "framing": [
+              "No se trata solo de responder, sino de sostener el seguimiento.",
+              "La idea es que no dependas de estar pegado al celular.",
+              "El sistema responde y tambien retoma conversaciones automaticamente."
+            ],
+            "mapping": {
+              "gestion_mensajes": [
+                "automatizar_respuesta",
+                "seguimiento"
+              ],
+              "falta_seguimiento": [
+                "seguimiento_automatico"
+              ]
+            }
+          },
+          "offer": {
+            "strategy": {
+              "single": [
+                "explicar directo y conectar con valor",
+                "no sobrecargar con informacion"
+              ],
+              "multi": [
+                "recomendar segun problema",
+                "no listar todos los planes",
+                "guiar a mejor opcion"
+              ]
+            },
+            "recommendation_rules": [
+              {
+                "condition": "gestion_mensajes",
+                "recommend": "plan_pro"
+              },
+              {
+                "condition": "seguimiento",
+                "recommend": "plan_basico"
+              }
+            ]
+          },
+          "objection": {
+            "price": {
+              "layers": {
+                "acknowledge": [
+                  "Te entiendo, es una inversion importante.",
+                  "Es normal verlo asi al inicio."
+                ],
+                "reframe": [
+                  "Lo que suele salir caro es perder conversaciones que ya estaban interesadas.",
+                  "Cuando empiezas a recuperar leads, se paga solo."
+                ],
+                "proof": [
+                  "cuando recuperas ventas se paga solo"
+                ],
+                "redirect": [
+                  "avancemos hoy con activacion y recuperacion de conversaciones"
+                ]
+              },
+              "hard_rules": [
+                "no terminar objecion con 'quieres saber'",
+                "cerrar objecion con siguiente paso concreto"
+              ]
+            }
+          },
+          "closing": {
+            "strategy": "direct_sale",
+            "next_step": {
+              "action": "dynamic"
+            },
+            "required_data": [],
+            "behavior": {
+              "direct_sale": {
+                "goal": "confirmar_compra"
+              },
+              "lead_capture": {
+                "goal": "capturar_datos"
+              },
+              "booking": {
+                "goal": "agendar"
+              },
+              "checkout": {
+                "goal": "enviar_pago"
+              }
+            },
+            "triggers": [
+              "quiero empezar",
+              "me interesa",
+              "como arrancamos",
+              "quiero comprar",
+              "arranquemos"
+            ],
+            "actions": {
+              "high_intent": [
+                "agendar",
+                "activar",
+                "iniciar ahora"
+              ]
+            },
+            "next_steps": [
+              "agendar implementacion",
+              "configurar sistema",
+              "activar prueba"
+            ],
+            "micro_commitments": [
+              "te muestro como seria en tu caso",
+              "vemos el siguiente paso practico"
+            ],
+            "hard_rules": [
+              "si hay intencion de compra, confirmar y ejecutar cierre sin preguntas",
+              "no pedir mas contexto ni disponibilidad en buy",
+              "entregar accion concreta de arranque inmediato",
+              "prohibido cerrar buy con pregunta abierta",
+              "respuesta buy invalida si contiene '?' o '¿'",
+              "respuesta objection invalida si contiene la frase 'quieres saber'",
+              "en objection incluir literalmente 'avanzamos' o 'siguiente paso'"
+            ]
+          },
+          "progression_rules": {
+            "required_flow": [
+              "detect_pain",
+              "amplify_impact",
+              "present_solution",
+              "guide_next_step"
+            ],
+            "forbid": [
+              "responder_sin_direccion",
+              "responder_sin_solucion"
+            ]
+          }
+        },
+        "business": {
+          "name": "Asesor Comercial",
+          "brand_name": "Asesor Comercial",
+          "description": "Negocios que reciben muchos mensajes y no alcanzan a responder a tiempo, perdiendo clientes y oportunidades de venta sin darse cuenta.\n",
+          "industry": "automatizacion comercial para negocios que venden por chat",
+          "tone": "humano, cercano, directo y comercial de cierre",
+          "voice": "cercano, directo y orientado a resultados",
+          "city": "Medellin",
+          "promise": "Convierte tu WhatsApp en un vendedor automático 24/7 con un asistente comercial inteligente que responde al instante, da seguimiento a cada prospecto y transforma conversaciones en ventas sin que tengas que estar pendiente.\n",
+          "positioning": "Para negocios que pierden ventas porque no alcanzan a responder a tiempo y el seguimiento se pierde despues del primer contacto.\n",
+          "differentiators": [
+            "seguimiento automatico con contexto",
+            "integracion con WhatsApp",
+            "enfoque en ventas, no solo respuestas",
+            "implementacion guiada paso a paso"
+          ],
+          "customer_profile": {
+            "segment": "pymes de servicios y ventas",
+            "company_size": "2 a 25 personas",
+            "maturity": "venden por chat pero sin proceso de seguimiento consistente",
+            "roles": [
+              "dueno",
+              "asesor comercial",
+              "community manager"
+            ]
+          },
+          "pain_points": [
+            "no alcanzan a responder todos los mensajes",
+            "el seguimiento se pierde despues del primer contacto",
+            "conversaciones dispersas en multiples canales",
+            "oportunidades que se enfrian por demora"
+          ],
+          "desired_outcomes": [
+            "responder rapido sin depender del tiempo humano",
+            "mantener seguimiento constante",
+            "aumentar conversion de chats a ventas",
+            "tener orden en el proceso comercial"
+          ],
+          "credibility": [
+            "implementaciones reales en negocios similares",
+            "casos donde se recuperan conversaciones perdidas"
+          ],
+          "value_drivers": {
+            "tiempo": {
+              "description": "ahorro de tiempo en respuesta y seguimiento",
+              "triggers": [
+                "no me da el tiempo",
+                "muchos mensajes"
+              ]
+            },
+            "dinero": {
+              "description": "recuperacion de oportunidades perdidas",
+              "triggers": [
+                "pierdo clientes",
+                "no vendo"
+              ]
+            }
+          },
+          "buying_motivation": {
+            "primary": "tiempo",
+            "secondary": "dinero"
+          },
+          "use_cases": [
+            {
+              "nombre": "negocio saturado",
+              "senales": [
+                "muchos mensajes",
+                "no alcanzo a responder"
+              ],
+              "enfoque": "automatizar_respuesta"
+            },
+            {
+              "nombre": "seguimiento perdido",
+              "senales": [
+                "no hago seguimiento"
+              ],
+              "enfoque": "seguimiento_automatico"
+            }
+          ],
+          "location": {
+            "type": "virtual",
+            "address": "",
+            "city": "Medellin",
+            "coverage": {
+              "type": "nacional",
+              "zones": [
+                "colombia"
+              ]
+            }
+          },
+          "service_modes": [
+            "virtual"
+          ],
+          "logistics": {
+            "delivery": {
+              "available": false,
+              "type": "tercero",
+              "zones": [],
+              "cost": {
+                "type": "variable",
+                "value": 0
+              },
+              "time": {
+                "min": "",
+                "max": ""
+              }
+            },
+            "shipping": {
+              "available": false,
+              "scope": "nacional",
+              "providers": [],
+              "cost": {
+                "type": "variable",
+                "value": 0
+              },
+              "time": {
+                "min": "",
+                "max": ""
+              }
+            },
+            "pickup": {
+              "available": false,
+              "instructions": ""
+            },
+            "scheduling": {
+              "required": false
+            }
+          }
+        },
+        "pricing": {
+          "plans": [
+            {
+              "id": "plan_basico",
+              "name": "Plan Basico",
+              "description": "Configuracion inicial + sistema mensual",
+              "pricing": {
+                "COP": {
+                  "implementation": 100000,
+                  "monthly": 110000
+                },
+                "USD": {
+                  "implementation": 40,
+                  "monthly": 45
+                }
+              },
+              "includes": [
+                "configuracion inicial",
+                "Integración con WhatsApp",
+                "Asistente conversacional inteligente",
+                "Soporte inicial",
+                "Seguimiento automático de clientes"
+              ],
+              "not_included": [
+                "Costos de Meta (WhatsApp Business API)",
+                "costos de plataformas externas (token de IA, hosting, etc)",
+                "inversion publicitaria",
+                "Desarrollos o integraciones avanzadas"
+              ],
+              "payment": {
+                "link": "https://checkout.aisalesengine.com/asesor-ai-prod/plan-basico",
+                "transfer": {
+                  "enabled": true,
+                  "methods": [
+                    {
+                      "type": "nequi",
+                      "number": "3001234567"
+                    },
+                    {
+                      "type": "daviplata",
+                      "number": "3009876543"
+                    },
+                    {
+                      "type": "bank",
+                      "bank": "Bancolombia",
+                      "account_type": "ahorros",
+                      "account_number": "1234567890"
+                    },
+                    {
+                      "type": "breb",
+                      "reference": "usuario@correo.com"
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "conditions": [
+            "sin permanencia obligatoria",
+            "se puede cancelar mensual",
+            "el primer mes se paga 210000 COP (configuracion + primer mes)",
+            "luego se paga mensualmente 110000 COP"
+          ],
+          "price_framing": {
+            "type": "comparativo"
+          },
+          "roi": {
+            "break_even_sales": 3
+          },
+          "business_offers": {
+            "core": [
+              "plan_basico",
+              "plan_pro"
+            ],
+            "upsell": [
+              "plan_pro",
+              "prioridad_soporte"
+            ],
+            "cross_sell": [
+              "integraciones",
+              "setup_operativo"
+            ],
+            "financing": {
+              "available": false,
+              "providers": [],
+              "options": []
+            }
+          }
+        },
+        "features": {
+          "pricing_enabled": true,
+          "multi_currency": true,
+          "multi_plan": true,
+          "catalog_mode": false,
+          "business_model": "saas"
+        },
+        "inventory": {
+          "track_stock": false,
+          "items": []
+        },
+        "channel": "whatsapp",
+        "conversation_state": "active",
+        "memory_context": {}
+      }
+    },
+    {
+      "turn": 6,
+      "user_message": "¿Por dónde funciona?",
+      "assistant_reply": "Nuestra solución funciona directamente a través de WhatsApp, donde se integra un asistente inteligente que automatiza la atención al cliente. Así, podrás gestionar mensajes y consultas de manera eficiente, sin importar cuántos recibas. ¿Te gustaría saber cómo podemos ayudarte a implementarlo?",
+      "ai_used": true,
+      "metadata": {
+        "mode": "",
+        "tenant_slug": "asesor_ai_prod",
+        "memory_state": {
+          "last_message": "¿De verdad eso me puede ayudar a vender más?",
+          "last_user_message": "¿De verdad eso me puede ayudar a vender más?",
+          "last_response": "Sí, definitivamente. Al automatizar las respuestas en WhatsApp, puedes atender a más clientes al mismo tiempo, resolver sus dudas de inmediato y guiarlos en el proceso de compra. Esto no solo mejora la experiencia del cliente, sino que también aumenta tus oportunidades de venta. ¿Te gustaría saber cómo podemos implementar esto en tu negocio?",
+          "last_ai_response": "Sí, definitivamente. Al automatizar las respuestas en WhatsApp, puedes atender a más clientes al mismo tiempo, resolver sus dudas de inmediato y guiarlos en el proceso de compra. Esto no solo mejora la experiencia del cliente, sino que también aumenta tus oportunidades de venta. ¿Te gustaría saber cómo podemos implementar esto en tu negocio?",
+          "history_summary": "user: Hola amigo\nuser: Dame más información de lo que venden\nassistant: Ofrecemos una solución de automatización comercial que convierte tu WhatsApp en un vendedor automático 24/7. Con un asistente inteligente, podrás responder al instante, dar seguimiento a prospectos y transformar conversaciones en ventas sin esfuerzo. Ideal para negocios que buscan optimizar su atención al cliente y aumentar sus ventas. ¿Te gustaría saber más sobre cómo empezar?\nuser: Yo recibo muchos mensajes y no alcanzo a responder\nassistant: Entiendo que manejar muchos mensajes puede ser abrumador. Nuestra solución automatiza tus respuestas en WhatsApp, permitiendo que un asistente inteligente responda instantáneamente a tus clientes y dé seguimiento a los prospectos. Así, podrás enfocarte en lo que realmente importa. ¿Te gustaría saber cómo implementar esta solución y aliviar esa carga?\nuser: ¿Cómo funciona eso?\nassistant: Funciona integrando un asistente inteligente en tu WhatsApp que automatiza las respuestas a tus clientes. Cuando alguien te envía un mensaje, el asistente responde de inmediato, ayudando a resolver dudas y a seguir con el proceso de compra. Así, tú puedes enfocarte en tareas más importantes mientras el asistente se encarga de la atención al cliente. ¿Te gustaría saber cómo implementarlo en tu negocio?\nuser: ¿De verdad eso me puede ayudar a vender más?\nassistant: Sí, definitivamente. Al automatizar las respuestas en WhatsApp, puedes atender a más clientes al mismo tiempo, resolver sus dudas de inmediato y guiarlos en el proceso de compra. Esto no solo mejora la experiencia del cliente, sino que también aumenta tus oportunidades de venta. ¿Te gustaría saber cómo podemos implementar esto en tu negocio?",
+          "sales_memory_hint": "",
+          "last_intent": "info",
+          "intent_detectado": "info",
+          "last_pain": "",
+          "metodo_pago_elegido": "",
+          "estado_pago": "none",
+          "stage": "",
+          "mode": "",
+          "last_cta": "",
+          "conversation_state": "active"
+        },
+        "source": "ai_raw",
+        "intent": "info",
+        "intent_missing": false,
+        "ai_metadata": {
+          "intent": "info",
+          "stage": "",
+          "pain_detected": false,
+          "pain": "",
+          "next_step": "",
+          "urgency": "",
+          "last_cta": "",
+          "objection_count": 0,
+          "mode": "",
+          "payment_method": "",
+          "payment_status": "",
+          "response": "Nuestra solución funciona directamente a través de WhatsApp, donde se integra un asistente inteligente que automatiza la atención al cliente. Así, podrás gestionar mensajes y consultas de manera eficiente, sin importar cuántos recibas. ¿Te gustaría saber cómo podemos ayudarte a implementarlo?",
+          "user_message": "¿Por dónde funciona?"
+        },
+        "sales": {
+          "discovery": {
+            "objectives": [
+              "entender volumen de conversaciones",
+              "identificar fallas en seguimiento",
+              "detectar impacto en ventas"
+            ],
+            "questions": [
+              "Por donde te entran mas mensajes hoy?",
+              "Que pasa despues del primer mensaje, haces seguimiento o se queda ahi?",
+              "Cuantas conversaciones sientes que se pierden por no responder a tiempo?"
+            ]
+          },
+          "qualification": {
+            "detect_offer_fit": true
+          },
+          "support": {
+            "info_handling": {
+              "explain_first": false,
+              "sell_after": true
+            },
+            "hard_rules": [
+              "si el usuario pide informacion, evita saludo generico y conecta con dolor comercial real",
+              "prohibido preguntas consultivas vacias",
+              "si respondes informacion, avanza la conversacion desde un problema real"
+            ]
+          },
+          "pain": {
+            "clusters": {
+              "gestion_mensajes": {
+                "signals": [
+                  "muchos mensajes",
+                  "no me da el tiempo",
+                  "no alcanzo a responder"
+                ],
+                "impacts": [
+                  "cada mensaje que no respondes es un cliente que se va con otro",
+                  "el cliente se enfria y termina comprando en otro lado",
+                  "pierdes ventas sin darte cuenta"
+                ],
+                "monetization": [
+                  "cada lead sin respuesta es dinero perdido",
+                  "cada demora baja la probabilidad de cierre"
+                ],
+                "urgency_levels": {
+                  "alto": [
+                    "ya estas perdiendo dinero"
+                  ],
+                  "medio": [
+                    "estas dejando oportunidades"
+                  ]
+                },
+                "recommended_angles": [
+                  "tiempo",
+                  "dinero"
+                ]
+              },
+              "falta_seguimiento": {
+                "signals": [
+                  "no hago seguimiento",
+                  "se me olvidan los clientes"
+                ],
+                "impacts": [
+                  "el cliente se enfria y termina comprando en otro lado",
+                  "pierdes ventas que ya estaban avanzadas"
+                ],
+                "monetization": [
+                  "cada seguimiento perdido reduce cierres"
+                ],
+                "urgency_levels": {
+                  "alto": [
+                    "hay ventas en riesgo por falta de continuidad"
+                  ],
+                  "medio": [
+                    "el pipeline se enfria mas rapido"
+                  ]
+                },
+                "recommended_angles": [
+                  "dinero"
+                ]
+              }
+            }
+          },
+          "angles": {
+            "tiempo": {
+              "when": [
+                "no me da el tiempo",
+                "muchos mensajes"
+              ],
+              "execution": [
+                "no es solo responder, es que no te alcanza el tiempo"
+              ]
+            },
+            "dinero": {
+              "when": [
+                "pierdo clientes",
+                "no vendo"
+              ],
+              "execution": [
+                "cada lead que se enfria es dinero que ya estaba cerca"
+              ]
+            }
+          },
+          "conversation_flow": {
+            "steps": [
+              "detect_pain",
+              "amplify_impact",
+              "present_solution",
+              "guide_next_step"
+            ],
+            "rules": {
+              "no_skip_steps": true
+            }
+          },
+          "solution": {
+            "framing": [
+              "No se trata solo de responder, sino de sostener el seguimiento.",
+              "La idea es que no dependas de estar pegado al celular.",
+              "El sistema responde y tambien retoma conversaciones automaticamente."
+            ],
+            "mapping": {
+              "gestion_mensajes": [
+                "automatizar_respuesta",
+                "seguimiento"
+              ],
+              "falta_seguimiento": [
+                "seguimiento_automatico"
+              ]
+            }
+          },
+          "offer": {
+            "strategy": {
+              "single": [
+                "explicar directo y conectar con valor",
+                "no sobrecargar con informacion"
+              ],
+              "multi": [
+                "recomendar segun problema",
+                "no listar todos los planes",
+                "guiar a mejor opcion"
+              ]
+            },
+            "recommendation_rules": [
+              {
+                "condition": "gestion_mensajes",
+                "recommend": "plan_pro"
+              },
+              {
+                "condition": "seguimiento",
+                "recommend": "plan_basico"
+              }
+            ]
+          },
+          "objection": {
+            "price": {
+              "layers": {
+                "acknowledge": [
+                  "Te entiendo, es una inversion importante.",
+                  "Es normal verlo asi al inicio."
+                ],
+                "reframe": [
+                  "Lo que suele salir caro es perder conversaciones que ya estaban interesadas.",
+                  "Cuando empiezas a recuperar leads, se paga solo."
+                ],
+                "proof": [
+                  "cuando recuperas ventas se paga solo"
+                ],
+                "redirect": [
+                  "avancemos hoy con activacion y recuperacion de conversaciones"
+                ]
+              },
+              "hard_rules": [
+                "no terminar objecion con 'quieres saber'",
+                "cerrar objecion con siguiente paso concreto"
+              ]
+            }
+          },
+          "closing": {
+            "strategy": "direct_sale",
+            "next_step": {
+              "action": "dynamic"
+            },
+            "required_data": [],
+            "behavior": {
+              "direct_sale": {
+                "goal": "confirmar_compra"
+              },
+              "lead_capture": {
+                "goal": "capturar_datos"
+              },
+              "booking": {
+                "goal": "agendar"
+              },
+              "checkout": {
+                "goal": "enviar_pago"
+              }
+            },
+            "triggers": [
+              "quiero empezar",
+              "me interesa",
+              "como arrancamos",
+              "quiero comprar",
+              "arranquemos"
+            ],
+            "actions": {
+              "high_intent": [
+                "agendar",
+                "activar",
+                "iniciar ahora"
+              ]
+            },
+            "next_steps": [
+              "agendar implementacion",
+              "configurar sistema",
+              "activar prueba"
+            ],
+            "micro_commitments": [
+              "te muestro como seria en tu caso",
+              "vemos el siguiente paso practico"
+            ],
+            "hard_rules": [
+              "si hay intencion de compra, confirmar y ejecutar cierre sin preguntas",
+              "no pedir mas contexto ni disponibilidad en buy",
+              "entregar accion concreta de arranque inmediato",
+              "prohibido cerrar buy con pregunta abierta",
+              "respuesta buy invalida si contiene '?' o '¿'",
+              "respuesta objection invalida si contiene la frase 'quieres saber'",
+              "en objection incluir literalmente 'avanzamos' o 'siguiente paso'"
+            ]
+          },
+          "progression_rules": {
+            "required_flow": [
+              "detect_pain",
+              "amplify_impact",
+              "present_solution",
+              "guide_next_step"
+            ],
+            "forbid": [
+              "responder_sin_direccion",
+              "responder_sin_solucion"
+            ]
+          }
+        },
+        "business": {
+          "name": "Asesor Comercial",
+          "brand_name": "Asesor Comercial",
+          "description": "Negocios que reciben muchos mensajes y no alcanzan a responder a tiempo, perdiendo clientes y oportunidades de venta sin darse cuenta.\n",
+          "industry": "automatizacion comercial para negocios que venden por chat",
+          "tone": "humano, cercano, directo y comercial de cierre",
+          "voice": "cercano, directo y orientado a resultados",
+          "city": "Medellin",
+          "promise": "Convierte tu WhatsApp en un vendedor automático 24/7 con un asistente comercial inteligente que responde al instante, da seguimiento a cada prospecto y transforma conversaciones en ventas sin que tengas que estar pendiente.\n",
+          "positioning": "Para negocios que pierden ventas porque no alcanzan a responder a tiempo y el seguimiento se pierde despues del primer contacto.\n",
+          "differentiators": [
+            "seguimiento automatico con contexto",
+            "integracion con WhatsApp",
+            "enfoque en ventas, no solo respuestas",
+            "implementacion guiada paso a paso"
+          ],
+          "customer_profile": {
+            "segment": "pymes de servicios y ventas",
+            "company_size": "2 a 25 personas",
+            "maturity": "venden por chat pero sin proceso de seguimiento consistente",
+            "roles": [
+              "dueno",
+              "asesor comercial",
+              "community manager"
+            ]
+          },
+          "pain_points": [
+            "no alcanzan a responder todos los mensajes",
+            "el seguimiento se pierde despues del primer contacto",
+            "conversaciones dispersas en multiples canales",
+            "oportunidades que se enfrian por demora"
+          ],
+          "desired_outcomes": [
+            "responder rapido sin depender del tiempo humano",
+            "mantener seguimiento constante",
+            "aumentar conversion de chats a ventas",
+            "tener orden en el proceso comercial"
+          ],
+          "credibility": [
+            "implementaciones reales en negocios similares",
+            "casos donde se recuperan conversaciones perdidas"
+          ],
+          "value_drivers": {
+            "tiempo": {
+              "description": "ahorro de tiempo en respuesta y seguimiento",
+              "triggers": [
+                "no me da el tiempo",
+                "muchos mensajes"
+              ]
+            },
+            "dinero": {
+              "description": "recuperacion de oportunidades perdidas",
+              "triggers": [
+                "pierdo clientes",
+                "no vendo"
+              ]
+            }
+          },
+          "buying_motivation": {
+            "primary": "tiempo",
+            "secondary": "dinero"
+          },
+          "use_cases": [
+            {
+              "nombre": "negocio saturado",
+              "senales": [
+                "muchos mensajes",
+                "no alcanzo a responder"
+              ],
+              "enfoque": "automatizar_respuesta"
+            },
+            {
+              "nombre": "seguimiento perdido",
+              "senales": [
+                "no hago seguimiento"
+              ],
+              "enfoque": "seguimiento_automatico"
+            }
+          ],
+          "location": {
+            "type": "virtual",
+            "address": "",
+            "city": "Medellin",
+            "coverage": {
+              "type": "nacional",
+              "zones": [
+                "colombia"
+              ]
+            }
+          },
+          "service_modes": [
+            "virtual"
+          ],
+          "logistics": {
+            "delivery": {
+              "available": false,
+              "type": "tercero",
+              "zones": [],
+              "cost": {
+                "type": "variable",
+                "value": 0
+              },
+              "time": {
+                "min": "",
+                "max": ""
+              }
+            },
+            "shipping": {
+              "available": false,
+              "scope": "nacional",
+              "providers": [],
+              "cost": {
+                "type": "variable",
+                "value": 0
+              },
+              "time": {
+                "min": "",
+                "max": ""
+              }
+            },
+            "pickup": {
+              "available": false,
+              "instructions": ""
+            },
+            "scheduling": {
+              "required": false
+            }
+          }
+        },
+        "pricing": {
+          "plans": [
+            {
+              "id": "plan_basico",
+              "name": "Plan Basico",
+              "description": "Configuracion inicial + sistema mensual",
+              "pricing": {
+                "COP": {
+                  "implementation": 100000,
+                  "monthly": 110000
+                },
+                "USD": {
+                  "implementation": 40,
+                  "monthly": 45
+                }
+              },
+              "includes": [
+                "configuracion inicial",
+                "Integración con WhatsApp",
+                "Asistente conversacional inteligente",
+                "Soporte inicial",
+                "Seguimiento automático de clientes"
+              ],
+              "not_included": [
+                "Costos de Meta (WhatsApp Business API)",
+                "costos de plataformas externas (token de IA, hosting, etc)",
+                "inversion publicitaria",
+                "Desarrollos o integraciones avanzadas"
+              ],
+              "payment": {
+                "link": "https://checkout.aisalesengine.com/asesor-ai-prod/plan-basico",
+                "transfer": {
+                  "enabled": true,
+                  "methods": [
+                    {
+                      "type": "nequi",
+                      "number": "3001234567"
+                    },
+                    {
+                      "type": "daviplata",
+                      "number": "3009876543"
+                    },
+                    {
+                      "type": "bank",
+                      "bank": "Bancolombia",
+                      "account_type": "ahorros",
+                      "account_number": "1234567890"
+                    },
+                    {
+                      "type": "breb",
+                      "reference": "usuario@correo.com"
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "conditions": [
+            "sin permanencia obligatoria",
+            "se puede cancelar mensual",
+            "el primer mes se paga 210000 COP (configuracion + primer mes)",
+            "luego se paga mensualmente 110000 COP"
+          ],
+          "price_framing": {
+            "type": "comparativo"
+          },
+          "roi": {
+            "break_even_sales": 3
+          },
+          "business_offers": {
+            "core": [
+              "plan_basico",
+              "plan_pro"
+            ],
+            "upsell": [
+              "plan_pro",
+              "prioridad_soporte"
+            ],
+            "cross_sell": [
+              "integraciones",
+              "setup_operativo"
+            ],
+            "financing": {
+              "available": false,
+              "providers": [],
+              "options": []
+            }
+          }
+        },
+        "features": {
+          "pricing_enabled": true,
+          "multi_currency": true,
+          "multi_plan": true,
+          "catalog_mode": false,
+          "business_model": "saas"
+        },
+        "inventory": {
+          "track_stock": false,
+          "items": []
+        },
+        "channel": "whatsapp",
+        "conversation_state": "active",
+        "memory_context": {}
+      }
+    },
+    {
+      "turn": 7,
+      "user_message": "¿Y qué precio tiene?",
+      "assistant_reply": "El Plan Básico tiene un costo de 210,000 COP en el primer mes, que incluye la configuración y el primer mes de servicio. Después de eso, pagarás 110,000 COP mensuales. Sin permanencia obligatoria, así que puedes cancelar cuando desees. ¿Te gustaría avanzar con el siguiente paso?",
+      "ai_used": true,
+      "metadata": {
+        "mode": "",
+        "tenant_slug": "asesor_ai_prod",
+        "memory_state": {
+          "last_message": "¿Por dónde funciona?",
+          "last_user_message": "¿Por dónde funciona?",
+          "last_response": "Nuestra solución funciona directamente a través de WhatsApp, donde se integra un asistente inteligente que automatiza la atención al cliente. Así, podrás gestionar mensajes y consultas de manera eficiente, sin importar cuántos recibas. ¿Te gustaría saber cómo podemos ayudarte a implementarlo?",
+          "last_ai_response": "Nuestra solución funciona directamente a través de WhatsApp, donde se integra un asistente inteligente que automatiza la atención al cliente. Así, podrás gestionar mensajes y consultas de manera eficiente, sin importar cuántos recibas. ¿Te gustaría saber cómo podemos ayudarte a implementarlo?",
+          "history_summary": "user: Dame más información de lo que venden\nassistant: Ofrecemos una solución de automatización comercial que convierte tu WhatsApp en un vendedor automático 24/7. Con un asistente inteligente, podrás responder al instante, dar seguimiento a prospectos y transformar conversaciones en ventas sin esfuerzo. Ideal para negocios que buscan optimizar su atención al cliente y aumentar sus ventas. ¿Te gustaría saber más sobre cómo empezar?\nuser: Yo recibo muchos mensajes y no alcanzo a responder\nassistant: Entiendo que manejar muchos mensajes puede ser abrumador. Nuestra solución automatiza tus respuestas en WhatsApp, permitiendo que un asistente inteligente responda instantáneamente a tus clientes y dé seguimiento a los prospectos. Así, podrás enfocarte en lo que realmente importa. ¿Te gustaría saber cómo implementar esta solución y aliviar esa carga?\nuser: ¿Cómo funciona eso?\nassistant: Funciona integrando un asistente inteligente en tu WhatsApp que automatiza las respuestas a tus clientes. Cuando alguien te envía un mensaje, el asistente responde de inmediato, ayudando a resolver dudas y a seguir con el proceso de compra. Así, tú puedes enfocarte en tareas más importantes mientras el asistente se encarga de la atención al cliente. ¿Te gustaría saber cómo implementarlo en tu negocio?\nuser: ¿De verdad eso me puede ayudar a vender más?\nassistant: Sí, definitivamente. Al automatizar las respuestas en WhatsApp, puedes atender a más clientes al mismo tiempo, resolver sus dudas de inmediato y guiarlos en el proceso de compra. Esto no solo mejora la experiencia del cliente, sino que también aumenta tus oportunidades de venta. ¿Te gustaría saber cómo podemos implementar esto en tu negocio?\nuser: ¿Por dónde funciona?\nassistant: Nuestra solución funciona directamente a través de WhatsApp, donde se integra un asistente inteligente que automatiza la atención al cliente. Así, podrás gestionar mensajes y consultas de manera eficiente, sin importar cuántos recibas. ¿Te gustaría saber cómo podemos ayudarte a implementarlo?",
+          "sales_memory_hint": "",
+          "last_intent": "info",
+          "intent_detectado": "info",
+          "last_pain": "",
+          "metodo_pago_elegido": "",
+          "estado_pago": "none",
+          "stage": "",
+          "mode": "",
+          "last_cta": "",
+          "conversation_state": "active"
+        },
+        "source": "ai_raw",
+        "intent": "info",
+        "intent_missing": false,
+        "ai_metadata": {
+          "intent": "info",
+          "stage": "",
+          "pain_detected": false,
+          "pain": "",
+          "next_step": "",
+          "urgency": "",
+          "last_cta": "",
+          "objection_count": 0,
+          "mode": "",
+          "payment_method": "",
+          "payment_status": "",
+          "response": "El Plan Básico tiene un costo de 210,000 COP en el primer mes, que incluye la configuración y el primer mes de servicio. Después de eso, pagarás 110,000 COP mensuales. Sin permanencia obligatoria, así que puedes cancelar cuando desees. ¿Te gustaría avanzar con el siguiente paso?",
+          "user_message": "¿Y qué precio tiene?"
+        },
+        "sales": {
+          "discovery": {
+            "objectives": [
+              "entender volumen de conversaciones",
+              "identificar fallas en seguimiento",
+              "detectar impacto en ventas"
+            ],
+            "questions": [
+              "Por donde te entran mas mensajes hoy?",
+              "Que pasa despues del primer mensaje, haces seguimiento o se queda ahi?",
+              "Cuantas conversaciones sientes que se pierden por no responder a tiempo?"
+            ]
+          },
+          "qualification": {
+            "detect_offer_fit": true
+          },
+          "support": {
+            "info_handling": {
+              "explain_first": false,
+              "sell_after": true
+            },
+            "hard_rules": [
+              "si el usuario pide informacion, evita saludo generico y conecta con dolor comercial real",
+              "prohibido preguntas consultivas vacias",
+              "si respondes informacion, avanza la conversacion desde un problema real"
+            ]
+          },
+          "pain": {
+            "clusters": {
+              "gestion_mensajes": {
+                "signals": [
+                  "muchos mensajes",
+                  "no me da el tiempo",
+                  "no alcanzo a responder"
+                ],
+                "impacts": [
+                  "cada mensaje que no respondes es un cliente que se va con otro",
+                  "el cliente se enfria y termina comprando en otro lado",
+                  "pierdes ventas sin darte cuenta"
+                ],
+                "monetization": [
+                  "cada lead sin respuesta es dinero perdido",
+                  "cada demora baja la probabilidad de cierre"
+                ],
+                "urgency_levels": {
+                  "alto": [
+                    "ya estas perdiendo dinero"
+                  ],
+                  "medio": [
+                    "estas dejando oportunidades"
+                  ]
+                },
+                "recommended_angles": [
+                  "tiempo",
+                  "dinero"
+                ]
+              },
+              "falta_seguimiento": {
+                "signals": [
+                  "no hago seguimiento",
+                  "se me olvidan los clientes"
+                ],
+                "impacts": [
+                  "el cliente se enfria y termina comprando en otro lado",
+                  "pierdes ventas que ya estaban avanzadas"
+                ],
+                "monetization": [
+                  "cada seguimiento perdido reduce cierres"
+                ],
+                "urgency_levels": {
+                  "alto": [
+                    "hay ventas en riesgo por falta de continuidad"
+                  ],
+                  "medio": [
+                    "el pipeline se enfria mas rapido"
+                  ]
+                },
+                "recommended_angles": [
+                  "dinero"
+                ]
+              }
+            }
+          },
+          "angles": {
+            "tiempo": {
+              "when": [
+                "no me da el tiempo",
+                "muchos mensajes"
+              ],
+              "execution": [
+                "no es solo responder, es que no te alcanza el tiempo"
+              ]
+            },
+            "dinero": {
+              "when": [
+                "pierdo clientes",
+                "no vendo"
+              ],
+              "execution": [
+                "cada lead que se enfria es dinero que ya estaba cerca"
+              ]
+            }
+          },
+          "conversation_flow": {
+            "steps": [
+              "detect_pain",
+              "amplify_impact",
+              "present_solution",
+              "guide_next_step"
+            ],
+            "rules": {
+              "no_skip_steps": true
+            }
+          },
+          "solution": {
+            "framing": [
+              "No se trata solo de responder, sino de sostener el seguimiento.",
+              "La idea es que no dependas de estar pegado al celular.",
+              "El sistema responde y tambien retoma conversaciones automaticamente."
+            ],
+            "mapping": {
+              "gestion_mensajes": [
+                "automatizar_respuesta",
+                "seguimiento"
+              ],
+              "falta_seguimiento": [
+                "seguimiento_automatico"
+              ]
+            }
+          },
+          "offer": {
+            "strategy": {
+              "single": [
+                "explicar directo y conectar con valor",
+                "no sobrecargar con informacion"
+              ],
+              "multi": [
+                "recomendar segun problema",
+                "no listar todos los planes",
+                "guiar a mejor opcion"
+              ]
+            },
+            "recommendation_rules": [
+              {
+                "condition": "gestion_mensajes",
+                "recommend": "plan_pro"
+              },
+              {
+                "condition": "seguimiento",
+                "recommend": "plan_basico"
+              }
+            ]
+          },
+          "objection": {
+            "price": {
+              "layers": {
+                "acknowledge": [
+                  "Te entiendo, es una inversion importante.",
+                  "Es normal verlo asi al inicio."
+                ],
+                "reframe": [
+                  "Lo que suele salir caro es perder conversaciones que ya estaban interesadas.",
+                  "Cuando empiezas a recuperar leads, se paga solo."
+                ],
+                "proof": [
+                  "cuando recuperas ventas se paga solo"
+                ],
+                "redirect": [
+                  "avancemos hoy con activacion y recuperacion de conversaciones"
+                ]
+              },
+              "hard_rules": [
+                "no terminar objecion con 'quieres saber'",
+                "cerrar objecion con siguiente paso concreto"
+              ]
+            }
+          },
+          "closing": {
+            "strategy": "direct_sale",
+            "next_step": {
+              "action": "dynamic"
+            },
+            "required_data": [],
+            "behavior": {
+              "direct_sale": {
+                "goal": "confirmar_compra"
+              },
+              "lead_capture": {
+                "goal": "capturar_datos"
+              },
+              "booking": {
+                "goal": "agendar"
+              },
+              "checkout": {
+                "goal": "enviar_pago"
+              }
+            },
+            "triggers": [
+              "quiero empezar",
+              "me interesa",
+              "como arrancamos",
+              "quiero comprar",
+              "arranquemos"
+            ],
+            "actions": {
+              "high_intent": [
+                "agendar",
+                "activar",
+                "iniciar ahora"
+              ]
+            },
+            "next_steps": [
+              "agendar implementacion",
+              "configurar sistema",
+              "activar prueba"
+            ],
+            "micro_commitments": [
+              "te muestro como seria en tu caso",
+              "vemos el siguiente paso practico"
+            ],
+            "hard_rules": [
+              "si hay intencion de compra, confirmar y ejecutar cierre sin preguntas",
+              "no pedir mas contexto ni disponibilidad en buy",
+              "entregar accion concreta de arranque inmediato",
+              "prohibido cerrar buy con pregunta abierta",
+              "respuesta buy invalida si contiene '?' o '¿'",
+              "respuesta objection invalida si contiene la frase 'quieres saber'",
+              "en objection incluir literalmente 'avanzamos' o 'siguiente paso'"
+            ]
+          },
+          "progression_rules": {
+            "required_flow": [
+              "detect_pain",
+              "amplify_impact",
+              "present_solution",
+              "guide_next_step"
+            ],
+            "forbid": [
+              "responder_sin_direccion",
+              "responder_sin_solucion"
+            ]
+          }
+        },
+        "business": {
+          "name": "Asesor Comercial",
+          "brand_name": "Asesor Comercial",
+          "description": "Negocios que reciben muchos mensajes y no alcanzan a responder a tiempo, perdiendo clientes y oportunidades de venta sin darse cuenta.\n",
+          "industry": "automatizacion comercial para negocios que venden por chat",
+          "tone": "humano, cercano, directo y comercial de cierre",
+          "voice": "cercano, directo y orientado a resultados",
+          "city": "Medellin",
+          "promise": "Convierte tu WhatsApp en un vendedor automático 24/7 con un asistente comercial inteligente que responde al instante, da seguimiento a cada prospecto y transforma conversaciones en ventas sin que tengas que estar pendiente.\n",
+          "positioning": "Para negocios que pierden ventas porque no alcanzan a responder a tiempo y el seguimiento se pierde despues del primer contacto.\n",
+          "differentiators": [
+            "seguimiento automatico con contexto",
+            "integracion con WhatsApp",
+            "enfoque en ventas, no solo respuestas",
+            "implementacion guiada paso a paso"
+          ],
+          "customer_profile": {
+            "segment": "pymes de servicios y ventas",
+            "company_size": "2 a 25 personas",
+            "maturity": "venden por chat pero sin proceso de seguimiento consistente",
+            "roles": [
+              "dueno",
+              "asesor comercial",
+              "community manager"
+            ]
+          },
+          "pain_points": [
+            "no alcanzan a responder todos los mensajes",
+            "el seguimiento se pierde despues del primer contacto",
+            "conversaciones dispersas en multiples canales",
+            "oportunidades que se enfrian por demora"
+          ],
+          "desired_outcomes": [
+            "responder rapido sin depender del tiempo humano",
+            "mantener seguimiento constante",
+            "aumentar conversion de chats a ventas",
+            "tener orden en el proceso comercial"
+          ],
+          "credibility": [
+            "implementaciones reales en negocios similares",
+            "casos donde se recuperan conversaciones perdidas"
+          ],
+          "value_drivers": {
+            "tiempo": {
+              "description": "ahorro de tiempo en respuesta y seguimiento",
+              "triggers": [
+                "no me da el tiempo",
+                "muchos mensajes"
+              ]
+            },
+            "dinero": {
+              "description": "recuperacion de oportunidades perdidas",
+              "triggers": [
+                "pierdo clientes",
+                "no vendo"
+              ]
+            }
+          },
+          "buying_motivation": {
+            "primary": "tiempo",
+            "secondary": "dinero"
+          },
+          "use_cases": [
+            {
+              "nombre": "negocio saturado",
+              "senales": [
+                "muchos mensajes",
+                "no alcanzo a responder"
+              ],
+              "enfoque": "automatizar_respuesta"
+            },
+            {
+              "nombre": "seguimiento perdido",
+              "senales": [
+                "no hago seguimiento"
+              ],
+              "enfoque": "seguimiento_automatico"
+            }
+          ],
+          "location": {
+            "type": "virtual",
+            "address": "",
+            "city": "Medellin",
+            "coverage": {
+              "type": "nacional",
+              "zones": [
+                "colombia"
+              ]
+            }
+          },
+          "service_modes": [
+            "virtual"
+          ],
+          "logistics": {
+            "delivery": {
+              "available": false,
+              "type": "tercero",
+              "zones": [],
+              "cost": {
+                "type": "variable",
+                "value": 0
+              },
+              "time": {
+                "min": "",
+                "max": ""
+              }
+            },
+            "shipping": {
+              "available": false,
+              "scope": "nacional",
+              "providers": [],
+              "cost": {
+                "type": "variable",
+                "value": 0
+              },
+              "time": {
+                "min": "",
+                "max": ""
+              }
+            },
+            "pickup": {
+              "available": false,
+              "instructions": ""
+            },
+            "scheduling": {
+              "required": false
+            }
+          }
+        },
+        "pricing": {
+          "plans": [
+            {
+              "id": "plan_basico",
+              "name": "Plan Basico",
+              "description": "Configuracion inicial + sistema mensual",
+              "pricing": {
+                "COP": {
+                  "implementation": 100000,
+                  "monthly": 110000
+                },
+                "USD": {
+                  "implementation": 40,
+                  "monthly": 45
+                }
+              },
+              "includes": [
+                "configuracion inicial",
+                "Integración con WhatsApp",
+                "Asistente conversacional inteligente",
+                "Soporte inicial",
+                "Seguimiento automático de clientes"
+              ],
+              "not_included": [
+                "Costos de Meta (WhatsApp Business API)",
+                "costos de plataformas externas (token de IA, hosting, etc)",
+                "inversion publicitaria",
+                "Desarrollos o integraciones avanzadas"
+              ],
+              "payment": {
+                "link": "https://checkout.aisalesengine.com/asesor-ai-prod/plan-basico",
+                "transfer": {
+                  "enabled": true,
+                  "methods": [
+                    {
+                      "type": "nequi",
+                      "number": "3001234567"
+                    },
+                    {
+                      "type": "daviplata",
+                      "number": "3009876543"
+                    },
+                    {
+                      "type": "bank",
+                      "bank": "Bancolombia",
+                      "account_type": "ahorros",
+                      "account_number": "1234567890"
+                    },
+                    {
+                      "type": "breb",
+                      "reference": "usuario@correo.com"
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "conditions": [
+            "sin permanencia obligatoria",
+            "se puede cancelar mensual",
+            "el primer mes se paga 210000 COP (configuracion + primer mes)",
+            "luego se paga mensualmente 110000 COP"
+          ],
+          "price_framing": {
+            "type": "comparativo"
+          },
+          "roi": {
+            "break_even_sales": 3
+          },
+          "business_offers": {
+            "core": [
+              "plan_basico",
+              "plan_pro"
+            ],
+            "upsell": [
+              "plan_pro",
+              "prioridad_soporte"
+            ],
+            "cross_sell": [
+              "integraciones",
+              "setup_operativo"
+            ],
+            "financing": {
+              "available": false,
+              "providers": [],
+              "options": []
+            }
+          }
+        },
+        "features": {
+          "pricing_enabled": true,
+          "multi_currency": true,
+          "multi_plan": true,
+          "catalog_mode": false,
+          "business_model": "saas"
+        },
+        "inventory": {
+          "track_stock": false,
+          "items": []
+        },
+        "channel": "whatsapp",
+        "conversation_state": "active",
+        "memory_context": {}
+      }
+    },
+    {
+      "turn": 8,
+      "user_message": "¿Qué incluye?",
+      "assistant_reply": "El Plan Básico incluye la configuración inicial de tu asistente inteligente y el primer mes de servicio. A partir del segundo mes, tendrás acceso a la automatización de respuestas y seguimiento a clientes por solo 110,000 COP mensuales. Sin permanencia obligatoria, así que puedes cancelar cuando desees. ¿Te gustaría avanzar con el siguiente paso?",
+      "ai_used": true,
+      "metadata": {
+        "mode": "",
+        "tenant_slug": "asesor_ai_prod",
+        "memory_state": {
+          "last_message": "¿Y qué precio tiene?",
+          "last_user_message": "¿Y qué precio tiene?",
+          "last_response": "El Plan Básico tiene un costo de 210,000 COP en el primer mes, que incluye la configuración y el primer mes de servicio. Después de eso, pagarás 110,000 COP mensuales. Sin permanencia obligatoria, así que puedes cancelar cuando desees. ¿Te gustaría avanzar con el siguiente paso?",
+          "last_ai_response": "El Plan Básico tiene un costo de 210,000 COP en el primer mes, que incluye la configuración y el primer mes de servicio. Después de eso, pagarás 110,000 COP mensuales. Sin permanencia obligatoria, así que puedes cancelar cuando desees. ¿Te gustaría avanzar con el siguiente paso?",
+          "history_summary": "user: Yo recibo muchos mensajes y no alcanzo a responder\nassistant: Entiendo que manejar muchos mensajes puede ser abrumador. Nuestra solución automatiza tus respuestas en WhatsApp, permitiendo que un asistente inteligente responda instantáneamente a tus clientes y dé seguimiento a los prospectos. Así, podrás enfocarte en lo que realmente importa. ¿Te gustaría saber cómo implementar esta solución y aliviar esa carga?\nuser: ¿Cómo funciona eso?\nassistant: Funciona integrando un asistente inteligente en tu WhatsApp que automatiza las respuestas a tus clientes. Cuando alguien te envía un mensaje, el asistente responde de inmediato, ayudando a resolver dudas y a seguir con el proceso de compra. Así, tú puedes enfocarte en tareas más importantes mientras el asistente se encarga de la atención al cliente. ¿Te gustaría saber cómo implementarlo en tu negocio?\nuser: ¿De verdad eso me puede ayudar a vender más?\nassistant: Sí, definitivamente. Al automatizar las respuestas en WhatsApp, puedes atender a más clientes al mismo tiempo, resolver sus dudas de inmediato y guiarlos en el proceso de compra. Esto no solo mejora la experiencia del cliente, sino que también aumenta tus oportunidades de venta. ¿Te gustaría saber cómo podemos implementar esto en tu negocio?\nuser: ¿Por dónde funciona?\nassistant: Nuestra solución funciona directamente a través de WhatsApp, donde se integra un asistente inteligente que automatiza la atención al cliente. Así, podrás gestionar mensajes y consultas de manera eficiente, sin importar cuántos recibas. ¿Te gustaría saber cómo podemos ayudarte a implementarlo?\nuser: ¿Y qué precio tiene?\nassistant: El Plan Básico tiene un costo de 210,000 COP en el primer mes, que incluye la configuración y el primer mes de servicio. Después de eso, pagarás 110,000 COP mensuales. Sin permanencia obligatoria, así que puedes cancelar cuando desees. ¿Te gustaría avanzar con el siguiente paso?",
+          "sales_memory_hint": "",
+          "last_intent": "info",
+          "intent_detectado": "info",
+          "last_pain": "",
+          "metodo_pago_elegido": "",
+          "estado_pago": "none",
+          "stage": "",
+          "mode": "",
+          "last_cta": "",
+          "conversation_state": "active"
+        },
+        "source": "ai_raw",
+        "intent": "info",
+        "intent_missing": false,
+        "ai_metadata": {
+          "intent": "info",
+          "stage": "",
+          "pain_detected": false,
+          "pain": "",
+          "next_step": "",
+          "urgency": "",
+          "last_cta": "",
+          "objection_count": 0,
+          "mode": "",
+          "payment_method": "",
+          "payment_status": "",
+          "response": "El Plan Básico incluye la configuración inicial de tu asistente inteligente y el primer mes de servicio. A partir del segundo mes, tendrás acceso a la automatización de respuestas y seguimiento a clientes por solo 110,000 COP mensuales. Sin permanencia obligatoria, así que puedes cancelar cuando desees. ¿Te gustaría avanzar con el siguiente paso?",
+          "user_message": "¿Qué incluye?"
+        },
+        "sales": {
+          "discovery": {
+            "objectives": [
+              "entender volumen de conversaciones",
+              "identificar fallas en seguimiento",
+              "detectar impacto en ventas"
+            ],
+            "questions": [
+              "Por donde te entran mas mensajes hoy?",
+              "Que pasa despues del primer mensaje, haces seguimiento o se queda ahi?",
+              "Cuantas conversaciones sientes que se pierden por no responder a tiempo?"
+            ]
+          },
+          "qualification": {
+            "detect_offer_fit": true
+          },
+          "support": {
+            "info_handling": {
+              "explain_first": false,
+              "sell_after": true
+            },
+            "hard_rules": [
+              "si el usuario pide informacion, evita saludo generico y conecta con dolor comercial real",
+              "prohibido preguntas consultivas vacias",
+              "si respondes informacion, avanza la conversacion desde un problema real"
+            ]
+          },
+          "pain": {
+            "clusters": {
+              "gestion_mensajes": {
+                "signals": [
+                  "muchos mensajes",
+                  "no me da el tiempo",
+                  "no alcanzo a responder"
+                ],
+                "impacts": [
+                  "cada mensaje que no respondes es un cliente que se va con otro",
+                  "el cliente se enfria y termina comprando en otro lado",
+                  "pierdes ventas sin darte cuenta"
+                ],
+                "monetization": [
+                  "cada lead sin respuesta es dinero perdido",
+                  "cada demora baja la probabilidad de cierre"
+                ],
+                "urgency_levels": {
+                  "alto": [
+                    "ya estas perdiendo dinero"
+                  ],
+                  "medio": [
+                    "estas dejando oportunidades"
+                  ]
+                },
+                "recommended_angles": [
+                  "tiempo",
+                  "dinero"
+                ]
+              },
+              "falta_seguimiento": {
+                "signals": [
+                  "no hago seguimiento",
+                  "se me olvidan los clientes"
+                ],
+                "impacts": [
+                  "el cliente se enfria y termina comprando en otro lado",
+                  "pierdes ventas que ya estaban avanzadas"
+                ],
+                "monetization": [
+                  "cada seguimiento perdido reduce cierres"
+                ],
+                "urgency_levels": {
+                  "alto": [
+                    "hay ventas en riesgo por falta de continuidad"
+                  ],
+                  "medio": [
+                    "el pipeline se enfria mas rapido"
+                  ]
+                },
+                "recommended_angles": [
+                  "dinero"
+                ]
+              }
+            }
+          },
+          "angles": {
+            "tiempo": {
+              "when": [
+                "no me da el tiempo",
+                "muchos mensajes"
+              ],
+              "execution": [
+                "no es solo responder, es que no te alcanza el tiempo"
+              ]
+            },
+            "dinero": {
+              "when": [
+                "pierdo clientes",
+                "no vendo"
+              ],
+              "execution": [
+                "cada lead que se enfria es dinero que ya estaba cerca"
+              ]
+            }
+          },
+          "conversation_flow": {
+            "steps": [
+              "detect_pain",
+              "amplify_impact",
+              "present_solution",
+              "guide_next_step"
+            ],
+            "rules": {
+              "no_skip_steps": true
+            }
+          },
+          "solution": {
+            "framing": [
+              "No se trata solo de responder, sino de sostener el seguimiento.",
+              "La idea es que no dependas de estar pegado al celular.",
+              "El sistema responde y tambien retoma conversaciones automaticamente."
+            ],
+            "mapping": {
+              "gestion_mensajes": [
+                "automatizar_respuesta",
+                "seguimiento"
+              ],
+              "falta_seguimiento": [
+                "seguimiento_automatico"
+              ]
+            }
+          },
+          "offer": {
+            "strategy": {
+              "single": [
+                "explicar directo y conectar con valor",
+                "no sobrecargar con informacion"
+              ],
+              "multi": [
+                "recomendar segun problema",
+                "no listar todos los planes",
+                "guiar a mejor opcion"
+              ]
+            },
+            "recommendation_rules": [
+              {
+                "condition": "gestion_mensajes",
+                "recommend": "plan_pro"
+              },
+              {
+                "condition": "seguimiento",
+                "recommend": "plan_basico"
+              }
+            ]
+          },
+          "objection": {
+            "price": {
+              "layers": {
+                "acknowledge": [
+                  "Te entiendo, es una inversion importante.",
+                  "Es normal verlo asi al inicio."
+                ],
+                "reframe": [
+                  "Lo que suele salir caro es perder conversaciones que ya estaban interesadas.",
+                  "Cuando empiezas a recuperar leads, se paga solo."
+                ],
+                "proof": [
+                  "cuando recuperas ventas se paga solo"
+                ],
+                "redirect": [
+                  "avancemos hoy con activacion y recuperacion de conversaciones"
+                ]
+              },
+              "hard_rules": [
+                "no terminar objecion con 'quieres saber'",
+                "cerrar objecion con siguiente paso concreto"
+              ]
+            }
+          },
+          "closing": {
+            "strategy": "direct_sale",
+            "next_step": {
+              "action": "dynamic"
+            },
+            "required_data": [],
+            "behavior": {
+              "direct_sale": {
+                "goal": "confirmar_compra"
+              },
+              "lead_capture": {
+                "goal": "capturar_datos"
+              },
+              "booking": {
+                "goal": "agendar"
+              },
+              "checkout": {
+                "goal": "enviar_pago"
+              }
+            },
+            "triggers": [
+              "quiero empezar",
+              "me interesa",
+              "como arrancamos",
+              "quiero comprar",
+              "arranquemos"
+            ],
+            "actions": {
+              "high_intent": [
+                "agendar",
+                "activar",
+                "iniciar ahora"
+              ]
+            },
+            "next_steps": [
+              "agendar implementacion",
+              "configurar sistema",
+              "activar prueba"
+            ],
+            "micro_commitments": [
+              "te muestro como seria en tu caso",
+              "vemos el siguiente paso practico"
+            ],
+            "hard_rules": [
+              "si hay intencion de compra, confirmar y ejecutar cierre sin preguntas",
+              "no pedir mas contexto ni disponibilidad en buy",
+              "entregar accion concreta de arranque inmediato",
+              "prohibido cerrar buy con pregunta abierta",
+              "respuesta buy invalida si contiene '?' o '¿'",
+              "respuesta objection invalida si contiene la frase 'quieres saber'",
+              "en objection incluir literalmente 'avanzamos' o 'siguiente paso'"
+            ]
+          },
+          "progression_rules": {
+            "required_flow": [
+              "detect_pain",
+              "amplify_impact",
+              "present_solution",
+              "guide_next_step"
+            ],
+            "forbid": [
+              "responder_sin_direccion",
+              "responder_sin_solucion"
+            ]
+          }
+        },
+        "business": {
+          "name": "Asesor Comercial",
+          "brand_name": "Asesor Comercial",
+          "description": "Negocios que reciben muchos mensajes y no alcanzan a responder a tiempo, perdiendo clientes y oportunidades de venta sin darse cuenta.\n",
+          "industry": "automatizacion comercial para negocios que venden por chat",
+          "tone": "humano, cercano, directo y comercial de cierre",
+          "voice": "cercano, directo y orientado a resultados",
+          "city": "Medellin",
+          "promise": "Convierte tu WhatsApp en un vendedor automático 24/7 con un asistente comercial inteligente que responde al instante, da seguimiento a cada prospecto y transforma conversaciones en ventas sin que tengas que estar pendiente.\n",
+          "positioning": "Para negocios que pierden ventas porque no alcanzan a responder a tiempo y el seguimiento se pierde despues del primer contacto.\n",
+          "differentiators": [
+            "seguimiento automatico con contexto",
+            "integracion con WhatsApp",
+            "enfoque en ventas, no solo respuestas",
+            "implementacion guiada paso a paso"
+          ],
+          "customer_profile": {
+            "segment": "pymes de servicios y ventas",
+            "company_size": "2 a 25 personas",
+            "maturity": "venden por chat pero sin proceso de seguimiento consistente",
+            "roles": [
+              "dueno",
+              "asesor comercial",
+              "community manager"
+            ]
+          },
+          "pain_points": [
+            "no alcanzan a responder todos los mensajes",
+            "el seguimiento se pierde despues del primer contacto",
+            "conversaciones dispersas en multiples canales",
+            "oportunidades que se enfrian por demora"
+          ],
+          "desired_outcomes": [
+            "responder rapido sin depender del tiempo humano",
+            "mantener seguimiento constante",
+            "aumentar conversion de chats a ventas",
+            "tener orden en el proceso comercial"
+          ],
+          "credibility": [
+            "implementaciones reales en negocios similares",
+            "casos donde se recuperan conversaciones perdidas"
+          ],
+          "value_drivers": {
+            "tiempo": {
+              "description": "ahorro de tiempo en respuesta y seguimiento",
+              "triggers": [
+                "no me da el tiempo",
+                "muchos mensajes"
+              ]
+            },
+            "dinero": {
+              "description": "recuperacion de oportunidades perdidas",
+              "triggers": [
+                "pierdo clientes",
+                "no vendo"
+              ]
+            }
+          },
+          "buying_motivation": {
+            "primary": "tiempo",
+            "secondary": "dinero"
+          },
+          "use_cases": [
+            {
+              "nombre": "negocio saturado",
+              "senales": [
+                "muchos mensajes",
+                "no alcanzo a responder"
+              ],
+              "enfoque": "automatizar_respuesta"
+            },
+            {
+              "nombre": "seguimiento perdido",
+              "senales": [
+                "no hago seguimiento"
+              ],
+              "enfoque": "seguimiento_automatico"
+            }
+          ],
+          "location": {
+            "type": "virtual",
+            "address": "",
+            "city": "Medellin",
+            "coverage": {
+              "type": "nacional",
+              "zones": [
+                "colombia"
+              ]
+            }
+          },
+          "service_modes": [
+            "virtual"
+          ],
+          "logistics": {
+            "delivery": {
+              "available": false,
+              "type": "tercero",
+              "zones": [],
+              "cost": {
+                "type": "variable",
+                "value": 0
+              },
+              "time": {
+                "min": "",
+                "max": ""
+              }
+            },
+            "shipping": {
+              "available": false,
+              "scope": "nacional",
+              "providers": [],
+              "cost": {
+                "type": "variable",
+                "value": 0
+              },
+              "time": {
+                "min": "",
+                "max": ""
+              }
+            },
+            "pickup": {
+              "available": false,
+              "instructions": ""
+            },
+            "scheduling": {
+              "required": false
+            }
+          }
+        },
+        "pricing": {
+          "plans": [
+            {
+              "id": "plan_basico",
+              "name": "Plan Basico",
+              "description": "Configuracion inicial + sistema mensual",
+              "pricing": {
+                "COP": {
+                  "implementation": 100000,
+                  "monthly": 110000
+                },
+                "USD": {
+                  "implementation": 40,
+                  "monthly": 45
+                }
+              },
+              "includes": [
+                "configuracion inicial",
+                "Integración con WhatsApp",
+                "Asistente conversacional inteligente",
+                "Soporte inicial",
+                "Seguimiento automático de clientes"
+              ],
+              "not_included": [
+                "Costos de Meta (WhatsApp Business API)",
+                "costos de plataformas externas (token de IA, hosting, etc)",
+                "inversion publicitaria",
+                "Desarrollos o integraciones avanzadas"
+              ],
+              "payment": {
+                "link": "https://checkout.aisalesengine.com/asesor-ai-prod/plan-basico",
+                "transfer": {
+                  "enabled": true,
+                  "methods": [
+                    {
+                      "type": "nequi",
+                      "number": "3001234567"
+                    },
+                    {
+                      "type": "daviplata",
+                      "number": "3009876543"
+                    },
+                    {
+                      "type": "bank",
+                      "bank": "Bancolombia",
+                      "account_type": "ahorros",
+                      "account_number": "1234567890"
+                    },
+                    {
+                      "type": "breb",
+                      "reference": "usuario@correo.com"
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "conditions": [
+            "sin permanencia obligatoria",
+            "se puede cancelar mensual",
+            "el primer mes se paga 210000 COP (configuracion + primer mes)",
+            "luego se paga mensualmente 110000 COP"
+          ],
+          "price_framing": {
+            "type": "comparativo"
+          },
+          "roi": {
+            "break_even_sales": 3
+          },
+          "business_offers": {
+            "core": [
+              "plan_basico",
+              "plan_pro"
+            ],
+            "upsell": [
+              "plan_pro",
+              "prioridad_soporte"
+            ],
+            "cross_sell": [
+              "integraciones",
+              "setup_operativo"
+            ],
+            "financing": {
+              "available": false,
+              "providers": [],
+              "options": []
+            }
+          }
+        },
+        "features": {
+          "pricing_enabled": true,
+          "multi_currency": true,
+          "multi_plan": true,
+          "catalog_mode": false,
+          "business_model": "saas"
+        },
+        "inventory": {
+          "track_stock": false,
+          "items": []
+        },
+        "channel": "whatsapp",
+        "conversation_state": "active",
+        "memory_context": {}
+      }
+    },
+    {
+      "turn": 9,
+      "user_message": "¿Qué no incluye?",
+      "assistant_reply": "El Plan Básico no incluye personalizaciones avanzadas ni soporte técnico extendido. Está diseñado para ofrecerte una solución eficiente y sencilla para comenzar a automatizar tu atención al cliente. Si necesitas algo más específico, podemos hablar de opciones adicionales. ¿Te gustaría avanzar con el siguiente paso?",
+      "ai_used": true,
+      "metadata": {
+        "mode": "",
+        "tenant_slug": "asesor_ai_prod",
+        "memory_state": {
+          "last_message": "¿Qué incluye?",
+          "last_user_message": "¿Qué incluye?",
+          "last_response": "El Plan Básico incluye la configuración inicial de tu asistente inteligente y el primer mes de servicio. A partir del segundo mes, tendrás acceso a la automatización de respuestas y seguimiento a clientes por solo 110,000 COP mensuales. Sin permanencia obligatoria, así que puedes cancelar cuando desees. ¿Te gustaría avanzar con el siguiente paso?",
+          "last_ai_response": "El Plan Básico incluye la configuración inicial de tu asistente inteligente y el primer mes de servicio. A partir del segundo mes, tendrás acceso a la automatización de respuestas y seguimiento a clientes por solo 110,000 COP mensuales. Sin permanencia obligatoria, así que puedes cancelar cuando desees. ¿Te gustaría avanzar con el siguiente paso?",
+          "history_summary": "user: ¿Cómo funciona eso?\nassistant: Funciona integrando un asistente inteligente en tu WhatsApp que automatiza las respuestas a tus clientes. Cuando alguien te envía un mensaje, el asistente responde de inmediato, ayudando a resolver dudas y a seguir con el proceso de compra. Así, tú puedes enfocarte en tareas más importantes mientras el asistente se encarga de la atención al cliente. ¿Te gustaría saber cómo implementarlo en tu negocio?\nuser: ¿De verdad eso me puede ayudar a vender más?\nassistant: Sí, definitivamente. Al automatizar las respuestas en WhatsApp, puedes atender a más clientes al mismo tiempo, resolver sus dudas de inmediato y guiarlos en el proceso de compra. Esto no solo mejora la experiencia del cliente, sino que también aumenta tus oportunidades de venta. ¿Te gustaría saber cómo podemos implementar esto en tu negocio?\nuser: ¿Por dónde funciona?\nassistant: Nuestra solución funciona directamente a través de WhatsApp, donde se integra un asistente inteligente que automatiza la atención al cliente. Así, podrás gestionar mensajes y consultas de manera eficiente, sin importar cuántos recibas. ¿Te gustaría saber cómo podemos ayudarte a implementarlo?\nuser: ¿Y qué precio tiene?\nassistant: El Plan Básico tiene un costo de 210,000 COP en el primer mes, que incluye la configuración y el primer mes de servicio. Después de eso, pagarás 110,000 COP mensuales. Sin permanencia obligatoria, así que puedes cancelar cuando desees. ¿Te gustaría avanzar con el siguiente paso?\nuser: ¿Qué incluye?\nassistant: El Plan Básico incluye la configuración inicial de tu asistente inteligente y el primer mes de servicio. A partir del segundo mes, tendrás acceso a la automatización de respuestas y seguimiento a clientes por solo 110,000 COP mensuales. Sin permanencia obligatoria, así que puedes cancelar cuando desees. ¿Te gustaría avanzar con el siguiente paso?",
+          "sales_memory_hint": "",
+          "last_intent": "info",
+          "intent_detectado": "info",
+          "last_pain": "",
+          "metodo_pago_elegido": "",
+          "estado_pago": "none",
+          "stage": "",
+          "mode": "",
+          "last_cta": "",
+          "conversation_state": "active"
+        },
+        "source": "ai_raw",
+        "intent": "info",
+        "intent_missing": false,
+        "ai_metadata": {
+          "intent": "info",
+          "stage": "",
+          "pain_detected": false,
+          "pain": "",
+          "next_step": "",
+          "urgency": "",
+          "last_cta": "",
+          "objection_count": 0,
+          "mode": "",
+          "payment_method": "",
+          "payment_status": "",
+          "response": "El Plan Básico no incluye personalizaciones avanzadas ni soporte técnico extendido. Está diseñado para ofrecerte una solución eficiente y sencilla para comenzar a automatizar tu atención al cliente. Si necesitas algo más específico, podemos hablar de opciones adicionales. ¿Te gustaría avanzar con el siguiente paso?",
+          "user_message": "¿Qué no incluye?"
+        },
+        "sales": {
+          "discovery": {
+            "objectives": [
+              "entender volumen de conversaciones",
+              "identificar fallas en seguimiento",
+              "detectar impacto en ventas"
+            ],
+            "questions": [
+              "Por donde te entran mas mensajes hoy?",
+              "Que pasa despues del primer mensaje, haces seguimiento o se queda ahi?",
+              "Cuantas conversaciones sientes que se pierden por no responder a tiempo?"
+            ]
+          },
+          "qualification": {
+            "detect_offer_fit": true
+          },
+          "support": {
+            "info_handling": {
+              "explain_first": false,
+              "sell_after": true
+            },
+            "hard_rules": [
+              "si el usuario pide informacion, evita saludo generico y conecta con dolor comercial real",
+              "prohibido preguntas consultivas vacias",
+              "si respondes informacion, avanza la conversacion desde un problema real"
+            ]
+          },
+          "pain": {
+            "clusters": {
+              "gestion_mensajes": {
+                "signals": [
+                  "muchos mensajes",
+                  "no me da el tiempo",
+                  "no alcanzo a responder"
+                ],
+                "impacts": [
+                  "cada mensaje que no respondes es un cliente que se va con otro",
+                  "el cliente se enfria y termina comprando en otro lado",
+                  "pierdes ventas sin darte cuenta"
+                ],
+                "monetization": [
+                  "cada lead sin respuesta es dinero perdido",
+                  "cada demora baja la probabilidad de cierre"
+                ],
+                "urgency_levels": {
+                  "alto": [
+                    "ya estas perdiendo dinero"
+                  ],
+                  "medio": [
+                    "estas dejando oportunidades"
+                  ]
+                },
+                "recommended_angles": [
+                  "tiempo",
+                  "dinero"
+                ]
+              },
+              "falta_seguimiento": {
+                "signals": [
+                  "no hago seguimiento",
+                  "se me olvidan los clientes"
+                ],
+                "impacts": [
+                  "el cliente se enfria y termina comprando en otro lado",
+                  "pierdes ventas que ya estaban avanzadas"
+                ],
+                "monetization": [
+                  "cada seguimiento perdido reduce cierres"
+                ],
+                "urgency_levels": {
+                  "alto": [
+                    "hay ventas en riesgo por falta de continuidad"
+                  ],
+                  "medio": [
+                    "el pipeline se enfria mas rapido"
+                  ]
+                },
+                "recommended_angles": [
+                  "dinero"
+                ]
+              }
+            }
+          },
+          "angles": {
+            "tiempo": {
+              "when": [
+                "no me da el tiempo",
+                "muchos mensajes"
+              ],
+              "execution": [
+                "no es solo responder, es que no te alcanza el tiempo"
+              ]
+            },
+            "dinero": {
+              "when": [
+                "pierdo clientes",
+                "no vendo"
+              ],
+              "execution": [
+                "cada lead que se enfria es dinero que ya estaba cerca"
+              ]
+            }
+          },
+          "conversation_flow": {
+            "steps": [
+              "detect_pain",
+              "amplify_impact",
+              "present_solution",
+              "guide_next_step"
+            ],
+            "rules": {
+              "no_skip_steps": true
+            }
+          },
+          "solution": {
+            "framing": [
+              "No se trata solo de responder, sino de sostener el seguimiento.",
+              "La idea es que no dependas de estar pegado al celular.",
+              "El sistema responde y tambien retoma conversaciones automaticamente."
+            ],
+            "mapping": {
+              "gestion_mensajes": [
+                "automatizar_respuesta",
+                "seguimiento"
+              ],
+              "falta_seguimiento": [
+                "seguimiento_automatico"
+              ]
+            }
+          },
+          "offer": {
+            "strategy": {
+              "single": [
+                "explicar directo y conectar con valor",
+                "no sobrecargar con informacion"
+              ],
+              "multi": [
+                "recomendar segun problema",
+                "no listar todos los planes",
+                "guiar a mejor opcion"
+              ]
+            },
+            "recommendation_rules": [
+              {
+                "condition": "gestion_mensajes",
+                "recommend": "plan_pro"
+              },
+              {
+                "condition": "seguimiento",
+                "recommend": "plan_basico"
+              }
+            ]
+          },
+          "objection": {
+            "price": {
+              "layers": {
+                "acknowledge": [
+                  "Te entiendo, es una inversion importante.",
+                  "Es normal verlo asi al inicio."
+                ],
+                "reframe": [
+                  "Lo que suele salir caro es perder conversaciones que ya estaban interesadas.",
+                  "Cuando empiezas a recuperar leads, se paga solo."
+                ],
+                "proof": [
+                  "cuando recuperas ventas se paga solo"
+                ],
+                "redirect": [
+                  "avancemos hoy con activacion y recuperacion de conversaciones"
+                ]
+              },
+              "hard_rules": [
+                "no terminar objecion con 'quieres saber'",
+                "cerrar objecion con siguiente paso concreto"
+              ]
+            }
+          },
+          "closing": {
+            "strategy": "direct_sale",
+            "next_step": {
+              "action": "dynamic"
+            },
+            "required_data": [],
+            "behavior": {
+              "direct_sale": {
+                "goal": "confirmar_compra"
+              },
+              "lead_capture": {
+                "goal": "capturar_datos"
+              },
+              "booking": {
+                "goal": "agendar"
+              },
+              "checkout": {
+                "goal": "enviar_pago"
+              }
+            },
+            "triggers": [
+              "quiero empezar",
+              "me interesa",
+              "como arrancamos",
+              "quiero comprar",
+              "arranquemos"
+            ],
+            "actions": {
+              "high_intent": [
+                "agendar",
+                "activar",
+                "iniciar ahora"
+              ]
+            },
+            "next_steps": [
+              "agendar implementacion",
+              "configurar sistema",
+              "activar prueba"
+            ],
+            "micro_commitments": [
+              "te muestro como seria en tu caso",
+              "vemos el siguiente paso practico"
+            ],
+            "hard_rules": [
+              "si hay intencion de compra, confirmar y ejecutar cierre sin preguntas",
+              "no pedir mas contexto ni disponibilidad en buy",
+              "entregar accion concreta de arranque inmediato",
+              "prohibido cerrar buy con pregunta abierta",
+              "respuesta buy invalida si contiene '?' o '¿'",
+              "respuesta objection invalida si contiene la frase 'quieres saber'",
+              "en objection incluir literalmente 'avanzamos' o 'siguiente paso'"
+            ]
+          },
+          "progression_rules": {
+            "required_flow": [
+              "detect_pain",
+              "amplify_impact",
+              "present_solution",
+              "guide_next_step"
+            ],
+            "forbid": [
+              "responder_sin_direccion",
+              "responder_sin_solucion"
+            ]
+          }
+        },
+        "business": {
+          "name": "Asesor Comercial",
+          "brand_name": "Asesor Comercial",
+          "description": "Negocios que reciben muchos mensajes y no alcanzan a responder a tiempo, perdiendo clientes y oportunidades de venta sin darse cuenta.\n",
+          "industry": "automatizacion comercial para negocios que venden por chat",
+          "tone": "humano, cercano, directo y comercial de cierre",
+          "voice": "cercano, directo y orientado a resultados",
+          "city": "Medellin",
+          "promise": "Convierte tu WhatsApp en un vendedor automático 24/7 con un asistente comercial inteligente que responde al instante, da seguimiento a cada prospecto y transforma conversaciones en ventas sin que tengas que estar pendiente.\n",
+          "positioning": "Para negocios que pierden ventas porque no alcanzan a responder a tiempo y el seguimiento se pierde despues del primer contacto.\n",
+          "differentiators": [
+            "seguimiento automatico con contexto",
+            "integracion con WhatsApp",
+            "enfoque en ventas, no solo respuestas",
+            "implementacion guiada paso a paso"
+          ],
+          "customer_profile": {
+            "segment": "pymes de servicios y ventas",
+            "company_size": "2 a 25 personas",
+            "maturity": "venden por chat pero sin proceso de seguimiento consistente",
+            "roles": [
+              "dueno",
+              "asesor comercial",
+              "community manager"
+            ]
+          },
+          "pain_points": [
+            "no alcanzan a responder todos los mensajes",
+            "el seguimiento se pierde despues del primer contacto",
+            "conversaciones dispersas en multiples canales",
+            "oportunidades que se enfrian por demora"
+          ],
+          "desired_outcomes": [
+            "responder rapido sin depender del tiempo humano",
+            "mantener seguimiento constante",
+            "aumentar conversion de chats a ventas",
+            "tener orden en el proceso comercial"
+          ],
+          "credibility": [
+            "implementaciones reales en negocios similares",
+            "casos donde se recuperan conversaciones perdidas"
+          ],
+          "value_drivers": {
+            "tiempo": {
+              "description": "ahorro de tiempo en respuesta y seguimiento",
+              "triggers": [
+                "no me da el tiempo",
+                "muchos mensajes"
+              ]
+            },
+            "dinero": {
+              "description": "recuperacion de oportunidades perdidas",
+              "triggers": [
+                "pierdo clientes",
+                "no vendo"
+              ]
+            }
+          },
+          "buying_motivation": {
+            "primary": "tiempo",
+            "secondary": "dinero"
+          },
+          "use_cases": [
+            {
+              "nombre": "negocio saturado",
+              "senales": [
+                "muchos mensajes",
+                "no alcanzo a responder"
+              ],
+              "enfoque": "automatizar_respuesta"
+            },
+            {
+              "nombre": "seguimiento perdido",
+              "senales": [
+                "no hago seguimiento"
+              ],
+              "enfoque": "seguimiento_automatico"
+            }
+          ],
+          "location": {
+            "type": "virtual",
+            "address": "",
+            "city": "Medellin",
+            "coverage": {
+              "type": "nacional",
+              "zones": [
+                "colombia"
+              ]
+            }
+          },
+          "service_modes": [
+            "virtual"
+          ],
+          "logistics": {
+            "delivery": {
+              "available": false,
+              "type": "tercero",
+              "zones": [],
+              "cost": {
+                "type": "variable",
+                "value": 0
+              },
+              "time": {
+                "min": "",
+                "max": ""
+              }
+            },
+            "shipping": {
+              "available": false,
+              "scope": "nacional",
+              "providers": [],
+              "cost": {
+                "type": "variable",
+                "value": 0
+              },
+              "time": {
+                "min": "",
+                "max": ""
+              }
+            },
+            "pickup": {
+              "available": false,
+              "instructions": ""
+            },
+            "scheduling": {
+              "required": false
+            }
+          }
+        },
+        "pricing": {
+          "plans": [
+            {
+              "id": "plan_basico",
+              "name": "Plan Basico",
+              "description": "Configuracion inicial + sistema mensual",
+              "pricing": {
+                "COP": {
+                  "implementation": 100000,
+                  "monthly": 110000
+                },
+                "USD": {
+                  "implementation": 40,
+                  "monthly": 45
+                }
+              },
+              "includes": [
+                "configuracion inicial",
+                "Integración con WhatsApp",
+                "Asistente conversacional inteligente",
+                "Soporte inicial",
+                "Seguimiento automático de clientes"
+              ],
+              "not_included": [
+                "Costos de Meta (WhatsApp Business API)",
+                "costos de plataformas externas (token de IA, hosting, etc)",
+                "inversion publicitaria",
+                "Desarrollos o integraciones avanzadas"
+              ],
+              "payment": {
+                "link": "https://checkout.aisalesengine.com/asesor-ai-prod/plan-basico",
+                "transfer": {
+                  "enabled": true,
+                  "methods": [
+                    {
+                      "type": "nequi",
+                      "number": "3001234567"
+                    },
+                    {
+                      "type": "daviplata",
+                      "number": "3009876543"
+                    },
+                    {
+                      "type": "bank",
+                      "bank": "Bancolombia",
+                      "account_type": "ahorros",
+                      "account_number": "1234567890"
+                    },
+                    {
+                      "type": "breb",
+                      "reference": "usuario@correo.com"
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "conditions": [
+            "sin permanencia obligatoria",
+            "se puede cancelar mensual",
+            "el primer mes se paga 210000 COP (configuracion + primer mes)",
+            "luego se paga mensualmente 110000 COP"
+          ],
+          "price_framing": {
+            "type": "comparativo"
+          },
+          "roi": {
+            "break_even_sales": 3
+          },
+          "business_offers": {
+            "core": [
+              "plan_basico",
+              "plan_pro"
+            ],
+            "upsell": [
+              "plan_pro",
+              "prioridad_soporte"
+            ],
+            "cross_sell": [
+              "integraciones",
+              "setup_operativo"
+            ],
+            "financing": {
+              "available": false,
+              "providers": [],
+              "options": []
+            }
+          }
+        },
+        "features": {
+          "pricing_enabled": true,
+          "multi_currency": true,
+          "multi_plan": true,
+          "catalog_mode": false,
+          "business_model": "saas"
+        },
+        "inventory": {
+          "track_stock": false,
+          "items": []
+        },
+        "channel": "whatsapp",
+        "conversation_state": "active",
+        "memory_context": {}
+      }
+    },
+    {
+      "turn": 10,
+      "user_message": "Está caro, pero si me sirve quiero empezar",
+      "assistant_reply": "Entiendo que puede parecer un poco alto, pero recuerda que es una inversión para aumentar tus ventas y mejorar la atención al cliente. Avanzamos con el siguiente paso. ¿Prefieres pagar a través de un link o hacer una transferencia?",
+      "ai_used": true,
+      "metadata": {
+        "mode": "",
+        "tenant_slug": "asesor_ai_prod",
+        "memory_state": {
+          "last_message": "¿Qué no incluye?",
+          "last_user_message": "¿Qué no incluye?",
+          "last_response": "El Plan Básico no incluye personalizaciones avanzadas ni soporte técnico extendido. Está diseñado para ofrecerte una solución eficiente y sencilla para comenzar a automatizar tu atención al cliente. Si necesitas algo más específico, podemos hablar de opciones adicionales. ¿Te gustaría avanzar con el siguiente paso?",
+          "last_ai_response": "El Plan Básico no incluye personalizaciones avanzadas ni soporte técnico extendido. Está diseñado para ofrecerte una solución eficiente y sencilla para comenzar a automatizar tu atención al cliente. Si necesitas algo más específico, podemos hablar de opciones adicionales. ¿Te gustaría avanzar con el siguiente paso?",
+          "history_summary": "user: ¿De verdad eso me puede ayudar a vender más?\nassistant: Sí, definitivamente. Al automatizar las respuestas en WhatsApp, puedes atender a más clientes al mismo tiempo, resolver sus dudas de inmediato y guiarlos en el proceso de compra. Esto no solo mejora la experiencia del cliente, sino que también aumenta tus oportunidades de venta. ¿Te gustaría saber cómo podemos implementar esto en tu negocio?\nuser: ¿Por dónde funciona?\nassistant: Nuestra solución funciona directamente a través de WhatsApp, donde se integra un asistente inteligente que automatiza la atención al cliente. Así, podrás gestionar mensajes y consultas de manera eficiente, sin importar cuántos recibas. ¿Te gustaría saber cómo podemos ayudarte a implementarlo?\nuser: ¿Y qué precio tiene?\nassistant: El Plan Básico tiene un costo de 210,000 COP en el primer mes, que incluye la configuración y el primer mes de servicio. Después de eso, pagarás 110,000 COP mensuales. Sin permanencia obligatoria, así que puedes cancelar cuando desees. ¿Te gustaría avanzar con el siguiente paso?\nuser: ¿Qué incluye?\nassistant: El Plan Básico incluye la configuración inicial de tu asistente inteligente y el primer mes de servicio. A partir del segundo mes, tendrás acceso a la automatización de respuestas y seguimiento a clientes por solo 110,000 COP mensuales. Sin permanencia obligatoria, así que puedes cancelar cuando desees. ¿Te gustaría avanzar con el siguiente paso?\nuser: ¿Qué no incluye?\nassistant: El Plan Básico no incluye personalizaciones avanzadas ni soporte técnico extendido. Está diseñado para ofrecerte una solución eficiente y sencilla para comenzar a automatizar tu atención al cliente. Si necesitas algo más específico, podemos hablar de opciones adicionales. ¿Te gustaría avanzar con el siguiente paso?",
+          "sales_memory_hint": "",
+          "last_intent": "info",
+          "intent_detectado": "info",
+          "last_pain": "",
+          "metodo_pago_elegido": "",
+          "estado_pago": "none",
+          "stage": "",
+          "mode": "",
+          "last_cta": "",
+          "conversation_state": "active"
+        },
+        "source": "ai_raw",
+        "intent": "buy",
+        "intent_missing": false,
+        "ai_metadata": {
+          "intent": "buy",
+          "stage": "",
+          "pain_detected": false,
+          "pain": "",
+          "next_step": "",
+          "urgency": "",
+          "last_cta": "",
+          "objection_count": 0,
+          "mode": "",
+          "payment_method": "",
+          "payment_status": "",
+          "response": "Entiendo que puede parecer un poco alto, pero recuerda que es una inversión para aumentar tus ventas y mejorar la atención al cliente. Avanzamos con el siguiente paso. ¿Prefieres pagar a través de un link o hacer una transferencia?",
+          "user_message": "Está caro, pero si me sirve quiero empezar"
+        },
+        "sales": {
+          "discovery": {
+            "objectives": [
+              "entender volumen de conversaciones",
+              "identificar fallas en seguimiento",
+              "detectar impacto en ventas"
+            ],
+            "questions": [
+              "Por donde te entran mas mensajes hoy?",
+              "Que pasa despues del primer mensaje, haces seguimiento o se queda ahi?",
+              "Cuantas conversaciones sientes que se pierden por no responder a tiempo?"
+            ]
+          },
+          "qualification": {
+            "detect_offer_fit": true
+          },
+          "support": {
+            "info_handling": {
+              "explain_first": false,
+              "sell_after": true
+            },
+            "hard_rules": [
+              "si el usuario pide informacion, evita saludo generico y conecta con dolor comercial real",
+              "prohibido preguntas consultivas vacias",
+              "si respondes informacion, avanza la conversacion desde un problema real"
+            ]
+          },
+          "pain": {
+            "clusters": {
+              "gestion_mensajes": {
+                "signals": [
+                  "muchos mensajes",
+                  "no me da el tiempo",
+                  "no alcanzo a responder"
+                ],
+                "impacts": [
+                  "cada mensaje que no respondes es un cliente que se va con otro",
+                  "el cliente se enfria y termina comprando en otro lado",
+                  "pierdes ventas sin darte cuenta"
+                ],
+                "monetization": [
+                  "cada lead sin respuesta es dinero perdido",
+                  "cada demora baja la probabilidad de cierre"
+                ],
+                "urgency_levels": {
+                  "alto": [
+                    "ya estas perdiendo dinero"
+                  ],
+                  "medio": [
+                    "estas dejando oportunidades"
+                  ]
+                },
+                "recommended_angles": [
+                  "tiempo",
+                  "dinero"
+                ]
+              },
+              "falta_seguimiento": {
+                "signals": [
+                  "no hago seguimiento",
+                  "se me olvidan los clientes"
+                ],
+                "impacts": [
+                  "el cliente se enfria y termina comprando en otro lado",
+                  "pierdes ventas que ya estaban avanzadas"
+                ],
+                "monetization": [
+                  "cada seguimiento perdido reduce cierres"
+                ],
+                "urgency_levels": {
+                  "alto": [
+                    "hay ventas en riesgo por falta de continuidad"
+                  ],
+                  "medio": [
+                    "el pipeline se enfria mas rapido"
+                  ]
+                },
+                "recommended_angles": [
+                  "dinero"
+                ]
+              }
+            }
+          },
+          "angles": {
+            "tiempo": {
+              "when": [
+                "no me da el tiempo",
+                "muchos mensajes"
+              ],
+              "execution": [
+                "no es solo responder, es que no te alcanza el tiempo"
+              ]
+            },
+            "dinero": {
+              "when": [
+                "pierdo clientes",
+                "no vendo"
+              ],
+              "execution": [
+                "cada lead que se enfria es dinero que ya estaba cerca"
+              ]
+            }
+          },
+          "conversation_flow": {
+            "steps": [
+              "detect_pain",
+              "amplify_impact",
+              "present_solution",
+              "guide_next_step"
+            ],
+            "rules": {
+              "no_skip_steps": true
+            }
+          },
+          "solution": {
+            "framing": [
+              "No se trata solo de responder, sino de sostener el seguimiento.",
+              "La idea es que no dependas de estar pegado al celular.",
+              "El sistema responde y tambien retoma conversaciones automaticamente."
+            ],
+            "mapping": {
+              "gestion_mensajes": [
+                "automatizar_respuesta",
+                "seguimiento"
+              ],
+              "falta_seguimiento": [
+                "seguimiento_automatico"
+              ]
+            }
+          },
+          "offer": {
+            "strategy": {
+              "single": [
+                "explicar directo y conectar con valor",
+                "no sobrecargar con informacion"
+              ],
+              "multi": [
+                "recomendar segun problema",
+                "no listar todos los planes",
+                "guiar a mejor opcion"
+              ]
+            },
+            "recommendation_rules": [
+              {
+                "condition": "gestion_mensajes",
+                "recommend": "plan_pro"
+              },
+              {
+                "condition": "seguimiento",
+                "recommend": "plan_basico"
+              }
+            ]
+          },
+          "objection": {
+            "price": {
+              "layers": {
+                "acknowledge": [
+                  "Te entiendo, es una inversion importante.",
+                  "Es normal verlo asi al inicio."
+                ],
+                "reframe": [
+                  "Lo que suele salir caro es perder conversaciones que ya estaban interesadas.",
+                  "Cuando empiezas a recuperar leads, se paga solo."
+                ],
+                "proof": [
+                  "cuando recuperas ventas se paga solo"
+                ],
+                "redirect": [
+                  "avancemos hoy con activacion y recuperacion de conversaciones"
+                ]
+              },
+              "hard_rules": [
+                "no terminar objecion con 'quieres saber'",
+                "cerrar objecion con siguiente paso concreto"
+              ]
+            }
+          },
+          "closing": {
+            "strategy": "direct_sale",
+            "next_step": {
+              "action": "dynamic"
+            },
+            "required_data": [],
+            "behavior": {
+              "direct_sale": {
+                "goal": "confirmar_compra"
+              },
+              "lead_capture": {
+                "goal": "capturar_datos"
+              },
+              "booking": {
+                "goal": "agendar"
+              },
+              "checkout": {
+                "goal": "enviar_pago"
+              }
+            },
+            "triggers": [
+              "quiero empezar",
+              "me interesa",
+              "como arrancamos",
+              "quiero comprar",
+              "arranquemos"
+            ],
+            "actions": {
+              "high_intent": [
+                "agendar",
+                "activar",
+                "iniciar ahora"
+              ]
+            },
+            "next_steps": [
+              "agendar implementacion",
+              "configurar sistema",
+              "activar prueba"
+            ],
+            "micro_commitments": [
+              "te muestro como seria en tu caso",
+              "vemos el siguiente paso practico"
+            ],
+            "hard_rules": [
+              "si hay intencion de compra, confirmar y ejecutar cierre sin preguntas",
+              "no pedir mas contexto ni disponibilidad en buy",
+              "entregar accion concreta de arranque inmediato",
+              "prohibido cerrar buy con pregunta abierta",
+              "respuesta buy invalida si contiene '?' o '¿'",
+              "respuesta objection invalida si contiene la frase 'quieres saber'",
+              "en objection incluir literalmente 'avanzamos' o 'siguiente paso'"
+            ]
+          },
+          "progression_rules": {
+            "required_flow": [
+              "detect_pain",
+              "amplify_impact",
+              "present_solution",
+              "guide_next_step"
+            ],
+            "forbid": [
+              "responder_sin_direccion",
+              "responder_sin_solucion"
+            ]
+          }
+        },
+        "business": {
+          "name": "Asesor Comercial",
+          "brand_name": "Asesor Comercial",
+          "description": "Negocios que reciben muchos mensajes y no alcanzan a responder a tiempo, perdiendo clientes y oportunidades de venta sin darse cuenta.\n",
+          "industry": "automatizacion comercial para negocios que venden por chat",
+          "tone": "humano, cercano, directo y comercial de cierre",
+          "voice": "cercano, directo y orientado a resultados",
+          "city": "Medellin",
+          "promise": "Convierte tu WhatsApp en un vendedor automático 24/7 con un asistente comercial inteligente que responde al instante, da seguimiento a cada prospecto y transforma conversaciones en ventas sin que tengas que estar pendiente.\n",
+          "positioning": "Para negocios que pierden ventas porque no alcanzan a responder a tiempo y el seguimiento se pierde despues del primer contacto.\n",
+          "differentiators": [
+            "seguimiento automatico con contexto",
+            "integracion con WhatsApp",
+            "enfoque en ventas, no solo respuestas",
+            "implementacion guiada paso a paso"
+          ],
+          "customer_profile": {
+            "segment": "pymes de servicios y ventas",
+            "company_size": "2 a 25 personas",
+            "maturity": "venden por chat pero sin proceso de seguimiento consistente",
+            "roles": [
+              "dueno",
+              "asesor comercial",
+              "community manager"
+            ]
+          },
+          "pain_points": [
+            "no alcanzan a responder todos los mensajes",
+            "el seguimiento se pierde despues del primer contacto",
+            "conversaciones dispersas en multiples canales",
+            "oportunidades que se enfrian por demora"
+          ],
+          "desired_outcomes": [
+            "responder rapido sin depender del tiempo humano",
+            "mantener seguimiento constante",
+            "aumentar conversion de chats a ventas",
+            "tener orden en el proceso comercial"
+          ],
+          "credibility": [
+            "implementaciones reales en negocios similares",
+            "casos donde se recuperan conversaciones perdidas"
+          ],
+          "value_drivers": {
+            "tiempo": {
+              "description": "ahorro de tiempo en respuesta y seguimiento",
+              "triggers": [
+                "no me da el tiempo",
+                "muchos mensajes"
+              ]
+            },
+            "dinero": {
+              "description": "recuperacion de oportunidades perdidas",
+              "triggers": [
+                "pierdo clientes",
+                "no vendo"
+              ]
+            }
+          },
+          "buying_motivation": {
+            "primary": "tiempo",
+            "secondary": "dinero"
+          },
+          "use_cases": [
+            {
+              "nombre": "negocio saturado",
+              "senales": [
+                "muchos mensajes",
+                "no alcanzo a responder"
+              ],
+              "enfoque": "automatizar_respuesta"
+            },
+            {
+              "nombre": "seguimiento perdido",
+              "senales": [
+                "no hago seguimiento"
+              ],
+              "enfoque": "seguimiento_automatico"
+            }
+          ],
+          "location": {
+            "type": "virtual",
+            "address": "",
+            "city": "Medellin",
+            "coverage": {
+              "type": "nacional",
+              "zones": [
+                "colombia"
+              ]
+            }
+          },
+          "service_modes": [
+            "virtual"
+          ],
+          "logistics": {
+            "delivery": {
+              "available": false,
+              "type": "tercero",
+              "zones": [],
+              "cost": {
+                "type": "variable",
+                "value": 0
+              },
+              "time": {
+                "min": "",
+                "max": ""
+              }
+            },
+            "shipping": {
+              "available": false,
+              "scope": "nacional",
+              "providers": [],
+              "cost": {
+                "type": "variable",
+                "value": 0
+              },
+              "time": {
+                "min": "",
+                "max": ""
+              }
+            },
+            "pickup": {
+              "available": false,
+              "instructions": ""
+            },
+            "scheduling": {
+              "required": false
+            }
+          }
+        },
+        "pricing": {
+          "plans": [
+            {
+              "id": "plan_basico",
+              "name": "Plan Basico",
+              "description": "Configuracion inicial + sistema mensual",
+              "pricing": {
+                "COP": {
+                  "implementation": 100000,
+                  "monthly": 110000
+                },
+                "USD": {
+                  "implementation": 40,
+                  "monthly": 45
+                }
+              },
+              "includes": [
+                "configuracion inicial",
+                "Integración con WhatsApp",
+                "Asistente conversacional inteligente",
+                "Soporte inicial",
+                "Seguimiento automático de clientes"
+              ],
+              "not_included": [
+                "Costos de Meta (WhatsApp Business API)",
+                "costos de plataformas externas (token de IA, hosting, etc)",
+                "inversion publicitaria",
+                "Desarrollos o integraciones avanzadas"
+              ],
+              "payment": {
+                "link": "https://checkout.aisalesengine.com/asesor-ai-prod/plan-basico",
+                "transfer": {
+                  "enabled": true,
+                  "methods": [
+                    {
+                      "type": "nequi",
+                      "number": "3001234567"
+                    },
+                    {
+                      "type": "daviplata",
+                      "number": "3009876543"
+                    },
+                    {
+                      "type": "bank",
+                      "bank": "Bancolombia",
+                      "account_type": "ahorros",
+                      "account_number": "1234567890"
+                    },
+                    {
+                      "type": "breb",
+                      "reference": "usuario@correo.com"
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "conditions": [
+            "sin permanencia obligatoria",
+            "se puede cancelar mensual",
+            "el primer mes se paga 210000 COP (configuracion + primer mes)",
+            "luego se paga mensualmente 110000 COP"
+          ],
+          "price_framing": {
+            "type": "comparativo"
+          },
+          "roi": {
+            "break_even_sales": 3
+          },
+          "business_offers": {
+            "core": [
+              "plan_basico",
+              "plan_pro"
+            ],
+            "upsell": [
+              "plan_pro",
+              "prioridad_soporte"
+            ],
+            "cross_sell": [
+              "integraciones",
+              "setup_operativo"
+            ],
+            "financing": {
+              "available": false,
+              "providers": [],
+              "options": []
+            }
+          }
+        },
+        "features": {
+          "pricing_enabled": true,
+          "multi_currency": true,
+          "multi_plan": true,
+          "catalog_mode": false,
+          "business_model": "saas"
+        },
+        "inventory": {
+          "track_stock": false,
+          "items": []
+        },
+        "channel": "whatsapp",
+        "conversation_state": "active",
+        "memory_context": {}
+      }
+    }
+  ],
+  "turn_evaluations": [
+    {
+      "turn": 1,
+      "user_message": "Hola amigo",
+      "assistant_reply": "Hola, ¿qué más? 👋 soy Juan un gusto tenerte por aquí.",
+      "price": false,
+      "includes": false,
+      "not_includes": false,
+      "roi": false,
+      "cta": false,
+      "objection_handling": false,
+      "closing_progress": false,
+      "notes": []
+    },
+    {
+      "turn": 2,
+      "user_message": "Dame más información de lo que venden",
+      "assistant_reply": "Ofrecemos una solución de automatización comercial que convierte tu WhatsApp en un vendedor automático 24/7. Con un asistente inteligente, podrás responder al instante, dar seguimiento a prospectos y transformar conversaciones en ventas sin esfuerzo. Ideal para negocios que buscan optimizar su atención al cliente y aumentar sus ventas. ¿Te gustaría saber más sobre cómo empezar?",
+      "price": false,
+      "includes": true,
+      "not_includes": false,
+      "roi": false,
+      "cta": true,
+      "objection_handling": false,
+      "closing_progress": true,
+      "notes": []
+    },
+    {
+      "turn": 3,
+      "user_message": "Yo recibo muchos mensajes y no alcanzo a responder",
+      "assistant_reply": "Entiendo que manejar muchos mensajes puede ser abrumador. Nuestra solución automatiza tus respuestas en WhatsApp, permitiendo que un asistente inteligente responda instantáneamente a tus clientes y dé seguimiento a los prospectos. Así, podrás enfocarte en lo que realmente importa. ¿Te gustaría saber cómo implementar esta solución y aliviar esa carga?",
+      "price": false,
+      "includes": true,
+      "not_includes": false,
+      "roi": true,
+      "cta": true,
+      "objection_handling": true,
+      "closing_progress": true,
+      "notes": []
+    },
+    {
+      "turn": 4,
+      "user_message": "¿Cómo funciona eso?",
+      "assistant_reply": "Funciona integrando un asistente inteligente en tu WhatsApp que automatiza las respuestas a tus clientes. Cuando alguien te envía un mensaje, el asistente responde de inmediato, ayudando a resolver dudas y a seguir con el proceso de compra. Así, tú puedes enfocarte en tareas más importantes mientras el asistente se encarga de la atención al cliente. ¿Te gustaría saber cómo implementarlo en tu negocio?",
+      "price": false,
+      "includes": true,
+      "not_includes": false,
+      "roi": true,
+      "cta": true,
+      "objection_handling": false,
+      "closing_progress": true,
+      "notes": []
+    },
+    {
+      "turn": 5,
+      "user_message": "¿De verdad eso me puede ayudar a vender más?",
+      "assistant_reply": "Sí, definitivamente. Al automatizar las respuestas en WhatsApp, puedes atender a más clientes al mismo tiempo, resolver sus dudas de inmediato y guiarlos en el proceso de compra. Esto no solo mejora la experiencia del cliente, sino que también aumenta tus oportunidades de venta. ¿Te gustaría saber cómo podemos implementar esto en tu negocio?",
+      "price": false,
+      "includes": true,
+      "not_includes": false,
+      "roi": true,
+      "cta": true,
+      "objection_handling": false,
+      "closing_progress": true,
+      "notes": []
+    },
+    {
+      "turn": 6,
+      "user_message": "¿Por dónde funciona?",
+      "assistant_reply": "Nuestra solución funciona directamente a través de WhatsApp, donde se integra un asistente inteligente que automatiza la atención al cliente. Así, podrás gestionar mensajes y consultas de manera eficiente, sin importar cuántos recibas. ¿Te gustaría saber cómo podemos ayudarte a implementarlo?",
+      "price": false,
+      "includes": true,
+      "not_includes": false,
+      "roi": false,
+      "cta": true,
+      "objection_handling": false,
+      "closing_progress": true,
+      "notes": []
+    },
+    {
+      "turn": 7,
+      "user_message": "¿Y qué precio tiene?",
+      "assistant_reply": "El Plan Básico tiene un costo de 210,000 COP en el primer mes, que incluye la configuración y el primer mes de servicio. Después de eso, pagarás 110,000 COP mensuales. Sin permanencia obligatoria, así que puedes cancelar cuando desees. ¿Te gustaría avanzar con el siguiente paso?",
+      "price": true,
+      "includes": true,
+      "not_includes": false,
+      "roi": false,
+      "cta": true,
+      "objection_handling": false,
+      "closing_progress": true,
+      "notes": []
+    },
+    {
+      "turn": 8,
+      "user_message": "¿Qué incluye?",
+      "assistant_reply": "El Plan Básico incluye la configuración inicial de tu asistente inteligente y el primer mes de servicio. A partir del segundo mes, tendrás acceso a la automatización de respuestas y seguimiento a clientes por solo 110,000 COP mensuales. Sin permanencia obligatoria, así que puedes cancelar cuando desees. ¿Te gustaría avanzar con el siguiente paso?",
+      "price": true,
+      "includes": true,
+      "not_includes": false,
+      "roi": true,
+      "cta": true,
+      "objection_handling": false,
+      "closing_progress": true,
+      "notes": []
+    },
+    {
+      "turn": 9,
+      "user_message": "¿Qué no incluye?",
+      "assistant_reply": "El Plan Básico no incluye personalizaciones avanzadas ni soporte técnico extendido. Está diseñado para ofrecerte una solución eficiente y sencilla para comenzar a automatizar tu atención al cliente. Si necesitas algo más específico, podemos hablar de opciones adicionales. ¿Te gustaría avanzar con el siguiente paso?",
+      "price": true,
+      "includes": true,
+      "not_includes": true,
+      "roi": false,
+      "cta": true,
+      "objection_handling": false,
+      "closing_progress": true,
+      "notes": []
+    },
+    {
+      "turn": 10,
+      "user_message": "Está caro, pero si me sirve quiero empezar",
+      "assistant_reply": "Entiendo que puede parecer un poco alto, pero recuerda que es una inversión para aumentar tus ventas y mejorar la atención al cliente. Avanzamos con el siguiente paso. ¿Prefieres pagar a través de un link o hacer una transferencia?",
+      "price": true,
+      "includes": false,
+      "not_includes": false,
+      "roi": false,
+      "cta": true,
+      "objection_handling": true,
+      "closing_progress": true,
+      "notes": []
+    }
+  ],
+  "behavior_metrics": {
+    "price_turns": 4,
+    "includes_turns": 8,
+    "not_includes_turns": 1,
+    "roi_turns": 4,
+    "cta_turns": 9,
+    "objection_turns": 2,
+    "closing_progress_turns": 9
+  },
+  "commercial_score": 100,
+  "verdict": "Mejora comercial fuerte"
+}
