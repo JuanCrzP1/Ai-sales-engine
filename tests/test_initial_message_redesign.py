@@ -27,6 +27,10 @@ from app.application.runtime import load_tenant_runtime_yaml
 from app.services.ai_service import AIService
 
 
+def _normalize_text(value: str) -> str:
+    return " ".join(str(value or "").strip().split())
+
+
 def _tenant(slug: str = "asesor_ai_prod") -> SimpleNamespace:
     return SimpleNamespace(name=slug, slug=slug, id=slug)
 
@@ -137,6 +141,27 @@ def test_initial_message_blocks_ai_for_valid_greeting_variant() -> None:
         message="hola amigo",
     )
 
+    assert ai_used is False
+    assert str(metadata.get("source") or "") == "initial_message"
+    assert call_count == 0
+
+
+def test_initial_message_exact_for_hola_como_estas() -> None:
+    service = AIService()
+    runtime_yaml = load_tenant_runtime_yaml("asesor_ai_prod", channel="whatsapp")
+    expected = (
+        runtime_yaml.get("config", {})
+        .get("initial_message", {})
+        .get("text", "")
+    ).strip()
+    reply, ai_used, metadata, call_count = _run_turn_with_ai_call_count(
+        service,
+        user_id="init-redesign-hola-como-estas",
+        message="Hola, ¿cómo estás?",
+        runtime_yaml=runtime_yaml,
+    )
+
+    assert _normalize_text(reply) == _normalize_text(expected)
     assert ai_used is False
     assert str(metadata.get("source") or "") == "initial_message"
     assert call_count == 0

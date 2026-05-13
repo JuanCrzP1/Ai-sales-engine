@@ -81,20 +81,27 @@ def is_greeting_only(message: str) -> bool:
     greetings = {
         "hola",
         "holaa",
+        "hola amigo",
+        "hola parce",
+        "hola parcero",
+        "hola como estas",
         "buenas",
+        "buenas tardes",
+        "buenas noches",
         "hey",
         "holi",
         "que mas",
+        "que mas parcero",
         "q mas",
         "qlq",
         "parce",
         "parce que mas",
         "amigo",
         "bro",
+        "como vas",
+        "todo bien",
         "buen dia",
         "buenos dias",
-        "buenas tardes",
-        "buenas noches",
     }
 
     greeting_starters = {
@@ -125,6 +132,10 @@ def is_greeting_only(message: str) -> bool:
         "informaciono",
         "necesito",
         "quiero",
+        "interesa",
+        "empezar",
+        "contratar",
+        "funciona",
         "venden",
         "vendes",
         "pedido",
@@ -142,6 +153,11 @@ def is_greeting_only(message: str) -> bool:
         "que",
         "q",
         "mas",
+        "como",
+        "estas",
+        "vas",
+        "todo",
+        "bien",
         "parce",
         "parcero",
         "amigo",
@@ -158,7 +174,7 @@ def is_greeting_only(message: str) -> bool:
 
     words = normalized.split()
 
-    if len(words) > 3:
+    if len(words) > 4:
         return False
 
     if any(word in intent_tokens for word in words):

@@ -289,6 +289,10 @@ def test_missing_tenant_yaml_raises_without_cross_tenant_fallback() -> None:
 def test_greeting_gate_identifies_first_message_only_inputs() -> None:
     assert ConversationFlow.is_greeting_only("hola") is True
     assert ConversationFlow.is_greeting_only("hola amigo") is True
+    assert ConversationFlow.is_greeting_only("hola como estas") is True
+    assert ConversationFlow.is_greeting_only("buenas tardes") is True
+    assert ConversationFlow.is_greeting_only("hola parcero") is True
+    assert ConversationFlow.is_greeting_only("qué más") is True
     assert ConversationFlow.is_greeting_only("parce") is True
     assert ConversationFlow.is_greeting_only("q mas") is True
     assert ConversationFlow.is_greeting_only("buenas") is True
@@ -298,6 +302,10 @@ def test_greeting_gate_identifies_first_message_only_inputs() -> None:
     assert ConversationFlow.is_greeting_only("👋") is False
     assert ConversationFlow.is_greeting_only("hola precio") is False
     assert ConversationFlow.is_greeting_only("hola necesito info") is False
+    assert ConversationFlow.is_greeting_only("hola quiero información") is False
+    assert ConversationFlow.is_greeting_only("hola cuánto cuesta") is False
+    assert ConversationFlow.is_greeting_only("buenas tardes me interesa") is False
+    assert ConversationFlow.is_greeting_only("qué más, cómo funciona") is False
     assert ConversationFlow.is_greeting_only("dame info") is False
     assert ConversationFlow.is_greeting_only("quiero informacion") is False
     assert ConversationFlow.is_greeting_only("precio") is False
