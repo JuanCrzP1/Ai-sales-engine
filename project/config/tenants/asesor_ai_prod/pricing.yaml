@@ -15,16 +15,14 @@ pricing:
 
       includes:  # Lo que si trae este plan
         - configuracion inicial
-        - Integración con WhatsApp
+        - Guia de integración con WhatsApp
         - Asistente conversacional inteligente
-        - Soporte inicial
-        - Seguimiento automático de clientes
 
       not_included:  # Lo que no esta incluido en este plan
         - Costos de Meta (WhatsApp Business API)
-        - costos de plataformas externas (token de IA, hosting, etc)
-        - inversion publicitaria
-        - Desarrollos o integraciones avanzadas
+        - costos de token de IA (OpenAI)
+        - Personalización avanzada
+        
 
       payment:
         # ------------------------------
