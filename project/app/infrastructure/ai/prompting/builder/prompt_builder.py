@@ -488,6 +488,10 @@ class PromptBuilderService:
                 f"Precios: {pricing_structure_text}.",
                 f"Condiciones: {conditions_text}.",
             ]
+            if includes:
+                narrative_lines.append(f"Incluye: {', '.join(includes)}.")
+            if not_included:
+                narrative_lines.append(f"No incluye: {', '.join(not_included)}.")
             lines = narrative_lines + operational_lines
 
         return "\n".join(lines)
