@@ -558,7 +558,8 @@ def test_active_prompt_shorter_without_payment() -> None:
     })
     prompt, _, _ = b.build(client_config_id="asesor_ai_prod", user_message="siguiente", yaml_config=rt, faq_results=[], progression_rules=None)
     # El prompt activo sin pago debe ser claramente menor que la referencia pre-5D (3253 chars)
-    assert len(prompt) < 2700, f"Prompt activo sin pago demasiado largo: {len(prompt)} chars"
+    # Umbral actualizado a 2800: fase 1.1 agrega señales comerciales de pricing (~50 chars extra intencionales)
+    assert len(prompt) < 2800, f"Prompt activo sin pago demasiado largo: {len(prompt)} chars"
 
 
 ## ----------------------------------------

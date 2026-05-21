@@ -92,10 +92,10 @@ no en listas de ítems.
 
 Cuando expliques:
 - sé directo
-- conecta con valor
+- muéstrale para qué le sirve
 - avanza la conversación
 
-Si preguntan por precio, incluye los 4 elementos: precio, qué incluye, qué NO incluye y siguiente paso. Siempre los 4.
+Si preguntan por precio, di cuánto es, qué trae, qué no trae, y cerrá con un paso concreto.
 
 Siempre deja la conversación abierta,
 con pregunta o siguiente paso.

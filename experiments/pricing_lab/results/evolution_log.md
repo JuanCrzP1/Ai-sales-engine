@@ -1,5 +1,23 @@
 # Evolution Log
 
+## 2026-05-21T16:47:23+00:00 | phase1_human_tuning
+- fecha: 2026-05-21T16:47:23+00:00
+- label: phase1_human_tuning
+- tenant: asesor_ai_prod
+- commit: 614e8cc
+- métricas del prompt: chars=2658, lines=61, estimated_tokens=661, pricing_block_chars=708
+- métricas comerciales: precio=5, incluye=6, no_incluye=3, roi=6, cta=9, objeciones=2, cierre=8
+- score total: 100
+- veredicto: Mejora comercial fuerte
+## 2026-05-21T15:58:18+00:00 | phase1_1_pricing
+- fecha: 2026-05-21T15:58:18+00:00
+- label: phase1_1_pricing
+- tenant: asesor_ai_prod
+- commit: 614e8cc
+- métricas del prompt: chars=2658, lines=61, estimated_tokens=661, pricing_block_chars=708
+- métricas comerciales: precio=5, incluye=6, no_incluye=3, roi=6, cta=9, objeciones=4, cierre=6
+- score total: 100
+- veredicto: Mejora comercial fuerte
 ## 2026-05-21T13:54:59+00:00 | fase1_v2
 - fecha: 2026-05-21T13:54:59+00:00
 - label: fase1_v2

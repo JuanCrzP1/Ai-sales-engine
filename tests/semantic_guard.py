@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 
 def normalize(text: str) -> str:
     return (text or "").lower().strip()
@@ -30,6 +31,7 @@ def has_forward_intent(text: str) -> bool:
     action_signals = [
         "empez",
         "avanz",
+        "avanc",
         "usar",
         "tener",
         "lograr",
@@ -52,4 +54,6 @@ def talks_about_price(text: str) -> bool:
         "implementación", "implementacion", "cobr", "pag",
         "cuánto", "cuanto",
     ]
-    return any(token in t for token in price_tokens)
+    return any(token in t for token in price_tokens) or bool(
+        re.search(r"\b\d[\d.]*,\d{3}\b", t)
+    )

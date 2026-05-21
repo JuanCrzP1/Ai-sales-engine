@@ -444,6 +444,7 @@ def _shows_buy_progression(text: str) -> bool:
         r"\bcontinuar\b",
         r"\bavanzar\b",
         r"\benlace de pago\b",
+        r"\blink\b",
         r"\bproceder con el pago\b",
         r"\bc[oó]mo te gustar[ií]a proceder\b",
         r"\bte gustar[ií]a proceder\b",

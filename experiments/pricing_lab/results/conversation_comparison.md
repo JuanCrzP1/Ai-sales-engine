@@ -1,7 +1,7 @@
 # Comparación conversacional
 
 - baseline: baseline | score=100
-- candidate: fase1_v2
+- candidate: phase1_human_tuning
 
 ## Métricas del prompt
 - chars: baseline=2658, candidate=2658, delta=0
@@ -40,7 +40,7 @@ Hola, ¿qué más? 👋 soy Juan un gusto tenerte por aquí.
 Ofrecemos una solución de automatización comercial que convierte tu WhatsApp en un vendedor automático 24/7. Con un asistente inteligente, podrás responder al instante, dar seguimiento a prospectos y transformar conversaciones en ventas sin esfuerzo. Ideal para negocios que buscan optimizar su atención al cliente y aumentar sus ventas. ¿Te gustaría saber más sobre cómo empezar?
 
 ## Candidate
-Ofrecemos un servicio que convierte tu WhatsApp en un vendedor automático 24/7. Con nuestro asistente comercial inteligente, puedes responder al instante, dar seguimiento a tus prospectos y transformar conversaciones en ventas sin necesidad de estar presente. Esto te permite ahorrar tiempo y maximizar tus ingresos. ¿Te gustaría saber sobre nuestros planes y precios?
+Ofrecemos un servicio que convierte tu WhatsApp en un vendedor automático 24/7. Con un asistente comercial inteligente, puedes responder al instante, hacer seguimiento a cada prospecto y transformar conversaciones en ventas sin que tengas que estar presente. Esto te ahorra tiempo y aumenta tus oportunidades de venta. ¿Te gustaría saber cómo implementarlo en tu negocio?
 
 ### Evaluación automática
 - Precio: No
@@ -49,7 +49,7 @@ Ofrecemos un servicio que convierte tu WhatsApp en un vendedor automático 24/7.
 - ROI: Sí
 - CTA: Sí
 - Manejo de objeciones: No
-- Avance al cierre: No
+- Avance al cierre: Sí
 
 ### Veredicto Manual
 - [ ] Mejoró
@@ -62,11 +62,11 @@ Ofrecemos un servicio que convierte tu WhatsApp en un vendedor automático 24/7.
 Entiendo que manejar muchos mensajes puede ser abrumador. Nuestra solución automatiza tus respuestas en WhatsApp, permitiendo que un asistente inteligente responda instantáneamente a tus clientes y dé seguimiento a los prospectos. Así, podrás enfocarte en lo que realmente importa. ¿Te gustaría saber cómo implementar esta solución y aliviar esa carga?
 
 ## Candidate
-Entiendo, eso puede ser abrumador. Nuestro servicio permite que tu WhatsApp trabaje como un vendedor automático 24/7, respondiendo a tus clientes al instante y gestionando el seguimiento sin que tengas que estar presente. Esto te ahorra tiempo y te ayuda a no perder oportunidades de venta. ¿Te gustaría conocer más sobre cómo podemos ayudarte con esto?
+Entiendo, eso puede ser un gran desafío. Con nuestro servicio, tu WhatsApp se convierte en un vendedor automático que responde al instante, incluso cuando no estás disponible. Así, puedes gestionar más conversaciones sin perder oportunidades de venta. ¿Te gustaría saber cómo podemos ayudarte a optimizar tu tiempo y aumentar tus ventas?
 
 ### Evaluación automática
 - Precio: No
-- Incluye: Sí
+- Incluye: No
 - No incluye: No
 - ROI: Sí
 - CTA: Sí
@@ -84,16 +84,16 @@ Entiendo, eso puede ser abrumador. Nuestro servicio permite que tu WhatsApp trab
 Funciona integrando un asistente inteligente en tu WhatsApp que automatiza las respuestas a tus clientes. Cuando alguien te envía un mensaje, el asistente responde de inmediato, ayudando a resolver dudas y a seguir con el proceso de compra. Así, tú puedes enfocarte en tareas más importantes mientras el asistente se encarga de la atención al cliente. ¿Te gustaría saber cómo implementarlo en tu negocio?
 
 ## Candidate
-Funciona integrando nuestro asistente comercial en tu WhatsApp, permitiendo que responda automáticamente a tus clientes 24/7. Configuramos el sistema para que maneje preguntas frecuentes, gestione seguimientos y cierre de ventas sin que tengas que estar presente. Esto te ayuda a no perder oportunidades y a ahorrar tiempo en tus interacciones. ¿Te gustaría conocer más sobre los planes y precios?
+Nuestro servicio se integra con tu WhatsApp y utiliza un asistente comercial inteligente que responde automáticamente a los mensajes de tus clientes. Así, puedes atender múltiples conversaciones al mismo tiempo, sin perder ninguna oportunidad de venta. Además, te ayuda a hacer seguimiento a los prospectos y gestionar tus interacciones de manera más efectiva. ¿Te gustaría saber más sobre cómo empezar a usarlo?
 
 ### Evaluación automática
 - Precio: No
-- Incluye: No
+- Incluye: Sí
 - No incluye: No
 - ROI: Sí
 - CTA: Sí
 - Manejo de objeciones: No
-- Avance al cierre: No
+- Avance al cierre: Sí
 
 ### Veredicto Manual
 - [ ] Mejoró
@@ -106,10 +106,10 @@ Funciona integrando nuestro asistente comercial en tu WhatsApp, permitiendo que 
 Sí, definitivamente. Al automatizar las respuestas en WhatsApp, puedes atender a más clientes al mismo tiempo, resolver sus dudas de inmediato y guiarlos en el proceso de compra. Esto no solo mejora la experiencia del cliente, sino que también aumenta tus oportunidades de venta. ¿Te gustaría saber cómo podemos implementar esto en tu negocio?
 
 ## Candidate
-Sí, definitivamente. Al automatizar las respuestas y el seguimiento a tus clientes, aseguras que no se pierdan oportunidades de venta, incluso cuando no estás disponible. Esto no solo mejora la experiencia del cliente, sino que también te permite enfocarte en otras áreas de tu negocio. ¿Te gustaría saber más sobre cómo implementarlo y los costos asociados?
+Sí, definitivamente. Al tener un asistente comercial inteligente que responde automáticamente a tus clientes, no perderás ninguna oportunidad de venta, incluso cuando no estás disponible. Esto te permite atender más conversaciones al mismo tiempo y hacer seguimiento a tus prospectos de manera efectiva. Con solo tres ventas al mes, ya habrías cubierto el costo del servicio. ¿Te gustaría saber cómo empezar a implementarlo?
 
 ### Evaluación automática
-- Precio: No
+- Precio: Sí
 - Incluye: Sí
 - No incluye: No
 - ROI: Sí
@@ -128,7 +128,7 @@ Sí, definitivamente. Al automatizar las respuestas y el seguimiento a tus clien
 Nuestra solución funciona directamente a través de WhatsApp, donde se integra un asistente inteligente que automatiza la atención al cliente. Así, podrás gestionar mensajes y consultas de manera eficiente, sin importar cuántos recibas. ¿Te gustaría saber cómo podemos ayudarte a implementarlo?
 
 ## Candidate
-Funciona a través de WhatsApp, donde integramos nuestro asistente comercial para que pueda interactuar automáticamente con tus clientes. Esto te permite responder preguntas, hacer seguimientos y cerrar ventas sin necesidad de estar presente. Es una forma efectiva de manejar la comunicación y maximizar tus oportunidades de venta. ¿Te gustaría saber más sobre cómo configurarlo y los costos asociados?
+Funciona a través de WhatsApp, donde se integra un asistente comercial inteligente que responde automáticamente a los mensajes de tus clientes. Esto te permite gestionar tus conversaciones de manera eficiente y no perder oportunidades de venta. ¿Te gustaría saber cómo empezar a implementarlo en tu negocio?
 
 ### Evaluación automática
 - Precio: No
@@ -137,7 +137,7 @@ Funciona a través de WhatsApp, donde integramos nuestro asistente comercial par
 - ROI: Sí
 - CTA: Sí
 - Manejo de objeciones: No
-- Avance al cierre: No
+- Avance al cierre: Sí
 
 ### Veredicto Manual
 - [ ] Mejoró
@@ -150,7 +150,7 @@ Funciona a través de WhatsApp, donde integramos nuestro asistente comercial par
 El Plan Básico tiene un costo de 210,000 COP en el primer mes, que incluye la configuración y el primer mes de servicio. Después de eso, pagarás 110,000 COP mensuales. Sin permanencia obligatoria, así que puedes cancelar cuando desees. ¿Te gustaría avanzar con el siguiente paso?
 
 ## Candidate
-El precio del Plan Básico es de 100,000 COP por la implementación inicial y 110,000 COP mensuales. Esto incluye la configuración inicial, una guía de integración con WhatsApp y el asistente conversacional inteligente. No incluye los costos de Meta (WhatsApp Business API) ni la personalización avanzada. Para comenzar, el primer mes se paga 210,000 COP. ¿Te gustaría proceder con el siguiente paso?
+El Plan Básico tiene un costo de 210,000 COP el primer mes, que incluye la configuración inicial y el primer mes de servicio. Luego, pagarás 110,000 COP mensuales. Este plan incluye el asistente conversacional inteligente y una guía de integración con WhatsApp. No incluye costos adicionales de Meta ni personalización avanzada. Con solo tres ventas al mes, ya habrías cubierto el costo del servicio. ¿Te gustaría avanzar con el siguiente paso?
 
 ### Evaluación automática
 - Precio: Sí
@@ -172,7 +172,7 @@ El precio del Plan Básico es de 100,000 COP por la implementación inicial y 11
 El Plan Básico incluye la configuración inicial de tu asistente inteligente y el primer mes de servicio. A partir del segundo mes, tendrás acceso a la automatización de respuestas y seguimiento a clientes por solo 110,000 COP mensuales. Sin permanencia obligatoria, así que puedes cancelar cuando desees. ¿Te gustaría avanzar con el siguiente paso?
 
 ## Candidate
-El Plan Básico incluye la configuración inicial, una guía de integración con WhatsApp y el asistente conversacional inteligente. Esto te permite automatizar respuestas y gestionar interacciones con tus clientes de manera eficiente. Sin embargo, no incluye los costos de Meta (WhatsApp Business API) ni la personalización avanzada. ¿Te gustaría proceder con el siguiente paso para activar el servicio?
+El Plan Básico incluye la configuración inicial, una guía de integración con WhatsApp y el asistente conversacional inteligente que responderá automáticamente a los mensajes de tus clientes. Esto te ayudará a gestionar mejor tus interacciones y aumentar tus ventas. No incluye costos adicionales de Meta ni personalización avanzada. ¿Te gustaría avanzar con el siguiente paso para implementar esto en tu negocio?
 
 ### Evaluación automática
 - Precio: Sí
@@ -194,7 +194,7 @@ El Plan Básico incluye la configuración inicial, una guía de integración con
 El Plan Básico no incluye personalizaciones avanzadas ni soporte técnico extendido. Está diseñado para ofrecerte una solución eficiente y sencilla para comenzar a automatizar tu atención al cliente. Si necesitas algo más específico, podemos hablar de opciones adicionales. ¿Te gustaría avanzar con el siguiente paso?
 
 ## Candidate
-El Plan Básico no incluye los costos de Meta (WhatsApp Business API), los costos de token de IA (OpenAI) ni la personalización avanzada de tu asistente. Esto significa que tendrás que considerar esos gastos adicionales si decides personalizarlo más allá de lo que ofrecemos inicialmente. ¿Te gustaría proceder con el siguiente paso para activar el servicio?
+El Plan Básico no incluye costos adicionales de Meta por el uso de WhatsApp Business API, ni los costos de token de IA de OpenAI, tampoco incluye personalización avanzada. Esto significa que el asistente funcionará de manera estándar, pero podrás gestionar tus interacciones de manera efectiva desde el inicio. ¿Te gustaría avanzar con el siguiente paso para implementarlo en tu negocio?
 
 ### Evaluación automática
 - Precio: Sí
@@ -216,13 +216,13 @@ El Plan Básico no incluye los costos de Meta (WhatsApp Business API), los costo
 Entiendo que puede parecer un poco alto, pero recuerda que es una inversión para aumentar tus ventas y mejorar la atención al cliente. Avanzamos con el siguiente paso. ¿Prefieres pagar a través de un link o hacer una transferencia?
 
 ## Candidate
-Entiendo que pueda parecer un poco alto, pero la inversión se traduce en más ventas y una mejor atención al cliente. Avanzamos con el siguiente paso para activar el servicio. ¿Prefieres hacerlo con un link de pago o mediante transferencia?
+Entiendo que puede parecer un costo alto, pero considera que con solo tres ventas al mes ya habrías cubierto el servicio. Avanzamos con el siguiente paso para implementarlo. ¿Prefieres hacerlo mediante un link de pago o una transferencia?
 
 ### Evaluación automática
 - Precio: Sí
 - Incluye: No
 - No incluye: No
-- ROI: Sí
+- ROI: No
 - CTA: Sí
 - Manejo de objeciones: Sí
 - Avance al cierre: Sí

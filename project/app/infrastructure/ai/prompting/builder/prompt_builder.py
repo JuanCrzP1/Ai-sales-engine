@@ -310,7 +310,8 @@ class PromptBuilderService:
     @staticmethod
     def build_pricing_context(yaml_config: dict) -> str:
         pricing = yaml_config.get("pricing", {})
-        features = yaml_config.get("features", {}) if isinstance(yaml_config.get("features"), dict) else {}
+        _config_sect = yaml_config.get("config") if isinstance(yaml_config.get("config"), dict) else {}
+        features = _config_sect.get("features") if isinstance(_config_sect.get("features"), dict) else {}
         plans = pricing.get("plans", [])
         catalog = pricing.get("catalog", {}) if isinstance(pricing.get("catalog"), dict) else {}
         catalog_items = catalog.get("items", []) if isinstance(catalog.get("items"), list) else []
@@ -479,6 +480,13 @@ class PromptBuilderService:
         if payment_links and transfer_method_lines:
             operational_lines.append("Si hay link y transferencia disponibles, pregunta: prefieres link o transferencia.")
 
+        # Señales comerciales del YAML (price_framing, roi, roi_hints)
+        _price_framing = pricing.get("price_framing") if isinstance(pricing.get("price_framing"), dict) else {}
+        _framing_type = str(_price_framing.get("type") or "").strip().lower()
+        _roi = pricing.get("roi") if isinstance(pricing.get("roi"), dict) else {}
+        _break_even = _roi.get("break_even_sales")
+        _roi_hints = [h for h in (pricing.get("roi_hints") or []) if isinstance(h, str) and h.strip()]
+
         # Bloque narrativo — gateado: solo en conversaciones activas o modelos catálogo
         if conversation_state == "new" and not is_catalog_model:
             lines = ["Tiene opciones de servicio disponibles con pricing definido."] + operational_lines
@@ -492,6 +500,22 @@ class PromptBuilderService:
                 narrative_lines.append(f"Incluye: {', '.join(includes)}.")
             if not_included:
                 narrative_lines.append(f"No incluye: {', '.join(not_included)}.")
+
+            # Señales comerciales compactas — no llegar al prompt era el bug
+            if _framing_type == "comparativo":
+                narrative_lines.append("Si el cliente duda del precio, pregúntale cuánto le cuesta no tenerlo.")
+            elif _framing_type:
+                narrative_lines.append(f"Si el cliente duda, muéstrale el valor real: {_framing_type}.")
+            if _break_even is not None:
+                narrative_lines.append(f"Con {_break_even} ventas al mes ya pagó el servicio.")
+            elif _roi_hints:
+                narrative_lines.append(f"{_roi_hints[0]}.")
+
+            # Guía de precio conversacional — scoped a pricing, no modifica el bloque global
+            narrative_lines.append(
+                "Al hablar de precio: di cuánto es, qué trae, qué no trae, y cerrá con el siguiente paso."
+            )
+
             lines = narrative_lines + operational_lines
 
         return "\n".join(lines)
