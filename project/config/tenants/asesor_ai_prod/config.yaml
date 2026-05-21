@@ -23,7 +23,7 @@ config:
     log_level: info  # Nivel de logs: debug | info | warning | error
 
   response:
-    length: short  # Tamano de respuesta: short | medium | long
+    length: medium  # Tamano de respuesta: short | medium | long
     max_words: 75  # Maximo de palabras por respuesta
 
   post_payment:
