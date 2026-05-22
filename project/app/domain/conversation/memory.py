@@ -248,3 +248,14 @@ class MemoryDomainService:
 
     def reset_conversation(self, *, tenant_slug: str, user_id: str) -> None:
         self._repository.reset_conversation(tenant_slug=tenant_slug, user_id=user_id)
+
+    def set_op_state(self, *, tenant_slug: str, user_id: str, state_dict: dict) -> None:
+        _fn = getattr(self._repository, "set_op_state", None)
+        if callable(_fn):
+            _fn(tenant_slug=tenant_slug, user_id=user_id, state_dict=state_dict)
+
+    def get_op_state(self, *, tenant_slug: str, user_id: str) -> dict:
+        _fn = getattr(self._repository, "get_op_state", None)
+        if callable(_fn):
+            return _fn(tenant_slug=tenant_slug, user_id=user_id) or {}
+        return {}

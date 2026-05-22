@@ -474,11 +474,15 @@ class PromptBuilderService:
                 transfer_methods_text,
                 "NO muestres links, números, cuentas ni referencias sin elección explícita del usuario.",
                 "SOLO ejecuta el pago cuando el usuario elige explícitamente link, nequi, daviplata, bank o breb.",
-                "Si el usuario aún no eligió método, antes de pedir elegir escribe literalmente: avanzamos con el siguiente paso.",
+                "Si el usuario aún no eligió método, guíalo directamente a elegir uno sin frases de transición genéricas.",
             ]
         )
         if payment_links and transfer_method_lines:
             operational_lines.append("Si hay link y transferencia disponibles, pregunta: prefieres link o transferencia.")
+        elif transfer_method_lines and not payment_links:
+            _transfer_types = [line.split(":")[0].strip("- ").strip() for line in transfer_method_lines if ":" in line]
+            _types_str = ", ".join(t for t in _transfer_types if t) or "transferencia"
+            operational_lines.append(f"Si el usuario quiere pagar, pregunta cuál prefiere: {_types_str}.")
 
         # Señales comerciales del YAML (price_framing, roi, roi_hints)
         _price_framing = pricing.get("price_framing") if isinstance(pricing.get("price_framing"), dict) else {}
@@ -513,7 +517,7 @@ class PromptBuilderService:
 
             # Guía de precio conversacional — scoped a pricing, no modifica el bloque global
             narrative_lines.append(
-                "Al hablar de precio: di cuánto es, qué trae, qué no trae, y cerrá con el siguiente paso."
+                "Al hablar de precio: di cuánto es, qué trae, qué no trae, y llévalo a elegir o decidir."
             )
 
             lines = narrative_lines + operational_lines
@@ -627,6 +631,51 @@ Estado de la conversación: {conversation_state}
             return ""
 
         return f"Dato previo relevante: {sales_memory_hint}. Retómalo sin perder continuidad."
+
+    @staticmethod
+    def build_commercial_memory_context(yaml_config: dict) -> str:
+        """Build human-readable commercial continuity context from CommercialMemorySignal.
+
+        Replaces: build_recent_customer_context + build_conversation_state (memory part)
+                  + build_sales_memory_hint when a CommercialMemorySignal is present.
+
+        Falls back to empty string (legacy blocks remain active) when:
+        - No signal in yaml_config (first turn, no memory)
+        - Signal context_weight is "light" (no substantial memory to render)
+        """
+        signal = yaml_config.get("commercial_memory_signal")
+        if signal is None:
+            return ""
+
+        context_weight = str(getattr(signal, "context_weight", "light") or "light").strip().lower()
+        if context_weight == "light":
+            return ""
+
+        lines: list[str] = []
+
+        continuity_brief = str(getattr(signal, "continuity_brief", "") or "").strip()
+        if continuity_brief:
+            lines.append(continuity_brief)
+
+        commercial_anchor = str(getattr(signal, "commercial_anchor_active", "") or "").strip()
+        if commercial_anchor:
+            lines.append(commercial_anchor)
+
+        episodic_hook = str(getattr(signal, "episodic_hook", "") or "").strip()
+        if episodic_hook:
+            lines.append(episodic_hook)
+
+        return "\n".join(lines)
+
+    @staticmethod
+    def build_operational_context(yaml_config: dict) -> str:
+        """Return operational anchor + rule from memory_context if an active process exists."""
+        memory = yaml_config.get("memory_context") if isinstance(yaml_config.get("memory_context"), dict) else {}
+        anchor = str(memory.get("operational_anchor") or "").strip()
+        rule = str(memory.get("operational_rule") or "").strip()
+        if not anchor:
+            return ""
+        return f"{anchor}\n{rule}" if rule else anchor
 
     @staticmethod
     def build_memory_behavior_context(yaml_config: dict) -> str:
@@ -785,6 +834,8 @@ Estado de la conversación: {conversation_state}
         recent_customer_context = self.build_recent_customer_context(safe_yaml)
         conversation_state = self.build_conversation_state(safe_yaml, user_message)
         sales_memory_hint = self.build_sales_memory_hint(safe_yaml)
+        commercial_memory_context = self.build_commercial_memory_context(safe_yaml)
+        operational_context = self.build_operational_context(safe_yaml)
         response_length = self._as_text(safe_yaml.get("response_length") or "short") or "short"
         config_section = safe_yaml.get("config") if isinstance(safe_yaml.get("config"), dict) else {}
         response_cfg = config_section.get("response") if isinstance(config_section.get("response"), dict) else {}
@@ -800,7 +851,16 @@ Estado de la conversación: {conversation_state}
 ESTILO: {response_length}, máximo {response_max_words} palabras, natural y claro.
 """.strip()
 
-        existing_prompt = f"""
+        # Context Budget — Phase 2
+        # Determines prompt layout based on commercial memory weight.
+        # strong  → memory placed AFTER pricing (recency effect: closer to user message)
+        # moderate → memory replaces legacy blocks BEFORE pricing (cleaner signal)
+        # light / none → legacy blocks remain (full backward compatibility)
+        _cmem_signal = safe_yaml.get("commercial_memory_signal")
+        _context_weight = str(getattr(_cmem_signal, "context_weight", "light") or "light").strip().lower()
+        _use_commercial_memory = bool(commercial_memory_context)
+
+        _base = f"""
 CONTEXTO DEL NEGOCIO:
 {business_context}
 {customer_context}
@@ -812,8 +872,56 @@ CAPACIDADES DEL NEGOCIO:
 {business_model_context}
 {catalog_behavior_context}
 {capabilities_context}
+""".strip()
+
+        if _use_commercial_memory and _context_weight == "strong":
+            # Memory after pricing: maximum proximity to the user message.
+            # The model processes the last dense block with more attention.
+            existing_prompt = f"""
+{_base}
 
 COMPORTAMIENTO COMERCIAL:
+{operational_context}
+{commercial_behavior_block}
+{sales_context}
+{continuity_rule_block}
+{response_style_block}
+{memory_behavior_context}
+
+PRICING:
+{pricing_context}
+{post_payment_context}
+
+CONTINUIDAD COMERCIAL:
+{commercial_memory_context}
+""".strip()
+
+        elif _use_commercial_memory:
+            # Moderate: memory replaces three legacy blocks before pricing.
+            existing_prompt = f"""
+{_base}
+
+COMPORTAMIENTO COMERCIAL:
+{operational_context}
+{commercial_behavior_block}
+{sales_context}
+{continuity_rule_block}
+{commercial_memory_context}
+{response_style_block}
+{memory_behavior_context}
+
+PRICING:
+{pricing_context}
+{post_payment_context}
+""".strip()
+
+        else:
+            # Fallback: legacy layout. Full backward compatibility.
+            existing_prompt = f"""
+{_base}
+
+COMPORTAMIENTO COMERCIAL:
+{operational_context}
 {commercial_behavior_block}
 {sales_context}
 {continuity_rule_block}
@@ -827,4 +935,5 @@ PRICING:
 {pricing_context}
 {post_payment_context}
 """.strip()
+
         return existing_prompt, prompt_metadata, context

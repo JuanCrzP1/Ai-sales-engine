@@ -35,6 +35,7 @@ class MemoryRepository:
         self._conversation_state_by_user: dict[tuple[str, str], dict[str, object]] = {}
         self._initial_message_last_sent_by_user: dict[tuple[str, str], datetime] = {}
         self._last_user_message_at_by_user: dict[tuple[str, str], datetime] = {}
+        self._op_state_by_user: dict[tuple[str, str], dict] = {}
 
     @staticmethod
     def _key(*, tenant_slug: str, user_id: str) -> tuple[str, str] | None:
@@ -63,6 +64,7 @@ class MemoryRepository:
         self._conversation_state_by_user.pop(key, None)
         self._initial_message_last_sent_by_user.pop(key, None)
         self._last_user_message_at_by_user.pop(key, None)
+        self._op_state_by_user.pop(key, None)
 
     def save_message(self, *, tenant_slug: str, user_id: str, message_text: str, role: str = "user") -> None:
         # Hoy: in-memory. Manana: persistencia en DB por tenant/user.
@@ -328,6 +330,7 @@ class MemoryRepository:
             "estado_pago": self._payment_status_by_user.get(key),
             "last_user_message": self._last_user_message_by_user.get(key),
             "last_ai_response": self._last_ai_response_by_user.get(key),
+            "operational_continuity_state": self._op_state_by_user.get(key),
         }
 
     def update_last_user_message_at(
@@ -339,6 +342,17 @@ class MemoryRepository:
         self, tenant_slug: str, user_id: str, timestamp: datetime
     ) -> None:
         self.set_initial_message_last_sent_at(tenant_slug=tenant_slug, user_id=user_id, sent_at=timestamp)
+
+    def set_op_state(self, *, tenant_slug: str, user_id: str, state_dict: dict) -> None:
+        key = self._key(tenant_slug=tenant_slug, user_id=user_id)
+        if key and isinstance(state_dict, dict) and state_dict.get("active_process"):
+            self._op_state_by_user[key] = state_dict
+
+    def get_op_state(self, *, tenant_slug: str, user_id: str) -> dict:
+        key = self._key(tenant_slug=tenant_slug, user_id=user_id)
+        if not key:
+            return {}
+        return dict(self._op_state_by_user.get(key) or {})
 
 
 class SQLMemoryRepository(MemoryRepository):

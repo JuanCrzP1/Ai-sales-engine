@@ -77,6 +77,11 @@ from app.application.pipeline.response_postprocessor import enforce_max_words
 from app.application.pipeline.response_router import route_response
 from app.domain.conversation.demo import DemoDomainService
 from app.domain.conversation.memory import ConversationState, MemoryDomainService
+from app.domain.memory.observability.audit import emit_memory_audit
+from app.domain.memory.salience.selector import select as select_commercial_memory
+from app.domain.operations.operational_extractor import extract_op_state
+from app.domain.operations.operational_renderer import render_op_anchor, render_op_rule
+from app.domain.operations.operational_state import OperationalState
 from app.utils.logger import logger
 
 
@@ -95,10 +100,9 @@ Cuando expliques:
 - muéstrale para qué le sirve
 - avanza la conversación
 
-Si preguntan por precio, di cuánto es, qué trae, qué no trae, y cerrá con un paso concreto.
+Si preguntan por precio, di cuánto es, qué trae, qué no trae, y llevalo a elegir o decidir.
 
-Siempre deja la conversación abierta,
-con pregunta o siguiente paso.
+Siempre deja la conversación abierta con una pregunta concreta.
 
 Puedes usar ejemplos concretos.
 Habla como si estuvieras explicándole a un cliente real.
@@ -283,7 +287,7 @@ def _build_memory_context(memory_service: MemoryDomainService | None, *, tenant_
         except Exception:
             sales_memory_hint = ""
 
-    return {
+    result = {
         "last_message": last_message,
         "last_user_message": last_message,
         "last_response": last_response,
@@ -301,7 +305,26 @@ def _build_memory_context(memory_service: MemoryDomainService | None, *, tenant_
         "mode": memory.get("mode"),
 
         "last_cta": memory.get("next_step"),
+        # pain_timeline: full list of detected pains across the conversation
+        # Required by CommercialMemorySelector for multi-pain scoring
+        "pain_timeline": list(getattr(conversation_state, "pain_timeline", None) or []),
     }
+
+    # Operational continuity: read persisted state, render human anchor for next turn.
+    _get_op = getattr(memory_service, "get_op_state", None)
+    if callable(_get_op):
+        try:
+            _op_dict = _get_op(tenant_slug=tenant_slug, user_id=user_id)
+            _op_state = OperationalState.from_dict(_op_dict) if _op_dict else OperationalState()
+            _anchor = render_op_anchor(_op_state)
+            _rule = render_op_rule(_op_state)
+            if _anchor:
+                result["operational_anchor"] = _anchor
+                result["operational_rule"] = _rule
+        except Exception:
+            pass
+
+    return result
 
 
 def _persist_conversation_state(
@@ -451,6 +474,48 @@ def _log_payment_override(*, tenant_slug: str, user_id: str, payment_method: str
     )
 
 
+def _get_configured_payment_methods(runtime_yaml: dict) -> list[str]:
+    """Extract the list of payment method types configured for this tenant.
+
+    Reads pricing.plans[*].payment.transfer.methods and
+    pricing.catalog.payment.transfer.methods.
+    Returns only method type strings (e.g. ["nequi", "bank"]).
+    """
+    pricing = runtime_yaml.get("pricing") if isinstance(runtime_yaml.get("pricing"), dict) else {}
+    seen: set[str] = set()
+    result: list[str] = []
+
+    candidate_lists: list[list] = []
+    plans = pricing.get("plans") if isinstance(pricing.get("plans"), list) else []
+    for plan in plans:
+        if not isinstance(plan, dict):
+            continue
+        try:
+            methods = plan["payment"]["transfer"]["methods"]
+            if isinstance(methods, list):
+                candidate_lists.append(methods)
+        except (KeyError, TypeError):
+            pass
+
+    catalog = pricing.get("catalog") if isinstance(pricing.get("catalog"), dict) else {}
+    try:
+        methods = catalog["payment"]["transfer"]["methods"]
+        if isinstance(methods, list):
+            candidate_lists.append(methods)
+    except (KeyError, TypeError):
+        pass
+
+    for method_list in candidate_lists:
+        for m in method_list:
+            if not isinstance(m, dict):
+                continue
+            t = str(m.get("type") or "").strip().lower()
+            if t and t not in seen:
+                seen.add(t)
+                result.append(t)
+    return result
+
+
 class AIExecution:
     def run(
         self,
@@ -489,6 +554,30 @@ class AIExecution:
             conv_state = str(safe_runtime_yaml.get("conversation_state") or "new").strip() or "new"
             memory_context["conversation_state"] = conv_state
             runtime_yaml_with_memory["memory_context"] = memory_context
+
+        # Commercial Memory Salience Selection — Phase 2
+        # Runs after memory_context is populated. Pure function, no side effects.
+        if memory_context:
+            _history_for_signal = _safe_history(memory_service, tenant_slug=tenant_slug_value, user_id=user_key)
+            _last_ts = None
+            try:
+                _last_ts = memory_service.get_last_timestamp(tenant_slug=tenant_slug_value, user_id=user_key) if memory_service else None
+            except Exception:
+                _last_ts = None
+            _commercial_signal = select_commercial_memory(
+                memory_context=memory_context,
+                history=_history_for_signal,
+                current_message=user_message,
+                last_timestamp=_last_ts,
+            )
+            runtime_yaml_with_memory["commercial_memory_signal"] = _commercial_signal
+            _pricing_mode = "compact" if _commercial_signal.context_weight == "strong" else "normal"
+            emit_memory_audit(
+                tenant=tenant_slug_value,
+                user_id=user_key,
+                signal=_commercial_signal,
+                pricing_mode=_pricing_mode,
+            )
 
         demo_active = bool(runtime_yaml_with_memory.get("demo_input"))
         del demo_service
@@ -570,6 +659,18 @@ class AIExecution:
 
             raw_response = response_text
             persisted_response = raw_response
+
+            # Operational continuity — persist state extracted from response text.
+            _route_source = str(route_context.get("source") if isinstance(route_context, dict) else "").strip()
+            _configured_methods = _get_configured_payment_methods(runtime_yaml_with_memory)
+            _new_op_state = extract_op_state(raw_response, route_source=_route_source, payment_methods=_configured_methods)
+            _set_op = getattr(memory_service, "set_op_state", None)
+            if callable(_set_op) and _new_op_state.active_process:
+                try:
+                    _set_op(tenant_slug=tenant_slug_value, user_id=user_key, state_dict=_new_op_state.to_dict())
+                except Exception:
+                    pass
+
             final_response = enforce_max_words(
                 raw_response,
                 _max_words,
