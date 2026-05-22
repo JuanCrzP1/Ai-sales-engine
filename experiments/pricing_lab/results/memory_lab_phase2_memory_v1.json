@@ -1,0 +1,274 @@
+{
+  "label": "phase2_memory_v1",
+  "tenant_slug": "asesor_ai_prod",
+  "channel": "whatsapp",
+  "run_at": "2026-05-22T02:12:53+00:00",
+  "scenarios": [
+    {
+      "scenario_id": "continuidad_corta",
+      "description": "Usuario vuelve después de un intercambio breve",
+      "seed_message": "Hola, recibo muchos mensajes de clientes y no alcanzo a contestar todos",
+      "test_message": "Entonces, ¿me explicás cómo funciona eso?",
+      "baseline_reply": "Claro, nuestro sistema convierte tu WhatsApp en un vendedor automático 24/7. Un asistente comercial inteligente responde al instante, da seguimiento a cada prospecto y transforma conversaciones en ventas sin que tengas que estar presente. Esto te ahorra tiempo y aumenta tus ventas al no perder oportunidades. ¿Te gustaría saber más sobre los planes y precios?",
+      "candidate_reply": "Claro, nuestro servicio se integra con tu WhatsApp y utiliza un asistente conversacional inteligente. Este asistente responde automáticamente a los mensajes de tus clientes, brindando información y seguimiento, lo que te permite atender a más prospectos sin perder oportunidades. Además, te damos una guía de integración para que todo sea fácil. ¿Te gustaría saber sobre precios y cómo activar el servicio?",
+      "evaluation": {
+        "crm_markers_in_candidate": [],
+        "crm_markers_in_baseline": [],
+        "crm_free": true,
+        "candidate_commercial_signals": [
+          "activar"
+        ],
+        "baseline_commercial_signals": [],
+        "candidate_advances_more": true,
+        "candidate_words": 61,
+        "baseline_words": 55,
+        "word_delta": 6
+      }
+    },
+    {
+      "scenario_id": "continuidad_larga",
+      "description": "Usuario con historial rico — dolor + precio + objeción",
+      "seed_message": "Yo pierdo leads todos los días porque no respondo rápido, necesito algo que me ayude",
+      "test_message": "Bueno, ¿y cómo arrancamos?",
+      "baseline_reply": "Para arrancar, primero te cuento que tenemos un plan básico que convierte tu WhatsApp en un vendedor automático 24/7. Esto te ayudará a responder al instante y hacer seguimiento a tus prospectos. El siguiente paso sería elegir el método de pago. ¿Prefieres un link de pago o una transferencia?",
+      "candidate_reply": "Para comenzar, te propongo el Plan Básico. Incluye la configuración inicial, una guía de integración con WhatsApp y un asistente conversacional inteligente. El primer mes cuesta 210,000 COP, que incluye la implementación y el primer mes, y luego 110,000 COP mensuales. ¿Te gustaría que avanzáramos con el siguiente paso?",
+      "evaluation": {
+        "crm_markers_in_candidate": [],
+        "crm_markers_in_baseline": [],
+        "crm_free": true,
+        "candidate_commercial_signals": [
+          "siguiente paso"
+        ],
+        "baseline_commercial_signals": [
+          "arrancar",
+          "siguiente paso",
+          "pago",
+          "link",
+          "te cuento"
+        ],
+        "candidate_advances_more": false,
+        "candidate_words": 49,
+        "baseline_words": 49,
+        "word_delta": 0
+      }
+    },
+    {
+      "scenario_id": "follow_up_dolor",
+      "description": "AI debe referenciar el dolor sin que el usuario lo repita",
+      "seed_message": "Mi problema es que los clientes se me enfrían cuando tardo en responder",
+      "test_message": "¿De verdad me puede ayudar con eso?",
+      "baseline_reply": "Sí, definitivamente. Te ofrezco una solución para convertir tu WhatsApp en un vendedor automático 24/7. Esto significa que tendrás un asistente comercial que responde al instante, da seguimiento a tus prospectos y transforma conversaciones en ventas sin que tengas que estar presente. Así podrás enfocarte en otras áreas de tu negocio. ¿Te gustaría saber más sobre cómo funciona?",
+      "candidate_reply": "¡Claro! Nuestro servicio está diseñado para ayudarte a responder rápidamente a tus clientes, evitando que se enfríen. Con un asistente conversacional inteligente, podrás interactuar de manera más eficiente y mantener el interés de tus clientes. ¿Te gustaría saber más sobre cómo funciona?",
+      "evaluation": {
+        "crm_markers_in_candidate": [],
+        "crm_markers_in_baseline": [],
+        "crm_free": true,
+        "candidate_commercial_signals": [],
+        "baseline_commercial_signals": [],
+        "candidate_advances_more": false,
+        "candidate_words": 42,
+        "baseline_words": 58,
+        "word_delta": -16
+      }
+    },
+    {
+      "scenario_id": "pricing_ya_vio",
+      "description": "Usuario que ya vio el precio pregunta cómo pagar",
+      "seed_message": "¿Cuánto cuesta el plan mensual?",
+      "test_message": "Está bien, ¿cómo hago para pagar?",
+      "baseline_reply": "Avanzamos con el siguiente paso. Tienes dos opciones para pagar: puedes elegir un link de pago o una transferencia. ¿Prefieres el link o la transferencia?",
+      "candidate_reply": "Avanzamos con el siguiente paso. Puedes elegir entre pagar a través de un link o hacer una transferencia. ¿Cuál prefieres?",
+      "evaluation": {
+        "crm_markers_in_candidate": [],
+        "crm_markers_in_baseline": [],
+        "crm_free": true,
+        "candidate_commercial_signals": [
+          "siguiente paso",
+          "link"
+        ],
+        "baseline_commercial_signals": [
+          "siguiente paso",
+          "pago",
+          "link"
+        ],
+        "candidate_advances_more": false,
+        "candidate_words": 20,
+        "baseline_words": 25,
+        "word_delta": -5
+      }
+    },
+    {
+      "scenario_id": "objecion_caro",
+      "description": "Usuario que dijo 'está caro' regresa con interés",
+      "seed_message": "Me parece caro, no sé si vale la pena",
+      "test_message": "Pensándolo bien, ¿qué me garantizan?",
+      "baseline_reply": "Te garantizamos que tu WhatsApp se convierte en un vendedor automático 24/7, respondiendo al instante y dando seguimiento a cada prospecto. Esto significa que no perderás oportunidades de venta, incluso cuando no estés disponible. Puedes transformar conversaciones en ventas sin esfuerzo adicional. ¿Te gustaría saber más sobre cómo funciona esto?",
+      "candidate_reply": "Con nuestro Plan Básico, te garantizamos una configuración inicial completa, acceso a una guía de integración con WhatsApp y un asistente conversacional inteligente que optimiza tu comunicación. Esto significa que podrás mejorar la atención al cliente y aumentar tus ventas. ¿Te gustaría saber cómo esto puede impactar tu negocio directamente?",
+      "evaluation": {
+        "crm_markers_in_candidate": [],
+        "crm_markers_in_baseline": [],
+        "crm_free": true,
+        "candidate_commercial_signals": [],
+        "baseline_commercial_signals": [],
+        "candidate_advances_more": false,
+        "candidate_words": 50,
+        "baseline_words": 50,
+        "word_delta": 0
+      }
+    },
+    {
+      "scenario_id": "reenganche_cold",
+      "description": "Usuario que estuvo en contacto y se enfrió vuelve",
+      "seed_message": "Oye me interesa pero lo voy a pensar, hablamos después",
+      "test_message": "Hola de nuevo, ¿siguen con lo mismo?",
+      "baseline_reply": "¡Hola! Sí, seguimos ofreciendo la automatización comercial para tu negocio. Con nuestro sistema, puedes convertir tu WhatsApp en un vendedor automático que responde al instante y sigue a tus prospectos 24/7. ¿Te gustaría saber más sobre cómo esto puede beneficiar a tu negocio?",
+      "candidate_reply": "¡Hola! Sí, seguimos ofreciendo nuestro Plan Básico. Es una excelente solución para integrar un asistente conversacional inteligente en tu negocio. ¿Hay algo específico que te gustaría saber o en qué puedo ayudarte hoy?",
+      "evaluation": {
+        "crm_markers_in_candidate": [],
+        "crm_markers_in_baseline": [],
+        "crm_free": true,
+        "candidate_commercial_signals": [],
+        "baseline_commercial_signals": [],
+        "candidate_advances_more": false,
+        "candidate_words": 33,
+        "baseline_words": 43,
+        "word_delta": -10
+      }
+    },
+    {
+      "scenario_id": "demo_siguiente_paso",
+      "description": "Usuario que pidió demo pregunta qué sigue",
+      "seed_message": "¿Tienen alguna demo o prueba que pueda ver antes de comprar?",
+      "test_message": "Ya vi la info, ¿qué sería el siguiente paso?",
+      "baseline_reply": "Avanzamos con el siguiente paso. Te ofrezco el Plan Básico, que convierte tu WhatsApp en un vendedor automático 24/7. Incluye un asistente comercial que responde al instante y da seguimiento a tus prospectos. El costo es de $29 al mes. ¿Prefieres pagar con link o transferencia?",
+      "candidate_reply": "Avanzamos con el siguiente paso. El costo del Plan Básico es de 210,000 COP, que incluye la configuración inicial y el primer mes de servicio. Luego, pagarás 110,000 COP mensuales. ¿Prefieres hacer el pago mediante un link o transferencia?",
+      "evaluation": {
+        "crm_markers_in_candidate": [],
+        "crm_markers_in_baseline": [],
+        "crm_free": true,
+        "candidate_commercial_signals": [
+          "siguiente paso",
+          "pago",
+          "link"
+        ],
+        "baseline_commercial_signals": [
+          "siguiente paso",
+          "link"
+        ],
+        "candidate_advances_more": true,
+        "candidate_words": 39,
+        "baseline_words": 46,
+        "word_delta": -7
+      }
+    },
+    {
+      "scenario_id": "cierre",
+      "description": "Usuario con toda la info lista para cerrar",
+      "seed_message": "Me explicaste todo, el precio me parece bien y quiero empezar",
+      "test_message": "¿Qué necesitan de mi parte para activarlo?",
+      "baseline_reply": "Para activar tu servicio, solo necesito tu nombre, teléfono y algunos detalles sobre cómo planeas usarlo. Esto nos ayudará a configurar todo a tu medida. ¿Te gustaría empezar con eso?",
+      "candidate_reply": "Hubo un problema procesando el mensaje. Intenta de nuevo.",
+      "evaluation": {
+        "crm_markers_in_candidate": [],
+        "crm_markers_in_baseline": [],
+        "crm_free": true,
+        "candidate_commercial_signals": [],
+        "baseline_commercial_signals": [
+          "empezar",
+          "activar"
+        ],
+        "candidate_advances_more": false,
+        "candidate_words": 9,
+        "baseline_words": 30,
+        "word_delta": -21
+      }
+    },
+    {
+      "scenario_id": "vuelve_horas_despues",
+      "description": "Usuario warm regresa horas después con la misma intención",
+      "seed_message": "Me interesa el servicio, pero tengo que revisar con mi socio",
+      "test_message": "Ya hablé con él, le parece bien. ¿Cómo seguimos?",
+      "baseline_reply": "Genial, para avanzar necesitamos elegir un método de pago. ¿Prefieres hacerlo a través de un link o mediante transferencia? Te puedo ofrecer el Plan Básico, que convierte tu WhatsApp en un vendedor automático 24/7. Dime cómo te gustaría proceder.",
+      "candidate_reply": "¡Genial! Entonces, el siguiente paso es elegir el método de pago. Puedes optar por un link de pago o hacer una transferencia. El costo total es de 210,000 COP, que incluye la configuración inicial y el primer mes de servicio. ¿Prefieres el link o la transferencia?",
+      "evaluation": {
+        "crm_markers_in_candidate": [],
+        "crm_markers_in_baseline": [],
+        "crm_free": true,
+        "candidate_commercial_signals": [
+          "siguiente paso",
+          "pago",
+          "link"
+        ],
+        "baseline_commercial_signals": [
+          "pago",
+          "link"
+        ],
+        "candidate_advances_more": true,
+        "candidate_words": 46,
+        "baseline_words": 39,
+        "word_delta": 7
+      }
+    },
+    {
+      "scenario_id": "ya_hablo_antes",
+      "description": "Usuario active vuelve en la misma sesión",
+      "seed_message": "Tengo un negocio de ropa y recibo pedidos por WhatsApp, muchos se me van porque tardo",
+      "test_message": "¿Cómo manejan eso con tiendas como la mía?",
+      "baseline_reply": "Nuestro sistema convierte tu WhatsApp en un vendedor automático, ideal para tiendas como la tuya. Responde al instante, da seguimiento a cada prospecto y transforma conversaciones en ventas sin que tengas que estar presente. Esto te permite optimizar tu tiempo y aumentar tus ingresos. ¿Te gustaría saber más sobre cómo podemos ayudarte específicamente?",
+      "candidate_reply": "Entendemos que recibir pedidos por WhatsApp puede ser complicado y lento. Nuestro servicio te ayuda a gestionar esos pedidos de manera más eficiente, reduciendo el tiempo de respuesta y evitando que se te escapen ventas. Con nuestra solución, puedes automatizar respuestas y tener un asistente conversacional que te facilite la gestión. ¿Te gustaría saber más sobre cómo funciona?",
+      "evaluation": {
+        "crm_markers_in_candidate": [],
+        "crm_markers_in_baseline": [],
+        "crm_free": true,
+        "candidate_commercial_signals": [],
+        "baseline_commercial_signals": [],
+        "candidate_advances_more": false,
+        "candidate_words": 58,
+        "baseline_words": 53,
+        "word_delta": 5
+      }
+    },
+    {
+      "scenario_id": "ya_dijo_dolor",
+      "description": "Usuario que explicó su dolor ahora pregunta cómo funciona",
+      "seed_message": "El problema mío es que trabajo solo y no puedo responder todo el día",
+      "test_message": "¿Esto lo puedo manejar yo solo o necesito contratar a alguien?",
+      "baseline_reply": "Puedes manejarlo tú solo sin problemas. Nuestro asistente comercial inteligente te permite convertir tu WhatsApp en un vendedor automático 24/7, respondiendo al instante y dando seguimiento a cada prospecto. Así, no necesitas contratar a nadie y puedes enfocarte en cerrar más ventas. ¿Te gustaría saber más sobre cómo empezar?",
+      "candidate_reply": "Con nuestro servicio, tú puedes manejarlo solo. Incluye un asistente conversacional inteligente que automatiza respuestas y te ayuda a gestionar las consultas, lo que reduce la carga de trabajo. Así, puedes enfocarte en lo que realmente importa. ¿Te gustaría saber más sobre cómo puede facilitarte el día a día?",
+      "evaluation": {
+        "crm_markers_in_candidate": [],
+        "crm_markers_in_baseline": [],
+        "crm_free": true,
+        "candidate_commercial_signals": [],
+        "baseline_commercial_signals": [
+          "empezar"
+        ],
+        "candidate_advances_more": false,
+        "candidate_words": 49,
+        "baseline_words": 49,
+        "word_delta": 0
+      }
+    },
+    {
+      "scenario_id": "ya_vio_precio_objeta",
+      "description": "Usuario que vio precio y objetó quiere entender el valor",
+      "seed_message": "Vi que cuesta bastante, ¿y si no me funciona qué pasa?",
+      "test_message": "¿Cómo sé que vale la inversión para mi negocio?",
+      "baseline_reply": "La inversión vale la pena porque convierte tu WhatsApp en un vendedor automático que trabaja 24/7. Esto significa que puedes atender a tus clientes en cualquier momento, aumentar tus ventas y reducir el tiempo que pasas respondiendo preguntas repetitivas. Imagina tener un asistente que sigue a cada prospecto y transforma conversaciones en ventas, ¡sin que tengas que estar presente! ¿Te gustaría saber más sobre cómo empezar?",
+      "candidate_reply": "La inversión vale la pena si consideras que con solo 3 ventas al mes ya cubres el costo del servicio. Además, al optimizar tus conversaciones, puedes aumentar tus ventas de manera significativa. ¿Te gustaría que analicemos cómo este servicio puede impactar tu negocio específicamente?",
+      "evaluation": {
+        "crm_markers_in_candidate": [],
+        "crm_markers_in_baseline": [],
+        "crm_free": true,
+        "candidate_commercial_signals": [],
+        "baseline_commercial_signals": [
+          "empezar"
+        ],
+        "candidate_advances_more": false,
+        "candidate_words": 44,
+        "baseline_words": 66,
+        "word_delta": -22
+      }
+    }
+  ]
+}
