@@ -51,7 +51,7 @@ from __future__ import annotations
 
 import copy
 
-from app.application.pipeline import AIExecution, ConversationFlow, SaaSGuard, SalesFlow, blocked_response, log_trace, tenant_key, tenant_slug
+from app.application.pipeline import AIExecution, ConversationFlow, SaaSGuard, SalesFlow, blocked_response, log_trace, service_unavailable_response, tenant_key, tenant_slug
 from app.application.runtime import load_tenant_runtime_yaml
 from app.domain.conversation.demo import DemoDomainService
 from app.domain.conversation.memory import MemoryDomainService
@@ -128,7 +128,25 @@ class AIPipeline:
             return runtime_error_response, False
         tenant_key_value = tenant_key(tenant)
 
-        allowed, reason = self.saas_guard.check_access(tenant_key_value)
+        try:
+            allowed, reason = self.saas_guard.check_access(tenant_key_value)
+        except Exception as exc:
+            # Resiliencia: una falla de dependencia crítica (ej. PostgreSQL caído)
+            # NO debe propagar un traceback al usuario. Respuesta controlada + log.
+            logger.error(
+                "saas_guard_unavailable",
+                extra={"tenant": tenant_slug_value, "error": str(exc)},
+            )
+            controlled = service_unavailable_response()
+            log_trace(tenant_slug_value=tenant_slug_value, user_id=str(user_id or "anonymous"), intent="info", user_message=user_message, final_response=controlled)
+            metadata = {
+                "source": "saas_guard_unavailable",
+                "intent": "info",
+                "tenant_slug": tenant_slug_value,
+            }
+            if include_metadata:
+                return controlled, False, metadata
+            return controlled, False
         if not allowed:
             blocked = blocked_response(reason)
             log_trace(tenant_slug_value=tenant_slug_value, user_id=str(user_id or "anonymous"), intent="info", user_message=user_message, final_response=blocked)
@@ -186,6 +204,19 @@ class AIPipeline:
         )
         route_context = route_context if isinstance(route_context, dict) else {}
         route_intent = str(route_context.get("intent") or "").strip().lower()
+
+        # Registrar consumo SOLO cuando la IA produjo una respuesta válida.
+        # Excluye saludos/demo/bloqueos (early-return) y fallbacks (ai_used=False).
+        # Protegido para que un fallo de DB en el incremento no pierda la respuesta.
+        if ai_used and str(final_response or "").strip():
+            try:
+                self.saas_guard.record_usage(tenant_key_value)
+            except Exception as exc:
+                logger.error(
+                    "usage_record_failed",
+                    extra={"tenant": tenant_slug_value, "error": str(exc)},
+                )
+
         log_trace(tenant_slug_value=tenant_slug_value, user_id=conversation.user_id, intent=route_intent, user_message=user_message, final_response=str(final_response or ""))
         if include_metadata:
             metadata = route_context if isinstance(route_context, dict) else {}

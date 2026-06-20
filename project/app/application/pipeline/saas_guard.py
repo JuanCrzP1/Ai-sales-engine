@@ -26,5 +26,15 @@ class SaaSGuard:
                 "limit": limit,
             }
 
-        self.usage_repo.increment(tenant_key)
+        # NOTA: el incremento de uso NO ocurre aquí. check_access SOLO verifica acceso.
+        # El consumo de cuota se registra con record_usage() únicamente cuando el flujo
+        # produjo una respuesta válida (ver AIPipeline.run).
         return True, None
+
+    def record_usage(self, tenant_key: str) -> None:
+        """Registra el consumo de un mensaje para el tenant.
+
+        Se invoca SOLO tras generar una respuesta válida al usuario, de modo que
+        fallos de IA/proveedor o excepciones del pipeline no descuenten cuota.
+        """
+        self.usage_repo.increment(tenant_key)
