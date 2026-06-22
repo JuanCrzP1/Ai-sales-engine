@@ -8,6 +8,9 @@ from uuid import uuid4
 
 import pytest
 
+# Suite de integración: ejercita el LLM en vivo (requiere OPENROUTER_API_KEY).
+pytestmark = pytest.mark.integration
+
 ROOT_DIR = Path(__file__).resolve().parents[1]
 PROJECT_DIR = ROOT_DIR / "project"
 if str(PROJECT_DIR) not in sys.path:

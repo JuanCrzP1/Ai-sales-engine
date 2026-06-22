@@ -16,6 +16,11 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 from types import SimpleNamespace
+
+import pytest
+
+# Suite de integración: ejercita el LLM en vivo (requiere OPENROUTER_API_KEY).
+pytestmark = pytest.mark.integration
 from uuid import uuid4
 
 ROOT_DIR = Path(__file__).resolve().parents[1]

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib
 import os
+import sys
 from pathlib import Path
 from typing import Any, Dict
 
@@ -392,23 +393,62 @@ for name in Settings.model_fields.keys():
 
 settings = Settings(**_yaml_cfg)
 
-_database_url = str(settings.database_url or "").strip()
-_resolved_mode = str(settings.mode or settings.environment or "").strip().lower()
-_is_test = _resolved_mode == "test" or bool(os.getenv("PYTEST_CURRENT_TEST"))
+def is_test_context() -> bool:
+    """Detecta ejecución bajo pytest sin depender de PYTEST_CURRENT_TEST.
 
-if not _database_url:
-    if _is_test:
-        _database_url = "sqlite:///:memory:"
-    else:
-        raise RuntimeError("DATABASE_URL es obligatorio")
+    PYTEST_CURRENT_TEST solo existe mientras corre un test (no durante la
+    fase de collection), por eso se complementa con la presencia del módulo
+    pytest en sys.modules y con MODE/ENVIRONMENT=test.
+    """
+    resolved_mode = str(settings.mode or settings.environment or "").strip().lower()
+    return (
+        resolved_mode == "test"
+        or bool(os.getenv("PYTEST_CURRENT_TEST"))
+        or "pytest" in sys.modules
+    )
 
-if _database_url.lower().startswith("sqlite") and not _is_test:
-    raise RuntimeError("sqlite solo está permitido en entorno de test")
 
-if not _database_url.lower().startswith(("postgresql+psycopg", "sqlite")):
-    raise RuntimeError("DATABASE_URL debe apuntar a PostgreSQL con psycopg")
+def validate_database_url(url: str | None = None, *, is_test: bool | None = None) -> str:
+    """Resuelve y valida DATABASE_URL. Debe llamarse en STARTUP, NO en import.
 
-settings.database_url = _database_url
+    - Producción sin DATABASE_URL  -> RuntimeError (fail-fast en arranque).
+    - Contexto de test sin DATABASE_URL -> sqlite in-memory.
+    - sqlite solo se permite en test; el resto debe ser PostgreSQL con psycopg.
+
+    Mantiene EXACTAMENTE las mismas reglas que antes; solo cambia *cuándo* se
+    aplican (arranque en vez de import), para que importar app.config nunca aborte.
+
+    Parámetros (solo para testabilidad; el startup las omite):
+    - url: cadena a validar. Si es None usa settings.database_url y, al validar,
+      escribe el resultado de vuelta en settings.
+    - is_test: fuerza el contexto; si es None se detecta con is_test_context().
+    """
+    apply_to_settings = url is None
+    resolved = str((settings.database_url if apply_to_settings else url) or "").strip()
+    test_ctx = is_test_context() if is_test is None else bool(is_test)
+
+    if not resolved:
+        if test_ctx:
+            resolved = "sqlite:///:memory:"
+        else:
+            raise RuntimeError("DATABASE_URL es obligatorio")
+
+    if resolved.lower().startswith("sqlite") and not test_ctx:
+        raise RuntimeError("sqlite solo está permitido en entorno de test")
+
+    if not resolved.lower().startswith(("postgresql+psycopg", "sqlite")):
+        raise RuntimeError("DATABASE_URL debe apuntar a PostgreSQL con psycopg")
+
+    if apply_to_settings:
+        settings.database_url = resolved
+    return resolved
+
+
+# Resolución segura en tiempo de import: NUNCA aborta el import.
+# Solo aporta un default usable en contexto de test; la validación estricta de
+# producción ocurre en validate_database_url() invocada desde el startup (main.py).
+if not str(settings.database_url or "").strip() and is_test_context():
+    settings.database_url = "sqlite:///:memory:"
 
 
 def get_environment_status() -> Dict[str, Any]:

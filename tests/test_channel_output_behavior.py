@@ -5,8 +5,13 @@ from pathlib import Path
 from types import SimpleNamespace
 from uuid import uuid4
 
+import pytest
+
 from app.application.runtime import load_tenant_runtime_yaml
 from app.services.ai_service import AIService
+
+# Suite de integración: ejercita el LLM en vivo (requiere OPENROUTER_API_KEY).
+pytestmark = pytest.mark.integration
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
 PROJECT_DIR = ROOT_DIR / "project"

@@ -1,10 +1,17 @@
 from __future__ import annotations
 
+import os
 import sys
 from pathlib import Path
 from unittest.mock import patch
 
 import pytest
+
+# Bootstrap reproducible: declarar modo test ANTES de cualquier import de `app`.
+# Garantiza que la suite corra sin .env local, sin DATABASE_URL y sin PostgreSQL
+# (la config resuelve sqlite in-memory en contexto de test). setdefault respeta
+# un MODE provisto externamente (p. ej. integración real).
+os.environ.setdefault("MODE", "test")
 
 TESTS_DIR = Path(__file__).resolve().parent
 PROJECT_DIR = TESTS_DIR.parent / "project"
@@ -12,6 +19,29 @@ PROJECT_DIR = TESTS_DIR.parent / "project"
 for _p in (str(PROJECT_DIR), str(TESTS_DIR)):
     if _p not in sys.path:
         sys.path.insert(0, _p)
+
+
+def _llm_key_available() -> bool:
+    """True si hay una OPENROUTER_API_KEY usable (no vacía ni placeholder)."""
+    key = str(os.getenv("OPENROUTER_API_KEY") or "").strip()
+    return bool(key) and key not in {"<<TOKEN>>", "<TOKEN>"}
+
+
+def pytest_collection_modifyitems(config, items):
+    """Omite los tests marcados como integración cuando no hay OPENROUTER_API_KEY.
+
+    Permite `git clone && pytest` en verde sin .env ni secretos: la suite unitaria
+    corre y la de integración (LLM en vivo) se SKIPea (no falla). Con la key
+    presente (.env local o secreto de CI) la integración se ejecuta normalmente.
+    """
+    if _llm_key_available():
+        return
+    skip_integration = pytest.mark.skip(
+        reason="integración: requiere OPENROUTER_API_KEY (LLM en vivo)"
+    )
+    for item in items:
+        if "integration" in item.keywords:
+            item.add_marker(skip_integration)
 
 
 @pytest.fixture(autouse=True)
@@ -48,6 +78,13 @@ def _bypass_saas_for_core_tests(request):
             ".UsageRepository.increment",
             None,
         ),
+        (
+            # get_plan_code también consulta la DB dentro de check_access;
+            # sin mock dependería de un Postgres sembrado (dependencia oculta del entorno).
+            "app.infrastructure.persistence.subscription_repository"
+            ".SubscriptionRepository.get_plan_code",
+            None,
+        ),
     ]
 
     if test_file == "test_sql_memory_repository.py":
@@ -55,6 +92,7 @@ def _bypass_saas_for_core_tests(request):
             patch(_saas_targets[0][0], return_value=_saas_targets[0][1]),
             patch(_saas_targets[1][0], return_value=_saas_targets[1][1]),
             patch(_saas_targets[2][0], return_value=_saas_targets[2][1]),
+            patch(_saas_targets[3][0], return_value=_saas_targets[3][1]),
         ):
             yield
         return
@@ -84,6 +122,7 @@ def _bypass_saas_for_core_tests(request):
         patch(_saas_targets[0][0], return_value=_saas_targets[0][1]),
         patch(_saas_targets[1][0], return_value=_saas_targets[1][1]),
         patch(_saas_targets[2][0], return_value=_saas_targets[2][1]),
+        patch(_saas_targets[3][0], return_value=_saas_targets[3][1]),
         patch(f"{_mem_base}.set_last_user_message_at", _fake_set),
         patch(f"{_mem_base}.get_last_user_message_at", _fake_get),
     ):

@@ -13,6 +13,9 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-latest
+    env:
+      # Suite unitaria: corre en modo test (sqlite in-memory), sin Postgres ni .env.
+      MODE: test
     strategy:
       matrix:
         python-version: ['3.11', '3.13']
@@ -28,9 +31,44 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r project/requirements.txt
-      - name: Run tests
+      - name: Run unit tests
         run: |
+          # Sin OPENROUTER_API_KEY los tests de integración se autoexcluyen (skip).
           pytest -q
+
+  integration:
+    needs: test
+    runs-on: ubuntu-latest
+    env:
+      MODE: test
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Guard - requiere OPENROUTER_API_KEY
+        id: guard
+        run: |
+          if [ -z "${OPENROUTER_API_KEY}" ]; then
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            echo "Sin secreto OPENROUTER_API_KEY: se omite la suite de integración."
+          else
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Set up Python
+        if: steps.guard.outputs.run == 'true'
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: pip
+          cache-dependency-path: project/requirements.txt
+      - name: Install dependencies
+        if: steps.guard.outputs.run == 'true'
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r project/requirements.txt
+      - name: Run integration tests (LLM en vivo)
+        if: steps.guard.outputs.run == 'true'
+        run: |
+          pytest -q -m integration
 
   build:
     needs: test

@@ -20,9 +20,14 @@ PROJECT_DIR = ROOT_DIR / "project"
 if str(PROJECT_DIR) not in sys.path:
     sys.path.insert(0, str(PROJECT_DIR))
 
+import pytest
+
 from app.application.runtime import load_tenant_runtime_yaml
 from app.services.ai_service import AIService
 from semantic_guard import has_forward_intent
+
+# Suite de integración: ejercita el LLM en vivo (requiere OPENROUTER_API_KEY).
+pytestmark = pytest.mark.integration
 
 
 def _tenant(slug: str):
