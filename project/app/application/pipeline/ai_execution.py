@@ -75,7 +75,6 @@ from __future__ import annotations
 from app.application.pipeline.fallback import build_fallback_response
 from app.application.pipeline.response_postprocessor import enforce_max_words
 from app.application.pipeline.response_router import route_response
-from app.domain.conversation.demo import DemoDomainService
 from app.domain.conversation.memory import ConversationState, MemoryDomainService
 from app.domain.memory.observability.audit import emit_memory_audit
 from app.domain.memory.salience.selector import select as select_commercial_memory
@@ -528,7 +527,6 @@ class AIExecution:
         faq_results: list[dict],
         runtime_yaml: dict,
         memory_service: MemoryDomainService | None,
-        demo_service: DemoDomainService | None = None,
         tenant_slug: str,
         user_id: str,
     ) -> tuple[str, bool, dict]:
@@ -578,10 +576,6 @@ class AIExecution:
                 signal=_commercial_signal,
                 pricing_mode=_pricing_mode,
             )
-
-        demo_active = bool(runtime_yaml_with_memory.get("demo_input"))
-        del demo_service
-        runtime_yaml_with_memory["demo_active"] = demo_active
 
         runtime_yaml_with_memory["response_length"] = _response_length
         runtime_yaml_with_memory["response_max_words"] = _max_words

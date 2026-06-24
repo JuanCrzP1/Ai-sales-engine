@@ -230,9 +230,8 @@ class ConversationResult:
 
 
 class ConversationFlow:
-    def __init__(self, *, memory_service, demo_service, config_service: ConfigService | None = None) -> None:
+    def __init__(self, *, memory_service, config_service: ConfigService | None = None) -> None:
         self.memory = memory_service
-        self.demo = demo_service
         self.config = config_service or ConfigService()
 
     @staticmethod
@@ -389,37 +388,6 @@ class ConversationFlow:
 
         return initial_text, "initial_message"
 
-    def _build_demo_result(self, *, tenant_slug: str, user_id: str, user_message: str, runtime_yaml: dict) -> ConversationResult:
-        self.demo.activate(tenant_slug, user_id)
-        runtime_yaml["demo_input"] = True
-        runtime_yaml["mode"] = "demo"
-        self._set_stage(runtime_yaml, "connection")
-
-        self._save_runtime_memory(
-            tenant_slug=tenant_slug,
-            user_id=user_id,
-            user_message=user_message,
-            intent="",
-            stage="",
-        )
-        self.memory.set_mode(tenant_slug=tenant_slug, user_id=user_id, mode="demo")
-        return ConversationResult(runtime_yaml=runtime_yaml, user_id=user_id, intent="", early_response=self.demo.handle(), early_source="demo")
-
-    def _build_persisted_demo_result(self, *, tenant_slug: str, user_id: str, user_message: str, runtime_yaml: dict) -> ConversationResult:
-        runtime_yaml["mode"] = "demo"
-        runtime_yaml["demo_input"] = True
-        current_stage = str(self.memory.get_stage(tenant_slug=tenant_slug, user_id=user_id) or "").strip().lower() or "connection"
-        self._set_stage(runtime_yaml, current_stage)
-
-        self._save_runtime_memory(
-            tenant_slug=tenant_slug,
-            user_id=user_id,
-            user_message=user_message,
-            intent="",
-            stage="",
-        )
-        return ConversationResult(runtime_yaml=runtime_yaml, user_id=user_id, intent="", early_response=None)
-
     def process(
         self,
         *,
@@ -483,7 +451,7 @@ class ConversationFlow:
             conversation_history=conversation_history,
             runtime_yaml=runtime_yaml,
         )
-        persisted_mode, _persisted_intent, _persisted_pain = self._apply_persisted_memory_state(
+        _persisted_mode, _persisted_intent, _persisted_pain = self._apply_persisted_memory_state(
             tenant_slug=tenant_slug,
             user_id=normalized_user_id,
             runtime_yaml=runtime_yaml,
@@ -515,24 +483,6 @@ class ConversationFlow:
                 early_source=initial_source,
             )
 
-        demo_activation = self.demo.should_activate(tenant, user_message)
-        if demo_activation:
-            return self._build_demo_result(
-                tenant_slug=tenant_slug,
-                user_id=normalized_user_id,
-                user_message=user_message,
-                runtime_yaml=runtime_yaml,
-            )
-
-        if persisted_mode == "demo":
-            return self._build_persisted_demo_result(
-                tenant_slug=tenant_slug,
-                user_id=normalized_user_id,
-                user_message=user_message,
-                runtime_yaml=runtime_yaml,
-            )
-
-        runtime_yaml["demo_input"] = False
         persisted_stage = str(self.memory.get_stage(tenant_slug=tenant_slug, user_id=normalized_user_id) or "").strip().lower()
         if persisted_stage:
             self._set_stage(runtime_yaml, persisted_stage)

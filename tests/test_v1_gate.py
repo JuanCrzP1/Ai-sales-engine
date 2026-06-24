@@ -33,9 +33,7 @@ from app.application.ai_pipeline import AIPipeline
 from app.application.pipeline.common import blocked_response, service_unavailable_response
 from app.application.pipeline.saas_guard import PLAN_LIMITS
 from app.application.runtime import load_tenant_runtime_yaml
-from app.domain.conversation.demo import DemoDomainService
 from app.domain.conversation.memory import MemoryDomainService
-from app.infrastructure.persistence.demo_repository import DemoRepository
 from app.infrastructure.persistence.memory_repository import MemoryRepository
 
 
@@ -63,11 +61,9 @@ def _build_pipeline(*, is_active=True, can_send=True, plan_code="starter"):
     usage_repo.can_send.return_value = can_send
 
     memory = MemoryDomainService(MemoryRepository())
-    demo = DemoDomainService(DemoRepository())
 
     pipeline = AIPipeline(
         memory_service=memory,
-        demo_service=demo,
         subscription_repo=sub_repo,
         usage_repo=usage_repo,
     )

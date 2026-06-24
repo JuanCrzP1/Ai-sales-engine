@@ -33,9 +33,6 @@ def render_op_anchor(state: OperationalState | None) -> str:
             return f"Venían avanzando por {opt_label}."
         return "Venían avanzando con el pago."
 
-    if p == "demo":
-        return "Estaban en demo en vivo."
-
     if p in ("activation", "onboarding"):
         return "Ya iban dejando todo listo para empezar."
 

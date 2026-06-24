@@ -297,11 +297,6 @@ class TestGenericPaymentFallback:
 # ---------------------------------------------------------------------------
 
 class TestNonPaymentProcesses:
-    def test_demo_via_route_source(self):
-        text = "Mira, así es como funciona el sistema en tiempo real."
-        state = extract_op_state(text, route_source="demo", payment_methods=["nequi"])
-        assert state.active_process == "demo"
-
     def test_activation_detected(self):
         text = "Para activar el sistema, necesito algunos datos de arranque."
         state = extract_op_state(text, payment_methods=["nequi"])

@@ -339,7 +339,6 @@ def test_runtime_config_initial_message_has_priority_over_config_service() -> No
     memory = _MemoryStub()
     flow = ConversationFlow(
         memory_service=memory,
-        demo_service=object(),
         config_service=_ConfigMustNotLoadInitialMessage(),
     )
     runtime_yaml = {

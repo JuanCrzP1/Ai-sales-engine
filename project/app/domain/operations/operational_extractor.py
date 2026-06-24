@@ -49,11 +49,6 @@ _HANDOFF = re.compile(
     r"|te comunica(?:mos)? con",
 )
 
-_DEMO_PREFIX = re.compile(
-    r"^perfecto, mira, esto s[eé]r[ií]a respondiendo"
-)
-
-
 def _expiry(hours: int = 6) -> datetime:
     return datetime.now(timezone.utc) + timedelta(hours=hours)
 
@@ -76,14 +71,6 @@ def extract_op_state(
     normalized = str(response_text or "").strip().lower()
     if not normalized:
         return OperationalState()
-
-    source = str(route_source or "").strip().lower()
-    if source == "demo" or _DEMO_PREFIX.match(normalized):
-        return OperationalState(
-            active_process="demo",
-            pending_action="continue_demo",
-            expires_at=_expiry(2),
-        )
 
     # Payment with specific option — only tenant-configured methods are checked.
     if payment_methods:

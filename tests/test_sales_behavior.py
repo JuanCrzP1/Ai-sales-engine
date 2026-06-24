@@ -160,7 +160,6 @@ def prompt(runtime_yaml: dict) -> str:
                 faq_results=[],
                 runtime_yaml=runtime_yaml,
                 memory_service=pipeline.conversation_flow.memory,
-                demo_service=pipeline.conversation_flow.demo,
                 tenant_slug="asesor_ai_prod",
                 user_id=f"prompt-capture-{uuid4().hex[:8]}",
             )

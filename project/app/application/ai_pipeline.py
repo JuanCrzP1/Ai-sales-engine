@@ -53,9 +53,7 @@ import copy
 
 from app.application.pipeline import AIExecution, ConversationFlow, SaaSGuard, SalesFlow, blocked_response, log_trace, service_unavailable_response, tenant_key, tenant_slug
 from app.application.runtime import load_tenant_runtime_yaml
-from app.domain.conversation.demo import DemoDomainService
 from app.domain.conversation.memory import MemoryDomainService
-from app.infrastructure.persistence.demo_repository import DemoRepository
 from app.infrastructure.persistence.memory_repository import MemoryRepository, SQLMemoryRepository
 from app.infrastructure.persistence.subscription_repository import SubscriptionRepository
 from app.infrastructure.persistence.usage_repository import UsageRepository
@@ -72,7 +70,6 @@ class AIPipeline:
         message_repository=None,
         runtime: AIRuntimeService | None = None,
         memory_service: MemoryDomainService | None = None,
-        demo_service: DemoDomainService | None = None,
         subscription_repo: SubscriptionRepository,
         usage_repo: UsageRepository,
     ) -> None:
@@ -87,13 +84,12 @@ class AIPipeline:
         else:
             memory = memory_service
             memory_repository = memory.repository
-        demo = demo_service or DemoDomainService(DemoRepository())
 
         self.runtime = runtime_service
         self.usage_repo = usage_repo
         self.memory_repository = memory_repository
         self.saas_guard = SaaSGuard(subscription_repo=subscription_repo, usage_repo=usage_repo)
-        self.conversation_flow = ConversationFlow(memory_service=memory, demo_service=demo)
+        self.conversation_flow = ConversationFlow(memory_service=memory)
         self.sales_flow = SalesFlow()
         self.ai_execution = AIExecution()
 
@@ -198,7 +194,6 @@ class AIPipeline:
             faq_results=faq_results,
             runtime_yaml=runtime_yaml_for_ai,
             memory_service=self.conversation_flow.memory,
-            demo_service=self.conversation_flow.demo,
             tenant_slug=tenant_slug_value,
             user_id=conversation.user_id,
         )
