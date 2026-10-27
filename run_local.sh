@@ -117,6 +117,27 @@ else
 fi
 
 # -------------------------
+# PANEL WEB (puerto 5173)
+# -------------------------
+ADMIN_WEB_DIR="$SCRIPT_DIR/apps/admin-web"
+ADMIN_WEB_PORT=5173
+
+if ! command -v npm >/dev/null 2>&1; then
+    echo "[AVISO] npm no esta instalado. El panel web no se inicia."
+elif [ ! -f "$ADMIN_WEB_DIR/package.json" ]; then
+    echo "[AVISO] No se encontro $ADMIN_WEB_DIR. El panel web no se inicia."
+elif lsof -nP -iTCP:"$ADMIN_WEB_PORT" -sTCP:LISTEN >/dev/null 2>&1; then
+    echo "[AVISO] El puerto $ADMIN_WEB_PORT ya esta en uso. El panel web no se inicia."
+else
+    if [ ! -d "$ADMIN_WEB_DIR/node_modules" ]; then
+        echo "[INFO] Instalando dependencias del panel web..."
+        (cd "$ADMIN_WEB_DIR" && npm install)
+    fi
+    echo "[INFO] Iniciando panel web en http://localhost:$ADMIN_WEB_PORT ..."
+    start_background_process "admin-web" "cd $(printf '%q' "$ADMIN_WEB_DIR") && npm run dev -- --port $ADMIN_WEB_PORT --strictPort --open"
+fi
+
+# -------------------------
 # BACKEND (puerto 8082)
 # -------------------------
 echo "[INFO] Iniciando backend en puerto 8082..."

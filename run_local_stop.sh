@@ -52,9 +52,11 @@ kill_port_listener() {
 
 kill_if_exists "ngrok"
 kill_if_exists "telegram-polling"
+kill_if_exists "admin-web"
+kill_port_listener "5173"
 kill_matching_processes "ngrok" "ngrok http $APP_PORT"
 kill_matching_processes "telegram-polling" "app.connectors.telegram.polling"
 kill_matching_processes "uvicorn" "uvicorn app.main:app --reload --port $APP_PORT"
 kill_port_listener "$APP_PORT"
 
-echo "[INFO] Procesos ngrok, telegram-polling y backend detenidos (si estaban activos)."
+echo "[INFO] Procesos ngrok, telegram-polling, panel web y backend detenidos (si estaban activos)."

@@ -40,6 +40,26 @@ if defined TELEGRAM_POLLING_ENABLED (
 )
 
 :: -------------------------
+:: PANEL WEB (puerto 5173)
+:: -------------------------
+set ADMIN_WEB_DIR=%~dp0apps\admin-web
+where npm >nul 2>nul
+if errorlevel 1 (
+	echo [AVISO] npm no esta instalado. El panel web no se inicia.
+) else if not exist "%ADMIN_WEB_DIR%\package.json" (
+	echo [AVISO] No se encontro %ADMIN_WEB_DIR%. El panel web no se inicia.
+) else (
+	if not exist "%ADMIN_WEB_DIR%\node_modules" (
+		echo [INFO] Instalando dependencias del panel web...
+		pushd "%ADMIN_WEB_DIR%"
+		call npm install
+		popd
+	)
+	echo [INFO] Iniciando panel web en http://localhost:5173 ...
+	start "admin-web" cmd /k "cd /d "%ADMIN_WEB_DIR%" && npm run dev -- --port 5173 --strictPort --open"
+)
+
+:: -------------------------
 :: BACKEND (puerto 8082)
 :: -------------------------
 echo [INFO] Iniciando backend en puerto 8082...
