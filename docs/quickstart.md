@@ -2,7 +2,7 @@
 
 ## ¿Qué es esto?
 
-Es un sistema SaaS de ventas conversacionales por WhatsApp.
+Es un motor de ventas conversacionales por WhatsApp. Las cuentas, suscripciones y facturación los gestiona la plataforma externa que lo integra.
 No responde por responder.
 Toma el mensaje, entiende el contexto comercial del negocio y mueve la conversación hacia una acción concreta.
 Está diseñado para vender, no para simular atención.

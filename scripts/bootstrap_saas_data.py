@@ -7,8 +7,10 @@ directory found under project/config/tenants/.
 For each tenant the script guarantees exactly one row in:
   - tenants         (name=slug, status='active')
   - admin_users     (name=slug, all other fields NULL)
-  - subscriptions   (plan_code='starter', status='trialing', +30 days)
   - tenant_settings (settings='{}')
+
+Subscriptions, plans and usage limits belong to the external platform: this script
+does not create them.
 
 Behavior:
   - Idempotent: safe to run multiple times without side effects.
@@ -112,33 +114,6 @@ def _create_admin_user(conn, tenant_id: UUID, slug: str) -> None:
     )
 
 
-def _has_subscription(conn, tenant_id: UUID) -> bool:
-    row = conn.execute(
-        text(
-            "SELECT 1 FROM subscriptions WHERE tenant_id = CAST(:tid AS UUID) LIMIT 1"
-        ),
-        {"tid": str(tenant_id)},
-    ).fetchone()
-    return row is not None
-
-
-def _create_subscription(conn, tenant_id: UUID) -> None:
-    conn.execute(
-        text(
-            """
-            INSERT INTO subscriptions (tenant_id, plan_code, status, current_period_end)
-            VALUES (
-                CAST(:tid AS UUID),
-                'starter',
-                'trialing',
-                now() + interval '30 days'
-            )
-            """
-        ),
-        {"tid": str(tenant_id)},
-    )
-
-
 def _has_tenant_settings(conn, tenant_id: UUID) -> bool:
     row = conn.execute(
         text(
@@ -209,12 +184,6 @@ def bootstrap() -> None:
                 else:
                     _create_admin_user(conn, tenant_id, slug)
                     created_parts.append("admin_user")
-
-                if _has_subscription(conn, tenant_id):
-                    existing_parts.append("subscription")
-                else:
-                    _create_subscription(conn, tenant_id)
-                    created_parts.append("subscription")
 
                 if _has_tenant_settings(conn, tenant_id):
                     existing_parts.append("tenant_settings")

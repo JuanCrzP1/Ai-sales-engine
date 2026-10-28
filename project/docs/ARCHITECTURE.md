@@ -1,6 +1,6 @@
 # 🧠 ARCHITECTURE.md
 
-## Sistema SaaS AI-First de Ventas Conversacionales
+## Motor AI-First de Ventas Conversacionales
 
 ---
 
@@ -8,7 +8,7 @@
 
 Este sistema NO es una automatización rígida.
 
-👉 Es un **vendedor SaaS conversacional** que:
+👉 Es un **vendedor conversacional** que:
 
 - entiende clientes
 - guía decisiones

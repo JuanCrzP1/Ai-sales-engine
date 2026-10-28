@@ -45,56 +45,18 @@ def pytest_collection_modifyitems(config, items):
 
 
 @pytest.fixture(autouse=True)
-def _bypass_saas_for_core_tests(request):
-    """Patch SaaS and memory infrastructure for all tests except specific suites:
+def _isolate_last_message_timestamps(request):
+    """Aísla la marca del último mensaje del usuario en cada prueba.
 
-    - test_saas_guards.py           → no patches (validates real enforcement logic)
-    - test_sql_memory_repository.py → SaaS patches only (validates real SQL memory)
-    - all others                    → SaaS patches + in-memory last_message_at store
-
-    Memory patch: set/get_last_user_message_at are redirected to a per-test
-    in-memory dict, so historical DB state never contaminates conversational tests,
-    while intra-test state changes (e.g. simulating activity windows) still work.
+    - test_sql_memory_repository.py → sin parches (valida la memoria SQL real)
+    - resto                         → set/get_last_user_message_at usan un dict por prueba,
+      de modo que el estado histórico de la DB no contamina las pruebas conversacionales,
+      mientras los cambios dentro de la prueba (ventanas de actividad) siguen funcionando.
     """
     test_file = request.node.fspath.basename
 
-    if test_file == "test_saas_guards.py":
-        yield
-        return
-
-    _saas_targets = [
-        (
-            "app.infrastructure.persistence.subscription_repository"
-            ".SubscriptionRepository.is_active",
-            True,
-        ),
-        (
-            "app.infrastructure.persistence.usage_repository"
-            ".UsageRepository.can_send",
-            True,
-        ),
-        (
-            "app.infrastructure.persistence.usage_repository"
-            ".UsageRepository.increment",
-            None,
-        ),
-        (
-            # get_plan_code también consulta la DB dentro de check_access;
-            # sin mock dependería de un Postgres sembrado (dependencia oculta del entorno).
-            "app.infrastructure.persistence.subscription_repository"
-            ".SubscriptionRepository.get_plan_code",
-            None,
-        ),
-    ]
-
     if test_file == "test_sql_memory_repository.py":
-        with (
-            patch(_saas_targets[0][0], return_value=_saas_targets[0][1]),
-            patch(_saas_targets[1][0], return_value=_saas_targets[1][1]),
-            patch(_saas_targets[2][0], return_value=_saas_targets[2][1]),
-            patch(_saas_targets[3][0], return_value=_saas_targets[3][1]),
-        ):
-            yield
+        yield
         return
 
     # Per-test in-memory store: (tenant_slug, user_id) → datetime | None
@@ -119,10 +81,6 @@ def _bypass_saas_for_core_tests(request):
     _mem_base = "app.infrastructure.persistence.memory_repository.SQLMemoryRepository"
 
     with (
-        patch(_saas_targets[0][0], return_value=_saas_targets[0][1]),
-        patch(_saas_targets[1][0], return_value=_saas_targets[1][1]),
-        patch(_saas_targets[2][0], return_value=_saas_targets[2][1]),
-        patch(_saas_targets[3][0], return_value=_saas_targets[3][1]),
         patch(f"{_mem_base}.set_last_user_message_at", _fake_set),
         patch(f"{_mem_base}.get_last_user_message_at", _fake_get),
     ):

@@ -43,7 +43,7 @@ Estos principios son no negociables. Cualquier propuesta de cambio que los viole
 Orquestador principal. Recibe el mensaje del usuario y coordina la secuencia:
 
 ```
-SaaSGuard → ConversationFlow → SalesFlow → AIExecution
+ConversationFlow → SalesFlow → AIExecution
 ```
 
 No toma decisiones comerciales. Solo valida estado y delega.
@@ -176,25 +176,11 @@ Los siguientes tipos de cambio son de alto riesgo y requieren una fase numerada 
 
 ---
 
-## 7. Relación con la capa SaaS (subscriptions, usage, billing)
+## 7. Suscripciones, planes y límites de uso
 
-El núcleo conversacional está desacoplado del billing. La integración ocurre en un único punto de entrada:
-
-```
-AIPipeline.run()
-  └── SaaSGuard.check_access(tenant_key)
-        ├── SubscriptionRepository — valida que el tenant tenga suscripción activa
-        └── UsageRepository — valida que no haya superado su cuota de mensajes
-```
-
-Si `SaaSGuard` bloquea la solicitud, el núcleo conversacional **no se ejecuta**. La respuesta de bloqueo es devuelta directamente sin llamar a la IA.
-
-Para pasar a billing y monetización real, el prerequisito técnico es:
-1. Implementar `SQLMemoryRepository` con persistencia real en PostgreSQL
-2. Conectar `SubscriptionRepository` y `UsageRepository` a la base de datos
-3. Verificar que `SaaSGuard` refleje el estado real de cada tenant
-
-El núcleo conversacional no necesita cambiar para soportar billing.
+No forman parte del motor. La plataforma externa gestiona cuentas, planes, facturación y límites,
+y solo envía al motor solicitudes que ya puede atender. `AIPipeline.run()` no consulta suscripciones
+ni cuotas: carga la configuración del negocio y ejecuta la atención comercial.
 
 ---
 
@@ -209,7 +195,7 @@ Canales activos: WhatsApp, Web, Telegram
 LLM:            OpenRouter (configurable por tenant)
 ```
 
-### Deuda técnica pendiente (no bloquea billing)
+### Deuda técnica pendiente
 
 | Item | Impacto | Fase sugerida |
 |---|---|---|

@@ -1,14 +1,12 @@
-# Guía YAML SaaS
+# Guía YAML de configuración comercial por negocio
 
-Esta guía define la estructura canónica de configuración por tenant para un runtime SaaS multi-tenant.
+Cada negocio (tenant) configura en YAML lo que vende y cómo lo cobra a **sus propios clientes**.
+Las cuentas, suscripciones, facturación y límites de uso del motor no se configuran aquí: los
+administra la plataforma externa.
 
-## 1. Estructura Mínima Del Tenant
+## 1. Estructura mínima del tenant
 
-Cada tenant debe vivir en:
-
-`project/config/tenants/<tenant_slug>/`
-
-Y debe incluir como mínimo:
+Cada tenant vive en `project/config/tenants/<tenant_slug>/` e incluye:
 
 - `business.yaml`
 - `config.yaml`
@@ -16,149 +14,87 @@ Y debe incluir como mínimo:
 - `pricing.yaml`
 - `sales.yaml`
 
-## 2. Regla General
+El comportamiento comercial no se define en el código: si cambias sector, precios o estilo
+comercial, cambias YAML.
 
-El comportamiento comercial no se define en el código.
-Se define en los YAML del tenant.
-
-Si cambias sector, pricing o estilo comercial, cambias YAML.
-No cambias la lógica interna del motor.
-
-## 3. config.yaml
-
-`config.yaml` debe incluir switches operativos del runtime:
+## 2. config.yaml
 
 ```yaml
 config:
   features:
     pricing_enabled: true
-    multi_currency: true
-    multi_plan: true
     catalog_mode: false
 ```
 
-Regla:
+- Si `pricing_enabled: false` y no hay precios ni medios de pago, el prompt no incluye pricing.
 
-- si `pricing_enabled: false`, el runtime no debe inyectar pricing comercial en el prompt final
+## 3. pricing.yaml
 
-## 4. pricing.yaml
+`pricing.yaml` define la oferta del negocio. Debe tener `plans` o `catalog`.
 
-`pricing.yaml` define la estructura económica del tenant.
-
-Ejemplo canónico:
+### Planes o servicios (incluye negocios que venden suscripciones a sus clientes)
 
 ```yaml
 pricing:
-  currencies:
-    primary: COP
-    supported:
-      - COP
-      - USD
-
-  exchange_reference: manual
-  model: hybrid
-
   plans:
     - id: plan_basico
       name: Plan Basico
-      description: Configuracion inicial + sistema mensual
+      description: Configuracion inicial + servicio mensual
       pricing:
         COP:
-          implementation: 150000
-          monthly: 180000
+          implementation: 150000   # cobro inicial (opcional)
+          monthly: 180000          # cobro mensual recurrente del negocio a su cliente
         USD:
           implementation: 40
           monthly: 45
       includes:
         - configuracion inicial
-        - integracion con canales
-        - seguimiento automatico
       not_included:
         - costos de plataformas externas
-        - inversion publicitaria
-
-  custom_rules:
-    show_single_plan_as_main: true
-    allow_multi_plan_selection: false
-
-  payment_methods:
-    - transferencia
-    - nequi
-    - tarjeta
-
+      payment:
+        link: https://...          # enlace de pago del negocio
+        transfer:
+          enabled: true
+          methods:
+            - type: nequi          # nequi | daviplata | bank | breb
+              number: "..."
   conditions:
     - sin permanencia
-    - cancelacion mensual
 ```
 
-Regla clave:
+- Para pago único usa `price` en lugar de `monthly`.
+- `plans` siempre es una lista, aunque haya un solo plan.
 
-- `plans` siempre debe ser una lista, incluso cuando exista un solo plan
-
-## 5. Adaptación Multi-Tenant
-
-El mismo motor puede operar para:
-
-- servicios
-- salud
-- ecommerce
-- educación
-- cualquier operación comercial con conversación como canal principal
-
-La diferencia la marca el tenant activo y su configuración YAML.
-          monthly: 250000
-    - id: premium
-      name: Premium
-      pricing:
-        COP:
-          implementation: 350000
-          monthly: 420000
-```
-
-### Ecommerce catalog
+### Catálogo de productos
 
 ```yaml
 pricing:
   model: catalog
-  currencies:
-    primary: COP
-    supported:
-      - COP
-  plans:
-    - id: producto_1
-      name: Camiseta deportiva
-      pricing:
-        COP:
-          price: 80000
+  catalog:
+    categories:
+      - id: camisetas
+        name: Camisetas
+    items:
+      - id: camiseta_basica
+        name: Camiseta basica
+        category: camisetas
+        price:
+          COP: 45000
+    payment:
+      link: ""
+      transfer:
+        enabled: true
+        methods: []
+  conditions:
+    - cambios hasta 5 dias despues de la entrega
 ```
 
-## 4. Real Examples by Industry
+## 4. Monedas
 
-### Service business
+- El motor nunca convierte monedas ni calcula tasas de cambio.
+- Los valores se muestran tal como están en el YAML, por moneda.
 
-- Use `model: single` or `model: hybrid`.
-- Use `implementation` and/or `monthly` per currency.
-- Use `includes` and `not_included` to define scope.
+## 5. Datos sensibles
 
-### Ecommerce
-
-- Use `model: catalog`.
-- Define one product per `plans[]` item.
-- Prefer `price` over `monthly` when subscription does not apply.
-
-### SaaS subscription
-
-- Use `model: subscription` or `model: hybrid`.
-- Keep `monthly` in each currency bucket.
-- Optionally keep `implementation` if onboarding is charged.
-
-### Multi-plan commercial strategy
-
-- Keep all available options in `plans`.
-- Use `custom_rules.show_single_plan_as_main` and `custom_rules.allow_multi_plan_selection` for sales behavior hints.
-
-## 5. Multi-currency Behavior
-
-- Never convert currencies in runtime prompt assembly.
-- Never calculate exchange rates in code.
-- Prompt rendering should only display values as provided in YAML.
+Los enlaces de pago, números de cuenta y referencias de transferencia son datos del negocio que el
+motor entrega al comprador cuando elige un método de pago. Trátalos como información sensible.

@@ -8,7 +8,6 @@ Behavior:
   - existing slug → skip, report as [existing]
   - missing slug  → INSERT with name=slug, status='active'
   - idempotent: safe to run multiple times
-  - never creates subscriptions
   - never modifies existing rows
 
 Usage:

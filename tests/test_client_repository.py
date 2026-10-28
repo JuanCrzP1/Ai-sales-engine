@@ -1,7 +1,6 @@
 """
 Phase 7C — ClientRepository tests.
 All tests mock DBRepository and get_engine; no live DB required.
-The conftest autouse fixture isolates these tests from the SaaS subscription layer.
 """
 from __future__ import annotations
 

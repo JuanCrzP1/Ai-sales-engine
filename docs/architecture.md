@@ -32,7 +32,6 @@ WhatsApp Cloud API
 -> project/app/infrastructure/config/config_service.py
 -> project/app/services/ai_service.py
 -> project/app/application/ai_pipeline.py
--> project/app/application/pipeline/saas_guard.py
 -> project/app/application/pipeline/conversation_flow.py
 -> project/app/application/pipeline/sales_flow.py
 -> project/app/application/pipeline/ai_execution.py
@@ -105,14 +104,12 @@ No existe un archivo activo llamado `intent.py` para la decisión final del runt
 
 No hay un módulo activo con ese nombre. La decisión efectiva se reparte entre:
 
-- `project/app/application/pipeline/saas_guard.py`
 - `project/app/application/pipeline/conversation_flow.py`
 - `project/app/application/pipeline/sales_flow.py`
 - `project/app/application/pipeline/response_router.py`
 
 Qué hace cada uno:
 
-- `saas_guard.py`: decide si el tenant puede responder o debe bloquearse por estado SaaS.
 - `conversation_flow.py`: decide early responses, continuidad, memoria y contexto del turno.
 - `sales_flow.py`: decide qué contexto comercial, pricing, features e inventario deben inyectarse al runtime.
 - `response_router.py`: decide si la salida proviene de IA o fallback por excepción, y conserva metadata operativa.
@@ -287,7 +284,6 @@ El tenant cambia directamente:
 - qué precio existe y cómo se cobra
 - qué capacidades o canales están disponibles
 - qué memoria reciente debe influir en la respuesta
-- si el tenant puede o no responder por estado SaaS
 
 La respuesta final no es genérica. Se construye sobre el runtime YAML efectivo del tenant activo.
 

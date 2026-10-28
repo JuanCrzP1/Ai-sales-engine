@@ -24,7 +24,7 @@ El producto está orientado a equipos y negocios que venden por conversación:
 - operaciones donde una respuesta lenta equivale a una venta perdida
 - negocios que necesitan atender varios clientes o marcas desde una misma plataforma
 
-También está diseñado para operación multi-tenant, por lo que encaja como plataforma SaaS para múltiples clientes con configuración aislada.
+También está diseñado para operación multi-tenant: atiende a múltiples negocios con configuración aislada. Las cuentas, suscripciones, facturación y límites de uso los administra la plataforma externa que integra el motor.
 
 ## Cómo Funciona En Términos De Negocio
 
@@ -127,7 +127,6 @@ Eso permite que el producto:
 
 - no invente información crítica con facilidad
 - se adapte por tenant sin duplicar código
-- pueda monetizarse como SaaS
 - mantenga coherencia entre operación técnica y objetivo comercial
 
 ## Qué Rompe El Sistema
@@ -154,21 +153,17 @@ Cuando el cliente conversa con el sistema, la experiencia buscada es:
 
 La salida correcta no es “inteligente” en abstracto. Es una salida que mueve la conversación hacia resultado.
 
-## Producto SaaS, No Proyecto Aislado
+## Motor Integrable, No Proyecto Aislado
 
-Este sistema ya está diseñado para operar como plataforma:
+El motor está diseñado para integrarse en una plataforma externa:
 
 - múltiples tenants
 - configuración por negocio
-- validación SaaS previa a la respuesta
-- posibilidad de límites por plan
 - separación entre transporte, pipeline, configuración y persistencia
 
-Eso lo convierte en una base válida para:
+La plataforma externa administra las cuentas, las suscripciones, la facturación y los límites de uso. El motor recibe solicitudes autorizadas y ejecuta la atención comercial.
 
-- venta como software de atención comercial
-- uso interno como motor conversacional multi-cliente
-- evolución hacia planes, límites, cobro y reporting por tenant
+Los precios, planes, catálogos, enlaces de pago y transferencias que aparecen en la configuración pertenecen a cada negocio: son lo que ese negocio vende a sus clientes y el motor los usa para cerrar ventas.
 
 ## Resumen De Posicionamiento
 

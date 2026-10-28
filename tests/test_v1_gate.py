@@ -1,25 +1,22 @@
 ## ========================================
 ## ARCHIVO: test_v1_gate.py
 ##
-## QUÉ VALIDA (cirugía V1 GATE):
-##   FASE 1 — Bug de límite SaaS: el cliente recibe el mensaje comercial de
-##            límite de plan y NO un fallback genérico.
-##   FASE 2 — Medición de uso: increment() ocurre SOLO tras una respuesta válida
-##            de IA; nunca ante fallo de IA o excepción de pipeline; una sola vez.
-##   FASE 3 — Resiliencia PostgreSQL: una excepción de repositorio NO tumba el
-##            pipeline; devuelve respuesta controlada y la registra en log.
-##
-## POR QUÉ ES CRÍTICO:
-##   Protege monetización (mensaje de upsell + conteo justo) y operación continua
-##   (no caída total ante DB intermitente).
+## QUÉ VALIDA:
+##   - El flujo conversacional NO depende de suscripciones, planes ni límites de uso
+##     internos: eso es responsabilidad de la plataforma externa.
+##   - La atención comercial funciona: precios, pagos y sustituciones de pago de cada
+##     negocio siguen llegando al prompt y a la respuesta.
+##   - Aislamiento entre negocios: cada tenant recibe solo su propia configuración.
+##   - Resiliencia: un fallo de IA devuelve un fallback controlado.
 ## ========================================
 
 from __future__ import annotations
 
+import inspect
+import json
 import sys
 from pathlib import Path
 from types import SimpleNamespace
-from unittest.mock import MagicMock, patch
 from uuid import uuid4
 
 import pytest
@@ -30,44 +27,18 @@ if str(PROJECT_DIR) not in sys.path:
     sys.path.insert(0, str(PROJECT_DIR))
 
 from app.application.ai_pipeline import AIPipeline
-from app.application.pipeline.common import blocked_response, service_unavailable_response
-from app.application.pipeline.saas_guard import PLAN_LIMITS
 from app.application.runtime import load_tenant_runtime_yaml
 from app.domain.conversation.memory import MemoryDomainService
 from app.infrastructure.persistence.memory_repository import MemoryRepository
-
-
-_LIMIT_MESSAGE = "Ya llegaste al límite del plan. Si quieres seguimos de una y no paras las ventas."
-_INACTIVE_MESSAGE = "En este momento no tienes el servicio activo, si quieres lo activamos y lo dejas trabajando ya contigo."
-_GENERIC_MESSAGE = "No puedo procesar tu solicitud en este momento."
 
 
 def _tenant(slug: str = "asesor_ai_prod") -> SimpleNamespace:
     return SimpleNamespace(name=slug, slug=slug, id=slug)
 
 
-def _build_pipeline(*, is_active=True, can_send=True, plan_code="starter"):
-    """Construye un AIPipeline con repos SaaS falsos e inyectados.
-
-    Al inyectar instancias propias, los parches de conftest sobre las clases
-    de repositorio no afectan estas instancias: controlamos el comportamiento.
-    Memoria en RAM (sin DB) para aislar la prueba.
-    """
-    sub_repo = MagicMock()
-    sub_repo.is_active.return_value = is_active
-    sub_repo.get_plan_code.return_value = plan_code
-
-    usage_repo = MagicMock()
-    usage_repo.can_send.return_value = can_send
-
-    memory = MemoryDomainService(MemoryRepository())
-
-    pipeline = AIPipeline(
-        memory_service=memory,
-        subscription_repo=sub_repo,
-        usage_repo=usage_repo,
-    )
-    return pipeline, sub_repo, usage_repo
+def _build_pipeline() -> AIPipeline:
+    """AIPipeline con memoria en RAM (sin DB). No recibe repositorios de suscripción ni de uso."""
+    return AIPipeline(memory_service=MemoryDomainService(MemoryRepository()))
 
 
 def _stub_ai(pipeline, *, response="respuesta de ia", ai_used=True, metadata=None, raises=False):
@@ -81,10 +52,23 @@ def _stub_ai(pipeline, *, response="respuesta de ia", ai_used=True, metadata=Non
     pipeline.runtime.ai_orchestrator.generate_business_reply = _gen
 
 
-def _run(pipeline, *, message="necesito informacion de precios", user_id=None):
-    runtime_yaml = load_tenant_runtime_yaml("asesor_ai_prod")
+def _capture_prompts(pipeline, replies: list[dict]) -> list[str]:
+    """Sustituye la llamada al LLM: devuelve salidas estructuradas guionizadas y guarda cada prompt."""
+    prompts: list[str] = []
+    queue = [json.dumps(reply, ensure_ascii=False) for reply in replies]
+
+    def _generate(prompt, *, user_message, bot_config=None):
+        prompts.append(str(prompt))
+        return queue.pop(0)
+
+    pipeline.runtime.generate = _generate
+    return prompts
+
+
+def _run(pipeline, *, tenant_slug="asesor_ai_prod", message="necesito informacion de precios", user_id=None):
+    runtime_yaml = load_tenant_runtime_yaml(tenant_slug)
     return pipeline.run(
-        tenant=_tenant(),
+        tenant=_tenant(tenant_slug),
         user_message=message,
         user_id=user_id or f"v1gate-{uuid4().hex[:8]}",
         bot_config=None,
@@ -96,65 +80,116 @@ def _run(pipeline, *, message="necesito informacion de precios", user_id=None):
 
 
 # ===========================================================================
-# FASE 1 — Bug de límite SaaS
+# Sin suscripciones ni límites internos
 # ===========================================================================
 
-def test_plan_limit_returns_correct_upgrade_message():
-    """blocked_response debe traducir el dict de límite al mensaje comercial."""
-    reason = {"source": "saas_guard_limit_reached", "plan_code": "starter", "limit": PLAN_LIMITS["starter"]}
-    assert blocked_response(reason) == _LIMIT_MESSAGE
+def test_pipeline_has_no_subscription_or_usage_dependencies():
+    params = inspect.signature(AIPipeline.__init__).parameters
+    assert "subscription_repo" not in params
+    assert "usage_repo" not in params
+    pipeline = _build_pipeline()
+    assert not hasattr(pipeline, "saas_guard")
+    assert not hasattr(pipeline, "usage_repo")
 
 
-def test_limit_message_not_replaced_by_generic_fallback():
-    """El mensaje de límite NUNCA debe degradarse al genérico."""
-    reason = {"source": "saas_guard_limit_reached", "plan_code": "pro", "limit": 10000}
-    assert blocked_response(reason) != _GENERIC_MESSAGE
-    # Flujo integrado: tenant activo pero cuota agotada → mensaje de límite.
-    pipeline, _sub, _usage = _build_pipeline(is_active=True, can_send=False)
-    _stub_ai(pipeline)  # no debería llegar a ejecutarse
-    response, ai_used, metadata = _run(pipeline)
-    assert response == _LIMIT_MESSAGE
-    assert ai_used is False
-    assert str(metadata.get("source") or "") == "saas_guard_blocked"
-
-
-def test_limit_flow_keeps_current_behavior():
-    """Compatibilidad: strings legacy y casos previos siguen igual."""
-    assert blocked_response("subscription_inactive") == _INACTIVE_MESSAGE
-    assert blocked_response("usage_limit") == _LIMIT_MESSAGE
-    assert blocked_response(None) == _GENERIC_MESSAGE
-    assert blocked_response("algo_raro") == _GENERIC_MESSAGE
-    # Suscripción inactiva sigue bloqueando con su mensaje propio.
-    pipeline, _sub, _usage = _build_pipeline(is_active=False)
-    response, ai_used, _meta = _run(pipeline)
-    assert response == _INACTIVE_MESSAGE
-    assert ai_used is False
-
-
-# ===========================================================================
-# FASE 2 — Medición de uso
-# ===========================================================================
-
-def test_usage_increment_after_successful_response():
-    pipeline, _sub, usage_repo = _build_pipeline()
+def test_conversation_is_served_without_any_subscription_data():
+    pipeline = _build_pipeline()
     _stub_ai(pipeline, response="todo bien", ai_used=True)
-    response, ai_used, _meta = _run(pipeline)
+    response, ai_used, metadata = _run(pipeline)
     assert ai_used is True
-    assert response.strip() != ""
-    usage_repo.increment.assert_called_once_with("asesor_ai_prod")
+    assert response == "todo bien"
+    assert str(metadata.get("source") or "") == "ai_raw"
 
 
-def test_usage_not_incremented_when_ai_fails():
-    pipeline, _sub, usage_repo = _build_pipeline()
-    _stub_ai(pipeline, raises=True)  # IA/proveedor cae → fallback (ai_used=False)
+def test_no_subscription_or_plan_limit_code_remains_in_engine():
+    app_dir = PROJECT_DIR / "app"
+    forbidden = ("SaaSGuard", "saas_guard", "SubscriptionRepository", "UsageRepository", "PLAN_LIMITS", "usage_daily", "FROM subscriptions", "blocked_response(")
+    offenders = sorted(
+        f"{path.relative_to(app_dir)}:{token}"
+        for path in app_dir.rglob("*.py")
+        for token in forbidden
+        if token in path.read_text(encoding="utf-8")
+    )
+    assert not offenders
+
+
+# ===========================================================================
+# Venta conversacional: precios y pagos de los negocios
+# ===========================================================================
+
+def test_business_prices_and_conditions_reach_the_prompt():
+    pipeline = _build_pipeline()
+    prompts = _capture_prompts(pipeline, [
+        {"response": "Claro, te explico.", "intent": "info"},
+        {"response": "Te cuento los precios.", "intent": "info"},
+    ])
+    user_id = f"v1gate-{uuid4().hex[:8]}"
+    _run(pipeline, message="Hola, necesito información de lo que venden", user_id=user_id)
+    _response, ai_used, _meta = _run(pipeline, message="¿Y qué precio tiene?", user_id=user_id)
+
+    assert ai_used is True
+    pricing_block = prompts[-1].split("PRICING:", 1)[1]
+    assert "Plan Basico -> COP: implementation=100000, monthly=110000" in pricing_block
+    assert "sin permanencia obligatoria" in pricing_block
+
+
+def test_business_payment_method_is_delivered_by_the_engine():
+    runtime_yaml = load_tenant_runtime_yaml("asesor_ai_prod")
+    methods = runtime_yaml["pricing"]["plans"][0]["payment"]["transfer"]["methods"]
+    nequi_number = next(str(m["number"]) for m in methods if m.get("type") == "nequi")
+
+    pipeline = _build_pipeline()
+    _stub_ai(pipeline, response="Listo.", ai_used=True, metadata={"intent": "buy", "payment_method": "nequi"})
+    response, ai_used, _meta = _run(pipeline, message="Quiero pagar por Nequi")
+
+    assert ai_used is True
+    assert response.startswith("Avanzamos con el siguiente paso.")
+    assert nequi_number in response
+
+
+def test_business_payment_report_returns_configured_message():
+    runtime_yaml = load_tenant_runtime_yaml("asesor_ai_prod")
+    expected = " ".join(runtime_yaml["config"]["post_payment"]["on_user_report"]["message"].split())
+
+    pipeline = _build_pipeline()
+    _stub_ai(pipeline, response="Gracias.", ai_used=True, metadata={"intent": "buy", "payment_status": "reportado"})
+    response, _ai_used, _meta = _run(pipeline, message="Ya pagué")
+
+    assert " ".join(response.split()) == expected
+
+
+# ===========================================================================
+# Aislamiento entre negocios
+# ===========================================================================
+
+def test_each_tenant_prompt_contains_only_its_own_offer():
+    pipeline = _build_pipeline()
+    prompts = _capture_prompts(pipeline, [
+        {"response": "Hola.", "intent": "info"},
+        {"response": "Hola.", "intent": "info"},
+    ])
+    _run(pipeline, tenant_slug="asesor_ai_prod", message="¿Qué venden?", user_id="same-user")
+    _run(pipeline, tenant_slug="restaurant", message="¿Qué venden?", user_id="same-user")
+
+    saas_prompt, restaurant_prompt = prompts
+    assert "Plan Basico" in saas_prompt and "Hamburguesas" not in saas_prompt
+    assert "Hamburguesas" in restaurant_prompt and "Plan Basico" not in restaurant_prompt
+
+
+# ===========================================================================
+# Resiliencia
+# ===========================================================================
+
+def test_ai_failure_returns_controlled_fallback():
+    pipeline = _build_pipeline()
+    _stub_ai(pipeline, raises=True)
     response, ai_used, _meta = _run(pipeline)
     assert ai_used is False
-    assert response.strip() != ""  # responde con fallback controlado
-    usage_repo.increment.assert_not_called()
+    assert response.strip() != ""
 
 
-def test_usage_not_incremented_on_pipeline_exception():
-    pipeline, _sub, usage_repo = _build_pipeline()
+def test_pipeline_stage_exception_is_not_swallowed():
+    pipeline = _build_pipeline()
 
     def _boom(*args, **kwargs):
         raise RuntimeError("pipeline stage failure")
@@ -162,53 +197,3 @@ def test_usage_not_incremented_on_pipeline_exception():
     pipeline.ai_execution.run = _boom
     with pytest.raises(RuntimeError):
         _run(pipeline)
-    usage_repo.increment.assert_not_called()
-
-
-def test_usage_increment_once_per_successful_request():
-    pipeline, _sub, usage_repo = _build_pipeline()
-    _stub_ai(pipeline, ai_used=True)
-    _run(pipeline)
-    assert usage_repo.increment.call_count == 1
-
-
-# ===========================================================================
-# FASE 3 — Resiliencia PostgreSQL
-# ===========================================================================
-
-def test_db_failure_does_not_crash_pipeline():
-    pipeline, sub_repo, _usage = _build_pipeline()
-    sub_repo.is_active.side_effect = RuntimeError("postgres connection refused")
-    # No debe lanzar excepción
-    response, ai_used, _meta = _run(pipeline)
-    assert ai_used is False
-    assert response.strip() != ""
-
-
-def test_db_failure_returns_controlled_response():
-    pipeline, sub_repo, _usage = _build_pipeline()
-    sub_repo.is_active.side_effect = RuntimeError("postgres down")
-    response, ai_used, metadata = _run(pipeline)
-    assert response == service_unavailable_response()
-    assert ai_used is False
-    assert str(metadata.get("source") or "") == "saas_guard_unavailable"
-
-
-def test_db_failure_is_logged():
-    pipeline, sub_repo, _usage = _build_pipeline()
-    sub_repo.is_active.side_effect = RuntimeError("postgres unreachable")
-    with patch("app.application.ai_pipeline.logger") as mock_logger:
-        _run(pipeline)
-    mock_logger.error.assert_called_once()
-    assert mock_logger.error.call_args[0][0] == "saas_guard_unavailable"
-
-
-def test_pipeline_survives_repository_exception():
-    """Si el incremento de uso falla (DB caída tras responder), la respuesta de
-    IA ya generada se entrega igual; el pipeline no se rompe."""
-    pipeline, _sub, usage_repo = _build_pipeline()
-    usage_repo.increment.side_effect = RuntimeError("usage write failed")
-    _stub_ai(pipeline, response="respuesta valida", ai_used=True)
-    response, ai_used, _meta = _run(pipeline)
-    assert ai_used is True
-    assert response == "respuesta valida"

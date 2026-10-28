@@ -29,8 +29,6 @@ from app.application.ai_pipeline import AIPipeline
 from app.application.response_guard import validate_response_against_yaml
 from app.domain.conversation.memory import MemoryDomainService
 from app.infrastructure.persistence.memory_repository import MemoryRepository, SQLMemoryRepository
-from app.infrastructure.persistence.subscription_repository import SubscriptionRepository
-from app.infrastructure.persistence.usage_repository import UsageRepository
 from app.utils.logger import logger
 
 
@@ -74,15 +72,11 @@ class AIService:
     """Adapter liviano: delega todo el flujo al AIPipeline."""
 
     def __init__(self, prompt_path: str | None = None, bot_config: dict | None = None, message_repository=None) -> None:
-        subscription_repo = SubscriptionRepository()
-        usage_repo = UsageRepository()
         self.pipeline = AIPipeline(
             prompt_path=prompt_path,
             bot_config=bot_config,
             message_repository=message_repository,
             memory_service=GLOBAL_MEMORY_SERVICE,
-            subscription_repo=subscription_repo,
-            usage_repo=usage_repo,
         )
 
     def generate_business_reply(

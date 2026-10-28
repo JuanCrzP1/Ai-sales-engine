@@ -257,6 +257,38 @@ Antes de cerrar un cambio relevante en runtime:
 4. probar `/api/v1/simulate` con la secuencia comercial base
 5. revisar que no aparezcan errores en consola
 
+## Scripts De Base De Datos
+
+Ambos scripts leen la lista de tenants de las carpetas de `project/config/tenants/` y escriben en
+la base que indique `DATABASE_URL` (variable de entorno o `.env` de la raíz). Se ejecutan desde la
+raíz del repositorio:
+
+```bash
+python scripts/sync_tenants_to_db.py
+python scripts/bootstrap_saas_data.py
+```
+
+### `sync_tenants_to_db.py`
+
+Crea en la tabla `tenants` una fila (`name=slug`, `status='active'`) por cada carpeta de tenant
+que todavía no exista. No modifica filas existentes y es idempotente. Informa `[created]`,
+`[existing]` o `[error]` por tenant.
+
+### `bootstrap_saas_data.py`
+
+Garantiza por cada tenant una fila en `tenants`, `admin_users` (`name=slug`) y `tenant_settings`
+(`settings='{}'`). No sobrescribe filas existentes, procesa cada tenant en su propia transacción y
+termina con código 1 si algún tenant falla. No crea suscripciones, planes ni límites de uso: eso
+lo administra la plataforma externa.
+
+### Precauciones
+
+- **Escriben en la base de datos.** Comprueba antes a qué base apunta `DATABASE_URL`; el `.env`
+  local puede apuntar a una base compartida. No los ejecutes contra producción sin copia de seguridad.
+- Requieren el esquema UUID de `project/docs/postgresql_schema.sql` (tablas `tenants`,
+  `admin_users`, `tenant_settings`).
+- Cada carpeta de `project/config/tenants/` se trata como un tenant, incluidos los de ejemplo.
+
 ## Resumen Operativo
 
 La operación actual del sistema es simple:
@@ -267,4 +299,4 @@ La operación actual del sistema es simple:
 - validación por `/health` y `/simulate`
 - debugging por consola y eventos estructurados
 
-Eso es suficiente para desarrollo, QA y simulaciones controladas, y es la base correcta para endurecer la operación SaaS más adelante.
+Eso es suficiente para desarrollo, QA y simulaciones controladas.

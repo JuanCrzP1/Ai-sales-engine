@@ -135,5 +135,5 @@ La suite protege:
 - `../README.md`
 - `../docs/architecture.md`
 - `../docs/operations.md`
-- `../docs/saas.md`
+- `../docs/tenants.md`
 - `../config/README.md`

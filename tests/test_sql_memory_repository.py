@@ -1,8 +1,7 @@
 """
 Phase 7D/7E — SQLMemoryRepository tests.
 Tests exercise the PostgreSQL-backed methods via mocks of DBRepository,
-ClientRepository, and get_engine.  The conftest autouse fixture isolates
-these tests from the SaaS subscription layer.
+ClientRepository, and get_engine.
 
 Persistence guarantees tested here:
 - save_message writes to conversation_messages

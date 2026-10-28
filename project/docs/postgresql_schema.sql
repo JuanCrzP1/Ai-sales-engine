@@ -9,24 +9,8 @@ CREATE TABLE tenants (
   created_at TIMESTAMPTZ DEFAULT now()
 );
 
--- SUBSCRIPTIONS
-CREATE TABLE subscriptions (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  tenant_id UUID REFERENCES tenants(id) ON DELETE CASCADE,
-  plan_code TEXT,
-  status TEXT,
-  current_period_end TIMESTAMPTZ,
-  created_at TIMESTAMPTZ DEFAULT now()
-);
-
--- USAGE (AGREGAMOS FK)
-CREATE TABLE usage_daily (
-  tenant_id UUID REFERENCES tenants(id) ON DELETE CASCADE,
-  date DATE,
-  messages_count INT DEFAULT 0,
-  ai_calls INT DEFAULT 0,
-  PRIMARY KEY (tenant_id, date)
-);
+-- Suscripciones, planes y límites de uso pertenecen a la plataforma externa:
+-- el motor no define ni consulta tablas para ello.
 
 -- ADMIN USERS
 CREATE TABLE admin_users (
@@ -95,8 +79,6 @@ CREATE TABLE tenant_settings (
 
 -- ÍNDICES (MEJORADOS)
 CREATE INDEX idx_tenants_slug ON tenants(slug);
-CREATE INDEX idx_subscriptions_tenant_status ON subscriptions(tenant_id, status);
 CREATE INDEX idx_clients_tenant ON clients(tenant_id);
 CREATE INDEX idx_messages_tenant_client ON conversation_messages(tenant_id, client_id);
-CREATE INDEX idx_usage_tenant_date ON usage_daily(tenant_id, date);
 CREATE INDEX idx_memory_tenant_client ON conversation_memory(tenant_id, client_id);

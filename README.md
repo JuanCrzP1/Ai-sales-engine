@@ -5,7 +5,7 @@
 <h1 align="center">AI Sales Engine</h1>
 
 <p align="center">
-  Motor conversacional AI-first para ventas SaaS multi-tenant
+  Motor conversacional AI-first de ventas multi-tenant
 </p>
 
 ## AI Sales Engine — Vendedor Conversacional por WhatsApp
@@ -112,13 +112,13 @@ El mismo motor puede operar en:
 
 - [Quickstart](docs/quickstart.md)
 - [Arquitectura](docs/architecture.md)
-- [SaaS](docs/saas.md)
+- [Tenants](docs/tenants.md)
 - [Operación](docs/operations.md)
 - [Producto](docs/product.md)
 
 ---
 
-AI Sales Engine es un sistema SaaS de atención comercial conversacional para WhatsApp y canales relacionados. Su propósito no es responder mensajes aislados, sino operar conversaciones de venta con contexto, continuidad y criterio comercial para mover al cliente hacia una acción concreta.
+AI Sales Engine es el motor de atención comercial conversacional para WhatsApp y canales relacionados. La plataforma externa administra las cuentas, las suscripciones, la facturación y los límites de uso; el motor recibe solicitudes autorizadas y ejecuta la venta con la configuración de cada negocio. Su propósito no es responder mensajes aislados, sino operar conversaciones de venta con contexto, continuidad y criterio comercial para mover al cliente hacia una acción concreta.
 
 El sistema está diseñado para equipos que necesitan:
 
@@ -162,7 +162,6 @@ Entrada A: WhatsApp Cloud API (webhook Meta)
 	-> project/app/infrastructure/config/config_service.py
 	-> project/app/services/ai_service.py
 	-> project/app/application/ai_pipeline.py
-	-> project/app/application/pipeline/saas_guard.py
 	-> project/app/application/pipeline/conversation_flow.py
 	-> project/app/application/pipeline/sales_flow.py
 	-> project/app/application/pipeline/ai_execution.py
@@ -196,7 +195,7 @@ Entrada B: API de simulación
 4. `project/app/connectors/router.py` normaliza el payload entrante a un formato interno unificado.
 5. `project/app/application/runtime/tenant_runtime_loader.py` arma el `runtime_yaml` efectivo del tenant.
 6. `project/app/services/ai_service.py` delega la ejecución a `project/app/application/ai_pipeline.py`.
-7. El pipeline valida acceso SaaS, continuidad conversacional, contexto comercial y ejecución AI-first.
+7. El pipeline resuelve continuidad conversacional, contexto comercial y ejecución AI-first.
 8. `project/app/services/ai/ai_orchestrator.py` construye el prompt y llama al cliente LLM real en `project/app/services/ai_runtime/runtime_llm/client.py`.
 9. La salida estructurada se parsea en `project/app/services/ai/structured_output.py`.
 10. La respuesta pasa por postproceso y guardas mínimas.
