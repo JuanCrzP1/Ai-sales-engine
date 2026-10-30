@@ -1,15 +1,15 @@
-import { engineUsage, MAX_CATEGORIES_USED, MAX_PROBLEMS_USED, type ConfigField } from "../domain/config/engineUsage";
+import { MAX_CATEGORIES_USED, MAX_PROBLEMS_USED } from "../domain/config/engineLimits";
 import { isKnownAction } from "../domain/config/options";
 import type { AssistantConfig } from "../domain/config/types";
+import { localIsoDate } from "../lib/format";
 import { cleanList } from "../lib/text";
-import { categoryId } from "./engineRuntimeAdapter";
+import { categoryId } from "./contractAdapter";
 
 /**
- * Avisos de la traducción al motor: datos que no se envían, que se fusionan o que el
- * motor actual recibe pero no usa. Así nada se pierde en silencio.
+ * Avisos de la traducción al motor: datos que no se envían, que se fusionan o que el motor
+ * usa de forma limitada. Así nada se pierde en silencio.
  */
 export type EngineNoticeCode =
-  | "offering_unavailable_omitted"
   | "catalog_field_dropped"
   | "plan_category_dropped"
   | "category_defaulted"
@@ -22,7 +22,9 @@ export type EngineNoticeCode =
   | "problems_beyond_limit"
   | "unknown_action"
   | "human_handoff_not_notified"
-  | "field_not_consumed";
+  | "recommendation_omitted"
+  | "promotion_omitted"
+  | "promotion_expired";
 
 export interface EngineNotice {
   code: EngineNoticeCode;
@@ -32,25 +34,19 @@ export interface EngineNotice {
 }
 
 export function collectEngineNotices(config: AssistantConfig): EngineNotice[] {
-  return [...offeringNotices(config), ...paymentNotices(config), ...behaviorNotices(config), ...unusedFieldNotices(config)];
+  return [...offeringNotices(config), ...paymentNotices(config), ...behaviorNotices(config)];
 }
 
 function offeringNotices(config: AssistantConfig): EngineNotice[] {
   const notices: EngineNotice[] = [];
   const isCatalog = config.business.salesMode === "catalog";
-  const available = config.offerings.filter((offering) => offering.available);
 
   for (const offering of config.offerings) {
     const label = offering.name.trim() || offering.id;
     const field = `offerings.${offering.id}`;
-    if (!offering.available) {
-      notices.push({ code: "offering_unavailable_omitted", field, message: `"${label}" no está disponible y no se envía.` });
-      continue;
-    }
     if (offering.price === null) notices.push({ code: "price_missing", field, message: `"${label}" no tiene precio: se envía sin valor.` });
     if (isCatalog) {
       const dropped = [
-        cleanList(offering.features).length > 0 ? "características" : "",
         cleanList(offering.notIncluded).length > 0 ? "lo que no incluye" : "",
         offering.setupFee !== null ? "costo inicial" : "",
         offering.billing === "monthly" ? "cobro mensual" : "",
@@ -68,7 +64,7 @@ function offeringNotices(config: AssistantConfig): EngineNotice[] {
 
   if (isCatalog) {
     const namesById = new Map<string, Set<string>>();
-    for (const offering of available) {
+    for (const offering of config.offerings) {
       const name = offering.category.trim() || "General";
       const id = categoryId(name);
       namesById.set(id, (namesById.get(id) ?? new Set()).add(name));
@@ -133,36 +129,34 @@ function paymentNotices({ payments, closing }: AssistantConfig): EngineNotice[] 
   return notices;
 }
 
-function behaviorNotices({ behavior }: AssistantConfig): EngineNotice[] {
+function behaviorNotices({ behavior, offerings, payments }: AssistantConfig, today = new Date()): EngineNotice[] {
+  const notices: EngineNotice[] = [];
   const problems = cleanList(behavior.customerProblems);
-  return problems.length > MAX_PROBLEMS_USED
-    ? [
-        {
-          code: "problems_beyond_limit",
-          field: "behavior.customerProblems",
-          message: `Hay ${problems.length} problemas; el motor actual solo usa los ${MAX_PROBLEMS_USED} primeros.`,
-        },
-      ]
-    : [];
-}
-
-/** Datos que se envían pero que el motor actual no usa al responder (según `engineUsage`). */
-function unusedFieldNotices(config: AssistantConfig): EngineNotice[] {
-  const { business, behavior, offerings } = config;
-  const available = offerings.filter((offering) => offering.available);
-  const filled: [ConfigField, boolean][] = [
-    ["business.name", Boolean(business.name.trim())],
-    ["business.description", Boolean(business.description.trim())],
-    ["behavior.tone", true],
-    ["behavior.salesRules", cleanList(behavior.salesRules).length > 0],
-    ["behavior.discoveryQuestions", cleanList(behavior.discoveryQuestions).length > 0],
-    ["behavior.recommendationNotes", Boolean(behavior.recommendationNotes.trim())],
-    ["offering.name", available.length > 0],
-    ["offering.description", available.some((offering) => offering.description.trim())],
-    ["offering.price", available.some((offering) => offering.price !== null)],
-    ["offering.features", available.some((offering) => cleanList(offering.features).length > 0)],
-  ];
-  return filled
-    .filter(([field, hasValue]) => hasValue && engineUsage(field, business.salesMode) === "stored")
-    .map(([field]) => ({ code: "field_not_consumed" as const, field, message: `"${field}" se envía, pero el motor actual no lo usa al responder.` }));
+  if (problems.length > MAX_PROBLEMS_USED) {
+    notices.push({
+      code: "problems_beyond_limit",
+      field: "behavior.customerProblems",
+      message: `Hay ${problems.length} problemas; el motor actual solo usa los ${MAX_PROBLEMS_USED} primeros.`,
+    });
+  }
+  const offeringIds = new Set(offerings.map((offering) => offering.id));
+  for (const rule of behavior.recommendationRules) {
+    if (!rule.when.trim() || !offeringIds.has(rule.offeringId)) {
+      notices.push({
+        code: "recommendation_omitted",
+        field: `behavior.recommendationRules.${rule.id}`,
+        message: "Una recomendación sin situación o sin un plan o producto de la oferta no se envía.",
+      });
+    }
+  }
+  const todayIso = localIsoDate(today);
+  for (const promotion of payments.promotions) {
+    const field = `payments.promotions.${promotion.id}`;
+    if (!promotion.name.trim() || !promotion.details.trim()) {
+      notices.push({ code: "promotion_omitted", field, message: "Una promoción sin nombre o sin detalle no se envía." });
+    } else if (promotion.validUntil && promotion.validUntil < todayIso) {
+      notices.push({ code: "promotion_expired", field, message: `"${promotion.name.trim()}" ya venció: el asistente no la ofrecerá.` });
+    }
+  }
+  return notices;
 }

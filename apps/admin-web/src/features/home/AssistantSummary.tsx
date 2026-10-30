@@ -1,6 +1,6 @@
 import { Badge } from "../../components/ui/Feedback";
 import { Icon, type IconName } from "../../components/ui/Icon";
-import { labelFor, SALES_MODES, TONES } from "../../domain/config/options";
+import { labelFor, RESPONSE_LENGTHS, SALES_MODES } from "../../domain/config/options";
 import { initials } from "../../lib/text";
 import { useConfig } from "../../state/useConfig";
 
@@ -35,7 +35,7 @@ export function AssistantSummary() {
         <Stat icon="box" tone="blue" value={String(available)} label={available === 1 ? "producto o servicio disponible" : "productos o servicios disponibles"} />
         <Stat icon="wallet" tone="green" value={String(paymentOptions)} label={paymentOptions === 1 ? "medio de pago" : "medios de pago"} />
         <Stat icon="tag" tone="violet" value={labelFor(SALES_MODES, business.salesMode)} label="forma de venta" />
-        <Stat icon="smile" tone="amber" value={labelFor(TONES, behavior.tone)} label="tono de atención" />
+        <Stat icon="smile" tone="amber" value={labelFor(RESPONSE_LENGTHS, behavior.responseLength)} label="largo de respuestas" />
       </div>
     </section>
   );

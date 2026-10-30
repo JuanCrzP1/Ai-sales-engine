@@ -5,7 +5,6 @@ import {
   RESPONSE_LENGTHS,
   SALES_MODES,
   SERVICE_CHANNELS,
-  TONES,
   TRANSFER_METHOD_TYPES,
 } from "../../domain/config/options";
 import type { AssistantConfig } from "../../domain/config/types";
@@ -80,12 +79,10 @@ export function buildSummary(config: AssistantConfig): SummarySection[] {
     {
       id: "assistant",
       rows: [
-        { label: "Tono", value: labelFor(TONES, behavior.tone) },
         { label: "Respuestas", value: labelFor(RESPONSE_LENGTHS, behavior.responseLength) },
         { label: "Por qué te compran", value: list([behavior.primaryMotivation, behavior.secondaryMotivation]) },
         { label: "Problemas que resuelves", value: list(behavior.customerProblems) },
-        { label: "Reglas comerciales", value: list(behavior.salesRules) },
-        { label: "Preguntas", value: list(behavior.discoveryQuestions) },
+        { label: "Preguntas frecuentes", value: list(behavior.faqs.map((faq) => faq.question)) },
       ],
     },
     {

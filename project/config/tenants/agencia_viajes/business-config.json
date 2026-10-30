@@ -1,0 +1,451 @@
+{
+  "schema_version": "1.0",
+  "tenant_slug": "agencia_viajes",
+  "identity": {
+    "name": "Viajes Demo",
+    "industry": "automatizacion comercial para agencias de viajes que venden por chat",
+    "description": "Sistema que responde prospectos, retoma cotizaciones y sostiene seguimiento para que la agencia no pierda reservas por demora o falta de continuidad.\n",
+    "value_proposition": "Responder rapido, retomar cotizaciones frias y convertir mas conversaciones en reservas cerradas.\n",
+    "positioning": "No es solo responder mensajes. Es orden comercial para que la agencia cierre mas viajes sin depender de perseguir cada chat manualmente.\n",
+    "differentiators": [
+      "seguimiento automatico de cotizaciones y reservas",
+      "recomendacion de plan segun volumen y momento comercial",
+      "integracion multicanal para captacion y seguimiento",
+      "implementacion guiada con enfoque en cierre"
+    ],
+    "location": {
+      "type": "virtual",
+      "address": "",
+      "city": "Medellin",
+      "coverage": {
+        "type": "internacional",
+        "zones": [
+          "colombia",
+          "internacional"
+        ]
+      }
+    },
+    "service_modes": [
+      "virtual"
+    ],
+    "target_customer": {
+      "segment": "agencias de viajes pequenas y medianas que venden por WhatsApp e Instagram",
+      "company_size": "2 a 25 personas",
+      "maturity": "reciben cotizaciones por chat pero pierden seguimiento y reservas",
+      "roles": [
+        "dueno",
+        "asesor comercial",
+        "agente de viajes"
+      ]
+    },
+    "credibility": [
+      "implementaciones reales en negocios que venden por chat",
+      "casos donde se retoman conversaciones que ya estaban frias"
+    ]
+  },
+  "offer": {
+    "model": "catalog",
+    "catalog": {
+      "categories": [
+        {
+          "id": "destinos",
+          "name": "Destinos"
+        },
+        {
+          "id": "excursiones",
+          "name": "Excursiones"
+        }
+      ],
+      "items": [
+        {
+          "id": "cartagena_3_noches",
+          "name": "Cartagena 3 noches",
+          "category": "destinos",
+          "description": "Paquete con vuelo, hotel y traslados compartidos.",
+          "prices": [
+            {
+              "currency": "COP",
+              "amount": 850000
+            }
+          ],
+          "available": true
+        },
+        {
+          "id": "san_andres_4_noches",
+          "name": "San Andres 4 noches",
+          "category": "destinos",
+          "description": "Paquete con vuelo, hotel y asistencia al viajero.",
+          "prices": [
+            {
+              "currency": "COP",
+              "amount": 1250000
+            }
+          ],
+          "available": true
+        },
+        {
+          "id": "tour_guatape",
+          "name": "Tour Guatape",
+          "category": "excursiones",
+          "description": "Excursion de un dia con transporte y guia.",
+          "prices": [
+            {
+              "currency": "COP",
+              "amount": 120000
+            }
+          ],
+          "available": true
+        }
+      ],
+      "payment_profile": "catalog"
+    }
+  },
+  "terms": {
+    "conditions": [
+      "precios sujetos a temporada y disponibilidad"
+    ],
+    "price_framing": "directo",
+    "roi_break_even_bookings": 1,
+    "roi_hints": [
+      "una reserva cerrada puede cubrir el costo del sistema",
+      "responder y retomar cotizaciones eleva conversion de reservas"
+    ],
+    "price_note": "La reserva se confirma segun destino, fechas y disponibilidad.\n",
+    "financing": {
+      "available": true,
+      "providers": [
+        "addi",
+        "sistecredito"
+      ],
+      "options": [
+        "reserva_con_abono",
+        "pago_en_cuotas"
+      ]
+    }
+  },
+  "payments": [
+    {
+      "id": "catalog",
+      "transfer_enabled": true,
+      "transfer_methods": [
+        {
+          "type": "nequi",
+          "number": {
+            "secret_ref": "legacy_yaml:pricing.catalog.payment.transfer.methods.0.number"
+          }
+        },
+        {
+          "type": "daviplata",
+          "number": {
+            "secret_ref": "legacy_yaml:pricing.catalog.payment.transfer.methods.1.number"
+          }
+        },
+        {
+          "type": "bank",
+          "bank": "Bancolombia",
+          "account_type": "ahorros",
+          "account_number": {
+            "secret_ref": "legacy_yaml:pricing.catalog.payment.transfer.methods.2.account_number"
+          }
+        },
+        {
+          "type": "breb",
+          "reference": {
+            "secret_ref": "legacy_yaml:pricing.catalog.payment.transfer.methods.3.reference"
+          }
+        }
+      ]
+    }
+  ],
+  "sales": {
+    "buying_motivation": {
+      "primary": "dinero",
+      "secondary": "tiempo"
+    },
+    "motivation_drivers": [
+      {
+        "motivation": "tiempo",
+        "description": "ahorro de tiempo en respuesta y seguimiento comercial",
+        "signals": [
+          "no me da el tiempo",
+          "muchos mensajes"
+        ]
+      },
+      {
+        "motivation": "dinero",
+        "description": "recuperacion de cotizaciones y reservas perdidas",
+        "signals": [
+          "pierdo reservas",
+          "no cierro"
+        ]
+      }
+    ],
+    "customer_problems": [
+      {
+        "id": "seguimiento_perdido",
+        "impacts": [
+          "reservas perdidas por demora comercial"
+        ],
+        "signals": [
+          "cotizacion fria",
+          "no responden a tiempo",
+          "reserva sin cierre"
+        ],
+        "monetization": [
+          "cada cotizacion no atendida reduce cierres"
+        ]
+      }
+    ],
+    "pain_points": [
+      "no alcanzan a responder todas las cotizaciones a tiempo",
+      "el seguimiento se cae despues del primer contacto",
+      "reservas que se enfrian por demora o falta de orden",
+      "conversaciones dispersas entre varios canales"
+    ],
+    "use_cases": [
+      {
+        "name": "cotizaciones acumuladas",
+        "signals": [
+          "muchas cotizaciones",
+          "no alcanzo a responder"
+        ],
+        "approach": "automatizar_respuesta"
+      },
+      {
+        "name": "seguimiento perdido",
+        "signals": [
+          "no hago seguimiento",
+          "se enfria la reserva"
+        ],
+        "approach": "seguimiento_automatico"
+      }
+    ],
+    "benefits": [
+      "responder mas rapido sin depender del tiempo humano",
+      "recuperar cotizaciones que se estaban perdiendo",
+      "aumentar conversion de chats a reservas",
+      "ordenar el proceso comercial del equipo"
+    ],
+    "offer_mix": {
+      "core": [
+        "paquetes_destino"
+      ],
+      "upsell": [
+        "hotel_superior",
+        "actividades_premium"
+      ],
+      "cross_sell": [
+        "tour_adicional",
+        "seguro_viajero"
+      ]
+    },
+    "discovery": {
+      "objectives": [
+        "entender volumen de cotizaciones y reservas",
+        "identificar donde se cae el seguimiento"
+      ]
+    },
+    "support": {
+      "explain_first": true,
+      "sell_after": true
+    },
+    "objections": [
+      {
+        "topic": "price",
+        "acknowledge": [
+          "es normal evaluar inversion antes de reservar"
+        ],
+        "reframe": [
+          "perder reservas por falta de seguimiento tambien cuesta dinero"
+        ],
+        "redirect": [
+          "avanzamos con reserva guiada segun destino y fechas"
+        ]
+      }
+    ],
+    "closing": {
+      "strategy": "booking",
+      "required_data": [
+        "name",
+        "phone",
+        "destination",
+        "dates"
+      ],
+      "purchase_signals": [
+        "quiero viajar",
+        "quiero cotizar viaje",
+        "quiero reservar viaje",
+        "me interesa viajar",
+        "quiero empezar"
+      ],
+      "next_steps": [
+        "coordinar destino y fechas",
+        "confirmar datos de contacto para reserva"
+      ],
+      "rules": [
+        "seguir strategy booking como regla principal de cierre",
+        "ejecutar cierre orientado a reserva",
+        "no vender planes ni mensualidades en viajes",
+        "pedir solo datos necesarios para coordinar viaje"
+      ]
+    }
+  },
+  "capabilities": {
+    "service_channels": [
+      "whatsapp",
+      "instagram"
+    ],
+    "product_channels": [],
+    "actions_primary": [
+      "agendar_reserva",
+      "cerrar_venta"
+    ],
+    "actions_support": [
+      "responder_dudas",
+      "seguimiento",
+      "enviar_info"
+    ],
+    "closing_methods": {
+      "payment_link": true,
+      "human_handoff": true,
+      "data_collection": true
+    },
+    "data_collection": {
+      "enabled": true,
+      "fields": [
+        "nombre",
+        "telefono",
+        "detalles"
+      ]
+    },
+    "restrictions": {
+      "disallowed_channels": [
+        "messenger",
+        "telegram",
+        "web"
+      ],
+      "disallowed_actions": [
+        "llamadas"
+      ]
+    }
+  },
+  "messages": {
+    "welcome": {
+      "enabled": true,
+      "text": "Hola, tu asesor ya esta listo. Cuentame, que quieres mejorar hoy en tus ventas o seguimiento de viajes?\n"
+    },
+    "payment_reported": "Perfecto, ya lo reviso y te confirmo en un momento para continuar.\n",
+    "payment_confirmed": "Listo, ya quedó confirmado. Ahora seguimos con el siguiente paso.\n"
+  },
+  "response_style": {
+    "tone": "humano, claro y consultivo",
+    "voice": "cercano, directo y orientado a cierres",
+    "length": "short",
+    "max_words": 60
+  },
+  "knowledge": {
+    "faqs": []
+  },
+  "fulfillment": {
+    "delivery": {
+      "available": false,
+      "type": "tercero",
+      "zones": [],
+      "cost": {
+        "type": "variable",
+        "value": 0
+      },
+      "time": {
+        "min": "",
+        "max": ""
+      }
+    },
+    "shipping": {
+      "available": false,
+      "scope": "internacional",
+      "providers": [],
+      "cost": {
+        "type": "variable",
+        "value": 0
+      },
+      "time": {
+        "min": "",
+        "max": ""
+      }
+    },
+    "pickup": {
+      "available": false,
+      "instructions": ""
+    },
+    "scheduling": {
+      "required": true
+    }
+  },
+  "inventory": {
+    "items": [],
+    "track_stock": false
+  },
+  "engine": {
+    "conversation": {
+      "active_window_minutes": 15,
+      "reset_hours": 4
+    },
+    "features": {
+      "pricing_enabled": true,
+      "catalog_mode": true,
+      "business_model": "catalog"
+    }
+  },
+  "compatibility": {
+    "business": {
+      "brand_name": "Viajes Demo",
+      "city": "Medellin"
+    },
+    "sales": {
+      "closing": {
+        "next_step": {
+          "action": "dynamic"
+        },
+        "behavior": {
+          "direct_sale": {
+            "goal": "confirmar_compra"
+          },
+          "lead_capture": {
+            "goal": "capturar_datos"
+          },
+          "booking": {
+            "goal": "agendar"
+          },
+          "checkout": {
+            "goal": "enviar_pago"
+          }
+        }
+      },
+      "progression_rules": {
+        "required_flow": [
+          "detect_pain",
+          "amplify_impact",
+          "present_solution",
+          "guide_next_step"
+        ]
+      }
+    },
+    "config": {
+      "features": {
+        "multi_currency": true,
+        "multi_plan": false
+      },
+      "flags": {
+        "ai_first": true,
+        "allow_fallback": false,
+        "log_level": "info"
+      },
+      "capabilities": {
+        "channels": [
+          "whatsapp",
+          "instagram"
+        ]
+      }
+    }
+  }
+}

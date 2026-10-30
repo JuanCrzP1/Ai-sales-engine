@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import functools
 import os
 import sys
 from pathlib import Path
@@ -19,6 +20,46 @@ PROJECT_DIR = TESTS_DIR.parent / "project"
 for _p in (str(PROJECT_DIR), str(TESTS_DIR)):
     if _p not in sys.path:
         sys.path.insert(0, _p)
+
+
+REDACTED_IN_REPORTS = "[dato de pago]"
+
+
+@functools.lru_cache(maxsize=1)
+def _payment_values() -> tuple[str, ...]:
+    """Datos de pago de los YAML de los negocios (links, números, cuentas, referencias), del más largo al más corto."""
+    try:
+        from app.application.runtime.tenant_runtime_loader import _load_legacy_sections
+        from app.domain.business_config.payment_data import payment_values
+        from app.infrastructure.config.config_service import ConfigService
+
+        service = ConfigService()
+        values: set[str] = set()
+        for tenant_dir in service.tenants_root.iterdir():
+            if (tenant_dir / "pricing.yaml").is_file():
+                values.update(payment_values(_load_legacy_sections(service, tenant_dir.name)))
+        return tuple(sorted(values, key=len, reverse=True))
+    except Exception:
+        return ()
+
+
+def _redact_payment_values(text: str) -> str:
+    for value in _payment_values():
+        text = text.replace(value, REDACTED_IN_REPORTS)
+    return text
+
+
+@pytest.hookimpl(hookwrapper=True)
+def pytest_runtest_makereport(item, call):
+    """Los informes de fallo (y la salida capturada) no muestran datos de pago en consola ni en los logs de CI."""
+    outcome = yield
+    report = outcome.get_result()
+    if not report.failed:
+        return
+    text = str(report.longrepr)
+    if any(value in text for value in _payment_values()):
+        report.longrepr = _redact_payment_values(text)
+    report.sections = [(title, _redact_payment_values(content)) for title, content in report.sections]
 
 
 def _llm_key_available() -> bool:

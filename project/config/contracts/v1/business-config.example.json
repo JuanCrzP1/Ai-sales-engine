@@ -1,0 +1,280 @@
+{
+  "schema_version": "1.0",
+  "tenant_slug": "panaderia_ejemplo",
+  "identity": {
+    "name": "Panadería Ejemplo",
+    "brand_name": "La Masa Madre",
+    "industry": "panadería artesanal con domicilios",
+    "description": "Panadería de barrio que vende pan artesanal y tortas por encargo.",
+    "value_proposition": "Pan fresco todos los días y tortas personalizadas entregadas en casa.",
+    "differentiators": [
+      "fermentación lenta de 24 horas",
+      "harinas sin blanquear"
+    ],
+    "location": {
+      "type": "mixto",
+      "address": "Calle 10 #20-30",
+      "city": "Ciudad Ejemplo",
+      "coverage": {
+        "type": "local",
+        "zones": [
+          "Centro",
+          "Norte"
+        ]
+      }
+    },
+    "service_modes": [
+      "presencial",
+      "domicilio",
+      "recoger"
+    ],
+    "opening_hours": [
+      {
+        "days": [
+          "lunes",
+          "martes",
+          "miercoles",
+          "jueves",
+          "viernes"
+        ],
+        "opens": "07:00",
+        "closes": "19:00"
+      },
+      {
+        "days": [
+          "sabado"
+        ],
+        "opens": "08:00",
+        "closes": "14:00"
+      }
+    ]
+  },
+  "offer": {
+    "model": "catalog",
+    "catalog": {
+      "categories": [
+        {
+          "id": "panes",
+          "name": "Panes"
+        },
+        {
+          "id": "tortas",
+          "name": "Tortas"
+        }
+      ],
+      "items": [
+        {
+          "id": "pan_masa_madre",
+          "name": "Pan de masa madre",
+          "category": "panes",
+          "description": "Hogaza de 800 g",
+          "prices": [
+            {
+              "currency": "COP",
+              "amount": 18000
+            }
+          ],
+          "available": true
+        },
+        {
+          "id": "torta_chocolate",
+          "name": "Torta de chocolate",
+          "category": "tortas",
+          "prices": [
+            {
+              "currency": "COP",
+              "amount": 65000
+            }
+          ],
+          "features": [
+            "para 12 porciones",
+            "decoración personalizada"
+          ],
+          "available": true
+        }
+      ],
+      "payment_profile": "principal"
+    }
+  },
+  "terms": {
+    "conditions": [
+      "las tortas se encargan con 24 horas de anticipación"
+    ],
+    "price_framing": "directo",
+    "prices_include_taxes": true,
+    "promotions": [
+      {
+        "name": "Lunes de pan",
+        "details": "10 % de descuento en panes los lunes",
+        "valid_until": "2030-12-31"
+      }
+    ],
+    "policies": {
+      "returns": "Si un producto llega en mal estado, lo cambiamos el mismo día.",
+      "cancellation": "Las tortas por encargo se pueden cancelar hasta 24 horas antes de la entrega."
+    }
+  },
+  "payments": [
+    {
+      "id": "principal",
+      "transfer_enabled": true,
+      "transfer_methods": [
+        {
+          "type": "nequi",
+          "number": {
+            "secret_ref": "legacy_yaml:pricing.catalog.payment.transfer.methods.0.number"
+          }
+        }
+      ]
+    }
+  ],
+  "sales": {
+    "buying_motivation": {
+      "primary": "antojo",
+      "secondary": "celebraciones"
+    },
+    "customer_problems": [
+      {
+        "id": "sin_tiempo",
+        "impacts": [
+          "no tiene tiempo de salir a comprar pan fresco"
+        ]
+      }
+    ],
+    "benefits": [
+      "pan fresco sin salir de casa"
+    ],
+    "arguments": [
+      "Horneamos cada mañana: lo que pides se hizo hoy."
+    ],
+    "recommendation_rules": [
+      {
+        "when": "celebra un cumpleaños",
+        "recommend": "torta_chocolate"
+      }
+    ],
+    "discovery": {
+      "questions": [
+        "¿Es para hoy o para una fecha especial?"
+      ]
+    },
+    "instructions": [
+      "Confirma la dirección de entrega antes de cerrar el pedido."
+    ]
+  },
+  "capabilities": {
+    "service_channels": [
+      "whatsapp"
+    ],
+    "product_channels": [],
+    "actions_primary": [
+      "tomar_pedido",
+      "cerrar_venta"
+    ],
+    "actions_support": [
+      "responder_dudas"
+    ],
+    "closing_methods": {
+      "payment_link": false,
+      "human_handoff": true,
+      "data_collection": true
+    },
+    "data_collection": {
+      "enabled": true,
+      "fields": [
+        "nombre",
+        "telefono",
+        "direccion"
+      ],
+      "consent_notice": "Usamos tus datos solo para gestionar tu pedido. Puedes pedir que los borremos cuando quieras."
+    },
+    "human_handoff_when": [
+      "pide una torta para más de 30 personas",
+      "reporta un problema con un pedido"
+    ],
+    "restrictions": {
+      "disallowed_channels": [],
+      "disallowed_actions": [],
+      "forbidden_claims": [
+        "productos sin gluten"
+      ]
+    }
+  },
+  "messages": {
+    "welcome": {
+      "enabled": true,
+      "text": "Hola, ¿qué te provoca hoy? Tenemos pan recién horneado."
+    },
+    "payment_reported": "Gracias, reviso el pago y te confirmo tu pedido.",
+    "payment_confirmed": "Pago confirmado. Tu pedido ya está en preparación."
+  },
+  "response_style": {
+    "tone": "cercano y alegre",
+    "length": "medium"
+  },
+  "knowledge": {
+    "faqs": [
+      {
+        "question": "¿Hacen domicilios?",
+        "answer": "Sí, en el barrio y alrededores, de 7 a. m. a 7 p. m."
+      },
+      {
+        "question": "¿Con cuánto tiempo encargo una torta?",
+        "answer": "Con 24 horas de anticipación."
+      }
+    ]
+  },
+  "fulfillment": {
+    "delivery": {
+      "available": true,
+      "type": "propio",
+      "zones": [
+        "Centro",
+        "Norte"
+      ],
+      "cost": {
+        "type": "fijo",
+        "value": 5000
+      },
+      "time": {
+        "min": "30 min",
+        "max": "1 hora"
+      }
+    },
+    "pickup": {
+      "available": true,
+      "instructions": "Recoge en el local de la Calle 10."
+    }
+  },
+  "inventory": {
+    "items": [
+      {
+        "product_id": "torta_chocolate",
+        "variants": [
+          {
+            "sku": "torta_chocolate_12",
+            "attributes": {
+              "porciones": 12
+            },
+            "stock": 3
+          },
+          {
+            "sku": "torta_chocolate_24",
+            "attributes": {
+              "porciones": 24
+            },
+            "stock": 1,
+            "prices": [
+              {
+                "currency": "COP",
+                "amount": 95000
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "track_stock": true
+  },
+  "compatibility": {}
+}

@@ -1,5 +1,35 @@
 import { createId } from "../../lib/ids";
-import type { AssistantConfig, Offering, TransferMethod } from "./types";
+import type { AssistantConfig, FaqEntry, Offering, Promotion, RecommendationRule, TransferMethod } from "./types";
+
+export function createFaq(overrides: Partial<FaqEntry> = {}): FaqEntry {
+  return { id: createId("pregunta"), question: "", answer: "", ...overrides };
+}
+
+export function createRecommendationRule(overrides: Partial<RecommendationRule> = {}): RecommendationRule {
+  return { id: createId("recomendacion"), when: "", offeringId: "", ...overrides };
+}
+
+export function createPromotion(overrides: Partial<Promotion> = {}): Promotion {
+  return { id: createId("promocion"), name: "", details: "", validUntil: "", ...overrides };
+}
+
+/**
+ * Completa una configuración guardada con los campos que se añadieron después (p. ej. `faqs`,
+ * la ubicación o las promociones), sin descartar lo que ya tenía.
+ */
+export function withDefaults(config: AssistantConfig): AssistantConfig {
+  const empty = createEmptyConfig();
+  return {
+    ...config,
+    business: {
+      ...empty.business,
+      ...config.business,
+      location: { ...empty.business.location, ...config.business.location },
+    },
+    payments: { ...empty.payments, ...config.payments },
+    behavior: { ...empty.behavior, ...config.behavior },
+  };
+}
 
 export function createOffering(overrides: Partial<Offering> = {}): Offering {
   return {
@@ -37,10 +67,14 @@ export function createEmptyConfig(): AssistantConfig {
     version: 1,
     business: {
       name: "",
+      brandName: "",
       businessType: "",
       description: "",
       valueProposition: "",
       salesMode: "plans",
+      differentiators: [],
+      location: { type: "", address: "", city: "", coverageType: "local", coverageZones: [] },
+      serviceModes: [],
     },
     offerings: [],
     payments: {
@@ -49,6 +83,7 @@ export function createEmptyConfig(): AssistantConfig {
       transferEnabled: false,
       transferMethods: [],
       conditions: [],
+      promotions: [],
     },
     closing: {
       sendPaymentLink: false,
@@ -58,14 +93,18 @@ export function createEmptyConfig(): AssistantConfig {
       actions: ["responder_dudas"],
     },
     behavior: {
-      tone: "cercano",
+      tone: "",
       responseLength: "short",
+      maxWords: null,
       primaryMotivation: "",
       secondaryMotivation: "",
       customerProblems: [],
-      salesRules: [],
+      benefits: [],
+      sellingPoints: [],
       discoveryQuestions: [],
-      recommendationNotes: "",
+      recommendationRules: [],
+      salesInstructions: [],
+      faqs: [],
     },
     messages: {
       welcomeEnabled: false,

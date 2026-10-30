@@ -1,0 +1,543 @@
+{
+  "schema_version": "1.0",
+  "tenant_slug": "demo",
+  "identity": {
+    "name": "Demo Comercial",
+    "industry": "servicios",
+    "description": "Entorno demo para validar comportamiento comercial multi-tenant.",
+    "value_proposition": "mover conversaciones a una accion concreta.",
+    "positioning": "demostracion de ejecucion comercial por chat.",
+    "differentiators": [
+      "seguimiento automatico",
+      "cierre guiado"
+    ],
+    "location": {
+      "type": "virtual",
+      "address": "",
+      "city": "Medellin",
+      "coverage": {
+        "type": "nacional",
+        "zones": [
+          "colombia"
+        ]
+      }
+    },
+    "service_modes": [
+      "virtual"
+    ],
+    "target_customer": {
+      "segment": "pymes",
+      "company_size": "1 a 20 personas"
+    }
+  },
+  "offer": {
+    "model": "plans",
+    "plans": [
+      {
+        "id": "basico",
+        "name": "Plan Basico",
+        "description": "Estructura inicial para bajo volumen.",
+        "prices": [
+          {
+            "currency": "COP",
+            "implementation": 100000,
+            "monthly": 120000
+          },
+          {
+            "currency": "USD",
+            "implementation": 30,
+            "monthly": 35
+          }
+        ],
+        "includes": [
+          "configuracion inicial",
+          "integracion con canales",
+          "seguimiento automatico"
+        ],
+        "not_included": [
+          "costos de plataformas externas",
+          "inversion publicitaria"
+        ],
+        "payment_profile": "basico",
+        "target": "negocios con bajo volumen",
+        "available": true
+      },
+      {
+        "id": "pro",
+        "name": "Plan Pro",
+        "description": "Operacion activa con mayor volumen y seguimiento.",
+        "prices": [
+          {
+            "currency": "COP",
+            "implementation": 200000,
+            "monthly": 250000
+          },
+          {
+            "currency": "USD",
+            "implementation": 50,
+            "monthly": 65
+          }
+        ],
+        "includes": [
+          "configuracion avanzada",
+          "integracion multicanal",
+          "seguimiento automatizado con prioridad"
+        ],
+        "not_included": [
+          "costos de plataformas externas",
+          "inversion publicitaria"
+        ],
+        "payment_profile": "pro",
+        "target": "negocios con alto volumen y seguimiento activo",
+        "available": true
+      }
+    ]
+  },
+  "terms": {
+    "conditions": [
+      "sin permanencia obligatoria",
+      "se puede cancelar mensual"
+    ],
+    "price_framing": "comparativo",
+    "roi_break_even_sales": 3
+  },
+  "payments": [
+    {
+      "id": "basico",
+      "link": {
+        "secret_ref": "legacy_yaml:pricing.plans.0.payment.link"
+      },
+      "transfer_enabled": true,
+      "transfer_methods": [
+        {
+          "type": "nequi",
+          "number": {
+            "secret_ref": "legacy_yaml:pricing.plans.0.payment.transfer.methods.0.number"
+          }
+        },
+        {
+          "type": "daviplata",
+          "number": {
+            "secret_ref": "legacy_yaml:pricing.plans.0.payment.transfer.methods.1.number"
+          }
+        },
+        {
+          "type": "bank",
+          "bank": "Bancolombia",
+          "account_type": "ahorros",
+          "account_number": {
+            "secret_ref": "legacy_yaml:pricing.plans.0.payment.transfer.methods.2.account_number"
+          }
+        },
+        {
+          "type": "breb",
+          "reference": {
+            "secret_ref": "legacy_yaml:pricing.plans.0.payment.transfer.methods.3.reference"
+          }
+        }
+      ]
+    },
+    {
+      "id": "pro",
+      "link": {
+        "secret_ref": "legacy_yaml:pricing.plans.1.payment.link"
+      },
+      "transfer_enabled": true,
+      "transfer_methods": [
+        {
+          "type": "nequi",
+          "number": {
+            "secret_ref": "legacy_yaml:pricing.plans.1.payment.transfer.methods.0.number"
+          }
+        },
+        {
+          "type": "daviplata",
+          "number": {
+            "secret_ref": "legacy_yaml:pricing.plans.1.payment.transfer.methods.1.number"
+          }
+        },
+        {
+          "type": "bank",
+          "bank": "Bancolombia",
+          "account_type": "ahorros",
+          "account_number": {
+            "secret_ref": "legacy_yaml:pricing.plans.1.payment.transfer.methods.2.account_number"
+          }
+        },
+        {
+          "type": "breb",
+          "reference": {
+            "secret_ref": "legacy_yaml:pricing.plans.1.payment.transfer.methods.3.reference"
+          }
+        }
+      ]
+    }
+  ],
+  "sales": {
+    "customer_problems": [
+      {
+        "id": "gestion_mensajes",
+        "impacts": [
+          "cada mensaje que no respondes es un cliente que se va con otro",
+          "el cliente se enfria y termina comprando en otro lado",
+          "pierdes ventas sin darte cuenta"
+        ],
+        "signals": [
+          "muchos mensajes",
+          "no me da el tiempo",
+          "no alcanzo a responder"
+        ],
+        "monetization": [
+          "cada lead sin respuesta es dinero perdido",
+          "cada demora baja la probabilidad de cierre"
+        ],
+        "urgency_levels": {
+          "alto": [
+            "ya estas perdiendo dinero"
+          ],
+          "medio": [
+            "estas dejando oportunidades"
+          ]
+        },
+        "recommended_angles": [
+          "tiempo",
+          "dinero"
+        ]
+      },
+      {
+        "id": "falta_seguimiento",
+        "impacts": [
+          "el cliente se enfria y termina comprando en otro lado",
+          "pierdes ventas que ya estaban avanzadas"
+        ],
+        "signals": [
+          "no hago seguimiento",
+          "se me olvidan los clientes"
+        ],
+        "monetization": [
+          "cada seguimiento perdido reduce cierres"
+        ],
+        "urgency_levels": {
+          "alto": [
+            "hay ventas en riesgo por falta de continuidad"
+          ],
+          "medio": [
+            "el pipeline se enfria mas rapido"
+          ]
+        },
+        "recommended_angles": [
+          "dinero"
+        ]
+      }
+    ],
+    "pain_points": [
+      "conversaciones sin seguimiento"
+    ],
+    "benefits": [
+      "cerrar mas oportunidades"
+    ],
+    "arguments": [
+      "No se trata solo de responder, sino de sostener el seguimiento.",
+      "La idea es que no dependas de estar pegado al celular.",
+      "El sistema responde y tambien retoma conversaciones automaticamente."
+    ],
+    "solution": {
+      "mapping": [
+        {
+          "problem": "gestion_mensajes",
+          "solutions": [
+            "automatizar_respuesta",
+            "seguimiento"
+          ]
+        },
+        {
+          "problem": "falta_seguimiento",
+          "solutions": [
+            "seguimiento_automatico"
+          ]
+        }
+      ]
+    },
+    "angles": [
+      {
+        "motivation": "tiempo",
+        "signals": [
+          "no me da el tiempo",
+          "muchos mensajes"
+        ],
+        "messages": [
+          "no es solo responder, es que no te alcanza el tiempo"
+        ]
+      },
+      {
+        "motivation": "dinero",
+        "signals": [
+          "pierdo clientes",
+          "no vendo"
+        ],
+        "messages": [
+          "cada lead que se enfria es dinero que ya estaba cerca"
+        ]
+      }
+    ],
+    "offer_presentation": {
+      "single_offer": [
+        "explicar directo y conectar con valor",
+        "no sobrecargar con informacion"
+      ],
+      "multiple_offers": [
+        "recomendar segun problema",
+        "no listar todos los planes",
+        "guiar a mejor opcion"
+      ]
+    },
+    "discovery": {
+      "questions": [
+        "Por donde te entran mas mensajes hoy?",
+        "Que pasa despues del primer mensaje, haces seguimiento o se queda ahi?",
+        "Cuantas conversaciones sientes que se pierden por no responder a tiempo?"
+      ],
+      "objectives": [
+        "entender volumen de conversaciones",
+        "identificar fallas en seguimiento",
+        "detectar impacto en ventas"
+      ]
+    },
+    "qualification": {
+      "detect_offer_fit": true
+    },
+    "support": {
+      "explain_first": true,
+      "sell_after": true
+    },
+    "conversation_flow": {
+      "steps": [
+        "detect_pain",
+        "amplify_impact",
+        "present_solution",
+        "guide_next_step"
+      ],
+      "no_skip_steps": true
+    },
+    "objections": [
+      {
+        "topic": "price",
+        "acknowledge": [
+          "Te entiendo, es una inversion importante.",
+          "Es normal verlo asi al inicio."
+        ],
+        "reframe": [
+          "Lo que suele salir caro es perder conversaciones que ya estaban interesadas.",
+          "Cuando empiezas a recuperar leads, se paga solo."
+        ],
+        "proof": [
+          "cuando recuperas ventas se paga solo"
+        ],
+        "redirect": [
+          "Hoy que te esta afectando mas?"
+        ]
+      }
+    ],
+    "closing": {
+      "strategy": "booking",
+      "required_data": [
+        "name",
+        "phone",
+        "day",
+        "hour"
+      ],
+      "purchase_signals": [
+        "quiero empezar",
+        "me interesa",
+        "como arrancamos"
+      ],
+      "high_intent_actions": [
+        "agendar",
+        "activar"
+      ],
+      "next_steps": [
+        "agendar implementacion",
+        "configurar sistema",
+        "activar prueba"
+      ],
+      "micro_commitments": [
+        "te muestro como seria en tu caso",
+        "vemos el siguiente paso practico"
+      ]
+    }
+  },
+  "capabilities": {
+    "service_channels": [
+      "whatsapp"
+    ],
+    "product_channels": [],
+    "actions_primary": [
+      "cerrar_venta",
+      "activar_implementacion"
+    ],
+    "actions_support": [
+      "responder_dudas",
+      "seguimiento",
+      "enviar_info"
+    ],
+    "closing_methods": {
+      "payment_link": true,
+      "human_handoff": true,
+      "data_collection": true
+    },
+    "data_collection": {
+      "enabled": true,
+      "fields": [
+        "nombre",
+        "telefono",
+        "detalles"
+      ]
+    },
+    "restrictions": {
+      "disallowed_channels": [
+        "instagram",
+        "messenger",
+        "telegram",
+        "web"
+      ],
+      "disallowed_actions": [
+        "llamadas"
+      ]
+    }
+  },
+  "messages": {
+    "welcome": {
+      "enabled": true,
+      "text": "Hola, tu asesor ya esta listo. Cuentame, que quieres mejorar hoy en tus conversaciones o ventas?\n"
+    },
+    "payment_reported": "Perfecto, ya lo reviso y te confirmo en un momento para continuar.\n",
+    "payment_confirmed": "Listo, ya quedó confirmado. Ahora seguimos con el siguiente paso.\n"
+  },
+  "response_style": {
+    "tone": "humano y comercial",
+    "voice": "cercano y directo",
+    "length": "short",
+    "max_words": 60
+  },
+  "knowledge": {
+    "faqs": []
+  },
+  "fulfillment": {
+    "delivery": {
+      "available": false,
+      "type": "tercero",
+      "zones": [],
+      "cost": {
+        "type": "variable",
+        "value": 0
+      },
+      "time": {
+        "min": "",
+        "max": ""
+      }
+    },
+    "shipping": {
+      "available": false,
+      "scope": "nacional",
+      "providers": [],
+      "cost": {
+        "type": "variable",
+        "value": 0
+      },
+      "time": {
+        "min": "",
+        "max": ""
+      }
+    },
+    "pickup": {
+      "available": false,
+      "instructions": ""
+    },
+    "scheduling": {
+      "required": false
+    }
+  },
+  "inventory": {
+    "items": [],
+    "track_stock": false
+  },
+  "engine": {
+    "features": {
+      "pricing_enabled": true,
+      "catalog_mode": false
+    }
+  },
+  "compatibility": {
+    "business": {
+      "brand_name": "Demo Comercial",
+      "city": "Medellin"
+    },
+    "sales": {
+      "offer": {
+        "recommendation_rules": [
+          {
+            "condition": "gestion_mensajes",
+            "recommend": "plan_pro"
+          },
+          {
+            "condition": "seguimiento",
+            "recommend": "plan_basico"
+          }
+        ]
+      },
+      "closing": {
+        "next_step": {
+          "action": "dynamic"
+        },
+        "behavior": {
+          "direct_sale": {
+            "goal": "confirmar_compra"
+          },
+          "lead_capture": {
+            "goal": "capturar_datos"
+          },
+          "booking": {
+            "goal": "agendar"
+          },
+          "checkout": {
+            "goal": "enviar_pago"
+          }
+        }
+      },
+      "progression_rules": {
+        "required_flow": [
+          "detect_pain",
+          "amplify_impact",
+          "present_solution",
+          "guide_next_step"
+        ],
+        "forbid": [
+          "responder_sin_direccion",
+          "responder_sin_solucion"
+        ]
+      }
+    },
+    "config": {
+      "initial_message": {
+        "recency": {
+          "active_minutes": 15,
+          "reset_hours": 4
+        }
+      },
+      "features": {
+        "multi_currency": true,
+        "multi_plan": true
+      },
+      "flags": {
+        "ai_first": true,
+        "allow_fallback": false,
+        "log_level": "info"
+      },
+      "capabilities": {
+        "channels": [
+          "whatsapp"
+        ]
+      }
+    }
+  }
+}

@@ -9,10 +9,14 @@ export const SAMPLE_CONFIG: AssistantConfig = {
   version: 1,
   business: {
     name: "Café Aroma",
+    brandName: "",
     businessType: "cafetería con domicilios",
     description: "Cafetería de barrio que vende café, panadería y desayunos para llevar.",
     valueProposition: "Tu desayuno listo en minutos, pedido directo por chat y sin filas.",
     salesMode: "catalog",
+    differentiators: ["Pan horneado cada mañana"],
+    location: { type: "fisico", address: "Calle 10 #20-30", city: "Ciudad Ejemplo", coverageType: "local", coverageZones: ["Centro"] },
+    serviceModes: ["domicilio", "recoger"],
   },
   offerings: [
     {
@@ -71,6 +75,7 @@ export const SAMPLE_CONFIG: AssistantConfig = {
       },
     ],
     conditions: ["Domicilios solo dentro del barrio."],
+    promotions: [{ id: "sample_promo", name: "Desayuno del lunes", details: "10 % de descuento en desayunos los lunes", validUntil: "" }],
   },
   closing: {
     sendPaymentLink: true,
@@ -80,14 +85,18 @@ export const SAMPLE_CONFIG: AssistantConfig = {
     actions: ["tomar_pedido", "cerrar_venta", "responder_dudas", "confirmar_datos"],
   },
   behavior: {
-    tone: "cercano",
+    tone: "cercano y amable",
     responseLength: "short",
+    maxWords: null,
     primaryMotivation: "ahorrar tiempo en la mañana",
     secondaryMotivation: "comer bien sin salir",
     customerProblems: ["no tienen tiempo de desayunar antes del trabajo"],
-    salesRules: ["Confirmar la dirección antes de cerrar el pedido."],
+    benefits: ["Desayunar sin hacer fila"],
+    sellingPoints: ["Todo se prepara al momento."],
     discoveryQuestions: ["¿Para cuántas personas es el pedido?"],
-    recommendationNotes: "Si piden café, sugerir un acompañamiento de panadería.",
+    recommendationRules: [{ id: "sample_recomendacion", when: "pide café", offeringId: "sample_croissant" }],
+    salesInstructions: ["Confirma la dirección antes de cerrar el pedido."],
+    faqs: [{ id: "sample_faq_domicilios", question: "¿Hacen domicilios?", answer: "Sí, dentro del barrio." }],
   },
   messages: {
     welcomeEnabled: true,

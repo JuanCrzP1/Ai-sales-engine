@@ -1,0 +1,401 @@
+{
+  "schema_version": "1.0",
+  "tenant_slug": "tienda_ropa",
+  "identity": {
+    "name": "Tienda Ropa",
+    "industry": "moda y retail",
+    "description": "Sistema comercial para tienda de ropa que cierra pedidos por chat.",
+    "value_proposition": "convertir interes en compra con entrega o recogida segun preferencia.",
+    "positioning": "ejecucion comercial para cerrar pedidos de ropa por chat.",
+    "differentiators": [
+      "cierre de compra por chat",
+      "envio y recogida en tienda",
+      "recomendacion de complementos"
+    ],
+    "location": {
+      "type": "mixto",
+      "address": "Centro Comercial Ejemplo",
+      "city": "Medellin",
+      "coverage": {
+        "type": "nacional",
+        "zones": [
+          "colombia"
+        ]
+      }
+    },
+    "service_modes": [
+      "presencial",
+      "envio"
+    ],
+    "target_customer": {
+      "segment": "tiendas de ropa",
+      "company_size": "2 a 20 personas"
+    }
+  },
+  "offer": {
+    "model": "catalog",
+    "catalog": {
+      "categories": [
+        {
+          "id": "camisetas",
+          "name": "Camisetas"
+        },
+        {
+          "id": "jeans",
+          "name": "Jeans"
+        }
+      ],
+      "items": [
+        {
+          "id": "camiseta_basica",
+          "name": "Camiseta Basica",
+          "category": "camisetas",
+          "description": "Camiseta de algodon de uso diario.",
+          "prices": [
+            {
+              "currency": "COP",
+              "amount": 45000
+            }
+          ],
+          "available": true
+        },
+        {
+          "id": "jean_clasico",
+          "name": "Jean Clasico",
+          "category": "jeans",
+          "description": "Jean azul de corte regular.",
+          "prices": [
+            {
+              "currency": "COP",
+              "amount": 95000
+            }
+          ],
+          "available": true
+        }
+      ],
+      "payment_profile": "catalog"
+    }
+  },
+  "terms": {
+    "conditions": [
+      "cambios segun politica de la tienda"
+    ],
+    "price_framing": "directo",
+    "roi_break_even_sales": 2,
+    "financing": {
+      "available": true,
+      "providers": [
+        "addi",
+        "sistecredito"
+      ],
+      "options": [
+        "cuotas",
+        "pago_inicial"
+      ]
+    }
+  },
+  "payments": [
+    {
+      "id": "catalog",
+      "transfer_enabled": true,
+      "transfer_methods": [
+        {
+          "type": "nequi",
+          "number": {
+            "secret_ref": "legacy_yaml:pricing.catalog.payment.transfer.methods.0.number"
+          }
+        },
+        {
+          "type": "daviplata",
+          "number": {
+            "secret_ref": "legacy_yaml:pricing.catalog.payment.transfer.methods.1.number"
+          }
+        },
+        {
+          "type": "bank",
+          "bank": "Bancolombia",
+          "account_type": "ahorros",
+          "account_number": {
+            "secret_ref": "legacy_yaml:pricing.catalog.payment.transfer.methods.2.account_number"
+          }
+        },
+        {
+          "type": "breb",
+          "reference": {
+            "secret_ref": "legacy_yaml:pricing.catalog.payment.transfer.methods.3.reference"
+          }
+        }
+      ]
+    }
+  ],
+  "sales": {
+    "pain_points": [
+      "conversaciones que no cierran compra",
+      "demora para confirmar entrega"
+    ],
+    "benefits": [
+      "cerrar pedidos rapido",
+      "mejorar conversion de chat a venta"
+    ],
+    "offer_mix": {
+      "core": [
+        "camiseta_basica",
+        "jean_clasico"
+      ],
+      "upsell": [
+        "look_completo",
+        "prenda_premium"
+      ],
+      "cross_sell": [
+        "accesorios",
+        "cinturon"
+      ]
+    },
+    "discovery": {
+      "objectives": [
+        "entender preferencia de compra y entrega"
+      ]
+    },
+    "support": {
+      "explain_first": true,
+      "sell_after": true
+    },
+    "closing": {
+      "strategy": "checkout",
+      "required_data": [
+        "name",
+        "phone",
+        "address"
+      ],
+      "purchase_signals": [
+        "lo quiero",
+        "quiero comprar",
+        "me lo llevo",
+        "quiero empezar"
+      ],
+      "next_steps": [
+        "confirmar talla y color",
+        "confirmar envio o recogida",
+        "confirmar pago"
+      ],
+      "rules": [
+        "ejecutar cierre orientado a checkout",
+        "si hay trigger de compra, avanzar sin frenar"
+      ]
+    }
+  },
+  "capabilities": {
+    "service_channels": [
+      "whatsapp"
+    ],
+    "product_channels": [],
+    "actions_primary": [
+      "cerrar_venta",
+      "enviar_pago"
+    ],
+    "actions_support": [
+      "responder_dudas",
+      "seguimiento",
+      "confirmar_datos"
+    ],
+    "closing_methods": {
+      "payment_link": true,
+      "human_handoff": true,
+      "data_collection": true
+    },
+    "data_collection": {
+      "enabled": true,
+      "fields": [
+        "nombre",
+        "telefono",
+        "direccion",
+        "detalles"
+      ]
+    },
+    "restrictions": {
+      "disallowed_channels": [
+        "instagram",
+        "messenger",
+        "telegram",
+        "web"
+      ],
+      "disallowed_actions": [
+        "llamadas"
+      ]
+    }
+  },
+  "messages": {
+    "welcome": {
+      "enabled": true,
+      "text": "Hola, te ayudo a cerrar tu compra de ropa por chat. Si quieres, avanzamos con envio o recogida en tienda.\n"
+    },
+    "payment_reported": "Perfecto, ya lo reviso y te confirmo en un momento para continuar.\n",
+    "payment_confirmed": "Listo, ya quedó confirmado. Ahora seguimos con el siguiente paso.\n"
+  },
+  "response_style": {
+    "tone": "cercano, directo y comercial",
+    "voice": "claro y orientado a cierre",
+    "length": "short",
+    "max_words": 60
+  },
+  "knowledge": {
+    "faqs": []
+  },
+  "fulfillment": {
+    "delivery": {
+      "available": true,
+      "type": "propio",
+      "zones": [
+        "medellin"
+      ],
+      "cost": {
+        "type": "fijo",
+        "value": 6000
+      },
+      "time": {
+        "min": "1 hora",
+        "max": "3 horas"
+      }
+    },
+    "shipping": {
+      "available": true,
+      "scope": "nacional",
+      "providers": [
+        "servientrega",
+        "interrapidisimo"
+      ],
+      "cost": {
+        "type": "variable",
+        "value": 0
+      },
+      "time": {
+        "min": "1 dia",
+        "max": "3 dias"
+      }
+    },
+    "pickup": {
+      "available": true,
+      "instructions": "recoge en tienda"
+    },
+    "scheduling": {
+      "required": false
+    }
+  },
+  "inventory": {
+    "items": [
+      {
+        "product_id": "camiseta_basica",
+        "variants": [
+          {
+            "sku": "camiseta_basica_s_blanco",
+            "attributes": {
+              "size": "S",
+              "color": "blanco"
+            },
+            "stock": 5
+          },
+          {
+            "sku": "camiseta_basica_m_blanco",
+            "attributes": {
+              "size": "M",
+              "color": "blanco"
+            },
+            "stock": 0
+          },
+          {
+            "sku": "camiseta_basica_l_negro",
+            "attributes": {
+              "size": "L",
+              "color": "negro"
+            },
+            "stock": 3
+          }
+        ]
+      },
+      {
+        "product_id": "jean_clasico",
+        "variants": [
+          {
+            "sku": "jean_30_azul",
+            "attributes": {
+              "size": 30,
+              "color": "azul"
+            },
+            "stock": 4
+          },
+          {
+            "sku": "jean_32_azul",
+            "attributes": {
+              "size": 32,
+              "color": "azul"
+            },
+            "stock": 2
+          }
+        ]
+      }
+    ],
+    "track_stock": true
+  },
+  "engine": {
+    "conversation": {
+      "active_window_minutes": 15,
+      "reset_hours": 4
+    },
+    "features": {
+      "pricing_enabled": true,
+      "catalog_mode": true,
+      "business_model": "checkout"
+    }
+  },
+  "compatibility": {
+    "business": {
+      "brand_name": "Tienda Ropa",
+      "city": "Medellin"
+    },
+    "sales": {
+      "closing": {
+        "next_step": {
+          "action": "dynamic"
+        },
+        "behavior": {
+          "direct_sale": {
+            "goal": "confirmar_compra"
+          },
+          "lead_capture": {
+            "goal": "capturar_datos"
+          },
+          "booking": {
+            "goal": "agendar"
+          },
+          "checkout": {
+            "goal": "enviar_pago"
+          }
+        }
+      },
+      "progression_rules": {
+        "required_flow": [
+          "detect_pain",
+          "amplify_impact",
+          "present_solution",
+          "guide_next_step"
+        ]
+      }
+    },
+    "config": {
+      "features": {
+        "multi_currency": false,
+        "multi_plan": false
+      },
+      "flags": {
+        "ai_first": true,
+        "allow_fallback": false,
+        "log_level": "info"
+      },
+      "capabilities": {
+        "channels": [
+          "whatsapp"
+        ]
+      }
+    }
+  }
+}

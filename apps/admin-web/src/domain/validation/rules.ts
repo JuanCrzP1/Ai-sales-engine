@@ -1,6 +1,19 @@
-import { WORD_LIMITS } from "../config/engineUsage";
+import {
+  MAX_FAQ_ANSWER_CHARS,
+  MAX_FAQ_QUESTION_CHARS,
+  MAX_FAQS,
+  MAX_PROFILE_ITEM_CHARS,
+  MAX_PROFILE_ITEMS,
+  MAX_PROMOTIONS,
+  MAX_TONE_CHARS,
+  RESPONSE_LENGTH_WORD_RANGES,
+  WORD_LIMITS,
+} from "../config/engineLimits";
+import { labelFor, RESPONSE_LENGTHS } from "../config/options";
 import type { AssistantConfig, Offering, TransferMethod } from "../config/types";
-import { countWords } from "../../lib/text";
+import type { ConfigSectionId } from "../sections";
+import { localIsoDate } from "../../lib/format";
+import { cleanList, countWords } from "../../lib/text";
 import {
   isAccountNumber,
   isBlank,
@@ -15,14 +28,27 @@ import type { ValidationIssue } from "./types";
  * Reglas de validación de la configuración. Única fuente de verdad: los formularios,
  * el inicio y la revisión consumen el resultado de `validateConfig`.
  */
-export function validateConfig(config: AssistantConfig): ValidationIssue[] {
+export function validateConfig(config: AssistantConfig, today: Date = new Date()): ValidationIssue[] {
   return [
     ...validateBusiness(config),
     ...validateCatalog(config),
-    ...validatePayments(config),
+    ...validatePayments(config, localIsoDate(today)),
     ...validateAssistant(config),
     ...validateMessages(config),
   ];
+}
+
+/** Listas del perfil comercial: el contrato admite hasta MAX_PROFILE_ITEMS frases de MAX_PROFILE_ITEM_CHARS. */
+function validateList(section: ConfigSectionId, field: string, label: string, items: string[]): ValidationIssue[] {
+  const cleaned = cleanList(items);
+  const issues: ValidationIssue[] = [];
+  if (cleaned.length > MAX_PROFILE_ITEMS) {
+    issues.push({ section, field, severity: "error", message: `${label}: puedes agregar hasta ${MAX_PROFILE_ITEMS}.` });
+  }
+  if (cleaned.some((item) => item.length > MAX_PROFILE_ITEM_CHARS)) {
+    issues.push({ section, field, severity: "error", message: `${label}: cada uno admite hasta ${MAX_PROFILE_ITEM_CHARS} caracteres.` });
+  }
+  return issues;
 }
 
 function validateBusiness({ business }: AssistantConfig): ValidationIssue[] {
@@ -31,6 +57,11 @@ function validateBusiness({ business }: AssistantConfig): ValidationIssue[] {
     issues.push({ section: "business", field: `business.${field}`, severity, message });
 
   if (isBlank(business.name)) add("name", "error", "Escribe el nombre comercial de tu negocio.");
+  if (isBlank(business.description)) {
+    add("description", "error", "Describe brevemente tu negocio.");
+  } else if (countWords(business.description) > WORD_LIMITS.description) {
+    add("description", "warning", `El asistente usa las primeras ${WORD_LIMITS.description} palabras de la descripción.`);
+  }
   if (isBlank(business.businessType)) {
     add("businessType", "error", "Indica a qué se dedica tu negocio.");
   } else if (countWords(business.businessType) > WORD_LIMITS.businessType) {
@@ -48,6 +79,14 @@ function validateBusiness({ business }: AssistantConfig): ValidationIssue[] {
       "warning",
       `El asistente solo usa las primeras ${WORD_LIMITS.valueProposition} palabras; el resto se corta.`,
     );
+  }
+  issues.push(...validateList("business", "business.differentiators", "Diferenciadores", business.differentiators));
+  const { location } = business;
+  if ((location.type === "fisico" || location.type === "mixto") && isBlank(location.address)) {
+    add("location.address", "warning", "Sin dirección, el asistente no podrá decir dónde queda tu local.");
+  }
+  if (location.type !== "") {
+    issues.push(...validateList("business", "business.location.coverageZones", "Zonas de cobertura", location.coverageZones));
   }
   return issues;
 }
@@ -85,10 +124,16 @@ export function validateOffering(offering: Offering, isCatalog: boolean): Valida
   if (isCatalog && isBlank(offering.category)) {
     add("category", "error", `${label}: elige o escribe una categoría.`);
   }
+  if (countWords(offering.description) > WORD_LIMITS.offeringDescription) {
+    add("description", "warning", `${label}: el asistente usa las primeras ${WORD_LIMITS.offeringDescription} palabras de la descripción.`);
+  }
+  if (isCatalog) {
+    issues.push(...validateList("catalog", `offerings.${offering.id}.features`, `${label}, características`, offering.features));
+  }
   return issues;
 }
 
-function validatePayments({ payments, closing }: AssistantConfig): ValidationIssue[] {
+function validatePayments({ payments, closing }: AssistantConfig, todayIso: string): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
   const add = (field: string, severity: ValidationIssue["severity"], message: string) =>
     issues.push({ section: "payments", field, severity, message });
@@ -146,6 +191,22 @@ function validatePayments({ payments, closing }: AssistantConfig): ValidationIss
   if (closing.actions.length === 0) {
     add("closing.actions", "error", "Elige al menos una acción que pueda realizar el asistente.");
   }
+
+  if (payments.promotions.length > MAX_PROMOTIONS) {
+    add("payments.promotions", "error", `Puedes guardar hasta ${MAX_PROMOTIONS} promociones.`);
+  }
+  for (const promotion of payments.promotions) {
+    const field = (name: string) => `payments.promotions.${promotion.id}.${name}`;
+    if (isBlank(promotion.name)) add(field("name"), "error", "Escribe el nombre de la promoción o elimínala.");
+    else if (promotion.name.trim().length > MAX_PROFILE_ITEM_CHARS) add(field("name"), "error", `El nombre admite hasta ${MAX_PROFILE_ITEM_CHARS} caracteres.`);
+    if (isBlank(promotion.details)) add(field("details"), "error", "Explica en qué consiste la promoción.");
+    else if (promotion.details.trim().length > MAX_PROFILE_ITEM_CHARS) add(field("details"), "error", `El detalle admite hasta ${MAX_PROFILE_ITEM_CHARS} caracteres.`);
+    if (promotion.validUntil && !/^\d{4}-\d{2}-\d{2}$/.test(promotion.validUntil)) {
+      add(field("validUntil"), "error", "Escribe una fecha válida o déjala vacía.");
+    } else if (promotion.validUntil && promotion.validUntil < todayIso) {
+      add(field("validUntil"), "warning", "Esta promoción ya venció: el asistente no la ofrecerá.");
+    }
+  }
   return issues;
 }
 
@@ -175,18 +236,61 @@ export function validateTransferMethod(method: TransferMethod): ValidationIssue[
   return issues;
 }
 
-function validateAssistant({ behavior }: AssistantConfig): ValidationIssue[] {
-  if (behavior.customerProblems.length === 0 && isBlank(behavior.primaryMotivation)) {
-    return [
-      {
-        section: "assistant",
-        field: "behavior.customerProblems",
-        severity: "warning",
-        message: "Cuéntale al asistente qué problemas resuelves o por qué te compran; le ayuda a vender mejor.",
-      },
-    ];
+function validateAssistant({ behavior, offerings }: AssistantConfig): ValidationIssue[] {
+  const issues: ValidationIssue[] = [];
+  const add = (field: string, severity: ValidationIssue["severity"], message: string) =>
+    issues.push({ section: "assistant", field: `behavior.${field}`, severity, message });
+
+  if (behavior.tone.trim().length > MAX_TONE_CHARS) add("tone", "error", `El tono admite hasta ${MAX_TONE_CHARS} caracteres.`);
+  if (behavior.maxWords !== null) {
+    const [low, high] = RESPONSE_LENGTH_WORD_RANGES[behavior.responseLength];
+    if (!Number.isInteger(behavior.maxWords) || behavior.maxWords < low || (high !== null && behavior.maxWords > high)) {
+      const label = labelFor(RESPONSE_LENGTHS, behavior.responseLength).toLowerCase();
+      const range = high !== null ? `entre ${low} y ${high}` : `de al menos ${low}`;
+      add("maxWords", "error", `Con respuestas ${label}, el límite debe ser ${range} palabras.`);
+    }
   }
-  return [];
+  issues.push(
+    ...validateList("assistant", "behavior.benefits", "Beneficios", behavior.benefits),
+    ...validateList("assistant", "behavior.sellingPoints", "Argumentos de venta", behavior.sellingPoints),
+    ...validateList("assistant", "behavior.discoveryQuestions", "Preguntas para entender al cliente", behavior.discoveryQuestions),
+    ...validateList("assistant", "behavior.salesInstructions", "Instrucciones de venta", behavior.salesInstructions),
+  );
+
+  if (behavior.recommendationRules.length > MAX_PROFILE_ITEMS) {
+    add("recommendationRules", "error", `Puedes agregar hasta ${MAX_PROFILE_ITEMS} recomendaciones.`);
+  }
+  for (const rule of behavior.recommendationRules) {
+    const field = (name: string) => `recommendationRules.${rule.id}.${name}`;
+    const offering = offerings.find((item) => item.id === rule.offeringId);
+    if (isBlank(rule.when)) add(field("when"), "error", "Describe la situación del cliente o elimina la recomendación.");
+    else if (rule.when.trim().length > MAX_PROFILE_ITEM_CHARS) add(field("when"), "error", `La situación admite hasta ${MAX_PROFILE_ITEM_CHARS} caracteres.`);
+    if (!offering) add(field("offeringId"), "error", "Elige qué plan o producto recomendar.");
+    else if (!offering.available) {
+      add(field("offeringId"), "warning", `"${offering.name.trim() || "Este elemento"}" no está disponible: el asistente no lo recomendará.`);
+    }
+  }
+
+  if (behavior.customerProblems.length === 0 && isBlank(behavior.primaryMotivation)) {
+    issues.push({
+      section: "assistant",
+      field: "behavior.customerProblems",
+      severity: "warning",
+      message: "Cuéntale al asistente qué problemas resuelves o por qué te compran; le ayuda a vender mejor.",
+    });
+  }
+  if (behavior.faqs.length > MAX_FAQS) {
+    issues.push({ section: "assistant", field: "behavior.faqs", severity: "error", message: `Puedes guardar hasta ${MAX_FAQS} preguntas frecuentes.` });
+  }
+  for (const faq of behavior.faqs) {
+    const add = (field: string, message: string) =>
+      issues.push({ section: "assistant", field: `behavior.faqs.${faq.id}.${field}`, severity: "error", message });
+    if (isBlank(faq.question)) add("question", "Escribe la pregunta o elimínala.");
+    else if (faq.question.trim().length > MAX_FAQ_QUESTION_CHARS) add("question", `La pregunta admite hasta ${MAX_FAQ_QUESTION_CHARS} caracteres.`);
+    if (isBlank(faq.answer)) add("answer", "Escribe la respuesta o elimina la pregunta.");
+    else if (faq.answer.trim().length > MAX_FAQ_ANSWER_CHARS) add("answer", `La respuesta admite hasta ${MAX_FAQ_ANSWER_CHARS} caracteres.`);
+  }
+  return issues;
 }
 
 function validateMessages({ messages }: AssistantConfig): ValidationIssue[] {

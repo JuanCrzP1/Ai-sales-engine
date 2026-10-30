@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { createEmptyConfig } from "../domain/config/factories";
+import { createEmptyConfig, withDefaults } from "../domain/config/factories";
 import * as operations from "../domain/config/operations";
 import type { AssistantConfig } from "../domain/config/types";
 import { computeProgress } from "../domain/validation/progress";
@@ -52,7 +52,7 @@ export function ConfigProvider({ repository, children, renderLoading, renderErro
     repository.load().then(
       (stored) => {
         if (!active) return;
-        const loaded = stored?.config ?? createEmptyConfig();
+        const loaded = stored ? withDefaults(stored.config) : createEmptyConfig();
         persisted.current = loaded;
         setConfig(loaded);
         setSave({ ...INITIAL_SAVE, savedAt: stored?.savedAt ?? null });

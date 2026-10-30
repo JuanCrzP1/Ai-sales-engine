@@ -1,8 +1,8 @@
 /**
  * Modelo de configuración del asistente tal como lo entiende el cliente.
  *
- * Es independiente del formato interno del motor (los cinco YAML por negocio).
- * La traducción a ese formato vive en `adapters/engineRuntimeAdapter.ts`.
+ * Es independiente del contrato del motor (BusinessConfig v1).
+ * La traducción al contrato global del motor vive en `adapters/contractAdapter.ts`.
  */
 
 export type SalesMode = "plans" | "catalog";
@@ -14,15 +14,32 @@ export type BillingType = "one_time" | "monthly";
 
 export type ResponseLength = "short" | "medium" | "long";
 
-export type CommunicationTone = "cercano" | "profesional" | "formal" | "entusiasta";
-
 export type TransferMethodType = "nequi" | "daviplata" | "bank" | "breb";
 
 export type BankAccountType = "ahorros" | "corriente";
 
+/** Dónde atiende el negocio; "" significa que no lo indica. */
+export type LocationType = "" | "virtual" | "fisico" | "mixto";
+
+export type CoverageType = "local" | "nacional" | "internacional";
+
+export type ServiceMode = "virtual" | "presencial" | "domicilio" | "recoger" | "envio";
+
+export interface BusinessLocation {
+  type: LocationType;
+  /** Dirección del local (si tiene local físico). */
+  address: string;
+  city: string;
+  coverageType: CoverageType;
+  /** Barrios, ciudades o países a los que atiende o envía. */
+  coverageZones: string[];
+}
+
 export interface BusinessProfile {
   /** Nombre comercial que verá el cliente final. */
   name: string;
+  /** Marca con la que el asistente presenta al negocio, si es distinta del nombre. */
+  brandName: string;
   /** A qué se dedica el negocio, en pocas palabras. */
   businessType: string;
   /** Descripción libre del negocio. */
@@ -31,6 +48,10 @@ export interface BusinessProfile {
   valueProposition: string;
   /** Si vende planes/servicios o un catálogo de productos. */
   salesMode: SalesMode;
+  /** Por qué elegir este negocio y no otro. */
+  differentiators: string[];
+  location: BusinessLocation;
+  serviceModes: ServiceMode[];
 }
 
 export interface Offering {
@@ -69,6 +90,16 @@ export interface PaymentSettings {
   transferEnabled: boolean;
   transferMethods: TransferMethod[];
   conditions: string[];
+  /** Únicas promociones o descuentos que el asistente puede ofrecer. */
+  promotions: Promotion[];
+}
+
+export interface Promotion {
+  id: string;
+  name: string;
+  details: string;
+  /** Último día de vigencia (AAAA-MM-DD) o vacío si no vence. */
+  validUntil: string;
 }
 
 export interface ClosingSettings {
@@ -80,17 +111,44 @@ export interface ClosingSettings {
   actions: string[];
 }
 
+/** Qué debe recomendar el asistente en una situación concreta del cliente. */
+export interface RecommendationRule {
+  id: string;
+  when: string;
+  /** Id del plan, servicio o producto recomendado. */
+  offeringId: string;
+}
+
+/** Pregunta frecuente que el asistente puede consultar para responder. */
+export interface FaqEntry {
+  id: string;
+  question: string;
+  answer: string;
+}
+
 export interface AssistantBehavior {
-  tone: CommunicationTone;
+  /** Cómo habla el asistente (por ejemplo, cercano y claro). */
+  tone: string;
+  /** Largo de las respuestas: fija el límite de palabras del motor. */
   responseLength: ResponseLength;
+  /** Ajuste avanzado dentro del rango de `responseLength`; null usa el límite de la opción. */
+  maxWords: number | null;
   /** Principal razón por la que compran (por ejemplo, ahorrar tiempo). */
   primaryMotivation: string;
   secondaryMotivation: string;
   /** Problemas de los clientes que el negocio resuelve. */
   customerProblems: string[];
-  salesRules: string[];
+  /** Resultados que obtiene el cliente. */
+  benefits: string[];
+  /** Argumentos de venta. */
+  sellingPoints: string[];
+  /** Preguntas para entender al cliente antes de recomendar. */
   discoveryQuestions: string[];
-  recommendationNotes: string;
+  recommendationRules: RecommendationRule[];
+  /** Instrucciones de venta propias del negocio. */
+  salesInstructions: string[];
+  /** Conocimiento del negocio: preguntas frecuentes y sus respuestas. */
+  faqs: FaqEntry[];
 }
 
 export interface MessageSettings {

@@ -12,7 +12,7 @@ Este repositorio prioriza estabilidad operativa, configuración explícita y pru
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install --upgrade pip
-pip install -r project/requirements.txt
+pip install -r project/requirements-dev.txt
 Copy-Item project/.env.example project/.env
 cd project
 ```
@@ -23,7 +23,7 @@ cd project
 python -m venv .venv
 source .venv/bin/activate
 pip install --upgrade pip
-pip install -r project/requirements.txt
+pip install -r project/requirements-dev.txt
 cp project/.env.example project/.env
 cd project
 ```

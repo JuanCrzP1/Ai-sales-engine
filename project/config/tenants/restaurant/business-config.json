@@ -1,0 +1,373 @@
+{
+  "schema_version": "1.0",
+  "tenant_slug": "restaurant",
+  "identity": {
+    "name": "Mesa Activa",
+    "industry": "restaurante y domicilios",
+    "description": "Sistema comercial para restaurantes que toman pedidos por chat.",
+    "value_proposition": "tomar pedidos rapido y reducir perdidas por demora.",
+    "positioning": "asistencia comercial para convertir chats en pedidos confirmados.",
+    "differentiators": [
+      "toma de pedido por chat",
+      "confirmacion de orden",
+      "seguimiento de entrega"
+    ],
+    "location": {
+      "type": "fisico",
+      "address": "Cra 45 #10-20",
+      "city": "Medellin",
+      "coverage": {
+        "type": "local",
+        "zones": [
+          "poblado",
+          "laureles"
+        ]
+      }
+    },
+    "service_modes": [
+      "domicilio",
+      "presencial",
+      "recoger"
+    ],
+    "target_customer": {
+      "segment": "restaurantes",
+      "company_size": "3 a 40 personas"
+    }
+  },
+  "offer": {
+    "model": "catalog",
+    "catalog": {
+      "categories": [
+        {
+          "id": "hamburguesas",
+          "name": "Hamburguesas"
+        },
+        {
+          "id": "bebidas",
+          "name": "Bebidas"
+        }
+      ],
+      "items": [
+        {
+          "id": "hamburguesa_sencilla",
+          "name": "Hamburguesa Sencilla",
+          "category": "hamburguesas",
+          "description": "Carne artesanal, queso y vegetales frescos.",
+          "prices": [
+            {
+              "currency": "COP",
+              "amount": 18000
+            }
+          ],
+          "available": true
+        },
+        {
+          "id": "hamburguesa_doble",
+          "name": "Hamburguesa Doble",
+          "category": "hamburguesas",
+          "description": "Doble carne, doble queso y salsa especial.",
+          "prices": [
+            {
+              "currency": "COP",
+              "amount": 24000
+            }
+          ],
+          "available": true
+        },
+        {
+          "id": "gaseosa",
+          "name": "Gaseosa",
+          "category": "bebidas",
+          "description": "Bebida gaseosa fria para acompanar el pedido.",
+          "prices": [
+            {
+              "currency": "COP",
+              "amount": 5000
+            }
+          ],
+          "available": true
+        },
+        {
+          "id": "jugo_natural",
+          "name": "Jugo Natural",
+          "category": "bebidas",
+          "description": "Jugo del dia sin azucar adicionada.",
+          "prices": [
+            {
+              "currency": "COP",
+              "amount": 7000
+            }
+          ],
+          "available": true
+        }
+      ],
+      "payment_profile": "catalog"
+    }
+  },
+  "terms": {
+    "conditions": [
+      "precios de menu sujetos a disponibilidad diaria"
+    ],
+    "price_framing": "directo",
+    "roi_break_even_sales": 2,
+    "financing": {
+      "available": false,
+      "providers": [],
+      "options": []
+    }
+  },
+  "payments": [
+    {
+      "id": "catalog",
+      "transfer_enabled": true,
+      "transfer_methods": [
+        {
+          "type": "nequi",
+          "number": {
+            "secret_ref": "legacy_yaml:pricing.catalog.payment.transfer.methods.0.number"
+          }
+        },
+        {
+          "type": "daviplata",
+          "number": {
+            "secret_ref": "legacy_yaml:pricing.catalog.payment.transfer.methods.1.number"
+          }
+        },
+        {
+          "type": "bank",
+          "bank": "Bancolombia",
+          "account_type": "ahorros",
+          "account_number": {
+            "secret_ref": "legacy_yaml:pricing.catalog.payment.transfer.methods.2.account_number"
+          }
+        },
+        {
+          "type": "breb",
+          "reference": {
+            "secret_ref": "legacy_yaml:pricing.catalog.payment.transfer.methods.3.reference"
+          }
+        }
+      ]
+    }
+  ],
+  "sales": {
+    "pain_points": [
+      "pedidos sin confirmar",
+      "demoras en toma de orden"
+    ],
+    "benefits": [
+      "confirmar pedido rapido",
+      "mejorar flujo de ordenes"
+    ],
+    "offer_mix": {
+      "core": [
+        "hamburguesa_sencilla",
+        "hamburguesa_doble"
+      ],
+      "upsell": [
+        "combo_agrandado",
+        "doble_carne",
+        "papas_grandes"
+      ],
+      "cross_sell": [
+        "gaseosa",
+        "jugo",
+        "postre"
+      ]
+    },
+    "discovery": {
+      "objectives": [
+        "entender volumen de pedidos por chat"
+      ]
+    },
+    "support": {
+      "explain_first": true,
+      "sell_after": true
+    },
+    "closing": {
+      "strategy": "direct_sale",
+      "required_data": [
+        "name",
+        "phone",
+        "address"
+      ],
+      "purchase_signals": [
+        "quiero pedir",
+        "quiero ordenar",
+        "lo quiero",
+        "quiero empezar"
+      ],
+      "next_steps": [
+        "confirmar pedido",
+        "enviar orden a cocina",
+        "validar direccion de entrega"
+      ],
+      "rules": [
+        "ejecutar cierre orientado a pedido",
+        "no frenar orden con preguntas innecesarias"
+      ]
+    }
+  },
+  "capabilities": {
+    "service_channels": [
+      "whatsapp"
+    ],
+    "product_channels": [],
+    "actions_primary": [
+      "tomar_pedido",
+      "cerrar_venta"
+    ],
+    "actions_support": [
+      "responder_dudas",
+      "seguimiento",
+      "confirmar_datos"
+    ],
+    "closing_methods": {
+      "payment_link": true,
+      "human_handoff": true,
+      "data_collection": true
+    },
+    "data_collection": {
+      "enabled": true,
+      "fields": [
+        "nombre",
+        "telefono",
+        "direccion",
+        "detalles"
+      ]
+    },
+    "restrictions": {
+      "disallowed_channels": [
+        "instagram",
+        "messenger",
+        "telegram",
+        "web"
+      ],
+      "disallowed_actions": [
+        "llamadas"
+      ]
+    }
+  },
+  "messages": {
+    "welcome": {
+      "enabled": true,
+      "text": "Hola, ya estamos listos para ayudarte con tus pedidos. Cuentame, quieres tomar una orden ahora?\n"
+    },
+    "payment_reported": "Perfecto, ya lo reviso y te confirmo en un momento para continuar.\n",
+    "payment_confirmed": "Listo, ya quedó confirmado. Ahora seguimos con el siguiente paso.\n"
+  },
+  "response_style": {
+    "tone": "cercano, agil y orientado a orden",
+    "voice": "claro y rapido",
+    "length": "short",
+    "max_words": 60
+  },
+  "knowledge": {
+    "faqs": []
+  },
+  "fulfillment": {
+    "delivery": {
+      "available": true,
+      "type": "propio",
+      "zones": [
+        "poblado",
+        "laureles"
+      ],
+      "cost": {
+        "type": "fijo",
+        "value": 4000
+      },
+      "time": {
+        "min": "30 min",
+        "max": "50 min"
+      }
+    },
+    "shipping": {
+      "available": false,
+      "scope": "local",
+      "providers": [],
+      "cost": {
+        "type": "variable",
+        "value": 0
+      },
+      "time": {
+        "min": "",
+        "max": ""
+      }
+    },
+    "pickup": {
+      "available": true,
+      "instructions": "puedes recoger en el local"
+    },
+    "scheduling": {
+      "required": false
+    }
+  },
+  "inventory": {
+    "items": [],
+    "track_stock": false
+  },
+  "engine": {
+    "conversation": {
+      "active_window_minutes": 15,
+      "reset_hours": 4
+    },
+    "features": {
+      "pricing_enabled": true,
+      "catalog_mode": true,
+      "business_model": "catalog"
+    }
+  },
+  "compatibility": {
+    "business": {
+      "type": "restaurant",
+      "brand_name": "Mesa Activa",
+      "city": "Medellin"
+    },
+    "sales": {
+      "closing": {
+        "next_step": {
+          "action": "dynamic"
+        },
+        "behavior": {
+          "direct_sale": {
+            "goal": "confirmar_compra"
+          },
+          "lead_capture": {
+            "goal": "capturar_datos"
+          },
+          "booking": {
+            "goal": "agendar"
+          },
+          "checkout": {
+            "goal": "enviar_pago"
+          }
+        }
+      },
+      "progression_rules": {
+        "required_flow": [
+          "detect_pain",
+          "amplify_impact",
+          "present_solution",
+          "guide_next_step"
+        ]
+      }
+    },
+    "config": {
+      "features": {
+        "multi_currency": false,
+        "multi_plan": false
+      },
+      "flags": {
+        "ai_first": true,
+        "allow_fallback": false,
+        "log_level": "info"
+      },
+      "capabilities": {
+        "channels": [
+          "whatsapp"
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,329 @@
+{
+  "schema_version": "1.0",
+  "tenant_slug": "saas",
+  "identity": {
+    "name": "SaaS Growth Engine",
+    "industry": "saas b2b",
+    "description": "Plataforma de automatizacion comercial para equipos SaaS que venden por chat.",
+    "value_proposition": "activar implementacion rapido y mover oportunidades a cierre.",
+    "positioning": "no es un bot de soporte, es ejecucion comercial para ventas SaaS.",
+    "differentiators": [
+      "activacion guiada",
+      "implementacion rapida",
+      "seguimiento automatico"
+    ],
+    "location": {
+      "type": "virtual",
+      "address": "",
+      "city": "Medellin",
+      "coverage": {
+        "type": "nacional",
+        "zones": [
+          "colombia"
+        ]
+      }
+    },
+    "service_modes": [
+      "virtual"
+    ],
+    "target_customer": {
+      "segment": "pymes SaaS",
+      "company_size": "2 a 30 personas"
+    }
+  },
+  "offer": {
+    "model": "plans",
+    "plans": [
+      {
+        "id": "starter",
+        "name": "Starter SaaS",
+        "description": "Activacion inicial y operacion mensual.",
+        "prices": [
+          {
+            "currency": "COP",
+            "implementation": 180000,
+            "monthly": 220000
+          }
+        ],
+        "includes": [
+          "activacion inicial",
+          "implementacion",
+          "seguimiento comercial"
+        ],
+        "not_included": [
+          "costos de plataformas externas"
+        ],
+        "payment_profile": "starter",
+        "available": true
+      }
+    ]
+  },
+  "terms": {
+    "conditions": [
+      "sin permanencia obligatoria"
+    ],
+    "price_framing": "comparativo",
+    "roi_break_even_sales": 3,
+    "financing": {
+      "available": false,
+      "providers": [],
+      "options": []
+    }
+  },
+  "payments": [
+    {
+      "id": "starter",
+      "link": {
+        "secret_ref": "legacy_yaml:pricing.plans.0.payment.link"
+      },
+      "transfer_enabled": true,
+      "transfer_methods": [
+        {
+          "type": "nequi",
+          "number": {
+            "secret_ref": "legacy_yaml:pricing.plans.0.payment.transfer.methods.0.number"
+          }
+        },
+        {
+          "type": "daviplata",
+          "number": {
+            "secret_ref": "legacy_yaml:pricing.plans.0.payment.transfer.methods.1.number"
+          }
+        },
+        {
+          "type": "bank",
+          "bank": "Bancolombia",
+          "account_type": "ahorros",
+          "account_number": {
+            "secret_ref": "legacy_yaml:pricing.plans.0.payment.transfer.methods.2.account_number"
+          }
+        },
+        {
+          "type": "breb",
+          "reference": {
+            "secret_ref": "legacy_yaml:pricing.plans.0.payment.transfer.methods.3.reference"
+          }
+        }
+      ]
+    }
+  ],
+  "sales": {
+    "pain_points": [
+      "seguimiento lento",
+      "oportunidades frias"
+    ],
+    "benefits": [
+      "activar rapido",
+      "implementar sin friccion"
+    ],
+    "offer_mix": {
+      "core": [
+        "plan"
+      ],
+      "upsell": [
+        "plan_superior"
+      ],
+      "cross_sell": [
+        "integraciones",
+        "setup"
+      ]
+    },
+    "discovery": {
+      "objectives": [
+        "entender cuello de botella comercial"
+      ]
+    },
+    "support": {
+      "explain_first": true,
+      "sell_after": true
+    },
+    "objections": [
+      {
+        "topic": "price",
+        "acknowledge": [
+          "es normal verlo como inversion inicial"
+        ],
+        "reframe": [
+          "perder oportunidades por no implementar tambien cuesta dinero"
+        ],
+        "redirect": [
+          "avanzamos con implementacion hoy"
+        ]
+      }
+    ],
+    "closing": {
+      "strategy": "direct_sale",
+      "required_data": [],
+      "purchase_signals": [
+        "quiero empezar",
+        "quiero comprar",
+        "arranquemos"
+      ],
+      "next_steps": [
+        "activar implementacion",
+        "iniciar arranque"
+      ],
+      "rules": [
+        "ejecutar cierre sin preguntas cuando haya intencion alta",
+        "no frenar compra con respuestas genericas"
+      ]
+    }
+  },
+  "capabilities": {
+    "service_channels": [
+      "whatsapp"
+    ],
+    "product_channels": [],
+    "actions_primary": [
+      "cerrar_venta",
+      "activar_implementacion"
+    ],
+    "actions_support": [
+      "responder_dudas",
+      "seguimiento",
+      "enviar_info"
+    ],
+    "closing_methods": {
+      "payment_link": true,
+      "human_handoff": true,
+      "data_collection": true
+    },
+    "data_collection": {
+      "enabled": true,
+      "fields": [
+        "nombre",
+        "telefono",
+        "detalles"
+      ]
+    },
+    "restrictions": {
+      "disallowed_channels": [
+        "instagram",
+        "messenger",
+        "telegram",
+        "web"
+      ],
+      "disallowed_actions": [
+        "llamadas"
+      ]
+    }
+  },
+  "messages": {
+    "welcome": {
+      "enabled": true,
+      "text": "Hola, tu asesor SaaS ya esta listo. Cuentame, quieres activar implementacion o revisar plan primero?\n"
+    },
+    "payment_reported": "Perfecto, ya lo reviso y te confirmo en un momento para continuar.\n",
+    "payment_confirmed": "Listo, ya quedó confirmado. Ahora seguimos con el siguiente paso.\n"
+  },
+  "response_style": {
+    "tone": "humano, directo y comercial",
+    "voice": "cercano y orientado a ejecucion",
+    "length": "short",
+    "max_words": 60
+  },
+  "knowledge": {
+    "faqs": []
+  },
+  "fulfillment": {
+    "delivery": {
+      "available": false,
+      "type": "tercero",
+      "zones": [],
+      "cost": {
+        "type": "variable",
+        "value": 0
+      },
+      "time": {
+        "min": "",
+        "max": ""
+      }
+    },
+    "shipping": {
+      "available": false,
+      "scope": "nacional",
+      "providers": [],
+      "cost": {
+        "type": "variable",
+        "value": 0
+      },
+      "time": {
+        "min": "",
+        "max": ""
+      }
+    },
+    "pickup": {
+      "available": false,
+      "instructions": ""
+    },
+    "scheduling": {
+      "required": false
+    }
+  },
+  "inventory": {
+    "items": [],
+    "track_stock": false
+  },
+  "engine": {
+    "conversation": {
+      "active_window_minutes": 15,
+      "reset_hours": 4
+    },
+    "features": {
+      "pricing_enabled": true,
+      "catalog_mode": false,
+      "business_model": "saas"
+    }
+  },
+  "compatibility": {
+    "business": {
+      "brand_name": "SaaS Growth Engine",
+      "city": "Medellin"
+    },
+    "sales": {
+      "closing": {
+        "next_step": {
+          "action": "dynamic"
+        },
+        "behavior": {
+          "direct_sale": {
+            "goal": "confirmar_compra"
+          },
+          "lead_capture": {
+            "goal": "capturar_datos"
+          },
+          "booking": {
+            "goal": "agendar"
+          },
+          "checkout": {
+            "goal": "enviar_pago"
+          }
+        }
+      },
+      "progression_rules": {
+        "required_flow": [
+          "detect_pain",
+          "amplify_impact",
+          "present_solution",
+          "guide_next_step"
+        ]
+      }
+    },
+    "config": {
+      "features": {
+        "multi_currency": false,
+        "multi_plan": true
+      },
+      "flags": {
+        "ai_first": true,
+        "allow_fallback": false,
+        "log_level": "info"
+      },
+      "capabilities": {
+        "channels": [
+          "whatsapp"
+        ]
+      }
+    }
+  }
+}

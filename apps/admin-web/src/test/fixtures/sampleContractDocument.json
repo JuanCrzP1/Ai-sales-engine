@@ -1,0 +1,211 @@
+{
+  "schema_version": "1.0",
+  "tenant_slug": "cafe_aroma",
+  "identity": {
+    "name": "Café Aroma",
+    "brand_name": null,
+    "industry": "cafetería con domicilios",
+    "description": "Cafetería de barrio que vende café, panadería y desayunos para llevar.",
+    "value_proposition": "Tu desayuno listo en minutos, pedido directo por chat y sin filas.",
+    "differentiators": [
+      "Pan horneado cada mañana"
+    ],
+    "location": {
+      "type": "fisico",
+      "address": "Calle 10 #20-30",
+      "city": "Ciudad Ejemplo",
+      "coverage": {
+        "type": "local",
+        "zones": [
+          "Centro"
+        ]
+      }
+    },
+    "service_modes": [
+      "domicilio",
+      "recoger"
+    ]
+  },
+  "offer": {
+    "model": "catalog",
+    "catalog": {
+      "categories": [
+        {
+          "id": "bebidas",
+          "name": "Bebidas"
+        },
+        {
+          "id": "panaderia",
+          "name": "Panadería"
+        },
+        {
+          "id": "desayunos",
+          "name": "Desayunos"
+        }
+      ],
+      "items": [
+        {
+          "id": "sample_cafe_americano",
+          "name": "Café americano",
+          "category": "bebidas",
+          "description": "Café filtrado de 12 oz.",
+          "prices": [
+            {
+              "currency": "COP",
+              "amount": 6000
+            }
+          ],
+          "features": [
+            "Tamaño 12 oz"
+          ],
+          "available": true
+        },
+        {
+          "id": "sample_croissant",
+          "name": "Croissant de mantequilla",
+          "category": "panaderia",
+          "description": "Horneado cada mañana.",
+          "prices": [
+            {
+              "currency": "COP",
+              "amount": 5500
+            }
+          ],
+          "features": null,
+          "available": true
+        },
+        {
+          "id": "sample_desayuno",
+          "name": "Desayuno completo",
+          "category": "desayunos",
+          "description": "Huevos, pan, fruta y bebida caliente.",
+          "prices": [
+            {
+              "currency": "COP",
+              "amount": 18000
+            }
+          ],
+          "features": [
+            "Incluye bebida caliente"
+          ],
+          "available": false
+        }
+      ],
+      "payment_profile": "principal"
+    }
+  },
+  "terms": {
+    "conditions": [
+      "Domicilios solo dentro del barrio."
+    ],
+    "promotions": [
+      {
+        "name": "Desayuno del lunes",
+        "details": "10 % de descuento en desayunos los lunes",
+        "valid_until": null
+      }
+    ]
+  },
+  "payments": [
+    {
+      "id": "principal",
+      "link": {
+        "secret_ref": "secret_store:principal.link"
+      },
+      "transfer_enabled": true,
+      "transfer_methods": [
+        {
+          "type": "nequi",
+          "number": {
+            "secret_ref": "secret_store:principal.transfer.0.number"
+          }
+        }
+      ]
+    }
+  ],
+  "sales": {
+    "buying_motivation": {
+      "primary": "ahorrar tiempo en la mañana",
+      "secondary": "comer bien sin salir"
+    },
+    "customer_problems": [
+      {
+        "id": "problema_1",
+        "impacts": [
+          "no tienen tiempo de desayunar antes del trabajo"
+        ]
+      }
+    ],
+    "benefits": [
+      "Desayunar sin hacer fila"
+    ],
+    "arguments": [
+      "Todo se prepara al momento."
+    ],
+    "discovery": {
+      "questions": [
+        "¿Para cuántas personas es el pedido?"
+      ]
+    },
+    "recommendation_rules": [
+      {
+        "when": "pide café",
+        "recommend": "sample_croissant"
+      }
+    ],
+    "instructions": [
+      "Confirma la dirección antes de cerrar el pedido."
+    ]
+  },
+  "capabilities": {
+    "service_channels": [
+      "whatsapp"
+    ],
+    "product_channels": [],
+    "actions_primary": [
+      "tomar_pedido",
+      "cerrar_venta"
+    ],
+    "actions_support": [
+      "responder_dudas",
+      "confirmar_datos"
+    ],
+    "closing_methods": {
+      "payment_link": true,
+      "human_handoff": false,
+      "data_collection": true
+    },
+    "data_collection": {
+      "enabled": true,
+      "fields": [
+        "nombre",
+        "telefono",
+        "direccion"
+      ]
+    }
+  },
+  "messages": {
+    "welcome": {
+      "enabled": true,
+      "text": "¡Hola! Bienvenido a Café Aroma. ¿Quieres hacer un pedido?"
+    },
+    "payment_reported": "Gracias, ya reviso tu pago y te confirmo en un momento.",
+    "payment_confirmed": "Listo, tu pago quedó confirmado. Preparamos tu pedido."
+  },
+  "response_style": {
+    "tone": "cercano y amable",
+    "length": "short",
+    "max_words": null
+  },
+  "knowledge": {
+    "faqs": [
+      {
+        "question": "¿Hacen domicilios?",
+        "answer": "Sí, dentro del barrio."
+      }
+    ]
+  },
+  "inventory": {
+    "items": []
+  }
+}

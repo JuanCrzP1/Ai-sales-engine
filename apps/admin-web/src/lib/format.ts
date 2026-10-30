@@ -16,3 +16,9 @@ export function formatTime(iso: string): string {
 export function formatDateTime(iso: string): string {
   return new Date(iso).toLocaleString("es-CO", { dateStyle: "long", timeStyle: "short" });
 }
+
+/** Fecha local en formato AAAA-MM-DD (el mismo de los campos de fecha y del contrato). */
+export function localIsoDate(date: Date): string {
+  const pad = (value: number) => String(value).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}

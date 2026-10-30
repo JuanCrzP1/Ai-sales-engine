@@ -1,7 +1,6 @@
-import { storedFieldHint } from "../../components/config/storedFieldHint";
 import { TextAreaField, TextField } from "../../components/ui/FormFields";
 import { Card } from "../../components/ui/Layout";
-import { WORD_LIMITS } from "../../domain/config/engineUsage";
+import { WORD_LIMITS } from "../../domain/config/engineLimits";
 import { useFieldIssue, useSection } from "../../state/useConfig";
 
 export function BusinessIdentityForm() {
@@ -20,7 +19,6 @@ export function BusinessIdentityForm() {
           onChange={(name) => update({ name })}
           placeholder="Ej.: Panadería La Esquina"
           issue={nameIssue}
-          hint={storedFieldHint("business.name", business.salesMode)}
         />
         <TextField
           label="¿A qué se dedica tu negocio?"
@@ -38,7 +36,8 @@ export function BusinessIdentityForm() {
         value={business.description}
         onChange={(description) => update({ description })}
         placeholder="Qué haces, para quién y desde cuándo."
-        hint={storedFieldHint("business.description", business.salesMode)}
+        wordLimit={WORD_LIMITS.description}
+        hint="El asistente la usa para presentar tu negocio."
       />
       <TextAreaField
         label="Propuesta de valor"

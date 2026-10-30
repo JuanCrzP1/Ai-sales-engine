@@ -449,7 +449,9 @@ def _shows_buy_progression(text: str) -> bool:
         r"\bcontinuar\b",
         r"\bavanzar\b",
         r"\benlace de pago\b",
+        # "enlace" y "link" son sinónimos: el modelo usa ambos para ofrecer el pago por link.
         r"\blink\b",
+        r"\benlace\b",
         r"\bproceder con el pago\b",
         r"\bc[oó]mo te gustar[ií]a proceder\b",
         r"\bte gustar[ií]a proceder\b",

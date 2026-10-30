@@ -1,0 +1,331 @@
+{
+  "schema_version": "1.0",
+  "tenant_slug": "ecommerce",
+  "identity": {
+    "name": "Checkout Conversacional",
+    "industry": "ecommerce",
+    "description": "Motor de cierre para ecommerce que vende por chat.",
+    "value_proposition": "convertir interes en compra con direccion, envio y pago.",
+    "positioning": "ejecucion comercial de checkout segun contexto del comprador.",
+    "differentiators": [
+      "cierre por chat",
+      "captura de direccion y envio",
+      "guia a pago"
+    ],
+    "location": {
+      "type": "virtual",
+      "address": "",
+      "city": "Medellin",
+      "coverage": {
+        "type": "nacional",
+        "zones": [
+          "colombia"
+        ]
+      }
+    },
+    "service_modes": [
+      "envio"
+    ],
+    "target_customer": {
+      "segment": "tiendas ecommerce",
+      "company_size": "2 a 50 personas"
+    }
+  },
+  "offer": {
+    "model": "plans",
+    "plans": [
+      {
+        "id": "checkout_flow",
+        "name": "Checkout Flow",
+        "description": "Cierre con datos de envio y pago.",
+        "prices": [
+          {
+            "currency": "COP",
+            "implementation": 160000,
+            "monthly": 190000
+          }
+        ],
+        "includes": [
+          "flujo de checkout",
+          "guia a pago"
+        ],
+        "not_included": [
+          "costos de plataformas externas"
+        ],
+        "payment_profile": "checkout_flow",
+        "available": true
+      }
+    ]
+  },
+  "terms": {
+    "conditions": [
+      "pago mensual"
+    ],
+    "price_framing": "comparativo",
+    "roi_break_even_sales": 2,
+    "financing": {
+      "available": true,
+      "providers": [
+        "addi",
+        "sistecredito"
+      ],
+      "options": [
+        "pago_contra_entrega",
+        "cuotas"
+      ]
+    }
+  },
+  "payments": [
+    {
+      "id": "checkout_flow",
+      "link": {
+        "secret_ref": "legacy_yaml:pricing.plans.0.payment.link"
+      },
+      "transfer_enabled": true,
+      "transfer_methods": [
+        {
+          "type": "nequi",
+          "number": {
+            "secret_ref": "legacy_yaml:pricing.plans.0.payment.transfer.methods.0.number"
+          }
+        },
+        {
+          "type": "daviplata",
+          "number": {
+            "secret_ref": "legacy_yaml:pricing.plans.0.payment.transfer.methods.1.number"
+          }
+        },
+        {
+          "type": "bank",
+          "bank": "Bancolombia",
+          "account_type": "ahorros",
+          "account_number": {
+            "secret_ref": "legacy_yaml:pricing.plans.0.payment.transfer.methods.2.account_number"
+          }
+        },
+        {
+          "type": "breb",
+          "reference": {
+            "secret_ref": "legacy_yaml:pricing.plans.0.payment.transfer.methods.3.reference"
+          }
+        }
+      ]
+    }
+  ],
+  "sales": {
+    "pain_points": [
+      "carritos abandonados",
+      "compras sin cerrar"
+    ],
+    "benefits": [
+      "cerrar pago",
+      "confirmar envio"
+    ],
+    "offer_mix": {
+      "core": [
+        "producto_principal"
+      ],
+      "upsell": [
+        "version_premium",
+        "garantia_extendida"
+      ],
+      "cross_sell": [
+        "accesorios",
+        "productos_relacionados"
+      ]
+    },
+    "discovery": {
+      "objectives": [
+        "entender friccion de checkout"
+      ]
+    },
+    "support": {
+      "explain_first": true,
+      "sell_after": true
+    },
+    "closing": {
+      "strategy": "checkout",
+      "required_data": [
+        "name",
+        "phone",
+        "address"
+      ],
+      "purchase_signals": [
+        "lo quiero",
+        "quiero comprar",
+        "comprar",
+        "quiero empezar"
+      ],
+      "next_steps": [
+        "confirmar direccion de envio",
+        "compartir enlace de pago",
+        "confirmar metodo de pago"
+      ],
+      "rules": [
+        "ejecutar cierre orientado a checkout",
+        "si el mensaje coincide con un trigger de cierre, ejecutar checkout inmediato",
+        "pedir solo datos necesarios para envio y pago"
+      ]
+    }
+  },
+  "capabilities": {
+    "service_channels": [
+      "whatsapp"
+    ],
+    "product_channels": [],
+    "actions_primary": [
+      "cerrar_venta",
+      "enviar_pago"
+    ],
+    "actions_support": [
+      "responder_dudas",
+      "seguimiento",
+      "enviar_info"
+    ],
+    "closing_methods": {
+      "payment_link": true,
+      "human_handoff": true,
+      "data_collection": true
+    },
+    "data_collection": {
+      "enabled": true,
+      "fields": [
+        "nombre",
+        "telefono",
+        "direccion",
+        "detalles"
+      ]
+    },
+    "restrictions": {
+      "disallowed_channels": [
+        "instagram",
+        "messenger",
+        "telegram",
+        "web"
+      ],
+      "disallowed_actions": [
+        "llamadas"
+      ]
+    }
+  },
+  "messages": {
+    "welcome": {
+      "enabled": true,
+      "text": "Hola, ya estamos listos para cerrar tu compra por chat. Cuentame, quieres avanzar con envio y pago?\n"
+    },
+    "payment_reported": "Perfecto, ya lo reviso y te confirmo en un momento para continuar.\n",
+    "payment_confirmed": "Listo, ya quedó confirmado. Ahora seguimos con el siguiente paso.\n"
+  },
+  "response_style": {
+    "tone": "directo y orientado a conversion",
+    "voice": "cercano y accionable",
+    "length": "short",
+    "max_words": 60
+  },
+  "knowledge": {
+    "faqs": []
+  },
+  "fulfillment": {
+    "delivery": {
+      "available": false,
+      "type": "tercero",
+      "zones": [],
+      "cost": {
+        "type": "variable",
+        "value": 0
+      },
+      "time": {
+        "min": "",
+        "max": ""
+      }
+    },
+    "shipping": {
+      "available": true,
+      "scope": "nacional",
+      "providers": [
+        "coordinadora"
+      ],
+      "cost": {
+        "type": "variable",
+        "value": 0
+      },
+      "time": {
+        "min": "2 dias",
+        "max": "5 dias"
+      }
+    },
+    "pickup": {
+      "available": false,
+      "instructions": ""
+    },
+    "scheduling": {
+      "required": false
+    }
+  },
+  "inventory": {
+    "items": [],
+    "track_stock": false
+  },
+  "engine": {
+    "conversation": {
+      "active_window_minutes": 15,
+      "reset_hours": 4
+    },
+    "features": {
+      "pricing_enabled": true,
+      "catalog_mode": true,
+      "business_model": "checkout"
+    }
+  },
+  "compatibility": {
+    "business": {
+      "brand_name": "Checkout Conversacional",
+      "city": "Medellin"
+    },
+    "sales": {
+      "closing": {
+        "next_step": {
+          "action": "dynamic"
+        },
+        "behavior": {
+          "direct_sale": {
+            "goal": "confirmar_compra"
+          },
+          "lead_capture": {
+            "goal": "capturar_datos"
+          },
+          "booking": {
+            "goal": "agendar"
+          },
+          "checkout": {
+            "goal": "enviar_pago"
+          }
+        }
+      },
+      "progression_rules": {
+        "required_flow": [
+          "detect_pain",
+          "amplify_impact",
+          "present_solution",
+          "guide_next_step"
+        ]
+      }
+    },
+    "config": {
+      "features": {
+        "multi_currency": false,
+        "multi_plan": false
+      },
+      "flags": {
+        "ai_first": true,
+        "allow_fallback": false,
+        "log_level": "info"
+      },
+      "capabilities": {
+        "channels": [
+          "whatsapp"
+        ]
+      }
+    }
+  }
+}

@@ -11,7 +11,7 @@ export const CONFIG_SECTIONS: ConfigSection[] = [
   { id: "business", title: "Mi negocio", summary: "Quién eres, a qué te dedicas y qué prometes." },
   { id: "catalog", title: "Productos y servicios", summary: "Lo que vendes, con precios y detalles." },
   { id: "payments", title: "Pagos y cierre", summary: "Cómo te pagan y cómo se cierra una venta." },
-  { id: "assistant", title: "Cómo atiende", summary: "Tono, estilo e instrucciones de venta." },
+  { id: "assistant", title: "Cómo atiende", summary: "Largo de respuestas, motivos de compra y preguntas frecuentes." },
   { id: "messages", title: "Mensajes y canales", summary: "Bienvenida, mensajes de pago y canales." },
 ];
 

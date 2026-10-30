@@ -1,10 +1,13 @@
+import { RESPONSE_LENGTH_MAX_WORDS } from "../../contracts/businessConfig.v1";
 import type {
   BankAccountType,
   BillingType,
-  CommunicationTone,
+  CoverageType,
   Currency,
+  LocationType,
   ResponseLength,
   SalesMode,
+  ServiceMode,
   TransferMethodType,
 } from "./types";
 
@@ -29,17 +32,11 @@ export const BILLING_TYPES: Option<BillingType>[] = [
   { value: "monthly", label: "Mensual" },
 ];
 
-export const TONES: Option<CommunicationTone>[] = [
-  { value: "cercano", label: "Cercano", hint: "Amable y conversacional, como un asesor de confianza." },
-  { value: "profesional", label: "Profesional", hint: "Claro y respetuoso, sin exceso de confianza." },
-  { value: "formal", label: "Formal", hint: "Trato de usted y lenguaje cuidado." },
-  { value: "entusiasta", label: "Entusiasta", hint: "Energético y positivo." },
-];
-
+/** Opciones de largo de respuesta; el límite de palabras lo define el contrato del motor. */
 export const RESPONSE_LENGTHS: Option<ResponseLength>[] = [
-  { value: "short", label: "Cortas", hint: "Ideal para chat: respuestas breves y directas." },
-  { value: "medium", label: "Medianas", hint: "Algo más de explicación en cada respuesta." },
-  { value: "long", label: "Detalladas", hint: "Respuestas más completas." },
+  { value: "short", label: "Cortas", hint: `Ideal para chat: hasta ${RESPONSE_LENGTH_MAX_WORDS.short} palabras.` },
+  { value: "medium", label: "Equilibradas", hint: `Algo más de explicación: hasta ${RESPONSE_LENGTH_MAX_WORDS.medium} palabras.` },
+  { value: "long", label: "Detalladas", hint: `Respuestas más completas: hasta ${RESPONSE_LENGTH_MAX_WORDS.long} palabras.` },
 ];
 
 /**
@@ -84,6 +81,27 @@ export const TRANSFER_METHOD_TYPES: Option<TransferMethodType>[] = [
   { value: "daviplata", label: "Daviplata" },
   { value: "bank", label: "Cuenta bancaria" },
   { value: "breb", label: "Bre-B" },
+];
+
+export const LOCATION_TYPES: Option<LocationType>[] = [
+  { value: "", label: "No indicar", hint: "El asistente no hablará de ubicación." },
+  { value: "virtual", label: "Solo virtual", hint: "Atiendes por chat, llamada o en línea." },
+  { value: "fisico", label: "Local físico", hint: "Los clientes pueden visitarte." },
+  { value: "mixto", label: "Local físico y virtual" },
+];
+
+export const COVERAGE_TYPES: Option<CoverageType>[] = [
+  { value: "local", label: "Local (barrios o una ciudad)" },
+  { value: "nacional", label: "Nacional" },
+  { value: "internacional", label: "Internacional" },
+];
+
+export const SERVICE_MODES: Option<ServiceMode>[] = [
+  { value: "presencial", label: "Presencial" },
+  { value: "virtual", label: "Virtual" },
+  { value: "domicilio", label: "A domicilio" },
+  { value: "recoger", label: "Para recoger" },
+  { value: "envio", label: "Con envío" },
 ];
 
 export const BANK_ACCOUNT_TYPES: Option<BankAccountType>[] = [

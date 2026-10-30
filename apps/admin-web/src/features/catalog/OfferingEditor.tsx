@@ -1,9 +1,9 @@
 import { useEffect, useId, useRef } from "react";
-import { storedFieldHint } from "../../components/config/storedFieldHint";
 import { Button } from "../../components/ui/Button";
 import { NumberField, SelectField, TextAreaField, TextField } from "../../components/ui/FormFields";
 import { ListEditor } from "../../components/ui/ListEditor";
 import { Toggle } from "../../components/ui/Toggle";
+import { WORD_LIMITS } from "../../domain/config/engineLimits";
 import { BILLING_TYPES, CURRENCIES } from "../../domain/config/options";
 import type { Offering, SalesMode } from "../../domain/config/types";
 import { issuesFor } from "../../domain/validation/issues";
@@ -53,7 +53,6 @@ export function OfferingEditor({ draft, isNew, issues, salesMode, categorySugges
           value={draft.name}
           onChange={(name) => onChange({ name })}
           issue={issue("name")}
-          hint={storedFieldHint("offering.name", salesMode)}
         />
         {isCatalog && (
           <>
@@ -81,7 +80,8 @@ export function OfferingEditor({ draft, isNew, issues, salesMode, categorySugges
         value={draft.description}
         onChange={(description) => onChange({ description })}
         rows={2}
-        hint={storedFieldHint("offering.description", salesMode)}
+        wordLimit={WORD_LIMITS.offeringDescription}
+        hint="El asistente la usa para explicar este elemento."
       />
 
       <div className="grid-2">
@@ -91,7 +91,6 @@ export function OfferingEditor({ draft, isNew, issues, salesMode, categorySugges
           value={draft.price}
           onChange={(price) => onChange({ price })}
           issue={issue("price")}
-          hint={storedFieldHint("offering.price", salesMode)}
         />
         <SelectField label="Moneda" value={draft.currency} options={CURRENCIES} onChange={(currency) => onChange({ currency })} />
         {!isCatalog && (
@@ -114,7 +113,6 @@ export function OfferingEditor({ draft, isNew, issues, salesMode, categorySugges
         onChange={(features) => onChange({ features })}
         placeholder={isCatalog ? "Ej.: Tamaño 12 oz" : "Ej.: Soporte por WhatsApp"}
         addLabel={isCatalog ? "Agregar característica" : "Agregar a lo que incluye"}
-        hint={storedFieldHint("offering.features", salesMode)}
       />
 
       {!isCatalog && (

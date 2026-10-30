@@ -1,0 +1,3350 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ai-sales-engine/contracts/business-config/v1.0",
+  "$defs": {
+    "BuyingMotivation": {
+      "additionalProperties": false,
+      "properties": {
+        "primary": {
+          "title": "Primary",
+          "type": "string"
+        },
+        "secondary": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Secondary"
+        }
+      },
+      "required": [
+        "primary"
+      ],
+      "title": "BuyingMotivation",
+      "type": "object"
+    },
+    "Capabilities": {
+      "additionalProperties": false,
+      "description": "Canales, acciones, métodos de cierre y datos que se piden al cliente.",
+      "properties": {
+        "service_channels": {
+          "description": "Canales de atención al cliente.",
+          "items": {
+            "type": "string"
+          },
+          "title": "Service Channels",
+          "type": "array",
+          "x-engine": "conectado"
+        },
+        "product_channels": {
+          "description": "Canales por los que funciona el producto que se vende.",
+          "items": {
+            "type": "string"
+          },
+          "title": "Product Channels",
+          "type": "array",
+          "x-engine": "conectado"
+        },
+        "actions_primary": {
+          "description": "Acciones de venta.",
+          "items": {
+            "type": "string"
+          },
+          "title": "Actions Primary",
+          "type": "array",
+          "x-engine": "conectado"
+        },
+        "actions_support": {
+          "description": "Acciones de apoyo.",
+          "items": {
+            "type": "string"
+          },
+          "title": "Actions Support",
+          "type": "array",
+          "x-engine": "conectado"
+        },
+        "closing_methods": {
+          "$ref": "#/$defs/ClosingMethods",
+          "description": "Cómo puede cerrar el asistente una venta.",
+          "x-engine": "conectado"
+        },
+        "data_collection": {
+          "$ref": "#/$defs/DataCollection",
+          "description": "Datos que el asistente pide al cliente."
+        },
+        "human_handoff_when": {
+          "anyOf": [
+            {
+              "items": {
+                "maxLength": 300,
+                "type": "string"
+              },
+              "maxItems": 10,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Situaciones en las que el asistente pasa la conversación a una persona.",
+          "title": "Human Handoff When"
+        },
+        "restrictions": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Restrictions"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Lo que el negocio no hace ni promete."
+        }
+      },
+      "required": [
+        "closing_methods",
+        "data_collection"
+      ],
+      "title": "Capabilities",
+      "type": "object"
+    },
+    "Catalog": {
+      "additionalProperties": false,
+      "properties": {
+        "categories": {
+          "items": {
+            "$ref": "#/$defs/CatalogCategory"
+          },
+          "minItems": 1,
+          "title": "Categories",
+          "type": "array",
+          "x-engine": "conectado"
+        },
+        "items": {
+          "items": {
+            "$ref": "#/$defs/CatalogItem"
+          },
+          "minItems": 1,
+          "title": "Items",
+          "type": "array"
+        },
+        "payment_profile": {
+          "anyOf": [
+            {
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Perfil de pago con el que se cobra.",
+          "title": "Payment Profile",
+          "x-engine": "conectado"
+        }
+      },
+      "required": [
+        "categories",
+        "items"
+      ],
+      "title": "Catalog",
+      "type": "object"
+    },
+    "CatalogCategory": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$",
+          "title": "Id",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "name"
+      ],
+      "title": "CatalogCategory",
+      "type": "object"
+    },
+    "CatalogItem": {
+      "additionalProperties": false,
+      "description": "Producto del catálogo.",
+      "properties": {
+        "id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$",
+          "title": "Id",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "category": {
+          "description": "Id de su categoría; una categoría sin productos disponibles no se ofrece.",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$",
+          "title": "Category",
+          "type": "string",
+          "x-engine": "conectado"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Detalle del producto.",
+          "title": "Description"
+        },
+        "prices": {
+          "items": {
+            "$ref": "#/$defs/ItemPrice"
+          },
+          "minItems": 1,
+          "title": "Prices",
+          "type": "array"
+        },
+        "features": {
+          "anyOf": [
+            {
+              "items": {
+                "maxLength": 300,
+                "type": "string"
+              },
+              "maxItems": 10,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Características del producto.",
+          "title": "Features"
+        },
+        "available": {
+          "default": true,
+          "description": "Si es false, el producto se conserva pero no se ofrece (ni su categoría, si se queda sin productos).",
+          "title": "Available",
+          "type": "boolean",
+          "x-engine": "conectado"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "category",
+        "prices"
+      ],
+      "title": "CatalogItem",
+      "type": "object"
+    },
+    "Closing": {
+      "additionalProperties": false,
+      "properties": {
+        "strategy": {
+          "description": "Venta directa, captación de datos, reserva o compra con pago (checkout).",
+          "enum": [
+            "direct_sale",
+            "lead_capture",
+            "booking",
+            "checkout"
+          ],
+          "title": "Strategy",
+          "type": "string"
+        },
+        "required_data": {
+          "anyOf": [
+            {
+              "items": {
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$",
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Datos que necesita el cierre (name, phone, address...).",
+          "title": "Required Data"
+        },
+        "purchase_signals": {
+          "anyOf": [
+            {
+              "items": {
+                "maxLength": 300,
+                "type": "string"
+              },
+              "maxItems": 10,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Frases que indican intención de compra.",
+          "title": "Purchase Signals"
+        },
+        "high_intent_actions": {
+          "anyOf": [
+            {
+              "items": {
+                "maxLength": 300,
+                "type": "string"
+              },
+              "maxItems": 10,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Qué hacer ante una intención de compra alta.",
+          "title": "High Intent Actions"
+        },
+        "next_steps": {
+          "anyOf": [
+            {
+              "items": {
+                "maxLength": 300,
+                "type": "string"
+              },
+              "maxItems": 10,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Siguientes pasos que el asistente propone.",
+          "title": "Next Steps"
+        },
+        "micro_commitments": {
+          "anyOf": [
+            {
+              "items": {
+                "maxLength": 300,
+                "type": "string"
+              },
+              "maxItems": 10,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Compromisos pequeños para avanzar.",
+          "title": "Micro Commitments"
+        },
+        "rules": {
+          "anyOf": [
+            {
+              "items": {
+                "maxLength": 300,
+                "type": "string"
+              },
+              "maxItems": 10,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Reglas de cierre del negocio.",
+          "title": "Rules"
+        }
+      },
+      "required": [
+        "strategy"
+      ],
+      "title": "Closing",
+      "type": "object"
+    },
+    "ClosingMethods": {
+      "additionalProperties": false,
+      "properties": {
+        "payment_link": {
+          "title": "Payment Link",
+          "type": "boolean"
+        },
+        "human_handoff": {
+          "title": "Human Handoff",
+          "type": "boolean"
+        },
+        "data_collection": {
+          "title": "Data Collection",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "payment_link",
+        "human_handoff",
+        "data_collection"
+      ],
+      "title": "ClosingMethods",
+      "type": "object"
+    },
+    "ConversationFlow": {
+      "additionalProperties": false,
+      "properties": {
+        "steps": {
+          "description": "Etapas internas del motor, en orden (p. ej. detect_pain, present_solution).",
+          "items": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$",
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Steps",
+          "type": "array"
+        },
+        "no_skip_steps": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "No Skip Steps"
+        },
+        "guided_process": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Guiar al cliente paso a paso en un proceso (trámites, matrículas).",
+          "title": "Guided Process"
+        }
+      },
+      "required": [
+        "steps"
+      ],
+      "title": "ConversationFlow",
+      "type": "object"
+    },
+    "ConversationWindows": {
+      "additionalProperties": false,
+      "properties": {
+        "active_window_minutes": {
+          "description": "Minutos sin mensajes tras los que la conversación deja de estar activa.",
+          "minimum": 1,
+          "title": "Active Window Minutes",
+          "type": "integer"
+        },
+        "reset_hours": {
+          "description": "Horas sin mensajes tras las que la conversación empieza de nuevo.",
+          "minimum": 1,
+          "title": "Reset Hours",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "active_window_minutes",
+        "reset_hours"
+      ],
+      "title": "ConversationWindows",
+      "type": "object"
+    },
+    "Cost": {
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "enum": [
+            "fijo",
+            "variable",
+            "gratis"
+          ],
+          "title": "Type",
+          "type": "string"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "ge": 0,
+          "title": "Value"
+        }
+      },
+      "required": [
+        "type",
+        "value"
+      ],
+      "title": "Cost",
+      "type": "object"
+    },
+    "Coverage": {
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "enum": [
+            "local",
+            "nacional",
+            "internacional"
+          ],
+          "title": "Type",
+          "type": "string"
+        },
+        "zones": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 10,
+          "title": "Zones",
+          "type": "array"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "title": "Coverage",
+      "type": "object"
+    },
+    "CustomerProblem": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$",
+          "title": "Id",
+          "type": "string",
+          "x-engine": "conectado"
+        },
+        "impacts": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Qué le causa el problema al cliente.",
+          "title": "Impacts",
+          "x-engine": "conectado"
+        },
+        "signals": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Frases del cliente que revelan el problema.",
+          "title": "Signals",
+          "x-audience": "avanzado"
+        },
+        "monetization": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Cómo el problema le cuesta dinero al cliente.",
+          "title": "Monetization",
+          "x-audience": "avanzado"
+        },
+        "urgency_levels": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "propertyNames": {
+                "enum": [
+                  "alto",
+                  "medio",
+                  "bajo"
+                ]
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Mensajes según la urgencia.",
+          "title": "Urgency Levels",
+          "x-audience": "avanzado"
+        },
+        "recommended_angles": {
+          "anyOf": [
+            {
+              "items": {
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$",
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Ángulos de venta para este problema.",
+          "title": "Recommended Angles",
+          "x-audience": "avanzado"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "title": "CustomerProblem",
+      "type": "object"
+    },
+    "DataCollection": {
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "title": "Enabled",
+          "type": "boolean",
+          "x-engine": "conectado"
+        },
+        "fields": {
+          "items": {
+            "enum": [
+              "nombre",
+              "telefono",
+              "direccion",
+              "detalles"
+            ],
+            "type": "string"
+          },
+          "title": "Fields",
+          "type": "array",
+          "x-engine": "conectado"
+        },
+        "consent_notice": {
+          "anyOf": [
+            {
+              "maxLength": 800,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Aviso de tratamiento de datos personales que el asistente comparte al pedirlos.",
+          "title": "Consent Notice"
+        }
+      },
+      "required": [
+        "enabled"
+      ],
+      "title": "DataCollection",
+      "type": "object"
+    },
+    "Delivery": {
+      "additionalProperties": false,
+      "properties": {
+        "available": {
+          "title": "Available",
+          "type": "boolean"
+        },
+        "type": {
+          "anyOf": [
+            {
+              "enum": [
+                "propio",
+                "tercero"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Type"
+        },
+        "zones": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Zones",
+          "type": "array"
+        },
+        "cost": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Cost"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "time": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TimeWindow"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "available"
+      ],
+      "title": "Delivery",
+      "type": "object"
+    },
+    "Discovery": {
+      "additionalProperties": false,
+      "properties": {
+        "questions": {
+          "anyOf": [
+            {
+              "items": {
+                "maxLength": 300,
+                "type": "string"
+              },
+              "maxItems": 10,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Preguntas para entender al cliente.",
+          "title": "Questions"
+        },
+        "objectives": {
+          "anyOf": [
+            {
+              "items": {
+                "maxLength": 300,
+                "type": "string"
+              },
+              "maxItems": 10,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Qué debe averiguar el asistente.",
+          "title": "Objectives",
+          "x-audience": "avanzado"
+        }
+      },
+      "title": "Discovery",
+      "type": "object"
+    },
+    "EngineFeatures": {
+      "additionalProperties": false,
+      "properties": {
+        "pricing_enabled": {
+          "description": "Bandera heredada: el motor solo la consulta si no hay precios ni pagos, y el contrato siempre los exige.",
+          "title": "Pricing Enabled",
+          "type": "boolean"
+        },
+        "catalog_mode": {
+          "description": "Debe coincidir con `offer.model` (catalog).",
+          "title": "Catalog Mode",
+          "type": "boolean",
+          "x-engine": "conectado"
+        },
+        "business_model": {
+          "anyOf": [
+            {
+              "enum": [
+                "saas",
+                "catalog",
+                "checkout",
+                "service_booking",
+                "process"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Modelo de negocio con el que el motor decide cuándo mostrar precios.",
+          "title": "Business Model",
+          "x-engine": "conectado"
+        }
+      },
+      "required": [
+        "pricing_enabled",
+        "catalog_mode"
+      ],
+      "title": "EngineFeatures",
+      "type": "object"
+    },
+    "EngineSettings": {
+      "additionalProperties": false,
+      "properties": {
+        "conversation": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ConversationWindows"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "x-engine": "conectado"
+        },
+        "features": {
+          "$ref": "#/$defs/EngineFeatures"
+        }
+      },
+      "required": [
+        "features"
+      ],
+      "title": "EngineSettings",
+      "type": "object"
+    },
+    "Faq": {
+      "additionalProperties": false,
+      "properties": {
+        "question": {
+          "maxLength": 200,
+          "title": "Question",
+          "type": "string"
+        },
+        "answer": {
+          "maxLength": 800,
+          "title": "Answer",
+          "type": "string"
+        }
+      },
+      "required": [
+        "question",
+        "answer"
+      ],
+      "title": "Faq",
+      "type": "object"
+    },
+    "Financing": {
+      "additionalProperties": false,
+      "properties": {
+        "available": {
+          "title": "Available",
+          "type": "boolean"
+        },
+        "providers": {
+          "description": "Entidades con las que se financia.",
+          "items": {
+            "type": "string"
+          },
+          "title": "Providers",
+          "type": "array"
+        },
+        "options": {
+          "description": "Modalidades (abono, cuotas...).",
+          "items": {
+            "type": "string"
+          },
+          "title": "Options",
+          "type": "array"
+        }
+      },
+      "required": [
+        "available"
+      ],
+      "title": "Financing",
+      "type": "object"
+    },
+    "Fulfillment": {
+      "additionalProperties": false,
+      "description": "Cómo recibe el cliente lo que compra. Los modos que no aplican se omiten.",
+      "properties": {
+        "delivery": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Delivery"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "shipping": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Shipping"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "pickup": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Pickup"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "scheduling": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Scheduling"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "title": "Fulfillment",
+      "type": "object"
+    },
+    "Identity": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "description": "Nombre del negocio.",
+          "title": "Name",
+          "type": "string"
+        },
+        "brand_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Marca con la que el asistente presenta al negocio, si es distinta del nombre.",
+          "title": "Brand Name"
+        },
+        "industry": {
+          "description": "Sector o tipo de negocio, en pocas palabras.",
+          "title": "Industry",
+          "type": "string",
+          "x-engine": "conectado"
+        },
+        "description": {
+          "description": "Qué hace el negocio.",
+          "title": "Description",
+          "type": "string"
+        },
+        "value_proposition": {
+          "description": "Promesa comercial: qué gana el cliente.",
+          "title": "Value Proposition",
+          "type": "string",
+          "x-engine": "conectado"
+        },
+        "positioning": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "A quién se dirige y qué problema resuelve.",
+          "title": "Positioning"
+        },
+        "differentiators": {
+          "anyOf": [
+            {
+              "items": {
+                "maxLength": 300,
+                "type": "string"
+              },
+              "maxItems": 10,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Por qué elegir este negocio y no otro.",
+          "title": "Differentiators"
+        },
+        "location": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Location"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Dónde está y a qué zonas atiende."
+        },
+        "service_modes": {
+          "anyOf": [
+            {
+              "items": {
+                "enum": [
+                  "virtual",
+                  "presencial",
+                  "domicilio",
+                  "recoger",
+                  "envio"
+                ],
+                "type": "string"
+              },
+              "maxItems": 5,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Cómo recibe el cliente el servicio o producto.",
+          "title": "Service Modes"
+        },
+        "target_customer": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TargetCustomer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Cliente ideal."
+        },
+        "credibility": {
+          "anyOf": [
+            {
+              "items": {
+                "maxLength": 300,
+                "type": "string"
+              },
+              "maxItems": 10,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Pruebas de confianza: casos, resultados, trayectoria.",
+          "title": "Credibility"
+        },
+        "opening_hours": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/OpeningHours"
+              },
+              "maxItems": 14,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Horarios de atención.",
+          "title": "Opening Hours"
+        }
+      },
+      "required": [
+        "name",
+        "industry",
+        "description",
+        "value_proposition"
+      ],
+      "title": "Identity",
+      "type": "object"
+    },
+    "Inventory": {
+      "additionalProperties": false,
+      "description": "Variantes y existencias de los productos del catálogo.",
+      "properties": {
+        "items": {
+          "items": {
+            "$ref": "#/$defs/InventoryItem"
+          },
+          "title": "Items",
+          "type": "array"
+        },
+        "track_stock": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Si el negocio controla existencias.",
+          "title": "Track Stock"
+        }
+      },
+      "title": "Inventory",
+      "type": "object"
+    },
+    "InventoryItem": {
+      "additionalProperties": false,
+      "properties": {
+        "product_id": {
+          "description": "Id de un producto del catálogo.",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$",
+          "title": "Product Id",
+          "type": "string"
+        },
+        "variants": {
+          "items": {
+            "$ref": "#/$defs/Variant"
+          },
+          "title": "Variants",
+          "type": "array"
+        }
+      },
+      "required": [
+        "product_id"
+      ],
+      "title": "InventoryItem",
+      "type": "object"
+    },
+    "ItemPrice": {
+      "additionalProperties": false,
+      "properties": {
+        "currency": {
+          "pattern": "^[A-Z]{3}$",
+          "title": "Currency",
+          "type": "string"
+        },
+        "amount": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "ge": 0,
+          "title": "Amount"
+        }
+      },
+      "required": [
+        "currency",
+        "amount"
+      ],
+      "title": "ItemPrice",
+      "type": "object"
+    },
+    "Knowledge": {
+      "additionalProperties": false,
+      "properties": {
+        "faqs": {
+          "description": "Preguntas frecuentes con su respuesta oficial.",
+          "items": {
+            "$ref": "#/$defs/Faq"
+          },
+          "maxItems": 30,
+          "title": "Faqs",
+          "type": "array"
+        }
+      },
+      "title": "Knowledge",
+      "type": "object"
+    },
+    "Location": {
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "description": "virtual, fisico (local propio) o mixto.",
+          "enum": [
+            "virtual",
+            "fisico",
+            "mixto"
+          ],
+          "title": "Type",
+          "type": "string"
+        },
+        "address": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Address"
+        },
+        "city": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "City"
+        },
+        "coverage": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Coverage"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "title": "Location",
+      "type": "object"
+    },
+    "Messages": {
+      "additionalProperties": false,
+      "properties": {
+        "welcome": {
+          "$ref": "#/$defs/WelcomeMessage",
+          "description": "Primer mensaje de cada conversación nueva, si está activo.",
+          "x-engine": "conectado"
+        },
+        "payment_reported": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Respuesta exacta cuando el cliente reporta un pago.",
+          "title": "Payment Reported",
+          "x-engine": "conectado"
+        },
+        "payment_confirmed": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Mensaje cuando el pago queda confirmado.",
+          "title": "Payment Confirmed",
+          "x-engine": "conectado"
+        },
+        "after_sale": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Mensaje después de una compra.",
+          "title": "After Sale"
+        },
+        "data_request": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Mensaje para pedir los datos del cliente.",
+          "title": "Data Request"
+        },
+        "follow_up": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Mensaje de seguimiento a un cliente que no respondió.",
+          "title": "Follow Up"
+        },
+        "human_handoff": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Mensaje al pasar la conversación a una persona.",
+          "title": "Human Handoff"
+        }
+      },
+      "required": [
+        "welcome"
+      ],
+      "title": "Messages",
+      "type": "object"
+    },
+    "MotivationDriver": {
+      "additionalProperties": false,
+      "properties": {
+        "motivation": {
+          "description": "Motivo de compra (p. ej. tiempo, dinero).",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$",
+          "title": "Motivation",
+          "type": "string"
+        },
+        "description": {
+          "title": "Description",
+          "type": "string"
+        },
+        "signals": {
+          "description": "Frases del cliente que revelan este motivo.",
+          "items": {
+            "type": "string"
+          },
+          "title": "Signals",
+          "type": "array"
+        }
+      },
+      "required": [
+        "motivation",
+        "description"
+      ],
+      "title": "MotivationDriver",
+      "type": "object"
+    },
+    "ObjectionHandling": {
+      "additionalProperties": false,
+      "properties": {
+        "topic": {
+          "description": "Objeción que se atiende (p. ej. price).",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$",
+          "title": "Topic",
+          "type": "string"
+        },
+        "acknowledge": {
+          "anyOf": [
+            {
+              "items": {
+                "maxLength": 300,
+                "type": "string"
+              },
+              "maxItems": 10,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Cómo reconocer la objeción.",
+          "title": "Acknowledge"
+        },
+        "reframe": {
+          "anyOf": [
+            {
+              "items": {
+                "maxLength": 300,
+                "type": "string"
+              },
+              "maxItems": 10,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Cómo replantearla.",
+          "title": "Reframe"
+        },
+        "proof": {
+          "anyOf": [
+            {
+              "items": {
+                "maxLength": 300,
+                "type": "string"
+              },
+              "maxItems": 10,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Pruebas que la desmienten.",
+          "title": "Proof"
+        },
+        "redirect": {
+          "anyOf": [
+            {
+              "items": {
+                "maxLength": 300,
+                "type": "string"
+              },
+              "maxItems": 10,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Cómo volver al siguiente paso.",
+          "title": "Redirect"
+        },
+        "rules": {
+          "anyOf": [
+            {
+              "items": {
+                "maxLength": 300,
+                "type": "string"
+              },
+              "maxItems": 10,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Reglas al responder esta objeción.",
+          "title": "Rules"
+        }
+      },
+      "required": [
+        "topic"
+      ],
+      "title": "ObjectionHandling",
+      "type": "object"
+    },
+    "Offer": {
+      "additionalProperties": false,
+      "properties": {
+        "model": {
+          "description": "plans: planes o servicios; catalog: productos de un catálogo.",
+          "enum": [
+            "plans",
+            "catalog"
+          ],
+          "title": "Model",
+          "type": "string",
+          "x-engine": "conectado"
+        },
+        "plans": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/Plan"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Plans"
+        },
+        "catalog": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Catalog"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "model"
+      ],
+      "title": "Offer",
+      "type": "object"
+    },
+    "OfferMix": {
+      "additionalProperties": false,
+      "description": "Tipos de oferta en texto libre (no son ids de la oferta).",
+      "properties": {
+        "core": {
+          "description": "Ofertas principales.",
+          "items": {
+            "type": "string"
+          },
+          "title": "Core",
+          "type": "array"
+        },
+        "upsell": {
+          "description": "Mejoras para vender más.",
+          "items": {
+            "type": "string"
+          },
+          "title": "Upsell",
+          "type": "array"
+        },
+        "cross_sell": {
+          "description": "Complementos para vender junto.",
+          "items": {
+            "type": "string"
+          },
+          "title": "Cross Sell",
+          "type": "array"
+        }
+      },
+      "title": "OfferMix",
+      "type": "object"
+    },
+    "OfferPresentation": {
+      "additionalProperties": false,
+      "properties": {
+        "single_offer": {
+          "anyOf": [
+            {
+              "items": {
+                "maxLength": 300,
+                "type": "string"
+              },
+              "maxItems": 10,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Cómo presentar cuando hay una sola opción.",
+          "title": "Single Offer"
+        },
+        "multiple_offers": {
+          "anyOf": [
+            {
+              "items": {
+                "maxLength": 300,
+                "type": "string"
+              },
+              "maxItems": 10,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Cómo presentar cuando hay varias opciones.",
+          "title": "Multiple Offers"
+        }
+      },
+      "title": "OfferPresentation",
+      "type": "object"
+    },
+    "OpeningHours": {
+      "additionalProperties": false,
+      "properties": {
+        "days": {
+          "items": {
+            "enum": [
+              "lunes",
+              "martes",
+              "miercoles",
+              "jueves",
+              "viernes",
+              "sabado",
+              "domingo"
+            ],
+            "type": "string"
+          },
+          "maxItems": 7,
+          "minItems": 1,
+          "title": "Days",
+          "type": "array"
+        },
+        "opens": {
+          "description": "Hora HH:MM (24 h).",
+          "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$",
+          "title": "Opens",
+          "type": "string"
+        },
+        "closes": {
+          "description": "Hora HH:MM (24 h).",
+          "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$",
+          "title": "Closes",
+          "type": "string"
+        }
+      },
+      "required": [
+        "days",
+        "opens",
+        "closes"
+      ],
+      "title": "OpeningHours",
+      "type": "object"
+    },
+    "PaymentProfile": {
+      "additionalProperties": false,
+      "description": "Cómo se cobra: link de pago y transferencias. El motor entrega los datos al cliente cuando elige el método.",
+      "properties": {
+        "id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$",
+          "title": "Id",
+          "type": "string",
+          "x-engine": "conectado"
+        },
+        "link": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SecretRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "x-engine": "conectado"
+        },
+        "transfer_enabled": {
+          "title": "Transfer Enabled",
+          "type": "boolean",
+          "x-engine": "conectado"
+        },
+        "transfer_methods": {
+          "items": {
+            "$ref": "#/$defs/TransferMethod"
+          },
+          "title": "Transfer Methods",
+          "type": "array",
+          "x-engine": "conectado"
+        },
+        "instructions": {
+          "anyOf": [
+            {
+              "maxLength": 300,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Indicaciones para pagar, sin números ni links (esos datos son secretos).",
+          "title": "Instructions"
+        }
+      },
+      "required": [
+        "id",
+        "transfer_enabled"
+      ],
+      "title": "PaymentProfile",
+      "type": "object"
+    },
+    "Pickup": {
+      "additionalProperties": false,
+      "properties": {
+        "available": {
+          "title": "Available",
+          "type": "boolean"
+        },
+        "instructions": {
+          "default": "",
+          "title": "Instructions",
+          "type": "string"
+        }
+      },
+      "required": [
+        "available"
+      ],
+      "title": "Pickup",
+      "type": "object"
+    },
+    "Plan": {
+      "additionalProperties": false,
+      "description": "Plan o servicio.",
+      "properties": {
+        "id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$",
+          "title": "Id",
+          "type": "string",
+          "x-engine": "conectado"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string",
+          "x-engine": "conectado"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Detalle del plan.",
+          "title": "Description"
+        },
+        "prices": {
+          "items": {
+            "$ref": "#/$defs/PlanPrice"
+          },
+          "minItems": 1,
+          "title": "Prices",
+          "type": "array",
+          "x-engine": "conectado"
+        },
+        "includes": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Includes",
+          "x-engine": "conectado"
+        },
+        "not_included": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Not Included",
+          "x-engine": "conectado"
+        },
+        "payment_profile": {
+          "anyOf": [
+            {
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Perfil de pago con el que se cobra.",
+          "title": "Payment Profile",
+          "x-engine": "conectado"
+        },
+        "target": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Para quién es este plan.",
+          "title": "Target"
+        },
+        "available": {
+          "default": true,
+          "description": "Si es false, el plan se conserva pero no se ofrece.",
+          "title": "Available",
+          "type": "boolean",
+          "x-engine": "conectado"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "prices"
+      ],
+      "title": "Plan",
+      "type": "object"
+    },
+    "PlanPrice": {
+      "additionalProperties": false,
+      "description": "Importes de un plan en una moneda. Se usan solo los que correspondan al plan.",
+      "properties": {
+        "currency": {
+          "pattern": "^[A-Z]{3}$",
+          "title": "Currency",
+          "type": "string"
+        },
+        "implementation": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "ge": 0
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Pago único inicial (instalación, implementación, inscripción).",
+          "title": "Implementation"
+        },
+        "monthly": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "ge": 0
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Cobro mensual.",
+          "title": "Monthly"
+        },
+        "first_payment": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "ge": 0
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Valor del primer pago cuando difiere del mensual.",
+          "title": "First Payment"
+        },
+        "price": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "ge": 0
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Precio de pago único.",
+          "title": "Price"
+        },
+        "annual": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "ge": 0
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Cobro anual.",
+          "title": "Annual",
+          "x-engine": "pendiente"
+        }
+      },
+      "required": [
+        "currency"
+      ],
+      "title": "PlanPrice",
+      "type": "object"
+    },
+    "Policies": {
+      "additionalProperties": false,
+      "description": "Políticas oficiales que el asistente comunica tal cual cuando el cliente las pregunta.",
+      "properties": {
+        "warranty": {
+          "anyOf": [
+            {
+              "maxLength": 800,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Garantía: qué cubre y por cuánto tiempo.",
+          "title": "Warranty"
+        },
+        "returns": {
+          "anyOf": [
+            {
+              "maxLength": 800,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Cambios y devoluciones.",
+          "title": "Returns"
+        },
+        "cancellation": {
+          "anyOf": [
+            {
+              "maxLength": 800,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Cancelaciones y reembolsos (citas, reservas, suscripciones).",
+          "title": "Cancellation"
+        }
+      },
+      "title": "Policies",
+      "type": "object"
+    },
+    "Promotion": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "maxLength": 300,
+          "title": "Name",
+          "type": "string"
+        },
+        "details": {
+          "description": "Qué incluye la promoción y a qué aplica.",
+          "maxLength": 300,
+          "title": "Details",
+          "type": "string"
+        },
+        "valid_until": {
+          "anyOf": [
+            {
+              "format": "date",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Último día de vigencia.",
+          "title": "Valid Until"
+        }
+      },
+      "required": [
+        "name",
+        "details"
+      ],
+      "title": "Promotion",
+      "type": "object"
+    },
+    "Qualification": {
+      "additionalProperties": false,
+      "properties": {
+        "detect_offer_fit": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Si el asistente debe comprobar que la oferta encaja con el cliente.",
+          "title": "Detect Offer Fit"
+        },
+        "criteria": {
+          "anyOf": [
+            {
+              "items": {
+                "maxLength": 300,
+                "type": "string"
+              },
+              "maxItems": 10,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Criterios para considerar a alguien un cliente potencial.",
+          "title": "Criteria"
+        }
+      },
+      "title": "Qualification",
+      "type": "object"
+    },
+    "RecommendationRule": {
+      "additionalProperties": false,
+      "properties": {
+        "when": {
+          "description": "Situación o necesidad del cliente.",
+          "maxLength": 300,
+          "title": "When",
+          "type": "string"
+        },
+        "recommend": {
+          "description": "Id de un plan, producto o categoría de la oferta.",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$",
+          "title": "Recommend",
+          "type": "string"
+        }
+      },
+      "required": [
+        "when",
+        "recommend"
+      ],
+      "title": "RecommendationRule",
+      "type": "object"
+    },
+    "ResponseStyle": {
+      "additionalProperties": false,
+      "description": "Cómo se comunica el asistente.\n\nLongitud (en el prompt y al recortar la respuesta, en todos los canales): short = cortas,\nmedium = equilibradas, long = detalladas; límites en `engine_policy`.",
+      "properties": {
+        "tone": {
+          "anyOf": [
+            {
+              "maxLength": 160,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Tono del asistente (p. ej. cercano y claro).",
+          "title": "Tone"
+        },
+        "voice": {
+          "anyOf": [
+            {
+              "maxLength": 160,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Personalidad de la marca.",
+          "title": "Voice"
+        },
+        "formality": {
+          "anyOf": [
+            {
+              "enum": [
+                "informal",
+                "neutral",
+                "formal"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "informal (tutea), neutral o formal (usted).",
+          "title": "Formality"
+        },
+        "emojis": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Si el asistente puede usar emojis.",
+          "title": "Emojis"
+        },
+        "instructions": {
+          "anyOf": [
+            {
+              "items": {
+                "maxLength": 300,
+                "type": "string"
+              },
+              "maxItems": 10,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Indicaciones de comunicación del negocio.",
+          "title": "Instructions"
+        },
+        "length": {
+          "default": "short",
+          "description": "short (cortas), medium (equilibradas) o long (detalladas).",
+          "enum": [
+            "short",
+            "medium",
+            "long"
+          ],
+          "title": "Length",
+          "type": "string",
+          "x-engine": "conectado"
+        },
+        "max_words": {
+          "anyOf": [
+            {
+              "minimum": 20,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Ajuste dentro del rango de la opción elegida. Si falta, el límite de la opción.",
+          "title": "Max Words",
+          "x-audience": "avanzado",
+          "x-engine": "conectado"
+        }
+      },
+      "title": "ResponseStyle",
+      "type": "object"
+    },
+    "Restrictions": {
+      "additionalProperties": false,
+      "properties": {
+        "disallowed_channels": {
+          "description": "Canales por los que el negocio no atiende.",
+          "items": {
+            "type": "string"
+          },
+          "title": "Disallowed Channels",
+          "type": "array"
+        },
+        "disallowed_actions": {
+          "description": "Acciones que el negocio no realiza (p. ej. llamadas).",
+          "items": {
+            "type": "string"
+          },
+          "title": "Disallowed Actions",
+          "type": "array"
+        },
+        "forbidden_claims": {
+          "anyOf": [
+            {
+              "items": {
+                "maxLength": 300,
+                "type": "string"
+              },
+              "maxItems": 10,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Promesas o afirmaciones que el asistente nunca debe hacer (resultados garantizados, diagnósticos...).",
+          "title": "Forbidden Claims"
+        }
+      },
+      "title": "Restrictions",
+      "type": "object"
+    },
+    "Sales": {
+      "additionalProperties": false,
+      "description": "Estrategia comercial.\n\nBásica (el cliente la escribe en lenguaje natural): motivos de compra, problemas e impactos,\nbeneficios, argumentos, preguntas, recomendaciones e instrucciones. Avanzada (opcional): el resto.",
+      "properties": {
+        "buying_motivation": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/BuyingMotivation"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Motivo principal y secundario de compra.",
+          "x-engine": "conectado"
+        },
+        "motivation_drivers": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/MotivationDriver"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Qué significa cada motivo de compra y cómo reconocerlo.",
+          "title": "Motivation Drivers",
+          "x-audience": "avanzado"
+        },
+        "customer_problems": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/CustomerProblem"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Problemas del cliente que el negocio resuelve.",
+          "title": "Customer Problems"
+        },
+        "pain_points": {
+          "anyOf": [
+            {
+              "items": {
+                "maxLength": 300,
+                "type": "string"
+              },
+              "maxItems": 10,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Problemas del cliente en sus palabras.",
+          "title": "Pain Points"
+        },
+        "use_cases": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/UseCase"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Casos de uso típicos.",
+          "title": "Use Cases",
+          "x-audience": "avanzado"
+        },
+        "benefits": {
+          "anyOf": [
+            {
+              "items": {
+                "maxLength": 300,
+                "type": "string"
+              },
+              "maxItems": 10,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Resultados que obtiene el cliente.",
+          "title": "Benefits"
+        },
+        "arguments": {
+          "anyOf": [
+            {
+              "items": {
+                "maxLength": 300,
+                "type": "string"
+              },
+              "maxItems": 10,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Argumentos de venta.",
+          "title": "Arguments"
+        },
+        "solution": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Solution"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Cómo resuelve el negocio cada problema y qué pasos sigue el cliente."
+        },
+        "angles": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/SalesAngle"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Ángulos de venta por motivo de compra.",
+          "title": "Angles",
+          "x-audience": "avanzado"
+        },
+        "offer_mix": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/OfferMix"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Ofertas principales, mejoras y complementos.",
+          "x-audience": "avanzado"
+        },
+        "offer_presentation": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/OfferPresentation"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Cómo presentar las opciones.",
+          "x-audience": "avanzado"
+        },
+        "recommendation_rules": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/RecommendationRule"
+              },
+              "maxItems": 10,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Qué recomendar en cada situación.",
+          "title": "Recommendation Rules"
+        },
+        "discovery": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Discovery"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "qualification": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Qualification"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Cómo calificar al cliente.",
+          "x-audience": "avanzado"
+        },
+        "support": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SupportPolicy"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Cómo atender preguntas de información.",
+          "x-audience": "avanzado"
+        },
+        "conversation_flow": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ConversationFlow"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Etapas de la conversación (identificadores internos del motor).",
+          "x-audience": "operador"
+        },
+        "objections": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/ObjectionHandling"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Manejo de objeciones (precio y otras).",
+          "title": "Objections",
+          "x-audience": "avanzado"
+        },
+        "closing": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Closing"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Estrategia y reglas de cierre.",
+          "x-audience": "avanzado"
+        },
+        "instructions": {
+          "anyOf": [
+            {
+              "items": {
+                "maxLength": 300,
+                "type": "string"
+              },
+              "maxItems": 10,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Instrucciones de venta del negocio.",
+          "title": "Instructions"
+        }
+      },
+      "title": "Sales",
+      "type": "object"
+    },
+    "SalesAngle": {
+      "additionalProperties": false,
+      "properties": {
+        "motivation": {
+          "description": "Motivo de compra de `motivation_drivers` al que responde.",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$",
+          "title": "Motivation",
+          "type": "string"
+        },
+        "signals": {
+          "description": "Cuándo usar el ángulo: frases del cliente.",
+          "items": {
+            "type": "string"
+          },
+          "title": "Signals",
+          "type": "array"
+        },
+        "messages": {
+          "description": "Qué decir con este ángulo.",
+          "items": {
+            "type": "string"
+          },
+          "title": "Messages",
+          "type": "array"
+        }
+      },
+      "required": [
+        "motivation"
+      ],
+      "title": "SalesAngle",
+      "type": "object"
+    },
+    "Scheduling": {
+      "additionalProperties": false,
+      "properties": {
+        "required": {
+          "description": "Si el servicio requiere agendar una cita o reserva.",
+          "title": "Required",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "required"
+      ],
+      "title": "Scheduling",
+      "type": "object"
+    },
+    "SecretRef": {
+      "additionalProperties": false,
+      "description": "Referencia a un dato sensible guardado fuera del contrato (`<origen>:<clave>`).",
+      "properties": {
+        "secret_ref": {
+          "pattern": "^[a-z_]+:.+$",
+          "title": "Secret Ref",
+          "type": "string"
+        }
+      },
+      "required": [
+        "secret_ref"
+      ],
+      "title": "SecretRef",
+      "type": "object"
+    },
+    "Shipping": {
+      "additionalProperties": false,
+      "properties": {
+        "available": {
+          "title": "Available",
+          "type": "boolean"
+        },
+        "scope": {
+          "anyOf": [
+            {
+              "enum": [
+                "local",
+                "nacional",
+                "internacional"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Scope"
+        },
+        "providers": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Providers",
+          "type": "array"
+        },
+        "cost": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Cost"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "time": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TimeWindow"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "available"
+      ],
+      "title": "Shipping",
+      "type": "object"
+    },
+    "Solution": {
+      "additionalProperties": false,
+      "properties": {
+        "mapping": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/SolutionMapping"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Qué parte de la solución atiende cada problema.",
+          "title": "Mapping",
+          "x-audience": "avanzado"
+        },
+        "process_steps": {
+          "anyOf": [
+            {
+              "items": {
+                "maxLength": 300,
+                "type": "string"
+              },
+              "maxItems": 10,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Pasos que sigue el cliente para comprar o recibir el servicio.",
+          "title": "Process Steps"
+        },
+        "requirements": {
+          "anyOf": [
+            {
+              "items": {
+                "maxLength": 300,
+                "type": "string"
+              },
+              "maxItems": 10,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Requisitos que debe cumplir el cliente.",
+          "title": "Requirements"
+        }
+      },
+      "title": "Solution",
+      "type": "object"
+    },
+    "SolutionMapping": {
+      "additionalProperties": false,
+      "properties": {
+        "problem": {
+          "description": "Id de un problema de `customer_problems`.",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$",
+          "title": "Problem",
+          "type": "string"
+        },
+        "solutions": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Solutions",
+          "type": "array"
+        }
+      },
+      "required": [
+        "problem",
+        "solutions"
+      ],
+      "title": "SolutionMapping",
+      "type": "object"
+    },
+    "SupportPolicy": {
+      "additionalProperties": false,
+      "properties": {
+        "explain_first": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Ante una pregunta, explicar antes de vender.",
+          "title": "Explain First"
+        },
+        "sell_after": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Después de explicar, llevar la conversación a la venta.",
+          "title": "Sell After"
+        },
+        "rules": {
+          "anyOf": [
+            {
+              "items": {
+                "maxLength": 300,
+                "type": "string"
+              },
+              "maxItems": 10,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Reglas de atención del negocio.",
+          "title": "Rules"
+        }
+      },
+      "title": "SupportPolicy",
+      "type": "object"
+    },
+    "TargetCustomer": {
+      "additionalProperties": false,
+      "properties": {
+        "segment": {
+          "description": "Tipo de cliente al que se dirige el negocio.",
+          "title": "Segment",
+          "type": "string"
+        },
+        "company_size": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Company Size"
+        },
+        "maturity": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Situación típica del cliente al llegar.",
+          "title": "Maturity"
+        },
+        "roles": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Quién suele escribir o decidir la compra.",
+          "title": "Roles"
+        }
+      },
+      "required": [
+        "segment"
+      ],
+      "title": "TargetCustomer",
+      "type": "object"
+    },
+    "Terms": {
+      "additionalProperties": false,
+      "description": "Condiciones comerciales y políticas del negocio.",
+      "properties": {
+        "conditions": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Condiciones reales de compra.",
+          "title": "Conditions",
+          "x-engine": "conectado"
+        },
+        "price_framing": {
+          "anyOf": [
+            {
+              "enum": [
+                "directo",
+                "comparativo"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Cómo responder si el cliente duda del precio.",
+          "title": "Price Framing",
+          "x-audience": "avanzado",
+          "x-engine": "conectado"
+        },
+        "roi_break_even_sales": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Ventas al mes con las que el cliente recupera la inversión.",
+          "title": "Roi Break Even Sales",
+          "x-audience": "avanzado",
+          "x-engine": "conectado"
+        },
+        "roi_break_even_bookings": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Reservas con las que el cliente recupera la inversión.",
+          "title": "Roi Break Even Bookings",
+          "x-audience": "avanzado"
+        },
+        "roi_hints": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Argumentos de retorno de la inversión.",
+          "title": "Roi Hints",
+          "x-audience": "avanzado",
+          "x-engine": "conectado"
+        },
+        "price_note": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Aclaración sobre cómo se confirma el precio.",
+          "title": "Price Note"
+        },
+        "prices_include_taxes": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Si los precios publicados ya incluyen los impuestos (IVA).",
+          "title": "Prices Include Taxes"
+        },
+        "promotions": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/Promotion"
+              },
+              "maxItems": 10,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Únicas promociones o descuentos que el asistente puede ofrecer.",
+          "title": "Promotions"
+        },
+        "financing": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Financing"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Financiación disponible."
+        },
+        "policies": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Policies"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Garantía, devoluciones y cancelaciones."
+        }
+      },
+      "title": "Terms",
+      "type": "object"
+    },
+    "TimeWindow": {
+      "additionalProperties": false,
+      "properties": {
+        "min": {
+          "default": "",
+          "description": "Tiempo mínimo, en texto (p. ej. 30 min, 2 dias).",
+          "title": "Min",
+          "type": "string"
+        },
+        "max": {
+          "default": "",
+          "title": "Max",
+          "type": "string"
+        }
+      },
+      "title": "TimeWindow",
+      "type": "object"
+    },
+    "TransferMethod": {
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "enum": [
+            "nequi",
+            "daviplata",
+            "bank",
+            "breb"
+          ],
+          "title": "Type",
+          "type": "string"
+        },
+        "number": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SecretRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "bank": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Bank"
+        },
+        "account_type": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Account Type"
+        },
+        "account_number": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SecretRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "reference": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SecretRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "title": "TransferMethod",
+      "type": "object"
+    },
+    "UseCase": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string",
+          "x-engine": "conectado"
+        },
+        "signals": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Signals",
+          "type": "array"
+        },
+        "approach": {
+          "description": "Enfoque de la solución para este caso.",
+          "title": "Approach",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "approach"
+      ],
+      "title": "UseCase",
+      "type": "object"
+    },
+    "Variant": {
+      "additionalProperties": false,
+      "properties": {
+        "sku": {
+          "title": "Sku",
+          "type": "string"
+        },
+        "attributes": {
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer"
+              }
+            ]
+          },
+          "description": "Talla, color u otras características.",
+          "title": "Attributes",
+          "type": "object"
+        },
+        "stock": {
+          "minimum": 0,
+          "title": "Stock",
+          "type": "integer"
+        },
+        "prices": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/ItemPrice"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Precio de la variante, solo si difiere del precio del producto.",
+          "title": "Prices"
+        }
+      },
+      "required": [
+        "sku",
+        "stock"
+      ],
+      "title": "Variant",
+      "type": "object"
+    },
+    "WelcomeMessage": {
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "title": "Enabled",
+          "type": "boolean"
+        },
+        "text": {
+          "default": "",
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "enabled"
+      ],
+      "title": "WelcomeMessage",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string",
+      "x-audience": "sistema",
+      "x-engine": "conectado"
+    },
+    "tenant_slug": {
+      "pattern": "^[a-z0-9][a-z0-9_]*$",
+      "title": "Tenant Slug",
+      "type": "string",
+      "x-audience": "sistema",
+      "x-engine": "conectado"
+    },
+    "identity": {
+      "$ref": "#/$defs/Identity",
+      "x-audience": "cliente"
+    },
+    "offer": {
+      "$ref": "#/$defs/Offer",
+      "x-audience": "cliente"
+    },
+    "terms": {
+      "$ref": "#/$defs/Terms",
+      "x-audience": "cliente"
+    },
+    "payments": {
+      "items": {
+        "$ref": "#/$defs/PaymentProfile"
+      },
+      "title": "Payments",
+      "type": "array",
+      "x-audience": "cliente"
+    },
+    "sales": {
+      "$ref": "#/$defs/Sales",
+      "x-audience": "cliente"
+    },
+    "capabilities": {
+      "$ref": "#/$defs/Capabilities",
+      "x-audience": "cliente"
+    },
+    "messages": {
+      "$ref": "#/$defs/Messages",
+      "x-audience": "cliente"
+    },
+    "response_style": {
+      "$ref": "#/$defs/ResponseStyle",
+      "x-audience": "cliente"
+    },
+    "knowledge": {
+      "$ref": "#/$defs/Knowledge",
+      "x-audience": "cliente"
+    },
+    "fulfillment": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Fulfillment"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "x-audience": "cliente"
+    },
+    "inventory": {
+      "$ref": "#/$defs/Inventory",
+      "x-audience": "cliente"
+    },
+    "engine": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/EngineSettings"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Ajustes internos del motor. Si falta, se deriva de la oferta (catálogo o planes) con los valores por defecto.",
+      "x-audience": "operador"
+    },
+    "compatibility": {
+      "additionalProperties": true,
+      "description": "Datos de los YAML antiguos sin lugar en el contrato, conservados con su ruta original.",
+      "title": "Compatibility",
+      "type": "object",
+      "x-audience": "sistema",
+      "x-engine": "conservado"
+    }
+  },
+  "required": [
+    "tenant_slug",
+    "identity",
+    "offer",
+    "capabilities",
+    "messages"
+  ],
+  "title": "BusinessConfig",
+  "type": "object"
+}

@@ -15,6 +15,7 @@ const LAYERS: [prefix: string, layer: string][] = [
   ["/src/components/brand/", "brand"],
   ["/src/components/config/", "config-ui"],
   ["/src/lib/", "lib"],
+  ["/src/contracts/", "contracts"],
   ["/src/domain/", "domain"],
   ["/src/repositories/", "repositories"],
   ["/src/infrastructure/", "infrastructure"],
@@ -30,10 +31,11 @@ const LAYERS: [prefix: string, layer: string][] = [
 /** Capas que cada capa puede importar (además de sí misma). */
 const ALLOWED: Record<string, string[]> = {
   lib: [],
-  domain: ["lib"],
+  contracts: [],
+  domain: ["contracts", "lib"],
   repositories: ["domain", "lib"],
   infrastructure: ["repositories", "domain", "lib"],
-  adapters: ["domain", "lib"],
+  adapters: ["contracts", "domain", "lib"],
   ui: ["lib"],
   brand: [],
   "config-ui": ["ui", "domain", "lib", "navigation"],

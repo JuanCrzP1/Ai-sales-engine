@@ -113,6 +113,7 @@ El mismo motor puede operar en:
 - [Quickstart](docs/quickstart.md)
 - [Arquitectura](docs/architecture.md)
 - [Tenants](docs/tenants.md)
+- [Contrato de configuración](docs/business-config.md)
 - [Operación](docs/operations.md)
 - [Producto](docs/product.md)
 

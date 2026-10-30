@@ -471,12 +471,6 @@
   color: var(--color-warning);
 }
 
-.stored-note {
-  font-size: var(--text-xs);
-  color: var(--color-text-subtle);
-  font-style: italic;
-}
-
 /* Botones */
 .button {
   display: inline-flex;
@@ -844,6 +838,21 @@
 .list-editor__add {
   display: flex;
   gap: var(--space-2);
+}
+
+/* Pregunta frecuente editable */
+.faq-entry {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+}
+
+.faq-entry > button {
+  align-self: flex-start;
 }
 
 /* Indicador de estado */
