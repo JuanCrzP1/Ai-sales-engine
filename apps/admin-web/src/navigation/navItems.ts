@@ -2,21 +2,25 @@ import { CONFIG_SECTIONS, type ConfigSectionId } from "../domain/sections";
 
 export interface NavItem {
   key: "home" | ConfigSectionId | "review";
+  /** Ruta dentro del espacio de trabajo del negocio. */
   path: string;
   title: string;
   section?: ConfigSectionId;
 }
 
 const SECTION_PATHS: Record<ConfigSectionId, string> = {
-  business: "/negocio",
-  catalog: "/productos",
-  payments: "/pagos",
-  assistant: "/atencion",
-  messages: "/mensajes",
+  business: "negocio",
+  catalog: "productos",
+  payments: "pagos",
+  assistant: "atencion",
+  messages: "mensajes",
 };
 
-export const HOME_ITEM: NavItem = { key: "home", path: "/", title: "Inicio" };
-export const REVIEW_ITEM: NavItem = { key: "review", path: "/revision", title: "Revisión" };
+/** Lista de negocios: la entrada del panel. */
+export const BUSINESSES_PATH = "/";
+
+export const HOME_ITEM: NavItem = { key: "home", path: "", title: "Inicio" };
+export const REVIEW_ITEM: NavItem = { key: "review", path: "revision", title: "Revisión y publicación" };
 
 export const SECTION_ITEMS: NavItem[] = CONFIG_SECTIONS.map((section) => ({
   key: section.id,
@@ -30,6 +34,12 @@ export const FLOW_ITEMS: NavItem[] = [HOME_ITEM, ...SECTION_ITEMS, REVIEW_ITEM];
 
 export function sectionPath(id: ConfigSectionId): string {
   return SECTION_PATHS[id];
+}
+
+/** Ruta completa dentro del espacio de trabajo de un negocio. */
+export function workspacePath(slug: string, path = ""): string {
+  const base = `/negocios/${encodeURIComponent(slug)}`;
+  return path ? `${base}/${path}` : base;
 }
 
 /** Etiqueta del paso en el recorrido: "Paso N" para las secciones y "Último paso" para la revisión. */

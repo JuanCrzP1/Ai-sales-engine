@@ -2,7 +2,7 @@
 export_business_config_schema.py
 
 Genera el JSON Schema del contrato global desde los modelos Pydantic
-(`project/app/domain/business_config/contract.py`), que son su única fuente.
+(`project/app/domain/business_config/contract/`), que son su única fuente.
 
 Usage:
   python scripts/export_business_config_schema.py          # escribe el esquema
@@ -21,16 +21,11 @@ SCHEMA_PATH = PROJECT_DIR / "config" / "contracts" / "v1" / "business-config.sch
 if str(PROJECT_DIR) not in sys.path:
     sys.path.insert(0, str(PROJECT_DIR))
 
-from app.domain.business_config.contract import SCHEMA_VERSION, BusinessConfig  # noqa: E402
+from app.domain.business_config.contract import business_config_json_schema  # noqa: E402
 
 
 def render_schema() -> str:
-    schema = {
-        "$schema": "https://json-schema.org/draft/2020-12/schema",
-        "$id": f"https://ai-sales-engine/contracts/business-config/v{SCHEMA_VERSION}",
-        **BusinessConfig.model_json_schema(),
-    }
-    return json.dumps(schema, indent=2, ensure_ascii=False) + "\n"
+    return json.dumps(business_config_json_schema(), indent=2, ensure_ascii=False) + "\n"
 
 
 def main() -> int:

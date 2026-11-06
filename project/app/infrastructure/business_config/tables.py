@@ -36,11 +36,12 @@ def _now() -> datetime:
 
 metadata = MetaData()
 
-# Tabla existente del esquema del motor: se declara solo para la clave foránea y para resolver el slug.
+# Tabla del esquema del motor (`project/docs/postgresql_schema.sql`): se declaran sus columnas obligatorias.
 tenants = Table(
     "tenants",
     metadata,
     Column("id", Uuid, primary_key=True),
+    Column("name", Text, nullable=False),
     Column("slug", Text, nullable=False, unique=True),
 )
 
@@ -79,5 +80,14 @@ business_config_secrets = Table(
     Column("ref_key", Text, primary_key=True),
     Column("ciphertext", Text, nullable=False),
     Column("created_at", DateTime(timezone=True), nullable=False, default=_now),
+    Column("updated_at", DateTime(timezone=True), nullable=False, default=_now),
+)
+
+# Ajustes técnicos vigentes de cada negocio (`EngineSettings`): fuera del documento comercial y sin versiones.
+business_engine_settings = Table(
+    "business_engine_settings",
+    metadata,
+    Column("tenant_id", Uuid, ForeignKey("tenants.id", ondelete="CASCADE"), primary_key=True),
+    Column("document", JSON().with_variant(JSONB(), "postgresql"), nullable=False),
     Column("updated_at", DateTime(timezone=True), nullable=False, default=_now),
 )

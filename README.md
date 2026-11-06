@@ -29,23 +29,11 @@ cd project
 uvicorn app.main:app --reload
 ```
 
-Simular interacción:
+`POST /api/v1/simulate` está apagado por defecto y responde 404. No se puede usar hasta que exista la autenticación definitiva, pendiente de la fase de nube: ver [docs/operations.md](docs/operations.md).
 
-```text
-POST /api/v1/simulate
-```
+Panel de administración local, para gestionar los negocios sin editar YAML: `run_local.bat` o `./run_local.sh` lo arrancan junto con el resto del sistema y abren <http://127.0.0.1:5173>. Solo atiende en este equipo, y su clave de cifrado se crea sola fuera del repositorio: ver [apps/admin-web/README.md](apps/admin-web/README.md). Lo que publica todavía no llega a los clientes, porque el motor sigue usando sus YAML.
 
-Header:
-
-```text
-X-Tenant-Slug: asesor_ai_prod
-```
-
-Payload:
-
-```json
-{"user_message": "mensaje del cliente", "user_id": "demo_1"}
-```
+Para trabajar con los mismos datos desde Windows y macOS: [docs/operations.md](docs/operations.md), «Trabajar Desde Windows Y macOS». `secrets.local.env` lleva los secretos de un equipo a otro; nunca se sube a GitHub.
 
 ---
 
@@ -114,7 +102,9 @@ El mismo motor puede operar en:
 - [Arquitectura](docs/architecture.md)
 - [Tenants](docs/tenants.md)
 - [Contrato de configuración](docs/business-config.md)
+- [Panel de administración](apps/admin-web/README.md)
 - [Operación](docs/operations.md)
+- [Auditoría final de la Fase 2](docs/FASE_2_AUDITORIA_FINAL.md)
 - [Producto](docs/product.md)
 
 ---

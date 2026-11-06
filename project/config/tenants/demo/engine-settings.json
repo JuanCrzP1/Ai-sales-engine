@@ -1,0 +1,24 @@
+{
+  "schema_version": "1.0",
+  "tenant_slug": "demo",
+  "flags": {
+    "ai_first": true,
+    "allow_fallback": false,
+    "log_level": "info"
+  },
+  "legacy": {
+    "config": {
+      "initial_message": {
+        "recency": {
+          "active_minutes": 15,
+          "reset_hours": 4
+        }
+      },
+      "capabilities": {
+        "channels": [
+          "whatsapp"
+        ]
+      }
+    }
+  }
+}

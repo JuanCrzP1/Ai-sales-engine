@@ -101,7 +101,6 @@
       "las tortas se encargan con 24 horas de anticipación"
     ],
     "price_framing": "directo",
-    "prices_include_taxes": true,
     "promotions": [
       {
         "name": "Lunes de pan",
@@ -122,7 +121,7 @@
         {
           "type": "nequi",
           "number": {
-            "secret_ref": "legacy_yaml:pricing.catalog.payment.transfer.methods.0.number"
+            "secret_ref": "secret_store:principal.transfer.0.number"
           }
         }
       ]
@@ -185,19 +184,11 @@
         "nombre",
         "telefono",
         "direccion"
-      ],
-      "consent_notice": "Usamos tus datos solo para gestionar tu pedido. Puedes pedir que los borremos cuando quieras."
+      ]
     },
-    "human_handoff_when": [
-      "pide una torta para más de 30 personas",
-      "reporta un problema con un pedido"
-    ],
     "restrictions": {
       "disallowed_channels": [],
-      "disallowed_actions": [],
-      "forbidden_claims": [
-        "productos sin gluten"
-      ]
+      "disallowed_actions": []
     }
   },
   "messages": {
@@ -275,6 +266,5 @@
       }
     ],
     "track_stock": true
-  },
-  "compatibility": {}
+  }
 }

@@ -1,0 +1,25 @@
+{
+  "schema_version": "1.0",
+  "tenant_slug": "restaurant",
+  "conversation": {
+    "active_window_minutes": 15,
+    "reset_hours": 4
+  },
+  "flags": {
+    "ai_first": true,
+    "allow_fallback": false,
+    "log_level": "info"
+  },
+  "legacy": {
+    "business": {
+      "type": "restaurant"
+    },
+    "config": {
+      "capabilities": {
+        "channels": [
+          "whatsapp"
+        ]
+      }
+    }
+  }
+}

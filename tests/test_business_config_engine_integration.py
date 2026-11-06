@@ -277,6 +277,30 @@ def test_disabled_transfers_are_not_delivered(monkeypatch, tmp_path):
     assert "nequi usando el número" not in disabled
 
 
+def test_inactive_payment_methods_are_not_delivered(monkeypatch, tmp_path):
+    def _pause_nequi(document):
+        for profile in document["payments"]:
+            for method in profile["transfer_methods"]:
+                if method["type"] == "nequi":
+                    method["enabled"] = False
+
+    def _pause_link(document):
+        for profile in document["payments"]:
+            profile["link_enabled"] = False
+
+    by_nequi = [("Quiero pagar por nequi", reply("Listo.", "buy", payment_method="nequi"))]
+    (_, active), = run_with_document(monkeypatch, tmp_path / "activa", "saas", lambda d: None, by_nequi)
+    (_, paused), = run_with_document(monkeypatch, tmp_path / "pausada", "saas", _pause_nequi, by_nequi)
+    assert "nequi usando el número" in active
+    assert "nequi usando el número" not in paused
+
+    by_link = [("Quiero pagar por link", reply("Listo.", "buy", payment_method="link"))]
+    (_, active), = run_with_document(monkeypatch, tmp_path / "enlace_activo", "saas", lambda d: None, by_link)
+    (_, paused), = run_with_document(monkeypatch, tmp_path / "enlace_pausado", "saas", _pause_link, by_link)
+    assert "Puedes pagar aquí" in active
+    assert "Puedes pagar aquí" not in paused
+
+
 # ---------------------------------------------------------------------------
 # Capacidades, mensajes y ajustes del motor
 # ---------------------------------------------------------------------------
@@ -323,10 +347,10 @@ def test_payment_confirmed_message_reaches_the_post_payment_prompt(monkeypatch, 
 
 def test_conversation_windows_drive_the_conversation_state(monkeypatch, tmp_path):
     service = copy_tenant(tmp_path, "saas")
-    path = BusinessConfigStore(service.tenants_root).path_for("saas")
-    document = json.loads(path.read_text(encoding="utf-8"))
-    document["engine"]["conversation"] = {"active_window_minutes": 60, "reset_hours": 1}
-    path.write_text(json.dumps(document, ensure_ascii=False), encoding="utf-8")
+    path = BusinessConfigStore(service.tenants_root).engine_settings_path_for("saas")
+    settings = json.loads(path.read_text(encoding="utf-8"))
+    settings["conversation"] = {"active_window_minutes": 60, "reset_hours": 1}
+    path.write_text(json.dumps(settings, ensure_ascii=False), encoding="utf-8")
     monkeypatch.setenv(loader.CONTRACT_TENANTS_ENV, "saas")
     custom = load_tenant_runtime_yaml("saas", config_service=service)["config"]
     default = load_tenant_runtime_yaml("saas")["config"]
@@ -383,10 +407,12 @@ CONNECTED_CASES = {
                           "una venta paga el mes.", 1),
     "acciones": ("saas", lambda d: d["capabilities"].update(actions_primary=["cerrar_venta"], actions_support=["seguimiento"]),
                  "Acciones disponibles: cerrar_venta, seguimiento", 0),
+    "datos_propios_del_negocio": ("saas", lambda d: d["capabilities"]["data_collection"].update(fields=["cedula_de_prueba"]),
+                                  "Campos definidos para pedir al cliente:\ncedula_de_prueba", 0),
     "canales": ("saas", lambda d: d["capabilities"].update(service_channels=["whatsapp", "instagram"]),
                 "CANALES DE ATENCION (business_channels): whatsapp, instagram", 0),
     "canales_producto": ("saas", lambda d: d["capabilities"].update(product_channels=["telegram"]), "CANALES DEL SISTEMA (system_channels): telegram", 0),
-    "modo_catalogo": ("restaurant", lambda d: d["engine"].update(features={"pricing_enabled": True, "catalog_mode": False}),
+    "modo_catalogo": ("restaurant", lambda d: d.update(features={"pricing_enabled": True, "catalog_mode": False}),
                       "Tiene opciones de servicio disponibles con pricing definido.", 0),
 }
 
@@ -429,7 +455,9 @@ CONNECTED_EVIDENCE: dict[str, str] = {
     "terms.roi_hints": "test_connected_fields_change_the_prompt",
     "payments[].id": "test_payment_methods_reach_the_customer",
     "payments[].link": "test_payment_methods_reach_the_customer",
+    "payments[].link_enabled": "test_inactive_payment_methods_are_not_delivered",
     "payments[].transfer_enabled": "test_disabled_transfers_are_not_delivered",
+    "payments[].transfer_methods[].enabled": "test_inactive_payment_methods_are_not_delivered",
     "payments[].transfer_methods[].type": "test_payment_methods_reach_the_customer",
     "payments[].transfer_methods[].number": "test_payment_methods_reach_the_customer",
     "payments[].transfer_methods[].bank": "test_payment_methods_reach_the_customer",
@@ -456,10 +484,8 @@ CONNECTED_EVIDENCE: dict[str, str] = {
     "messages.payment_confirmed": "test_payment_confirmed_message_reaches_the_post_payment_prompt",
     "response_style.length": "test_each_response_length_option_controls_prompt_and_truncation",
     "response_style.max_words": "test_changing_the_contract_changes_response_length",
-    "engine.conversation.active_window_minutes": "test_conversation_windows_drive_the_conversation_state",
-    "engine.conversation.reset_hours": "test_conversation_windows_drive_the_conversation_state",
-    "engine.features.catalog_mode": "test_connected_fields_change_the_prompt",
-    "engine.features.business_model": "test_connected_fields_change_the_prompt",
+    "features.catalog_mode": "test_connected_fields_change_the_prompt",
+    "features.business_model": "test_connected_fields_change_the_prompt",
 }
 
 

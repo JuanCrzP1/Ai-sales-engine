@@ -1,8 +1,9 @@
-import { Route, Routes } from "react-router-dom";
+import { Route } from "react-router-dom";
 import { AssistantPage } from "../features/assistant/AssistantPage";
 import { AuthLayout } from "../features/auth/AuthLayout";
 import { SignInPage } from "../features/auth/SignInPage";
 import { SignUpPage } from "../features/auth/SignUpPage";
+import { BusinessesPage } from "../features/businesses/BusinessesPage";
 import { BusinessPage } from "../features/business/BusinessPage";
 import { CatalogPage } from "../features/catalog/CatalogPage";
 import { HomePage } from "../features/home/HomePage";
@@ -12,38 +13,41 @@ import { ProfilePage } from "../features/profile/ProfilePage";
 import { ReviewPage } from "../features/review/ReviewPage";
 import { AppShell } from "../layout/AppShell";
 import { ACCOUNT_PATHS } from "../navigation/accountPaths";
-import { HOME_ITEM, REVIEW_ITEM, sectionPath } from "../navigation/navItems";
-import { AccountWorkspace } from "./AccountWorkspace";
+import { BUSINESSES_PATH, REVIEW_ITEM, sectionPath } from "../navigation/navItems";
+import { BusinessWorkspace } from "./BusinessWorkspace";
 import { GuestOnly } from "./GuestOnly";
 import { NotFoundPage } from "./NotFoundPage";
 import { RequireAuth } from "./RequireAuth";
 
-/** Tabla de rutas: pantallas de cuenta (públicas) y panel (requiere sesión). */
-export function AppRoutes() {
-  return (
-    <Routes>
-      <Route element={<GuestOnly />}>
-        <Route element={<AuthLayout />}>
-          <Route path={ACCOUNT_PATHS.signIn} element={<SignInPage />} />
-          <Route path={ACCOUNT_PATHS.signUp} element={<SignUpPage />} />
-        </Route>
+/**
+ * Tabla de rutas: lista de negocios y espacio de trabajo de cada uno. Las pantallas de cuenta y las guardas de sesión
+ * siguen conectadas al contrato `AuthService`: con el acceso local nunca se muestran, porque siempre hay sesión.
+ */
+export const appRoutes = (
+  <>
+    <Route element={<GuestOnly />}>
+      <Route element={<AuthLayout />}>
+        <Route path={ACCOUNT_PATHS.signIn} element={<SignInPage />} />
+        <Route path={ACCOUNT_PATHS.signUp} element={<SignUpPage />} />
       </Route>
+    </Route>
 
-      <Route element={<RequireAuth />}>
-        <Route element={<AccountWorkspace />}>
-          <Route element={<AppShell />}>
-            <Route path={HOME_ITEM.path} element={<HomePage />} />
-            <Route path={sectionPath("business")} element={<BusinessPage />} />
-            <Route path={sectionPath("catalog")} element={<CatalogPage />} />
-            <Route path={sectionPath("payments")} element={<PaymentsPage />} />
-            <Route path={sectionPath("assistant")} element={<AssistantPage />} />
-            <Route path={sectionPath("messages")} element={<MessagesPage />} />
-            <Route path={REVIEW_ITEM.path} element={<ReviewPage />} />
-            <Route path={ACCOUNT_PATHS.profile} element={<ProfilePage />} />
-            <Route path="*" element={<NotFoundPage />} />
-          </Route>
+    <Route element={<RequireAuth />}>
+      <Route path={BUSINESSES_PATH} element={<BusinessesPage />} />
+      <Route path={ACCOUNT_PATHS.profile} element={<ProfilePage />} />
+      <Route path="/negocios/:slug" element={<BusinessWorkspace />}>
+        <Route element={<AppShell />}>
+          <Route index element={<HomePage />} />
+          <Route path={sectionPath("business")} element={<BusinessPage />} />
+          <Route path={sectionPath("catalog")} element={<CatalogPage />} />
+          <Route path={sectionPath("payments")} element={<PaymentsPage />} />
+          <Route path={sectionPath("assistant")} element={<AssistantPage />} />
+          <Route path={sectionPath("messages")} element={<MessagesPage />} />
+          <Route path={REVIEW_ITEM.path} element={<ReviewPage />} />
+          <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Route>
-    </Routes>
-  );
-}
+      <Route path="*" element={<NotFoundPage />} />
+    </Route>
+  </>
+);

@@ -2,12 +2,13 @@
 migrate_tenants_to_contract.py
 
 Convierte los cinco YAML de cada negocio (`project/config/tenants/<slug>/`) al contrato global y
-escribe `business-config.json` en la misma carpeta, junto con un informe de importación y diagnóstico.
+escribe en la misma carpeta `business-config.json` (comercial) y `engine-settings.json` (técnico),
+junto con un informe de importación y diagnóstico.
 
 Garantías antes de escribir cada documento:
   - cumple el contrato (validación Pydantic);
-  - compilado de nuevo, reproduce exactamente las secciones YAML de origen (sin pérdida);
-  - no contiene ningún dato de pago sensible (links, números, cuentas, referencias).
+  - compilado de nuevo con sus ajustes técnicos, reproduce exactamente las secciones YAML de origen (sin pérdida);
+  - ninguno de los dos archivos contiene datos de pago sensibles (links, números, cuentas, referencias).
 
 No modifica ni elimina los YAML, no usa base de datos ni red.
 
@@ -53,12 +54,13 @@ def build() -> tuple[dict[Path, str], str, list[tuple[str, str]]]:
             result = import_legacy_sections(slug, sections)
             if compile_business_config(result.config, LegacyYamlSecretResolver(lambda s=sections: s)) != sections:
                 raise ValueError("la compilación no reproduce las secciones YAML de origen")
-            document = store.dump(result.config)
-            leaked = [value for value in payment_values(sections) if value in document]
+            document, settings = store.dump(result.config), store.dump(result.engine_settings)
+            leaked = [value for value in payment_values(sections) if value in document or value in settings]
             if leaked:
-                raise ValueError(f"el documento contiene {len(leaked)} datos de pago sensibles")
+                raise ValueError(f"los documentos contienen {len(leaked)} datos de pago sensibles")
             documents[store.path_for(slug)] = document
-            rows.append((slug, result.config.offer.model, result.typed_fields, result.compatibility_fields, result.secret_refs))
+            documents[store.engine_settings_path_for(slug)] = settings
+            rows.append((slug, result.config.offer.model, result.typed_fields, result.technical_fields, result.secret_refs))
             findings += [(slug, item.kind, item.code, item.message) for item in review(result.config)]
         except Exception as exc:
             errors.append((slug, str(exc)))
@@ -67,17 +69,18 @@ def build() -> tuple[dict[Path, str], str, list[tuple[str, str]]]:
         "# Informe de migración a BusinessConfig v1",
         "",
         "Generado por `scripts/migrate_tenants_to_contract.py`. Cada documento se validó contra el contrato,",
-        "se comprobó que compilado reproduce exactamente sus YAML de origen y que no contiene datos de pago.",
+        "se comprobó que compilado con sus ajustes técnicos reproduce exactamente sus YAML de origen y que no",
+        "contiene datos de pago.",
         "",
         f"- Negocios encontrados: {len(slugs)}",
         f"- Negocios migrados: {len(rows)}",
         f"- Errores: {len(errors)}",
         "",
-        "| Negocio | Oferta | Campos tipados | Campos en compatibilidad | Referencias a secretos |",
+        "| Negocio | Oferta | Campos comerciales | Ajustes técnicos | Referencias a secretos |",
         "|---|---|---|---|---|",
         *[f"| {slug} | {model} | {typed} | {compat} | {secrets} |" for slug, model, typed, compat, secrets in rows],
         "",
-        f"Totales: {sum(r[2] for r in rows)} campos tipados, {sum(r[3] for r in rows)} en compatibilidad, "
+        f"Totales: {sum(r[2] for r in rows)} campos comerciales, {sum(r[3] for r in rows)} ajustes técnicos, "
         f"{sum(r[4] for r in rows)} referencias a secretos.",
         "",
         "## Diagnóstico de los documentos",
@@ -108,10 +111,10 @@ def main() -> int:
         return 1 if outdated or errors else 0
     for path, text in documents.items():
         path.write_text(text, encoding="utf-8")
-        print(f"[migrated] {path.parent.name}")
+        print(f"[migrated] {path.parent.name}/{path.name}")
     REPORT_PATH.parent.mkdir(parents=True, exist_ok=True)
     REPORT_PATH.write_text(report, encoding="utf-8")
-    print(f"\nmigrados={len(documents)} errores={len(errors)} informe={REPORT_PATH.relative_to(REPO_ROOT)}")
+    print(f"\narchivos={len(documents)} errores={len(errors)} informe={REPORT_PATH.relative_to(REPO_ROOT)}")
     return 1 if errors else 0
 
 

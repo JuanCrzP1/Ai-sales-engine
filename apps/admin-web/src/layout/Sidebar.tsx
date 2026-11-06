@@ -1,12 +1,13 @@
 import type { ReactNode } from "react";
-import { NavLink } from "react-router-dom";
+import { Link, NavLink } from "react-router-dom";
 import { SectionStatusDot } from "../components/config/SectionStatusBadge";
+import { BrandMark } from "../components/brand/BrandMark";
 import { ProgressBar } from "../components/ui/Feedback";
 import { Icon } from "../components/ui/Icon";
-import { NAV_ICONS } from "./navIcons";
-import { HOME_ITEM, REVIEW_ITEM, SECTION_ITEMS, type NavItem } from "../navigation/navItems";
+import { BUSINESSES_PATH, HOME_ITEM, REVIEW_ITEM, SECTION_ITEMS, type NavItem } from "../navigation/navItems";
+import { useWorkspacePath } from "../navigation/useWorkspacePath";
 import { useConfig } from "../state/useConfig";
-import { BrandMark } from "../components/brand/BrandMark";
+import { NAV_ICONS } from "./navIcons";
 
 interface SidebarProps {
   id: string;
@@ -14,7 +15,7 @@ interface SidebarProps {
 }
 
 export function Sidebar({ id, open }: SidebarProps) {
-  const { progress, config } = useConfig();
+  const { progress, document } = useConfig();
 
   return (
     <aside id={id} className={`sidebar${open ? " sidebar--open" : ""}`} aria-label="Menú principal">
@@ -22,9 +23,13 @@ export function Sidebar({ id, open }: SidebarProps) {
         <BrandMark />
         <div className="sidebar__brand-text">
           <span className="sidebar__brand-name">AI Sales Engine</span>
-          <span className="sidebar__brand-sub">{config.business.name.trim() || "Tu asistente de ventas"}</span>
+          <span className="sidebar__brand-sub">{document.identity.name.trim() || "Tu asistente de ventas"}</span>
         </div>
       </div>
+
+      <Link to={BUSINESSES_PATH} className="sidebar__back">
+        ← Todos los negocios
+      </Link>
 
       <div className="sidebar__progress">
         <ProgressBar value={progress.completed} total={progress.total} label="Secciones listas" />
@@ -51,8 +56,9 @@ export function Sidebar({ id, open }: SidebarProps) {
 }
 
 function NavEntry({ item, end, children }: { item: NavItem; end?: boolean; children?: ReactNode }) {
+  const pathTo = useWorkspacePath();
   return (
-    <NavLink to={item.path} end={end} className="nav__link">
+    <NavLink to={pathTo(item.path)} end={end} className="nav__link">
       <span className="nav__icon">
         <Icon name={NAV_ICONS[item.key]} />
       </span>

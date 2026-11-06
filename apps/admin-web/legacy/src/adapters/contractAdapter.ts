@@ -25,7 +25,7 @@ import { cleanList } from "../lib/text";
  * - Los elementos no disponibles se envían con `available: false`: el motor no los ofrece, pero no se pierden.
  * - Las recomendaciones sin situación o sin un elemento de la oferta no se envían.
  * - Todos los planes (o el catálogo) usan el mismo perfil de pago del negocio.
- * - Los ajustes internos del motor (`engine`) no se envían: el motor los deriva de la oferta.
+ * - Los interruptores comerciales (`features`) no se envían: se derivan de la oferta.
  * - Las listas vacías y los textos opcionales en blanco se omiten (`null`).
  */
 export interface ContractTranslation {

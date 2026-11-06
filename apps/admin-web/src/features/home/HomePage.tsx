@@ -7,14 +7,16 @@ import { Card } from "../../components/ui/Layout";
 import { CONFIG_SECTIONS } from "../../domain/sections";
 import { splitBySeverity } from "../../domain/validation/issues";
 import { NAV_ICONS } from "../../layout/navIcons";
-import { REVIEW_ITEM, sectionPath } from "../../navigation/navItems";
 import { SectionPager } from "../../layout/SectionPager";
+import { REVIEW_ITEM, sectionPath } from "../../navigation/navItems";
+import { useWorkspacePath } from "../../navigation/useWorkspacePath";
 import { useConfig } from "../../state/useConfig";
 import { AssistantSummary } from "./AssistantSummary";
 import { HomeHero } from "./HomeHero";
 
 export function HomePage() {
-  const { progress, issues } = useConfig();
+  const { progress, issues, meta } = useConfig();
+  const pathTo = useWorkspacePath();
   const { errors, warnings } = splitBySeverity(issues);
 
   return (
@@ -22,6 +24,12 @@ export function HomePage() {
       <HomeHero />
 
       <AssistantSummary />
+
+      {meta.latestVersion === null && (
+        <Alert tone="info" title="Este negocio aún no se ha guardado">
+          <p>El servidor acepta la configuración cuando tiene lo indispensable: los datos del negocio y al menos un producto o servicio. Hasta entonces, lo que escribas está solo en esta pestaña.</p>
+        </Alert>
+      )}
 
       <Card title="Estado de la configuración">
         {errors.length > 0 ? (
@@ -31,7 +39,7 @@ export function HomePage() {
           </Alert>
         ) : (
           <Alert tone="success" title="No hay datos obligatorios pendientes">
-            {warnings.length > 0 && <p>Hay {warnings.length} avisos que conviene revisar antes de terminar.</p>}
+            {warnings.length > 0 && <p>{warnings.length === 1 ? "Hay 1 aviso que conviene revisar" : `Hay ${warnings.length} avisos que conviene revisar`} antes de publicar.</p>}
           </Alert>
         )}
       </Card>
@@ -44,12 +52,7 @@ export function HomePage() {
           {CONFIG_SECTIONS.map((section, index) => {
             const sectionProgress = progress.sections.find((item) => item.id === section.id);
             return (
-              <Link
-                key={section.id}
-                to={sectionPath(section.id)}
-                className="section-card"
-                style={{ animationDelay: `${index * 60}ms` }}
-              >
+              <Link key={section.id} to={pathTo(sectionPath(section.id))} className="section-card" style={{ animationDelay: `${index * 60}ms` }}>
                 <span className="section-card__top">
                   <span className={`section-card__icon section-card__icon--${section.id}`}>
                     <Icon name={NAV_ICONS[section.id]} size={20} />
@@ -65,14 +68,14 @@ export function HomePage() {
               </Link>
             );
           })}
-          <Link to={REVIEW_ITEM.path} className="section-card section-card--highlight">
+          <Link to={pathTo(REVIEW_ITEM.path)} className="section-card section-card--highlight">
             <span className="section-card__top">
               <span className="section-card__icon section-card__icon--review">
                 <Icon name="check" size={20} />
               </span>
             </span>
             <span className="section-card__title">{REVIEW_ITEM.title}</span>
-            <span className="section-card__summary">Comprueba todo antes de terminar y revisa los datos pendientes.</span>
+            <span className="section-card__summary">Comprueba todo, guárdalo y publícalo.</span>
             <span className="section-card__cta">
               Revisar
               <Icon name="arrowRight" size={14} />

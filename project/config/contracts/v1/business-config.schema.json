@@ -77,24 +77,6 @@
           "$ref": "#/$defs/DataCollection",
           "description": "Datos que el asistente pide al cliente."
         },
-        "human_handoff_when": {
-          "anyOf": [
-            {
-              "items": {
-                "maxLength": 300,
-                "type": "string"
-              },
-              "maxItems": 10,
-              "type": "array"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "Situaciones en las que el asistente pasa la conversación a una persona.",
-          "title": "Human Handoff When"
-        },
         "restrictions": {
           "anyOf": [
             {
@@ -105,7 +87,7 @@
             }
           ],
           "default": null,
-          "description": "Lo que el negocio no hace ni promete."
+          "description": "Lo que el negocio no hace."
         }
       },
       "required": [
@@ -258,7 +240,7 @@
       "additionalProperties": false,
       "properties": {
         "strategy": {
-          "description": "Venta directa, captación de datos, reserva o compra con pago (checkout).",
+          "description": "Tipo de cierre: direct_sale (confirmar la compra), lead_capture (capturar datos), booking (agendar) o checkout (enviar el pago).",
           "enum": [
             "direct_sale",
             "lead_capture",
@@ -408,16 +390,59 @@
     },
     "ConversationFlow": {
       "additionalProperties": false,
+      "description": "Cómo avanza la conversación comercial.",
       "properties": {
         "steps": {
-          "description": "Etapas internas del motor, en orden (p. ej. detect_pain, present_solution).",
-          "items": {
-            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$",
-            "type": "string"
-          },
-          "minItems": 1,
-          "title": "Steps",
-          "type": "array"
+          "anyOf": [
+            {
+              "items": {
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$",
+                "type": "string"
+              },
+              "minItems": 1,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Pasos que idealmente sigue la conversación, en orden.",
+          "title": "Steps"
+        },
+        "required_flow": {
+          "anyOf": [
+            {
+              "items": {
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$",
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Secuencia mínima que debe respetar la conversación.",
+          "title": "Required Flow"
+        },
+        "forbid": {
+          "anyOf": [
+            {
+              "items": {
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$",
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Lo que el asistente no debe hacer en este negocio (p. ej. responder_sin_solucion).",
+          "title": "Forbid"
         },
         "no_skip_steps": {
           "anyOf": [
@@ -429,6 +454,7 @@
             }
           ],
           "default": null,
+          "description": "true: no se saltan pasos de la conversación.",
           "title": "No Skip Steps"
         },
         "guided_process": {
@@ -441,37 +467,11 @@
             }
           ],
           "default": null,
-          "description": "Guiar al cliente paso a paso en un proceso (trámites, matrículas).",
+          "description": "true: guía al cliente paso a paso en un proceso (trámites, matrículas).",
           "title": "Guided Process"
         }
       },
-      "required": [
-        "steps"
-      ],
       "title": "ConversationFlow",
-      "type": "object"
-    },
-    "ConversationWindows": {
-      "additionalProperties": false,
-      "properties": {
-        "active_window_minutes": {
-          "description": "Minutos sin mensajes tras los que la conversación deja de estar activa.",
-          "minimum": 1,
-          "title": "Active Window Minutes",
-          "type": "integer"
-        },
-        "reset_hours": {
-          "description": "Horas sin mensajes tras las que la conversación empieza de nuevo.",
-          "minimum": 1,
-          "title": "Reset Hours",
-          "type": "integer"
-        }
-      },
-      "required": [
-        "active_window_minutes",
-        "reset_hours"
-      ],
-      "title": "ConversationWindows",
       "type": "object"
     },
     "Cost": {
@@ -637,6 +637,24 @@
           "description": "Ángulos de venta para este problema.",
           "title": "Recommended Angles",
           "x-audience": "avanzado"
+        },
+        "solutions": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "minItems": 1,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Qué parte de la solución atiende este problema.",
+          "title": "Solutions",
+          "x-audience": "avanzado"
         }
       },
       "required": [
@@ -654,32 +672,15 @@
           "x-engine": "conectado"
         },
         "fields": {
+          "description": "Datos que el asistente puede pedir al cliente; solo esos.",
           "items": {
-            "enum": [
-              "nombre",
-              "telefono",
-              "direccion",
-              "detalles"
-            ],
+            "maxLength": 300,
             "type": "string"
           },
+          "maxItems": 10,
           "title": "Fields",
           "type": "array",
           "x-engine": "conectado"
-        },
-        "consent_notice": {
-          "anyOf": [
-            {
-              "maxLength": 800,
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "Aviso de tratamiento de datos personales que el asistente comparte al pedirlos.",
-          "title": "Consent Notice"
         }
       },
       "required": [
@@ -791,19 +792,69 @@
       "title": "Discovery",
       "type": "object"
     },
-    "EngineFeatures": {
+    "Faq": {
       "additionalProperties": false,
       "properties": {
+        "question": {
+          "description": "Pregunta tal como la haría el cliente.",
+          "maxLength": 200,
+          "title": "Question",
+          "type": "string"
+        },
+        "answer": {
+          "description": "Respuesta oficial del negocio.",
+          "maxLength": 800,
+          "title": "Answer",
+          "type": "string"
+        }
+      },
+      "required": [
+        "question",
+        "answer"
+      ],
+      "title": "Faq",
+      "type": "object"
+    },
+    "Features": {
+      "additionalProperties": false,
+      "description": "Cómo vende el negocio. Los valores se conservan tal cual; las contradicciones con la oferta las señala el diagnóstico.",
+      "properties": {
         "pricing_enabled": {
-          "description": "Bandera heredada: el motor solo la consulta si no hay precios ni pagos, y el contrato siempre los exige.",
+          "description": "true: permite usar precios en la conversación.",
           "title": "Pricing Enabled",
           "type": "boolean"
         },
         "catalog_mode": {
-          "description": "Debe coincidir con `offer.model` (catalog).",
+          "description": "true: vende opciones tipo catálogo. false: vende un servicio o plan.",
           "title": "Catalog Mode",
           "type": "boolean",
           "x-engine": "conectado"
+        },
+        "multi_currency": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "true: permite manejar más de una moneda.",
+          "title": "Multi Currency"
+        },
+        "multi_plan": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "true: permite ofrecer varios planes.",
+          "title": "Multi Plan"
         },
         "business_model": {
           "anyOf": [
@@ -822,7 +873,7 @@
             }
           ],
           "default": null,
-          "description": "Modelo de negocio con el que el motor decide cuándo mostrar precios.",
+          "description": "Tipo de negocio; con él el motor decide cuándo mostrar precios.",
           "title": "Business Model",
           "x-engine": "conectado"
         }
@@ -831,53 +882,7 @@
         "pricing_enabled",
         "catalog_mode"
       ],
-      "title": "EngineFeatures",
-      "type": "object"
-    },
-    "EngineSettings": {
-      "additionalProperties": false,
-      "properties": {
-        "conversation": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/ConversationWindows"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "x-engine": "conectado"
-        },
-        "features": {
-          "$ref": "#/$defs/EngineFeatures"
-        }
-      },
-      "required": [
-        "features"
-      ],
-      "title": "EngineSettings",
-      "type": "object"
-    },
-    "Faq": {
-      "additionalProperties": false,
-      "properties": {
-        "question": {
-          "maxLength": 200,
-          "title": "Question",
-          "type": "string"
-        },
-        "answer": {
-          "maxLength": 800,
-          "title": "Answer",
-          "type": "string"
-        }
-      },
-      "required": [
-        "question",
-        "answer"
-      ],
-      "title": "Faq",
+      "title": "Features",
       "type": "object"
     },
     "Financing": {
@@ -1179,6 +1184,7 @@
       "additionalProperties": false,
       "properties": {
         "currency": {
+          "description": "Moneda (código ISO de tres letras).",
           "pattern": "^[A-Z]{3}$",
           "title": "Currency",
           "type": "string"
@@ -1192,6 +1198,7 @@
               "type": "number"
             }
           ],
+          "description": "Precio en esa moneda.",
           "ge": 0,
           "title": "Amount"
         }
@@ -1279,12 +1286,13 @@
       "properties": {
         "welcome": {
           "$ref": "#/$defs/WelcomeMessage",
-          "description": "Primer mensaje de cada conversación nueva, si está activo.",
+          "description": "Saludo de cada conversación nueva: mensaje fijo o respuesta de la IA.",
           "x-engine": "conectado"
         },
         "payment_reported": {
           "anyOf": [
             {
+              "maxLength": 800,
               "type": "string"
             },
             {
@@ -1299,6 +1307,7 @@
         "payment_confirmed": {
           "anyOf": [
             {
+              "maxLength": 800,
               "type": "string"
             },
             {
@@ -1313,6 +1322,7 @@
         "after_sale": {
           "anyOf": [
             {
+              "maxLength": 800,
               "type": "string"
             },
             {
@@ -1326,6 +1336,7 @@
         "data_request": {
           "anyOf": [
             {
+              "maxLength": 800,
               "type": "string"
             },
             {
@@ -1339,6 +1350,7 @@
         "follow_up": {
           "anyOf": [
             {
+              "maxLength": 800,
               "type": "string"
             },
             {
@@ -1352,6 +1364,7 @@
         "human_handoff": {
           "anyOf": [
             {
+              "maxLength": 800,
               "type": "string"
             },
             {
@@ -1369,8 +1382,9 @@
       "title": "Messages",
       "type": "object"
     },
-    "MotivationDriver": {
+    "Motivation": {
       "additionalProperties": false,
+      "description": "Un motivo de compra: qué significa, cómo reconocerlo y cómo venderle a quien lo tiene.",
       "properties": {
         "motivation": {
           "description": "Motivo de compra (p. ej. tiempo, dinero).",
@@ -1379,23 +1393,51 @@
           "type": "string"
         },
         "description": {
-          "title": "Description",
-          "type": "string"
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Qué significa este motivo para el cliente.",
+          "title": "Description"
         },
         "signals": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
           "description": "Frases del cliente que revelan este motivo.",
-          "items": {
-            "type": "string"
-          },
-          "title": "Signals",
-          "type": "array"
+          "title": "Signals"
+        },
+        "angle": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SalesAngle"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Ángulo de venta para este motivo."
         }
       },
       "required": [
-        "motivation",
-        "description"
+        "motivation"
       ],
-      "title": "MotivationDriver",
+      "title": "Motivation",
       "type": "object"
     },
     "ObjectionHandling": {
@@ -1629,6 +1671,7 @@
       "additionalProperties": false,
       "properties": {
         "days": {
+          "description": "Días en los que aplica este horario.",
           "items": {
             "enum": [
               "lunes",
@@ -1647,13 +1690,13 @@
           "type": "array"
         },
         "opens": {
-          "description": "Hora HH:MM (24 h).",
+          "description": "Hora de apertura (HH:MM, 24 h).",
           "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$",
           "title": "Opens",
           "type": "string"
         },
         "closes": {
-          "description": "Hora HH:MM (24 h).",
+          "description": "Hora de cierre (HH:MM, 24 h).",
           "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$",
           "title": "Closes",
           "type": "string"
@@ -1689,6 +1732,20 @@
           "default": null,
           "x-engine": "conectado"
         },
+        "link_enabled": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Si es false, el enlace se conserva pero no se ofrece.",
+          "title": "Link Enabled",
+          "x-engine": "conectado"
+        },
         "transfer_enabled": {
           "title": "Transfer Enabled",
           "type": "boolean",
@@ -1701,20 +1758,6 @@
           "title": "Transfer Methods",
           "type": "array",
           "x-engine": "conectado"
-        },
-        "instructions": {
-          "anyOf": [
-            {
-              "maxLength": 300,
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "Indicaciones para pagar, sin números ni links (esos datos son secretos).",
-          "title": "Instructions"
         }
       },
       "required": [
@@ -1925,7 +1968,7 @@
             }
           ],
           "default": null,
-          "description": "Valor del primer pago cuando difiere del mensual.",
+          "description": "Valor del primer pago, si difiere de los siguientes.",
           "title": "First Payment"
         },
         "price": {
@@ -2032,6 +2075,7 @@
       "additionalProperties": false,
       "properties": {
         "name": {
+          "description": "Nombre con el que se presenta la promoción.",
           "maxLength": 300,
           "title": "Name",
           "type": "string"
@@ -2077,26 +2121,8 @@
             }
           ],
           "default": null,
-          "description": "Si el asistente debe comprobar que la oferta encaja con el cliente.",
+          "description": "true: valida si la oferta encaja antes de empujar el cierre.",
           "title": "Detect Offer Fit"
-        },
-        "criteria": {
-          "anyOf": [
-            {
-              "items": {
-                "maxLength": 300,
-                "type": "string"
-              },
-              "maxItems": 10,
-              "type": "array"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "Criterios para considerar a alguien un cliente potencial.",
-          "title": "Criteria"
         }
       },
       "title": "Qualification",
@@ -2112,7 +2138,7 @@
           "type": "string"
         },
         "recommend": {
-          "description": "Id de un plan, producto o categoría de la oferta.",
+          "description": "Plan, producto o categoría que se recomienda. Si no está en la oferta, el diagnóstico lo señala.",
           "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$",
           "title": "Recommend",
           "type": "string"
@@ -2203,7 +2229,7 @@
             }
           ],
           "default": null,
-          "description": "Indicaciones de comunicación del negocio.",
+          "description": "Cómo debe expresarse el asistente en este negocio.",
           "title": "Instructions"
         },
         "length": {
@@ -2256,24 +2282,6 @@
           },
           "title": "Disallowed Actions",
           "type": "array"
-        },
-        "forbidden_claims": {
-          "anyOf": [
-            {
-              "items": {
-                "maxLength": 300,
-                "type": "string"
-              },
-              "maxItems": 10,
-              "type": "array"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "Promesas o afirmaciones que el asistente nunca debe hacer (resultados garantizados, diagnósticos...).",
-          "title": "Forbidden Claims"
         }
       },
       "title": "Restrictions",
@@ -2296,11 +2304,11 @@
           "description": "Motivo principal y secundario de compra.",
           "x-engine": "conectado"
         },
-        "motivation_drivers": {
+        "motivations": {
           "anyOf": [
             {
               "items": {
-                "$ref": "#/$defs/MotivationDriver"
+                "$ref": "#/$defs/Motivation"
               },
               "type": "array"
             },
@@ -2309,8 +2317,8 @@
             }
           ],
           "default": null,
-          "description": "Qué significa cada motivo de compra y cómo reconocerlo.",
-          "title": "Motivation Drivers",
+          "description": "Cada motivo de compra: qué significa, cómo reconocerlo y con qué ángulo venderle.",
+          "title": "Motivations",
           "x-audience": "avanzado"
         },
         "customer_problems": {
@@ -2410,24 +2418,7 @@
             }
           ],
           "default": null,
-          "description": "Cómo resuelve el negocio cada problema y qué pasos sigue el cliente."
-        },
-        "angles": {
-          "anyOf": [
-            {
-              "items": {
-                "$ref": "#/$defs/SalesAngle"
-              },
-              "type": "array"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "Ángulos de venta por motivo de compra.",
-          "title": "Angles",
-          "x-audience": "avanzado"
+          "description": "Qué pasos sigue el cliente y qué requisitos debe cumplir."
         },
         "offer_mix": {
           "anyOf": [
@@ -2519,8 +2510,8 @@
             }
           ],
           "default": null,
-          "description": "Etapas de la conversación (identificadores internos del motor).",
-          "x-audience": "operador"
+          "description": "Pasos de la conversación y reglas para avanzar.",
+          "x-audience": "avanzado"
         },
         "objections": {
           "anyOf": [
@@ -2567,7 +2558,7 @@
             }
           ],
           "default": null,
-          "description": "Instrucciones de venta del negocio.",
+          "description": "Cómo debe vender el asistente en este negocio.",
           "title": "Instructions"
         }
       },
@@ -2577,12 +2568,6 @@
     "SalesAngle": {
       "additionalProperties": false,
       "properties": {
-        "motivation": {
-          "description": "Motivo de compra de `motivation_drivers` al que responde.",
-          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$",
-          "title": "Motivation",
-          "type": "string"
-        },
         "signals": {
           "description": "Cuándo usar el ángulo: frases del cliente.",
           "items": {
@@ -2600,9 +2585,6 @@
           "type": "array"
         }
       },
-      "required": [
-        "motivation"
-      ],
       "title": "SalesAngle",
       "type": "object"
     },
@@ -2700,23 +2682,6 @@
     "Solution": {
       "additionalProperties": false,
       "properties": {
-        "mapping": {
-          "anyOf": [
-            {
-              "items": {
-                "$ref": "#/$defs/SolutionMapping"
-              },
-              "type": "array"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "Qué parte de la solución atiende cada problema.",
-          "title": "Mapping",
-          "x-audience": "avanzado"
-        },
         "process_steps": {
           "anyOf": [
             {
@@ -2757,31 +2722,6 @@
       "title": "Solution",
       "type": "object"
     },
-    "SolutionMapping": {
-      "additionalProperties": false,
-      "properties": {
-        "problem": {
-          "description": "Id de un problema de `customer_problems`.",
-          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$",
-          "title": "Problem",
-          "type": "string"
-        },
-        "solutions": {
-          "items": {
-            "type": "string"
-          },
-          "minItems": 1,
-          "title": "Solutions",
-          "type": "array"
-        }
-      },
-      "required": [
-        "problem",
-        "solutions"
-      ],
-      "title": "SolutionMapping",
-      "type": "object"
-    },
     "SupportPolicy": {
       "additionalProperties": false,
       "properties": {
@@ -2795,7 +2735,7 @@
             }
           ],
           "default": null,
-          "description": "Ante una pregunta, explicar antes de vender.",
+          "description": "true: primero aclara la duda. false: vende directo.",
           "title": "Explain First"
         },
         "sell_after": {
@@ -2808,7 +2748,7 @@
             }
           ],
           "default": null,
-          "description": "Después de explicar, llevar la conversación a la venta.",
+          "description": "true: después de explicar, vuelve a llevar al cliente a avanzar.",
           "title": "Sell After"
         },
         "rules": {
@@ -2991,19 +2931,6 @@
           "description": "Aclaración sobre cómo se confirma el precio.",
           "title": "Price Note"
         },
-        "prices_include_taxes": {
-          "anyOf": [
-            {
-              "type": "boolean"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "Si los precios publicados ya incluyen los impuestos (IVA).",
-          "title": "Prices Include Taxes"
-        },
         "promotions": {
           "anyOf": [
             {
@@ -3136,6 +3063,34 @@
             }
           ],
           "default": null
+        },
+        "label": {
+          "anyOf": [
+            {
+              "maxLength": 300,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Titular o etiqueta para reconocer la cuenta en el panel. No se comparte con el cliente.",
+          "title": "Label",
+          "x-engine": "pendiente"
+        },
+        "enabled": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Si es false, la cuenta se conserva pero no se ofrece.",
+          "title": "Enabled"
         }
       },
       "required": [
@@ -3225,13 +3180,17 @@
     },
     "WelcomeMessage": {
       "additionalProperties": false,
+      "description": "Las dos modalidades de saludo, según `enabled`.\n\n- `true`: ante un saludo sin más en una conversación nueva, el sistema envía `text` tal cual, sin IA.\n- `false`: no envía el mensaje fijo y responde la IA. El texto se conserva para cuando se reactive.\n\nUn saludo con una intención (\"hola, ¿qué precio tiene?\") siempre lo responde la IA.",
       "properties": {
         "enabled": {
+          "description": "true: envía el mensaje inicial fijo, sin IA. false: no lo envía y responde la IA.",
           "title": "Enabled",
           "type": "boolean"
         },
         "text": {
           "default": "",
+          "description": "Mensaje de apertura que recibe el cliente.",
+          "maxLength": 800,
           "title": "Text",
           "type": "string"
         }
@@ -3316,26 +3275,18 @@
       "$ref": "#/$defs/Inventory",
       "x-audience": "cliente"
     },
-    "engine": {
+    "features": {
       "anyOf": [
         {
-          "$ref": "#/$defs/EngineSettings"
+          "$ref": "#/$defs/Features"
         },
         {
           "type": "null"
         }
       ],
       "default": null,
-      "description": "Ajustes internos del motor. Si falta, se deriva de la oferta (catálogo o planes) con los valores por defecto.",
-      "x-audience": "operador"
-    },
-    "compatibility": {
-      "additionalProperties": true,
-      "description": "Datos de los YAML antiguos sin lugar en el contrato, conservados con su ruta original.",
-      "title": "Compatibility",
-      "type": "object",
-      "x-audience": "sistema",
-      "x-engine": "conservado"
+      "description": "Interruptores comerciales. Si faltan, se derivan de la oferta (catálogo o planes).",
+      "x-audience": "avanzado"
     }
   },
   "required": [

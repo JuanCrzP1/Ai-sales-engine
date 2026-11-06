@@ -1,0 +1,191 @@
+/* Lista de negocios, área de edición y formularios generados desde el contrato. */
+
+.standalone {
+  min-height: 100vh;
+  background: var(--color-bg, #f6f7f9);
+}
+
+.standalone__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 24px;
+  border-bottom: 1px solid var(--color-border, #e5e7eb);
+  background: var(--color-surface, #fff);
+}
+
+.standalone__main {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 28px 24px 56px;
+}
+
+.standalone__main:focus {
+  outline: none;
+}
+
+/* La marca se diseñó para el menú oscuro; aquí va sobre fondo claro. */
+.standalone__header .sidebar__brand-name {
+  color: var(--color-text);
+}
+
+.business-row {
+  flex-wrap: wrap;
+}
+
+.business-row__delete {
+  flex-basis: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 12px;
+}
+
+.sidebar__back {
+  display: block;
+  padding: 0 16px 12px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: none;
+  color: inherit;
+  opacity: 0.85;
+}
+
+.sidebar__back:hover {
+  opacity: 1;
+  text-decoration: underline;
+}
+
+/* Sin aspecto propio: solo permite desactivar todos los controles mientras se guarda. */
+.main__edit-area {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+/* Mismo ancho que el contenido de la página. */
+.main__alerts {
+  max-width: var(--content-max);
+  margin: 0 auto var(--space-4);
+}
+
+.main__alerts .button-row {
+  margin-top: 8px;
+}
+
+.secret-stored {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+}
+
+.secret-mask {
+  font-size: 0.875rem;
+  font-weight: 400;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.secret-input {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.secret-input .field {
+  width: 100%;
+}
+
+.category-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.category-row .field {
+  flex: 1;
+}
+
+.contract-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.contract-group.subcard {
+  padding: 16px;
+}
+
+.contract-list {
+  min-width: 0;
+}
+
+.disclosure {
+  padding: 0;
+  gap: 0;
+}
+
+.disclosure__summary {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--space-5) 56px var(--space-5) var(--space-5);
+  border-radius: inherit;
+  cursor: pointer;
+  list-style: none;
+}
+
+.disclosure__summary::-webkit-details-marker {
+  display: none;
+}
+
+/* La flecha indica que se puede desplegar: `display: flex` quita la marca nativa. */
+.disclosure__summary::after {
+  content: "";
+  position: absolute;
+  top: 30px;
+  right: var(--space-5);
+  width: 9px;
+  height: 9px;
+  border-right: 2px solid var(--color-text-muted);
+  border-bottom: 2px solid var(--color-text-muted);
+  transform: rotate(45deg);
+  transition: transform 0.15s;
+}
+
+.disclosure[open] > .disclosure__summary::after {
+  transform: rotate(-135deg);
+}
+
+.disclosure__content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: 0 var(--space-5) var(--space-5);
+}
+
+@media (max-width: 640px) {
+  .standalone__header,
+  .standalone__main {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .category-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

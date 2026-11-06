@@ -13,11 +13,10 @@ from collections.abc import Callable, Mapping
 from typing import Any
 
 from app.domain.business_config.contract import SecretRef
+from app.domain.business_config.errors import SecretResolutionError
 from app.infrastructure.config.legacy_yaml_importer import LEGACY_SECRET_SOURCE
 
-
-class SecretResolutionError(LookupError):
-    pass
+__all__ = ["LegacyYamlSecretResolver", "SecretResolutionError", "resolve_by_source"]
 
 
 def _walk(data: Any, path: str) -> Any:

@@ -11,6 +11,10 @@ project/.env
 .env.*
 !project/.env.example
 
+# Secretos reales para trabajar desde varios equipos. El ejemplo sí se versiona.
+/secrets.local.env
+/secrets.local.env.tmp
+
 .pytest_cache/
 tmp/
 *.log
@@ -18,3 +22,6 @@ tmp/
 
 .DS_Store
 .vscode/
+
+# Base local de BusinessConfig
+project/data/*.sqlite3*

@@ -1,132 +1,96 @@
 import { Button } from "../../components/ui/Button";
 import { ConfirmButton } from "../../components/ui/ConfirmButton";
-import { Alert, EmptyState } from "../../components/ui/Feedback";
+import { Alert, Badge, EmptyState } from "../../components/ui/Feedback";
 import { SelectField, TextField } from "../../components/ui/FormFields";
-import { Card } from "../../components/ui/Layout";
 import { Toggle } from "../../components/ui/Toggle";
-import type { TransferMethodDetails } from "../../domain/config/operations";
+import { isMethodActive, optionalText } from "../../domain/config/document";
+import type { PaymentProfile, TransferMethod } from "../../domain/config/types";
 import { BANK_ACCOUNT_TYPES, labelFor, TRANSFER_METHOD_TYPES } from "../../domain/config/options";
-import type { TransferMethod, TransferMethodType } from "../../domain/config/types";
-import { issuesFor } from "../../domain/validation/issues";
-import type { ValidationIssue } from "../../domain/validation/types";
 import { useConfig, useFieldIssue } from "../../state/useConfig";
+import { SecretField } from "./SecretField";
 
-export function TransferMethodsForm() {
-  const { config, issues, actions } = useConfig();
-  const listIssue = useFieldIssue("payments.transferMethods");
-  const duplicatesIssue = useFieldIssue("payments.transferMethods.duplicates");
-  const { transferEnabled, transferMethods: methods } = config.payments;
+export function TransferMethodsForm({ profile, profileIndex }: { profile: PaymentProfile; profileIndex: number }) {
+  const { actions } = useConfig();
+  const base = `payments.${profileIndex}.transfer_methods`;
+  const listIssue = useFieldIssue(base);
+  const duplicatesIssue = useFieldIssue(`${base}.duplicates`);
+  const methods = profile.transfer_methods ?? [];
 
   return (
-    <Card title="Transferencias" description="Cuentas a las que el cliente puede transferir.">
-      <Toggle
-        label="Aceptar transferencias"
-        checked={transferEnabled}
-        onChange={(enabled) => actions.updateSection("payments", { transferEnabled: enabled })}
-      />
-
-      {transferEnabled && (
-        <>
-          {listIssue && <Alert tone="warning">{listIssue.message}</Alert>}
-          {duplicatesIssue && <Alert tone="warning">{duplicatesIssue.message}</Alert>}
-          {methods.length === 0 ? (
-            <EmptyState title="No hay cuentas registradas" description="Agrega una cuenta Nequi, Daviplata, bancaria o Bre-B." />
-          ) : (
-            methods.map((method, index) => (
-              <TransferMethodFields
-                key={method.id}
-                method={method}
-                position={index + 1}
-                issues={issues}
-                onChangeDetails={(details) => actions.updateTransferMethod(method.id, details)}
-                onChangeType={(type) => actions.changeTransferMethodType(method.id, type)}
-                onRemove={() => actions.removeTransferMethod(method.id)}
-              />
-            ))
-          )}
-          <div>
-            <Button variant="secondary" onClick={actions.addTransferMethod}>
-              Agregar cuenta
-            </Button>
-          </div>
-        </>
+    <>
+      <Toggle label="Aceptar transferencias" checked={profile.transfer_enabled} onChange={(enabled) => actions.setTransferEnabled(profile.id, enabled)} />
+      {profile.transfer_enabled && listIssue && <Alert tone="warning">{listIssue.message}</Alert>}
+      {profile.transfer_enabled && duplicatesIssue && <Alert tone="warning">{duplicatesIssue.message}</Alert>}
+      {!profile.transfer_enabled && methods.length > 0 && <p className="field__hint">Las transferencias están desactivadas: estas cuentas se conservan, pero el asistente no las ofrece.</p>}
+      {profile.transfer_enabled && methods.length === 0 && <EmptyState title="No hay cuentas registradas" description="Agrega una cuenta Nequi, Daviplata, bancaria o Bre-B." />}
+      {methods.map((method, index) => (
+        <TransferMethodFields key={index} method={method} position={index} profile={profile} base={base} />
+      ))}
+      {profile.transfer_enabled && (
+        <div>
+          <Button variant="secondary" onClick={() => actions.addTransferMethod(profile.id)}>
+            Agregar cuenta
+          </Button>
+        </div>
       )}
-    </Card>
+    </>
   );
 }
 
-interface TransferMethodFieldsProps {
-  method: TransferMethod;
-  position: number;
-  issues: ValidationIssue[];
-  onChangeDetails: (details: TransferMethodDetails) => void;
-  /** Cambiar el tipo borra los datos del tipo anterior. */
-  onChangeType: (type: TransferMethodType) => void;
-  onRemove: () => void;
-}
-
-function TransferMethodFields({ method, position, issues, onChangeDetails, onChangeType, onRemove }: TransferMethodFieldsProps) {
-  const issue = (field: string) => issuesFor(issues, `payments.transfer.${method.id}.${field}`)[0];
+function TransferMethodFields({ method, position, profile, base }: { method: TransferMethod; position: number; profile: PaymentProfile; base: string }) {
+  const { actions } = useConfig();
+  const profileId = profile.id;
+  const path = `${base}.${position}`;
+  const bankIssue = useFieldIssue(`${path}.bank`);
+  const labelIssue = useFieldIssue(`${path}.label`);
+  const active = isMethodActive(profile, method);
 
   return (
     <fieldset className="subcard">
-      <legend className="visually-hidden">Cuenta {position}</legend>
+      <legend className="visually-hidden">Cuenta {position + 1}</legend>
       <div className="card__header">
         <h3 className="field__label">
-          Cuenta {position}: {labelFor(TRANSFER_METHOD_TYPES, method.type)}
+          Cuenta {position + 1}: {labelFor(TRANSFER_METHOD_TYPES, method.type)} <Badge tone={active ? "success" : "neutral"}>{active ? "Activa" : "Inactiva"}</Badge>
         </h3>
-        <ConfirmButton confirmLabel="Sí, quitar" onConfirm={onRemove}>
+        <ConfirmButton confirmLabel="Sí, quitar" onConfirm={() => actions.removeTransferMethod(profileId, position)}>
           Quitar
         </ConfirmButton>
       </div>
+      <Toggle
+        label="Cuenta activa"
+        description="Una cuenta inactiva conserva sus datos, pero el asistente no la ofrece."
+        checked={method.enabled !== false}
+        onChange={(enabled) => actions.setTransferMethodEnabled(profileId, position, enabled)}
+      />
       <div className="grid-2">
         <SelectField
           label="Tipo"
           value={method.type}
           options={TRANSFER_METHOD_TYPES}
-          onChange={onChangeType}
-          hint="Al cambiar el tipo se borran los datos del tipo anterior."
+          onChange={(type) => actions.changeTransferMethodType(profileId, position, type)}
+          hint="Al cambiar el tipo se descartan los datos del tipo anterior."
         />
-        {(method.type === "nequi" || method.type === "daviplata") && (
-          <TextField
-            label="Número de celular"
-            type="tel"
-            inputMode="tel"
-            required
-            value={method.phoneNumber}
-            onChange={(phoneNumber) => onChangeDetails({ phoneNumber })}
-            placeholder="3001234567"
-            issue={issue("phoneNumber")}
-          />
-        )}
+        <TextField
+          label="Titular o etiqueta"
+          value={method.label ?? ""}
+          onChange={(label) => actions.updateTransferMethod(profileId, position, { label: optionalText(label) })}
+          issue={labelIssue}
+          hint="Para reconocerla aquí. No se comparte con el cliente."
+        />
+        {method.number && <SecretField label="Número de celular" secretRef={method.number.secret_ref} path={`${path}.number`} type="tel" inputMode="tel" placeholder="3001234567" />}
         {method.type === "bank" && (
           <>
-            <TextField label="Banco" required value={method.bankName} onChange={(bankName) => onChangeDetails({ bankName })} issue={issue("bankName")} />
+            <TextField label="Banco" required value={method.bank ?? ""} onChange={(bank) => actions.updateTransferMethod(profileId, position, { bank })} issue={bankIssue} />
             <SelectField
               label="Tipo de cuenta"
-              value={method.accountType}
+              value={method.account_type ?? "ahorros"}
               options={BANK_ACCOUNT_TYPES}
-              onChange={(accountType) => onChangeDetails({ accountType })}
-            />
-            <TextField
-              label="Número de cuenta"
-              inputMode="numeric"
-              required
-              value={method.accountNumber}
-              onChange={(accountNumber) => onChangeDetails({ accountNumber })}
-              issue={issue("accountNumber")}
+              onChange={(account_type) => actions.updateTransferMethod(profileId, position, { account_type })}
             />
           </>
         )}
-        {method.type === "breb" && (
-          <TextField
-            label="Llave o referencia Bre-B"
-            required
-            value={method.reference}
-            onChange={(reference) => onChangeDetails({ reference })}
-            issue={issue("reference")}
-          />
-        )}
+        {method.account_number && <SecretField label="Número de cuenta" secretRef={method.account_number.secret_ref} path={`${path}.account_number`} inputMode="numeric" />}
+        {method.reference && <SecretField label="Llave o referencia Bre-B" secretRef={method.reference.secret_ref} path={`${path}.reference`} />}
       </div>
     </fieldset>
   );

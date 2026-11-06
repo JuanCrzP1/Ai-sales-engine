@@ -1,22 +1,27 @@
-import { createLocalConfigRepository } from "../infrastructure/local/localConfigRepository";
-import { createOpenAuthService } from "../infrastructure/local/openAuthService";
+import { createApiBusinessDirectory } from "../infrastructure/api/apiBusinessDirectory";
+import { createApiConfigRepository } from "../infrastructure/api/apiConfigRepository";
+import { createHttpClient } from "../infrastructure/api/httpClient";
+import { createLocalOperatorAuthService } from "../infrastructure/local/localOperatorAuthService";
 import type { AuthService } from "../repositories/authService";
+import type { BusinessDirectory } from "../repositories/businessDirectory";
 import type { ConfigRepository } from "../repositories/configRepository";
 
 /**
- * Servicios de la aplicación. Es el ÚNICO punto donde se eligen las implementaciones:
- * para conectar un servidor se crean implementaciones remotas de los contratos de
- * `repositories/` y se devuelven aquí, sin tocar pantallas, estado ni reglas.
+ * Servicios de la aplicación. Es el ÚNICO punto donde se eligen las implementaciones: pantallas, estado y reglas solo
+ * conocen los contratos de `repositories/`. La autenticación definitiva (fase de nube) se conecta aquí.
  */
 export interface ApplicationServices {
   auth: AuthService;
-  createConfigRepository: (accountId: string) => ConfigRepository;
+  directory: BusinessDirectory;
+  createConfigRepository: (slug: string) => ConfigRepository;
 }
 
-/** Implementaciones actuales: todo en este navegador, sin servidor y sin verificación de acceso. */
-export function createLocalServices(): ApplicationServices {
+/** Implementaciones actuales: la API local del panel, sin autenticación porque solo atiende en este equipo. */
+export function createLocalServices(apiBaseUrl?: string): ApplicationServices {
+  const http = createHttpClient(apiBaseUrl);
   return {
-    auth: createOpenAuthService(),
-    createConfigRepository: (accountId) => createLocalConfigRepository(accountId),
+    auth: createLocalOperatorAuthService(),
+    directory: createApiBusinessDirectory(http),
+    createConfigRepository: (slug) => createApiConfigRepository(http, slug),
   };
 }

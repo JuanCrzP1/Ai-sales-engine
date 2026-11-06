@@ -256,6 +256,11 @@
     color: #fff;
   }
 
+  .mobile-header .button--secondary:hover {
+    background: rgba(255, 255, 255, 0.16);
+    border-color: rgba(255, 255, 255, 0.24);
+  }
+
   .sidebar {
     display: none;
   }

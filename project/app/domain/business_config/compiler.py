@@ -2,14 +2,18 @@
 
 Produce exactamente la forma de los YAML (`business`, `sales`, `pricing`, `inventory`, `config`) para
 que el pipeline existente funcione sin cambios. Los datos de pago se resuelven con `resolve_secret`;
-los campos de `compatibility` se reinyectan en su posición original.
+los ajustes técnicos (`EngineSettings`) se añaden al documento comercial, y los de `legacy` se
+reinyectan en su posición original.
 
-- Todo campo con ruta en los YAML vuelve a esa ruta y con su forma original, lo use el motor o no:
-  para un documento importado, la compilación es idéntica a sus YAML y el motor responde igual.
-- Los campos que solo existen en el contrato (marca, horarios, promociones, recomendaciones,
-  preguntas frecuentes, políticas...) no se compilan: ningún lector del motor actual los consume.
+- Todo campo del contrato con ruta en los YAML vuelve a esa ruta y con su forma original, lo use el
+  motor o no: un documento importado compila exactamente a sus YAML y el motor responde igual.
+- La definición común del cierre (`COMMON_CLOSING_POLICY`) no está en ningún documento: se añade aquí a
+  `sales.closing`, en la posición que tiene en los YAML, a todo negocio que tenga esa sección.
+- Los campos que solo existen en el contrato (horarios, promociones, instrucciones, preguntas
+  frecuentes, políticas...) no se compilan: ningún lector del motor actual los consume.
   Conectarlos exige cambiar el motor y acordar su clave de compilación (ver docs/business-config.md).
-- Los planes y productos no disponibles no se compilan: el motor no los ofrece.
+- Los planes y productos no disponibles no se compilan: el motor no los ofrece. Tampoco las cuentas ni los enlaces de
+  pago inactivos, y por eso no hace falta poder leer sus datos para publicar.
 """
 from __future__ import annotations
 
@@ -18,6 +22,7 @@ from collections.abc import Callable
 from typing import Any
 
 from app.domain.business_config.contract import BusinessConfig, PaymentProfile, Plan, SecretRef
+from app.domain.business_config.engine_policy import COMMON_CLOSING_POLICY
 
 SecretResolver = Callable[[SecretRef], str]
 
@@ -36,6 +41,8 @@ def _payment_block(profile: PaymentProfile | None, resolve_secret: SecretResolve
         return None
     methods = []
     for method in profile.transfer_methods:
+        if method.enabled is False:
+            continue
         entry: dict[str, Any] = {"type": method.type}
         _put(entry, "number", resolve_secret(method.number) if method.number else None)
         _put(entry, "bank", method.bank)
@@ -44,8 +51,8 @@ def _payment_block(profile: PaymentProfile | None, resolve_secret: SecretResolve
         _put(entry, "reference", resolve_secret(method.reference) if method.reference else None)
         methods.append(entry)
     return {
-        "link": resolve_secret(profile.link) if profile.link else "",
-        "transfer": {"enabled": profile.transfer_enabled, "methods": methods},
+        "link": resolve_secret(profile.link) if profile.link and profile.link_enabled is not False else "",
+        "transfer": {"enabled": profile.transfer_enabled and bool(methods), "methods": methods},
     }
 
 
@@ -74,6 +81,10 @@ def _business(config: BusinessConfig) -> dict:
         "industry": identity.industry,
         "promise": identity.value_proposition,
     }
+    _put(business, "brand_name", identity.brand_name)
+    # `business.city` duplica la ciudad de la ubicación: el contrato la guarda una sola vez.
+    if identity.location is not None:
+        _put(business, "city", identity.location.city)
     _put(business, "buying_motivation", _dump(sales.buying_motivation))
     _put(business, "positioning", identity.positioning)
     _put(business, "differentiators", identity.differentiators)
@@ -85,10 +96,13 @@ def _business(config: BusinessConfig) -> dict:
     _put(business, "voice", config.response_style.voice)
     _put(business, "pain_points", sales.pain_points)
     _put(business, "desired_outcomes", sales.benefits)
-    if sales.motivation_drivers is not None:
-        business["value_drivers"] = {
-            driver.motivation: {"description": driver.description, "triggers": driver.signals} for driver in sales.motivation_drivers
-        }
+    drivers = {
+        entry.motivation: {"description": entry.description, "triggers": entry.signals or []}
+        for entry in sales.motivations or []
+        if entry.description is not None
+    }
+    if drivers:
+        business["value_drivers"] = drivers
     if sales.use_cases is not None:
         # El prompt los lee aquí como respaldo, con sus nombres antiguos.
         business["use_cases"] = [{"nombre": case.name, "senales": case.signals, "enfoque": case.approach} for case in sales.use_cases]
@@ -101,26 +115,37 @@ def _sales(config: BusinessConfig) -> dict:
     sales: dict[str, Any] = {}
     if sales_config.customer_problems is not None:
         sales["pain"] = {
-            "clusters": {problem.id: problem.model_dump(mode="json", exclude={"id"}, exclude_none=True) for problem in sales_config.customer_problems}
+            "clusters": {problem.id: problem.model_dump(mode="json", exclude={"id", "solutions"}, exclude_none=True) for problem in sales_config.customer_problems}
         }
     solution = sales_config.solution
     section: dict[str, Any] = {}
     _put(section, "framing", sales_config.arguments)
+    mapping = {problem.id: problem.solutions for problem in sales_config.customer_problems or [] if problem.solutions is not None}
+    if mapping:
+        section["mapping"] = mapping
     if solution is not None:
-        if solution.mapping is not None:
-            section["mapping"] = {entry.problem: entry.solutions for entry in solution.mapping}
         _put(section, "process_steps", solution.process_steps)
         _put(section, "requirements", solution.requirements)
     if section:
         sales["solution"] = section
-    if sales_config.angles is not None:
-        sales["angles"] = {angle.motivation: {"when": angle.signals, "execution": angle.messages} for angle in sales_config.angles}
+    angles = {
+        entry.motivation: {"when": entry.angle.signals, "execution": entry.angle.messages}
+        for entry in sales_config.motivations or []
+        if entry.angle is not None
+    }
+    if angles:
+        sales["angles"] = angles
+    offer: dict[str, Any] = {}
     presentation = sales_config.offer_presentation
     if presentation is not None:
         strategy: dict[str, Any] = {}
         _put(strategy, "single", presentation.single_offer)
         _put(strategy, "multi", presentation.multiple_offers)
-        sales["offer"] = {"strategy": strategy}
+        offer["strategy"] = strategy
+    if sales_config.recommendation_rules is not None:
+        offer["recommendation_rules"] = [{"condition": rule.when, "recommend": rule.recommend} for rule in sales_config.recommendation_rules]
+    if offer:
+        sales["offer"] = offer
     if sales_config.discovery is not None:
         discovery: dict[str, Any] = {}
         _put(discovery, "questions", sales_config.discovery.questions)
@@ -128,9 +153,7 @@ def _sales(config: BusinessConfig) -> dict:
         if discovery:
             sales["discovery"] = discovery
     if sales_config.qualification is not None:
-        # `criteria` solo existe en el contrato: no se compila.
-        qualification = sales_config.qualification.model_dump(mode="json", exclude={"criteria"}, exclude_none=True)
-        _put(sales, "qualification", qualification or None)
+        _put(sales, "qualification", _dump(sales_config.qualification) or None)
     support = sales_config.support
     if support is not None:
         section = {}
@@ -146,7 +169,17 @@ def _sales(config: BusinessConfig) -> dict:
         rules: dict[str, Any] = {}
         _put(rules, "no_skip_steps", flow.no_skip_steps)
         _put(rules, "guided_process", flow.guided_process)
-        sales["conversation_flow"] = {"steps": flow.steps, **({"rules": rules} if rules else {})}
+        section = {}
+        _put(section, "steps", flow.steps)
+        if rules:
+            section["rules"] = rules
+        if section:
+            sales["conversation_flow"] = section
+        progression: dict[str, Any] = {}
+        _put(progression, "required_flow", flow.required_flow)
+        _put(progression, "forbid", flow.forbid)
+        if progression:
+            sales["progression_rules"] = progression
     if sales_config.objections is not None:
         objections: dict[str, Any] = {}
         for objection in sales_config.objections:
@@ -159,8 +192,9 @@ def _sales(config: BusinessConfig) -> dict:
         sales["objection"] = objections
     closing = sales_config.closing
     if closing is not None:
-        section = {"strategy": closing.strategy}
+        section = {"strategy": closing.strategy, "next_step": copy.deepcopy(COMMON_CLOSING_POLICY["next_step"])}
         _put(section, "required_data", closing.required_data)
+        section["behavior"] = copy.deepcopy(COMMON_CLOSING_POLICY["behavior"])
         _put(section, "triggers", closing.purchase_signals)
         if closing.high_intent_actions is not None:
             section["actions"] = {"high_intent": closing.high_intent_actions}
@@ -222,9 +256,9 @@ def _inventory(config: BusinessConfig) -> dict:
 
 
 def _features(config: BusinessConfig) -> dict:
-    if config.engine is not None:
-        return config.engine.features.model_dump(exclude_none=True)
-    # Sin ajustes internos explícitos: se derivan de la oferta.
+    if config.features is not None:
+        return config.features.model_dump(exclude_none=True)
+    # Sin interruptores explícitos: se derivan de la oferta.
     is_catalog = config.offer.model == "catalog"
     features: dict[str, Any] = {"pricing_enabled": True, "catalog_mode": is_catalog}
     if is_catalog:
@@ -234,8 +268,11 @@ def _features(config: BusinessConfig) -> dict:
 
 def _config(config: BusinessConfig) -> dict:
     section: dict[str, Any] = {}
-    if config.engine is not None and config.engine.conversation is not None:
-        section["conversation"] = config.engine.conversation.model_dump()
+    settings = config.engine_settings
+    if settings is not None and settings.conversation is not None:
+        section["conversation"] = settings.conversation.model_dump()
+    if settings is not None and settings.flags is not None:
+        section["flags"] = settings.flags.model_dump()
     section["initial_message"] = {"enabled": config.messages.welcome.enabled, "text": config.messages.welcome.text}
     section["features"] = _features(config)
     section["response"] = {"length": config.response_style.length, "max_words": config.response_style.effective_max_words()}
@@ -258,21 +295,20 @@ def _config(config: BusinessConfig) -> dict:
         "data_collection": {"enabled": capabilities.data_collection.enabled, "fields": list(capabilities.data_collection.fields)},
     }
     if capabilities.restrictions is not None:
-        constraints = capabilities.restrictions.model_dump(mode="json", exclude={"forbidden_claims"}, exclude_none=True)
-        section["capabilities"]["constraints"] = constraints
+        section["capabilities"]["constraints"] = _dump(capabilities.restrictions)
     return section
 
 
-def merge_compatibility(base: Any, extra: Any, path: str = "") -> Any:
-    """Reinyecta campos de compatibilidad sin sobrescribir datos del contrato."""
+def merge_legacy(base: Any, extra: Any, path: str = "") -> Any:
+    """Reinyecta los campos heredados de los ajustes técnicos sin sobrescribir datos del contrato."""
     if isinstance(base, dict) and isinstance(extra, dict):
         for key, value in extra.items():
             child_path = f"{path}.{key}" if path else key
-            base[key] = merge_compatibility(base[key], value, child_path) if key in base else copy.deepcopy(value)
+            base[key] = merge_legacy(base[key], value, child_path) if key in base else copy.deepcopy(value)
         return base
     if isinstance(base, list) and isinstance(extra, list) and len(base) == len(extra):
-        return [merge_compatibility(item, extra_item, f"{path}[{index}]") for index, (item, extra_item) in enumerate(zip(base, extra))]
-    raise ValueError(f"conflicto de compatibilidad en '{path}'")
+        return [merge_legacy(item, extra_item, f"{path}[{index}]") for index, (item, extra_item) in enumerate(zip(base, extra))]
+    raise ValueError(f"conflicto con los campos heredados en '{path}'")
 
 
 def compile_business_config(config: BusinessConfig, resolve_secret: SecretResolver) -> dict[str, dict]:
@@ -283,4 +319,5 @@ def compile_business_config(config: BusinessConfig, resolve_secret: SecretResolv
         "inventory": _inventory(config),
         "config": _config(config),
     }
-    return merge_compatibility(sections, config.compatibility)
+    settings = config.engine_settings
+    return merge_legacy(sections, settings.legacy) if settings is not None else sections

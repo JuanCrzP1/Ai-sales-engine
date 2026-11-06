@@ -8,8 +8,10 @@ Patrones de origen: `[]` es un índice de lista y `<nombre>` una clave variable 
 moneda...). `.**` al final abarca todos los campos que cuelgan de la ruta, que conservan su nombre
 en el destino.
 Destinos: ruta del contrato, donde `[{i}]` y `[{j}]` son los índices del origen y
-`[campo=<nombre>]` busca en una lista por clave; `compatibility` (misma ruta dentro de
-`compatibility`) o `secret:<ruta>` (referencia `legacy_yaml:` al valor, nunca el valor).
+`[campo=<nombre>]` busca en una lista por clave; `engine_settings.<ruta>` (ajustes técnicos, fuera
+del documento comercial; `engine_settings.legacy` conserva la ruta original); `secret:<ruta>`
+(referencia `legacy_yaml:` al valor, nunca el valor) o `engine_policy` (definición común a todos los
+negocios: no está en ningún documento y la aporta el compilador).
 
 Clases (misión de auditoría del contrato):
 - A: configuración que edita el cliente.
@@ -24,6 +26,8 @@ import re
 from collections.abc import Iterator
 from dataclasses import dataclass, field
 from typing import Any, Literal
+
+from app.domain.business_config.engine_policy import COMMON_CLOSING_POLICY
 
 Category = Literal["A", "B", "C", "D", "E"]
 
@@ -56,6 +60,8 @@ PAYMENT_TEST = "test_payment_methods_reach_the_customer"
 ISOLATION_TEST = "test_tenants_stay_isolated_with_contract_source"
 UNAVAILABLE_TEST = "test_unavailable_offer_is_not_offered"
 NOT_IN_PROMPT = "no: el prompt actual no lo usa"
+LEGACY_DESTINATION = "engine_settings.legacy"
+POLICY_DESTINATION = "engine_policy"
 
 
 @dataclass(frozen=True)
@@ -71,9 +77,11 @@ class LegacyField:
     evidence: tuple[str, ...] = field(default_factory=tuple)
 
     @property
-    def kind(self) -> Literal["typed", "compatibility", "secret"]:
-        if self.destination == "compatibility":
-            return "compatibility"
+    def kind(self) -> Literal["typed", "technical", "secret", "policy"]:
+        if self.destination == POLICY_DESTINATION:
+            return "policy"
+        if self.destination.startswith("engine_settings."):
+            return "technical"
         return "secret" if self.destination.startswith("secret:") else "typed"
 
 
@@ -85,8 +93,7 @@ def _f(pattern: str, meaning: str, category: Category, destination: str, **extra
 CATALOG: tuple[LegacyField, ...] = (
     # ------------------------------------------------------------------ business.yaml
     _f("business.name", "Nombre comercial", "A", "identity.name", engine=NOT_IN_PROMPT, panel="pantalla"),
-    _f("business.brand_name", "Marca", "E", "compatibility",
-       note="Igual a `name` en los 9 negocios. El contrato ofrece `identity.brand_name` para marcas distintas del nombre."),
+    _f("business.brand_name", "Marca", "A", "identity.brand_name", note="Igual a `name` en los 9 negocios; se conserva su valor."),
     _f("business.industry", "Sector o tipo de negocio", "A", "identity.industry", engine="sí: prompt (sector)", panel="pantalla", evidence=[ENGINE_TEST]),
     _f("business.description", "Descripción del negocio", "A", "identity.description",
        engine="no: el prompt solo la usa si falta `industry`, que el contrato exige", panel="pantalla"),
@@ -95,8 +102,9 @@ CATALOG: tuple[LegacyField, ...] = (
     _f("business.positioning", "A quién se dirige y qué problema resuelve", "A", "identity.positioning"),
     _f("business.tone", "Tono de comunicación", "A", "response_style.tone", transform="cambia de sección", engine=NOT_IN_PROMPT, panel="modelo"),
     _f("business.voice", "Personalidad o voz de la marca", "A", "response_style.voice", transform="cambia de sección"),
-    _f("business.city", "Ciudad", "E", "compatibility", note="Duplica `business.location.city` (mismo valor en los 9 negocios)."),
-    _f("business.type", "Tipo de negocio", "E", "compatibility", note="Solo restaurant; repite el sector (`industry`) y el modelo de negocio del motor."),
+    _f("business.city", "Ciudad", "E", "identity.location.city", transform="duplicado unificado con `business.location.city`",
+       note="Mismo valor que `business.location.city` en los 9 negocios: el contrato la guarda una sola vez y la compilación la devuelve a las dos rutas."),
+    _f("business.type", "Tipo de negocio", "E", LEGACY_DESTINATION, note="Solo restaurant; repite el sector (`industry`) y el tipo de negocio de `features`."),
     _f("business.location.**", "Ubicación y cobertura", "A", "identity.location.**", engine=NOT_IN_PROMPT, panel="modelo"),
     _f("business.service_modes", "Modalidades de atención", "A", "identity.service_modes", engine=NOT_IN_PROMPT, panel="modelo"),
     _f("business.differentiators", "Diferenciadores", "A", "identity.differentiators", engine=NOT_IN_PROMPT, panel="modelo"),
@@ -106,9 +114,9 @@ CATALOG: tuple[LegacyField, ...] = (
     _f("business.customer_profile.**", "Cliente ideal", "A", "identity.target_customer.**", transform="renombrado"),
     _f("business.credibility", "Pruebas de confianza", "A", "identity.credibility"),
     _f("business.value_drivers.<motivo>.description", "Qué significa cada motivo de compra", "B",
-       "sales.motivation_drivers[motivation=<motivo>].description", transform="mapa por motivo → lista con `motivation`"),
+       "sales.motivations[motivation=<motivo>].description", transform="mapa por motivo → lista con `motivation`; se une con `sales.angles`"),
     _f("business.value_drivers.<motivo>.triggers", "Frases que revelan cada motivo", "B",
-       "sales.motivation_drivers[motivation=<motivo>].signals", transform="mapa por motivo → lista; `triggers` → `signals`"),
+       "sales.motivations[motivation=<motivo>].signals", transform="mapa por motivo → lista; `triggers` → `signals`; se une con `sales.angles`"),
     _f("business.use_cases[].nombre", "Caso de uso típico", "B", "sales.use_cases[{i}].name", transform="`nombre` → `name`",
        engine="sí: respaldo de 'Casos típicos' si no hay impactos", evidence=[ENGINE_TEST]),
     _f("business.use_cases[].senales", "Señales del caso de uso", "B", "sales.use_cases[{i}].signals", transform="`senales` → `signals`"),
@@ -135,26 +143,25 @@ CATALOG: tuple[LegacyField, ...] = (
     _f("sales.support.info_handling.explain_first", "Explicar antes de vender", "B", "sales.support.explain_first", transform="se aplana `info_handling`"),
     _f("sales.support.info_handling.sell_after", "Vender después de explicar", "B", "sales.support.sell_after", transform="se aplana `info_handling`"),
     _f("sales.support.hard_rules", "Reglas de atención", "B", "sales.support.rules", transform="`hard_rules` → `rules`"),
-    _f("sales.angles.<motivo>.when", "Cuándo usar el ángulo de venta", "B", "sales.angles[motivation=<motivo>].signals",
-       transform="mapa por motivo → lista; `when` → `signals`"),
-    _f("sales.angles.<motivo>.execution", "Qué decir con el ángulo de venta", "B", "sales.angles[motivation=<motivo>].messages",
-       transform="mapa por motivo → lista; `execution` → `messages`"),
+    _f("sales.angles.<motivo>.when", "Cuándo usar el ángulo de venta", "B", "sales.motivations[motivation=<motivo>].angle.signals",
+       transform="se une con `business.value_drivers`; `when` → `signals`"),
+    _f("sales.angles.<motivo>.execution", "Qué decir con el ángulo de venta", "B", "sales.motivations[motivation=<motivo>].angle.messages",
+       transform="se une con `business.value_drivers`; `execution` → `messages`"),
     _f("sales.conversation_flow.steps", "Etapas de la conversación", "B", "sales.conversation_flow.steps"),
     _f("sales.conversation_flow.rules.no_skip_steps", "No saltar etapas", "B", "sales.conversation_flow.no_skip_steps", transform="se aplana `rules`"),
     _f("sales.conversation_flow.rules.guided_process", "Guiar un proceso paso a paso", "B", "sales.conversation_flow.guided_process",
        transform="se aplana `rules`"),
     _f("sales.solution.framing", "Argumentos de venta", "A", "sales.arguments", transform="renombrado", engine=NOT_IN_PROMPT, panel="modelo"),
     _f("sales.solution.mapping.<problema>", "Qué parte de la solución atiende cada problema", "B",
-       "sales.solution.mapping[problem=<problema>].solutions", transform="mapa por problema → lista con `problem`"),
+       "sales.customer_problems[id=<problema>].solutions", transform="se une con `sales.pain.clusters`, que usa la misma clave de problema"),
     _f("sales.solution.process_steps", "Pasos del proceso de compra o servicio", "A", "sales.solution.process_steps"),
     _f("sales.solution.requirements", "Requisitos del cliente", "A", "sales.solution.requirements"),
     _f("sales.offer.strategy.single", "Cómo presentar una sola opción", "B", "sales.offer_presentation.single_offer", transform="renombrado"),
     _f("sales.offer.strategy.multi", "Cómo presentar varias opciones", "B", "sales.offer_presentation.multiple_offers", transform="renombrado"),
-    _f("sales.offer.recommendation_rules[].condition", "Situación que activa una recomendación", "B", "compatibility",
-       note="Apunta a planes que no existen en el negocio (plan_pro, plan_basico). El contrato exige que "
-            "`sales.recommendation_rules` apunte a la oferta real: requiere decisión del negocio."),
-    _f("sales.offer.recommendation_rules[].recommend", "Plan recomendado", "B", "compatibility",
-       note="Ver `condition`: referencia a un plan inexistente."),
+    _f("sales.offer.recommendation_rules[].condition", "Situación que activa una recomendación", "B", "sales.recommendation_rules[{i}].when",
+       transform="`condition` → `when`"),
+    _f("sales.offer.recommendation_rules[].recommend", "Plan recomendado", "B", "sales.recommendation_rules[{i}].recommend",
+       note="En asesor_ai_prod y demo apunta a planes que no existen: se conserva y lo señala el diagnóstico `recomienda_oferta_no_disponible`."),
     _f("sales.objection.<objecion>.layers.**", "Manejo de la objeción por capas", "B", "sales.objections[topic=<objecion>].**",
        transform="mapa por objeción → lista con `topic`; se aplana `layers`"),
     _f("sales.objection.<objecion>.hard_rules", "Reglas al responder la objeción", "B", "sales.objections[topic=<objecion>].rules",
@@ -169,12 +176,14 @@ CATALOG: tuple[LegacyField, ...] = (
     _f("sales.closing.hard_rules", "Reglas de cierre", "B", "sales.closing.rules", transform="`hard_rules` → `rules`",
        note="En asesor_ai_prod tres reglas validan el texto de la respuesta (p. ej. que no contenga '?'); el motor no "
             "las aplica. Moverlas a las políticas del motor cambia las reglas del negocio: decisión pendiente."),
-    _f("sales.closing.behavior.<estrategia>.goal", "Objetivo de cada estrategia de cierre", "E", "compatibility",
-       note="Plantilla idéntica en los 9 negocios (estrategia → objetivo): es una política del motor, no un dato del negocio."),
-    _f("sales.closing.next_step.action", "Modo del siguiente paso", "C", "compatibility", note="Vale `dynamic` en los 9 negocios; parámetro interno."),
-    _f("sales.progression_rules.required_flow", "Flujo comercial obligatorio", "E", "compatibility",
-       note="Idéntico en los 9 negocios y ya fijado en el prompt del motor (dolor → impacto → solución → acción)."),
-    _f("sales.progression_rules.forbid", "Respuestas prohibidas por el flujo", "C", "compatibility", note="Códigos internos del motor (asesor_ai_prod, demo)."),
+    _f("sales.closing.behavior.<estrategia>.goal", "Objetivo de cada tipo de cierre", "E", POLICY_DESTINATION,
+       note="Definición común: mismo valor en los 9 negocios, que tienen los cuatro objetivos aunque usen un solo tipo de cierre. Cambiarlo no altera el motor."),
+    _f("sales.closing.next_step.action", "Modo del siguiente paso", "C", POLICY_DESTINATION,
+       note="Definición común: vale `dynamic` en los 9 negocios y describe cómo funciona el motor; el siguiente paso sale de la respuesta de la IA."),
+    _f("sales.progression_rules.required_flow", "Secuencia mínima de la conversación", "B", "sales.conversation_flow.required_flow",
+       transform="se une con `sales.conversation_flow`"),
+    _f("sales.progression_rules.forbid", "Lo que el asistente no debe hacer", "B", "sales.conversation_flow.forbid",
+       transform="se une con `sales.conversation_flow`"),
     # ------------------------------------------------------------------ pricing.yaml
     _f("pricing.model", "Venta por catálogo", "A", "offer.model", engine="sí: prompt (planes o categorías del catálogo)", panel="pantalla",
        evidence=[ISOLATION_TEST]),
@@ -269,7 +278,7 @@ CATALOG: tuple[LegacyField, ...] = (
        engine="sí: prompt", panel="pantalla", evidence=[ENGINE_TEST]),
     _f("config.capabilities.system_channels.allowed", "Canales por los que funciona el producto", "A", "capabilities.product_channels",
        transform="renombrado", engine="sí: prompt", evidence=[ENGINE_TEST]),
-    _f("config.capabilities.channels", "Canales (lista antigua)", "E", "compatibility",
+    _f("config.capabilities.channels", "Canales (lista antigua)", "E", LEGACY_DESTINATION,
        note="Estructura antigua: el prompt solo la usa si no hay canales de atención ni del sistema, lo que no ocurre en "
             "ningún negocio. En asesor_ai_prod contradice a `business_channels` (vacío)."),
     _f("config.capabilities.closing_methods.link_payment.enabled", "Cerrar enviando el pago", "A", "capabilities.closing_methods.payment_link",
@@ -283,25 +292,26 @@ CATALOG: tuple[LegacyField, ...] = (
     _f("config.capabilities.data_collection.fields", "Datos que se piden", "A", "capabilities.data_collection.fields",
        engine="sí: prompt", panel="pantalla", evidence=["test_closing_and_data_collection_toggles_change_the_prompt"]),
     _f("config.capabilities.constraints.**", "Canales y acciones que el negocio no ofrece", "A", "capabilities.restrictions.**", transform="renombrado"),
-    _f("config.conversation.**", "Ventanas de la conversación", "C", "engine.conversation.**", transform="sección interna `engine`",
-       engine="sí: estado y reinicio de la conversación", evidence=["test_conversation_windows_drive_the_conversation_state"]),
-    _f("config.features.pricing_enabled", "Mostrar precios", "C", "engine.features.pricing_enabled", transform="sección interna `engine`",
+    _f("config.conversation.**", "Ventanas de la conversación", "C", "engine_settings.conversation.**", transform="ajuste técnico, fuera del documento comercial",
+       engine="sí: estado y reinicio de la conversación", evidence=["test_conversation_windows_drive_the_conversation_state"],
+       note="Parámetro interno: cuándo el motor considera activa o nueva una conversación."),
+    _f("config.features.pricing_enabled", "Permite usar precios en la conversación", "B", "features.pricing_enabled", transform="sección `features`",
        note="El prompt solo lo consulta si no hay precios ni pagos, algo que el contrato no permite (toda oferta tiene precio)."),
-    _f("config.features.catalog_mode", "Modo catálogo", "C", "engine.features.catalog_mode", transform="sección interna `engine`",
+    _f("config.features.catalog_mode", "Vende opciones tipo catálogo o un servicio o plan", "B", "features.catalog_mode", transform="sección `features`",
        engine="sí: prompt (cuándo mostrar precios)", evidence=[ENGINE_TEST]),
-    _f("config.features.business_model", "Modelo de negocio", "C", "engine.features.business_model", transform="sección interna `engine`",
+    _f("config.features.business_model", "Tipo de negocio", "B", "features.business_model", transform="sección `features`",
        engine="sí: prompt (cuándo mostrar precios)", evidence=[ENGINE_TEST]),
-    _f("config.features.multi_currency", "Varias monedas", "E", "compatibility",
-       note="Derivable de los precios; contradice la oferta en agencia_viajes (true con una sola moneda)."),
-    _f("config.features.multi_plan", "Varios planes", "E", "compatibility",
-       note="Derivable de la oferta; contradice la oferta en asesor_ai_prod, clinic y saas (true con un solo plan)."),
-    _f("config.flags.**", "Banderas internas (ai_first, allow_fallback, log_level)", "C", "compatibility",
+    _f("config.features.multi_currency", "Permite manejar más de una moneda", "B", "features.multi_currency", transform="sección `features`",
+       note="En agencia_viajes es true con una sola moneda: permitirlo no obliga a usarlo."),
+    _f("config.features.multi_plan", "Permite ofrecer varios planes", "B", "features.multi_plan", transform="sección `features`",
+       note="En asesor_ai_prod, clinic y saas es true con un solo plan: permitirlo no obliga a usarlo."),
+    _f("config.flags.**", "Banderas internas (ai_first, allow_fallback, log_level)", "C", "engine_settings.flags.**", transform="ajuste técnico, fuera del documento comercial",
        note="Sin consumidor en el motor; no son decisiones del negocio."),
     _f("config.initial_message.enabled", "Mensaje de bienvenida activo", "A", "messages.welcome.enabled", engine="sí: primer mensaje", panel="pantalla",
        evidence=["test_welcome_message_toggle"]),
     _f("config.initial_message.text", "Texto de bienvenida", "A", "messages.welcome.text", engine="sí: primer mensaje", panel="pantalla",
        evidence=["test_welcome_message_toggle"]),
-    _f("config.initial_message.recency.**", "Ventanas del mensaje inicial (antiguas)", "E", "compatibility",
+    _f("config.initial_message.recency.**", "Ventanas del mensaje inicial (antiguas)", "E", LEGACY_DESTINATION,
        note="Solo demo: ubicación antigua de las ventanas de conversación, con los mismos valores por defecto del motor (15 min, 4 h)."),
     _f("config.post_payment.on_user_report.message", "Respuesta al reportar un pago", "A", "messages.payment_reported", transform="renombrado",
        engine="sí: respuesta exacta", panel="pantalla", evidence=["test_payment_report_message_is_optional"]),
@@ -314,11 +324,12 @@ CATALOG: tuple[LegacyField, ...] = (
 )
 
 
-# Campos del contrato sin origen en los YAML (o cuyo origen queda en compatibilidad): qué son y si el
-# panel los ofrece. Su estado en el motor (`x-engine`) y su audiencia (`x-audience`) salen del esquema.
+# Campos del contrato sin origen en los YAML: qué son y si el panel los ofrece. Su estado en el motor (`x-engine`) y su audiencia (`x-audience`) salen del esquema.
 NEW_CONTRACT_FIELDS: dict[str, tuple[str, str]] = {
     # ruta normalizada: (significado, interfaz)
-    "identity.brand_name": ("Marca distinta del nombre", "modelo"),
+    "payments[].link_enabled": ("Enlace de pago activo", "pantalla"),
+    "payments[].transfer_methods[].label": ("Titular o etiqueta de la cuenta", "pantalla"),
+    "payments[].transfer_methods[].enabled": ("Cuenta activa", "pantalla"),
     "identity.opening_hours[].days": ("Días de atención", "no"),
     "identity.opening_hours[].opens": ("Hora de apertura", "no"),
     "identity.opening_hours[].closes": ("Hora de cierre", "no"),
@@ -328,21 +339,13 @@ NEW_CONTRACT_FIELDS: dict[str, tuple[str, str]] = {
     "offer.plans[].available": ("Plan disponible", "pantalla"),
     "offer.catalog.items[].features": ("Características del producto", "pantalla"),
     "offer.catalog.items[].available": ("Producto disponible", "pantalla"),
-    "terms.prices_include_taxes": ("Precios con impuestos incluidos", "no"),
     "terms.promotions[].name": ("Nombre de la promoción", "modelo"),
     "terms.promotions[].details": ("Detalle de la promoción", "modelo"),
     "terms.promotions[].valid_until": ("Vigencia de la promoción", "modelo"),
     "terms.policies.warranty": ("Política de garantía", "no"),
     "terms.policies.returns": ("Política de cambios y devoluciones", "no"),
     "terms.policies.cancellation": ("Política de cancelación y reembolso", "no"),
-    "payments[].instructions": ("Indicaciones para pagar", "no"),
-    "sales.qualification.criteria": ("Criterios de calificación", "no"),
-    "sales.recommendation_rules[].when": ("Situación del cliente", "modelo"),
-    "sales.recommendation_rules[].recommend": ("Oferta recomendada", "modelo"),
     "sales.instructions": ("Instrucciones de venta", "modelo"),
-    "capabilities.data_collection.consent_notice": ("Aviso de tratamiento de datos", "no"),
-    "capabilities.human_handoff_when": ("Cuándo pasar a una persona", "no"),
-    "capabilities.restrictions.forbidden_claims": ("Promesas prohibidas", "no"),
     "messages.after_sale": ("Mensaje después de la compra", "no"),
     "messages.data_request": ("Mensaje para pedir datos", "no"),
     "messages.follow_up": ("Mensaje de seguimiento", "no"),
@@ -362,17 +365,62 @@ DERIVED_CONTRACT_FIELDS: dict[str, str] = {
     "schema_version": "Versión del contrato",
     "tenant_slug": "Negocio dueño del documento",
     "sales.customer_problems[].id": "Clave del problema en `sales.pain.clusters`",
-    "sales.motivation_drivers[].motivation": "Clave del motivo en `business.value_drivers`",
-    "sales.angles[].motivation": "Clave del motivo en `sales.angles`",
+    "sales.motivations[].motivation": "Clave del motivo en `business.value_drivers` y `sales.angles`",
     "sales.objections[].topic": "Clave de la objeción en `sales.objection`",
-    "sales.solution.mapping[].problem": "Clave del problema en `sales.solution.mapping`",
     "offer.plans[].prices[].currency": "Clave de moneda en `pricing.plans[].pricing`",
     "offer.catalog.items[].prices[].currency": "Clave de moneda en `pricing.catalog.items[].price`",
     "payments[].id": "Perfil de pago creado por la importación (id del plan o `catalog`)",
     "offer.plans[].payment_profile": "Enlace del plan con su perfil de pago",
     "offer.catalog.payment_profile": "Enlace del catálogo con su perfil de pago",
-    "compatibility": "Datos antiguos sin lugar en el contrato",
 }
+
+
+# Funcionalidades comerciales de los YAML: qué hace cada una, según sus comentarios y lo que comprobamos
+# en el motor. Conservan sus opciones y valores; la tabla se publica en la matriz de trazabilidad.
+@dataclass(frozen=True)
+class CommercialControl:
+    group: str
+    pattern: str
+    behavior: str
+    show_values: bool = True
+
+
+COMMERCIAL_CONTROLS: tuple[CommercialControl, ...] = (
+    CommercialControl("Saludo", "config.initial_message.enabled",
+                      "Dos modalidades. `true`: ante un saludo sin más en una conversación nueva, el sistema envía el texto fijo, sin IA. "
+                      "`false`: no lo envía y responde la IA. Un saludo con intención siempre lo responde la IA."),
+    CommercialControl("Saludo", "config.initial_message.text", "Mensaje de apertura que recibe el usuario; se conserva aunque esté desactivado.", False),
+    CommercialControl("Extensión de los mensajes", "config.response.length", "Tamaño de la respuesta, en el prompt y al recortarla."),
+    CommercialControl("Extensión de los mensajes", "config.response.max_words", "Máximo de palabras por respuesta, dentro del rango de `length`."),
+    CommercialControl("Interruptores de venta", "config.features.pricing_enabled", "`true`: permite usar precios en la conversación."),
+    CommercialControl("Interruptores de venta", "config.features.catalog_mode", "`true`: vende opciones tipo catálogo. `false`: vende un servicio o plan."),
+    CommercialControl("Interruptores de venta", "config.features.multi_currency", "`true`: permite manejar más de una moneda."),
+    CommercialControl("Interruptores de venta", "config.features.multi_plan", "`true`: permite ofrecer varios planes."),
+    CommercialControl("Interruptores de venta", "config.features.business_model", "Tipo de negocio; con él el motor decide cuándo mostrar precios."),
+    CommercialControl("Atención", "sales.support.info_handling.explain_first", "`true`: primero aclara la duda. `false`: vende directo."),
+    CommercialControl("Atención", "sales.support.info_handling.sell_after", "`true`: después de explicar, vuelve a llevar al cliente a avanzar."),
+    CommercialControl("Atención", "sales.qualification.detect_offer_fit", "`true`: valida si la oferta encaja antes de empujar el cierre."),
+    CommercialControl("Flujo de conversación", "sales.conversation_flow.steps", "Pasos que idealmente sigue la conversación."),
+    CommercialControl("Flujo de conversación", "sales.conversation_flow.rules.no_skip_steps", "`true`: no se saltan pasos."),
+    CommercialControl("Flujo de conversación", "sales.conversation_flow.rules.guided_process", "`true`: guía al cliente paso a paso en un proceso."),
+    CommercialControl("Flujo de conversación", "sales.progression_rules.required_flow", "Secuencia mínima que debe respetar la conversación."),
+    CommercialControl("Flujo de conversación", "sales.progression_rules.forbid", "Lo que el asistente no debe hacer en este negocio."),
+    CommercialControl("Cierre", "sales.closing.strategy", "Tipo de cierre."),
+    CommercialControl("Cierre", "config.capabilities.closing_methods.link_payment.enabled", "`true`: permite enviar un enlace de pago directo al cliente."),
+    CommercialControl("Cierre", "config.capabilities.closing_methods.human_handoff.enabled", "`true`: permite escalar la conversación a una persona."),
+    CommercialControl("Cierre", "config.capabilities.closing_methods.data_collection.enabled", "`true`: permite cerrar pidiendo los datos del cliente."),
+    CommercialControl("Cierre", "config.capabilities.data_collection.enabled", "`true`: el asistente puede pedir datos al cliente."),
+    CommercialControl("Cierre", "config.capabilities.data_collection.fields", "Datos que el asistente pide."),
+    CommercialControl("Precio", "pricing.price_framing.type", "Forma de presentar el precio."),
+    CommercialControl("Precio", "pricing.business_offers.financing.available", "`true`: permite financiación. `false`: no la ofrece."),
+    CommercialControl("Recomendaciones", "sales.offer.recommendation_rules[].condition", "Situación que activa una recomendación.", False),
+    CommercialControl("Recomendaciones", "sales.offer.recommendation_rules[].recommend", "Plan que se recomienda en esa situación.", False),
+    CommercialControl("Entrega", "business.logistics.delivery.available", "`true`: ofrece domicilio."),
+    CommercialControl("Entrega", "business.logistics.shipping.available", "`true`: ofrece envío."),
+    CommercialControl("Entrega", "business.logistics.pickup.available", "`true`: ofrece recogida."),
+    CommercialControl("Entrega", "business.logistics.scheduling.required", "`true`: el servicio requiere agendar."),
+    CommercialControl("Inventario", "inventory.track_stock", "`true`: el negocio controla existencias."),
+)
 
 
 # ---------------------------------------------------------------------------
@@ -439,9 +487,9 @@ def resolve_path(document: Any, path: str) -> Any:
 def destination_path(entry: LegacyField, leaf: LegacyLeaf) -> str:
     """Ruta concreta del destino en el documento del contrato."""
     destination = entry.destination.removeprefix("secret:")
-    if entry.kind == "compatibility":
+    if entry.destination in (LEGACY_DESTINATION, POLICY_DESTINATION):
         concrete = ".".join(f"[{part}]" if part.isdigit() else part for part in leaf.path.split("."))
-        return f"compatibility.{concrete}".replace(".[", "[")
+        return f"{LEGACY_DESTINATION}.{concrete}".replace(".[", "[")
     indices = list(leaf.indices)
     if entry.pattern.endswith(".**"):
         prefix = entry.pattern[:-3]
@@ -468,6 +516,12 @@ def check_leaf(document: dict, leaf: LegacyLeaf) -> str | None:
         return f"{leaf.path}: campo sin catalogar ({leaf.pattern})"
     path = destination_path(entry, leaf)
     found = resolve_path(document, path)
+    if entry.kind == "policy":
+        if found is not None or resolve_path(document, leaf.path) is not None:
+            return f"{leaf.path}: la definición común no debe estar en los documentos"
+        if resolve_path(COMMON_CLOSING_POLICY, leaf.path.removeprefix("sales.closing.")) != leaf.value:
+            return f"{leaf.path}: no coincide con la política global del cierre"
+        return None
     if entry.kind == "secret":
         expected = None if str(leaf.value or "").strip() == "" else {"secret_ref": f"legacy_yaml:{leaf.path}"}
     else:
@@ -487,6 +541,33 @@ class ContractField:
     audience: str
     engine: str
     description: str
+    value_type: str = ""
+
+
+def _value_type(target: dict, definitions: dict) -> str:
+    """Tipo y opciones de un campo hoja, en palabras, para la documentación."""
+    if "enum" in target:
+        return " \\| ".join(str(value) for value in target["enum"])
+    if "const" in target:
+        return str(target["const"])
+    numeric = [option for option in target.get("anyOf", []) if option.get("type") in ("integer", "number")]
+    if numeric and len(numeric) == len(target["anyOf"]):
+        minimum = f" (mínimo {numeric[0]['minimum']})" if "minimum" in numeric[0] else ""
+        return f"número{minimum}"
+    if target.get("format") == "date":
+        return "fecha"
+    if target.get("type") == "string" and "pattern" in target:
+        return "texto con formato validado"
+    if target.get("type") == "array":
+        items = target.get("items", {})
+        while "$ref" in items:
+            items = definitions[items["$ref"].rsplit("/", 1)[-1]]
+        return f"lista de {_value_type(items, definitions)}"
+    if target.get("properties", {}).keys() == {"secret_ref"}:
+        return "referencia a secreto"
+    minimum = f" (mínimo {target['minimum']})" if "minimum" in target else ""
+    labels = {"boolean": "interruptor true/false", "integer": "entero", "number": "número", "string": "texto", "object": "mapa"}
+    return labels.get(target.get("type", ""), "texto o número") + minimum
 
 
 def contract_fields(schema: dict) -> dict[str, ContractField]:
@@ -517,7 +598,7 @@ def contract_fields(schema: dict) -> dict[str, ContractField]:
         elif target.get("type") == "array" and _deref(target.get("items", {})).get("properties"):
             _walk(target["items"], f"{path}[]", audience, engine, description)
         else:
-            fields[path] = ContractField(path, audience, engine, " ".join(description.split()))
+            fields[path] = ContractField(path, audience, engine, " ".join(description.split()), _value_type(target, definitions))
 
     _walk(schema, "", "sistema", "pendiente", "")
     return fields

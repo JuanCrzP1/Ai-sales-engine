@@ -7,13 +7,13 @@
 -- Almacén versionado de la configuración comercial de cada negocio (contrato
 -- BusinessConfig v1, ver docs/business-config.md) y de sus datos de pago cifrados.
 -- La misma definición, para SQLAlchemy, está en
--- project/app/infrastructure/config/business_config_tables.py; una prueba
+-- project/app/infrastructure/business_config/tables.py; una prueba
 -- comprueba que ambas coinciden.
 --
 -- Identificadores: UUID es el identificador canónico de los negocios, igual que
 -- en project/docs/postgresql_schema.sql y en la ruta conversacional en ejecución
 -- (tenant_channel_resolver, DBRepository, memory_repository). Requiere la tabla
--- `tenants (id UUID PRIMARY KEY, slug TEXT UNIQUE)` de ese esquema. Los modelos
+-- `tenants (id UUID PRIMARY KEY, name TEXT NOT NULL, slug TEXT UNIQUE)` de ese esquema. Los modelos
 -- ORM con ids enteros (project/app/models) no participan.
 --
 -- Separación de responsabilidades: aquí solo hay configuración comercial y datos
@@ -61,8 +61,16 @@ CREATE TABLE IF NOT EXISTS business_config_secrets (
   PRIMARY KEY (tenant_id, ref_key)
 );
 
+-- Ajustes técnicos vigentes de cada negocio: fuera del documento comercial y sin versiones.
+CREATE TABLE IF NOT EXISTS business_engine_settings (
+  tenant_id   UUID PRIMARY KEY REFERENCES tenants(id) ON DELETE CASCADE,
+  document    JSONB NOT NULL,
+  updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
 COMMIT;
 
 -- Reversión (solo en una base de pruebas, nunca con datos en uso):
+--   DROP TABLE IF EXISTS business_engine_settings;
 --   DROP TABLE IF EXISTS business_config_secrets;
 --   DROP TABLE IF EXISTS business_configs;

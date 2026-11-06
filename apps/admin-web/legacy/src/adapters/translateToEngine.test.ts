@@ -40,7 +40,7 @@ describe("translateToEngine", () => {
       location: { type: "fisico", address: "Calle 10 #20-30", city: "Ciudad Ejemplo", coverage: { type: "local", zones: ["Centro"] } },
       service_modes: ["domicilio", "recoger"],
     });
-    expect(result.document.engine).toBeUndefined();
+    expect(result.document).not.toHaveProperty("engine");
   });
 
   it("produce el documento que valida el contrato de Python (tests/test_business_config_contract.py)", async () => {

@@ -353,7 +353,7 @@ class Settings(BaseSettings):
     enable_human_handoff: bool = True
     enable_audit_logs: bool = True
     enable_audit_alerts: bool = True
-    enable_simulation_endpoint: bool = True
+    enable_simulation_endpoint: bool = False
     enable_webhook_processing: bool = True
     semantic_threshold: float = 0.22
     conversation_context_limit: int = 8

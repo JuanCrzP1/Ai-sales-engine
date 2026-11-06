@@ -17,9 +17,12 @@
 
 from __future__ import annotations
 
+import os
 import sys
 from pathlib import Path
+from types import SimpleNamespace
 
+import conftest as suite_conftest
 import pytest
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
@@ -113,3 +116,52 @@ def test_explicit_validation_does_not_mutate_settings():
     before = settings.database_url
     validate_database_url("postgresql+psycopg://x:y@h/d", is_test=False)
     assert settings.database_url == before
+
+
+# ---------------------------------------------------------------------------
+# 5. `pytest` a secas no gasta API ni usa las credenciales del `.env` local.
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize(
+    "expression, requested",
+    [
+        ("", False),
+        ("unit", False),
+        ("not integration", False),
+        ("not integration and not e2e", False),
+        ("integration", True),
+        ("integration or unit", True),
+    ],
+)
+def test_live_model_tests_need_an_explicit_request(expression, requested):
+    config = SimpleNamespace(getoption=lambda name, default=None: expression)
+    assert suite_conftest._live_model_tests_requested(config) is requested
+
+
+def test_normal_run_ignores_the_credentials_of_the_local_env_file():
+    # Solo nombres y booleanos: si falla, el informe no debe mostrar ningún valor.
+    credentials = (suite_conftest._local_env_names() | {"OPENROUTER_API_KEY"}) - {"MODE"} - suite_conftest._non_text_settings()
+    exposed = sorted(name for name in credentials if os.environ.get(name))
+    assert exposed == []
+    key_in_settings = bool(str(settings.openrouter_api_key or "").strip())
+    assert key_in_settings is False
+
+
+def test_flags_of_the_local_env_file_do_not_stop_the_run(monkeypatch):
+    # `Settings` no acepta un booleano vacío; una credencial, en cambio, sí debe quedar vacía.
+    names = {"ENABLE_SIMULATION_ENDPOINT", "JWT_EXPIRE_MINUTES", "JWT_SECRET", "DATABASE_URL", "TELEGRAM_TOKEN", "NOMBRE_DESCONOCIDO"}
+    for name in names | {"OPENROUTER_API_KEY"}:
+        monkeypatch.setenv(name, "1")
+    monkeypatch.setattr(suite_conftest, "_local_env_names", lambda: names)
+    suite_conftest.pytest_configure(SimpleNamespace(getoption=lambda name, default=None: ""))
+    assert {name for name in names if os.environ[name]} == {"ENABLE_SIMULATION_ENDPOINT", "JWT_EXPIRE_MINUTES"}
+    assert os.environ["OPENROUTER_API_KEY"] == ""
+
+
+def test_live_model_tests_are_skipped_without_a_key(monkeypatch):
+    monkeypatch.setenv("OPENROUTER_API_KEY", "")
+    markers = []
+    live = SimpleNamespace(keywords={"integration": True}, add_marker=markers.append)
+    unit = SimpleNamespace(keywords={}, add_marker=markers.append)
+    suite_conftest.pytest_collection_modifyitems(None, [live, unit])
+    assert len(markers) == 1 and markers[0].name == "skip"

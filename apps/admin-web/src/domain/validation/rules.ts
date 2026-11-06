@@ -1,4 +1,7 @@
+import type { CatalogItem, Plan } from "../../contracts/businessConfig.v1";
+import { paymentHolders, isAvailable, isCatalog, isLinkActive, isMethodActive, isStoredRef, offerEntries } from "../config/document";
 import {
+  MAX_CATEGORIES_USED,
   MAX_FAQ_ANSWER_CHARS,
   MAX_FAQ_QUESTION_CHARS,
   MAX_FAQS,
@@ -10,37 +13,30 @@ import {
   WORD_LIMITS,
 } from "../config/engineLimits";
 import { labelFor, RESPONSE_LENGTHS } from "../config/options";
-import type { AssistantConfig, Offering, TransferMethod } from "../config/types";
+import type { BusinessDocument, PaymentValues, WorkingCopy } from "../config/types";
 import type { ConfigSectionId } from "../sections";
 import { localIsoDate } from "../../lib/format";
 import { cleanList, countWords } from "../../lib/text";
-import {
-  isAccountNumber,
-  isBlank,
-  isColombianMobile,
-  isHttpUrl,
-  isHttpsUrl,
-  isPositiveAmount,
-} from "./fieldChecks";
+import { isAccountNumber, isBlank, isColombianMobile, isHttpsUrl, isHttpUrl, isPositiveAmount } from "./fieldChecks";
 import type { ValidationIssue } from "./types";
 
 /**
- * Reglas de validación de la configuración. Única fuente de verdad: los formularios,
- * el inicio y la revisión consumen el resultado de `validateConfig`.
+ * Validación anticipada para ayudar mientras se edita. No es la autoridad: el servidor valida de nuevo con el contrato
+ * (BusinessConfig v1) al guardar y sus errores se muestran en los mismos campos. Los límites vienen del contrato generado.
  */
-export function validateConfig(config: AssistantConfig, today: Date = new Date()): ValidationIssue[] {
+export function validateDocument({ document, paymentValues }: WorkingCopy, today: Date = new Date()): ValidationIssue[] {
   return [
-    ...validateBusiness(config),
-    ...validateCatalog(config),
-    ...validatePayments(config, localIsoDate(today)),
-    ...validateAssistant(config),
-    ...validateMessages(config),
+    ...validateBusiness(document),
+    ...validateOffer(document),
+    ...validatePayments(document, paymentValues, localIsoDate(today)),
+    ...validateAssistant(document),
+    ...validateMessages(document),
   ];
 }
 
 /** Listas del perfil comercial: el contrato admite hasta MAX_PROFILE_ITEMS frases de MAX_PROFILE_ITEM_CHARS. */
-function validateList(section: ConfigSectionId, field: string, label: string, items: string[]): ValidationIssue[] {
-  const cleaned = cleanList(items);
+function validateList(section: ConfigSectionId, field: string, label: string, items: string[] | null | undefined): ValidationIssue[] {
+  const cleaned = cleanList(items ?? []);
   const issues: ValidationIssue[] = [];
   if (cleaned.length > MAX_PROFILE_ITEMS) {
     issues.push({ section, field, severity: "error", message: `${label}: puedes agregar hasta ${MAX_PROFILE_ITEMS}.` });
@@ -51,273 +47,230 @@ function validateList(section: ConfigSectionId, field: string, label: string, it
   return issues;
 }
 
-function validateBusiness({ business }: AssistantConfig): ValidationIssue[] {
+function validateBusiness({ identity }: BusinessDocument): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
   const add = (field: string, severity: ValidationIssue["severity"], message: string) =>
-    issues.push({ section: "business", field: `business.${field}`, severity, message });
+    issues.push({ section: "business", field: `identity.${field}`, severity, message });
 
-  if (isBlank(business.name)) add("name", "error", "Escribe el nombre comercial de tu negocio.");
-  if (isBlank(business.description)) {
+  if (isBlank(identity.name)) add("name", "error", "Escribe el nombre comercial de tu negocio.");
+  if (isBlank(identity.description)) {
     add("description", "error", "Describe brevemente tu negocio.");
-  } else if (countWords(business.description) > WORD_LIMITS.description) {
+  } else if (countWords(identity.description) > WORD_LIMITS.description) {
     add("description", "warning", `El asistente usa las primeras ${WORD_LIMITS.description} palabras de la descripción.`);
   }
-  if (isBlank(business.businessType)) {
-    add("businessType", "error", "Indica a qué se dedica tu negocio.");
-  } else if (countWords(business.businessType) > WORD_LIMITS.businessType) {
-    add(
-      "businessType",
-      "warning",
-      `El asistente solo usa las primeras ${WORD_LIMITS.businessType} palabras. Intenta resumirlo.`,
-    );
+  if (isBlank(identity.industry)) {
+    add("industry", "error", "Indica a qué se dedica tu negocio.");
+  } else if (countWords(identity.industry) > WORD_LIMITS.businessType) {
+    add("industry", "warning", `El asistente solo usa las primeras ${WORD_LIMITS.businessType} palabras. Intenta resumirlo.`);
   }
-  if (isBlank(business.valueProposition)) {
-    add("valueProposition", "error", "Escribe tu propuesta de valor: qué gana el cliente contigo.");
-  } else if (countWords(business.valueProposition) > WORD_LIMITS.valueProposition) {
-    add(
-      "valueProposition",
-      "warning",
-      `El asistente solo usa las primeras ${WORD_LIMITS.valueProposition} palabras; el resto se corta.`,
-    );
+  if (isBlank(identity.value_proposition)) {
+    add("value_proposition", "error", "Escribe tu propuesta de valor: qué gana el cliente contigo.");
+  } else if (countWords(identity.value_proposition) > WORD_LIMITS.valueProposition) {
+    add("value_proposition", "warning", `El asistente solo usa las primeras ${WORD_LIMITS.valueProposition} palabras; el resto se corta.`);
   }
-  issues.push(...validateList("business", "business.differentiators", "Diferenciadores", business.differentiators));
-  const { location } = business;
-  if ((location.type === "fisico" || location.type === "mixto") && isBlank(location.address)) {
+  issues.push(
+    ...validateList("business", "identity.differentiators", "Diferenciadores", identity.differentiators),
+    ...validateList("business", "identity.credibility", "Pruebas de confianza", identity.credibility),
+  );
+  const location = identity.location;
+  if (location && (location.type === "fisico" || location.type === "mixto") && isBlank(location.address ?? "")) {
     add("location.address", "warning", "Sin dirección, el asistente no podrá decir dónde queda tu local.");
   }
-  if (location.type !== "") {
-    issues.push(...validateList("business", "business.location.coverageZones", "Zonas de cobertura", location.coverageZones));
-  }
+  if (location) issues.push(...validateList("business", "identity.location.coverage.zones", "Zonas de cobertura", location.coverage?.zones));
   return issues;
 }
 
-function validateCatalog(config: AssistantConfig): ValidationIssue[] {
+function validateOffer(document: BusinessDocument): ValidationIssue[] {
+  const catalog = isCatalog(document);
+  const prefix = catalog ? "offer.catalog.items" : "offer.plans";
+  const entries = offerEntries(document);
   const issues: ValidationIssue[] = [];
-  const isCatalog = config.business.salesMode === "catalog";
-
-  if (!config.offerings.some((offering) => offering.available)) {
-    issues.push({
-      section: "catalog",
-      field: "offerings",
-      severity: "error",
-      message: "Agrega al menos un producto o servicio disponible.",
-    });
+  if (!entries.some(isAvailable)) {
+    issues.push({ section: "catalog", field: "offer", severity: "error", message: "Agrega al menos un producto o servicio disponible." });
   }
-
-  for (const offering of config.offerings) {
-    issues.push(...validateOffering(offering, isCatalog));
+  const categories = document.offer.catalog?.categories.length ?? 0;
+  if (categories > MAX_CATEGORIES_USED) {
+    issues.push({ section: "catalog", field: "offer.catalog.categories", severity: "warning", message: `Tienes ${categories} categorías: el asistente solo menciona las primeras ${MAX_CATEGORIES_USED}.` });
   }
+  entries.forEach((entry, index) => {
+    issues.push(...validateEntry(entry, catalog).map((issue) => ({ ...issue, field: `${prefix}.${index}.${issue.field}` })));
+  });
   return issues;
 }
 
-export function validateOffering(offering: Offering, isCatalog: boolean): ValidationIssue[] {
+/** Validación de un plan o producto; `field` es relativo al elemento, para usarla también en el formulario de edición. */
+export function validateEntry(entry: Plan | CatalogItem, catalog: boolean, categoryName?: string): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
-  const add = (field: string, severity: ValidationIssue["severity"], message: string) =>
-    issues.push({ section: "catalog", field: `offerings.${offering.id}.${field}`, severity, message });
-  const label = offering.name.trim() || "Un elemento sin nombre";
+  const add = (field: string, severity: ValidationIssue["severity"], message: string) => issues.push({ section: "catalog", field, severity, message });
+  const label = entry.name.trim() || "Un elemento sin nombre";
 
-  if (isBlank(offering.name)) add("name", "error", "Cada producto o servicio necesita un nombre.");
-  if (!isPositiveAmount(offering.price)) add("price", "error", `${label}: indica un precio mayor que cero.`);
-  if (offering.setupFee !== null && !isPositiveAmount(offering.setupFee)) {
-    add("setupFee", "error", `${label}: el costo inicial debe ser mayor que cero o quedar vacío.`);
+  if (isBlank(entry.name)) add("name", "error", "Cada producto o servicio necesita un nombre.");
+  if (catalog) {
+    const item = entry as CatalogItem;
+    if (categoryName !== undefined && isBlank(categoryName)) add("category", "error", `${label}: elige o escribe una categoría.`);
+    if (categoryName === undefined && isBlank(item.category)) add("category", "error", `${label}: elige o escribe una categoría.`);
+    if (item.prices.length === 0 || item.prices.some((price) => !isPositiveAmount(price.amount))) add("prices", "error", `${label}: indica un precio mayor que cero.`);
+    issues.push(...validateList("catalog", "features", `${label}, características`, item.features));
+  } else {
+    const plan = entry as Plan;
+    const hasAmount = (price: Plan["prices"][number]) => [price.price, price.monthly, price.annual, price.implementation, price.first_payment].some((amount) => isPositiveAmount(amount ?? null));
+    if (plan.prices.length === 0 || !plan.prices.every(hasAmount)) add("prices", "error", `${label}: indica un precio mayor que cero.`);
   }
-  if (isCatalog && isBlank(offering.category)) {
-    add("category", "error", `${label}: elige o escribe una categoría.`);
-  }
-  if (countWords(offering.description) > WORD_LIMITS.offeringDescription) {
+  const currencies = entry.prices.map((price) => price.currency);
+  if (new Set(currencies).size !== currencies.length) add("prices", "error", `${label}: hay dos precios en la misma moneda.`);
+  if (countWords(entry.description ?? "") > WORD_LIMITS.offeringDescription) {
     add("description", "warning", `${label}: el asistente usa las primeras ${WORD_LIMITS.offeringDescription} palabras de la descripción.`);
   }
-  if (isCatalog) {
-    issues.push(...validateList("catalog", `offerings.${offering.id}.features`, `${label}, características`, offering.features));
-  }
   return issues;
 }
 
-function validatePayments({ payments, closing }: AssistantConfig, todayIso: string): ValidationIssue[] {
+/** Formato de los datos de pago nuevos, para avisar mientras se escribe. La autoridad es el servidor (`payment_data.py`), que aplica las mismas reglas antes de guardar. */
+export function validatePaymentValues({ document, paymentValues }: WorkingCopy): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
-  const add = (field: string, severity: ValidationIssue["severity"], message: string) =>
-    issues.push({ section: "payments", field, severity, message });
-
-  const hasLink = payments.paymentLinkEnabled && !isBlank(payments.paymentLink);
-  if (payments.paymentLinkEnabled) {
-    if (isBlank(payments.paymentLink)) {
-      add("payments.paymentLink", "error", "Pega el enlace de pago o desactiva esta opción.");
-    } else if (!isHttpUrl(payments.paymentLink)) {
-      add("payments.paymentLink", "error", "El enlace debe ser una dirección web válida (https://…).");
-    } else if (!isHttpsUrl(payments.paymentLink)) {
-      add("payments.paymentLink", "warning", "Usa un enlace seguro que empiece por https://.");
-    }
-  }
-
-  if (payments.transferEnabled && payments.transferMethods.length === 0) {
-    add("payments.transferMethods", "error", "Agrega al menos una cuenta o desactiva las transferencias.");
-  }
-  if (payments.transferEnabled) {
-    for (const method of payments.transferMethods) issues.push(...validateTransferMethod(method));
-    const types = payments.transferMethods.map((method) => method.type);
-    if (new Set(types).size !== types.length) {
-      add(
-        "payments.transferMethods.duplicates",
-        "warning",
-        "Hay dos cuentas del mismo tipo: el asistente solo comparte la primera de cada tipo.",
-      );
-    }
-  }
-
-  const hasTransfer = payments.transferEnabled && payments.transferMethods.length > 0;
-  if (!hasLink && !hasTransfer) {
-    add("payments", "warning", "No hay ningún medio de pago: el asistente no podrá indicar cómo pagar.");
-  }
-
-  if (!closing.sendPaymentLink && !closing.humanHandoff && !closing.collectCustomerData) {
-    add("closing.methods", "error", "Activa al menos una forma de cerrar la venta.");
-  }
-  if (closing.sendPaymentLink && !hasLink && !hasTransfer) {
-    add("closing.sendPaymentLink", "warning", "Activaste el cierre con pago, pero no hay enlace ni cuentas configuradas.");
-  }
-  if (closing.sendPaymentLink && !hasLink && hasTransfer) {
-    add("closing.sendPaymentLink", "warning", "No hay enlace de pago: el asistente ofrecerá solo transferencias.");
-  }
-  if (closing.collectCustomerData && closing.customerDataFields.length === 0) {
-    add("closing.customerDataFields", "error", "Elige qué datos puede pedir el asistente.");
-  }
-  if (closing.humanHandoff) {
-    add(
-      "closing.humanHandoff",
-      "warning",
-      "El asistente podrá ofrecer pasar a una persona, pero esta versión aún no avisa a nadie de tu equipo.",
-    );
-  }
-  if (closing.actions.length === 0) {
-    add("closing.actions", "error", "Elige al menos una acción que pueda realizar el asistente.");
-  }
-
-  if (payments.promotions.length > MAX_PROMOTIONS) {
-    add("payments.promotions", "error", `Puedes guardar hasta ${MAX_PROMOTIONS} promociones.`);
-  }
-  for (const promotion of payments.promotions) {
-    const field = (name: string) => `payments.promotions.${promotion.id}.${name}`;
-    if (isBlank(promotion.name)) add(field("name"), "error", "Escribe el nombre de la promoción o elimínala.");
-    else if (promotion.name.trim().length > MAX_PROFILE_ITEM_CHARS) add(field("name"), "error", `El nombre admite hasta ${MAX_PROFILE_ITEM_CHARS} caracteres.`);
-    if (isBlank(promotion.details)) add(field("details"), "error", "Explica en qué consiste la promoción.");
-    else if (promotion.details.trim().length > MAX_PROFILE_ITEM_CHARS) add(field("details"), "error", `El detalle admite hasta ${MAX_PROFILE_ITEM_CHARS} caracteres.`);
-    if (promotion.validUntil && !/^\d{4}-\d{2}-\d{2}$/.test(promotion.validUntil)) {
-      add(field("validUntil"), "error", "Escribe una fecha válida o déjala vacía.");
-    } else if (promotion.validUntil && promotion.validUntil < todayIso) {
-      add(field("validUntil"), "warning", "Esta promoción ya venció: el asistente no la ofrecerá.");
+  for (const holder of paymentHolders(document.payments)) {
+    const value = paymentValues[holder.ref.secret_ref];
+    // Un dato ya guardado con el campo de reemplazo vacío no es un error: se conserva el que hay.
+    if (value === undefined || (isStoredRef(holder.ref.secret_ref) && isBlank(value))) continue;
+    const add = (severity: ValidationIssue["severity"], message: string) => issues.push({ section: "payments", field: holder.path, severity, message });
+    switch (holder.kind) {
+      case "link":
+        if (isBlank(value)) add("error", "Pega el enlace de pago o desactiva esta opción.");
+        else if (!isHttpUrl(value)) add("error", "El enlace debe ser una dirección web válida (https://…).");
+        else if (!isHttpsUrl(value)) add("warning", "Usa un enlace seguro que empiece por https://.");
+        break;
+      case "mobile":
+        if (!isColombianMobile(value)) add("error", "Escribe un celular de 10 dígitos que empiece por 3.");
+        break;
+      case "account":
+        if (!isAccountNumber(value)) add("error", "Escribe un número de cuenta válido (solo dígitos).");
+        break;
+      case "reference":
+        if (isBlank(value)) add("error", "Escribe tu llave o referencia Bre-B.");
+        break;
     }
   }
   return issues;
 }
 
-export function validateTransferMethod(method: TransferMethod): ValidationIssue[] {
-  const issues: ValidationIssue[] = [];
-  const add = (field: string, message: string) =>
-    issues.push({
-      section: "payments",
-      field: `payments.transfer.${method.id}.${field}`,
-      severity: "error",
-      message,
+function validatePayments(document: BusinessDocument, paymentValues: PaymentValues, todayIso: string): ValidationIssue[] {
+  const { payments, capabilities, terms } = document;
+  const issues: ValidationIssue[] = validatePaymentValues({ document, paymentValues });
+  const add = (field: string, severity: ValidationIssue["severity"], message: string) => issues.push({ section: "payments", field, severity, message });
+
+  const hasLink = payments.some(isLinkActive);
+  const hasTransfer = payments.some((profile) => (profile.transfer_methods ?? []).some((method) => isMethodActive(profile, method)));
+  payments.forEach((profile, index) => {
+    const methods = profile.transfer_methods ?? [];
+    if (profile.transfer_enabled && methods.length === 0) {
+      add(`payments.${index}.transfer_methods`, "error", "Agrega al menos una cuenta o desactiva las transferencias.");
+    } else if (profile.transfer_enabled && !methods.some((method) => isMethodActive(profile, method))) {
+      add(`payments.${index}.transfer_methods`, "warning", "Todas las cuentas están inactivas: el asistente no ofrecerá transferencias.");
+    }
+    methods.forEach((method, position) => {
+      if (method.type === "bank" && isBlank(method.bank ?? "")) add(`payments.${index}.transfer_methods.${position}.bank`, "error", "Escribe el nombre del banco.");
     });
+    const types = methods.filter((method) => isMethodActive(profile, method)).map((method) => method.type);
+    if (new Set(types).size !== types.length) {
+      add(`payments.${index}.transfer_methods.duplicates`, "warning", "Hay dos cuentas del mismo tipo: el asistente solo comparte la primera de cada tipo.");
+    }
+  });
+  if (!hasLink && !hasTransfer) add("payments", "warning", "No hay ningún medio de pago: el asistente no podrá indicar cómo pagar.");
 
-  switch (method.type) {
-    case "nequi":
-    case "daviplata":
-      if (!isColombianMobile(method.phoneNumber)) add("phoneNumber", "Escribe un celular de 10 dígitos que empiece por 3.");
-      break;
-    case "bank":
-      if (isBlank(method.bankName)) add("bankName", "Escribe el nombre del banco.");
-      if (!isAccountNumber(method.accountNumber)) add("accountNumber", "Escribe un número de cuenta válido (solo dígitos).");
-      break;
-    case "breb":
-      if (isBlank(method.reference)) add("reference", "Escribe tu llave o referencia Bre-B.");
-      break;
+  const closing = capabilities.closing_methods;
+  if (!closing.payment_link && !closing.human_handoff && !closing.data_collection) {
+    add("capabilities.closing_methods", "error", "Activa al menos una forma de cerrar la venta.");
   }
+  if (closing.payment_link && !hasLink && !hasTransfer) {
+    add("capabilities.closing_methods.payment_link", "warning", "Activaste el cierre con pago, pero no hay enlace ni cuentas configuradas.");
+  } else if (closing.payment_link && !hasLink) {
+    add("capabilities.closing_methods.payment_link", "warning", "No hay enlace de pago: el asistente ofrecerá solo transferencias.");
+  }
+  if (capabilities.data_collection.enabled && (capabilities.data_collection.fields ?? []).length === 0) {
+    add("capabilities.data_collection", "error", "Elige qué datos puede pedir el asistente.");
+  }
+  if (closing.human_handoff) {
+    add("capabilities.closing_methods.human_handoff", "warning", "El asistente podrá ofrecer pasar a una persona, pero esta versión aún no avisa a nadie de tu equipo.");
+  }
+  if ((capabilities.actions_primary ?? []).length + (capabilities.actions_support ?? []).length === 0) {
+    add("capabilities.actions", "error", "Elige al menos una acción que pueda realizar el asistente.");
+  }
+
+  const promotions = terms.promotions ?? [];
+  if (promotions.length > MAX_PROMOTIONS) add("terms.promotions", "error", `Puedes guardar hasta ${MAX_PROMOTIONS} promociones.`);
+  promotions.forEach((promotion, index) => {
+    const field = (name: string) => `terms.promotions.${index}.${name}`;
+    if (isBlank(promotion.name)) add(field("name"), "error", "Escribe el nombre de la promoción o elimínala.");
+    else if (promotion.name.length > MAX_PROFILE_ITEM_CHARS) add(field("name"), "error", `El nombre admite hasta ${MAX_PROFILE_ITEM_CHARS} caracteres.`);
+    if (isBlank(promotion.details)) add(field("details"), "error", "Explica en qué consiste la promoción.");
+    else if (promotion.details.length > MAX_PROFILE_ITEM_CHARS) add(field("details"), "error", `El detalle admite hasta ${MAX_PROFILE_ITEM_CHARS} caracteres.`);
+    if (promotion.valid_until && promotion.valid_until < todayIso) add(field("valid_until"), "warning", "Esta promoción ya venció: el asistente no la ofrecerá.");
+  });
   return issues;
 }
 
-function validateAssistant({ behavior, offerings }: AssistantConfig): ValidationIssue[] {
+function validateAssistant(document: BusinessDocument): ValidationIssue[] {
+  const { response_style: style, sales, knowledge } = document;
   const issues: ValidationIssue[] = [];
-  const add = (field: string, severity: ValidationIssue["severity"], message: string) =>
-    issues.push({ section: "assistant", field: `behavior.${field}`, severity, message });
+  const add = (field: string, severity: ValidationIssue["severity"], message: string) => issues.push({ section: "assistant", field, severity, message });
 
-  if (behavior.tone.trim().length > MAX_TONE_CHARS) add("tone", "error", `El tono admite hasta ${MAX_TONE_CHARS} caracteres.`);
-  if (behavior.maxWords !== null) {
-    const [low, high] = RESPONSE_LENGTH_WORD_RANGES[behavior.responseLength];
-    if (!Number.isInteger(behavior.maxWords) || behavior.maxWords < low || (high !== null && behavior.maxWords > high)) {
-      const label = labelFor(RESPONSE_LENGTHS, behavior.responseLength).toLowerCase();
+  if ((style.tone ?? "").length > MAX_TONE_CHARS) add("response_style.tone", "error", `El tono admite hasta ${MAX_TONE_CHARS} caracteres.`);
+  if ((style.voice ?? "").length > MAX_TONE_CHARS) add("response_style.voice", "error", `La personalidad admite hasta ${MAX_TONE_CHARS} caracteres.`);
+  if (style.max_words !== null && style.max_words !== undefined) {
+    const length = style.length ?? "short";
+    const [low, high] = RESPONSE_LENGTH_WORD_RANGES[length];
+    if (!Number.isInteger(style.max_words) || style.max_words < low || (high !== null && style.max_words > high)) {
       const range = high !== null ? `entre ${low} y ${high}` : `de al menos ${low}`;
-      add("maxWords", "error", `Con respuestas ${label}, el límite debe ser ${range} palabras.`);
+      add("response_style.max_words", "error", `Con respuestas ${labelFor(RESPONSE_LENGTHS, length).toLowerCase()}, el límite debe ser ${range} palabras.`);
     }
   }
   issues.push(
-    ...validateList("assistant", "behavior.benefits", "Beneficios", behavior.benefits),
-    ...validateList("assistant", "behavior.sellingPoints", "Argumentos de venta", behavior.sellingPoints),
-    ...validateList("assistant", "behavior.discoveryQuestions", "Preguntas para entender al cliente", behavior.discoveryQuestions),
-    ...validateList("assistant", "behavior.salesInstructions", "Instrucciones de venta", behavior.salesInstructions),
+    ...validateList("assistant", "response_style.instructions", "Indicaciones de estilo", style.instructions),
+    ...validateList("assistant", "sales.benefits", "Beneficios", sales.benefits),
+    ...validateList("assistant", "sales.arguments", "Argumentos de venta", sales.arguments),
+    ...validateList("assistant", "sales.discovery.questions", "Preguntas para entender al cliente", sales.discovery?.questions),
+    ...validateList("assistant", "sales.instructions", "Instrucciones de venta", sales.instructions),
   );
 
-  if (behavior.recommendationRules.length > MAX_PROFILE_ITEMS) {
-    add("recommendationRules", "error", `Puedes agregar hasta ${MAX_PROFILE_ITEMS} recomendaciones.`);
-  }
-  for (const rule of behavior.recommendationRules) {
-    const field = (name: string) => `recommendationRules.${rule.id}.${name}`;
-    const offering = offerings.find((item) => item.id === rule.offeringId);
+  const rules = sales.recommendation_rules ?? [];
+  if (rules.length > MAX_PROFILE_ITEMS) add("sales.recommendation_rules", "error", `Puedes agregar hasta ${MAX_PROFILE_ITEMS} recomendaciones.`);
+  const entries = offerEntries(document);
+  rules.forEach((rule, index) => {
+    const field = (name: string) => `sales.recommendation_rules.${index}.${name}`;
     if (isBlank(rule.when)) add(field("when"), "error", "Describe la situación del cliente o elimina la recomendación.");
-    else if (rule.when.trim().length > MAX_PROFILE_ITEM_CHARS) add(field("when"), "error", `La situación admite hasta ${MAX_PROFILE_ITEM_CHARS} caracteres.`);
-    if (!offering) add(field("offeringId"), "error", "Elige qué plan o producto recomendar.");
-    else if (!offering.available) {
-      add(field("offeringId"), "warning", `"${offering.name.trim() || "Este elemento"}" no está disponible: el asistente no lo recomendará.`);
-    }
-  }
+    if (isBlank(rule.recommend)) add(field("recommend"), "error", "Elige qué plan o producto recomendar.");
+    else if (entries.some((entry) => entry.id === rule.recommend && !isAvailable(entry))) add(field("recommend"), "warning", "Ese elemento no está disponible: el asistente no lo recomendará.");
+  });
 
-  if (behavior.customerProblems.length === 0 && isBlank(behavior.primaryMotivation)) {
-    issues.push({
-      section: "assistant",
-      field: "behavior.customerProblems",
-      severity: "warning",
-      message: "Cuéntale al asistente qué problemas resuelves o por qué te compran; le ayuda a vender mejor.",
-    });
+  if ((sales.customer_problems ?? []).length === 0 && !sales.buying_motivation?.primary) {
+    add("sales.customer_problems", "warning", "Cuéntale al asistente qué problemas resuelves o por qué te compran; le ayuda a vender mejor.");
   }
-  if (behavior.faqs.length > MAX_FAQS) {
-    issues.push({ section: "assistant", field: "behavior.faqs", severity: "error", message: `Puedes guardar hasta ${MAX_FAQS} preguntas frecuentes.` });
-  }
-  for (const faq of behavior.faqs) {
-    const add = (field: string, message: string) =>
-      issues.push({ section: "assistant", field: `behavior.faqs.${faq.id}.${field}`, severity: "error", message });
-    if (isBlank(faq.question)) add("question", "Escribe la pregunta o elimínala.");
-    else if (faq.question.trim().length > MAX_FAQ_QUESTION_CHARS) add("question", `La pregunta admite hasta ${MAX_FAQ_QUESTION_CHARS} caracteres.`);
-    if (isBlank(faq.answer)) add("answer", "Escribe la respuesta o elimina la pregunta.");
-    else if (faq.answer.trim().length > MAX_FAQ_ANSWER_CHARS) add("answer", `La respuesta admite hasta ${MAX_FAQ_ANSWER_CHARS} caracteres.`);
-  }
+  const faqs = knowledge.faqs ?? [];
+  if (faqs.length > MAX_FAQS) add("knowledge.faqs", "error", `Puedes guardar hasta ${MAX_FAQS} preguntas frecuentes.`);
+  faqs.forEach((faq, index) => {
+    const field = (name: string) => `knowledge.faqs.${index}.${name}`;
+    if (isBlank(faq.question)) add(field("question"), "error", "Escribe la pregunta o elimínala.");
+    else if (faq.question.length > MAX_FAQ_QUESTION_CHARS) add(field("question"), "error", `La pregunta admite hasta ${MAX_FAQ_QUESTION_CHARS} caracteres.`);
+    if (isBlank(faq.answer)) add(field("answer"), "error", "Escribe la respuesta o elimina la pregunta.");
+    else if (faq.answer.length > MAX_FAQ_ANSWER_CHARS) add(field("answer"), "error", `La respuesta admite hasta ${MAX_FAQ_ANSWER_CHARS} caracteres.`);
+  });
   return issues;
 }
 
-function validateMessages({ messages }: AssistantConfig): ValidationIssue[] {
+function validateMessages({ messages, capabilities }: BusinessDocument): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
-  if (messages.welcomeEnabled && isBlank(messages.welcomeText)) {
-    issues.push({
-      section: "messages",
-      field: "messages.welcomeText",
-      severity: "error",
-      message: "Escribe el mensaje de bienvenida o desactívalo.",
-    });
+  if (messages.welcome.enabled && isBlank(messages.welcome.text ?? "")) {
+    issues.push({ section: "messages", field: "messages.welcome.text", severity: "error", message: "Escribe el mensaje de bienvenida o desactívalo." });
   }
-  if (isBlank(messages.paymentReportedText)) {
+  if (isBlank(messages.payment_reported ?? "")) {
     issues.push({
       section: "messages",
-      field: "messages.paymentReportedText",
+      field: "messages.payment_reported",
       severity: "warning",
       message: "Sin este mensaje, el asistente responderá con sus propias palabras cuando el cliente diga que ya pagó.",
     });
   }
-  if (messages.serviceChannels.length === 0) {
-    issues.push({
-      section: "messages",
-      field: "messages.serviceChannels",
-      severity: "warning",
-      message: "Elige al menos un canal de atención para que el asistente sepa por dónde atiendes.",
-    });
+  if ((capabilities.service_channels ?? []).length === 0) {
+    issues.push({ section: "messages", field: "capabilities.service_channels", severity: "warning", message: "Elige al menos un canal de atención para que el asistente sepa por dónde atiendes." });
   }
   return issues;
 }

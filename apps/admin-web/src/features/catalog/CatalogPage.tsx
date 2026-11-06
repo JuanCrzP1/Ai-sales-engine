@@ -1,40 +1,39 @@
 import { Button } from "../../components/ui/Button";
 import { Alert, EmptyState } from "../../components/ui/Feedback";
 import { Card, PageHeader } from "../../components/ui/Layout";
+import { SelectField } from "../../components/ui/FormFields";
+import { isAvailable, isCatalog, offerEntries } from "../../domain/config/document";
+import { ContractSection } from "../../layout/ContractSection";
 import { SectionPager } from "../../layout/SectionPager";
 import { stepLabel } from "../../navigation/navItems";
 import { useConfig, useFieldIssue } from "../../state/useConfig";
+import { CategoriesForm } from "./CategoriesForm";
 import { OfferingEditor } from "./OfferingEditor";
 import { OfferingList } from "./OfferingList";
 import { useOfferingEditor } from "./useOfferingEditor";
 
 export function CatalogPage() {
-  const { config, actions } = useConfig();
-  const { editor, startNew, startEdit, change, cancel, save } = useOfferingEditor();
-  const listIssue = useFieldIssue("offerings");
-  const salesMode = config.business.salesMode;
-  const isCatalog = salesMode === "catalog";
-  const categories = [...new Set(config.offerings.map((offering) => offering.category.trim()).filter(Boolean))];
-  const addLabel = isCatalog ? "Agregar producto" : "Agregar plan o servicio";
+  const { document, actions } = useConfig();
+  const { editor, startNew, startEdit, change, changeCategory, cancel, save } = useOfferingEditor();
+  const listIssue = useFieldIssue("offer");
+  const catalog = isCatalog(document);
+  const entries = offerEntries(document);
+  const addLabel = catalog ? "Agregar producto" : "Agregar plan o servicio";
+  const categories = document.offer.catalog?.categories ?? [];
 
   return (
     <>
       <PageHeader
         eyebrow={stepLabel("catalog")}
         title="Productos y servicios"
-        description={
-          isCatalog
-            ? "Tu catálogo: los productos que el cliente puede pedir."
-            : "Tus planes o servicios, con su precio y lo que incluyen."
-        }
+        description={catalog ? "Tu catálogo: los productos que el cliente puede pedir." : "Tus planes o servicios, con su precio y lo que incluyen."}
         actions={!editor ? <Button onClick={startNew}>{addLabel}</Button> : undefined}
       />
 
-      {isCatalog && (
+      {catalog && (
         <Alert tone="info">
           <p>
-            En modo catálogo, la versión actual del asistente presenta tus <strong>categorías</strong>. Los nombres y precios
-            de cada producto se guardan para una próxima versión.
+            En modo catálogo, la versión actual del asistente presenta tus <strong>categorías</strong>. Los nombres y precios de cada producto se guardan para una próxima versión.
           </p>
         </Alert>
       )}
@@ -42,37 +41,51 @@ export function CatalogPage() {
       {editor && (
         <OfferingEditor
           draft={editor.draft}
+          categoryName={editor.categoryName}
           isNew={editor.isNew}
           issues={editor.issues}
-          salesMode={salesMode}
-          categorySuggestions={categories}
+          catalog={catalog}
+          categorySuggestions={categories.map((category) => category.name)}
+          profiles={document.payments.map((profile) => profile.id)}
           onChange={change}
+          onChangeCategory={changeCategory}
           onSave={save}
           onCancel={cancel}
         />
       )}
 
-      <Card
-        title={isCatalog ? "Catálogo" : "Planes y servicios"}
-        description={`${config.offerings.length} en total · ${config.offerings.filter((offering) => offering.available).length} disponibles`}
-      >
+      <Card title={catalog ? "Catálogo" : "Planes y servicios"} description={`${entries.length} en total · ${entries.filter(isAvailable).length} disponibles`}>
         {listIssue && <Alert tone="warning">{listIssue.message}</Alert>}
-        {config.offerings.length === 0 ? (
-          <EmptyState
-            title="Aún no has agregado nada"
-            description="Agrega lo que vendes para que el asistente pueda ofrecerlo."
-            action={!editor ? <Button onClick={startNew}>{addLabel}</Button> : undefined}
-          />
+        {entries.length === 0 ? (
+          <EmptyState title="Aún no has agregado nada" description="Agrega lo que vendes para que el asistente pueda ofrecerlo." action={!editor ? <Button onClick={startNew}>{addLabel}</Button> : undefined} />
         ) : (
           <OfferingList
-            offerings={config.offerings}
-            salesMode={salesMode}
+            document={document}
             onEdit={startEdit}
-            onToggleAvailable={(offering) => actions.setOfferingAvailability(offering.id, !offering.available)}
-            onRemove={(offering) => actions.removeOffering(offering.id)}
+            onToggleAvailable={(entry) => actions.setEntryAvailability(entry.id, !isAvailable(entry))}
+            onRemove={(entry) => actions.removeEntry(entry.id)}
           />
         )}
       </Card>
+
+      {catalog && <CategoriesForm />}
+
+      {catalog && document.payments.length > 1 && (
+        <Card title="Perfil de pago del catálogo">
+          <SelectField
+            label="Con qué perfil se cobra"
+            value={document.offer.catalog?.payment_profile ?? ""}
+            options={[{ value: "", label: "Sin asignar" }, ...document.payments.map((profile) => ({ value: profile.id, label: profile.id }))]}
+            onChange={(profile) => {
+              const current = document.offer.catalog;
+              if (current) actions.setRootValue("offer", { ...document.offer, catalog: { ...current, payment_profile: profile || null } });
+            }}
+          />
+        </Card>
+      )}
+
+      {catalog && <ContractSection title="Variantes y existencias" description="Tallas, colores y unidades disponibles de cada producto." section="inventory" />}
+      <ContractSection title="Entrega y agenda" description="Domicilio, envío, recogida y si el servicio requiere agendar." section="fulfillment" />
 
       <SectionPager current="catalog" />
     </>

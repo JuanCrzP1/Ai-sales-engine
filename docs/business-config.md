@@ -1,11 +1,16 @@
 # Contrato De Configuración De Negocios (BusinessConfig v1)
 
-`BusinessConfig v1` es la única estructura con la que se describe un negocio para el motor de ventas:
-qué vende, a qué precio, cómo cobra, cómo debe hablar y vender el asistente y qué puede hacer. Todos
-los negocios usan el mismo contrato versionado; cada uno tiene su propio documento con sus datos.
+`BusinessConfig v1` es la estructura común con la que se describe un negocio: qué vende, a qué precio, cómo
+cobra, cómo debe hablar y vender el asistente y qué puede hacer. Todos los negocios usan el mismo contrato
+versionado; cada uno tiene su propio documento con sus datos. Será la única fuente de configuración comercial
+cuando el motor se conecte a ella en la Fase 4; hasta entonces, el motor sigue leyendo sus YAML.
 
-- Referencia campo por campo (audiencia, estado en el motor, origen) y matriz de la configuración
-  antigua: [business-config-traceability.md](business-config-traceability.md) (generada).
+El contrato consolida las funcionalidades que ya existían en los YAML: las representa con tipos y
+validaciones, conserva sus opciones y valores y no añade comportamientos nuevos al motor.
+
+- Correspondencia de cada funcionalidad comercial con su campo original, referencia campo por campo y
+  matriz de la configuración antigua: [business-config-traceability.md](business-config-traceability.md)
+  (generada).
 - Diagnóstico de los nueve negocios: `project/config/contracts/v1/migration-report.md` (generado).
 
 ## Estado De Esta Fase
@@ -14,18 +19,28 @@ los negocios usan el mismo contrato versionado; cada uno tiene su propio documen
 |---|---|
 | Contrato (modelos, validaciones, diagnóstico, compilador, importador, catálogo) | **Terminado** |
 | Esquema JSON, tipos TypeScript, matriz y referencia de campos | **Terminados**, generados desde el modelo canónico |
-| Nueve documentos de negocio | **Terminados**: válidos, sin pérdida, sin datos de pago |
+| Nueve documentos comerciales y sus ajustes técnicos | **Terminados**: válidos, sin pérdida, sin datos de pago |
 | Pruebas del contrato y de su integración con el motor actual | **Pasan** |
 | Integración con el motor de los campos `pendiente` | **No iniciada** (requiere cambios en el motor, no autorizados) |
+| Persistencia local (SQLite) | **Terminada** y conectada al panel por la API local |
+| API local y panel de administración | **Terminados** (Fase 2): funcionan solo en este equipo; ver [Panel De Administración](#panel-de-administración) |
+| Funcionamiento del almacén sin YAML | **Terminado y comprobado** en un árbol sin YAML ni motor (ver [Independencia De Los YAML](#independencia-de-los-yaml)) |
+| Motor comercial | **Sin cambios**: sigue leyendo sus YAML hasta la Fase 4; no funciona desde este almacén |
 | Activación del contrato en algún negocio | **No realizada**: todos siguen con sus YAML |
 | Retiro de los YAML | **No realizado** ni autorizado |
-| Pantallas del panel para los campos nuevos | **No iniciadas** (fuera de alcance) |
 
 ## Fuente Canónica Y Archivos Generados
 
 | Elemento | Ruta | Origen |
 |---|---|---|
-| Modelos del contrato (**fuente canónica**) | `project/app/domain/business_config/contract.py` | a mano |
+| Modelos del contrato (**fuente canónica**), por secciones | `project/app/domain/business_config/contract/`, con sus piezas comunes en `primitives.py` | a mano |
+| Errores, registros y validación | `project/app/domain/business_config/{errors,records,validation}.py` | a mano |
+| Casos de uso y puertos de almacenamiento | `project/app/business_config_application/{service,ports}.py` | a mano |
+| Repositorio, tablas, datos de pago, clave y conexión | `project/app/infrastructure/business_config/{repository,tables,tenancy,payment_secret_store,secrets_key,database}.py` | a mano |
+| API local del panel | `project/app/admin_api/{main,routes,schemas,errors}.py` | a mano |
+| Migración inicial desde los YAML | `project/app/infrastructure/config/legacy_store_migration.py` | a mano |
+| Rutas anteriores que usa el cargador del motor | `project/app/infrastructure/config/{business_config_repository,payment_secret_store}.py` | reexportan, hasta la Fase 4 |
+| Ajustes técnicos (fuera del contrato comercial) | `project/app/domain/business_config/engine_settings.py` | a mano |
 | Políticas del motor y límites del contrato | `project/app/domain/business_config/engine_policy.py` | a mano |
 | Diagnóstico (incoherencias que no bloquean) | `project/app/domain/business_config/diagnostics.py` | a mano |
 | Compilador al formato que lee el motor | `project/app/domain/business_config/compiler.py` | a mano |
@@ -34,7 +49,7 @@ los negocios usan el mismo contrato versionado; cada uno tiene su propio documen
 | JSON Schema publicado | `project/config/contracts/v1/business-config.schema.json` | generado |
 | Tipos TypeScript del panel | `apps/admin-web/src/contracts/businessConfig.v1.ts` | generado |
 | Matriz y referencia de campos | `docs/business-config-traceability.md` | generada |
-| Documento de cada negocio + informe | `project/config/tenants/<slug>/business-config.json`, `migration-report.md` | generados desde sus YAML |
+| Documento comercial y ajustes técnicos de cada negocio + informe | `project/config/tenants/<slug>/business-config.json`, `engine-settings.json`, `migration-report.md` | generados desde sus YAML |
 | Ejemplo sin datos reales | `project/config/contracts/v1/business-config.example.json` | a mano |
 
 Después de cambiar el contrato, en este orden (cada script acepta `--check`, que no escribe y falla si
@@ -43,13 +58,75 @@ algo está desactualizado; las pruebas comprueban los cuatro):
 ```
 python scripts/export_business_config_schema.py      # JSON Schema
 python scripts/generate_business_config_types.py     # tipos TypeScript del panel
-python scripts/migrate_tenants_to_contract.py        # documentos de los nueve negocios + informe
+python scripts/migrate_tenants_to_contract.py        # documentos y ajustes de los nueve negocios + informe
 python scripts/generate_traceability_matrix.py       # matriz y referencia de campos
 ```
 
+## Arquitectura
+
+Las dependencias van hacia adentro y no hay ciclos. Lo comprueba `tests/test_business_config_architecture.py`; el panel tiene
+su propia comprobación en `apps/admin-web/src/test/architecture.test.ts`.
+
+| Capa | Paquete | Responsabilidad | Depende de |
+|---|---|---|---|
+| Dominio y contrato | `project/app/domain/business_config/` | Modelos, validación, reglas de los datos de pago, compilador, diagnóstico y errores | Solo Pydantic |
+| Aplicación | `project/app/business_config_application/` | Casos de uso (`service.py`) y lo que necesitan de la persistencia (`ports.py`) | Dominio |
+| Persistencia | `project/app/infrastructure/business_config/` | SQLAlchemy, transacciones, versionado, cifrado y aislamiento por negocio | Aplicación y dominio |
+| API | `project/app/admin_api/` | Rutas, peticiones y respuestas, errores HTTP y acceso solo local | Aplicación y dominio |
+| Panel | `apps/admin-web/` | Formularios, estado de interfaz y consumo de la API, con los tipos generados del contrato | La API |
+
+`scripts/run_admin_api.py` arma las piezas: crea la conexión, construye el servicio y se lo entrega a la API, que no conoce la
+base de datos. La capa de aplicación no vive en `app.application` porque importar ese paquete carga el motor comercial.
+
+Hay una sola excepción a las capas, explícita en esa prueba y temporal: la ruta `POST /api/businesses/import` usa la migración
+desde los YAML, que se retira con ellos en la Fase 4.
+
+**Multi-tenant.** Un único contrato para todos los negocios: las diferencias se expresan con datos y capacidades, nunca con
+código por tipo de negocio. Toda operación recibe el identificador del negocio y la persistencia filtra por su id
+(`tenancy.py`): las versiones, los datos de pago y los ajustes técnicos no se pueden alcanzar desde otro negocio, aunque se
+conozca su número de versión o su referencia. La base lo refuerza con claves foráneas en cascada, una versión publicada como
+máximo por negocio y números de versión únicos por negocio.
+
+**Transacciones.** Una versión y sus datos de pago se guardan juntos, y el conflicto con otro guardado se decide dentro de esa
+transacción. Publicar y revertir comprueban y cambian el estado en una sola transacción: si algo falla, lo publicado no cambia.
+
+**SQLite es un detalle de la persistencia.** Ni el dominio, ni la aplicación, ni la API dependen de él. Pasar a PostgreSQL es
+cambiar la URL de conexión y aplicar la migración SQL.
+
+## Arquitectura
+
+Las dependencias van hacia adentro y no hay ciclos. Lo comprueba `tests/test_business_config_architecture.py`; el panel tiene
+su propia comprobación en `apps/admin-web/src/test/architecture.test.ts`.
+
+| Capa | Paquete | Responsabilidad | Depende de |
+|---|---|---|---|
+| Dominio y contrato | `project/app/domain/business_config/` | Modelos, validación, reglas de los datos de pago, compilador, diagnóstico y errores | Solo Pydantic |
+| Aplicación | `project/app/business_config_application/` | Casos de uso (`service.py`) y lo que necesitan de la persistencia (`ports.py`) | Dominio |
+| Persistencia | `project/app/infrastructure/business_config/` | SQLAlchemy, transacciones, versionado, cifrado y aislamiento por negocio | Aplicación y dominio |
+| API | `project/app/admin_api/` | Rutas, peticiones y respuestas, errores HTTP y acceso solo local | Aplicación y dominio |
+| Panel | `apps/admin-web/` | Formularios, estado de interfaz y consumo de la API, con los tipos generados del contrato | La API |
+
+`scripts/run_admin_api.py` arma las piezas: crea la conexión, construye el servicio y se lo entrega a la API, que no conoce la
+base de datos. La capa de aplicación no vive en `app.application` porque importar ese paquete carga el motor comercial.
+
+Hay una sola excepción a las capas, explícita en esa prueba y temporal: la ruta `POST /api/businesses/import` usa la migración
+desde los YAML, que se retira con ellos en la Fase 4.
+
+**Multi-tenant.** Un único contrato para todos los negocios: las diferencias se expresan con datos y capacidades, nunca con
+código por tipo de negocio. Toda operación recibe el identificador del negocio y la persistencia filtra por su id
+(`tenancy.py`): las versiones, los datos de pago y los ajustes técnicos no se pueden alcanzar desde otro negocio, aunque se
+conozca su número de versión o su referencia. La base lo refuerza con claves foráneas en cascada, una versión publicada como
+máximo por negocio y números de versión únicos por negocio.
+
+**Transacciones.** Una versión y sus datos de pago se guardan juntos, y el conflicto con otro guardado se decide dentro de esa
+transacción. Publicar y revertir comprueban y cambian el estado en una sola transacción: si algo falla, lo publicado no cambia.
+
+**SQLite es un detalle de la persistencia.** Ni el dominio, ni la aplicación, ni la API dependen de él. Pasar a PostgreSQL es
+cambiar la URL de conexión y aplicar la migración SQL.
+
 ## Estructura
 
-Un único documento por negocio, con secciones comunes a todos los modelos comerciales. Solo
+Un único documento comercial por negocio, con secciones comunes a todos los modelos comerciales. Solo
 `tenant_slug`, cuatro textos de `identity` (`name`, `industry`, `description`, `value_proposition`),
 `offer`, `capabilities` (cierre y datos) y `messages.welcome` son obligatorios; todo lo demás se omite
 si no aplica, sin rellenarlo con datos inventados.
@@ -58,24 +135,25 @@ si no aplica, sin rellenarlo con datos inventados.
 |---|---|
 | `identity` | nombre, marca, sector, descripción, propuesta de valor, posicionamiento, diferenciadores, ubicación y cobertura, modalidades, cliente ideal, credibilidad, horarios |
 | `offer` | `plans` (planes o servicios) o `catalog` (categorías y productos); disponibilidad por elemento |
-| `terms` | condiciones, impuestos incluidos, promociones con vigencia, financiación, políticas (garantía, devoluciones, cancelación); encuadre del precio y retorno (avanzado) |
-| `payments` | perfiles de pago: link y transferencias como referencias a secretos; indicaciones |
-| `sales` | básica: motivos de compra, problemas e impactos, beneficios, argumentos, preguntas, recomendaciones, instrucciones; avanzada: ángulos, objeciones, cierre, calificación, atención, solución, mezcla de ofertas |
-| `capabilities` | canales, acciones, métodos de cierre, datos a pedir y aviso de tratamiento, cuándo pasar a una persona, restricciones y promesas prohibidas |
-| `messages` | bienvenida, pago reportado y confirmado, posventa, pedir datos, seguimiento, pasar a una persona |
+| `terms` | condiciones, promociones con vigencia, financiación, políticas (garantía, devoluciones, cancelación); encuadre del precio y retorno (avanzado) |
+| `payments` | perfiles de pago: link y transferencias como referencias a secretos |
+| `sales` | básica: motivos de compra, problemas e impactos, beneficios, argumentos, preguntas, recomendaciones, instrucciones; avanzada: ángulos y soluciones (dentro de cada motivo y problema), flujo de conversación, objeciones, cierre, calificación, atención, mezcla de ofertas |
+| `capabilities` | canales, acciones, métodos de cierre, datos a pedir y restricciones |
+| `messages` | saludo (sus dos modalidades), pago reportado y confirmado, posventa, pedir datos, seguimiento, pasar a una persona |
 | `response_style` | tono, voz, formalidad, emojis, indicaciones; largo de respuesta y ajuste avanzado |
 | `knowledge` | preguntas frecuentes con su respuesta oficial |
 | `fulfillment` | domicilio, envío, recogida y agenda |
 | `inventory` | variantes (atributos, existencias, precio propio si difiere) de los productos del catálogo |
-| `engine` | ventanas de conversación y modo del motor; si falta, se deriva de la oferta (operador) |
-| `compatibility` | datos antiguos sin lugar en el contrato (sistema, ver abajo) |
+| `features` | interruptores comerciales (precios, catálogo, varias monedas, varios planes) y tipo de negocio; si faltan, se derivan de la oferta |
+
+Lo técnico no está en este documento: ver [Ajustes Técnicos](#ajustes-técnicos).
 
 ### Modelos comerciales
 
 | Necesidad | Cómo se representa |
 |---|---|
-| Servicios o planes | `offer.model = plans`; cada plan con precios por moneda |
-| Productos por categoría | `offer.model = catalog`; categorías y productos con precio por moneda |
+| Servicios o planes | `offer.model = plans`; cada plan con precios por moneda (excluye `catalog`) |
+| Productos por categoría | `offer.model = catalog`; categorías y productos con precio por moneda (excluye `plans`) |
 | Varias monedas | una entrada de precio por moneda ISO (sin repetir) |
 | Pago único, mensual, anual, primer pago, instalación | `price`, `monthly`, `annual`, `first_payment`, `implementation` en cada precio de plan |
 | Variantes (talla, color, porciones) | `inventory.items[].variants[]` con `attributes`, `stock` y `prices` opcional |
@@ -84,7 +162,25 @@ si no aplica, sin rellenarlo con datos inventados.
 
 Las diferencias entre tipos de negocio son datos (secciones y campos opcionales), no contratos ni
 excepciones aparte: los nueve negocios (planes SaaS, clínica, agencia, escuela, restaurante, tiendas)
-usan el mismo contrato.
+usan el mismo contrato. Esta versión no admite negocios mixtos; `offer.model` es el punto donde una
+versión futura añadiría otro modelo de oferta.
+
+## Funcionalidades Comerciales
+
+La tabla completa, con campo original, comportamiento, destino, tipo, opciones y valores de cada
+negocio, está en [business-config-traceability.md](business-config-traceability.md#funcionalidades-comerciales-conservadas).
+
+- **Dos modalidades de saludo** (`messages.welcome.enabled`, de `config.initial_message.enabled`):
+  `true` envía el texto fijo ante un saludo sin más en una conversación nueva, sin IA; `false` no lo
+  envía y responde la IA. El texto se conserva aunque esté desactivado. Un saludo con una intención siempre
+  lo responde la IA. El motor también admite `initial_message.mode`, que ningún YAML usa: no se representa.
+- **Extensión de los mensajes** (`response_style.length` y `max_words`): ver
+  [Largo De Las Respuestas](#largo-de-las-respuestas).
+- **Interruptores:** `features.*`, `capabilities.closing_methods.*`, `capabilities.data_collection.enabled`,
+  `sales.support.explain_first` y `sell_after`, `sales.qualification.detect_offer_fit`,
+  `sales.conversation_flow.no_skip_steps` y `guided_process`, y los de entrega, financiación e inventario.
+  Conservan su nombre y su significado. Los que el motor aún no lee están marcados `pendiente`: se
+  conservan y se validan, pero cambiarlos no altera hoy la conversación.
 
 ## Marcas De Cada Campo
 
@@ -92,100 +188,122 @@ Cada campo del esquema lleva (o hereda de su sección) dos marcas, generadas en 
 y en los comentarios de los tipos TypeScript:
 
 - `x-audience` (quién lo configura): `cliente` (el negocio, en lenguaje comercial), `avanzado`
-  (estrategia comercial detallada, opcional), `operador` (ajustes internos del motor: `engine`,
-  etapas de `sales.conversation_flow`) o `sistema` (`schema_version`, `tenant_slug`, `compatibility`).
+  (estrategia comercial detallada, opcional) o `sistema` (`schema_version`, `tenant_slug`).
 - `x-engine` (si el motor actual lo usa): `conectado` solo con una prueba en
   `tests/test_business_config_engine_integration.py` que demuestra que cambiarlo cambia el prompt, la
   respuesta o la acción del motor (`CONNECTED_EVIDENCE`; una prueba exige que la lista coincida con las
-  marcas); `pendiente` si está representado y conservado pero el motor actual no lo usa;
-  `conservado` para `compatibility`.
+  marcas); `pendiente` si está representado y conservado pero el motor actual no lo usa.
 
 Con esto la matriz distingue cuatro situaciones que no son equivalentes:
 
-- **Representado en el contrato:** el campo existe con tipo y validaciones (191 campos hoja).
-- **Conservado en los datos:** el valor antiguo está en el documento del negocio (1211 campos de los
-  nueve negocios, comprobado campo por campo) y vuelve intacto al compilar.
+- **Representado en el contrato:** el campo existe con tipo y validaciones (184 campos hoja).
+- **Conservado en los datos:** los 1211 campos de los nueve negocios vuelven intactos al compilar (comprobado
+  campo por campo): 1166 desde el documento comercial, los datos de pago y los ajustes técnicos, y 45 desde la
+  definición común del cierre.
 - **Configurable en la interfaz:** columna Interfaz (`pantalla`, `modelo` o `no`).
-- **Ejecutado por el motor:** `x-engine = conectado` (58 campos hoja).
+- **Ejecutado por el motor:** `x-engine = conectado` (56 campos hoja). Las ventanas de conversación
+  también las usa el motor, pero son ajustes técnicos: no cuentan aquí.
 
 Conectados hoy: sector, propuesta de valor, tipo de oferta, planes (id, nombre, precios por moneda,
 incluye, no incluye, perfil de pago, disponibilidad), categorías del catálogo y categoría y
 disponibilidad de cada producto (deciden qué categorías se ofrecen), condiciones, encuadre del precio y retorno en ventas, pagos (link y transferencias: el motor
 entrega los datos al elegir el método), motivos de compra, impactos de los dos primeros problemas,
 casos de uso (respaldo), canales, acciones, métodos de cierre, datos a pedir, mensajes de bienvenida
-y de pago, largo de respuesta, ventanas de conversación y modo de catálogo.
+y de pago, largo de respuesta, modo de catálogo y tipo de negocio.
 
 Pendientes (todo lo demás), entre ellos: nombre, marca y descripción del negocio, diferenciadores,
 ubicación, modalidades, horarios, tono y estilo, productos y precios del catálogo, descripciones de
-planes y productos, promociones, políticas, impuestos, financiación, preguntas frecuentes,
+planes y productos, promociones, políticas, financiación, preguntas frecuentes,
 recomendaciones, instrucciones, preguntas de diagnóstico, beneficios, argumentos, estrategia avanzada,
 mensajes de posventa y seguimiento, entrega, inventario y precio por variante.
 
 ## Decisiones De Diseño
 
-1. **Se mejora la v1 existente sin romperla.** El panel ya produce documentos v1 y hay nueve documentos
-   migrados: todos los cambios son compatibles (campos opcionales nuevos y validaciones que los nueve
-   documentos cumplen). Unificar planes y catálogo en una sola lista de ofertas o mover `engine` fuera
-   del documento serían cambios incompatibles: quedan para una v2 (ver Pendientes).
-2. **El compilador solo produce lo que el motor actual lee.** Todo campo con ruta en los YAML vuelve a
+1. **Consolidación, no reconstrucción.** Las funcionalidades son las de los YAML: tipadas, con sus
+   opciones y valores. Se unifican solo las estructuras que describen lo mismo con la misma clave (ver la
+   tabla de abajo). Planes y catálogo siguen siendo dos modelos de oferta porque así funcionan en los
+   YAML y en el motor.
+2. **Comercial y técnico, separados.** El documento comercial no contiene parámetros internos ni datos
+   sin tipar; lo técnico está en `EngineSettings` y se adjunta al cargar el documento. Esta consolidación
+   sigue en `1.0`: ningún documento está publicado ni activo y el panel no enviaba las secciones retiradas.
+3. **El compilador reproduce lo que el motor actual recibe.** Todo campo con ruta en los YAML vuelve a
    esa ruta con su forma original; lo que solo existe en el contrato no se compila. Resultado
-   comprobado: para los nueve negocios, la compilación es idéntica a sus YAML y el motor produce los
-   mismos prompts y respuestas con el contrato que con los YAML. Las claves `config.profile`,
+   comprobado: para los nueve negocios, la compilación es idéntica a sus YAML y el motor produce los mismos
+   prompts y respuestas con el contrato que con los YAML. Las claves `config.profile`,
    `config.knowledge` y `features` de productos ya no se generan: ningún lector del motor actual las
    consume (las usaba el bloque de perfil que se retiró del motor).
-3. **Validación frente a diagnóstico.** El contrato rechaza lo que ningún negocio puede querer
+4. **Validación frente a diagnóstico.** El contrato rechaza lo que ningún negocio puede querer
    (referencias inexistentes, valores imposibles, combinaciones contradictorias). Lo que es una decisión
    del negocio se reporta sin bloquear (`diagnostics.py`, ver abajo).
-4. **Estado en el motor como dato del esquema, no como texto.** Las descripciones solo explican el
+5. **Estado en el motor como dato del esquema, no como texto.** Las descripciones solo explican el
    campo; `x-engine` y `x-audience` son la única fuente del estado, y la matriz y las pruebas se derivan
    de ellas.
-5. **Campos nuevos con propósito concreto:** cobro anual y precio por variante (modelos comerciales que
-   faltaban); políticas de garantía, devoluciones y cancelación e impuestos incluidos (preguntas
-   habituales que el asistente debe responder con la versión oficial); aviso de tratamiento de datos
-   (se piden datos personales en los nueve negocios); cuándo pasar a una persona y promesas prohibidas
-   (límites del asistente). Todos `pendiente`: el motor actual no los usa.
+6. **Campos propios del contrato, con finalidad comercial:** horarios; formalidad, emojis e instrucciones de
+   estilo; instrucciones comerciales; mensajes de posventa, datos, seguimiento y transferencia; cobro anual,
+   primer pago y pago único; precio por variante; disponibilidad; características de producto; promociones,
+   preguntas frecuentes y políticas. Se conservan aunque no vengan de los YAML; su responsabilidad, tipo y
+   estado en el motor están en la matriz (`Campos propios del contrato`).
+7. **Campos ajenos a los YAML retirados por decisión del dueño.** Se retiraron `terms.prices_include_taxes`,
+   `capabilities.data_collection.consent_notice`, `capabilities.human_handoff_when`,
+   `capabilities.restrictions.forbidden_claims`, `payments[].instructions` y
+   `sales.qualification.criteria`. Las obligaciones legales de la plataforma, como el aviso de tratamiento
+   de datos, no se configuran en BusinessConfig; este contrato no las sustituye ni las modifica.
+8. **Definición común del cierre.** `sales.closing.behavior.*.goal` y `sales.closing.next_step.action` tienen
+   los mismos cinco valores en los nueve negocios, y cambiarlos no altera prompts ni respuestas: no son decisiones
+   de cada negocio. Por eso no están en el contrato ni en los ajustes técnicos, sino una sola vez en
+   `COMMON_CLOSING_POLICY` (`engine_policy.py`). El compilador los añade a `sales.closing` en la posición que
+   tienen en los YAML, así que el motor recibe lo mismo. Un YAML con otros valores detiene la importación: esa
+   diferencia sería una configuración propia del negocio.
 
 ### Campos duplicados, derivados, obsoletos o técnicos
 
 | Campo | Tipo | Tratamiento |
 |---|---|---|
-| `sales.buying_motivation`, `motivation_drivers`, `angles` | mismo concepto en tres lugares | Se conservan (formas distintas en los YAML); validación: motivos y ángulos solo pueden referirse a motivos definidos en `motivation_drivers` |
+| `business.value_drivers` y `sales.angles` | mismos motivos con la misma clave | **Unificados** en `sales.motivations[]` (descripción, señales y ángulo). Validación: si el negocio explica sus motivos, todo motivo que use debe tener descripción |
+| `sales.solution.mapping` y `sales.pain.clusters` | mismos problemas con la misma clave | **Unificados** en `sales.customer_problems[].solutions` |
+| `sales.conversation_flow` y `sales.progression_rules` | reglas de cómo avanza la conversación | **Unificados** en `sales.conversation_flow`. `steps` (pasos ideales) y `required_flow` (secuencia mínima) se conservan: significan y valen distinto |
+| `business.city` y `business.location.city` | mismo dato, mismo valor en los nueve negocios | **Unificado** en `identity.location.city`; la compilación lo devuelve a las dos rutas |
 | `sales.closing.required_data` y `capabilities.data_collection.fields` | solapados (inglés/español) | Se conservan; diagnóstico `dato_de_cierre_no_solicitado` si el cierre pide un dato que no se recoge |
 | `closing_methods.data_collection` y `data_collection.enabled` | dependientes | Validación: cerrar pidiendo datos exige recogida de datos activa |
-| `engine.features.catalog_mode`, `business_model` | derivables de `offer.model` | Audiencia `operador`; si falta `engine`, se derivan; diagnóstico `modo_catalogo_contradice_oferta` (ecommerce) |
-| `engine.features.pricing_enabled` | obsoleto en la práctica | `pendiente`: el motor solo lo consulta sin precios ni pagos, que el contrato exige |
-| `sales.conversation_flow.steps` | identificadores internos del motor | Audiencia `operador` |
+| `features.catalog_mode`, `business_model` | relacionados con `offer.model` | Interruptores comerciales con sus valores; si faltan, se derivan; diagnóstico `modo_catalogo_contradice_oferta` (ecommerce) |
+| `features.multi_currency`, `multi_plan` | permiten, no obligan | Interruptores comerciales con sus valores; el diagnóstico solo señala `false` con varias monedas o planes |
+| `features.pricing_enabled` | el motor solo lo consulta sin precios ni pagos, que el contrato exige | Interruptor comercial, `pendiente` |
 | `response_style.max_words` | ajuste fino de `length` | Audiencia `avanzado`; rango validado contra `length` |
-| `response_style.tone` y `voice` | cercanos | Se conservan con significados distintos (tono de las respuestas / personalidad de marca) |
+| `response_style.tone` y `voice` | cercanos | Se conservan: valen distinto en los nueve negocios (tono de las respuestas / personalidad de marca) |
+| `sales.pain_points` y `customer_problems` | cercanos | Se conservan: contenido distinto (frases del cliente / problemas con impacto) |
 | `terms.roi_break_even_sales` y `roi_break_even_bookings` | mismo concepto, distinta unidad | Se conservan; solo el de ventas está conectado |
 | `sales.offer_mix` | texto libre, no referencias | Documentado como texto libre: no se valida contra los ids de la oferta |
-| `engine.conversation` con 0 | el motor trata 0 como "sin valor" | Validación: mínimo 1 |
-| `business.brand_name`, `business.city`, `business.type`, `config.capabilities.channels`, `config.features.multi_*`, `config.flags`, plantillas de cierre y progresión | duplicados, derivados o internos | En `compatibility` con justificación por campo (matriz) |
+| `conversation` con 0 (ajustes técnicos) | el motor trata 0 como "sin valor" | Validación: mínimo 1 |
 
 ## Validaciones Y Diagnóstico
 
 **Validaciones** (el documento se rechaza):
 
 - Tipos, valores cerrados y campos desconocidos rechazados en todo el documento; `schema_version` fijo
-  en `1.0`; `compatibility` solo con las cinco secciones antiguas.
+  en `1.0`. Interruptores solo booleanos; opciones cerradas en extensión, tipo de negocio, tipo de cierre y
+  encuadre del precio. Los datos a pedir y los pasos de la conversación son listas abiertas: los YAML no las
+  limitan y cada negocio puede tener los suyos. El documento comercial rechaza `engine` y `compatibility`.
 - Textos obligatorios no vacíos; listas de frases de hasta 10 elementos de hasta 300 caracteres; tono y
-  voz hasta 160; políticas y aviso de datos hasta 800; hasta 30 preguntas frecuentes (pregunta ≤ 200,
+  voz hasta 160; políticas y mensajes hasta 800; hasta 30 preguntas frecuentes (pregunta ≤ 200,
   respuesta ≤ 800); hasta 10 promociones.
 - Oferta: planes o catálogo según `offer.model`, al menos un elemento disponible, ids únicos, monedas ISO
   sin repetir, cada precio con algún importe, productos con categorías existentes.
 - Pagos: perfiles referenciados existentes, transferencias activas con métodos, cada método con sus
   datos obligatorios; datos sensibles solo como `SecretRef`.
-- Referencias: recomendaciones hacia planes, productos o categorías existentes; solución y ángulos solo
-  hacia problemas y ángulos existentes; motivos y ángulos hacia motivos definidos; inventario solo de
-  productos del catálogo, sku únicos y precios de variante en monedas de su producto.
+- Referencias: problemas solo hacia ángulos existentes; motivos sin repetir y con descripción o ángulo;
+  inventario solo de productos del catálogo, sku únicos y precios de variante en monedas de su producto.
 - Coherencia: al menos un método de cierre y una acción; datos a pedir si se activa la recolección;
-  cierre pidiendo datos solo con recolección activa; `human_handoff_when` solo con cierre con una
-  persona; costo "gratis" en 0; horarios que abren antes de cerrar; ventanas de conversación ≥ 1.
+  cierre pidiendo datos solo con recolección activa; costo "gratis" en 0; horarios que abren antes de
+  cerrar y sin días repetidos; promociones y preguntas frecuentes sin repetir.
+- Ajustes técnicos: ventanas de conversación ≥ 1, banderas conocidas, `legacy` solo con las cinco secciones
+  antiguas y del mismo negocio. Un conflicto entre `legacy` y el contrato invalida la compilación.
+- Importación: los YAML de un negocio deben coincidir con la definición común del cierre; si no, se detiene.
 
 **Diagnóstico** (el documento es válido; el negocio decide): cierre por link sin link, perfil de pago
-sin uso, modo de catálogo que contradice la oferta, modalidad sin entrega o entrega sin modalidad, dato
-de cierre que no se pide, recomendación hacia algo no disponible, promoción vencida, sin canales de
-atención, datos personales sin aviso de tratamiento, agenda sin horarios. El informe de migración lista
+sin uso, modo de catálogo, varias monedas o varios planes que contradicen la oferta, modalidad sin entrega
+o entrega sin modalidad, dato de cierre que no se pide, recomendación hacia algo que no existe o no está
+disponible (las reglas de asesor_ai_prod y demo se conservan tal cual), promoción vencida, sin canales de
+atención, agenda sin horarios. El informe de migración lista
 los hallazgos de los nueve negocios; no se corrigen automáticamente porque cambiarían su configuración.
 
 ## Largo De Las Respuestas
@@ -202,30 +320,94 @@ configuración usa su respaldo de 80 palabras (ningún negocio está en ese caso
 ## Datos De Pago
 
 El contrato no guarda links, números de cuenta ni referencias: usa `{"secret_ref": "<origen>:<clave>"}`
-(`legacy_yaml:` para los negocios migrados; `secret_store:` para datos guardados aparte). Ningún
-documento del contrato contiene esos valores (comprobado en los nueve negocios y en la migración).
+(`secret_store:` para el almacén cifrado, el único origen que admite la persistencia local; `legacy_yaml:`
+solo en los `business-config.json` de las carpetas de negocio, para la fuente opcional del motor). Ningún
+documento del contrato contiene esos valores (comprobado en los nueve negocios y en la migración). Los
+errores de validación tampoco repiten el valor recibido.
 
-**Limitación del motor actual (pendiente):** el prompt de la IA y el registro `conversation_trace`
-contienen hoy los datos de pago, con YAML y con contrato. Sacarlos de ahí exige cambiar el motor;
+Son datos del negocio y no se mezclan con las credenciales de canales (`tenant_secrets`), que pertenecen a
+las integraciones.
+
+### Consultarlos sin exponerlos
+
+Quien administra necesita saber qué métodos tiene sin ver sus valores. Cada respuesta de la API con el documento incluye
+`payment_fields`: por cada referencia, su estado y una versión enmascarada que calcula el servidor
+(`payment_data.mask_payment_value`). Lo descriptivo (tipo, banco, tipo de cuenta, etiqueta y estado) ya está en el documento.
+
+| Dato | Qué se muestra | Ejemplo |
+|---|---|---|
+| Enlace | El servidor, sin ruta, parámetros ni credenciales | `https://pagos.example.com/••••` |
+| Celular o cuenta | Hasta los últimos 4 caracteres | `••••4567` |
+| Llave o referencia | Hasta los últimos 3 caracteres | `••••ave` |
+| Menos de 6 caracteres | Nada | `••••` |
+
+En celulares, cuentas y llaves nunca revela la mitad del valor ni su longitud. De un enlace solo deja ver el servidor, que identifica
+al proveedor; si el enlace no tiene nada más, oculta también parte del servidor, para que el valor nunca salga completo.
+
+| `status` | Significa | `masked` |
+|---|---|---|
+| `configured` | Guardado y legible en este negocio | La versión enmascarada |
+| `missing` | No existe en este negocio, también si la referencia es de otro | `null` |
+| `unreadable` | No se puede descifrar con la clave actual | `null` |
+
+| Operación | Qué pasa con el dato cifrado |
+|---|---|
+| Editar banco, tipo de cuenta o etiqueta (`label`) | No cambia |
+| Guardar sin un valor nuevo | No cambia. En el panel, un campo de reemplazo vacío no se envía; por la API, un valor vacío se rechaza con 422 |
+| Reemplazar | Se cifra con una referencia nueva; las versiones anteriores conservan el suyo |
+| Desactivar (`transfer_methods[].enabled` o `link_enabled` en `false`) | Se conserva. No se compila ni se ofrece, y no hace falta poder leerlo para publicar |
+| Eliminar | Sale de la versión nueva; las anteriores lo conservan y restaurarlas lo trae de vuelta |
+
+`label`, `enabled` y `link_enabled` son opcionales: sin indicar, un método está activo y los documentos que no los usan no cambian
+ni compilan distinto. `label` no llega al motor.
+
+### Datos de pago en `/simulate`
+
+`POST /api/v1/simulate` está apagado por defecto y exige el token de un administrador, que hoy nadie puede obtener porque
+la autenticación definitiva queda para la fase de nube (ver `docs/operations.md`). No devuelve configuración interna ni usa
+la memoria de los clientes:
+
+| Dato | ¿Se devuelve? |
+|---|---|
+| Datos de pago: link, número, cuenta y referencia | No; ni el modelo los recibe, y `reply` muestra `[dato de pago]` |
+| Estrategia comercial, `pricing`, `business` y `ai_metadata` | No |
+| Memoria de conversaciones de clientes | No; la simulación usa una memoria propia en RAM |
+| Credenciales, tokens y prompt del sistema | No |
+| `reply`, `ai_used` y las etiquetas `source`, `intent`, `conversation_state` y `tenant_slug` | Sí |
+
+`reply` es texto del modelo, igual que el que recibe un cliente: puede mencionar precios. Ningún otro campo los lleva.
+
+**Limitación del motor actual (pendiente):** en los canales reales, el prompt de la IA y el registro
+`conversation_trace` contienen hoy los datos de pago, con YAML y con contrato. Sacarlos de ahí exige cambiar el motor;
 `payment_data.redact_payment_values` es la redacción preparada para esa integración.
 
-## Compatibilidad
+## Ajustes Técnicos
 
-`compatibility` conserva, con su ruta original, lo que no forma parte del contrato (139 campos de los
-nueve negocios). No contiene configuración que el cliente deba editar (lo comprueba una prueba):
+`engine-settings.json` (o la tabla `business_engine_settings`) guarda lo que el motor necesita y no es una
+decisión comercial (55 campos de los nueve negocios). El negocio no los edita y el panel no los recibe. Es
+opcional: sin él, el motor usa sus valores por defecto.
 
 | Datos | Motivo |
 |---|---|
-| `business.brand_name`, `business.city`, `business.type`, `config.capabilities.channels` | Duplicados de otros campos o estructura antigua |
-| `config.features.multi_currency`, `config.features.multi_plan` | Derivables de la oferta y contradictorios en varios negocios |
-| `config.flags.*`, `sales.closing.next_step.action`, `sales.progression_rules.forbid` | Parámetros internos sin consumidor |
-| `sales.closing.behavior.*`, `sales.progression_rules.required_flow` | Plantillas idénticas en los nueve negocios: políticas del motor |
-| `config.initial_message.recency` (demo) | Ubicación antigua de las ventanas de conversación |
-| `sales.offer.recommendation_rules` (asesor_ai_prod, demo) | Apuntan a planes inexistentes: requiere decisión del negocio |
+| `conversation` (`config.conversation`) | Cuándo el motor considera activa o nueva una conversación |
+| `flags` (`config.flags`) | Banderas internas, sin lector en el motor |
+| `legacy`: `config.capabilities.channels`, `config.initial_message.recency`, `business.type` | Estructuras antiguas o repetidas |
 
-Lo que tenga lugar en el contrato sale de `compatibility` (la matriz documenta cada sustitución); nada
-se elimina de ella mientras existan los YAML; el compilador la reinyecta sin sobrescribir datos del
-contrato y un conflicto invalida el documento en lugar de perder datos.
+Nada comercial queda aquí (lo comprueba una prueba). Los ajustes técnicos no se versionan con el documento
+comercial: en base de datos hay uno vigente por negocio, y se adjunta a la versión publicada al leerla.
+`legacy` se retira cuando se retiren los YAML.
+
+### YAML que no son de un negocio
+
+Estos archivos son globales: valen igual para todos y no se representan en BusinessConfig.
+
+| Archivo | Contenido | Por qué queda fuera |
+|---|---|---|
+| `system/settings.yaml`, `system/bot_config.yaml` | Aplicación, proveedor y modelos de IA, interruptores globales, límites técnicos (`max_message_length`, `history_limit`) y política de preguntas frecuentes | Parámetros técnicos del motor |
+| `system/secrets.yaml` | Credenciales de plataforma y canales | Credenciales |
+| `system/conversation_stage.yaml` | Objetivos y estilo del asistente por etapa de la conversación | Política global del motor; ningún negocio la cambia |
+| `channels/channels.yaml` | Canales activos | Conectores |
+| `assets/media.yaml` | Imágenes reutilizables | Global y sin lector (`load_media` no tiene quien la llame) |
 
 ## Conexión Con El Motor
 
@@ -237,39 +419,114 @@ Comprobado en los nueve negocios con el motor actual: con el contrato como fuent
 idéntico al de los YAML y una conversación de cuatro turnos produce exactamente los mismos prompts y
 respuestas. Activar el contrato hoy no cambia el comportamiento de la IA.
 
-La persistencia en base de datos de una fase anterior (`business_config_repository.py`,
-`payment_secret_store.py`, `business_config_tables.py`, `project/db/migrations/0001_business_config_store.sql`,
-`BUSINESS_CONFIG_STORE=database`) no forma parte de esta fase: no se ha modificado ni ejecutado contra
-ninguna base real.
+## Persistencia Local
 
-## Correspondencia Con El Panel
+`BusinessConfigService` ofrece crear y listar negocios, consultar lo publicado, recuperar el borrador en
+curso, guardar cambios, publicar, revertir, consultar el historial, recuperar versiones anteriores y
+compilar. Solo conoce los puertos de `ports.py`; `BusinessConfigRepository` y `PaymentSecretStore` los
+implementan con SQLAlchemy.
 
-El panel (`apps/admin-web`, no modificado en esta fase) traduce su modelo al contrato con
-`contractAdapter.ts`. Una prueba de Vitest guarda el documento que produce
-(`src/test/fixtures/sampleContractDocument.json`) y `test_panel_document_is_valid_against_the_contract`
-lo valida con el contrato canónico y lo compila. Los campos nuevos de esta fase son opcionales: el
-panel sigue compilando con los tipos regenerados.
-
-| Panel | Contrato |
+| Tema | Comportamiento |
 |---|---|
-| `business.name`, `brandName`, `businessType`, `description`, `valueProposition` | `identity.name`, `brand_name`, `industry`, `description`, `value_proposition` |
-| `business.differentiators`, `location`, `serviceModes` | `identity.differentiators`, `location`, `service_modes` |
-| `business.salesMode` + `offerings[]` | `offer.model` + `offer.plans[]` u `offer.catalog` |
-| `payments.paymentLink`, `transferMethods` | `payments[0]` con `secret_store:` (valores aparte) |
-| `payments.conditions`, `promotions` | `terms.conditions`, `terms.promotions` |
-| `closing.*` | `capabilities.closing_methods`, `data_collection`, `actions_primary/support` |
-| `behavior.tone`, `responseLength`, `maxWords` | `response_style.tone`, `length`, `max_words` |
-| `behavior.primaryMotivation/secondaryMotivation`, `customerProblems` | `sales.buying_motivation`, `customer_problems` |
-| `behavior.benefits`, `sellingPoints`, `discoveryQuestions`, `recommendationRules`, `salesInstructions` | `sales.benefits`, `arguments`, `discovery.questions`, `recommendation_rules`, `instructions` |
-| `behavior.faqs` | `knowledge.faqs` |
-| `messages.*` | `messages.welcome`, `payment_reported`, `payment_confirmed`; `capabilities.service_channels` |
+| Base | `BUSINESS_CONFIG_DATABASE_URL`; vacío: `project/data/business_config.sqlite3` (ignorado por git y por Docker). Es independiente de la base del motor (`DATABASE_URL`) |
+| PostgreSQL | Cambiar la URL y aplicar `project/db/migrations/0001_business_config_store.sql`. **Sin probar** contra un PostgreSQL real |
+| Versiones | Cada guardado crea una versión inmutable y validada; los números son por negocio |
+| Guardar | La versión y sus datos de pago se escriben en una sola transacción. Si se indica la versión de partida y ya hay otra más reciente, no se guarda |
+| Borrador en curso | El más reciente posterior a lo último publicado |
+| Recuperar una versión | Crea un borrador nuevo con su contenido; no publica nada |
+| Revertir | Vuelve a publicar la versión publicada anterior, en una sola transacción; si falla, lo publicado no cambia |
+| Publicar | Compila la versión con sus datos de pago, en una sola transacción; si falla, lo publicado no cambia |
+| Ajustes técnicos | Uno vigente por negocio, fuera de las versiones comerciales |
 
-Dependencias del panel (fuera de alcance, sin cambios): varios avisos y textos del panel suponen la
-integración del perfil comercial que el motor actual no tiene (p. ej. que el asistente usa la
-descripción del negocio o de cada oferta, el tono, las promociones o las recomendaciones). El límite
-de la descripción del negocio que el panel muestra viene de `PROMPT_WORD_LIMITS.description`, ahora 20
-palabras (el recorte real del motor, que solo la usa si falta el sector). Los campos nuevos de esta fase
-no tienen pantalla.
+**Datos de pago:** se cifran con Fernet (`BUSINESS_CONFIG_SECRETS_KEY`, sin valor por defecto) y el documento
+solo guarda referencias. Cada valor nuevo recibe una referencia propia, de modo que editar un borrador no
+altera lo publicado y revertir devuelve también los datos de pago de esa versión. Antes de cifrar un valor nuevo se
+comprueba su formato según su tipo (enlace, celular, cuenta o llave); el panel avisa con las mismas reglas mientras se
+escribe, pero la autoridad es el servidor (`payment_data.py`). Se rechazan documentos que
+contengan el valor de un dato de pago, ya sea uno nuevo o uno guardado antes, o que dependan de otro origen
+(`legacy_yaml:`). Los negocios importados pasan sus datos de los YAML al almacén cifrado.
+
+El panel usa este almacén a través de la API local: ver [Panel De Administración](#panel-de-administración).
+
+### Procedimiento
+
+1. **Comprobar la migración sin tocar ninguna base:** `pytest tests/test_business_config_nine_businesses.py
+   tests/test_business_config_yaml_independence.py` importa los nueve negocios en bases temporales.
+2. **Generar la clave** y guardarla fuera del repositorio. Sin ella los datos de pago no se pueden leer, y
+   perderla obliga a volver a introducirlos:
+   `python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"`
+3. **Definir `BUSINESS_CONFIG_SECRETS_KEY`** en el entorno de la sesión o del usuario (el script no lee `.env`).
+4. **Crear la base:** `python scripts/init_local_business_config.py`. No necesita clave ni lee YAML, y no toca
+   lo que la base ya contenga.
+5. **Migración inicial, una sola vez:** `python scripts/init_local_business_config.py --import-tenants`.
+   Comprueba la clave y que cada negocio reproduzca sus YAML antes de escribir nada. Repetirla no duplica ni
+   sobrescribe: un negocio con versiones no se toca, y uno registrado sin versiones se completa.
+
+### Independencia De Los YAML
+
+Una vez importados, los negocios no vuelven a leer YAML. Lo comprueba
+`tests/test_business_config_yaml_independence.py` en un proceso aparte, sobre una copia del código sin YAML,
+sin motor, sin `.env` y sin carpetas de negocio, con un registro de los archivos abiertos: crear un negocio,
+guardar, recuperar borradores, publicar, consultar el historial, revertir, recuperar versiones y compilar,
+también al reabrir la base en otro proceso. Los nueve negocios compilan allí a la misma huella que sus YAML.
+
+Lo único que sigue relacionado con los YAML:
+
+| Elemento | Para qué | Hasta |
+|---|---|---|
+| `legacy_store_migration.py` y `init_local_business_config.py --import-tenants` | Migración inicial; solo con esa opción se carga, y lee únicamente los cinco YAML de cada negocio, sin motor ni `.env` | Fase 4 |
+| `legacy_yaml_importer.py`, `payment_secrets.py`, `migrate_tenants_to_contract.py` y los `business-config.json` con `legacy_yaml:` | Fuente opcional del motor por contrato y documentos de referencia | Fase 4 |
+| `tenant_runtime_loader.py` y `config_service.py` | El motor sigue leyendo sus YAML | Fase 4 |
+| `legacy_field_catalog.py`, `generate_traceability_matrix.py` y las pruebas | Trazabilidad y comparación con la referencia original | Fase 4 |
+| `legacy` en los ajustes técnicos | Copia en la base de tres estructuras antiguas; no lee los YAML | Fase 4 |
+
+## Panel De Administración
+
+El panel (`apps/admin-web`) edita directamente este contrato a través de la API local (`project/app/admin_api`), sobre el almacén
+descrito en [Persistencia Local](#persistencia-local). No tiene un modelo propio: sus tipos se generan del contrato, los campos sin
+pantalla propia se generan del esquema y lo demás se conserva al guardar. Cómo ejecutarlo: `apps/admin-web/README.md`. El documento
+ficticio con el que se prueba (`src/test/fixtures/sampleContractDocument.json`) lo valida
+`test_panel_document_is_valid_against_the_contract`.
+
+**El motor no usa todavía lo que se guarda aquí** y sigue leyendo sus YAML hasta la Fase 4. Publicar deja una versión oficial en el
+almacén, comprobada con el compilador, pero no llega a los clientes. El panel lo dice en la pantalla de publicación. Algunos avisos
+suponen la integración del perfil comercial que el motor actual no tiene: ver [Integración Pendiente](#integración-pendiente-con-el-motor).
+
+| Pantalla | Contrato |
+|---|---|
+| Mi negocio | `identity.*`, `offer.model` |
+| Productos y servicios | `offer.plans[]` u `offer.catalog`, `inventory`, `fulfillment` |
+| Pagos y cierre | `payments[]` (referencias `secret_store:`, valores aparte), `terms.*`, `capabilities.closing_methods`, `data_collection`, `actions_primary/support` |
+| Cómo atiende | `response_style.*`, `sales.*`, `knowledge.faqs`, `features` |
+| Mensajes y canales | `messages.*`, `capabilities.service_channels`, `product_channels`, `restrictions` |
+| Revisión y publicación | Versiones, publicación y diagnóstico del almacén |
+
+### API local
+
+La arrancan `run_local.bat` y `run_local.sh`. Sin `BUSINESS_CONFIG_SECRETS_KEY`, usa la clave de `.ai-sales-engine/business_config_secrets.key`
+en la carpeta del usuario, que crea la primera vez. Escucha solo en `127.0.0.1:8010` (`scripts/run_admin_api.py`, host fijo). Rechaza clientes, `Host` y `Origin` ajenos, no publica su
+documentación y responde `Cache-Control: no-store`. **No tiene autenticación:** la autenticación y la autorización multiusuario deben
+incorporarse antes de desplegarla en la nube.
+
+| Método y ruta | Qué hace |
+|---|---|
+| `GET /api/health` | Comprueba que está en marcha |
+| `GET /api/contract` | El esquema publicado del contrato |
+| `GET /api/businesses` | Lista los negocios |
+| `POST /api/businesses` | Registra un negocio (`slug`, `name`). 409 si ya existe |
+| `POST /api/businesses/import` | Importa los YAML que falten; no los modifica y no toca lo ya guardado |
+| `DELETE /api/businesses/{slug}?confirm={slug}` | Borra el negocio con sus versiones y datos de pago. Exige repetir el identificador. Solo en SQLite |
+| `GET /api/businesses/{slug}/config` | El documento que se edita y `payment_fields`: los datos de pago solo enmascarados ([Consultarlos sin exponerlos](#consultarlos-sin-exponerlos)) |
+| `PUT /api/businesses/{slug}/config` | Guarda una versión (`document`, `payment_values`, `base_version`). 409 si cambió desde `base_version`; 422 con los campos por corregir, incluido el formato de los datos de pago |
+| `POST /api/businesses/{slug}/validate` | Valida sin guardar |
+| `GET /api/businesses/{slug}/review` | Diagnóstico y si la versión se puede compilar. Nunca devuelve lo compilado |
+| `GET /api/businesses/{slug}/versions` | Historial |
+| `POST /api/businesses/{slug}/versions/{version}/restore` | Crea un borrador con esa versión; no publica |
+| `POST /api/businesses/{slug}/publish` | Publica una versión; si no compila, lo publicado no cambia |
+| `POST /api/businesses/{slug}/rollback` | Vuelve a publicar la versión publicada anterior |
+
+Los errores son `{code, message, issues: [{path, message}]}` en español y nunca repiten el valor recibido. Códigos: `invalid`, `duplicate`,
+`conflict`, `not_found`, `confirmation_required`, `forbidden`, `payment_key`, `unexpected`.
 
 ## Hallazgos En Los Nueve Negocios
 
@@ -278,29 +535,41 @@ cual (cambiarlos es decisión del negocio):
 
 - **asesor_ai_prod:** `business_channels` vacío mientras la lista antigua `channels` tiene whatsapp,
   instagram y web; tres reglas de cierre son validaciones del texto de la respuesta, no instrucciones de
-  venta; recomendaciones hacia `plan_pro`, que no existe; `multi_plan` es `true` con un solo plan.
+  venta; recomendaciones hacia `plan_pro`, que no existe.
 - **demo:** recomendaciones hacia `plan_pro` y `plan_basico`, pero sus planes son `pro` y `basico`.
-- **agencia_viajes:** el retorno está en reservas, que el motor no lee; `multi_currency` es `true` con una
-  sola moneda.
-- **clinic, saas:** `multi_plan` es `true` con un solo plan.
+- **agencia_viajes:** el retorno está en reservas, que el motor no lee.
 - **ecommerce:** oferta por planes con `catalog_mode = true`.
 - **tienda_ropa:** modalidades presencial y envío, pero domicilio y recogida disponibles.
 - **agencia_viajes, escuela_conduccion, restaurant, tienda_ropa:** cierre por link de pago sin link.
-- **Todos:** piden datos personales sin aviso de tratamiento; comparten los mismos datos de
-  transferencia (comparados por hash), lo que sugiere datos de ejemplo.
+- **Todos:** comparten los mismos datos de transferencia (comparados por hash), lo que sugiere datos de
+  ejemplo.
 
 ## Pruebas
 
 | Archivo | Qué prueba | Estado |
 |---|---|---|
 | `tests/test_business_config_contract.py` | Modelo, esquema y tipos generados, marcas, conservación de los nueve negocios, compilación, validaciones, diagnóstico, panel | pasan |
-| `tests/test_business_config_traceability.py` | Cada campo antiguo en su destino; catálogo coherente con las marcas; evidencias existentes; matriz al día | pasan |
+| `tests/test_business_config_traceability.py` | Cada campo antiguo en su destino; funcionalidades comerciales con sus valores y opciones; nada técnico en el documento comercial; catálogo coherente con las marcas; evidencias existentes; matriz al día | pasan |
 | `tests/test_payment_data_protection.py` | Detección y redacción de datos de pago | pasan |
+| `tests/test_business_config_repository.py` | Versiones, publicación, reversión, cifrado y runtime desde base de datos | pasan |
+| `tests/test_business_config_closing_policy.py` | Definición común del cierre: los cinco valores en los nueve negocios, misma estructura que los YAML, fuera del contrato, divergencias rechazadas y motor sin cambios | pasan |
+| `tests/test_business_config_local_persistence.py` | Persistencia local en archivo SQLite: creación, aislamiento, borradores, historial, reversión, protección de pagos y migración segura ante fallos | pasan |
+| `tests/test_business_config_nine_businesses.py` | Los nueve negocios en una base temporal: cada campo de los YAML, compilación frente a la referencia, prompts iguales, aislamiento y repetición de la importación | pasan |
+| `tests/test_business_config_yaml_independence.py` | El almacén funciona en un árbol sin YAML ni motor; procedimiento documentado; base fuera del control de versiones | pasan |
 | `tests/test_business_config_engine_integration.py` | Contrato con el motor actual: equivalencia exacta con los YAML, fuente opcional y respaldo, evidencia de cada campo conectado | pasan |
+| `tests/test_admin_api.py` | API local: negocios, secciones comerciales, validaciones, conflictos, reinicio, aislamiento, datos de pago, acceso solo local, versiones e importación de los nueve negocios sin pérdida | pasan |
+| `tests/test_business_config_architecture.py` | Capas, ausencia de ciclos y de dependencias del motor; rutas sin lógica; nada técnico en el contrato | pasan |
+| `tests/test_business_config_architecture.py` | Capas, ausencia de ciclos y de dependencias del motor; rutas sin lógica; nada técnico en el contrato | pasan |
+| `apps/admin-web`: `npm test` | Interfaz con un backend en memoria, reglas, operaciones y arquitectura (sin `localStorage`, sin recursos externos) | pasan |
+| `apps/admin-web`: `npm run test:integration` | Interfaz real, API real, contrato y SQLite temporal, con reinicios reales de la API: el recorrido completo y los nueve negocios guardados desde el panel | pasan |
 | `tests/test_business_config_engine_pending.py` (`-m engine_pending`) | Comportamiento que exige cambios futuros en el motor | **xfail estricto**: se ejecutan siempre y fallan (63 "xfailed"); si una pasa, la suite falla hasta convertirla en prueba normal. Solo cuenta como fallo esperado la excepción con la que hoy falla cada prueba (`AssertionError`; `KeyError` y `AttributeError` en dos pruebas documentadas): cualquier otro error, incluido un fixture roto, es un fallo real. Detalle: `pytest -m engine_pending --runxfail` |
 
 Los informes de fallo de cualquier prueba ocultan los datos de pago de los YAML (`tests/conftest.py`), para que no
-lleguen a la consola ni a los logs de CI.
+lleguen a la consola ni a los logs de CI. `pytest.ini` usa una lista cerrada de archivos (`python_files`): una
+prueba nueva que no se añada allí no entra en la suite ni en el CI.
+
+`pytest` a secas no consume API ni usa las credenciales ni la base del `.env` local (`tests/conftest.py`): se
+comporta como el CI y omite las pruebas contra el modelo real. Esas solo corren con `pytest -m integration`.
 
 ## Integración Pendiente Con El Motor
 
@@ -315,16 +584,16 @@ Requieren cambios en el motor (no autorizados en esta fase). Sus pruebas están 
 3. **Productos y precios del catálogo en el prompt:** el prompt actual de catálogo no los lista.
 4. **Datos de pago fuera del prompt y del registro de la conversación.**
 5. **Presupuesto del prompt** en conversación activa con el perfil incluido.
-6. Resto de campos `pendiente` (políticas, impuestos, horarios, entrega, estrategia avanzada, mensajes
+6. Resto de campos `pendiente` (políticas, horarios, entrega, estrategia avanzada, mensajes
    de seguimiento, precio anual y por variante...): sin pruebas pendientes aún; cada uno necesitará la
    suya al conectarse.
 
 ## Pendientes Fuera Del Contrato
 
 1. Decisiones del negocio sobre el diagnóstico y los hallazgos.
-2. Pantallas del panel para los campos nuevos y revisión de sus avisos (ver Correspondencia).
-3. Activar el contrato por negocio (`BUSINESS_CONFIG_CONTRACT_TENANTS`): hoy no cambia respuestas.
-4. Retirar los YAML y vaciar `compatibility` solo cuando ningún negocio dependa de ellos.
-5. Contrato v2 (cambio incompatible): una sola lista de ofertas tipadas (producto, servicio, plan,
-   reserva), `engine` fuera del documento del negocio y un único lugar para motivos y cierre.
-6. Persistencia en base de datos: fuera de alcance.
+2. Activar el contrato por negocio (`BUSINESS_CONFIG_CONTRACT_TENANTS`): hoy no cambia respuestas.
+3. Retirar los YAML y `legacy` solo cuando ningún negocio dependa de ellos.
+4. Persistencia en PostgreSQL, rotación de la clave de cifrado y limpieza de datos de pago de versiones
+   antiguas: fase de nube.
+5. Autenticación definitiva, también para la API del panel: fase de nube. El sistema propio actual no se desarrollará ni se
+   mantendrá, y `/auth/register` no está listo para producción (ver `docs/operations.md`).

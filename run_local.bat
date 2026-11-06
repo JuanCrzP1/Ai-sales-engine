@@ -40,7 +40,7 @@ if defined TELEGRAM_POLLING_ENABLED (
 )
 
 :: -------------------------
-:: PANEL WEB (puerto 5173)
+:: PANEL WEB (API en 8010, interfaz en 5173)
 :: -------------------------
 set ADMIN_WEB_DIR=%~dp0apps\admin-web
 where npm >nul 2>nul
@@ -55,8 +55,15 @@ if errorlevel 1 (
 		call npm install
 		popd
 	)
-	echo [INFO] Iniciando panel web en http://localhost:5173 ...
-	start "admin-web" cmd /k "cd /d "%ADMIN_WEB_DIR%" && npm run dev -- --port 5173 --strictPort --open"
+	echo [INFO] Iniciando la API del panel en http://127.0.0.1:8010 ...
+	start "admin-api" cmd /k python "%~dp0scripts\run_admin_api.py"
+	python "%~dp0scripts\run_admin_api.py" --wait
+	if errorlevel 1 (
+		echo [AVISO] La API del panel no respondio. Revisa la ventana admin-api. El panel web no se inicia.
+	) else (
+		echo [INFO] Iniciando panel web en http://localhost:5173 ...
+		start "admin-web" cmd /k "cd /d "%ADMIN_WEB_DIR%" && npm run dev -- --port 5173 --strictPort --open"
+	)
 )
 
 :: -------------------------

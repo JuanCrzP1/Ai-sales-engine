@@ -100,6 +100,8 @@ def render_types() -> str:
         f"export const MAX_PROFILE_ITEM_CHARS = {engine_policy.MAX_PROFILE_ITEM_CHARS};",
         f"export const MAX_TONE_CHARS = {engine_policy.MAX_TONE_CHARS};",
         f"export const MAX_PROMOTIONS = {engine_policy.MAX_PROMOTIONS};",
+        f"export const MAX_POLICY_CHARS = {engine_policy.MAX_POLICY_CHARS};",
+        f"export const MAX_MESSAGE_CHARS = {engine_policy.MAX_MESSAGE_CHARS};",
         f"export const PROMPT_WORD_LIMITS = {json.dumps(engine_policy.PROMPT_WORD_LIMITS)} as const;",
         f"export const PROMPT_MAX_PROBLEMS = {engine_policy.PROMPT_MAX_PROBLEMS};",
         f"export const PROMPT_MAX_CATEGORIES = {engine_policy.PROMPT_MAX_CATEGORIES};",
@@ -108,8 +110,8 @@ def render_types() -> str:
         "// ARCHIVO GENERADO por scripts/generate_business_config_types.py. No editar a mano.\n"
         "// Fuente: project/config/contracts/v1/business-config.schema.json y\n"
         "// project/app/domain/business_config/engine_policy.py.\n"
-        "// Marcas: `audiencia` (cliente, avanzado, operador, sistema) y `motor` (conectado, pendiente,\n"
-        "// conservado); un campo sin marca toma la de su sección. Ver docs/business-config.md.\n"
+        "// Marcas: `audiencia` (cliente, avanzado, sistema) y `motor` (conectado, pendiente); un campo sin\n"
+        "// marca toma la de su sección. Ver docs/business-config.md.\n"
     )
     return header + "\n" + "\n".join(constants) + "\n\n" + "\n\n".join(blocks) + "\n"
 

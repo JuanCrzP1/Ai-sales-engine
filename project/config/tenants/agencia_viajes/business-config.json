@@ -3,6 +3,7 @@
   "tenant_slug": "agencia_viajes",
   "identity": {
     "name": "Viajes Demo",
+    "brand_name": "Viajes Demo",
     "industry": "automatizacion comercial para agencias de viajes que venden por chat",
     "description": "Sistema que responde prospectos, retoma cotizaciones y sostiene seguimiento para que la agencia no pierda reservas por demora o falta de continuidad.\n",
     "value_proposition": "Responder rapido, retomar cotizaciones frias y convertir mas conversaciones en reservas cerradas.\n",
@@ -162,7 +163,7 @@
       "primary": "dinero",
       "secondary": "tiempo"
     },
-    "motivation_drivers": [
+    "motivations": [
       {
         "motivation": "tiempo",
         "description": "ahorro de tiempo en respuesta y seguimiento comercial",
@@ -248,6 +249,14 @@
     "support": {
       "explain_first": true,
       "sell_after": true
+    },
+    "conversation_flow": {
+      "required_flow": [
+        "detect_pain",
+        "amplify_impact",
+        "present_solution",
+        "guide_next_step"
+      ]
     },
     "objections": [
       {
@@ -385,67 +394,11 @@
     "items": [],
     "track_stock": false
   },
-  "engine": {
-    "conversation": {
-      "active_window_minutes": 15,
-      "reset_hours": 4
-    },
-    "features": {
-      "pricing_enabled": true,
-      "catalog_mode": true,
-      "business_model": "catalog"
-    }
-  },
-  "compatibility": {
-    "business": {
-      "brand_name": "Viajes Demo",
-      "city": "Medellin"
-    },
-    "sales": {
-      "closing": {
-        "next_step": {
-          "action": "dynamic"
-        },
-        "behavior": {
-          "direct_sale": {
-            "goal": "confirmar_compra"
-          },
-          "lead_capture": {
-            "goal": "capturar_datos"
-          },
-          "booking": {
-            "goal": "agendar"
-          },
-          "checkout": {
-            "goal": "enviar_pago"
-          }
-        }
-      },
-      "progression_rules": {
-        "required_flow": [
-          "detect_pain",
-          "amplify_impact",
-          "present_solution",
-          "guide_next_step"
-        ]
-      }
-    },
-    "config": {
-      "features": {
-        "multi_currency": true,
-        "multi_plan": false
-      },
-      "flags": {
-        "ai_first": true,
-        "allow_fallback": false,
-        "log_level": "info"
-      },
-      "capabilities": {
-        "channels": [
-          "whatsapp",
-          "instagram"
-        ]
-      }
-    }
+  "features": {
+    "pricing_enabled": true,
+    "catalog_mode": true,
+    "multi_currency": true,
+    "multi_plan": false,
+    "business_model": "catalog"
   }
 }

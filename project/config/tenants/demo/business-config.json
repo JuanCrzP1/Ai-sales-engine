@@ -3,6 +3,7 @@
   "tenant_slug": "demo",
   "identity": {
     "name": "Demo Comercial",
+    "brand_name": "Demo Comercial",
     "industry": "servicios",
     "description": "Entorno demo para validar comportamiento comercial multi-tenant.",
     "value_proposition": "mover conversaciones a una accion concreta.",
@@ -174,6 +175,32 @@
     }
   ],
   "sales": {
+    "motivations": [
+      {
+        "motivation": "tiempo",
+        "angle": {
+          "signals": [
+            "no me da el tiempo",
+            "muchos mensajes"
+          ],
+          "messages": [
+            "no es solo responder, es que no te alcanza el tiempo"
+          ]
+        }
+      },
+      {
+        "motivation": "dinero",
+        "angle": {
+          "signals": [
+            "pierdo clientes",
+            "no vendo"
+          ],
+          "messages": [
+            "cada lead que se enfria es dinero que ya estaba cerca"
+          ]
+        }
+      }
+    ],
     "customer_problems": [
       {
         "id": "gestion_mensajes",
@@ -202,6 +229,10 @@
         "recommended_angles": [
           "tiempo",
           "dinero"
+        ],
+        "solutions": [
+          "automatizar_respuesta",
+          "seguimiento"
         ]
       },
       {
@@ -227,6 +258,9 @@
         },
         "recommended_angles": [
           "dinero"
+        ],
+        "solutions": [
+          "seguimiento_automatico"
         ]
       }
     ],
@@ -241,45 +275,6 @@
       "La idea es que no dependas de estar pegado al celular.",
       "El sistema responde y tambien retoma conversaciones automaticamente."
     ],
-    "solution": {
-      "mapping": [
-        {
-          "problem": "gestion_mensajes",
-          "solutions": [
-            "automatizar_respuesta",
-            "seguimiento"
-          ]
-        },
-        {
-          "problem": "falta_seguimiento",
-          "solutions": [
-            "seguimiento_automatico"
-          ]
-        }
-      ]
-    },
-    "angles": [
-      {
-        "motivation": "tiempo",
-        "signals": [
-          "no me da el tiempo",
-          "muchos mensajes"
-        ],
-        "messages": [
-          "no es solo responder, es que no te alcanza el tiempo"
-        ]
-      },
-      {
-        "motivation": "dinero",
-        "signals": [
-          "pierdo clientes",
-          "no vendo"
-        ],
-        "messages": [
-          "cada lead que se enfria es dinero que ya estaba cerca"
-        ]
-      }
-    ],
     "offer_presentation": {
       "single_offer": [
         "explicar directo y conectar con valor",
@@ -291,6 +286,16 @@
         "guiar a mejor opcion"
       ]
     },
+    "recommendation_rules": [
+      {
+        "when": "gestion_mensajes",
+        "recommend": "plan_pro"
+      },
+      {
+        "when": "seguimiento",
+        "recommend": "plan_basico"
+      }
+    ],
     "discovery": {
       "questions": [
         "Por donde te entran mas mensajes hoy?",
@@ -316,6 +321,16 @@
         "amplify_impact",
         "present_solution",
         "guide_next_step"
+      ],
+      "required_flow": [
+        "detect_pain",
+        "amplify_impact",
+        "present_solution",
+        "guide_next_step"
+      ],
+      "forbid": [
+        "responder_sin_direccion",
+        "responder_sin_solucion"
       ],
       "no_skip_steps": true
     },
@@ -461,83 +476,10 @@
     "items": [],
     "track_stock": false
   },
-  "engine": {
-    "features": {
-      "pricing_enabled": true,
-      "catalog_mode": false
-    }
-  },
-  "compatibility": {
-    "business": {
-      "brand_name": "Demo Comercial",
-      "city": "Medellin"
-    },
-    "sales": {
-      "offer": {
-        "recommendation_rules": [
-          {
-            "condition": "gestion_mensajes",
-            "recommend": "plan_pro"
-          },
-          {
-            "condition": "seguimiento",
-            "recommend": "plan_basico"
-          }
-        ]
-      },
-      "closing": {
-        "next_step": {
-          "action": "dynamic"
-        },
-        "behavior": {
-          "direct_sale": {
-            "goal": "confirmar_compra"
-          },
-          "lead_capture": {
-            "goal": "capturar_datos"
-          },
-          "booking": {
-            "goal": "agendar"
-          },
-          "checkout": {
-            "goal": "enviar_pago"
-          }
-        }
-      },
-      "progression_rules": {
-        "required_flow": [
-          "detect_pain",
-          "amplify_impact",
-          "present_solution",
-          "guide_next_step"
-        ],
-        "forbid": [
-          "responder_sin_direccion",
-          "responder_sin_solucion"
-        ]
-      }
-    },
-    "config": {
-      "initial_message": {
-        "recency": {
-          "active_minutes": 15,
-          "reset_hours": 4
-        }
-      },
-      "features": {
-        "multi_currency": true,
-        "multi_plan": true
-      },
-      "flags": {
-        "ai_first": true,
-        "allow_fallback": false,
-        "log_level": "info"
-      },
-      "capabilities": {
-        "channels": [
-          "whatsapp"
-        ]
-      }
-    }
+  "features": {
+    "pricing_enabled": true,
+    "catalog_mode": false,
+    "multi_currency": true,
+    "multi_plan": true
   }
 }

@@ -39,26 +39,11 @@ cd project
 uvicorn app.main:app --reload
 ```
 
-Simular conversación:
+### Simular una conversación
 
-```text
-POST /api/v1/simulate
-```
-
-Header:
-
-```text
-X-Tenant-Slug: asesor_ai_prod
-```
-
-JSON:
-
-```json
-{
-  "user_message": "tengo muchos mensajes",
-  "user_id": "demo_1"
-}
-```
+`POST /api/v1/simulate` es una ruta de pruebas internas. Está apagada por defecto y responde 404. Aunque se habilite, exige un
+token de administrador que hoy ningún entorno puede emitir, porque la autenticación definitiva queda para la fase de nube, así
+que por ahora no se puede usar de extremo a extremo. El estado completo está en `docs/operations.md`.
 
 ## Resultado
 

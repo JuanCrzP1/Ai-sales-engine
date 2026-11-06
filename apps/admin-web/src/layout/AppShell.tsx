@@ -1,11 +1,14 @@
 import { useEffect, useState } from "react";
 import { Outlet, useLocation } from "react-router-dom";
+import { BrandMark } from "../components/brand/BrandMark";
 import { Button } from "../components/ui/Button";
 import { Icon } from "../components/ui/Icon";
-import { BrandMark } from "../components/brand/BrandMark";
+import { useConfig } from "../state/useConfig";
 import { ErrorBoundary } from "./ErrorBoundary";
+import { SaveProblems } from "./SaveProblems";
 import { Sidebar } from "./Sidebar";
 import { Topbar } from "./Topbar";
+import { UnsavedChangesGuard } from "./UnsavedChangesGuard";
 
 const SIDEBAR_ID = "menu-principal";
 
@@ -13,6 +16,7 @@ const SIDEBAR_ID = "menu-principal";
 export function AppShell() {
   const [menuOpen, setMenuOpen] = useState(false);
   const location = useLocation();
+  const { save } = useConfig();
 
   useEffect(() => {
     setMenuOpen(false);
@@ -30,13 +34,7 @@ export function AppShell() {
           <BrandMark size={30} />
           <span className="sidebar__brand-name">AI Sales Engine</span>
         </span>
-        <Button
-          variant="secondary"
-          size="small"
-          aria-expanded={menuOpen}
-          aria-controls={SIDEBAR_ID}
-          onClick={() => setMenuOpen((open) => !open)}
-        >
+        <Button variant="secondary" size="small" aria-expanded={menuOpen} aria-controls={SIDEBAR_ID} onClick={() => setMenuOpen((open) => !open)}>
           <Icon name={menuOpen ? "close" : "menu"} size={16} />
           {menuOpen ? "Cerrar menú" : "Menú"}
         </Button>
@@ -48,11 +46,16 @@ export function AppShell() {
         <div className="main__top">
           <Topbar />
         </div>
-        <div className="main__inner" key={location.pathname}>
-          <ErrorBoundary variant="section" resetKey={location.pathname}>
-            <Outlet />
-          </ErrorBoundary>
-        </div>
+        <UnsavedChangesGuard />
+        <SaveProblems />
+        {/* Mientras se guarda no se puede editar: lo escrito se perdería al recibir la versión del servidor. */}
+        <fieldset className="main__edit-area" disabled={save.status === "saving"}>
+          <div className="main__inner" key={location.pathname}>
+            <ErrorBoundary variant="section" resetKey={location.pathname}>
+              <Outlet />
+            </ErrorBoundary>
+          </div>
+        </fieldset>
       </main>
     </div>
   );

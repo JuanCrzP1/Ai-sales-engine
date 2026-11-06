@@ -1,12 +1,9 @@
-from types import SimpleNamespace
-
 from fastapi import Depends, Header, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 
 from app.config import ACTIVE_TENANT_SLUG
 from app.database.connection import get_db
-from app.infrastructure.db.repository import DBRepository
 from app.models import AdminUser, Tenant
 from app.services.auth_service import AuthService
 from app.utils.logger import logger
@@ -46,12 +43,3 @@ def get_current_tenant(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tenant no encontrado")
     logger.info('tenant_resolved', extra={'event': 'tenant_resolved', 'tenant_id': tenant.slug, 'tenant_db_id': tenant.id})
     return tenant
-
-
-def get_tenant_by_slug_public(x_tenant_slug: str = Header(..., alias="X-Tenant-Slug")) -> Tenant:
-    repo = DBRepository()
-    tenant = repo.get_tenant_by_slug(resolve_tenant_slug(x_tenant_slug))
-    if not tenant:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tenant no encontrado")
-    logger.info('tenant_resolved', extra={'event': 'tenant_resolved', 'tenant_id': tenant.get('slug'), 'tenant_db_id': tenant.get('id')})
-    return SimpleNamespace(**tenant)

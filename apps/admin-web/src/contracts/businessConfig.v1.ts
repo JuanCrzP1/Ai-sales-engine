@@ -1,8 +1,8 @@
 // ARCHIVO GENERADO por scripts/generate_business_config_types.py. No editar a mano.
 // Fuente: project/config/contracts/v1/business-config.schema.json y
 // project/app/domain/business_config/engine_policy.py.
-// Marcas: `audiencia` (cliente, avanzado, operador, sistema) y `motor` (conectado, pendiente,
-// conservado); un campo sin marca toma la de su sección. Ver docs/business-config.md.
+// Marcas: `audiencia` (cliente, avanzado, sistema) y `motor` (conectado, pendiente); un campo sin
+// marca toma la de su sección. Ver docs/business-config.md.
 
 export const SCHEMA_VERSION = "1.0";
 export const RESPONSE_LENGTH_MAX_WORDS = {"short": 60, "medium": 75, "long": 100} as const;
@@ -15,6 +15,8 @@ export const MAX_PROFILE_ITEMS = 10;
 export const MAX_PROFILE_ITEM_CHARS = 300;
 export const MAX_TONE_CHARS = 160;
 export const MAX_PROMOTIONS = 10;
+export const MAX_POLICY_CHARS = 800;
+export const MAX_MESSAGE_CHARS = 800;
 export const PROMPT_WORD_LIMITS = {"industry": 8, "value_proposition": 30, "description": 20, "offer_description": 25} as const;
 export const PROMPT_MAX_PROBLEMS = 2;
 export const PROMPT_MAX_CATEGORIES = 4;
@@ -38,9 +40,7 @@ export interface Capabilities {
   closing_methods: ClosingMethods;
   /** Datos que el asistente pide al cliente. */
   data_collection: DataCollection;
-  /** Situaciones en las que el asistente pasa la conversación a una persona. */
-  human_handoff_when?: string[] | null;
-  /** Lo que el negocio no hace ni promete. */
+  /** Lo que el negocio no hace. */
   restrictions?: Restrictions | null;
 }
 
@@ -73,7 +73,7 @@ export interface CatalogItem {
 }
 
 export interface Closing {
-  /** Venta directa, captación de datos, reserva o compra con pago (checkout). */
+  /** Tipo de cierre: direct_sale (confirmar la compra), lead_capture (capturar datos), booking (agendar) o checkout (enviar el pago). */
   strategy: "direct_sale" | "lead_capture" | "booking" | "checkout";
   /** Datos que necesita el cierre (name, phone, address...). */
   required_data?: string[] | null;
@@ -95,19 +95,18 @@ export interface ClosingMethods {
   data_collection: boolean;
 }
 
+/** Cómo avanza la conversación comercial. */
 export interface ConversationFlow {
-  /** Etapas internas del motor, en orden (p. ej. detect_pain, present_solution). */
-  steps: string[];
+  /** Pasos que idealmente sigue la conversación, en orden. */
+  steps?: string[] | null;
+  /** Secuencia mínima que debe respetar la conversación. */
+  required_flow?: string[] | null;
+  /** Lo que el asistente no debe hacer en este negocio (p. ej. responder_sin_solucion). */
+  forbid?: string[] | null;
+  /** true: no se saltan pasos de la conversación. */
   no_skip_steps?: boolean | null;
-  /** Guiar al cliente paso a paso en un proceso (trámites, matrículas). */
+  /** true: guía al cliente paso a paso en un proceso (trámites, matrículas). */
   guided_process?: boolean | null;
-}
-
-export interface ConversationWindows {
-  /** Minutos sin mensajes tras los que la conversación deja de estar activa. */
-  active_window_minutes: number;
-  /** Horas sin mensajes tras las que la conversación empieza de nuevo. */
-  reset_hours: number;
 }
 
 export interface Cost {
@@ -133,15 +132,15 @@ export interface CustomerProblem {
   urgency_levels?: Record<string, string[]> | null;
   /** Ángulos de venta para este problema. [audiencia: avanzado] */
   recommended_angles?: string[] | null;
+  /** Qué parte de la solución atiende este problema. [audiencia: avanzado] */
+  solutions?: string[] | null;
 }
 
 export interface DataCollection {
   /** [motor: conectado] */
   enabled: boolean;
-  /** [motor: conectado] */
-  fields?: ("nombre" | "telefono" | "direccion" | "detalles")[];
-  /** Aviso de tratamiento de datos personales que el asistente comparte al pedirlos. */
-  consent_notice?: string | null;
+  /** Datos que el asistente puede pedir al cliente; solo esos. [motor: conectado] */
+  fields?: string[];
 }
 
 export interface Delivery {
@@ -159,24 +158,25 @@ export interface Discovery {
   objectives?: string[] | null;
 }
 
-export interface EngineFeatures {
-  /** Bandera heredada: el motor solo la consulta si no hay precios ni pagos, y el contrato siempre los exige. */
-  pricing_enabled: boolean;
-  /** Debe coincidir con `offer.model` (catalog). [motor: conectado] */
-  catalog_mode: boolean;
-  /** Modelo de negocio con el que el motor decide cuándo mostrar precios. [motor: conectado] */
-  business_model?: "saas" | "catalog" | "checkout" | "service_booking" | "process" | null;
-}
-
-export interface EngineSettings {
-  /** [motor: conectado] */
-  conversation?: ConversationWindows | null;
-  features: EngineFeatures;
-}
-
 export interface Faq {
+  /** Pregunta tal como la haría el cliente. */
   question: string;
+  /** Respuesta oficial del negocio. */
   answer: string;
+}
+
+/** Cómo vende el negocio. Los valores se conservan tal cual; las contradicciones con la oferta las señala el diagnóstico. */
+export interface Features {
+  /** true: permite usar precios en la conversación. */
+  pricing_enabled: boolean;
+  /** true: vende opciones tipo catálogo. false: vende un servicio o plan. [motor: conectado] */
+  catalog_mode: boolean;
+  /** true: permite manejar más de una moneda. */
+  multi_currency?: boolean | null;
+  /** true: permite ofrecer varios planes. */
+  multi_plan?: boolean | null;
+  /** Tipo de negocio; con él el motor decide cuándo mostrar precios. [motor: conectado] */
+  business_model?: "saas" | "catalog" | "checkout" | "service_booking" | "process" | null;
 }
 
 export interface Financing {
@@ -236,7 +236,9 @@ export interface InventoryItem {
 }
 
 export interface ItemPrice {
+  /** Moneda (código ISO de tres letras). */
   currency: string;
+  /** Precio en esa moneda. */
   amount: number;
 }
 
@@ -254,7 +256,7 @@ export interface Location {
 }
 
 export interface Messages {
-  /** Primer mensaje de cada conversación nueva, si está activo. [motor: conectado] */
+  /** Saludo de cada conversación nueva: mensaje fijo o respuesta de la IA. [motor: conectado] */
   welcome: WelcomeMessage;
   /** Respuesta exacta cuando el cliente reporta un pago. [motor: conectado] */
   payment_reported?: string | null;
@@ -270,12 +272,16 @@ export interface Messages {
   human_handoff?: string | null;
 }
 
-export interface MotivationDriver {
+/** Un motivo de compra: qué significa, cómo reconocerlo y cómo venderle a quien lo tiene. */
+export interface Motivation {
   /** Motivo de compra (p. ej. tiempo, dinero). */
   motivation: string;
-  description: string;
+  /** Qué significa este motivo para el cliente. */
+  description?: string | null;
   /** Frases del cliente que revelan este motivo. */
-  signals?: string[];
+  signals?: string[] | null;
+  /** Ángulo de venta para este motivo. */
+  angle?: SalesAngle | null;
 }
 
 export interface ObjectionHandling {
@@ -318,10 +324,11 @@ export interface OfferPresentation {
 }
 
 export interface OpeningHours {
+  /** Días en los que aplica este horario. */
   days: ("lunes" | "martes" | "miercoles" | "jueves" | "viernes" | "sabado" | "domingo")[];
-  /** Hora HH:MM (24 h). */
+  /** Hora de apertura (HH:MM, 24 h). */
   opens: string;
-  /** Hora HH:MM (24 h). */
+  /** Hora de cierre (HH:MM, 24 h). */
   closes: string;
 }
 
@@ -331,12 +338,12 @@ export interface PaymentProfile {
   id: string;
   /** [motor: conectado] */
   link?: SecretRef | null;
+  /** Si es false, el enlace se conserva pero no se ofrece. [motor: conectado] */
+  link_enabled?: boolean | null;
   /** [motor: conectado] */
   transfer_enabled: boolean;
   /** [motor: conectado] */
   transfer_methods?: TransferMethod[];
-  /** Indicaciones para pagar, sin números ni links (esos datos son secretos). */
-  instructions?: string | null;
 }
 
 export interface Pickup {
@@ -373,7 +380,7 @@ export interface PlanPrice {
   implementation?: number | null;
   /** Cobro mensual. */
   monthly?: number | null;
-  /** Valor del primer pago cuando difiere del mensual. */
+  /** Valor del primer pago, si difiere de los siguientes. */
   first_payment?: number | null;
   /** Precio de pago único. */
   price?: number | null;
@@ -392,6 +399,7 @@ export interface Policies {
 }
 
 export interface Promotion {
+  /** Nombre con el que se presenta la promoción. */
   name: string;
   /** Qué incluye la promoción y a qué aplica. */
   details: string;
@@ -400,16 +408,14 @@ export interface Promotion {
 }
 
 export interface Qualification {
-  /** Si el asistente debe comprobar que la oferta encaja con el cliente. */
+  /** true: valida si la oferta encaja antes de empujar el cierre. */
   detect_offer_fit?: boolean | null;
-  /** Criterios para considerar a alguien un cliente potencial. */
-  criteria?: string[] | null;
 }
 
 export interface RecommendationRule {
   /** Situación o necesidad del cliente. */
   when: string;
-  /** Id de un plan, producto o categoría de la oferta. */
+  /** Plan, producto o categoría que se recomienda. Si no está en la oferta, el diagnóstico lo señala. */
   recommend: string;
 }
 
@@ -423,7 +429,7 @@ export interface ResponseStyle {
   formality?: "informal" | "neutral" | "formal" | null;
   /** Si el asistente puede usar emojis. */
   emojis?: boolean | null;
-  /** Indicaciones de comunicación del negocio. */
+  /** Cómo debe expresarse el asistente en este negocio. */
   instructions?: string[] | null;
   /** short (cortas), medium (equilibradas) o long (detalladas). [motor: conectado] */
   length?: "short" | "medium" | "long";
@@ -436,16 +442,14 @@ export interface Restrictions {
   disallowed_channels?: string[];
   /** Acciones que el negocio no realiza (p. ej. llamadas). */
   disallowed_actions?: string[];
-  /** Promesas o afirmaciones que el asistente nunca debe hacer (resultados garantizados, diagnósticos...). */
-  forbidden_claims?: string[] | null;
 }
 
 /** Estrategia comercial. Básica (el cliente la escribe en lenguaje natural): motivos de compra, problemas e impactos, beneficios, argumentos, preguntas, recomendaciones e instrucciones. Avanzada (opcional): el resto. */
 export interface Sales {
   /** Motivo principal y secundario de compra. [motor: conectado] */
   buying_motivation?: BuyingMotivation | null;
-  /** Qué significa cada motivo de compra y cómo reconocerlo. [audiencia: avanzado] */
-  motivation_drivers?: MotivationDriver[] | null;
+  /** Cada motivo de compra: qué significa, cómo reconocerlo y con qué ángulo venderle. [audiencia: avanzado] */
+  motivations?: Motivation[] | null;
   /** Problemas del cliente que el negocio resuelve. */
   customer_problems?: CustomerProblem[] | null;
   /** Problemas del cliente en sus palabras. */
@@ -456,10 +460,8 @@ export interface Sales {
   benefits?: string[] | null;
   /** Argumentos de venta. */
   arguments?: string[] | null;
-  /** Cómo resuelve el negocio cada problema y qué pasos sigue el cliente. */
+  /** Qué pasos sigue el cliente y qué requisitos debe cumplir. */
   solution?: Solution | null;
-  /** Ángulos de venta por motivo de compra. [audiencia: avanzado] */
-  angles?: SalesAngle[] | null;
   /** Ofertas principales, mejoras y complementos. [audiencia: avanzado] */
   offer_mix?: OfferMix | null;
   /** Cómo presentar las opciones. [audiencia: avanzado] */
@@ -471,19 +473,17 @@ export interface Sales {
   qualification?: Qualification | null;
   /** Cómo atender preguntas de información. [audiencia: avanzado] */
   support?: SupportPolicy | null;
-  /** Etapas de la conversación (identificadores internos del motor). [audiencia: operador] */
+  /** Pasos de la conversación y reglas para avanzar. [audiencia: avanzado] */
   conversation_flow?: ConversationFlow | null;
   /** Manejo de objeciones (precio y otras). [audiencia: avanzado] */
   objections?: ObjectionHandling[] | null;
   /** Estrategia y reglas de cierre. [audiencia: avanzado] */
   closing?: Closing | null;
-  /** Instrucciones de venta del negocio. */
+  /** Cómo debe vender el asistente en este negocio. */
   instructions?: string[] | null;
 }
 
 export interface SalesAngle {
-  /** Motivo de compra de `motivation_drivers` al que responde. */
-  motivation: string;
   /** Cuándo usar el ángulo: frases del cliente. */
   signals?: string[];
   /** Qué decir con este ángulo. */
@@ -509,24 +509,16 @@ export interface Shipping {
 }
 
 export interface Solution {
-  /** Qué parte de la solución atiende cada problema. [audiencia: avanzado] */
-  mapping?: SolutionMapping[] | null;
   /** Pasos que sigue el cliente para comprar o recibir el servicio. */
   process_steps?: string[] | null;
   /** Requisitos que debe cumplir el cliente. */
   requirements?: string[] | null;
 }
 
-export interface SolutionMapping {
-  /** Id de un problema de `customer_problems`. */
-  problem: string;
-  solutions: string[];
-}
-
 export interface SupportPolicy {
-  /** Ante una pregunta, explicar antes de vender. */
+  /** true: primero aclara la duda. false: vende directo. */
   explain_first?: boolean | null;
-  /** Después de explicar, llevar la conversación a la venta. */
+  /** true: después de explicar, vuelve a llevar al cliente a avanzar. */
   sell_after?: boolean | null;
   /** Reglas de atención del negocio. */
   rules?: string[] | null;
@@ -556,8 +548,6 @@ export interface Terms {
   roi_hints?: string[] | null;
   /** Aclaración sobre cómo se confirma el precio. */
   price_note?: string | null;
-  /** Si los precios publicados ya incluyen los impuestos (IVA). */
-  prices_include_taxes?: boolean | null;
   /** Únicas promociones o descuentos que el asistente puede ofrecer. */
   promotions?: Promotion[] | null;
   /** Financiación disponible. */
@@ -579,6 +569,10 @@ export interface TransferMethod {
   account_type?: string | null;
   account_number?: SecretRef | null;
   reference?: SecretRef | null;
+  /** Titular o etiqueta para reconocer la cuenta en el panel. No se comparte con el cliente. [motor: pendiente] */
+  label?: string | null;
+  /** Si es false, la cuenta se conserva pero no se ofrece. */
+  enabled?: boolean | null;
 }
 
 export interface UseCase {
@@ -598,8 +592,11 @@ export interface Variant {
   prices?: ItemPrice[] | null;
 }
 
+/** Las dos modalidades de saludo, según `enabled`. - `true`: ante un saludo sin más en una conversación nueva, el sistema envía `text` tal cual, sin IA. - `false`: no envía el mensaje fijo y responde la IA. El texto se conserva para cuando se reactive. Un saludo con una intención ("hola, ¿qué precio tiene?") siempre lo responde la IA. */
 export interface WelcomeMessage {
+  /** true: envía el mensaje inicial fijo, sin IA. false: no lo envía y responde la IA. */
   enabled: boolean;
+  /** Mensaje de apertura que recibe el cliente. */
   text?: string;
 }
 
@@ -630,8 +627,6 @@ export interface BusinessConfig {
   fulfillment?: Fulfillment | null;
   /** [audiencia: cliente] */
   inventory?: Inventory;
-  /** Ajustes internos del motor. Si falta, se deriva de la oferta (catálogo o planes) con los valores por defecto. [audiencia: operador] */
-  engine?: EngineSettings | null;
-  /** Datos de los YAML antiguos sin lugar en el contrato, conservados con su ruta original. [audiencia: sistema; motor: conservado] */
-  compatibility?: Record<string, unknown>;
+  /** Interruptores comerciales. Si faltan, se derivan de la oferta (catálogo o planes). [audiencia: avanzado] */
+  features?: Features | null;
 }

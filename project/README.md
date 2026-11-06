@@ -31,29 +31,12 @@ Superficie operativa principal:
 
 - `GET /health`
 - `GET /docs`
-- `POST /api/v1/simulate`
 - `GET /api/v1/whatsapp/webhook`
 - `POST /api/v1/whatsapp/webhook`
 
 ## Simulación Operativa
 
-El endpoint de simulación válido es:
-
-```text
-POST /api/v1/simulate
-```
-
-Header:
-
-```text
-X-Tenant-Slug: asesor_ai_prod
-```
-
-Payload:
-
-```json
-{"user_message": "mensaje del cliente", "user_id": "sim-user-1"}
-```
+`POST /api/v1/simulate` está apagado por defecto y responde 404. No se puede usar hasta que exista la autenticación definitiva, pendiente de la fase de nube: ver `docs/operations.md`.
 
 ## Configuración Multi-Tenant
 

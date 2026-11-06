@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import ast
 import functools
 import os
+import re
 import sys
 from pathlib import Path
 from unittest.mock import patch
@@ -62,6 +64,49 @@ def pytest_runtest_makereport(item, call):
     report.sections = [(title, _redact_payment_values(content)) for title, content in report.sections]
 
 
+def _local_env_names() -> set[str]:
+    """Nombres de las variables de los `.env` locales; nunca se leen sus valores."""
+    names: set[str] = set()
+    for env_file in (TESTS_DIR.parent / ".env", PROJECT_DIR / ".env"):
+        if env_file.is_file():
+            for line in env_file.read_text(encoding="utf-8", errors="ignore").splitlines():
+                line = line.strip()
+                if line and not line.startswith("#") and "=" in line:
+                    names.add(line.split("=", 1)[0].removeprefix("export ").strip())
+    return names
+
+
+def _live_model_tests_requested(config) -> bool:
+    """Las pruebas contra el modelo real solo corren si se piden expresamente con `-m integration`."""
+    expression = config.getoption("markexpr", default="") or ""
+    return re.search(r"(?<!not )\bintegration\b", expression) is not None
+
+
+def _non_text_settings() -> set[str]:
+    """Variables que `Settings` valida como booleano o número: no son credenciales y vacías detendrían la suite."""
+    source = (PROJECT_DIR / "app" / "config" / "settings" / "base.py").read_text(encoding="utf-8")
+    settings_class = next(node for node in ast.parse(source).body if isinstance(node, ast.ClassDef) and node.name == "Settings")
+    return {
+        field.target.id.upper()
+        for field in settings_class.body
+        if isinstance(field, ast.AnnAssign) and ast.unparse(field.annotation) in {"bool", "int", "float"}
+    }
+
+
+def pytest_configure(config):
+    """Una ejecución normal no gasta API ni toca bases reales, aunque exista un `.env` local.
+
+    Antes de que nada importe `app`, deja vacías las variables del `.env` y la clave del modelo: la
+    configuración respeta un valor ya definido, así que ni la clave ni `DATABASE_URL` llegan a usarse. La
+    suite corre igual que en el CI, que no tiene `.env`. Tampoco lee `secrets.local.env`, ni aunque exista.
+    """
+    os.environ["AI_SALES_ENGINE_SECRETS_FILE"] = os.devnull
+    if _live_model_tests_requested(config):
+        return
+    for name in (_local_env_names() | {"OPENROUTER_API_KEY"}) - {"MODE"} - _non_text_settings():
+        os.environ[name] = ""
+
+
 def _llm_key_available() -> bool:
     """True si hay una OPENROUTER_API_KEY usable (no vacía ni placeholder)."""
     key = str(os.getenv("OPENROUTER_API_KEY") or "").strip()
@@ -71,9 +116,8 @@ def _llm_key_available() -> bool:
 def pytest_collection_modifyitems(config, items):
     """Omite los tests marcados como integración cuando no hay OPENROUTER_API_KEY.
 
-    Permite `git clone && pytest` en verde sin .env ni secretos: la suite unitaria
-    corre y la de integración (LLM en vivo) se SKIPea (no falla). Con la key
-    presente (.env local o secreto de CI) la integración se ejecuta normalmente.
+    `pytest` a secas nunca los ejecuta (ver `pytest_configure`): se SKIPean, no fallan. Solo corren con
+    `pytest -m integration` y una clave disponible (.env local o secreto de CI), porque consumen API.
     """
     if _llm_key_available():
         return

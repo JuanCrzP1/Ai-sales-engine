@@ -23,11 +23,11 @@ from app.application.pipeline.ai_execution import ejecutar_pago
 from app.application.runtime import load_tenant_runtime_yaml
 from app.application.runtime import tenant_runtime_loader as loader
 from app.domain.business_config.compiler import compile_business_config
-from app.infrastructure.config.business_config_repository import BusinessConfigRepository
+from app.infrastructure.business_config.repository import BusinessConfigRepository
 from app.infrastructure.config.business_config_store import BusinessConfigError, BusinessConfigStore
-from app.infrastructure.config.business_config_tables import business_config_secrets, business_configs, metadata, tenants
+from app.infrastructure.business_config.tables import business_config_secrets, business_configs, business_engine_settings, metadata, tenants
 from app.infrastructure.config.config_service import ConfigService
-from app.infrastructure.config.payment_secret_store import SECRETS_KEY_ENV, PaymentSecretStore
+from app.infrastructure.business_config.payment_secret_store import SECRETS_KEY_ENV, PaymentSecretStore
 from app.infrastructure.config.payment_secrets import SecretResolutionError
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
@@ -41,12 +41,16 @@ def engine():
     metadata.create_all(engine)
     with engine.begin() as conn:
         for slug in ("restaurant", "saas"):
-            conn.execute(tenants.insert().values(id=uuid.uuid4(), slug=slug))
+            conn.execute(tenants.insert().values(id=uuid.uuid4(), name=slug, slug=slug))
     return engine
 
 
 def _document(slug: str) -> dict:
     return json.loads(BusinessConfigStore(ConfigService().tenants_root).path_for(slug).read_text(encoding="utf-8"))
+
+
+def _engine_settings(slug: str) -> dict:
+    return json.loads(BusinessConfigStore(ConfigService().tenants_root).engine_settings_path_for(slug).read_text(encoding="utf-8"))
 
 
 def _with_length(document: dict, length: str) -> dict:
@@ -177,7 +181,9 @@ def database_source(engine, monkeypatch):
     monkeypatch.setenv(loader.CONTRACT_TENANTS_ENV, "restaurant")
     monkeypatch.setenv(loader.CONTRACT_STORE_ENV, "database")
     monkeypatch.setattr(loader, "get_engine", lambda: engine)
-    return BusinessConfigRepository(engine)
+    repository = BusinessConfigRepository(engine)
+    repository.save_engine_settings("restaurant", _engine_settings("restaurant"))
+    return repository
 
 
 def test_runtime_reads_the_published_version_and_follows_rollback(database_source, monkeypatch):
@@ -254,6 +260,29 @@ def test_panel_document_with_encrypted_payment_data_reaches_the_payment_reply(da
 # La migración SQL y las tablas de la aplicación coinciden; identificadores UUID
 # ---------------------------------------------------------------------------
 
+def test_engine_settings_are_validated_replaced_and_scoped_to_their_tenant(engine):
+    repository = BusinessConfigRepository(engine)
+    repository.save_draft("restaurant", _document("restaurant"))
+    repository.publish("restaurant", 1)
+    assert repository.published("restaurant").engine_settings is None  # opcionales
+
+    with pytest.raises(BusinessConfigError):
+        repository.save_engine_settings("restaurant", _engine_settings("saas"))  # de otro negocio
+    with pytest.raises(BusinessConfigError):
+        repository.save_engine_settings("restaurant", {**_engine_settings("restaurant"), "conversation": {"active_window_minutes": 0, "reset_hours": 4}})
+
+    repository.save_engine_settings("restaurant", _engine_settings("restaurant"))
+    windows = {"active_window_minutes": 60, "reset_hours": 1}
+    repository.save_engine_settings("restaurant", {**_engine_settings("restaurant"), "conversation": windows})
+    assert repository.published("restaurant").engine_settings.conversation.model_dump() == windows
+    assert [version.version for version in repository.history("restaurant")] == [1]  # no crean una versión comercial
+
+    with engine.begin() as conn:
+        conn.execute(update(business_engine_settings).values(document={"tenant_slug": "restaurant", "conversation": {"reset_hours": 0}}))
+    with pytest.raises(BusinessConfigError):
+        repository.published("restaurant")  # lo almacenado se valida antes de usarse
+
+
 def _sql_columns(sql: str, table: str) -> dict[str, str]:
     body = re.search(rf"CREATE TABLE IF NOT EXISTS {table} \((.*?)\n\);", sql, re.S).group(1)
     columns = {}
@@ -266,10 +295,14 @@ def _sql_columns(sql: str, table: str) -> dict[str, str]:
 
 def test_migration_matches_the_application_tables_and_uses_uuid_tenants():
     sql = MIGRATION.read_text(encoding="utf-8")
-    for table in (business_configs, business_config_secrets):
+    for table in (business_configs, business_config_secrets, business_engine_settings):
         assert set(_sql_columns(sql, table.name)) == {column.name for column in table.columns}
     assert _sql_columns(sql, "business_configs")["tenant_id"] == "UUID"
     assert _sql_columns(sql, "business_config_secrets")["tenant_id"] == "UUID"
     assert "business_configs_one_published" in sql and "WHERE status = 'published'" in sql
     # El negocio se identifica por UUID en el esquema del motor que referencian las claves foráneas.
     assert re.search(r"CREATE TABLE tenants \(\s*id UUID PRIMARY KEY", ENGINE_SCHEMA.read_text(encoding="utf-8"))
+    # Lo que se inserta al crear un negocio cubre las columnas obligatorias de `tenants` en ese esquema.
+    schema_tenants = re.search(r"CREATE TABLE tenants \((.*?)\n\);", ENGINE_SCHEMA.read_text(encoding="utf-8"), re.S).group(1)
+    required = {match.group(1) for match in re.finditer(r"^\s+([a-z_]+) .*NOT NULL", schema_tenants, re.M)}
+    assert required <= {column.name for column in tenants.columns}

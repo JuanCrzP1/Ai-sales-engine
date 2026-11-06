@@ -9,6 +9,12 @@ const SOURCES = import.meta.glob<string>(["/src/**/*.{ts,tsx}", "!/src/**/*.test
   eager: true,
 });
 
+const PAGE_ASSETS = import.meta.glob<string>(["/index.html", "/src/styles/*.css"], {
+  query: "?raw",
+  import: "default",
+  eager: true,
+});
+
 /** Capa de cada archivo, por prefijo de ruta (el más específico primero). */
 const LAYERS: [prefix: string, layer: string][] = [
   ["/src/components/ui/", "ui"],
@@ -19,7 +25,6 @@ const LAYERS: [prefix: string, layer: string][] = [
   ["/src/domain/", "domain"],
   ["/src/repositories/", "repositories"],
   ["/src/infrastructure/", "infrastructure"],
-  ["/src/adapters/", "adapters"],
   ["/src/state/", "state"],
   ["/src/navigation/", "navigation"],
   ["/src/layout/", "layout"],
@@ -35,7 +40,6 @@ const ALLOWED: Record<string, string[]> = {
   domain: ["contracts", "lib"],
   repositories: ["domain", "lib"],
   infrastructure: ["repositories", "domain", "lib"],
-  adapters: ["contracts", "domain", "lib"],
   ui: ["lib"],
   brand: [],
   "config-ui": ["ui", "domain", "lib", "navigation"],
@@ -109,6 +113,31 @@ describe("arquitectura", () => {
         : [],
     );
     expect(violations).toEqual([]);
+  });
+
+  it("no guarda nada en el navegador: la persistencia es del servidor", () => {
+    const uses = Object.entries(SOURCES).filter(([, source]) => /\b(localStorage|sessionStorage|indexedDB)\b/.test(source)).map(([file]) => file);
+    expect(uses).toEqual([]);
+  });
+
+  it("solo la infraestructura habla con el servidor, y solo con la API local", () => {
+    const callers = Object.entries(SOURCES).filter(([, source]) => /\b(fetch|XMLHttpRequest|WebSocket|EventSource)\s*\(/.test(source)).map(([file]) => file);
+    expect(callers).toEqual(["/src/infrastructure/api/httpClient.ts"]);
+    const external = Object.entries(SOURCES).filter(([, source]) => /fetch\(\s*["'`]https?:/.test(source)).map(([file]) => file);
+    expect(external).toEqual([]);
+  });
+
+  it("la página no carga nada de otros servidores: el panel funciona sin salir de este equipo", () => {
+    expect(Object.keys(PAGE_ASSETS)).toContain("/index.html");
+    const external = Object.entries(PAGE_ASSETS).filter(([, source]) => /(href|src)=["']https?:|url\(["']?https?:|@import\s+["']?https?:/.test(source)).map(([file]) => file);
+    expect(external).toEqual([]);
+  });
+
+  it("las pantallas no tienen acceso directo a los datos de pago ya guardados", () => {
+    const contract = SOURCES["/src/contracts/businessConfig.v1.ts"] ?? "";
+    expect(contract).toContain("secret_ref");
+    // El documento solo lleva referencias: ni el contrato ni las pantallas definen un campo con el valor del dato.
+    expect(contract).not.toMatch(/\b(card_number|cvv|password|api_key|token)\b/);
   });
 
   it("no tiene dependencias circulares", () => {

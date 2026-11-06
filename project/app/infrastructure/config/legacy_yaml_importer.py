@@ -1,9 +1,12 @@
 """Importa las cinco secciones YAML antiguas de un negocio al contrato BusinessConfig v1.
 
-- Los campos con lugar propio en el contrato se convierten a su forma tipada (ver la matriz de
-  trazabilidad en docs/business-config-traceability.md).
-- Lo demás (plantillas del motor, duplicados, datos inconsistentes) se conserva en `compatibility`
-  con su ruta original, sin pérdida.
+- Los campos comerciales se convierten a su forma tipada (ver la matriz de trazabilidad en
+  docs/business-config-traceability.md).
+- Los ajustes técnicos van a `EngineSettings`: ventanas de conversación, banderas internas y, en
+  `legacy`, las estructuras antiguas con su ruta original, sin pérdida.
+- La definición común del cierre (`COMMON_CLOSING_POLICY`) no se copia a ningún documento: el compilador la
+  aporta. Si los YAML de un negocio no coinciden con ella, la importación se detiene: esa diferencia sería una
+  configuración propia del negocio y no se puede perder en silencio.
 - Los datos de pago sensibles se sustituyen por `SecretRef` con origen `legacy_yaml`, que apuntan
   a su posición en las secciones antiguas; nunca se copian al contrato.
 
@@ -17,6 +20,8 @@ from dataclasses import dataclass
 from typing import Any
 
 from app.domain.business_config.contract import BusinessConfig
+from app.domain.business_config.engine_policy import COMMON_CLOSING_POLICY
+from app.domain.business_config.engine_settings import EngineSettings
 
 LEGACY_SECRET_SOURCE = "legacy_yaml"
 SECTIONS = ("business", "sales", "pricing", "inventory", "config")
@@ -27,8 +32,9 @@ PLAN_TYPED_KEYS = ("id", "name", "description", "pricing", "includes", "not_incl
 @dataclass
 class ImportResult:
     config: BusinessConfig
+    engine_settings: EngineSettings
     typed_fields: int
-    compatibility_fields: int
+    technical_fields: int
     secret_refs: int
 
 
@@ -47,7 +53,7 @@ def _ensure_keys(value: dict, allowed: set[str], path: str) -> None:
 
 
 class _Remainder:
-    """Copia de las secciones de la que se retiran los campos tipados; el resto es compatibilidad."""
+    """Copia de las secciones de la que se retiran los campos tipados; el resto queda en `legacy`."""
 
     def __init__(self, sections: dict[str, dict]) -> None:
         self.data = copy.deepcopy(sections)
@@ -181,12 +187,17 @@ def _identity(rest: _Remainder, business: dict) -> dict:
     location = take(business, "location")
     if isinstance(location, dict):
         _ensure_keys(location, {"type", "address", "city", "coverage"}, "business.location")
+        # `business.city` duplica la ciudad de la ubicación. Si difiriera, se queda en `legacy` y la
+        # compilación falla por conflicto: nunca se pierde en silencio.
+        if business.get("city") == location.get("city"):
+            take(business, "city")
     profile = child(business, "customer_profile")
     target_customer = None
     if profile is not None:
         target_customer = _compact({key: take(profile, key) for key in ("segment", "company_size", "maturity", "roles")})
     return {
         "name": take(business, "name"),
+        "brand_name": take(business, "brand_name"),
         "industry": take(business, "industry"),
         "description": take(business, "description"),
         "value_proposition": take(business, "promise"),
@@ -201,37 +212,53 @@ def _identity(rest: _Remainder, business: dict) -> dict:
 
 def _customer_problems(rest: _Remainder, sales: dict) -> list[dict] | None:
     clusters = rest.child(rest.child(sales, "pain"), "clusters")
+    mapping = rest.take(rest.child(sales, "solution"), "mapping")
+    mapping = mapping if isinstance(mapping, dict) else {}
+    unknown = sorted(set(mapping) - set(clusters or {}))
+    if unknown:
+        raise ValueError(f"sales.solution.mapping menciona problemas inexistentes: {unknown}")
     if clusters is None:
         return None
     fields = ("impacts", "signals", "monetization", "urgency_levels", "recommended_angles")
     return [
-        {"id": cluster_id, **{field: rest.take(cluster, field) for field in fields}} if isinstance(cluster, dict) else {"id": cluster_id}
+        {
+            "id": cluster_id,
+            **({field: rest.take(cluster, field) for field in fields} if isinstance(cluster, dict) else {}),
+            "solutions": mapping.get(cluster_id),
+        }
         for cluster_id, cluster in clusters.items()
     ]
 
 
-def _keyed_list(mapping: Any, key_name: str, fields: dict[str, str], path: str) -> list[dict] | None:
-    """Convierte `{clave: {campo antiguo: valor}}` en `[{key_name: clave, campo nuevo: valor}]`."""
-    if not isinstance(mapping, dict):
-        return None
+def _motivations(drivers: Any, angles: Any) -> list[dict] | None:
+    """Une `business.value_drivers` y `sales.angles`, que describen los mismos motivos, en una sola lista."""
+    drivers = drivers if isinstance(drivers, dict) else {}
+    angles = angles if isinstance(angles, dict) else {}
     result = []
-    for key, entry in mapping.items():
-        if not isinstance(entry, dict):
-            raise ValueError(f"{path}.{key} no es un objeto")
-        _ensure_keys(entry, set(fields), f"{path}.{key}")
-        result.append({key_name: key, **{new: entry.get(old) for old, new in fields.items()}})
-    return result
+    for key in [*drivers, *(key for key in angles if key not in drivers)]:
+        entry: dict[str, Any] = {"motivation": key}
+        if key in drivers:
+            _ensure_keys(drivers[key], {"description", "triggers"}, f"business.value_drivers.{key}")
+            entry.update(description=drivers[key].get("description"), signals=drivers[key].get("triggers"))
+        if key in angles:
+            _ensure_keys(angles[key], {"when", "execution"}, f"sales.angles.{key}")
+            entry["angle"] = {"signals": angles[key].get("when"), "messages": angles[key].get("execution")}
+        result.append(entry)
+    return result or None
 
 
 def _sales(rest: _Remainder, business: dict, sales: dict, pricing: dict) -> dict:
     take, child = rest.take, rest.child
     solution = child(sales, "solution")
-    mapping = take(solution, "mapping")
     discovery = child(sales, "discovery")
     qualification = child(sales, "qualification")
     support = child(sales, "support")
     flow = child(sales, "conversation_flow")
     closing = child(sales, "closing")
+    if closing is not None:
+        for key, expected in COMMON_CLOSING_POLICY.items():
+            if take(closing, key) != expected:
+                raise ValueError(f"sales.closing.{key} no coincide con la política global del cierre (engine_policy.py)")
     offers = child(pricing, "business_offers")
 
     use_cases = take(business, "use_cases")
@@ -255,12 +282,19 @@ def _sales(rest: _Remainder, business: dict, sales: dict, pricing: dict) -> dict
             )
 
     flow_rules = child(flow, "rules")
-    strategy = take(child(sales, "offer"), "strategy")
+    progression = child(sales, "progression_rules")
+    offer = child(sales, "offer")
+    strategy = take(offer, "strategy")
     if isinstance(strategy, dict):
         _ensure_keys(strategy, {"single", "multi"}, "sales.offer.strategy")
+    rules = take(offer, "recommendation_rules")
+    if isinstance(rules, list):
+        for index, rule in enumerate(rules):
+            _ensure_keys(rule, {"condition", "recommend"}, f"sales.offer.recommendation_rules.{index}")
+        rules = [{"when": rule.get("condition"), "recommend": rule.get("recommend")} for rule in rules]
     return {
         "buying_motivation": take(business, "buying_motivation"),
-        "motivation_drivers": _keyed_list(take(business, "value_drivers"), "motivation", {"description": "description", "triggers": "signals"}, "business.value_drivers"),
+        "motivations": _motivations(take(business, "value_drivers"), take(sales, "angles")),
         "customer_problems": _customer_problems(rest, sales),
         "pain_points": take(business, "pain_points"),
         "use_cases": use_cases,
@@ -268,14 +302,13 @@ def _sales(rest: _Remainder, business: dict, sales: dict, pricing: dict) -> dict
         "arguments": take(solution, "framing"),
         "solution": _compact(
             {
-                "mapping": [{"problem": problem, "solutions": solutions} for problem, solutions in mapping.items()] if isinstance(mapping, dict) else None,
                 "process_steps": take(solution, "process_steps"),
                 "requirements": take(solution, "requirements"),
             }
         ),
-        "angles": _keyed_list(take(sales, "angles"), "motivation", {"when": "signals", "execution": "messages"}, "sales.angles"),
         "offer_mix": None if offers is None else _compact({key: take(offers, key) for key in ("core", "upsell", "cross_sell")}),
         "offer_presentation": None if not isinstance(strategy, dict) else {"single_offer": strategy.get("single"), "multiple_offers": strategy.get("multi")},
+        "recommendation_rules": rules,
         "discovery": None if discovery is None else _compact({"questions": take(discovery, "questions"), "objectives": take(discovery, "objectives")}),
         "qualification": None if qualification is None else _compact({"detect_offer_fit": take(qualification, "detect_offer_fit")}),
         "support": None
@@ -287,17 +320,16 @@ def _sales(rest: _Remainder, business: dict, sales: dict, pricing: dict) -> dict
                 "rules": take(support, "hard_rules"),
             }
         ),
-        "conversation_flow": None
-        if flow is None
-        else _compact(
+        "conversation_flow": _compact(
             {
                 "steps": take(flow, "steps"),
+                "required_flow": take(progression, "required_flow"),
+                "forbid": take(progression, "forbid"),
                 "no_skip_steps": take(flow_rules, "no_skip_steps"),
                 "guided_process": take(flow_rules, "guided_process"),
             }
         ),
         "objections": objections,
-        # Quedan en compatibilidad `behavior` y `next_step`: plantillas idénticas en todos los negocios.
         "closing": None
         if closing is None
         else _compact(
@@ -379,24 +411,25 @@ def import_legacy_sections(tenant_slug: str, sections: dict[str, dict]) -> Impor
         "knowledge": {"faqs": take(child(config, "knowledge"), "faqs", [])},
         "fulfillment": take(business, "logistics"),
         "inventory": {"items": take(inventory, "items", []), "track_stock": take(inventory, "track_stock")},
-        "engine": {
-            "conversation": take(config, "conversation"),
-            "features": {
-                "pricing_enabled": take(features, "pricing_enabled"),
-                "catalog_mode": take(features, "catalog_mode"),
-                "business_model": take(features, "business_model"),
-            },
+        "features": {
+            "pricing_enabled": take(features, "pricing_enabled"),
+            "catalog_mode": take(features, "catalog_mode"),
+            "multi_currency": take(features, "multi_currency"),
+            "multi_plan": take(features, "multi_plan"),
+            "business_model": take(features, "business_model"),
         },
     }
-    # Los valores nulos se omiten en los campos tipados; la compatibilidad se conserva intacta.
+    technical = {"tenant_slug": tenant_slug, "conversation": take(config, "conversation"), "flags": take(config, "flags")}
+    # Los valores nulos se omiten en los campos tipados; lo heredado se conserva intacto.
     contract = _drop_none(contract)
-    contract["compatibility"] = rest.prune()
+    settings = EngineSettings.model_validate({**_drop_none(technical), "legacy": rest.prune()})
 
-    config_model = BusinessConfig.model_validate(contract)
+    config_model = BusinessConfig.model_validate(contract).with_engine_settings(settings)
     return ImportResult(
         config=config_model,
-        typed_fields=count_leaves(config_model.model_dump(exclude={"compatibility"}, exclude_none=True)),
-        compatibility_fields=count_leaves(contract["compatibility"]) if contract["compatibility"] else 0,
+        engine_settings=settings,
+        typed_fields=count_leaves(config_model.model_dump(exclude_none=True)),
+        technical_fields=count_leaves(settings.model_dump(exclude={"schema_version", "tenant_slug"}, exclude_none=True)),
         secret_refs=rest.secret_refs,
     )
 

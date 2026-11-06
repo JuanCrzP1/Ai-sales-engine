@@ -1,14 +1,16 @@
+import { Button } from "../components/ui/Button";
+import { ConfirmButton } from "../components/ui/ConfirmButton";
 import { Icon, type IconName } from "../components/ui/Icon";
 import { formatTime } from "../lib/format";
 import { useConfig } from "../state/useConfig";
 
 /**
- * Estado del guardado de la configuración. "Guardado" solo aparece cuando el
- * almacenamiento confirmó la operación; un fallo se muestra con opción de reintentar.
+ * Estado del guardado y acción de guardar. Cada guardado crea una versión, por eso se hace a petición. "Guardado" solo
+ * aparece cuando el servidor aceptó el documento; un fallo se muestra con opción de reintentar.
  */
 export function SaveStatus() {
-  const { save, actions } = useConfig();
-  const { icon, text, tone } = describe(save.status, save.savedAt);
+  const { save, dirty, actions } = useConfig();
+  const { icon, text, tone } = describe(save.status, save.savedAt, dirty);
 
   return (
     <div className={`save-status save-status--${tone}`}>
@@ -16,30 +18,23 @@ export function SaveStatus() {
         <Icon name={icon} size={16} />
         {text}
       </p>
-      {save.status === "error" && (
-        <>
-          <span className="visually-hidden" role="alert">
-            {save.error}
-          </span>
-          <button type="button" className="save-status__retry" onClick={actions.retrySave} title={save.error ?? undefined}>
-            Reintentar
-          </button>
-        </>
+      {dirty && save.status !== "saving" && (
+        <span className="button-row">
+          <ConfirmButton variant="ghost" confirmLabel="Sí, descartar" onConfirm={actions.discardChanges}>
+            Descartar
+          </ConfirmButton>
+          <Button size="small" onClick={() => void actions.save()}>
+            {save.status === "error" ? "Reintentar" : "Guardar cambios"}
+          </Button>
+        </span>
       )}
     </div>
   );
 }
 
-function describe(status: "idle" | "saving" | "saved" | "error", savedAt: string | null): { icon: IconName; text: string; tone: string } {
-  switch (status) {
-    case "saving":
-      return { icon: "cloudCheck", text: "Guardando…", tone: "saving" };
-    case "error":
-      return { icon: "alert", text: "No se pudo guardar", tone: "error" };
-    case "saved":
-    case "idle":
-      return savedAt
-        ? { icon: "cloudCheck", text: `Guardado · ${formatTime(savedAt)}`, tone: "saved" }
-        : { icon: "cloudCheck", text: "Sin cambios todavía", tone: "idle" };
-  }
+function describe(status: "idle" | "saving" | "saved" | "error", savedAt: string | null, dirty: boolean): { icon: IconName; text: string; tone: string } {
+  if (status === "saving") return { icon: "cloudCheck", text: "Guardando…", tone: "saving" };
+  if (status === "error") return { icon: "alert", text: "No se pudo guardar", tone: "error" };
+  if (dirty) return { icon: "alert", text: "Cambios sin guardar", tone: "idle" };
+  return savedAt ? { icon: "cloudCheck", text: `Guardado · ${formatTime(savedAt)}`, tone: "saved" } : { icon: "cloudCheck", text: "Sin cambios todavía", tone: "idle" };
 }

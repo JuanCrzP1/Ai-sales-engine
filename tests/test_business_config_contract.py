@@ -17,19 +17,26 @@ from datetime import date
 from pathlib import Path
 
 import pytest
+import yaml
 from pydantic import ValidationError
 
 from app.application.runtime.tenant_runtime_loader import _load_legacy_sections
 from app.domain.business_config.compiler import compile_business_config
 from app.domain.business_config.contract import BusinessConfig
 from app.domain.business_config.diagnostics import review
+from app.domain.business_config.engine_settings import EngineSettings
 from app.domain.business_config.engine_policy import (
     DEFAULT_MAX_WORDS,
     DEFAULT_RESPONSE_LENGTH,
+    MAX_FAQ_ANSWER_CHARS,
+    MAX_FAQ_QUESTION_CHARS,
     MAX_FAQS,
+    MAX_MESSAGE_CHARS,
     MAX_POLICY_CHARS,
     MAX_PROFILE_ITEM_CHARS,
     MAX_PROFILE_ITEMS,
+    MAX_PROMOTIONS,
+    MAX_TONE_CHARS,
     MIN_MAX_WORDS,
     RESPONSE_LENGTH_MAX_WORDS,
     RESPONSE_LENGTH_WORD_RANGES,
@@ -71,8 +78,14 @@ def _schema() -> dict:
     return json.loads((CONTRACTS_DIR / "business-config.schema.json").read_text(encoding="utf-8"))
 
 
-def _compile(document: dict, slug: str | None = None) -> dict:
+def _engine_settings(slug: str) -> dict:
+    return json.loads(BusinessConfigStore(ConfigService().tenants_root).engine_settings_path_for(slug).read_text(encoding="utf-8"))
+
+
+def _compile(document: dict, slug: str | None = None, *, settings: dict | None = None) -> dict:
     config = BusinessConfig.model_validate(document)
+    if settings is not None:
+        config.with_engine_settings(EngineSettings.model_validate(settings))
     if slug is None:
         return compile_business_config(config, lambda ref: f"valor:{ref.secret_ref}")
     return compile_business_config(config, LegacyYamlSecretResolver(lambda: _sections(slug)))
@@ -96,19 +109,19 @@ def test_schema_marks_who_configures_each_section():
     properties = _schema()["properties"]
     for section in ("identity", "offer", "terms", "payments", "sales", "capabilities", "messages", "response_style", "knowledge", "fulfillment", "inventory"):
         assert properties[section]["x-audience"] == "cliente", section
-    assert properties["engine"]["x-audience"] == "operador"
-    assert properties["compatibility"]["x-audience"] == "sistema" and properties["compatibility"]["x-engine"] == "conservado"
+    assert properties["features"]["x-audience"] == "avanzado"
+    # Lo técnico no forma parte del documento comercial.
+    assert "engine" not in properties and "compatibility" not in properties
 
 
 def test_every_contract_field_has_an_audience_and_an_engine_status():
     fields = contract_fields(_schema())
     assert len(fields) > 150
     for path, field in fields.items():
-        assert field.audience in {"cliente", "avanzado", "operador", "sistema"}, path
-        assert field.engine in {"conectado", "pendiente", "conservado"}, path
-        assert (field.engine == "conservado") == (path == "compatibility"), path
-    # Los ajustes internos del motor y los identificadores de etapas no los configura el negocio.
-    assert all(fields[path].audience == "operador" for path in fields if path.startswith(("engine.", "sales.conversation_flow.")))
+        assert field.audience in {"cliente", "avanzado", "sistema"}, path
+        assert field.engine in {"conectado", "pendiente"}, path
+    # Los interruptores y el flujo de conversación son decisiones comerciales.
+    assert all(fields[path].audience == "avanzado" for path in fields if path.startswith(("features.", "sales.conversation_flow.")))
     # Las descripciones no repiten el estado en el motor: sale de `x-engine`.
     assert not any("El motor lo usa" in field.description or "sin uso en el motor" in field.description for field in fields.values())
 
@@ -132,14 +145,14 @@ def test_tenant_document_is_valid_and_belongs_to_its_folder(slug):
 
 @pytest.mark.parametrize("slug", TENANTS)
 def test_compiled_document_reproduces_the_original_yaml_exactly(slug):
-    """Sin pérdida: lo que el motor recibe desde el contrato es idéntico a sus YAML de origen."""
-    assert _compile(_document(slug), slug) == _sections(slug)
+    """Sin pérdida: lo que el motor recibe desde el contrato es idéntico a sus YAML."""
+    assert _compile(_document(slug), slug, settings=_engine_settings(slug)) == _sections(slug)
 
 
 def test_committed_documents_and_migration_report_are_up_to_date():
     documents, report, errors = _load_script("migrate_tenants_to_contract").build()
     assert errors == []
-    assert len(documents) == len(TENANTS)
+    assert len(documents) == 2 * len(TENANTS)  # documento comercial + ajustes técnicos
     for path, text in documents.items():
         assert path.read_text(encoding="utf-8") == text, f"{path.parent.name}: documento desactualizado"
     assert (CONTRACTS_DIR / "migration-report.md").read_text(encoding="utf-8") == report
@@ -148,10 +161,12 @@ def test_committed_documents_and_migration_report_are_up_to_date():
 def test_documents_contain_no_payment_secrets_of_any_tenant():
     secrets = set().union(*(payment_values(_sections(slug)) for slug in TENANTS))
     assert secrets, "los YAML de origen deberían tener datos de pago"
+    store = BusinessConfigStore(ConfigService().tenants_root)
     for slug in TENANTS:
-        document = BusinessConfigStore(ConfigService().tenants_root).path_for(slug).read_text(encoding="utf-8")
-        leaked = [value for value in secrets if value in document]
-        assert not leaked, f"{slug}: {len(leaked)} datos de pago en el documento"
+        for path in (store.path_for(slug), store.engine_settings_path_for(slug)):
+            document = path.read_text(encoding="utf-8")
+            leaked = [value for value in secrets if value in document]
+            assert not leaked, f"{path.name} de {slug}: {len(leaked)} datos de pago"
 
 
 @pytest.mark.parametrize("slug", TENANTS)
@@ -182,21 +197,12 @@ def _with_every_contract_only_field(document: dict) -> dict:
     document = copy.deepcopy(document)
     first_item = document["offer"]["catalog"]["items"][0]
     first_item["features"] = ["pan artesanal"]
-    document["identity"].update(
-        brand_name="Marca", opening_hours=[{"days": ["lunes"], "opens": "08:00", "closes": "18:00"}],
-    )
+    document["identity"].update(opening_hours=[{"days": ["lunes"], "opens": "08:00", "closes": "18:00"}])
     document["terms"].update(
-        prices_include_taxes=True,
         promotions=[{"name": "Promo", "details": "2x1", "valid_until": "2999-12-31"}],
         policies={"warranty": "30 días", "returns": "Cambios en 5 días", "cancellation": "Hasta 1 día antes"},
     )
-    document["payments"][0]["instructions"] = "Envía el comprobante por este chat."
-    document["sales"].update(recommendation_rules=[{"when": "tiene hambre", "recommend": first_item["id"]}], instructions=["Confirma la dirección."])
-    document["sales"].setdefault("qualification", {})["criteria"] = ["vive en la ciudad"]
-    document["capabilities"].update(human_handoff_when=["pide hablar con una persona"])
-    document["capabilities"]["closing_methods"]["human_handoff"] = True
-    document["capabilities"]["data_collection"]["consent_notice"] = "Usamos tus datos solo para tu pedido."
-    document["capabilities"].setdefault("restrictions", {})["forbidden_claims"] = ["sin gluten"]
+    document["sales"].update(instructions=["Confirma la dirección."])
     document["messages"].update(after_sale="Gracias", data_request="Tus datos", follow_up="¿Seguimos?", human_handoff="Te paso con alguien")
     document["response_style"].update(formality="formal", emojis=False, instructions=["sin tecnicismos"])
     document["knowledge"] = {"faqs": [{"question": "¿Abren domingos?", "answer": "Sí."}]}
@@ -205,13 +211,43 @@ def _with_every_contract_only_field(document: dict) -> dict:
 
 def test_contract_only_fields_do_not_change_what_the_engine_receives():
     base = _document("restaurant")
-    enriched = _with_every_contract_only_field(base)
-    if base["capabilities"]["closing_methods"]["human_handoff"]:
-        assert _compile(enriched, "restaurant") == _compile(base, "restaurant")
-    else:
-        handoff_only = copy.deepcopy(base)
-        handoff_only["capabilities"]["closing_methods"]["human_handoff"] = True
-        assert _compile(enriched, "restaurant") == _compile(handoff_only, "restaurant")
+    assert _compile(_with_every_contract_only_field(base), "restaurant") == _compile(base, "restaurant")
+
+
+def test_commercial_fields_return_to_their_original_yaml_route():
+    """Marca, recomendaciones, motivos, soluciones e interruptores vuelven a la ruta y la forma de los YAML."""
+    document = _document("restaurant")
+    document["identity"]["brand_name"] = "Marca"
+    document["identity"]["location"] = {"type": "fisico", "city": "Bogotá"}
+    document["sales"]["recommendation_rules"] = [{"when": "tiene hambre", "recommend": "plan_x"}]
+    document["sales"]["customer_problems"] = [{"id": "demora", "solutions": ["respuesta inmediata"]}]
+    document["sales"]["motivations"] = [
+        {"motivation": "tiempo", "description": "Ahorrar tiempo", "signals": ["rápido"]},
+        {"motivation": "dinero", "description": "Ahorrar dinero", "angle": {"signals": ["caro"], "messages": ["se paga solo"]}},
+    ]
+    document["sales"]["conversation_flow"] = {"required_flow": ["detect_pain"], "forbid": ["responder_sin_solucion"], "no_skip_steps": True}
+    document["features"] = {"pricing_enabled": False, "catalog_mode": True, "multi_currency": True, "multi_plan": False}
+    compiled = _compile(document, "restaurant")
+    assert compiled["business"]["brand_name"] == "Marca" and compiled["business"]["city"] == "Bogotá"
+    assert compiled["sales"]["offer"]["recommendation_rules"] == [{"condition": "tiene hambre", "recommend": "plan_x"}]
+    assert compiled["sales"]["solution"]["mapping"] == {"demora": ["respuesta inmediata"]}
+    assert "solutions" not in compiled["sales"]["pain"]["clusters"]["demora"]
+    assert compiled["business"]["value_drivers"] == {
+        "tiempo": {"description": "Ahorrar tiempo", "triggers": ["rápido"]},
+        "dinero": {"description": "Ahorrar dinero", "triggers": []},
+    }
+    assert compiled["sales"]["angles"] == {"dinero": {"when": ["caro"], "execution": ["se paga solo"]}}
+    assert compiled["sales"]["progression_rules"] == {"required_flow": ["detect_pain"], "forbid": ["responder_sin_solucion"]}
+    assert compiled["sales"]["conversation_flow"] == {"rules": {"no_skip_steps": True}}
+    assert compiled["config"]["features"] == {"pricing_enabled": False, "catalog_mode": True, "multi_currency": True, "multi_plan": False}
+
+
+@pytest.mark.parametrize("enabled", [True, False])
+def test_both_greeting_modes_are_kept_with_their_text(enabled):
+    document = _document("demo")
+    document["messages"]["welcome"]["enabled"] = enabled
+    compiled = _compile(document, "demo")["config"]["initial_message"]
+    assert compiled == {"enabled": enabled, "text": _sections("demo")["config"]["initial_message"]["text"]}
 
 
 def test_example_document_compiles_to_the_engine_shape():
@@ -241,11 +277,10 @@ def test_unavailable_offers_are_not_compiled():
 
 
 @pytest.mark.parametrize("slug", ["saas", "restaurant"])
-def test_engine_section_is_derived_when_missing(slug):
-    # Documento como lo crearía un negocio nuevo: sin ajustes internos ni compatibilidad heredada.
+def test_features_are_derived_when_missing(slug):
+    # Documento como lo crearía un negocio nuevo: sin interruptores ni ajustes técnicos.
     document = _document(slug)
-    document.pop("engine")
-    document.pop("compatibility")
+    document.pop("features")
     features = _compile(document, slug)["config"]["features"]
     if document["offer"]["model"] == "catalog":
         assert features == {"pricing_enabled": True, "catalog_mode": True, "business_model": "catalog"}
@@ -304,19 +339,32 @@ INVALID_PLAN_DOCUMENTS = {
     "nequi_sin_numero": lambda d: d["payments"][0]["transfer_methods"][0].pop("number"),
     "bienvenida_vacia": lambda d: d["messages"]["welcome"].update(enabled=True, text="  "),
     "sin_metodo_de_cierre": lambda d: d["capabilities"]["closing_methods"].update(payment_link=False, human_handoff=False, data_collection=False),
-    "dato_desconocido": lambda d: d["capabilities"]["data_collection"].update(fields=["correo"]),
+    "dato_vacio": lambda d: d["capabilities"]["data_collection"].update(fields=[" "]),
     "cierre_por_datos_sin_pedirlos": lambda d: d["capabilities"]["data_collection"].update(enabled=False, fields=[]),
-    "persona_sin_cierre_con_persona": lambda d: (
-        d["capabilities"]["closing_methods"].update(human_handoff=False, payment_link=True),
-        d["capabilities"].update(human_handoff_when=["pide hablar con alguien"]),
-    ),
+    "planes_y_catalogo_a_la_vez": lambda d: d["offer"].update(catalog=_example()["offer"]["catalog"]),
+    "modelo_mixto": lambda d: d["offer"].update(model="mixed"),
+    "impuestos_incluidos": lambda d: d["terms"].update(prices_include_taxes=True),
+    "aviso_de_datos": lambda d: d["capabilities"]["data_collection"].update(consent_notice="Aviso"),
+    "cuando_pasar_a_una_persona": lambda d: d["capabilities"].update(human_handoff_when=["pide hablar con alguien"]),
+    "promesas_prohibidas": lambda d: d["capabilities"].setdefault("restrictions", {}).update(forbidden_claims=["sin gluten"]),
+    "indicaciones_de_pago": lambda d: d["payments"][0].update(instructions="Envía el comprobante"),
+    "criterios_de_calificacion": lambda d: d["sales"].setdefault("qualification", {}).update(criteria=["vive en la ciudad"]),
     "descripcion_vacia": lambda d: d["identity"].update(description=" "),
     "campo_desconocido": lambda d: d.update(campo_desconocido=True),
-    "compatibilidad_desconocida": lambda d: d["compatibility"].update(otra_seccion={}),
+    "ajustes_tecnicos_en_el_documento": lambda d: d.update(engine={"conversation": {"active_window_minutes": 15, "reset_hours": 4}}),
+    "datos_heredados_en_el_documento": lambda d: d.update(compatibility={"config": {}}),
+    "interruptor_sin_booleano": lambda d: d["features"].update(pricing_enabled="quizas"),
+    "tipo_de_negocio_desconocido": lambda d: d["features"].update(business_model="otro"),
+    "paso_con_espacios": lambda d: d["sales"]["conversation_flow"].update(steps=["otro paso"]),
+    "extension_desconocida": lambda d: d["response_style"].update(length="enorme"),
+    "cierre_desconocido": lambda d: d["sales"]["closing"].update(strategy="otro"),
     "version_desconocida": lambda d: d.update(schema_version="2.0"),
-    "ventana_cero": lambda d: d["engine"].update(conversation={"active_window_minutes": 0, "reset_hours": 4}),
     "motivo_sin_explicacion": lambda d: d["sales"].update(buying_motivation={"primary": "inexistente"}),
-    "angulo_sin_motivo": lambda d: d["sales"]["angles"].append({"motivation": "inexistente", "signals": [], "messages": []}),
+    "angulo_sin_motivo": lambda d: d["sales"]["motivations"].append({"motivation": "inexistente", "angle": {"signals": [], "messages": []}}),
+    "motivo_sin_contenido": lambda d: d["sales"]["motivations"].append({"motivation": "vacio"}),
+    "motivo_repetido": lambda d: d["sales"]["motivations"].append(dict(d["sales"]["motivations"][0])),
+    "problema_con_angulo_inexistente": lambda d: d["sales"]["customer_problems"][0].update(recommended_angles=["inexistente"]),
+    "problema_sin_soluciones": lambda d: d["sales"]["customer_problems"][0].update(solutions=[]),
     "politica_demasiado_larga": lambda d: d["terms"].update(policies={"returns": "x" * (MAX_POLICY_CHARS + 1)}),
 }
 
@@ -324,7 +372,8 @@ INVALID_PLAN_DOCUMENTS = {
 @pytest.mark.parametrize("case", INVALID_PLAN_DOCUMENTS)
 def test_invalid_documents_are_rejected(case):
     document = _document("asesor_ai_prod")
-    assert document["sales"].get("motivation_drivers") and document["sales"].get("angles")
+    motivations = document["sales"]["motivations"]
+    assert all(entry.get("description") and entry.get("angle") for entry in motivations)
     INVALID_PLAN_DOCUMENTS[case](document)
     with pytest.raises(ValidationError):
         BusinessConfig.model_validate(document)
@@ -337,8 +386,26 @@ INVALID_CATALOG_DOCUMENTS = {
     "variante_con_moneda_repetida": lambda d: _first_variant(d).update(prices=[{"currency": "COP", "amount": 1}, {"currency": "COP", "amount": 2}]),
     "inventario_de_producto_inexistente": lambda d: d["inventory"]["items"].append({"product_id": "inexistente", "variants": []}),
     "categoria_inexistente": lambda d: d["offer"]["catalog"]["items"][0].update(category="inexistente"),
+    "catalogo_y_planes_a_la_vez": lambda d: d["offer"].update(plans=_document("demo")["offer"]["plans"]),
     "nada_disponible": lambda d: [item.update(available=False) for item in d["offer"]["catalog"]["items"]],
     "horario_invertido": lambda d: d["identity"].update(opening_hours=[{"days": ["lunes"], "opens": "18:00", "closes": "08:00"}]),
+    "horario_con_dia_repetido": lambda d: d["identity"].update(opening_hours=[{"days": ["lunes", "lunes"], "opens": "08:00", "closes": "18:00"}]),
+    "hora_sin_formato": lambda d: d["identity"].update(opening_hours=[{"days": ["lunes"], "opens": "8am", "closes": "18:00"}]),
+    "formalidad_desconocida": lambda d: d["response_style"].update(formality="muy_formal"),
+    "emojis_sin_booleano": lambda d: d["response_style"].update(emojis="a veces"),
+    "instruccion_de_estilo_larga": lambda d: d["response_style"].update(instructions=["x" * (MAX_PROFILE_ITEM_CHARS + 1)]),
+    "instruccion_comercial_vacia": lambda d: d["sales"].update(instructions=[" "]),
+    "mensaje_posventa_largo": lambda d: d["messages"].update(after_sale="x" * (MAX_MESSAGE_CHARS + 1)),
+    "mensaje_pedir_datos_vacio": lambda d: d["messages"].update(data_request=" "),
+    "mensaje_seguimiento_largo": lambda d: d["messages"].update(follow_up="x" * (MAX_MESSAGE_CHARS + 1)),
+    "mensaje_transferencia_largo": lambda d: d["messages"].update(human_handoff="x" * (MAX_MESSAGE_CHARS + 1)),
+    "saludo_largo": lambda d: d["messages"]["welcome"].update(text="x" * (MAX_MESSAGE_CHARS + 1)),
+    "precio_de_variante_negativo": lambda d: _first_variant(d).update(prices=[{"currency": "COP", "amount": -1}]),
+    "producto_no_disponible_sin_booleano": lambda d: d["offer"]["catalog"]["items"][0].update(available="quizas"),
+    "caracteristica_vacia": lambda d: d["offer"]["catalog"]["items"][0].update(features=[" "]),
+    "promocion_repetida": lambda d: d["terms"].update(promotions=[{"name": "2x1", "details": "a"}, {"name": "2x1", "details": "b"}]),
+    "pregunta_repetida": lambda d: d.update(knowledge={"faqs": [{"question": "¿Abren?", "answer": "Sí"}, {"question": "¿Abren?", "answer": "No"}]}),
+    "politica_vacia": lambda d: d["terms"].update(policies={"warranty": " "}),
 }
 
 
@@ -348,6 +415,30 @@ def test_invalid_catalog_documents_are_rejected(case):
     INVALID_CATALOG_DOCUMENTS[case](document)
     with pytest.raises(ValidationError):
         BusinessConfig.model_validate(document)
+
+
+INVALID_ENGINE_SETTINGS = {
+    "ventana_cero": lambda d: d.update(conversation={"active_window_minutes": 0, "reset_hours": 4}),
+    "bandera_desconocida": lambda d: d["flags"].update(otra=True),
+    "nivel_de_registro_desconocido": lambda d: d["flags"].update(log_level="todo"),
+    "seccion_heredada_desconocida": lambda d: d["legacy"].update(otra_seccion={}),
+    "campo_desconocido": lambda d: d.update(features={}),
+}
+
+
+@pytest.mark.parametrize("case", INVALID_ENGINE_SETTINGS)
+def test_invalid_engine_settings_are_rejected(case):
+    settings = _engine_settings("asesor_ai_prod")
+    INVALID_ENGINE_SETTINGS[case](settings)
+    with pytest.raises(ValidationError):
+        EngineSettings.model_validate(settings)
+
+
+def test_conflict_between_legacy_data_and_the_contract_is_not_hidden():
+    settings = _engine_settings("restaurant")
+    settings["legacy"].setdefault("business", {})["industry"] = "otro sector"
+    with pytest.raises(ValueError, match="conflicto"):
+        _compile(_document("restaurant"), "restaurant", settings=settings)
 
 
 def test_optional_commercial_models_are_accepted():
@@ -361,6 +452,25 @@ def test_optional_commercial_models_are_accepted():
     BusinessConfig.model_validate(minimal)
 
 
+def test_commercial_fields_of_the_contract_are_accepted_together():
+    """Horarios, estilo, instrucciones, mensajes, cobros, variantes, disponibilidad, promociones, preguntas y políticas."""
+    document = _example()
+    document["identity"]["opening_hours"] = [{"days": ["lunes", "martes"], "opens": "08:00", "closes": "18:00"}]
+    document["response_style"].update(formality="formal", emojis=False, instructions=["Sin tecnicismos."])
+    document["sales"]["instructions"] = ["Ofrece primero lo más vendido."]
+    document["messages"].update(after_sale="Gracias", data_request="Tus datos", follow_up="¿Seguimos?", human_handoff="Te paso con alguien")
+    first_item = document["offer"]["catalog"]["items"][0]
+    first_item.update(features=["Masa madre"], available=False)
+    document["terms"].update(promotions=[{"name": "2x1", "details": "Martes", "valid_until": "2999-12-31"}], policies={"warranty": "30 días"})
+    document["knowledge"] = {"faqs": [{"question": "¿Abren domingos?", "answer": "Sí."}]}
+    config = BusinessConfig.model_validate(document)
+    assert config.response_style.formality == "formal" and config.identity.opening_hours[0].days == ["lunes", "martes"]
+    plan = {"id": "p", "name": "Plan", "available": False, "prices": [{"currency": "COP", "annual": 1200, "first_payment": 100, "monthly": 120}]}
+    saas = _document("saas")
+    saas["offer"]["plans"].append(plan)
+    assert BusinessConfig.model_validate(saas).offer.plans[-1].prices[0].annual == 1200
+
+
 def test_faq_limits_are_enforced():
     config = _document("restaurant")
     faq = {"question": "¿Pregunta?", "answer": "Respuesta."}
@@ -372,8 +482,6 @@ def test_faq_limits_are_enforced():
 def test_profile_validation_rejects_incoherent_values():
     config = BusinessConfigStore(ConfigService().tenants_root).load("restaurant").model_dump(mode="json", exclude_none=True)
     invalid_documents = [
-        # Recomendar algo que el negocio no vende.
-        {**config, "sales": {**config["sales"], "recommendation_rules": [{"when": "duda", "recommend": "plan_inexistente"}]}},
         {**config, "sales": {**config["sales"], "instructions": ["regla"] * (MAX_PROFILE_ITEMS + 1)}},
         {**config, "sales": {**config["sales"], "discovery": {"questions": ["x" * (MAX_PROFILE_ITEM_CHARS + 1)]}}},
         {**config, "identity": {**config["identity"], "service_modes": ["teletransporte"]}},
@@ -385,6 +493,294 @@ def test_profile_validation_rejects_incoherent_values():
     for document in invalid_documents:
         with pytest.raises(ValidationError):
             BusinessConfig.model_validate(document)
+
+
+def test_recommendation_outside_the_offer_is_kept_and_reported():
+    """Regla comercial existente en dos negocios: se conserva tal cual y el diagnóstico la señala."""
+    document = _document("restaurant")
+    document["sales"]["recommendation_rules"] = [{"when": "duda", "recommend": "plan_inexistente"}]
+    config = BusinessConfig.model_validate(document)
+    assert "recomienda_oferta_no_disponible" in {item.code for item in review(config, today=TODAY)}
+
+
+# ---------------------------------------------------------------------------
+# Campos obligatorios, tipos y formatos, límites, duplicados y opciones
+# ---------------------------------------------------------------------------
+
+REQUIRED_FIELDS = [
+    ("tenant_slug",),
+    ("identity",),
+    ("identity", "name"),
+    ("identity", "industry"),
+    ("identity", "description"),
+    ("identity", "value_proposition"),
+    ("offer",),
+    ("offer", "model"),
+    ("capabilities",),
+    ("capabilities", "closing_methods"),
+    ("capabilities", "data_collection"),
+    ("messages",),
+    ("messages", "welcome"),
+    ("messages", "welcome", "enabled"),
+]
+
+
+@pytest.mark.parametrize("path", REQUIRED_FIELDS, ids=".".join)
+def test_required_fields_cannot_be_omitted(path):
+    document = _example()
+    node = document
+    for key in path[:-1]:
+        node = node[key]
+    del node[path[-1]]
+    with pytest.raises(ValidationError):
+        BusinessConfig.model_validate(document)
+
+
+def test_only_the_documented_sections_are_required():
+    assert set(_schema()["required"]) == {path[0] for path in REQUIRED_FIELDS}
+
+
+INVALID_TYPES_AND_FORMATS = {
+    "identificador_de_negocio": lambda d: d.update(tenant_slug="Con Mayusculas"),
+    "version_numerica": lambda d: d.update(schema_version=1),
+    "nombre_numerico": lambda d: d["identity"].update(name=123),
+    "diferenciadores_sin_lista": lambda d: d["identity"].update(differentiators="uno solo"),
+    "moneda_en_minusculas": lambda d: d["offer"]["catalog"]["items"][0]["prices"][0].update(currency="cop"),
+    "moneda_larga": lambda d: d["offer"]["catalog"]["items"][0]["prices"][0].update(currency="COPE"),
+    "precio_negativo": lambda d: d["offer"]["catalog"]["items"][0]["prices"][0].update(amount=-1),
+    "precio_de_texto": lambda d: d["offer"]["catalog"]["items"][0]["prices"][0].update(amount="mucho"),
+    "id_de_producto_con_espacios": lambda d: d["offer"]["catalog"]["items"][0].update(id="con espacios"),
+    "fecha_de_promocion": lambda d: d["terms"]["promotions"][0].update(valid_until="31/12/2030"),
+    "hora_imposible": lambda d: d["identity"]["opening_hours"][0].update(opens="25:00"),
+    "dia_desconocido": lambda d: d["identity"]["opening_hours"][0].update(days=["festivo"]),
+    "existencias_negativas": lambda d: d["inventory"]["items"][0]["variants"][0].update(stock=-1),
+    "referencia_sin_origen": lambda d: d["payments"][0]["transfer_methods"][0].update(number={"secret_ref": "sin_origen"}),
+    "numero_de_pago_en_claro": lambda d: d["payments"][0]["transfer_methods"][0].update(number="3001234567"),
+    "link_de_pago_en_claro": lambda d: d["payments"][0].update(link="https://pagos.ejemplo/abc"),
+    "interruptor_de_saludo_de_texto": lambda d: d["messages"]["welcome"].update(enabled="quizas"),
+    "palabras_de_texto": lambda d: d["response_style"].update(max_words="muchas"),
+}
+
+
+@pytest.mark.parametrize("case", INVALID_TYPES_AND_FORMATS)
+def test_wrong_types_and_formats_are_rejected(case):
+    document = _example()
+    INVALID_TYPES_AND_FORMATS[case](document)
+    with pytest.raises(ValidationError):
+        BusinessConfig.model_validate(document)
+
+
+def _texts(count: int) -> list[str]:
+    return [f"elemento {index}" for index in range(count)]
+
+
+# Nombre: (cómo poner un valor de tamaño n, tamaño máximo admitido).
+TEXT_AND_LIST_LIMITS = {
+    "frase_de_diferenciador": (lambda d, n: d["identity"].update(differentiators=["x" * n]), MAX_PROFILE_ITEM_CHARS),
+    "lista_de_diferenciadores": (lambda d, n: d["identity"].update(differentiators=_texts(n)), MAX_PROFILE_ITEMS),
+    "zonas_de_cobertura": (lambda d, n: d["identity"]["location"]["coverage"].update(zones=_texts(n)), MAX_PROFILE_ITEMS),
+    "tono": (lambda d, n: d["response_style"].update(tone="x" * n), MAX_TONE_CHARS),
+    "voz": (lambda d, n: d["response_style"].update(voice="x" * n), MAX_TONE_CHARS),
+    "instruccion_de_estilo": (lambda d, n: d["response_style"].update(instructions=["x" * n]), MAX_PROFILE_ITEM_CHARS),
+    "instrucciones_de_estilo": (lambda d, n: d["response_style"].update(instructions=_texts(n)), MAX_PROFILE_ITEMS),
+    "instruccion_comercial": (lambda d, n: d["sales"].update(instructions=["x" * n]), MAX_PROFILE_ITEM_CHARS),
+    "instrucciones_comerciales": (lambda d, n: d["sales"].update(instructions=_texts(n)), MAX_PROFILE_ITEMS),
+    "caracteristica_de_producto": (lambda d, n: d["offer"]["catalog"]["items"][0].update(features=["x" * n]), MAX_PROFILE_ITEM_CHARS),
+    "nombre_de_promocion": (lambda d, n: d["terms"].update(promotions=[{"name": "x" * n, "details": "y"}]), MAX_PROFILE_ITEM_CHARS),
+    "detalle_de_promocion": (lambda d, n: d["terms"].update(promotions=[{"name": "y", "details": "x" * n}]), MAX_PROFILE_ITEM_CHARS),
+    "promociones": (lambda d, n: d["terms"].update(promotions=[{"name": text, "details": "y"} for text in _texts(n)]), MAX_PROMOTIONS),
+    "garantia": (lambda d, n: d["terms"].update(policies={"warranty": "x" * n}), MAX_POLICY_CHARS),
+    "devoluciones": (lambda d, n: d["terms"].update(policies={"returns": "x" * n}), MAX_POLICY_CHARS),
+    "cancelacion": (lambda d, n: d["terms"].update(policies={"cancellation": "x" * n}), MAX_POLICY_CHARS),
+    "saludo": (lambda d, n: d["messages"]["welcome"].update(text="x" * n), MAX_MESSAGE_CHARS),
+    "pago_reportado": (lambda d, n: d["messages"].update(payment_reported="x" * n), MAX_MESSAGE_CHARS),
+    "pago_confirmado": (lambda d, n: d["messages"].update(payment_confirmed="x" * n), MAX_MESSAGE_CHARS),
+    "posventa": (lambda d, n: d["messages"].update(after_sale="x" * n), MAX_MESSAGE_CHARS),
+    "pedir_datos": (lambda d, n: d["messages"].update(data_request="x" * n), MAX_MESSAGE_CHARS),
+    "seguimiento": (lambda d, n: d["messages"].update(follow_up="x" * n), MAX_MESSAGE_CHARS),
+    "transferencia": (lambda d, n: d["messages"].update(human_handoff="x" * n), MAX_MESSAGE_CHARS),
+    "pregunta_frecuente": (lambda d, n: d["knowledge"].update(faqs=[{"question": "x" * n, "answer": "y"}]), MAX_FAQ_QUESTION_CHARS),
+    "respuesta_frecuente": (lambda d, n: d["knowledge"].update(faqs=[{"question": "y", "answer": "x" * n}]), MAX_FAQ_ANSWER_CHARS),
+    "preguntas_frecuentes": (lambda d, n: d["knowledge"].update(faqs=[{"question": text, "answer": "y"} for text in _texts(n)]), MAX_FAQS),
+    "datos_a_pedir": (lambda d, n: d["capabilities"]["data_collection"].update(fields=_texts(n)), MAX_PROFILE_ITEMS),
+}
+
+
+@pytest.mark.parametrize("case", TEXT_AND_LIST_LIMITS)
+def test_limits_accept_the_maximum_and_reject_one_more(case):
+    apply, maximum = TEXT_AND_LIST_LIMITS[case]
+    document = _example()
+    apply(document, maximum)
+    BusinessConfig.model_validate(document)
+    apply(document, maximum + 1)
+    with pytest.raises(ValidationError):
+        BusinessConfig.model_validate(document)
+
+
+DUPLICATES = {
+    "id_de_plan": ("demo", lambda d: d["offer"]["plans"][1].update(id=d["offer"]["plans"][0]["id"])),
+    "moneda_de_plan": ("demo", lambda d: d["offer"]["plans"][0]["prices"].append(dict(d["offer"]["plans"][0]["prices"][0]))),
+    "categoria": (None, lambda d: d["offer"]["catalog"]["categories"].append(dict(d["offer"]["catalog"]["categories"][0]))),
+    "producto": (None, lambda d: d["offer"]["catalog"]["items"].append(copy.deepcopy(d["offer"]["catalog"]["items"][0]))),
+    "moneda_de_producto": (None, lambda d: d["offer"]["catalog"]["items"][0]["prices"].append(dict(d["offer"]["catalog"]["items"][0]["prices"][0]))),
+    "perfil_de_pago": (None, lambda d: d["payments"].append(copy.deepcopy(d["payments"][0]))),
+    "problema": ("asesor_ai_prod", lambda d: d["sales"]["customer_problems"].append(copy.deepcopy(d["sales"]["customer_problems"][0]))),
+    "objecion": ("asesor_ai_prod", lambda d: d["sales"]["objections"].append(copy.deepcopy(d["sales"]["objections"][0]))),
+}
+
+
+@pytest.mark.parametrize("case", DUPLICATES)
+def test_duplicates_are_rejected(case):
+    slug, mutate = DUPLICATES[case]
+    document = _document(slug) if slug else _example()
+    mutate(document)
+    with pytest.raises(ValidationError):
+        BusinessConfig.model_validate(document)
+
+
+_SECRET = {"secret_ref": "secret_store:dato"}
+# Cada opción cerrada del contrato: cómo ponerla en un documento. Una opción nueva exige añadirla aquí.
+OPTION_SETTERS = {
+    "features.business_model": lambda d, v: d.update(features={"pricing_enabled": True, "catalog_mode": True, "business_model": v}),
+    "fulfillment.delivery.cost.type": lambda d, v: d["fulfillment"]["delivery"].update(cost={"type": v, "value": 0}),
+    "fulfillment.delivery.type": lambda d, v: d["fulfillment"]["delivery"].update(type=v),
+    "fulfillment.shipping.cost.type": lambda d, v: d["fulfillment"].update(shipping={"available": True, "cost": {"type": v, "value": 0}}),
+    "fulfillment.shipping.scope": lambda d, v: d["fulfillment"].update(shipping={"available": True, "scope": v}),
+    "identity.location.coverage.type": lambda d, v: d["identity"]["location"]["coverage"].update(type=v),
+    "identity.location.type": lambda d, v: d["identity"]["location"].update(type=v),
+    "identity.opening_hours[].days": lambda d, v: d["identity"]["opening_hours"][0].update(days=[v]),
+    "identity.service_modes": lambda d, v: d["identity"].update(service_modes=[v]),
+    "payments[].transfer_methods[].type": lambda d, v: d["payments"][0].update(
+        transfer_methods=[{"type": v, "number": _SECRET, "bank": "Banco", "account_type": "ahorros", "account_number": _SECRET, "reference": _SECRET}]
+    ),
+    "response_style.formality": lambda d, v: d["response_style"].update(formality=v),
+    "response_style.length": lambda d, v: d["response_style"].update(length=v),
+    "sales.closing.strategy": lambda d, v: d["sales"].update(closing={"strategy": v}),
+    "terms.price_framing": lambda d, v: d["terms"].update(price_framing=v),
+}
+
+
+def _closed_options() -> dict[str, list[str]]:
+    fields = contract_fields(_schema())
+    return {
+        path: field.value_type.removeprefix("lista de ").split(" \\| ")
+        for path, field in fields.items()
+        if " \\| " in field.value_type
+    }
+
+
+def test_lists_the_yaml_leave_open_stay_open():
+    """Los YAML no limitan estas listas: cada negocio puede tener sus datos y sus pasos, y llegan al motor tal cual."""
+    document = _document("escuela_conduccion")
+    fields = ["nombre", "cedula", "licencia_anterior"]
+    steps = ["detect_pain", "validar_documentos", "guide_next_step"]
+    document["capabilities"]["data_collection"]["fields"] = fields
+    document["sales"]["conversation_flow"].update(steps=steps, required_flow=steps[:2])
+    compiled = _compile(document, "escuela_conduccion")
+    assert compiled["config"]["capabilities"]["data_collection"]["fields"] == fields
+    assert compiled["sales"]["conversation_flow"]["steps"] == steps
+    assert compiled["sales"]["progression_rules"]["required_flow"] == steps[:2]
+
+
+def test_every_closed_option_of_the_contract_is_covered():
+    assert set(_closed_options()) - {"offer.model"} == set(OPTION_SETTERS)
+
+
+@pytest.mark.parametrize("path", OPTION_SETTERS)
+def test_every_value_of_each_option_is_accepted_and_others_are_rejected(path):
+    for value in _closed_options()[path]:
+        document = _example()
+        OPTION_SETTERS[path](document, value)
+        BusinessConfig.model_validate(document)
+    document = _example()
+    OPTION_SETTERS[path](document, "opcion_inexistente")
+    with pytest.raises(ValidationError):
+        BusinessConfig.model_validate(document)
+
+
+@pytest.mark.parametrize(
+    "slug, offer_model, business_model",
+    [
+        ("agencia_viajes", "catalog", "catalog"),
+        ("asesor_ai_prod", "plans", "saas"),
+        ("clinic", "plans", "service_booking"),
+        ("demo", "plans", None),
+        ("ecommerce", "plans", "checkout"),
+        ("escuela_conduccion", "catalog", "process"),
+        ("restaurant", "catalog", "catalog"),
+        ("saas", "plans", "saas"),
+        ("tienda_ropa", "catalog", "checkout"),
+    ],
+)
+def test_the_same_contract_serves_each_business_model(slug, offer_model, business_model):
+    config = BusinessConfig.model_validate(_document(slug))
+    assert config.offer.model == offer_model and config.features.business_model == business_model
+    assert (config.offer.plans is not None) == (offer_model == "plans")
+    assert (config.offer.catalog is not None) == (offer_model == "catalog")
+
+
+# ---------------------------------------------------------------------------
+# Lo técnico, fuera del contrato comercial
+# ---------------------------------------------------------------------------
+
+TECHNICAL_FIELD_TOKENS = (
+    "token", "api_key", "apikey", "password", "credential", "secret", "webhook", "openrouter", "openai", "anthropic",
+    "temperature", "embedding", "database", "jwt", "twilio", "environment", "log_level", "ai_first",
+    "allow_fallback", "active_window", "reset_hours", "ai_provider", "base_url", "timeout",
+)
+# Términos cortos: se comparan como palabra completa ("fulfillment" contiene "llm").
+TECHNICAL_FIELD_WORDS = {"llm", "dsn", "provider", "debug"}
+
+
+def test_the_commercial_contract_has_no_technical_fields():
+    paths = contract_fields(_schema())
+    secrets_file = yaml.safe_load((ROOT_DIR / "project" / "config" / "system" / "secrets.yaml").read_text(encoding="utf-8"))
+    for path in paths:
+        lowered = path.lower()
+        words = set(lowered.replace("[]", "").replace(".", "_").split("_"))
+        assert not any(token in lowered for token in TECHNICAL_FIELD_TOKENS), f"{path}: campo técnico en el contrato comercial"
+        assert not words & TECHNICAL_FIELD_WORDS, f"{path}: campo técnico en el contrato comercial"
+        assert not set(lowered.replace("[]", "").split(".")) & {name.lower() for name in secrets_file}, path
+    assert {"engine", "compatibility", "provider", "channels_credentials"}.isdisjoint(_schema()["properties"])
+
+
+def test_engine_settings_only_hold_technical_parameters():
+    assert set(EngineSettings.model_fields) == {"schema_version", "tenant_slug", "conversation", "flags", "legacy"}
+
+
+@pytest.mark.parametrize("slug", TENANTS)
+def test_documents_contain_no_credentials(slug):
+    store = BusinessConfigStore(ConfigService().tenants_root)
+    secrets_file = yaml.safe_load((ROOT_DIR / "project" / "config" / "system" / "secrets.yaml").read_text(encoding="utf-8"))
+    credentials = [str(value) for value in secrets_file.values() if value and len(str(value)) >= 8 and "${" not in str(value)]
+    for path in (store.path_for(slug), store.engine_settings_path_for(slug)):
+        text = path.read_text(encoding="utf-8")
+        assert not any(marker in text for marker in ("sk-or-", "Bearer ", "postgresql://", "sqlite://")), path.name
+        assert [value for value in credentials if value in text] == [], path.name
+
+
+def test_payment_data_are_kept_apart_from_channel_credentials():
+    from app.infrastructure.business_config import payment_secret_store
+    from app.infrastructure.business_config.tables import metadata
+
+    assert "tenant_secrets" not in metadata.tables, "las credenciales de canales pertenecen a las integraciones"
+    assert payment_secret_store.SECRETS_KEY_ENV == "BUSINESS_CONFIG_SECRETS_KEY"
+    source = (ROOT_DIR / "project" / "app" / "infrastructure" / "business_config" / "payment_secret_store.py").read_text(encoding="utf-8")
+    assert "connector_secrets_key" not in source.lower()
+
+
+def test_store_rejects_engine_settings_of_another_tenant(tmp_path):
+    service = copy_tenant(tmp_path, "saas")
+    store = BusinessConfigStore(service.tenants_root)
+    path = store.engine_settings_path_for("saas")
+    path.write_text(json.dumps({**_engine_settings("saas"), "tenant_slug": "restaurant"}), encoding="utf-8")
+    with pytest.raises(BusinessConfigError):
+        store.load("saas")
+    path.write_text("{ no es json", encoding="utf-8")
+    with pytest.raises(BusinessConfigError):
+        store.load("saas")
+    path.unlink()
+    assert store.load("saas").engine_settings is None  # opcional: el motor usa sus valores por defecto
 
 
 def test_store_rejects_documents_of_another_tenant(tmp_path):
@@ -400,15 +796,15 @@ def test_store_rejects_documents_of_another_tenant(tmp_path):
 # ---------------------------------------------------------------------------
 
 EXPECTED_DIAGNOSTICS = {
-    "agencia_viajes": ["cierre_por_link_sin_link", "datos_sin_aviso_de_tratamiento", "agenda_sin_horarios"],
-    "asesor_ai_prod": ["sin_canales_de_atencion", "datos_sin_aviso_de_tratamiento"],
-    "clinic": ["datos_sin_aviso_de_tratamiento", "agenda_sin_horarios"],
-    "demo": ["datos_sin_aviso_de_tratamiento"],
-    "ecommerce": ["modo_catalogo_contradice_oferta", "datos_sin_aviso_de_tratamiento"],
-    "escuela_conduccion": ["cierre_por_link_sin_link", "datos_sin_aviso_de_tratamiento", "agenda_sin_horarios"],
-    "restaurant": ["cierre_por_link_sin_link", "datos_sin_aviso_de_tratamiento"],
-    "saas": ["datos_sin_aviso_de_tratamiento"],
-    "tienda_ropa": ["cierre_por_link_sin_link", "entrega_sin_modalidad", "entrega_sin_modalidad", "datos_sin_aviso_de_tratamiento"],
+    "agencia_viajes": ["cierre_por_link_sin_link", "agenda_sin_horarios"],
+    "asesor_ai_prod": ["recomienda_oferta_no_disponible", "sin_canales_de_atencion"],
+    "clinic": ["agenda_sin_horarios"],
+    "demo": ["recomienda_oferta_no_disponible", "recomienda_oferta_no_disponible"],
+    "ecommerce": ["modo_catalogo_contradice_oferta"],
+    "escuela_conduccion": ["cierre_por_link_sin_link", "agenda_sin_horarios"],
+    "restaurant": ["cierre_por_link_sin_link"],
+    "saas": [],
+    "tienda_ropa": ["cierre_por_link_sin_link", "entrega_sin_modalidad", "entrega_sin_modalidad"],
 }
 
 
@@ -430,7 +826,14 @@ def test_the_nine_businesses_cover_both_offer_models_and_their_differences():
 DIAGNOSTIC_CASES = {
     "cierre_por_link_sin_link": lambda d: (d["capabilities"]["closing_methods"].update(payment_link=True), [p.pop("link", None) for p in d["payments"]]),
     "perfil_de_pago_sin_uso": lambda d: d["payments"].append({"id": "otro", "transfer_enabled": False}),
-    "modo_catalogo_contradice_oferta": lambda d: d.update(engine={"features": {"pricing_enabled": True, "catalog_mode": False}}),
+    "transferencias_sin_cuentas_activas": lambda d: d["payments"][0].update(
+        transfer_enabled=True, transfer_methods=[{"type": "nequi", "number": {"secret_ref": "secret_store:numero"}, "enabled": False}]
+    ),
+    "modo_catalogo_contradice_oferta": lambda d: d.update(features={"pricing_enabled": True, "catalog_mode": False}),
+    "multi_moneda_contradice_oferta": lambda d: (
+        d.update(features={"pricing_enabled": True, "catalog_mode": True, "multi_currency": False}),
+        d["offer"]["catalog"]["items"][0]["prices"].append({"currency": "USD", "amount": 5}),
+    ),
     "modalidad_sin_entrega": lambda d: d["fulfillment"]["delivery"].update(available=False),
     "entrega_sin_modalidad": lambda d: d["identity"].update(service_modes=["presencial", "domicilio"]),
     "dato_de_cierre_no_solicitado": lambda d: d["sales"].update(closing={"strategy": "checkout", "required_data": ["address"]})
@@ -438,7 +841,6 @@ DIAGNOSTIC_CASES = {
     "recomienda_oferta_no_disponible": lambda d: d["offer"]["catalog"]["items"][1].update(available=False),
     "promocion_vencida": lambda d: d["terms"]["promotions"][0].update(valid_until="2000-01-01"),
     "sin_canales_de_atencion": lambda d: d["capabilities"].update(service_channels=[]),
-    "datos_sin_aviso_de_tratamiento": lambda d: d["capabilities"]["data_collection"].pop("consent_notice"),
     "agenda_sin_horarios": lambda d: (d["fulfillment"].update(scheduling={"required": True}), d["identity"].pop("opening_hours")),
 }
 
@@ -450,12 +852,18 @@ def test_each_diagnostic_detects_its_case(code):
     assert code in {item.code for item in review(BusinessConfig.model_validate(document), today=TODAY)}
 
 
+def test_multi_plan_false_with_several_plans_is_reported():
+    document = _document("demo")
+    document["features"]["multi_plan"] = False
+    assert "multi_plan_contradice_oferta" in {item.code for item in review(BusinessConfig.model_validate(document), today=TODAY)}
+
+
 # ---------------------------------------------------------------------------
 # Correspondencia con el panel
 # ---------------------------------------------------------------------------
 
 def test_panel_document_is_valid_against_the_contract():
-    """`translateToEngine.test.ts` genera este archivo con el adaptador del panel; aquí lo valida el contrato."""
+    """El documento con el que se prueba el panel (`src/test/fixtures`) debe cumplir el contrato."""
     config = BusinessConfig.model_validate_json(PANEL_DOCUMENT.read_text(encoding="utf-8"))
     secrets: dict[str, str] = {}
     compiled = compile_business_config(config, lambda ref: secrets.setdefault(ref.secret_ref, f"valor-{len(secrets)}"))

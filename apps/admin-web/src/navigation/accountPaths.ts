@@ -1,4 +1,4 @@
-/** Rutas de cuenta: fuera del recorrido de configuración. */
+/** Rutas de cuenta: fuera del recorrido de configuración. Se usarán cuando exista la autenticación definitiva. */
 export const ACCOUNT_PATHS = {
   signIn: "/iniciar-sesion",
   signUp: "/crear-cuenta",

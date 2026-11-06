@@ -1,15 +1,18 @@
 import { LinkButton } from "../../components/ui/Button";
 import { EmptyState } from "../../components/ui/Feedback";
 import { Card } from "../../components/ui/Layout";
+import { isAvailable, offerEntries } from "../../domain/config/document";
 import { sectionPath } from "../../navigation/navItems";
+import { useWorkspacePath } from "../../navigation/useWorkspacePath";
 import { useConfig } from "../../state/useConfig";
 
-/** Productos o servicios que ofrece el negocio, tomados del catálogo (no se duplican aquí). */
+/** Productos o servicios que ofrece el negocio, tomados de la oferta (no se duplican aquí). */
 export function OfferingsOverview() {
-  const { config } = useConfig();
-  const available = config.offerings.filter((offering) => offering.available);
+  const { document } = useConfig();
+  const pathTo = useWorkspacePath();
+  const available = offerEntries(document).filter(isAvailable);
   const manageLink = (
-    <LinkButton to={sectionPath("catalog")} size="small">
+    <LinkButton to={pathTo(sectionPath("catalog"))} size="small">
       Administrar productos y servicios
     </LinkButton>
   );
@@ -17,13 +20,9 @@ export function OfferingsOverview() {
   return (
     <Card title="Productos o servicios que ofreces" actions={available.length > 0 ? manageLink : undefined}>
       {available.length === 0 ? (
-        <EmptyState
-          title="Todavía no hay productos ni servicios disponibles"
-          description="Agrégalos en la sección de productos y servicios."
-          action={manageLink}
-        />
+        <EmptyState title="Todavía no hay productos ni servicios disponibles" description="Agrégalos en la sección de productos y servicios." action={manageLink} />
       ) : (
-        <p>{available.map((offering) => offering.name.trim() || "Sin nombre").join(" · ")}</p>
+        <p>{available.map((entry) => entry.name.trim() || "Sin nombre").join(" · ")}</p>
       )}
     </Card>
   );

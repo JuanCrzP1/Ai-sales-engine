@@ -1,0 +1,22 @@
+{
+  "schema_version": "1.0",
+  "tenant_slug": "tienda_ropa",
+  "conversation": {
+    "active_window_minutes": 15,
+    "reset_hours": 4
+  },
+  "flags": {
+    "ai_first": true,
+    "allow_fallback": false,
+    "log_level": "info"
+  },
+  "legacy": {
+    "config": {
+      "capabilities": {
+        "channels": [
+          "whatsapp"
+        ]
+      }
+    }
+  }
+}

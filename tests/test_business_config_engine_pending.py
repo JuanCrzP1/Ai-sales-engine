@@ -272,7 +272,7 @@ def test_engine_used_fields_change_the_prompt(monkeypatch, tmp_path, case):
     strict=True, raises=AttributeError, reason=f"{PENDING_REASON}: el motor no tiene PromptBuilderService.build_business_profile_context"
 )
 def test_panel_document_is_valid_and_reaches_the_engine():
-    """`translateToEngine.test.ts` genera este archivo con el adaptador del panel; aquí lo valida el contrato."""
+    """El documento con el que se prueba el panel (`src/test/fixtures`) debe cumplir el contrato."""
     config = BusinessConfig.model_validate_json(PANEL_DOCUMENT.read_text(encoding="utf-8"))
     secrets = {}
     compiled = compile_business_config(config, lambda ref: secrets.setdefault(ref.secret_ref, f"valor-{len(secrets)}"))

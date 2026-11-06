@@ -56,7 +56,7 @@ interface TextFieldProps extends Omit<FieldProps, "children" | "footer"> {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
-  type?: "text" | "url" | "tel" | "email";
+  type?: "text" | "url" | "tel" | "email" | "date" | "time";
   wordLimit?: number;
   inputMode?: "text" | "numeric" | "tel" | "url" | "email";
   autoComplete?: string;

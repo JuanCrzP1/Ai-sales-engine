@@ -3,8 +3,10 @@ __pycache__/
 .venv/
 venv/
 .env
+secrets.local.env*
 project/logs/
 project/app/logs/
 .git
 node_modules/
 tmp/
+project/data/*.sqlite3*

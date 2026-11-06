@@ -6,31 +6,29 @@ import { useFieldIssue, useSection } from "../../state/useConfig";
 
 export function WelcomeMessageForm() {
   const [messages, update] = useSection("messages");
-  const welcomeIssue = useFieldIssue("messages.welcomeText");
+  const welcome = messages.welcome;
+  const textIssue = useFieldIssue("messages.welcome.text");
+  const groupIssue = useFieldIssue("messages.welcome");
 
   return (
-    <Card title="Mensaje de bienvenida" description="Se envía tal cual cuando un cliente nuevo solo saluda.">
-      <Toggle
-        label="Enviar mensaje de bienvenida"
-        checked={messages.welcomeEnabled}
-        onChange={(welcomeEnabled) => update({ welcomeEnabled })}
-      />
-      {messages.welcomeEnabled && (
+    <Card title="Mensaje de bienvenida" description="Se envía tal cual cuando un cliente nuevo solo saluda. Si lo desactivas, responde el asistente.">
+      <Toggle label="Enviar mensaje de bienvenida" checked={welcome.enabled} onChange={(enabled) => update({ welcome: { ...welcome, enabled } })} />
+      {welcome.enabled && (
         <div className="grid-2">
           <TextAreaField
             label="Mensaje"
             required
             rows={4}
-            value={messages.welcomeText}
-            onChange={(welcomeText) => update({ welcomeText })}
+            value={welcome.text ?? ""}
+            onChange={(text) => update({ welcome: { ...welcome, text } })}
             placeholder="Ej.: ¡Hola! Gracias por escribirnos. ¿En qué te ayudo?"
-            issue={welcomeIssue}
+            issue={textIssue ?? groupIssue}
           />
           <ChatPreview
             caption="Vista previa"
             lines={[
               { from: "customer", text: "Hola" },
-              { from: "assistant", text: messages.welcomeText.trim() || "Escribe tu mensaje para verlo aquí." },
+              { from: "assistant", text: welcome.text?.trim() || "Escribe tu mensaje para verlo aquí." },
             ]}
           />
         </div>

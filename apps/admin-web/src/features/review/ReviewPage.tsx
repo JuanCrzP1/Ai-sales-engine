@@ -5,39 +5,29 @@ import { Alert } from "../../components/ui/Feedback";
 import { Card, PageHeader } from "../../components/ui/Layout";
 import { sectionTitle } from "../../domain/sections";
 import { splitBySeverity } from "../../domain/validation/issues";
-import { sectionPath, stepLabel } from "../../navigation/navItems";
 import { SectionPager } from "../../layout/SectionPager";
+import { sectionPath, stepLabel } from "../../navigation/navItems";
+import { useWorkspacePath } from "../../navigation/useWorkspacePath";
 import { useConfig } from "../../state/useConfig";
 import { buildSummary } from "./buildSummary";
+import { PublishCard } from "./PublishCard";
 
 export function ReviewPage() {
-  const { config, issues, progress } = useConfig();
+  const { document, issues, progress } = useConfig();
+  const pathTo = useWorkspacePath();
   const { errors, warnings } = splitBySeverity(issues);
-  const summary = buildSummary(config);
+  const summary = buildSummary(document);
 
   return (
     <>
-      <PageHeader
-        eyebrow={stepLabel("review")}
-        title="Revisión de la configuración"
-        description="Comprueba lo que has configurado antes de terminar."
-      />
-
-      <Alert tone="info" title="Configuración sin publicar">
-        <p>
-          Todavía no está conectada al asistente ni a ningún canal: revisarla aquí no la publica ni la pone en
-          funcionamiento.
-        </p>
-      </Alert>
+      <PageHeader eyebrow={stepLabel("review")} title="Revisión y publicación" description="Comprueba lo que has configurado, guárdalo y publícalo." />
 
       {errors.length > 0 ? (
-        <Alert tone="danger" title={`Faltan ${errors.length} ${errors.length === 1 ? "dato obligatorio" : "datos obligatorios"}`}>
+        <Alert tone="danger" title={errors.length === 1 ? "Falta 1 dato obligatorio" : `Faltan ${errors.length} datos obligatorios`}>
           <IssueList issues={errors} />
         </Alert>
       ) : (
-        <Alert tone="success" title="Todos los datos obligatorios están completos">
-          <p>La configuración está lista para conectarse cuando la integración con el motor esté disponible.</p>
-        </Alert>
+        <Alert tone="success" title="Todos los datos obligatorios están completos" />
       )}
 
       {warnings.length > 0 && (
@@ -45,6 +35,8 @@ export function ReviewPage() {
           <IssueList issues={warnings} />
         </Alert>
       )}
+
+      <PublishCard />
 
       {summary.map((section) => {
         const sectionProgress = progress.sections.find((item) => item.id === section.id);
@@ -55,7 +47,7 @@ export function ReviewPage() {
             actions={
               <span className="button-row">
                 {sectionProgress && <SectionStatusBadge progress={sectionProgress} />}
-                <LinkButton to={sectionPath(section.id)} size="small">
+                <LinkButton to={pathTo(sectionPath(section.id))} size="small">
                   Editar
                 </LinkButton>
               </span>

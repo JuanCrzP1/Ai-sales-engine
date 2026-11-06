@@ -1,6 +1,6 @@
 """Diagnóstico de un BusinessConfig válido: incoherencias y datos incompletos que no bloquean.
 
-La validación del contrato (`contract.py`) rechaza los documentos rotos: referencias inexistentes,
+La validación del contrato (`contract/`) rechaza los documentos rotos: referencias inexistentes,
 valores imposibles, combinaciones contradictorias que ningún negocio puede querer. Lo que aquí se
 reporta es distinto: el documento es usable, pero tiene algo que el negocio debería decidir o
 completar (p. ej. "cierra por link de pago" sin link configurado). Corregirlo cambia datos del
@@ -42,9 +42,10 @@ def review(config: BusinessConfig, *, today: date | None = None) -> list[Diagnos
         found.append(Diagnostic(code, kind, path, message))
 
     capabilities = config.capabilities
-    if capabilities.closing_methods.payment_link and not any(profile.link for profile in config.payments):
+    if capabilities.closing_methods.payment_link and not any(profile.link and profile.link_enabled is not False for profile in config.payments):
+        missing = "un link activo" if any(profile.link for profile in config.payments) else "link"
         add("cierre_por_link_sin_link", "incoherencia", "capabilities.closing_methods.payment_link",
-            "El asistente puede cerrar enviando el link de pago, pero ningún perfil de pago tiene link.")
+            f"El asistente puede cerrar enviando el link de pago, pero ningún perfil de pago tiene {missing}.")
 
     referenced = {plan.payment_profile for plan in config.offer.plans or []}
     if config.offer.catalog is not None:
@@ -53,10 +54,21 @@ def review(config: BusinessConfig, *, today: date | None = None) -> list[Diagnos
         if profile.id not in referenced:
             add("perfil_de_pago_sin_uso", "incoherencia", f"payments[id={profile.id}]",
                 f"El perfil de pago '{profile.id}' no lo usa ningún plan ni el catálogo.")
+        if profile.transfer_enabled and all(method.enabled is False for method in profile.transfer_methods):
+            add("transferencias_sin_cuentas_activas", "incoherencia", f"payments[id={profile.id}]",
+                f"El perfil de pago '{profile.id}' acepta transferencias, pero todas sus cuentas están inactivas.")
 
-    if config.engine is not None and config.engine.features.catalog_mode != (config.offer.model == "catalog"):
-        add("modo_catalogo_contradice_oferta", "incoherencia", "engine.features.catalog_mode",
-            f"catalog_mode={config.engine.features.catalog_mode} pero la oferta es de tipo '{config.offer.model}'.")
+    features = config.features
+    if features is not None and features.catalog_mode != (config.offer.model == "catalog"):
+        add("modo_catalogo_contradice_oferta", "incoherencia", "features.catalog_mode",
+            f"catalog_mode={features.catalog_mode} pero la oferta es de tipo '{config.offer.model}'.")
+    if features is not None and features.multi_plan is False and len(config.offer.plans or []) > 1:
+        add("multi_plan_contradice_oferta", "incoherencia", "features.multi_plan",
+            f"multi_plan=false pero la oferta tiene {len(config.offer.plans)} planes.")
+    entries = config.offer.plans or (config.offer.catalog.items if config.offer.catalog else [])
+    if features is not None and features.multi_currency is False and any(len(entry.prices) > 1 for entry in entries):
+        add("multi_moneda_contradice_oferta", "incoherencia", "features.multi_currency",
+            "multi_currency=false pero la oferta tiene precios en más de una moneda.")
 
     modes = set(config.identity.service_modes or [])
     fulfillment = config.fulfillment
@@ -93,10 +105,6 @@ def review(config: BusinessConfig, *, today: date | None = None) -> list[Diagnos
     if not capabilities.service_channels:
         add("sin_canales_de_atencion", "incompleto", "capabilities.service_channels",
             "No hay canales de atención: el asistente no sabe por dónde atiende el negocio.")
-
-    if capabilities.data_collection.enabled and not capabilities.data_collection.consent_notice:
-        add("datos_sin_aviso_de_tratamiento", "incompleto", "capabilities.data_collection.consent_notice",
-            "Se piden datos personales sin un aviso de tratamiento de datos.")
 
     if fulfillment is not None and fulfillment.scheduling is not None and fulfillment.scheduling.required and not config.identity.opening_hours:
         add("agenda_sin_horarios", "incompleto", "identity.opening_hours",

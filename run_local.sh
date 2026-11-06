@@ -117,7 +117,7 @@ else
 fi
 
 # -------------------------
-# PANEL WEB (puerto 5173)
+# PANEL WEB (API en 8010, interfaz en 5173)
 # -------------------------
 ADMIN_WEB_DIR="$SCRIPT_DIR/apps/admin-web"
 ADMIN_WEB_PORT=5173
@@ -133,8 +133,14 @@ else
         echo "[INFO] Instalando dependencias del panel web..."
         (cd "$ADMIN_WEB_DIR" && npm install)
     fi
-    echo "[INFO] Iniciando panel web en http://localhost:$ADMIN_WEB_PORT ..."
-    start_background_process "admin-web" "cd $(printf '%q' "$ADMIN_WEB_DIR") && npm run dev -- --port $ADMIN_WEB_PORT --strictPort --open"
+    echo "[INFO] Iniciando la API del panel en http://127.0.0.1:8010 ..."
+    start_background_process "admin-api" "\"$PYTHON_BIN\" \"$SCRIPT_DIR/scripts/run_admin_api.py\""
+    if "$PYTHON_BIN" "$SCRIPT_DIR/scripts/run_admin_api.py" --wait; then
+        echo "[INFO] Iniciando panel web en http://localhost:$ADMIN_WEB_PORT ..."
+        start_background_process "admin-web" "cd $(printf '%q' "$ADMIN_WEB_DIR") && npm run dev -- --port $ADMIN_WEB_PORT --strictPort --open"
+    else
+        echo "[AVISO] La API del panel no respondio. Revisa $RUNTIME_DIR/admin-api.log. El panel web no se inicia."
+    fi
 fi
 
 # -------------------------

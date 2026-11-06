@@ -1,117 +1,71 @@
+import type { CatalogItem, Plan, PlanPrice } from "../../contracts/businessConfig.v1";
+import { SCHEMA_VERSION } from "../../contracts/businessConfig.v1";
 import { createId } from "../../lib/ids";
-import type { AssistantConfig, FaqEntry, Offering, Promotion, RecommendationRule, TransferMethod } from "./types";
+import type { BusinessDocument } from "./types";
 
-export function createFaq(overrides: Partial<FaqEntry> = {}): FaqEntry {
-  return { id: createId("pregunta"), question: "", answer: "", ...overrides };
+export const DEFAULT_CURRENCY = "COP";
+const SECRET_SOURCE = "secret_store";
+
+/** Id legible a partir de un nombre: minúsculas, sin tildes y con guion bajo. */
+export function toIdentifier(name: string): string {
+  return name
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
 }
 
-export function createRecommendationRule(overrides: Partial<RecommendationRule> = {}): RecommendationRule {
-  return { id: createId("recomendacion"), when: "", offeringId: "", ...overrides };
+export function categoryId(name: string): string {
+  return toIdentifier(name) || "general";
 }
 
-export function createPromotion(overrides: Partial<Promotion> = {}): Promotion {
-  return { id: createId("promocion"), name: "", details: "", validUntil: "", ...overrides };
+/** Referencia para un dato de pago nuevo; el servidor la versiona al guardarlo. */
+export function newSecretRef(profileId: string, field: string): string {
+  return `${SECRET_SOURCE}:${profileId}.${field}.${createId("dato")}`;
+}
+
+export function createPlan(overrides: Partial<Plan> = {}): Plan {
+  return { id: createId("plan"), name: "", prices: [{ currency: DEFAULT_CURRENCY }], includes: [], not_included: [], available: true, ...overrides };
+}
+
+export function createCatalogItem(overrides: Partial<CatalogItem> = {}): CatalogItem {
+  return { id: createId("producto"), name: "", category: "", prices: [{ currency: DEFAULT_CURRENCY, amount: 0 }], available: true, ...overrides };
+}
+
+/** Importe principal de un precio de plan, para mostrarlo en listas. */
+export function mainPlanAmount(price: PlanPrice): { amount: number | null; period: "mes" | "año" | null } {
+  if (price.monthly != null) return { amount: price.monthly, period: "mes" };
+  if (price.price != null) return { amount: price.price, period: null };
+  if (price.annual != null) return { amount: price.annual, period: "año" };
+  return { amount: price.implementation ?? price.first_payment ?? null, period: null };
 }
 
 /**
- * Completa una configuración guardada con los campos que se añadieron después (p. ej. `faqs`,
- * la ubicación o las promociones), sin descartar lo que ya tenía.
+ * Punto de partida de un negocio nuevo. Todavía no cumple el contrato (falta lo que solo el negocio puede decir):
+ * se guarda por primera vez cuando el servidor lo acepta.
  */
-export function withDefaults(config: AssistantConfig): AssistantConfig {
-  const empty = createEmptyConfig();
+export function createEmptyDocument(slug: string, name: string): BusinessDocument {
   return {
-    ...config,
-    business: {
-      ...empty.business,
-      ...config.business,
-      location: { ...empty.business.location, ...config.business.location },
+    schema_version: SCHEMA_VERSION as BusinessDocument["schema_version"],
+    tenant_slug: slug,
+    identity: { name, industry: "", description: "", value_proposition: "" },
+    offer: { model: "plans", plans: [] },
+    terms: {},
+    payments: [],
+    sales: {},
+    capabilities: {
+      service_channels: ["whatsapp"],
+      product_channels: [],
+      actions_primary: [],
+      actions_support: ["responder_dudas"],
+      closing_methods: { payment_link: false, human_handoff: false, data_collection: true },
+      data_collection: { enabled: true, fields: ["nombre", "telefono"] },
     },
-    payments: { ...empty.payments, ...config.payments },
-    behavior: { ...empty.behavior, ...config.behavior },
-  };
-}
-
-export function createOffering(overrides: Partial<Offering> = {}): Offering {
-  return {
-    id: createId("oferta"),
-    name: "",
-    description: "",
-    category: "",
-    price: null,
-    setupFee: null,
-    currency: "COP",
-    billing: "one_time",
-    features: [],
-    notIncluded: [],
-    available: true,
-    ...overrides,
-  };
-}
-
-export function createTransferMethod(overrides: Partial<TransferMethod> = {}): TransferMethod {
-  return {
-    id: createId("transferencia"),
-    type: "nequi",
-    phoneNumber: "",
-    bankName: "",
-    accountType: "ahorros",
-    accountNumber: "",
-    reference: "",
-    ...overrides,
-  };
-}
-
-/** Configuración vacía: punto de partida para un negocio nuevo. */
-export function createEmptyConfig(): AssistantConfig {
-  return {
-    version: 1,
-    business: {
-      name: "",
-      brandName: "",
-      businessType: "",
-      description: "",
-      valueProposition: "",
-      salesMode: "plans",
-      differentiators: [],
-      location: { type: "", address: "", city: "", coverageType: "local", coverageZones: [] },
-      serviceModes: [],
-    },
-    offerings: [],
-    payments: {
-      paymentLinkEnabled: false,
-      paymentLink: "",
-      transferEnabled: false,
-      transferMethods: [],
-      conditions: [],
-      promotions: [],
-    },
-    closing: {
-      sendPaymentLink: false,
-      humanHandoff: false,
-      collectCustomerData: true,
-      customerDataFields: ["nombre", "telefono"],
-      actions: ["responder_dudas"],
-    },
-    behavior: {
-      tone: "",
-      responseLength: "short",
-      maxWords: null,
-      primaryMotivation: "",
-      secondaryMotivation: "",
-      customerProblems: [],
-      benefits: [],
-      sellingPoints: [],
-      discoveryQuestions: [],
-      recommendationRules: [],
-      salesInstructions: [],
-      faqs: [],
-    },
-    messages: {
-      welcomeEnabled: false,
-      welcomeText: "",
-      paymentReportedText: "",
-      paymentConfirmedText: "",
-      serviceChannels: ["whatsapp"],
-    },
+    messages: { welcome: { enabled: false, text: "" } },
+    response_style: { length: "short" },
+    knowledge: { faqs: [] },
+    inventory: { items: [] },
   };
 }

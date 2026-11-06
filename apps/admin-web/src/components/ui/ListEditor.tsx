@@ -58,6 +58,8 @@ export function ListEditor({ label, hint, items, onChange, placeholder, addLabel
             value={draft}
             placeholder={placeholder}
             onChange={(event) => setDraft(event.target.value)}
+            // Lo escrito no se pierde si se pasa a otro campo o se guarda sin pulsar "Agregar".
+            onBlur={add}
             onKeyDown={(event) => {
               if (event.key === "Enter") {
                 event.preventDefault();

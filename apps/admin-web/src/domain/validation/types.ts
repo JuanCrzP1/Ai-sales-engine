@@ -8,4 +8,6 @@ export interface ValidationIssue {
   field: string;
   severity: IssueSeverity;
   message: string;
+  /** Nombre del campo, para listar el error fuera de su formulario cuando el mensaje no lo dice (los del servidor). */
+  label?: string;
 }
