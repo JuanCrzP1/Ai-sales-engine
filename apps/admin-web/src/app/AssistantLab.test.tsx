@@ -105,3 +105,39 @@ describe("Probar asistente", () => {
     expect(screen.getByText(/Respondió con la versión 1\./)).toBeInTheDocument();
   });
 });
+
+describe("Consumo de la IA", () => {
+  it("muestra respuestas, tokens y costo de los últimos 30 días", async () => {
+    const labs = createMemoryAssistantLabs();
+    labs.usage.set(SAMPLE_DOCUMENT.tenant_slug, {
+      since: "2026-10-12",
+      replies: 1234,
+      promptTokens: 1_100_000,
+      completionTokens: 100_000,
+      costUsd: 0.4231,
+      days: [{ day: "2026-11-10", replies: 1234, tokens: 1_200_000 }],
+    });
+    await open("/ia", labs);
+    const card = (await screen.findByRole("heading", { name: "Consumo de los últimos 30 días" })).closest("section") as HTMLElement;
+    const metric = (label: string) => (within(card).getByText(label).closest(".metric") as HTMLElement).querySelector(".metric__value")?.textContent;
+    await waitFor(() => expect(metric("Respuestas de la IA")).toBe("1.234"));
+    expect(metric("Tokens usados")).toMatch(/^1,2\s?M/);
+    expect(metric("Costo en OpenRouter")).toMatch(/USD\s?0,42/);
+  });
+
+  it("sin costo informado no lo muestra como cero", async () => {
+    const labs = createMemoryAssistantLabs();
+    labs.usage.set(SAMPLE_DOCUMENT.tenant_slug, { since: "2026-10-12", replies: 3, promptTokens: 900, completionTokens: 60, costUsd: null, days: [] });
+    await open("/ia", labs);
+    expect(await screen.findByText(/OpenRouter no informó el costo/)).toBeInTheDocument();
+  });
+});
+
+describe("Probar asistente: lo que entendió la IA", () => {
+  it("usa las mismas intenciones del motor y no inventa una que no indicó", async () => {
+    const { INTENT_LABELS, intentLabel } = await import("../domain/assistant/intents");
+    expect(Object.keys(INTENT_LABELS)).toEqual(["pain", "info", "objection", "buy"]);
+    expect(intentLabel("buy")).toBe("Quiere comprar");
+    expect([intentLabel(""), intentLabel(null), intentLabel("pricing")]).toEqual([null, null, null]);
+  });
+});

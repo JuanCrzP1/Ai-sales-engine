@@ -1,8 +1,11 @@
 from __future__ import annotations
 
-import sys
+import hashlib
+import hmac
+import json
+from typing import Annotated
 
-from fastapi import APIRouter, Body, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from fastapi.responses import PlainTextResponse
 
 from app.application.runtime import load_tenant_runtime_yaml
@@ -16,14 +19,27 @@ from app.utils.logger import logger
 
 router = APIRouter(prefix="/whatsapp", tags=["WhatsApp"])
 
+SIGNATURE_HEADER = "X-Hub-Signature-256"
 
-def _safe_print(*parts: object) -> None:
-    text = " ".join(str(part) for part in parts)
-    stdout_encoding = getattr(sys.stdout, "encoding", None) or "utf-8"
+
+async def signed_payload(request: Request) -> dict:
+    """El cuerpo del webhook, solo si Meta lo firmó con el secreto de la app (`META_APP_SECRET`).
+
+    Sin secreto configurado no se acepta nada: un webhook sin verificar dejaría a cualquiera enviar mensajes falsos.
+    """
+    secret = str(getattr(settings, "meta_app_secret", "") or "").strip()
+    body = await request.body()
+    expected = "sha256=" + hmac.new(secret.encode("utf-8"), body, hashlib.sha256).hexdigest()
+    if not secret or not hmac.compare_digest(request.headers.get(SIGNATURE_HEADER, ""), expected):
+        logger.warning("whatsapp_webhook_rejected", extra={"reason": "firma_no_valida" if secret else "sin_secreto"})
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Firma no válida")
     try:
-        print(text)
-    except UnicodeEncodeError:
-        print(text.encode(stdout_encoding, errors="ignore").decode(stdout_encoding, errors="ignore"))
+        payload = json.loads(body)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Cuerpo no válido") from exc
+    if not isinstance(payload, dict):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Cuerpo no válido")
+    return payload
 
 
 def _extract_phone_number_id(payload: dict) -> str:
@@ -62,17 +78,15 @@ def verify_whatsapp_webhook(
     hub_challenge: str | None = Query(default=None, alias="hub.challenge"),
 ) -> PlainTextResponse:
     expected_token = str(getattr(settings, "meta_verify_token", "") or "").strip()
-    _safe_print("VERIFY TOKEN BACKEND:", expected_token)
-    _safe_print("VERIFY TOKEN META:", hub_verify_token)
-
-    if hub_mode == "subscribe" and expected_token and hub_verify_token == expected_token:
+    # Comparación en tiempo constante; los tokens nunca van a los registros.
+    if hub_mode == "subscribe" and expected_token and hmac.compare_digest(str(hub_verify_token or ""), expected_token):
         return PlainTextResponse(str(hub_challenge or ""), status_code=status.HTTP_200_OK)
 
     raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Webhook verification failed")
 
 
 @router.post("/webhook")
-def receive_whatsapp_webhook(payload: dict = Body(...)) -> dict[str, str]:
+def receive_whatsapp_webhook(payload: Annotated[dict, Depends(signed_payload)]) -> dict[str, str]:
     if not bool(getattr(settings, "enable_webhook_processing", True)):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Endpoint no disponible")
 
@@ -106,7 +120,6 @@ def receive_whatsapp_webhook(payload: dict = Body(...)) -> dict[str, str]:
         include_metadata=True,
     )
 
-    _safe_print("RESPUESTA IA:", response)
-    _safe_print("DESTINO:", phone_number)
+    logger.info("whatsapp_reply", extra={"tenant": tenant.slug})
     WhatsAppService().send_message(tenant=tenant, phone_number=phone_number, message=str(response or ""), provider="meta")
     return {"status": "ok"}

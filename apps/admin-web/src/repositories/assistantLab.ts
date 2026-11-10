@@ -16,6 +16,16 @@ export interface SaveAISettings {
   clearKey?: boolean;
 }
 
+/** Lo que gastó la IA de este negocio en los últimos 30 días. `costUsd` es null si OpenRouter no informó el costo. */
+export interface AIUsage {
+  since: string;
+  replies: number;
+  promptTokens: number;
+  completionTokens: number;
+  costUsd: number | null;
+  days: { day: string; replies: number; tokens: number }[];
+}
+
 export interface KeyCheck {
   valid: boolean;
   message: string;
@@ -38,6 +48,7 @@ export interface AssistantLab {
   getAISettings(): Promise<AISettings>;
   saveAISettings(input: SaveAISettings): Promise<AISettings>;
   verifyAIKey(): Promise<KeyCheck>;
+  getAIUsage(): Promise<AIUsage>;
   sendMessage(input: { message: string; source: ConfigSource; sessionId: string | null }): Promise<AssistantReply>;
   resetConversation(sessionId: string): Promise<void>;
 }

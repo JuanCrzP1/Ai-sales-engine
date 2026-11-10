@@ -1087,6 +1087,7 @@ def test_the_api_only_has_the_routes_of_the_panel(api):
         # Inteligencia artificial y área de pruebas (`assistant_routes.py`).
         ("GET", f"{business}/ai"),
         ("PUT", f"{business}/ai"),
+        ("GET", f"{business}/ai/usage"),
         ("POST", f"{business}/ai/verify"),
         ("POST", f"{business}/playground"),
         ("DELETE", f"{business}/playground/{{session_id}}"),

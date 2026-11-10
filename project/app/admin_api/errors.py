@@ -23,6 +23,7 @@ from app.domain.business_config.errors import (
     PaymentDataUnavailableError,
     PublicationError,
     SecretResolutionError,
+    UsageLimitExceededError,
     VersionConflictError,
 )
 
@@ -34,6 +35,14 @@ PAYMENT_PROBLEM = "Falta un dato de pago o no se puede leer con la clave actual.
 _DOCUMENT_TO_FIX = "La configuración tiene datos por corregir."
 _ALREADY_EXISTS = "Ya existe un negocio con ese identificador."
 _CHANGED_ELSEWHERE = "Este negocio cambió desde que lo abriste, quizá en otra pestaña. Recarga para ver lo último antes de guardar."
+_TOO_MANY = "Hiciste muchas solicitudes seguidas. Espera {wait} y vuelve a intentarlo."
+
+
+def _wait(seconds: int) -> str:
+    if seconds < 60:
+        return "unos segundos" if seconds < 10 else f"{seconds} segundos"
+    minutes = -(-seconds // 60)
+    return "1 minuto" if minutes == 1 else f"{minutes} minutos"
 
 # Pydantic añade al recorrido las ramas de los tipos compuestos (`int`, `float`, `function-after[...]`...).
 _UNION_BRANCHES = {"int", "float", "str", "bool"}
@@ -46,12 +55,21 @@ _TECHNICAL_MESSAGES = {
 class ApiError(Exception):
     """Error esperado de la API, con su estado HTTP y los problemas por campo, si los hay."""
 
-    def __init__(self, status_code: int, message: str, *, code: str = "error", issues: list[dict[str, str]] | None = None) -> None:
+    def __init__(
+        self,
+        status_code: int,
+        message: str,
+        *,
+        code: str = "error",
+        issues: list[dict[str, str]] | None = None,
+        headers: dict[str, str] | None = None,
+    ) -> None:
         super().__init__(message)
         self.status_code = status_code
         self.message = message
         self.code = code
         self.issues = issues or []
+        self.headers = headers
 
     def payload(self) -> dict[str, Any]:
         return {"code": self.code, "message": self.message, "issues": self.issues}
@@ -107,6 +125,9 @@ def _reason(request: Request, exc: Exception) -> str:
 
 
 def _api_error(request: Request, exc: BusinessConfigError) -> ApiError:
+    if isinstance(exc, UsageLimitExceededError):
+        wait = exc.retry_after_seconds
+        return ApiError(status.HTTP_429_TOO_MANY_REQUESTS, _TOO_MANY.format(wait=_wait(wait)), code="rate_limited", headers={"Retry-After": str(wait)})
     if isinstance(exc, AIKeyMissingError):
         return ApiError(status.HTTP_409_CONFLICT, _reason(request, exc), code="ai_key_missing")
     if isinstance(exc, AssistantUnavailableError):
@@ -134,12 +155,12 @@ def _api_error(request: Request, exc: BusinessConfigError) -> ApiError:
 def register_error_handlers(app: FastAPI) -> None:
     @app.exception_handler(ApiError)
     async def _expected(_request: Request, exc: ApiError) -> JSONResponse:
-        return JSONResponse(exc.payload(), exc.status_code)
+        return JSONResponse(exc.payload(), exc.status_code, headers=exc.headers)
 
     @app.exception_handler(BusinessConfigError)
     async def _business_config(request: Request, exc: BusinessConfigError) -> JSONResponse:
         error = _api_error(request, exc)
-        return JSONResponse(error.payload(), error.status_code)
+        return JSONResponse(error.payload(), error.status_code, headers=error.headers)
 
     @app.exception_handler(RequestValidationError)
     async def _invalid_request(_request: Request, exc: RequestValidationError) -> JSONResponse:

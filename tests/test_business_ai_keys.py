@@ -159,3 +159,16 @@ def test_a_real_message_answers_with_the_key_saved_in_the_panel(platform):
     _say(pipeline, "restaurant")
     _say(pipeline, "clinic")
     assert [(call.api_key, call.model_name) for call in calls] == [(KEY_A, "openai/gpt-4o-mini"), (None, None)]
+
+
+def test_each_answer_adds_to_the_usage_of_its_business_and_a_failure_never_blocks_the_reply(platform):
+    from datetime import datetime, timezone
+
+    from app.application.runtime import business_usage_recorder
+    from app.infrastructure.business_config.ai_usage_store import AIUsageStore
+
+    business_usage_recorder("restaurant")("openai/gpt-4o-mini", 1200, 80, 0.0004)
+    business_usage_recorder("negocio_inexistente")("openai/gpt-4o-mini", 1, 1, None)  # se registra el fallo y sigue
+    today = datetime.now(timezone.utc).date()
+    summary = AIUsageStore(platform).summary("restaurant", since=today)
+    assert (summary.replies, summary.prompt_tokens, summary.completion_tokens, summary.cost_usd) == (1, 1200, 80, 0.0004)

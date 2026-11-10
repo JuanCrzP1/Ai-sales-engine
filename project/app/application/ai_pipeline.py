@@ -53,7 +53,8 @@ import copy
 from collections.abc import Callable
 
 from app.application.pipeline import AIExecution, ConversationFlow, SalesFlow, log_trace, tenant_slug
-from app.application.runtime import load_business_ai, load_tenant_runtime_yaml, message_ai
+from app.application.runtime import business_usage_recorder, load_business_ai, load_tenant_runtime_yaml, message_ai
+from app.application.runtime.business_ai import UsageCallback
 from app.domain.business_config.ai_settings import AICredentials
 from app.domain.conversation.memory import MemoryDomainService
 from app.infrastructure.persistence.memory_repository import MemoryRepository, SQLMemoryRepository
@@ -71,6 +72,7 @@ class AIPipeline:
         memory_service: MemoryDomainService | None = None,
         runtime_loader: Callable[..., dict] | None = None,
         ai_loader: Callable[[str], AICredentials | None] | None = None,
+        usage_recorder: Callable[[str], UsageCallback | None] | None = None,
     ) -> None:
         # De dónde salen, en cada mensaje, la configuración del negocio y su IA (su clave de OpenRouter y su modelo). Por defecto,
         # `load_tenant_runtime_yaml` y `load_business_ai`; el área de pruebas del panel pasa la versión que se está probando y la
@@ -78,6 +80,8 @@ class AIPipeline:
         # clave propia, así que un mensaje nunca sale con la clave de otro negocio.
         self._runtime_loader = runtime_loader
         self._ai_loader = ai_loader
+        # Cada respuesta de la IA suma al consumo de su negocio (lo muestra el panel en «Inteligencia artificial»).
+        self._usage_recorder = usage_recorder
         runtime_service = runtime or AIRuntimeService(
             prompt_path=prompt_path,
             message_repository=message_repository,
@@ -164,10 +168,11 @@ class AIPipeline:
             "has_business": bool(runtime_yaml_for_ai.get("business")),
         })
         load_ai = self._ai_loader or load_business_ai
+        record_usage = (self._usage_recorder or business_usage_recorder)(tenant_slug_value)
         final_response, ai_used, route_context = self.ai_execution.run(
             runtime=self.runtime,
             tenant=tenant,
-            bot_config=message_ai(bot_config, load_ai(tenant_slug_value)),
+            bot_config=message_ai(bot_config, load_ai(tenant_slug_value), on_usage=record_usage),
             user_message=user_message,
             conversation_history=conversation_history,
             faq_results=faq_results,

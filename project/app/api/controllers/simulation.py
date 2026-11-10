@@ -102,7 +102,6 @@ def simulate_message(
         runtime_yaml = load_tenant_runtime_yaml(slug)
     except ValueError as exc:
         raise unknown_business from exc
-    print("YAML ENTRANTE:", runtime_yaml.keys())
 
     service = _SimulationService(_session_memory(current_user.id, payload.user_id))
     result = service.generate_business_reply(

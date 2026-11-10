@@ -28,6 +28,7 @@ def route_response(
     conversation_history: list,
     faq_results: list[dict],
     runtime_yaml: dict,
+    preamble: str = "",
 ) -> tuple[str, bool, dict]:
     tenant_slug = resolve_tenant_slug(tenant)
     safe_runtime_yaml = runtime_yaml if isinstance(runtime_yaml, dict) else {}
@@ -51,6 +52,7 @@ def route_response(
             conversation_history=conversation_history,
             faq_results=faq_results,
             yaml_config=runtime_yaml,
+            preamble=preamble,
         )
         ai_response = ""
         ai_used = True

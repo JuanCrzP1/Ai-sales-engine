@@ -253,7 +253,7 @@ def normalize_metadata(raw_metadata: dict | None) -> dict:
 def parse_structured_output(raw_text: str) -> StructuredOutputResult:
     text = str(raw_text or "").strip()
     if not text:
-        logger.info("structured_output_audit", extra={"raw_text": text, "response_text": "", "error": "empty_output"})
+        logger.info("structured_output_audit", extra={"error": "empty_output"})
         return _invalid_result(
             raw_text=text,
             error="empty_output",
@@ -269,7 +269,7 @@ def parse_structured_output(raw_text: str) -> StructuredOutputResult:
         parsed = None
 
     if not isinstance(parsed, dict):
-        logger.info("structured_output_audit", extra={"raw_text": text, "response_text": "", "error": "invalid_json"})
+        logger.info("structured_output_audit", extra={"error": "invalid_json", "length": len(text)})
         return _invalid_result(
             raw_text=text,
             error="invalid_json",
@@ -306,7 +306,7 @@ def parse_structured_output(raw_text: str) -> StructuredOutputResult:
     if intent not in VALID_INTENTS:
         logger.info(
             "structured_output_audit",
-            extra={"raw_text": text, "response_text": "", "error": "invalid_intent", "intent": intent},
+            extra={"error": "invalid_intent", "intent": intent[:40]},
         )
         legacy_metadata = dict(metadata)
         if not str(intent or "").strip():
@@ -322,7 +322,7 @@ def parse_structured_output(raw_text: str) -> StructuredOutputResult:
     if not response:
         logger.info(
             "structured_output_audit",
-            extra={"raw_text": text, "response_text": "", "error": "missing_response", "intent": intent},
+            extra={"error": "missing_response", "intent": intent},
         )
         return _invalid_result(
             raw_text=text,
@@ -334,7 +334,7 @@ def parse_structured_output(raw_text: str) -> StructuredOutputResult:
 
     metadata["intent"] = intent
 
-    logger.info("structured_output_audit", extra={"raw_text": text, "response_text": response, "intent": intent})
+    logger.info("structured_output_audit", extra={"intent": intent, "length": len(response)})
     return _build_result(
         valid=True,
         raw_text=text,

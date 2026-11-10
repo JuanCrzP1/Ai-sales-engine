@@ -11,6 +11,7 @@ from app.admin_api.errors import PAYMENT_PROBLEM
 from app.business_config_application.assistant_lab import PlaygroundReply
 from app.business_config_application.service import ConfigReview, EditableConfig
 from app.domain.business_config.ai_settings import AISettings, KeyCheck
+from app.domain.business_config.ai_usage import AIUsageSummary
 from app.domain.business_config.conversations import BusinessActivity, ChatMessage, ConversationSummary, Notification
 from app.domain.business_config.records import BusinessSummary, ConfigVersion
 
@@ -100,6 +101,19 @@ def review_payload(review: ConfigReview) -> dict[str, Any]:
 def ai_settings_payload(settings: AISettings) -> dict[str, Any]:
     """Nunca incluye la clave: solo si está configurada y sus últimos caracteres."""
     return {"provider": settings.provider, "model": settings.model, "key": {"configured": settings.key_configured, "hint": settings.key_hint}}
+
+
+def ai_usage_payload(summary: AIUsageSummary) -> dict[str, Any]:
+    return {
+        "since": summary.since.isoformat(),
+        "replies": summary.replies,
+        "prompt_tokens": summary.prompt_tokens,
+        "completion_tokens": summary.completion_tokens,
+        "cost_usd": summary.cost_usd,
+        "days": [
+            {"day": day.day.isoformat(), "replies": day.replies, "tokens": day.prompt_tokens + day.completion_tokens} for day in summary.days
+        ],
+    }
 
 
 def key_check_payload(check: KeyCheck) -> dict[str, Any]:

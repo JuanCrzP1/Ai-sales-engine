@@ -9,6 +9,7 @@ import { LoadingScreen } from "../../layout/StatusScreen";
 import { PLAYGROUND_ITEM } from "../../navigation/navItems";
 import { useWorkspacePath } from "../../navigation/useWorkspacePath";
 import { useAISettings } from "../../state/useAISettings";
+import { AIUsageCard } from "./AIUsageCard";
 
 /** La clave de OpenRouter de este negocio y el modelo de su asistente. La clave nunca se vuelve a mostrar completa. */
 export function AISettingsPage() {
@@ -90,6 +91,8 @@ export function AISettingsPage() {
           </form>
         </Card>
       )}
+
+      {ai.status === "ready" && <AIUsageCard />}
 
       {configured && (
         <Card title="Pruébalo" description="Conversa con tu asistente como si fueras un cliente, antes de que lo hagan tus clientes.">

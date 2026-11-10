@@ -95,25 +95,29 @@ class RuntimeLLMImplementation:
     def validate(text: str | None) -> bool:
         return len(str(text or "").strip()) > 0
 
+    # La respuesta llega en JSON (`app/services/ai/output_contract.py`). Los modelos que no admiten `response_format` lo ignoran
+    # y el formato lo sigue pidiendo el prompt.
+    RESPONSE_FORMAT = {"type": "json_object"}
+
     def _call_client(self, client_to_use, *, model_to_use: str, messages: list[dict], temperature: float, max_tokens: int | None, top_p: float | None = None):
         payload = {
             "model": model_to_use,
             "temperature": temperature,
             "messages": messages,
+            "response_format": dict(self.RESPONSE_FORMAT),
         }
         if max_tokens is not None:
             payload["max_tokens"] = max_tokens
         if top_p is not None:
             payload["top_p"] = top_p
-        try:
-            return client_to_use.chat.completions.create(**payload)
-        except TypeError:
-            payload.pop("top_p", None)
+        # Un cliente que no acepta un ajuste opcional (los de prueba) recibe la llamada sin él; nunca se llama dos veces al modelo.
+        for optional in ("response_format", "top_p", "max_tokens", None):
             try:
                 return client_to_use.chat.completions.create(**payload)
             except TypeError:
-                payload.pop("max_tokens", None)
-                return client_to_use.chat.completions.create(**payload)
+                if optional is None:
+                    raise
+                payload.pop(optional, None)
 
     def _build_prompt(self, *, tenant: Tenant, user_message: str, yaml_config: dict | None = None, faq_results: list[dict] | None = None) -> tuple[str, dict, dict]:
         tenant_slug = str(getattr(tenant, "slug", None) or "").strip() or None
@@ -144,6 +148,21 @@ class RuntimeLLMImplementation:
             if "text" in choice:
                 return choice.get("text")
         return None
+
+    @staticmethod
+    def _report_usage(response, *, bot_config, model: str) -> None:
+        """Los tokens de esta respuesta, al registro y a quien lleva el consumo del negocio (`MessageAI.on_usage`)."""
+        usage = response.get("usage") if isinstance(response, dict) else getattr(response, "usage", None)
+        if usage is None:
+            return
+        usage_dict = usage if isinstance(usage, dict) else vars(usage)
+        prompt_tokens = usage_dict.get("prompt_tokens")
+        completion_tokens = usage_dict.get("completion_tokens")
+        logger.info("tokens_usage", extra={"model": model, "prompt_tokens": prompt_tokens, "completion_tokens": completion_tokens})
+        on_usage = getattr(bot_config, "on_usage", None)
+        if callable(on_usage) and isinstance(prompt_tokens, int) and isinstance(completion_tokens, int):
+            cost = usage_dict.get("cost")
+            on_usage(model, prompt_tokens, completion_tokens, float(cost) if isinstance(cost, (int, float)) else None)
 
     def generate(self, prompt: str, *, user_message: str, bot_config: BotConfig | None = None) -> str:
         if str(os.getenv("LLM_MODE") or "").strip().lower() == "mock_fail":
@@ -177,18 +196,7 @@ class RuntimeLLMImplementation:
             max_tokens=resolved_max_tokens,
             top_p=getattr(bot_config, "top_p", None),
         )
-        usage = response.get("usage") if isinstance(response, dict) else getattr(response, "usage", None)
-        if usage is not None:
-            usage_dict = usage if isinstance(usage, dict) else vars(usage)
-            logger.info(
-                "tokens_usage",
-                extra={
-                    "model": str(getattr(bot_config, "model_name", None) or self._default_model()),
-                    "prompt_tokens": usage_dict.get("prompt_tokens"),
-                    "completion_tokens": usage_dict.get("completion_tokens"),
-                    "total_tokens": usage_dict.get("total_tokens"),
-                },
-            )
+        self._report_usage(response, bot_config=bot_config, model=str(getattr(bot_config, "model_name", None) or self._default_model()))
         try:
             first_choice = response.choices[0]
         except Exception:

@@ -29,6 +29,7 @@ from app.infrastructure.business_config.database import (
 from app.infrastructure.business_config.members_store import BusinessMembersStore
 from app.infrastructure.business_config.notification_store import NotificationStore
 from app.infrastructure.business_config.tables import business_members, conversation_entries, conversations, tenants
+from app.infrastructure.business_config.usage_store import UsageCounterStore
 from app.infrastructure.config.config_service import ConfigService
 from app.infrastructure.config.legacy_store_migration import import_prepared, prepare_tenant
 
@@ -80,7 +81,13 @@ def platform(tmp_path):
     store = ConversationStore(engine)
     lab = build_assistant_lab_service(engine, service, secrets_key=key, verifier=Verifier(), runner=Runner())
     app = create_app(
-        service, lab, access=BusinessAccess(service, BusinessMembersStore(engine)), verifier=Tokens(), conversations=store, notifications=NotificationStore(engine)
+        service,
+        lab,
+        access=BusinessAccess(service, BusinessMembersStore(engine)),
+        verifier=Tokens(),
+        conversations=store,
+        notifications=NotificationStore(engine),
+        usage=UsageCounterStore(engine),
     )
     yield engine, store, lab, TestClient(app)
     engine.dispose()

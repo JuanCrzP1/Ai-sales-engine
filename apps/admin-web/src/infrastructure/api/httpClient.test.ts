@@ -118,6 +118,13 @@ describe("cliente de la API en la nube", () => {
     expect(persistenceErrorMessage(error)).toBe("Tu sesión terminó. Vuelve a entrar.");
   });
 
+  it("un límite de uso se informa con la espera que dio el servidor", async () => {
+    stubFetch(respond(429, { code: "rate_limited", message: "Hiciste muchas solicitudes seguidas. Espera 40 segundos y vuelve a intentarlo.", issues: [] }));
+    const error = await failure(createHttpClient().post("/businesses/cafe/playground", { message: "Hola" }));
+    expect(error.code).toBe("rate_limited");
+    expect(persistenceErrorMessage(error)).toBe("Hiciste muchas solicitudes seguidas. Espera 40 segundos y vuelve a intentarlo.");
+  });
+
   it("los negocios de la nube no se importan de YAML ni se eliminan desde el panel", () => {
     const directory = createApiBusinessDirectory(createHttpClient(), { local: false });
     expect([directory.canImportExisting, directory.canRemove]).toEqual([false, false]);

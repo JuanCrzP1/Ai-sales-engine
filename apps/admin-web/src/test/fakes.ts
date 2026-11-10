@@ -6,7 +6,7 @@ import type { ContractSchema } from "../domain/config/contractSchema";
 import { paymentHolders } from "../domain/config/document";
 import type { BusinessDocument, BusinessSummary, Diagnostic, PaymentFields, PaymentFieldState, PaymentValues, VersionInfo, VersionStatus } from "../domain/config/types";
 import { createLocalOperatorAuthService } from "../infrastructure/local/localOperatorAuthService";
-import type { AISettings, AssistantLab, ConfigSource } from "../repositories/assistantLab";
+import type { AISettings, AIUsage, AssistantLab, ConfigSource } from "../repositories/assistantLab";
 import type { AuthService } from "../repositories/authService";
 import type { BusinessDirectory } from "../repositories/businessDirectory";
 import type { ConfigRepository, StoredConfig } from "../repositories/configRepository";
@@ -238,6 +238,8 @@ export interface MemoryAssistantLabs {
   keys: Map<string, string>;
   messages: { slug: string; message: string; source: ConfigSource; sessionId: string | null }[];
   resets: string[];
+  /** El consumo de IA de cada negocio; sin entrada, cero. */
+  usage: Map<string, AIUsage>;
 }
 
 /** Sustituto en memoria de la inteligencia artificial y del área de pruebas: responde «Respuesta a: …» sin red. */
@@ -246,6 +248,7 @@ export function createMemoryAssistantLabs(): MemoryAssistantLabs {
   const models = new Map<string, string | null>();
   const messages: MemoryAssistantLabs["messages"] = [];
   const resets: string[] = [];
+  const usage = new Map<string, AIUsage>();
   let sessions = 0;
   const settingsOf = (slug: string): AISettings => {
     const key = keys.get(slug);
@@ -257,6 +260,7 @@ export function createMemoryAssistantLabs(): MemoryAssistantLabs {
     keys,
     messages,
     resets,
+    usage,
     create: (slug) => ({
       getAISettings: async () => settingsOf(slug),
       async saveAISettings({ model, apiKey, clearKey }) {
@@ -273,6 +277,7 @@ export function createMemoryAssistantLabs(): MemoryAssistantLabs {
         if (!keys.has(slug)) throw missingKey();
         return { valid: true, message: "La clave funciona." };
       },
+      getAIUsage: async () => usage.get(slug) ?? { since: "2026-10-12", replies: 0, promptTokens: 0, completionTokens: 0, costUsd: null, days: [] },
       async sendMessage({ message, source, sessionId }) {
         if (!keys.has(slug)) throw missingKey();
         messages.push({ slug, message, source, sessionId });

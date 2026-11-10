@@ -1,5 +1,4 @@
 """Meta WhatsApp sender skeleton for WhatsApp Cloud API (Meta)."""
-import sys
 from typing import Any
 import httpx
 
@@ -8,15 +7,6 @@ from app.connectors.whatsapp.meta.config import get_meta_settings
 from app.services.tenant_channel_resolver import get_whatsapp_channel_config_by_tenant_id
 from app.services.tenant_secrets_service import get_whatsapp_token
 from app.utils.logger import logger
-
-
-def _safe_print(*parts: object) -> None:
-    text = " ".join(str(part) for part in parts)
-    stdout_encoding = getattr(sys.stdout, "encoding", None) or "utf-8"
-    try:
-        print(text)
-    except UnicodeEncodeError:
-        print(text.encode(stdout_encoding, errors="ignore").decode(stdout_encoding, errors="ignore"))
 
 
 def _get_tenant_id(tenant: Any) -> str | None:
@@ -78,10 +68,9 @@ def can_send(tenant: Any = None) -> bool:
 
 
 def _post_meta_message(endpoint: str, headers: dict[str, str], payload: dict[str, Any]) -> None:
-    _safe_print("PAYLOAD:", payload)
+    # Solo el tipo y el estado: el mensaje, el destino y el token nunca van a los registros.
     resp = httpx.post(endpoint, json=payload, headers=headers, timeout=20.0)
-    _safe_print("META STATUS:", resp.status_code)
-    _safe_print("META RESPONSE:", resp.text)
+    logger.info("meta_send", extra={"type": payload.get("type"), "status": resp.status_code})
     resp.raise_for_status()
 
 
@@ -171,8 +160,6 @@ def _send_menu(endpoint: str, headers: dict[str, str], phone_number: str, menu: 
 def send(tenant: Any, phone_number: str, message: str | dict[str, Any]) -> bool:
     """Send text, media and interactive menus via Meta Cloud API when present."""
     access_token, phone_id = _resolve_meta_runtime(tenant)
-    _safe_print("TOKEN USADO:", access_token)
-    _safe_print("PHONE_NUMBER_ID:", phone_id)
     if not access_token or not phone_id:
         raise Exception("❌ WHATSAPP MESSAGE NOT SENT — CONFIG INVALID")
 

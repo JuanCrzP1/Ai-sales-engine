@@ -1,10 +1,21 @@
 from __future__ import annotations
 
 import logging
+import time
+
 import requests
 
 from app.config import settings
 from app.utils.logger import logger
+
+
+def _error_code(response) -> str:
+    """El código del error que devolvió OpenRouter, sin su mensaje: puede repetir parte de lo enviado."""
+    try:
+        error = response.json().get('error') or {}
+    except ValueError:
+        return ''
+    return str(error.get('code') or '') if isinstance(error, dict) else ''
 
 
 class _OpenRouterCompletions:
@@ -37,41 +48,12 @@ class _OpenRouterCompletions:
                 if temperature is not None:
                     payload['temperature'] = temperature
                 payload.update(kwargs or {})
-                extra_params = {key: value for key, value in (kwargs or {}).items()}
-                logger.info(
-                    'openrouter_request_payload',
-                    extra={
-                        'url': url,
-                        'model': model,
-                        'messages': messages,
-                        'temperature': temperature,
-                        'max_tokens': payload.get('max_tokens'),
-                        'extra_params': extra_params,
-                        'payload': payload,
-                    },
-                )
-                logger.info('AI_CALL_COUNT: 1', extra={'provider': 'openrouter', 'model': model})
+                started = time.monotonic()
                 response = requests.post(url, headers=headers, json=payload, timeout=self._parent._parent.timeout)
-                response_preview = response.text[:4000]
-                logger.info(
-                    'openrouter_response_status',
-                    extra={
-                        'status_code': response.status_code,
-                        'model': model,
-                        'attempt': 1,
-                        'response_body_preview': response_preview,
-                    },
-                )
+                elapsed_ms = int((time.monotonic() - started) * 1000)
+                logger.info('openrouter_call', extra={'model': model, 'status_code': response.status_code, 'elapsed_ms': elapsed_ms})
                 if response.status_code >= 400:
-                    logger.error(
-                        'openrouter_response_error',
-                        extra={
-                            'status_code': response.status_code,
-                            'model': model,
-                            'payload': payload,
-                            'response_body': response_preview,
-                        },
-                    )
+                    logger.error('openrouter_error', extra={'model': model, 'status_code': response.status_code, 'error': _error_code(response)})
                 response.raise_for_status()
                 return response.json()
 

@@ -1,8 +1,9 @@
-"""Acceso de solo lectura del motor a lo publicado en el almacén de BusinessConfig.
+"""Acceso del motor al almacén de BusinessConfig: lee lo publicado y anota el consumo de IA.
 
 El motor lee la misma base que escribe el panel (`database_url()`: `BUSINESS_CONFIG_DATABASE_URL` o el SQLite local) con la misma
-clave de cifrado (`find_secrets_key()`): lo publicado, los datos de pago y la clave de IA de cada negocio. Nunca crea la base, las tablas ni la clave, y nunca escribe: si algo falta, lo informa con una
-excepción y el llamador decide (el cargador del motor vuelve a los YAML).
+clave de cifrado (`find_secrets_key()`): lo publicado, los datos de pago y la clave de IA de cada negocio. Lo único que escribe es
+el consumo de cada respuesta (`record_ai_usage`). Nunca crea la base, las tablas ni la clave: si algo falta, lo informa con una
+excepción y el llamador decide.
 
 Es la única puerta del motor hacia este almacén: el motor no conoce tablas, conexiones ni cifrado.
 """
@@ -11,19 +12,29 @@ from __future__ import annotations
 import threading
 from collections.abc import Callable
 from dataclasses import dataclass
+from datetime import date, datetime, timezone
 
 from sqlalchemy.engine import Engine
 
 from app.domain.business_config.ai_settings import AICredentials
+from app.domain.business_config.ai_usage import AIUsage
 from app.domain.business_config.contract import BusinessConfig, SecretRef
 from app.domain.business_config.errors import BusinessConfigError
 from app.infrastructure.business_config.ai_settings_store import AISettingsStore
+from app.infrastructure.business_config.ai_usage_store import AIUsageStore
 from app.infrastructure.business_config.database import create_business_config_engine, database_url, sqlite_file
 from app.infrastructure.business_config.payment_secret_store import SECRET_STORE_SOURCE, PaymentSecretStore
 from app.infrastructure.business_config.repository import BusinessConfigRepository
 from app.infrastructure.business_config.secrets_key import find_secrets_key
 
-__all__ = ["SECRET_STORE_SOURCE", "PublishedConfigReader", "dispose_shared_engines", "open_published_reader", "reader_for"]
+__all__ = [
+    "SECRET_STORE_SOURCE",
+    "PublishedConfigReader",
+    "dispose_shared_engines",
+    "open_published_reader",
+    "reader_for",
+    "record_ai_usage",
+]
 
 
 @dataclass(frozen=True)
@@ -63,14 +74,23 @@ def _shared_engine(url: str) -> Engine:
         return _engines[url]
 
 
-def open_published_reader() -> PublishedConfigReader:
-    """El lector del almacén que usa el panel en este equipo, o en la nube cuando `BUSINESS_CONFIG_DATABASE_URL` apunte allí."""
+def _store_engine() -> Engine:
     url = database_url()
     path = sqlite_file(url)
     if path is not None and not path.is_file():
         # Sin esta comprobación, SQLite crearía un archivo vacío: el motor nunca debe crear el almacén.
         raise BusinessConfigError("no existe el almacén de BusinessConfig: se crea con scripts/init_local_business_config.py")
-    return reader_for(_shared_engine(url), find_secrets_key())
+    return _shared_engine(url)
+
+
+def open_published_reader() -> PublishedConfigReader:
+    """El lector del almacén que usa el panel en este equipo, o en la nube cuando `BUSINESS_CONFIG_DATABASE_URL` apunte allí."""
+    return reader_for(_store_engine(), find_secrets_key())
+
+
+def record_ai_usage(tenant_slug: str, usage: AIUsage, *, day: date | None = None) -> None:
+    """Suma una respuesta al consumo de IA del negocio (día en UTC)."""
+    AIUsageStore(_store_engine()).add(tenant_slug, day or datetime.now(timezone.utc).date(), usage)
 
 
 def dispose_shared_engines() -> None:

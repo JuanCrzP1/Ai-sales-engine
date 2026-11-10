@@ -3,6 +3,7 @@ import { Button, LinkButton } from "../../components/ui/Button";
 import { RadioGroup } from "../../components/ui/ChoiceGroup";
 import { Alert } from "../../components/ui/Feedback";
 import { Card, PageHeader } from "../../components/ui/Layout";
+import { intentLabel } from "../../domain/assistant/intents";
 import { AI_ITEM } from "../../navigation/navItems";
 import { useWorkspacePath } from "../../navigation/useWorkspacePath";
 import { useConfig } from "../../state/useConfig";
@@ -12,16 +13,6 @@ const SOURCES = [
   { value: "draft" as ConfigSource, label: "Lo que estoy editando", hint: "Lo último guardado, aunque todavía no esté publicado." },
   { value: "published" as ConfigSource, label: "Lo publicado", hint: "Lo que hoy reciben tus clientes." },
 ];
-
-/** Lo que la IA entendió de cada mensaje, en palabras del negocio. */
-const INTENTS: Record<string, string> = {
-  info: "Pide información",
-  price: "Pregunta el precio",
-  buy: "Quiere comprar",
-  objection: "Tiene una objeción",
-  greeting: "Saluda",
-  support: "Pide ayuda",
-};
 
 const MAX_MESSAGE_CHARS = 1000;
 
@@ -113,7 +104,7 @@ export function PlaygroundPage() {
           </Button>
         </form>
         <p className="playground__note">
-          Estas conversaciones no llegan a tus clientes ni se guardan.
+          Estas conversaciones no llegan a tus clientes. Quedan en Conversaciones marcadas como Prueba y usan la clave de IA de este negocio.
           {playground.version !== null && ` Respondió con la versión ${playground.version}.`}
         </p>
       </Card>
@@ -127,9 +118,9 @@ function Bubble({ turn }: { turn: ChatTurn }) {
     <div className={`playground__bubble playground__bubble--${turn.from}`}>
       <span className="visually-hidden">{customer ? "Tú: " : "Asistente: "}</span>
       {turn.text}
-      {!customer && (turn.intent || turn.aiAnswered === false) && (
+      {!customer && (intentLabel(turn.intent) || turn.aiAnswered === false) && (
         <span className="playground__meta">
-          {turn.aiAnswered === false ? "Respondió sin la IA: revisa la clave o el modelo en Inteligencia artificial." : INTENTS[turn.intent ?? ""] ?? turn.intent}
+          {turn.aiAnswered === false ? "Respondió sin la IA: revisa la clave o el modelo en Inteligencia artificial." : intentLabel(turn.intent)}
         </span>
       )}
     </div>

@@ -10,6 +10,7 @@ from dotenv import load_dotenv
 
 from app.connectors.tenant_guard import resolve_connector_tenant
 from app.connectors.telegram.telegram_service import TelegramService
+from app.utils.logger import logger
 
 
 def _load_env_files() -> None:
@@ -72,7 +73,7 @@ def main() -> None:
     service = TelegramService(tenant_slug=tenant_slug)
     offset = 0
 
-    print("Telegram polling started.")
+    logger.info("telegram_polling_started")
     while True:
         try:
             updates = _telegram_api(
@@ -102,13 +103,14 @@ def main() -> None:
 
                 _send_message(token, chat_id, reply)
         except KeyboardInterrupt:
-            print("Telegram polling stopped.")
+            logger.info("telegram_polling_stopped")
             break
         except error.URLError as exc:
-            print(f"Telegram connection error: {exc}")
+            # Solo el tipo: el texto del error incluye la URL de Telegram, que lleva el token del bot.
+            logger.warning("telegram_connection_error", extra={"error": type(exc).__name__})
             time.sleep(2)
         except Exception as exc:
-            print(f"Telegram polling error: {exc}")
+            logger.warning("telegram_polling_error", extra={"error": type(exc).__name__})
             time.sleep(2)
 
 

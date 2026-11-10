@@ -600,25 +600,16 @@ class AIExecution:
 
         validate_runtime_yaml(runtime_yaml_with_memory)
 
-        original_generate = runtime.generate
-
-        def _generate_with_frame(prompt: str, *, user_message: str, bot_config=None):
-            framed_prompt = f"{FRAME_BLOCK}\n\n{str(prompt or '').strip()}".strip()
-            return original_generate(framed_prompt, user_message=user_message, bot_config=bot_config)
-
-        runtime.generate = _generate_with_frame
-        try:
-            response, ai_used, route_context = route_response(
-                runtime=runtime,
-                tenant=tenant,
-                bot_config=bot_config,
-                user_message=user_message,
-                conversation_history=conversation_history,
-                faq_results=faq_results,
-                runtime_yaml=runtime_yaml_with_memory,
-            )
-        finally:
-            runtime.generate = original_generate
+        response, ai_used, route_context = route_response(
+            runtime=runtime,
+            tenant=tenant,
+            bot_config=bot_config,
+            user_message=user_message,
+            conversation_history=conversation_history,
+            faq_results=faq_results,
+            runtime_yaml=runtime_yaml_with_memory,
+            preamble=FRAME_BLOCK,
+        )
 
         try:
             route_meta = route_context if isinstance(route_context, dict) else {}

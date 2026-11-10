@@ -13,14 +13,17 @@ from datetime import datetime, timezone
 
 from sqlalchemy import (
     JSON,
+    BigInteger,
     Boolean,
     CheckConstraint,
     Column,
+    Date,
     DateTime,
     ForeignKey,
     Index,
     Integer,
     MetaData,
+    Numeric,
     Table,
     Text,
     UniqueConstraint,
@@ -179,4 +182,26 @@ notification_reads = Table(
     Column("notification_id", Uuid, ForeignKey("notifications.id", ondelete="CASCADE"), primary_key=True),
     Column("user_id", Text, primary_key=True),
     Column("read_at", DateTime(timezone=True), nullable=False, default=_now),
+)
+
+# Contadores de los límites de uso (migración 0006): uno por qué se cuenta y de quién, y por ventana de tiempo.
+rate_limits = Table(
+    "rate_limits",
+    metadata,
+    Column("bucket", Text, primary_key=True),
+    Column("window_start", DateTime(timezone=True), primary_key=True),
+    Column("hits", Integer, nullable=False, default=0),
+)
+
+# Consumo de inteligencia artificial de cada negocio por día y modelo (migración 0007).
+ai_usage = Table(
+    "ai_usage",
+    metadata,
+    Column("tenant_id", Uuid, ForeignKey("tenants.id", ondelete="CASCADE"), primary_key=True),
+    Column("day", Date, primary_key=True),
+    Column("model", Text, primary_key=True),
+    Column("replies", Integer, nullable=False, default=0),
+    Column("prompt_tokens", BigInteger, nullable=False, default=0),
+    Column("completion_tokens", BigInteger, nullable=False, default=0),
+    Column("cost_usd", Numeric(14, 6, asdecimal=False)),
 )

@@ -114,6 +114,15 @@ def _llm_key_available() -> bool:
 
 
 @pytest.fixture(autouse=True)
+def _usage_is_not_recorded_in_the_local_store(monkeypatch):
+    """El consumo de IA de cada respuesta se anota en el almacén. En las pruebas no: el SQLite local de quien las corre es el
+    del panel. Las pruebas del consumo pasan su propio `usage_recorder`."""
+    from app.application import ai_pipeline
+
+    monkeypatch.setattr(ai_pipeline, "business_usage_recorder", lambda _slug: None)
+
+
+@pytest.fixture(autouse=True)
 def _live_tests_answer_with_their_own_business_key(request, monkeypatch):
     """La plataforma no tiene clave general: cada negocio usa la suya. En las pruebas en vivo, el negocio probado usa la
     `OPENROUTER_API_KEY` de quien las corre, como si la hubiera guardado en el panel."""

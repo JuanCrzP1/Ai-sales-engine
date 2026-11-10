@@ -18,6 +18,7 @@ from app.business_config_application.service import BusinessConfigService
 from app.business_config_application.conversations import PlaygroundRecorder
 from app.infrastructure.business_config.conversation_store import ConversationStore
 from app.infrastructure.business_config.ai_settings_store import AISettingsStore
+from app.infrastructure.business_config.ai_usage_store import AIUsageStore
 from app.infrastructure.business_config.payment_secret_store import PaymentSecretStore
 from app.infrastructure.business_config.repository import BusinessConfigRepository
 from app.infrastructure.business_config.tables import metadata
@@ -107,4 +108,6 @@ def build_assistant_lab_service(
     Sin `runner` ni `verifier` (por ejemplo, en pruebas), guardar la configuración funciona y conversar responde que no está
     disponible: el motor se conecta en el arranque de la API (`scripts/run_admin_api.py`)."""
     recorder = PlaygroundRecorder(ConversationStore(engine))
-    return AssistantLabService(configs, AISettingsStore(engine, secrets_key), verifier=verifier, runner=runner, recorder=recorder)
+    return AssistantLabService(
+        configs, AISettingsStore(engine, secrets_key), verifier=verifier, runner=runner, recorder=recorder, usage=AIUsageStore(engine)
+    )

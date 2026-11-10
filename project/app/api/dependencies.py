@@ -16,7 +16,6 @@ def resolve_tenant_slug(x_tenant_slug: str | None) -> str:
         tenant_id = ACTIVE_TENANT_SLUG
     if not tenant_id:
         tenant_id = ACTIVE_TENANT_SLUG
-    print("TENANT RECIBIDO:", tenant_id)
     logger.info('TENANT RECIBIDO: %s', tenant_id)
     logger.info('tenant_resolved', extra={'event': 'tenant_resolved', 'tenant_id': tenant_id})
     return tenant_id

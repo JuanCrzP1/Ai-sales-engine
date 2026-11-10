@@ -9,13 +9,16 @@ from __future__ import annotations
 
 import re
 import uuid
+from collections.abc import Callable
 from dataclasses import dataclass
+from datetime import date, datetime, timedelta, timezone
 from typing import Literal
 
 from app.business_config_application.conversations import PlaygroundRecorder
-from app.business_config_application.ports import AIKeyVerifier, AISettingsStorage, AssistantRunner
+from app.business_config_application.ports import AIKeyVerifier, AISettingsStorage, AIUsageStorage, AssistantRunner
 from app.business_config_application.service import BusinessConfigService
 from app.domain.business_config.ai_settings import AICredentials, AISettings, AssistantTurn, KeyCheck, clean_api_key, clean_model
+from app.domain.business_config.ai_usage import AIUsageSummary
 from app.domain.business_config.errors import (
     AIKeyMissingError,
     AssistantUnavailableError,
@@ -28,6 +31,8 @@ from app.domain.business_config.errors import (
 
 ConfigSource = Literal["draft", "published"]
 MAX_MESSAGE_CHARS = 1000
+# El panel muestra el consumo de los últimos 30 días, hoy incluido.
+USAGE_DAYS = 30
 _SESSION_ID = re.compile(r"[0-9a-f]{32}")
 
 
@@ -50,6 +55,8 @@ class AssistantLabService:
         verifier: AIKeyVerifier | None = None,
         runner: AssistantRunner | None = None,
         recorder: PlaygroundRecorder | None = None,
+        usage: AIUsageStorage | None = None,
+        today: Callable[[], date] = lambda: datetime.now(timezone.utc).date(),
     ) -> None:
         self._configs = configs
         self._storage = storage
@@ -57,6 +64,8 @@ class AssistantLabService:
         self._runner = runner
         # Las conversaciones de prueba también quedan en la bandeja del panel, marcadas como «Prueba».
         self._recorder = recorder
+        self._usage = usage
+        self._today = today
 
     # ------------------------------------------------------------------ inteligencia artificial
 
@@ -71,6 +80,14 @@ class AssistantLabService:
         if key and clear_key:
             raise InvalidFieldsError("Elige entre cambiar la clave o quitarla.", [FieldIssue("api_key", "Elige entre cambiar la clave o quitarla.")])
         return self._storage.save_ai_settings(tenant_slug, model=clean_model(model), api_key=key, clear_key=clear_key)
+
+    def ai_usage(self, tenant_slug: str) -> AIUsageSummary:
+        """Respuestas, tokens y costo de la IA de este negocio en los últimos 30 días (días en UTC)."""
+        self._configs.get_business(tenant_slug)
+        since = self._today() - timedelta(days=USAGE_DAYS - 1)
+        if self._usage is None:
+            return AIUsageSummary(since=since, replies=0, prompt_tokens=0, completion_tokens=0, cost_usd=None, days=[])
+        return self._usage.summary(tenant_slug, since=since)
 
     def verify_ai_key(self, tenant_slug: str) -> KeyCheck:
         credentials = self._credentials(tenant_slug)

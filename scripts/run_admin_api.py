@@ -102,8 +102,15 @@ def main() -> int:
     service = build_business_config_service(engine)
     from app.infrastructure.business_config.conversation_store import ConversationStore
     from app.infrastructure.business_config.notification_store import NotificationStore
+    from app.infrastructure.business_config.usage_store import UsageCounterStore
 
-    app = create_app(service, _assistant_lab(engine, service), conversations=ConversationStore(engine), notifications=NotificationStore(engine))
+    app = create_app(
+        service,
+        _assistant_lab(engine, service),
+        conversations=ConversationStore(engine),
+        notifications=NotificationStore(engine),
+        usage=UsageCounterStore(engine),
+    )
     uvicorn.run(app, host=HOST, port=port, log_level="warning")
     return 0
 

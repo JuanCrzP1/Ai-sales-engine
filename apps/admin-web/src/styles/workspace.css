@@ -222,6 +222,12 @@
   gap: var(--space-4);
 }
 
+.usage__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
 .metric {
   display: flex;
   flex-direction: column;
@@ -757,6 +763,10 @@
 @media (max-width: 560px) {
   .activity__grid {
     grid-template-columns: 1fr 1fr;
+  }
+
+  .usage__grid {
+    grid-template-columns: 1fr;
   }
 
   .metric {

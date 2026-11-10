@@ -80,3 +80,11 @@ class AssistantUnavailableError(BusinessConfigError):
 
 class ConversationNotFoundError(BusinessConfigError):
     """La conversación no existe o es de un negocio al que este usuario no llega."""
+
+
+class UsageLimitExceededError(BusinessConfigError):
+    """Se superó un límite de uso; se puede volver a intentar en `retry_after_seconds`."""
+
+    def __init__(self, retry_after_seconds: int) -> None:
+        super().__init__("se alcanzó el límite de uso")
+        self.retry_after_seconds = max(1, retry_after_seconds)

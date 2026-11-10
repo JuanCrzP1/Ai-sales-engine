@@ -20,6 +20,7 @@ const CODES: Record<string, PersistenceErrorCode> = {
   payment_key: "payment_key",
   ai_key_missing: "ai_key_missing",
   unauthenticated: "unauthenticated",
+  rate_limited: "rate_limited",
 };
 
 async function toError(response: Response): Promise<PersistenceError> {

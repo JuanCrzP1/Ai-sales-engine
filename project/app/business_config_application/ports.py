@@ -7,12 +7,13 @@ quien usa estos puertos. Toda operación recibe el negocio y solo alcanza sus da
 from __future__ import annotations
 
 from collections.abc import Callable, Collection
-from datetime import datetime
+from datetime import date, datetime
 from enum import Enum
 from typing import Any, Protocol, runtime_checkable
 
 from app.domain.business_config.access import Principal
 from app.domain.business_config.ai_settings import AICredentials, AISettings, AssistantTurn, KeyCheck
+from app.domain.business_config.ai_usage import AIUsageSummary
 from app.domain.business_config.contract import BusinessConfig, SecretRef
 from app.domain.business_config.conversations import BusinessActivity, ChatMessage, ConversationSummary, NewMessage, Notification
 from app.domain.business_config.records import BusinessSummary, ConfigVersion, StoredConfig
@@ -88,6 +89,13 @@ class AISettingsStorage(Protocol):
 
 
 @runtime_checkable
+class AIUsageStorage(Protocol):
+    """El consumo de IA de cada negocio. Lo escribe el motor en cada respuesta; el panel solo lo lee."""
+
+    def summary(self, tenant_slug: str, *, since: date) -> AIUsageSummary: ...
+
+
+@runtime_checkable
 class AIKeyVerifier(Protocol):
     """Pregunta al proveedor si la clave es válida, sin gastar créditos."""
 
@@ -142,6 +150,16 @@ class ConversationStorage(Protocol):
     def resolve_handoff(self, conversation_id: str) -> None: ...
 
     def activity(self, tenant_slug: str, *, since: datetime) -> BusinessActivity: ...
+
+
+@runtime_checkable
+class UsageCounter(Protocol):
+    """Contadores de uso por ventana de tiempo, compartidos por todas las instancias del servidor."""
+
+    def hit(self, bucket: str, window_start: datetime) -> int:
+        """Suma uno al contador de `bucket` en la ventana que empieza en `window_start` y devuelve el total, de forma atómica.
+        Puede borrar las ventanas anteriores de ese contador."""
+        ...
 
 
 @runtime_checkable

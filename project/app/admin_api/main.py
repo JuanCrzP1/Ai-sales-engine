@@ -22,8 +22,9 @@ from app.admin_api.routes import router
 from app.business_config_application.access import BusinessAccess
 from app.business_config_application.assistant_lab import AssistantLabService
 from app.business_config_application.conversations import ConversationsService, NotificationsService
-from app.business_config_application.ports import AccessTokenVerifier, ConversationStorage, NotificationStorage
+from app.business_config_application.ports import AccessTokenVerifier, ConversationStorage, NotificationStorage, UsageCounter
 from app.business_config_application.service import BusinessConfigService
+from app.business_config_application.usage_limits import MemoryUsageCounter, UsageGuard
 from app.domain.business_config.contract import business_config_json_schema
 
 logger = logging.getLogger("admin-api")
@@ -66,19 +67,24 @@ def create_app(
     verifier: AccessTokenVerifier | None = None,
     conversations: ConversationStorage | None = None,
     notifications: NotificationStorage | None = None,
+    usage: UsageCounter | None = None,
 ) -> FastAPI:
     """La API del panel. Sin `assistant_lab`, la inteligencia artificial y el área de pruebas responden que no están disponibles.
 
-    Con `verifier` es la de la nube y necesita `access` con los miembros de cada negocio; sin él, la local."""
+    Con `verifier` es la de la nube y necesita `access` con los miembros de cada negocio y `usage` con contadores compartidos
+    por todas sus instancias; sin él, la local, que cuenta en memoria."""
     cloud = verifier is not None
     if cloud and access is None:
         raise ValueError("la API de la nube necesita saber a qué negocios llega cada usuario")
+    if cloud and usage is None:
+        raise ValueError("la API de la nube necesita contadores de uso compartidos (`rate_limits`)")
     # Sin /docs ni /openapi.json: el único cliente es el panel y no hace falta anunciar las rutas.
     app = FastAPI(title="AI Sales Engine: API del panel", docs_url=None, redoc_url=None, openapi_url=None)
     app.state.service = service
     app.state.assistant_lab = assistant_lab
     app.state.access = access or BusinessAccess(service)
     app.state.verifier = verifier
+    app.state.usage = UsageGuard(usage or MemoryUsageCounter())
     app.state.conversations = ConversationsService(conversations, app.state.access) if conversations is not None else None
     app.state.notifications = NotificationsService(notifications, app.state.access) if notifications is not None else None
     app.state.contract_schema = business_config_json_schema()

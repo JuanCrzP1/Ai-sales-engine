@@ -23,6 +23,7 @@ from app.infrastructure.business_config.database import (
 )
 from app.infrastructure.business_config.members_store import BusinessMembersStore
 from app.infrastructure.business_config.tables import business_members
+from app.infrastructure.business_config.usage_store import UsageCounterStore
 from app.infrastructure.config.config_service import ConfigService
 from app.infrastructure.config.legacy_store_migration import import_prepared, prepare_tenant
 
@@ -59,7 +60,7 @@ def cloud(tmp_path):
     key = Fernet.generate_key().decode()
     service = build_business_config_service(engine, secrets_key=key)
     lab = build_assistant_lab_service(engine, service, secrets_key=key, verifier=Verifier(), runner=Runner())
-    app = create_app(service, lab, access=BusinessAccess(service, BusinessMembersStore(engine)), verifier=Tokens())
+    app = create_app(service, lab, access=BusinessAccess(service, BusinessMembersStore(engine)), verifier=Tokens(), usage=UsageCounterStore(engine))
     yield engine, service, TestClient(app)
     engine.dispose()
 
@@ -91,9 +92,11 @@ def test_without_a_valid_session_nothing_answers(cloud, headers):
         assert (response.status_code, response.json()["code"]) == (401, "unauthenticated"), path
 
 
-def test_the_cloud_api_needs_to_know_the_members():
-    with pytest.raises(ValueError):
+def test_the_cloud_api_needs_to_know_the_members_and_shared_usage_counters():
+    with pytest.raises(ValueError, match="negocios"):
         create_app(object(), verifier=Tokens())  # type: ignore[arg-type]
+    with pytest.raises(ValueError, match="contadores"):
+        create_app(object(), verifier=Tokens(), access=object())  # type: ignore[arg-type]
 
 
 # ---------------------------------------------------------------------------
@@ -201,3 +204,57 @@ def test_the_engine_publishes_the_panel_api_only_with_neon_auth(tmp_path, monkey
     assert client.get("/panel/api/health").json() == {"status": "ok"}
     assert client.get("/panel/api/businesses").status_code == 401
     assert client.get("/panel/api/businesses", headers={"Authorization": "Bearer no-es-un-jwt"}).status_code == 401
+
+
+# ---------------------------------------------------------------------------
+# Límites de uso
+# ---------------------------------------------------------------------------
+
+def test_the_playground_has_a_limit_per_person_that_answers_429_in_spanish(cloud):
+    from app.domain.business_config.usage_limits import PLAYGROUND_PER_USER
+
+    engine, service, client = cloud
+    import_prepared(service, prepare_tenant(ConfigService(), "restaurant"))
+    _give(engine, "restaurant", ANA)
+    _give(engine, "restaurant", BETO)
+    client.put("/api/businesses/restaurant/ai", headers=_as("ana"), json={"model": None, "api_key": KEY})
+    talk = {"message": "Hola", "source": "published"}
+    for _ in range(PLAYGROUND_PER_USER.limit):
+        assert client.post("/api/businesses/restaurant/playground", headers=_as("ana"), json=talk).status_code == 200
+    stopped = client.post("/api/businesses/restaurant/playground", headers=_as("ana"), json=talk)
+    assert (stopped.status_code, stopped.json()["code"]) == (429, "rate_limited")
+    assert stopped.json()["message"].startswith("Hiciste muchas solicitudes seguidas. Espera ")
+    assert 1 <= int(stopped.headers["Retry-After"]) <= PLAYGROUND_PER_USER.window_seconds
+    # El límite es de cada persona: Beto, del mismo equipo, sigue probando.
+    assert client.post("/api/businesses/restaurant/playground", headers=_as("beto"), json=talk).status_code == 200
+
+
+def test_checking_the_ai_key_has_its_own_limit(cloud):
+    from app.domain.business_config.usage_limits import AI_KEY_CHECKS_PER_USER
+
+    engine, service, client = cloud
+    import_prepared(service, prepare_tenant(ConfigService(), "restaurant"))
+    _give(engine, "restaurant", ANA)
+    client.put("/api/businesses/restaurant/ai", headers=_as("ana"), json={"model": None, "api_key": KEY})
+    for _ in range(AI_KEY_CHECKS_PER_USER.limit):
+        assert client.post("/api/businesses/restaurant/ai/verify", headers=_as("ana")).status_code == 200
+    assert client.post("/api/businesses/restaurant/ai/verify", headers=_as("ana")).status_code == 429
+
+
+def test_each_owner_sees_the_ai_usage_of_their_business_only(cloud):
+    from datetime import datetime, timezone
+
+    from app.domain.business_config.ai_usage import AIUsage
+    from app.infrastructure.business_config.ai_usage_store import AIUsageStore
+
+    engine, service, client = cloud
+    import_prepared(service, prepare_tenant(ConfigService(), "restaurant"))
+    _give(engine, "restaurant", ANA)
+    today = datetime.now(timezone.utc).date()
+    AIUsageStore(engine).add("restaurant", today, AIUsage("openai/gpt-4o-mini", 1200, 80, 0.0004))
+    usage = client.get("/api/businesses/restaurant/ai/usage", headers=_as("ana"))
+    assert usage.status_code == 200
+    body = usage.json()
+    assert (body["replies"], body["prompt_tokens"], body["completion_tokens"], body["cost_usd"]) == (1, 1200, 80, 0.0004)
+    assert body["days"] == [{"day": today.isoformat(), "replies": 1, "tokens": 1280}]
+    assert client.get("/api/businesses/restaurant/ai/usage", headers=_as("beto")).status_code == 404

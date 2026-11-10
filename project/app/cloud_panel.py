@@ -21,6 +21,7 @@ from app.infrastructure.business_config.conversation_store import ConversationSt
 from app.infrastructure.business_config.members_store import BusinessMembersStore
 from app.infrastructure.business_config.notification_store import NotificationStore
 from app.infrastructure.business_config.secrets_key import find_secrets_key
+from app.infrastructure.business_config.usage_store import UsageCounterStore
 
 
 def build_cloud_panel_api(auth_url: str) -> FastAPI:
@@ -33,5 +34,11 @@ def build_cloud_panel_api(auth_url: str) -> FastAPI:
     lab = build_assistant_lab_service(engine, service, secrets_key=key, verifier=OpenRouterKeyVerifier(), runner=EngineAssistantRunner())
     access = BusinessAccess(service, BusinessMembersStore(engine))
     return create_app(
-        service, lab, access=access, verifier=NeonAuthVerifier(auth_url), conversations=ConversationStore(engine), notifications=NotificationStore(engine)
+        service,
+        lab,
+        access=access,
+        verifier=NeonAuthVerifier(auth_url),
+        conversations=ConversationStore(engine),
+        notifications=NotificationStore(engine),
+        usage=UsageCounterStore(engine),
     )

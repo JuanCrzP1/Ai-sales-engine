@@ -35,17 +35,6 @@ class TelegramService:
         }
         return route_message("telegram", payload)
 
-    def _debug_sales_payload(self, *, user_message: str) -> None:
-        if str(os.getenv("TELEGRAM_DEBUG_PAYLOAD") or "0").strip() != "1":
-            return
-        runtime_yaml = load_tenant_runtime_yaml(self.tenant_slug, channel="telegram")
-        _sales_cfg, _pricing_cfg, _decision, payload = self.ai_service.pipeline.sales_flow.build(
-            tenant_slug=self.tenant_slug,
-            user_message=user_message,
-            runtime_yaml=runtime_yaml,
-        )
-        print("DEBUG TELEGRAM PAYLOAD:", payload)
-
     def handle_message_with_meta(self, text: str, user_id: str) -> tuple[str, bool]:
         routed = self._route_incoming(text=text, user_id=user_id)
         message = self._normalize_message(routed.get("message"))
@@ -53,8 +42,6 @@ class TelegramService:
         runtime_yaml = load_tenant_runtime_yaml(self.tenant_slug, channel="telegram")
         tenant = self._tenant()
 
-        self._debug_sales_payload(user_message=message)
-        print("YAML ENTRANTE:", runtime_yaml.keys())
 
         response, ai_used = self.ai_service.generate_business_reply(
             tenant=tenant,
