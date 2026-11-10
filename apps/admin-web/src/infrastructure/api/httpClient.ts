@@ -1,8 +1,9 @@
 import { PersistenceError, type FieldProblem, type PersistenceErrorCode } from "../../repositories/persistenceError";
 
 /**
- * Acceso a la API local del panel. En desarrollo llega por el proxy de Vite, en el mismo origen. Nunca oculta un fallo:
- * los errores se convierten en `PersistenceError` para que quien llama pueda informarlos.
+ * Acceso a la API del panel, siempre en el mismo origen: en este equipo por el proxy de Vite y en la nube por la reescritura
+ * de `vercel.json`. En la nube cada petición lleva el token de la sesión. Nunca oculta un fallo: los errores se convierten en
+ * `PersistenceError` para que quien llama pueda informarlos.
  */
 export interface HttpClient {
   get<T>(path: string): Promise<T>;
@@ -18,6 +19,7 @@ const CODES: Record<string, PersistenceErrorCode> = {
   not_found: "not_found",
   payment_key: "payment_key",
   ai_key_missing: "ai_key_missing",
+  unauthenticated: "unauthenticated",
 };
 
 async function toError(response: Response): Promise<PersistenceError> {
@@ -35,13 +37,24 @@ async function toError(response: Response): Promise<PersistenceError> {
   });
 }
 
-export function createHttpClient(baseUrl = "/api"): HttpClient {
+export interface HttpClientOptions {
+  /** El token de la sesión (en la nube). Se pide en cada petición: su dueño lo renueva antes de que venza. */
+  token?: () => Promise<string | null>;
+}
+
+export function createHttpClient(baseUrl = "/api", options: HttpClientOptions = {}): HttpClient {
   const request = async <T>(method: string, path: string, body?: unknown): Promise<T> => {
     let response: Response;
     try {
+      const token = options.token ? await options.token() : null;
+      const headers: Record<string, string> = {
+        ...(body !== undefined ? { "Content-Type": "application/json" } : {}),
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      };
       response = await fetch(`${baseUrl}${path}`, {
         method,
-        ...(body !== undefined ? { headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) } : {}),
+        ...(Object.keys(headers).length > 0 ? { headers } : {}),
+        ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
       });
     } catch (error) {
       throw new PersistenceError("unavailable", { cause: error });

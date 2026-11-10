@@ -1,7 +1,10 @@
-"""Aplicación de la API local del panel. Se arranca con `scripts/run_admin_api.py`, que la limita a `127.0.0.1`.
+"""Aplicación de la API del panel. Recibe los servicios ya construidos: no conoce la base de datos.
 
-Recibe el servicio ya construido: no conoce la base de datos. Aunque alguien la sirviera en otra interfaz, solo atiende
-peticiones que vengan de este equipo. El `Host` y el `Origin` se comprueban porque un sitio web abierto en el navegador también
+Dos modos, según reciba o no `verifier`:
+- En la nube (`app/cloud_panel.py`): cada petición trae el token de la sesión de Neon Auth y cada usuario solo llega a sus
+  negocios. Sin token válido, 401.
+- En este equipo (`scripts/run_admin_api.py`, limitada a `127.0.0.1`), sin cuentas. Aunque alguien la sirviera en otra
+  interfaz, solo atiende peticiones que vengan de este equipo. El `Host` y el `Origin` se comprueban porque un sitio web abierto en el navegador también
 corre en este equipo: sin estas comprobaciones podría llamar a la API (falsificación de peticiones o `DNS rebinding`). No hay
 CORS: el panel llega a través del proxy de Vite.
 """
@@ -15,7 +18,9 @@ from fastapi.responses import JSONResponse
 from app.admin_api.assistant_routes import router as assistant_router
 from app.admin_api.errors import register_error_handlers
 from app.admin_api.routes import router
+from app.business_config_application.access import BusinessAccess
 from app.business_config_application.assistant_lab import AssistantLabService
+from app.business_config_application.ports import AccessTokenVerifier
 from app.business_config_application.service import BusinessConfigService
 from app.domain.business_config.contract import business_config_json_schema
 
@@ -51,17 +56,30 @@ def _refusal(request: Request) -> str | None:
     return None
 
 
-def create_app(service: BusinessConfigService, assistant_lab: AssistantLabService | None = None) -> FastAPI:
-    """La API del panel. Sin `assistant_lab`, la inteligencia artificial y el área de pruebas responden que no están disponibles."""
+def create_app(
+    service: BusinessConfigService,
+    assistant_lab: AssistantLabService | None = None,
+    *,
+    access: BusinessAccess | None = None,
+    verifier: AccessTokenVerifier | None = None,
+) -> FastAPI:
+    """La API del panel. Sin `assistant_lab`, la inteligencia artificial y el área de pruebas responden que no están disponibles.
+
+    Con `verifier` es la de la nube y necesita `access` con los miembros de cada negocio; sin él, la local."""
+    cloud = verifier is not None
+    if cloud and access is None:
+        raise ValueError("la API de la nube necesita saber a qué negocios llega cada usuario")
     # Sin /docs ni /openapi.json: el único cliente es el panel y no hace falta anunciar las rutas.
-    app = FastAPI(title="AI Sales Engine: API local del panel", docs_url=None, redoc_url=None, openapi_url=None)
+    app = FastAPI(title="AI Sales Engine: API del panel", docs_url=None, redoc_url=None, openapi_url=None)
     app.state.service = service
     app.state.assistant_lab = assistant_lab
+    app.state.access = access or BusinessAccess(service)
+    app.state.verifier = verifier
     app.state.contract_schema = business_config_json_schema()
 
     @app.middleware("http")
-    async def local_only(request: Request, call_next):
-        refusal = _refusal(request)
+    async def guard(request: Request, call_next):
+        refusal = None if cloud else _refusal(request)
         if refusal is not None:
             logger.warning("peticion_rechazada", extra={"reason": refusal})
             return JSONResponse({"code": "forbidden", "message": "Esta API solo atiende al panel en este equipo.", "issues": []}, status.HTTP_403_FORBIDDEN)

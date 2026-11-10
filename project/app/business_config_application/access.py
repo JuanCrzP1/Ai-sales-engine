@@ -1,0 +1,41 @@
+"""A qué negocios llega cada usuario.
+
+En la nube, cada persona solo ve, crea y modifica sus negocios: un negocio ajeno se trata igual que uno inexistente, para no
+revelar que existe. En este equipo, sin cuentas, el operador local administra todos los negocios.
+"""
+from __future__ import annotations
+
+from app.business_config_application.ports import BusinessMembers
+from app.business_config_application.service import BusinessConfigService
+from app.domain.business_config.access import Principal
+from app.domain.business_config.errors import BusinessNotFoundError
+from app.domain.business_config.records import BusinessSummary
+
+
+class BusinessAccess:
+    def __init__(self, configs: BusinessConfigService, members: BusinessMembers | None = None) -> None:
+        # Sin `members` no hay cuentas: es la API local y solo el operador local llega hasta aquí.
+        self._configs = configs
+        self._members = members
+
+    def _all_access(self, principal: Principal) -> bool:
+        return self._members is None and principal.local_operator
+
+    def require(self, principal: Principal, tenant_slug: str) -> None:
+        """Falla como si el negocio no existiera cuando no es de este usuario."""
+        if self._all_access(principal):
+            return
+        if self._members is None or not self._members.is_member(tenant_slug, principal.user_id):
+            raise BusinessNotFoundError(f"{tenant_slug}: no existe o no pertenece a este usuario")
+
+    def list_for(self, principal: Principal) -> list[BusinessSummary]:
+        businesses = self._configs.list_businesses()
+        if self._all_access(principal):
+            return businesses
+        mine = self._members.slugs_of(principal.user_id) if self._members is not None else set()
+        return [business for business in businesses if business.slug in mine]
+
+    def create_for(self, principal: Principal, tenant_slug: str, name: str) -> BusinessSummary:
+        """Crea el negocio con este usuario como dueño, en la misma transacción."""
+        owner = None if self._all_access(principal) else principal.user_id
+        return self._configs.create_business(tenant_slug, name, owner_id=owner)

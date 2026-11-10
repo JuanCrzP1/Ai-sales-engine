@@ -33,6 +33,8 @@ BRIDGE = (
 )
 # La única puerta del motor hacia el almacén: solo lee lo publicado y nunca crea ni escribe.
 ENGINE_GATEWAY = f"{PERSISTENCE}.runtime_access"
+# Arma la API del panel en la nube con la persistencia real, como `scripts/run_admin_api.py` en este equipo. No es el motor.
+COMPOSITION_ROOTS = {"app.cloud_panel"}
 
 # Qué puede importar cada capa, del proyecto y de fuera. Nadie puede importar el motor.
 INTERNAL = {
@@ -147,9 +149,19 @@ def test_the_layer_check_detects_a_forbidden_import(tmp_path, monkeypatch):
 
 
 def _engine_modules() -> dict[str, Path]:
-    """Todo `app` salvo las capas de BusinessConfig: el motor y sus adaptadores."""
+    """Todo `app` salvo las capas de BusinessConfig y la raíz de composición de la nube: el motor y sus adaptadores."""
     modules = _layer_modules("app")
-    return {name: path for name, path in modules.items() if not any(name == layer or name.startswith(f"{layer}.") for layer in INTERNAL)}
+    return {
+        name: path
+        for name, path in modules.items()
+        if name not in COMPOSITION_ROOTS and not any(name == layer or name.startswith(f"{layer}.") for layer in INTERNAL)
+    }
+
+
+def test_the_composition_root_is_only_used_by_the_entry_point():
+    """La raíz de composición une el almacén con la API: solo la usa el punto de entrada del motor, que la publica bajo `/panel`."""
+    users = {name for name, path in _layer_modules("app").items() for target in _imports(name, path) if target in COMPOSITION_ROOTS}
+    assert users == {"app.main"}
 
 
 def test_the_engine_reaches_the_store_only_through_its_gateway():

@@ -4,6 +4,7 @@ import { Alert, EmptyState } from "../../components/ui/Feedback";
 import { Card, PageHeader } from "../../components/ui/Layout";
 import type { BusinessSummary } from "../../domain/config/types";
 import { StandalonePage } from "../../layout/StandalonePage";
+import { useAuth } from "../../state/auth/useAuth";
 import { persistenceErrorMessage, useBusinessDirectory } from "../../state/directoryContext";
 import { BusinessList } from "./BusinessList";
 import { CreateBusinessForm } from "./CreateBusinessForm";
@@ -13,6 +14,8 @@ type ListState = { status: "loading" } | { status: "error"; message: string } | 
 /** Entrada del panel: los negocios que administra, para abrir uno, crear otro o importar los existentes. */
 export function BusinessesPage() {
   const directory = useBusinessDirectory();
+  // Con cuentas (en la nube) no aplica el aviso de "solo en este equipo".
+  const { verifiesCredentials: withAccounts } = useAuth();
   const [list, setList] = useState<ListState>({ status: "loading" });
   const [creating, setCreating] = useState(false);
   const [notice, setNotice] = useState<{ tone: "success" | "danger"; text: string } | null>(null);
@@ -56,15 +59,17 @@ export function BusinessesPage() {
   return (
     <StandalonePage>
       <PageHeader
-        eyebrow="Administración local"
+        eyebrow={withAccounts ? "Tu cuenta" : "Administración local"}
         title="Tus negocios"
         description="Cada negocio tiene su propia configuración. Elige uno para editarlo o crea uno nuevo."
         actions={!creating ? <Button onClick={() => setCreating(true)}>Crear negocio</Button> : undefined}
       />
 
-      <Alert tone="info" title="Solo en este equipo">
-        <p>Este panel no tiene inicio de sesión todavía: funciona únicamente en este equipo. El acceso con usuarios llegará antes de publicarlo en la nube.</p>
-      </Alert>
+      {!withAccounts && (
+        <Alert tone="info" title="Solo en este equipo">
+          <p>Este panel no tiene inicio de sesión: funciona únicamente en este equipo. En la nube cada persona entra con su cuenta.</p>
+        </Alert>
+      )}
 
       {notice && <Alert tone={notice.tone}>{notice.text}</Alert>}
       {creating && <CreateBusinessForm existing={list.status === "ready" ? list.businesses : []} onCancel={() => setCreating(false)} />}
@@ -91,7 +96,7 @@ export function BusinessesPage() {
           {list.businesses.length === 0 ? (
             <EmptyState
               title="Aún no hay negocios"
-              description="Crea el primero o importa los que ya existen en la configuración del asistente."
+              description={directory.canImportExisting ? "Crea el primero o importa los que ya existen en la configuración del asistente." : "Crea el primero para configurar su asistente."}
               action={
                 !creating ? (
                   <Button onClick={() => setCreating(true)}>Crear negocio</Button>
@@ -99,12 +104,12 @@ export function BusinessesPage() {
               }
             />
           ) : (
-            <BusinessList businesses={list.businesses} onRemove={(business) => void remove(business)} />
+            <BusinessList businesses={list.businesses} onRemove={directory.canRemove ? (business) => void remove(business) : undefined} />
           )}
         </Card>
       )}
 
-      {list.status === "ready" && (
+      {list.status === "ready" && directory.canImportExisting && (
         <Card title="Importar negocios existentes" description="Copia al panel los negocios configurados en archivos YAML. Los archivos no se modifican y lo que ya está aquí no se toca.">
           <div className="button-row">
             <Button variant="secondary" disabled={importing} onClick={() => void importExisting()}>

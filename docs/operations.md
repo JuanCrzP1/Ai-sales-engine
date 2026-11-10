@@ -362,8 +362,20 @@ La IA no lleva variable: cada negocio guarda su clave de OpenRouter en el panel,
 
 **3. Volver a desplegar** y comprobar `/health`.
 
-Pendiente: Telegram necesita webhook (Vercel no mantiene procesos de *polling*), el canal de WhatsApp necesita su configuración
-por negocio, y el panel necesita la autenticación. Mientras tanto, el bot sigue atendiendo desde `run_local`.
+**4. El panel en la nube.** Es otro proyecto de Vercel, `ai-sales-engine-panel` (carpeta `apps/admin-web`, Vite), con
+`VITE_NEON_AUTH_URL` = la dirección de Neon Auth de la rama `production` (Neon → la rama → Better Auth → Configure Auth →
+*Auth URL*; es pública, no un secreto). Llama a la API por `/api`, que `apps/admin-web/vercel.json` reescribe hacia el motor
+(`/panel/api`). El motor publica esa API solo si tiene `NEON_AUTH_URL` (la misma dirección) en sus variables.
+
+- Cuentas: Neon Auth (Better Auth), con correo y contraseña; viven en `neon_auth.user` de la misma base. Cualquiera puede crear
+  una cuenta: es una plataforma.
+- Cada petición lleva el token de la sesión (JWT EdDSA de 15 minutos). La API lo comprueba con las claves públicas de Neon Auth
+  y cada usuario solo llega a sus negocios (`business_members`, migración 0003); un negocio ajeno responde como inexistente.
+- En la nube no se importan YAML ni se eliminan negocios. El dominio del panel debe estar en Neon Auth → Configure Auth →
+  *Domains*.
+
+Pendiente: Telegram necesita webhook (Vercel no mantiene procesos de *polling*) y el canal de WhatsApp necesita su configuración
+por negocio. Mientras tanto, el bot sigue atendiendo desde `run_local`.
 
 ## Secuencia De Prueba Recomendada
 

@@ -140,6 +140,8 @@ export function createMemoryBackend(seed: BusinessDocument[] = []): MemoryBacken
       check("list");
       return [...businesses.values()].map(summary);
     },
+    canImportExisting: true,
+    canRemove: true,
     create: async ({ slug, name }) => {
       check("create");
       if (businesses.has(slug)) throw new PersistenceError("duplicate", { message: "Ya existe un negocio con ese identificador.", problems: [{ path: "slug", message: "Ya existe un negocio con ese identificador." }] });

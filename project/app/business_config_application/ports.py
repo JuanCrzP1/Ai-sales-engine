@@ -10,6 +10,7 @@ from collections.abc import Callable
 from enum import Enum
 from typing import Any, Protocol, runtime_checkable
 
+from app.domain.business_config.access import Principal
 from app.domain.business_config.ai_settings import AICredentials, AISettings, AssistantTurn, KeyCheck
 from app.domain.business_config.contract import BusinessConfig, SecretRef
 from app.domain.business_config.records import BusinessSummary, ConfigVersion, StoredConfig
@@ -27,7 +28,9 @@ PublishCheck = Callable[[BusinessConfig], None]
 
 @runtime_checkable
 class BusinessConfigStorage(Protocol):
-    def create_business(self, tenant_slug: str, name: str) -> BusinessSummary: ...
+    def create_business(self, tenant_slug: str, name: str, *, owner_id: str | None = None) -> BusinessSummary:
+        """Registra el negocio y, si se indica, a su dueño, en la misma transacción: nunca queda un negocio sin dueño."""
+        ...
 
     def business(self, tenant_slug: str) -> BusinessSummary: ...
 
@@ -99,3 +102,19 @@ class AssistantRunner(Protocol):
     def reply(self, *, tenant_slug: str, sections: dict[str, dict], credentials: AICredentials, session_id: str, message: str) -> AssistantTurn: ...
 
     def reset(self, *, tenant_slug: str, session_id: str) -> None: ...
+
+
+@runtime_checkable
+class BusinessMembers(Protocol):
+    """Qué usuarios son miembros de cada negocio. Lo consulta la API de la nube antes de tocar cualquier negocio."""
+
+    def slugs_of(self, user_id: str) -> set[str]: ...
+
+    def is_member(self, tenant_slug: str, user_id: str) -> bool: ...
+
+
+@runtime_checkable
+class AccessTokenVerifier(Protocol):
+    """Comprueba el token de la sesión: quién es el usuario, o None si el token no es válido o venció."""
+
+    def verify(self, token: str) -> Principal | None: ...

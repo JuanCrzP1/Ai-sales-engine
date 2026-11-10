@@ -6,12 +6,12 @@ import { LoadingScreen, StatusScreen } from "../layout/StatusScreen";
 import { AuthProvider } from "../state/auth/AuthProvider";
 import { DirectoryContext } from "../state/directoryContext";
 import { appRoutes } from "./AppRoutes";
-import { createLocalServices, type ApplicationServices } from "./compositionRoot";
+import { createServices, type ApplicationServices } from "./compositionRoot";
 import { ServicesContext } from "./servicesContext";
 
 /** Composición de la aplicación: servicios + sesión + enrutador, protegidos ante errores. */
 export function App({ services }: { services?: ApplicationServices }) {
-  const [resolved] = useState(() => services ?? createLocalServices());
+  const [resolved] = useState(() => services ?? createServices());
   const [router] = useState(() => createBrowserRouter(createRoutesFromElements(appRoutes)));
 
   return (

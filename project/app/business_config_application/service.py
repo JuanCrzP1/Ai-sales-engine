@@ -116,16 +116,22 @@ class BusinessConfigService:
     # ------------------------------------------------------------------ negocios
 
     def create_business(
-        self, tenant_slug: str, name: str, *, document: dict[str, Any] | None = None, payment_values: dict[str, str] | None = None
+        self,
+        tenant_slug: str,
+        name: str,
+        *,
+        document: dict[str, Any] | None = None,
+        payment_values: dict[str, str] | None = None,
+        owner_id: str | None = None,
     ) -> BusinessSummary:
-        """Registra un negocio y, si se indica, guarda su primera versión en borrador."""
+        """Registra un negocio (con su dueño, si se indica) y, si se indica, guarda su primera versión en borrador."""
         check_business_identity(tenant_slug, name)
         if document is not None:
             # Antes de registrar nada: un documento rechazado no deja un negocio a medias.
             self._checked_document(tenant_slug, document, payment_values or {}, known_values=())
             if payment_values:
                 self._secrets.verify_key()
-        self._storage.create_business(tenant_slug, name.strip())
+        self._storage.create_business(tenant_slug, name.strip(), owner_id=owner_id)
         if document is not None:
             self.save_changes(tenant_slug, document, payment_values=payment_values)
         return self._storage.business(tenant_slug)

@@ -1,8 +1,10 @@
+import { createAuthClient } from "@neon/auth";
 import { createApiAssistantLab } from "../infrastructure/api/apiAssistantLab";
 import { createApiBusinessDirectory } from "../infrastructure/api/apiBusinessDirectory";
 import { createApiConfigRepository } from "../infrastructure/api/apiConfigRepository";
 import { createHttpClient } from "../infrastructure/api/httpClient";
 import { createLocalOperatorAuthService } from "../infrastructure/local/localOperatorAuthService";
+import { createNeonAuthService, type NeonAuthClient } from "../infrastructure/neon/neonAuthService";
 import type { AssistantLab } from "../repositories/assistantLab";
 import type { AuthService } from "../repositories/authService";
 import type { BusinessDirectory } from "../repositories/businessDirectory";
@@ -10,7 +12,7 @@ import type { ConfigRepository } from "../repositories/configRepository";
 
 /**
  * Servicios de la aplicación. Es el ÚNICO punto donde se eligen las implementaciones: pantallas, estado y reglas solo
- * conocen los contratos de `repositories/`. La autenticación definitiva (fase de nube) se conecta aquí.
+ * conocen los contratos de `repositories/`.
  */
 export interface ApplicationServices {
   auth: AuthService;
@@ -29,4 +31,22 @@ export function createLocalServices(apiBaseUrl?: string): ApplicationServices {
     createConfigRepository: (slug) => createApiConfigRepository(http, slug),
     createAssistantLab: (slug) => createApiAssistantLab(http, slug),
   };
+}
+
+/** En la nube: cuentas de Neon Auth y la API del panel con el token de la sesión en cada petición. */
+export function createCloudServices(authUrl: string, apiBaseUrl?: string): ApplicationServices {
+  const auth = createNeonAuthService(createAuthClient(authUrl) as unknown as NeonAuthClient);
+  const http = createHttpClient(apiBaseUrl, { token: auth.token });
+  return {
+    auth,
+    directory: createApiBusinessDirectory(http, { local: false }),
+    createConfigRepository: (slug) => createApiConfigRepository(http, slug),
+    createAssistantLab: (slug) => createApiAssistantLab(http, slug),
+  };
+}
+
+/** La nube cuando el despliegue define `VITE_NEON_AUTH_URL` (Vercel); si no, este equipo. */
+export function createServices(env: Record<string, unknown> = import.meta.env): ApplicationServices {
+  const authUrl = typeof env.VITE_NEON_AUTH_URL === "string" ? env.VITE_NEON_AUTH_URL.trim() : "";
+  return authUrl ? createCloudServices(authUrl) : createLocalServices();
 }

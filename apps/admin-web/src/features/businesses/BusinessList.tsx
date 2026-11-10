@@ -7,14 +7,15 @@ import { workspacePath } from "../../navigation/navItems";
 
 interface BusinessListProps {
   businesses: BusinessSummary[];
-  onRemove: (business: BusinessSummary) => void;
+  /** Sin esto no se ofrece eliminar (en la nube no se eliminan negocios). */
+  onRemove?: (business: BusinessSummary) => void;
 }
 
 export function BusinessList({ businesses, onRemove }: BusinessListProps) {
   return (
     <ul className="item-list" aria-label="Negocios">
       {businesses.map((business) => (
-        <BusinessRow key={business.slug} business={business} onRemove={() => onRemove(business)} />
+        <BusinessRow key={business.slug} business={business} onRemove={onRemove ? () => onRemove(business) : undefined} />
       ))}
     </ul>
   );
@@ -27,7 +28,7 @@ function statusOf(business: BusinessSummary) {
   return <Badge tone="success">Publicado</Badge>;
 }
 
-function BusinessRow({ business, onRemove }: { business: BusinessSummary; onRemove: () => void }) {
+function BusinessRow({ business, onRemove }: { business: BusinessSummary; onRemove?: () => void }) {
   const [deleting, setDeleting] = useState(false);
   const [typed, setTyped] = useState("");
 
@@ -47,11 +48,13 @@ function BusinessRow({ business, onRemove }: { business: BusinessSummary; onRemo
         <LinkButton to={workspacePath(business.slug)} variant="primary" size="small" aria-label={`Abrir ${business.name}`}>
           Abrir
         </LinkButton>
-        <Button variant="ghost" size="small" onClick={() => setDeleting(true)} aria-label={`Eliminar ${business.name}`}>
-          Eliminar
-        </Button>
+        {onRemove && (
+          <Button variant="ghost" size="small" onClick={() => setDeleting(true)} aria-label={`Eliminar ${business.name}`}>
+            Eliminar
+          </Button>
+        )}
       </span>
-      {deleting && (
+      {deleting && onRemove && (
         // Borra versiones y datos de pago sin posibilidad de recuperarlos: pide escribir el identificador.
         <form
           className="business-row__delete"

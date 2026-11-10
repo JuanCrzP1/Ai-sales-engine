@@ -104,3 +104,17 @@ business_ai_settings = Table(
     Column("key_hint", Text),
     Column("updated_at", DateTime(timezone=True), nullable=False, default=_now),
 )
+
+# Quién es miembro de cada negocio (ver `project/db/migrations/0003_business_members.sql`). `user_id` es el identificador del
+# usuario en Neon Auth (`neon_auth.user`): cada persona solo llega a los negocios donde figura aquí.
+MEMBER_ROLES = ("owner",)
+business_members = Table(
+    "business_members",
+    metadata,
+    Column("tenant_id", Uuid, ForeignKey("tenants.id", ondelete="CASCADE"), primary_key=True),
+    Column("user_id", Text, primary_key=True),
+    Column("role", Text, nullable=False),
+    Column("created_at", DateTime(timezone=True), nullable=False, default=_now),
+    CheckConstraint("role IN ('owner')", name="business_members_role_check"),
+    Index("business_members_user_idx", "user_id"),
+)

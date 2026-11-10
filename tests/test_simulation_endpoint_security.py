@@ -281,11 +281,19 @@ def test_the_route_reuses_the_existing_authentication():
     assert not hasattr(dependencies, "get_tenant_by_slug_public")
 
 
-def test_no_jwt_library_is_declared_while_authentication_is_postponed():
-    # Decisión del proyecto: la autenticación queda para la fase de nube. Declarar una librería reactivaría
-    # `/auth/register`, que emitiría tokens a cualquiera. Quien integre la autenticación debe revisar esta prueba.
+def test_only_the_neon_auth_verifier_uses_a_jwt_library():
+    # Las cuentas de la plataforma son de Neon Auth: el panel en la nube comprueba sus tokens con PyJWT, solo en su verificador.
+    # La librería del sistema de cuentas anterior (`python-jose`, que carga `/auth/register`) sigue sin declararse: con ella esa
+    # ruta volvería a emitir tokens a cualquiera.
     declared = "".join((PROJECT_DIR / name).read_text(encoding="utf-8").lower() for name in ("requirements.txt", "requirements-dev.txt"))
-    assert not re.search(r"^(pyjwt|python-jose|jose|authlib)\b", declared, re.MULTILINE)
+    assert not re.search(r"^(python-jose|jose|authlib)\b", declared, re.MULTILINE)
+    assert re.search(r"^pyjwt==", declared, re.MULTILINE)
+    uses = {
+        path.relative_to(PROJECT_DIR).as_posix()
+        for path in (PROJECT_DIR / "app").rglob("*.py")
+        if re.search(r"^\s*(import jwt|from jwt)\b", path.read_text(encoding="utf-8"), re.MULTILINE)
+    }
+    assert uses == {"app/infrastructure/auth/neon_auth.py"}
 
 
 # 2. Con autenticación válida (verificación del token simulada): acceso permitido cuando la ruta está habilitada.

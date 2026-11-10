@@ -8,6 +8,9 @@ export interface ImportResult {
 
 /** Los negocios que administra el panel. Los fallos se rechazan con `PersistenceError`. */
 export interface BusinessDirectory {
+  /** Importar los negocios de los YAML y eliminar negocios: solo en este equipo. En la nube cada cuenta crea los suyos. */
+  readonly canImportExisting: boolean;
+  readonly canRemove: boolean;
   list(): Promise<BusinessSummary[]>;
   create(input: { slug: string; name: string }): Promise<BusinessSummary>;
   /** Borra el negocio con sus versiones y datos de pago. No se puede deshacer. */

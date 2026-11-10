@@ -26,6 +26,7 @@ from sqlalchemy.engine import Connection, Engine, Row
 from sqlalchemy.exc import IntegrityError
 
 from app.business_config_application.ports import ANY_VERSION, ExpectedVersion, PublishCheck
+from app.domain.business_config.access import OWNER
 from app.domain.business_config.contract import BusinessConfig
 from app.domain.business_config.engine_settings import EngineSettings
 from app.domain.business_config.errors import (
@@ -38,7 +39,7 @@ from app.domain.business_config.errors import (
 from app.domain.business_config.records import BusinessSummary, ConfigVersion, StoredConfig
 from app.domain.business_config.validation import validate_document, validate_engine_settings
 from app.infrastructure.business_config.payment_secret_store import PaymentSecretStore
-from app.infrastructure.business_config.tables import business_configs, business_engine_settings, tenants
+from app.infrastructure.business_config.tables import business_configs, business_engine_settings, business_members, tenants
 from app.infrastructure.business_config.tenancy import tenant_of
 
 SAVE_ATTEMPTS = 50
@@ -93,10 +94,13 @@ class BusinessConfigRepository:
 
     # ------------------------------------------------------------------ negocios
 
-    def create_business(self, tenant_slug: str, name: str) -> BusinessSummary:
+    def create_business(self, tenant_slug: str, name: str, *, owner_id: str | None = None) -> BusinessSummary:
+        tenant_id = uuid.uuid4()
         try:
             with self._engine.begin() as conn:
-                conn.execute(insert(tenants).values(id=uuid.uuid4(), name=name, slug=tenant_slug))
+                conn.execute(insert(tenants).values(id=tenant_id, name=name, slug=tenant_slug))
+                if owner_id is not None:
+                    conn.execute(insert(business_members).values(tenant_id=tenant_id, user_id=owner_id, role=OWNER))
         except IntegrityError as exc:
             raise BusinessAlreadyExistsError(f"{tenant_slug}: el negocio ya existe") from exc
         return BusinessSummary(tenant_slug, name, None, None, None)

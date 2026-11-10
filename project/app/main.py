@@ -1,3 +1,5 @@
+import os
+
 from fastapi import FastAPI
 from fastapi import Request
 
@@ -40,3 +42,16 @@ async def log_requests(request: Request, call_next):
 
 
 app.include_router(router, prefix=settings.api_prefix)
+
+
+def mount_cloud_panel(application: FastAPI) -> None:
+	"""En la nube, la API del panel vive bajo `/panel`, con las cuentas de Neon Auth. Sin `NEON_AUTH_URL` no se publica."""
+	auth_url = str(os.getenv("NEON_AUTH_URL") or "").strip()
+	if not auth_url:
+		return
+	from app.cloud_panel import build_cloud_panel_api
+
+	application.mount("/panel", build_cloud_panel_api(auth_url))
+
+
+mount_cloud_panel(app)

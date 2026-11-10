@@ -87,3 +87,40 @@ describe("repositorios sobre la API", () => {
     expect(mock.mock.calls[0]?.[0]).toBe("/api/businesses/..%2Fotro/config");
   });
 });
+
+describe("cliente de la API en la nube", () => {
+  it("envía el token de la sesión en cada petición, pedido en ese momento", async () => {
+    // Una respuesta nueva por llamada: el cuerpo de una respuesta solo se puede leer una vez.
+    const mock = vi.fn(async (url: string, init?: RequestInit) => {
+      void url;
+      void init;
+      return respond(200, []);
+    });
+    vi.stubGlobal("fetch", mock);
+    const token = vi.fn(async () => "jwt-de-ana");
+    const http = createHttpClient("/api", { token });
+    await http.get("/businesses");
+    await http.post("/businesses", { slug: "panaderia", name: "Panadería" });
+    expect(token).toHaveBeenCalledTimes(2);
+    expect(mock.mock.calls[0]?.[1]).toEqual({ method: "GET", headers: { Authorization: "Bearer jwt-de-ana" } });
+    expect(mock.mock.calls[1]?.[1]).toEqual({
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: "Bearer jwt-de-ana" },
+      body: JSON.stringify({ slug: "panaderia", name: "Panadería" }),
+    });
+  });
+
+  it("sin sesión no envía token, y una sesión vencida se informa como tal", async () => {
+    const mock = stubFetch(respond(401, { code: "unauthenticated", message: "Tu sesión terminó. Vuelve a entrar.", issues: [] }));
+    const error = await failure(createHttpClient("/api", { token: async () => null }).get("/businesses"));
+    expect(mock.mock.calls[0]?.[1]).toEqual({ method: "GET" });
+    expect(error.code).toBe("unauthenticated");
+    expect(persistenceErrorMessage(error)).toBe("Tu sesión terminó. Vuelve a entrar.");
+  });
+
+  it("los negocios de la nube no se importan de YAML ni se eliminan desde el panel", () => {
+    const directory = createApiBusinessDirectory(createHttpClient(), { local: false });
+    expect([directory.canImportExisting, directory.canRemove]).toEqual([false, false]);
+    expect(createApiBusinessDirectory(createHttpClient()).canImportExisting).toBe(true);
+  });
+});
