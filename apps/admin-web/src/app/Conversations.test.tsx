@@ -95,10 +95,11 @@ describe("Conversaciones", () => {
 });
 
 describe("Canales y secciones que se llenan con ellos", () => {
-  it("los canales no se presentan como conectados", async () => {
+  it("los canales no se presentan como conectados: WhatsApp por conectar y los demás, próximamente", async () => {
     await openAt(`/negocios/${CAFE}/canales`);
-    expect(screen.getAllByText("No conectado")).toHaveLength(4);
-    for (const button of screen.getAllByRole("button", { name: /Conectar/ })) expect(button).toBeDisabled();
+    expect(await screen.findByText("No conectado")).toBeInTheDocument();
+    expect(screen.getAllByText("Próximamente").length).toBeGreaterThanOrEqual(2);
+    expect(screen.queryByText("Conectado")).not.toBeInTheDocument();
   });
 
   it("clientes, ventas y reportes explican qué mostrarán y llevan a conectar un canal", async () => {

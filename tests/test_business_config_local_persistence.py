@@ -1082,7 +1082,7 @@ def test_postgres_schema_comes_from_the_reviewed_migration():
 
     with pytest.raises(ValueError):
         create_local_schema(FakeEngine())
-    assert {"tenants", "business_configs", "business_config_secrets", "business_engine_settings", "business_ai_settings", "business_members", "conversations", "conversation_entries", "notifications", "notification_reads", "rate_limits", "ai_usage"} == set(metadata.tables)
+    assert {"tenants", "business_configs", "business_config_secrets", "business_engine_settings", "business_ai_settings", "business_members", "conversations", "conversation_entries", "notifications", "notification_reads", "rate_limits", "ai_usage", "business_channels"} == set(metadata.tables)
 
 
 @pytest.mark.parametrize("scheme", ["postgresql", "postgres"])

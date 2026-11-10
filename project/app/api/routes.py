@@ -1,7 +1,8 @@
 """
 Definición de rutas principales de la API.
 
-En producción solo se publica lo que los canales necesitan: el webhook de WhatsApp (y `/health`, en `app.main`). Las rutas de
+En producción solo se publica lo que los canales necesitan: los webhooks de WhatsApp, el de Meta y el de código QR de cada negocio
+(y `/health`, en `app.main`). Las rutas de
 administración del sistema de cuentas anterior no se publican allí: `/auth/register` guardaría negocios y usuarios sin
 autenticación, y el panel no las usa. `ENABLE_LEGACY_ADMIN_API=1` las publica igual.
 """
@@ -16,6 +17,7 @@ from app.api.controllers.conversaciones import router as conversaciones_router
 from app.api.controllers.connector_config import router as connector_config_router
 from app.api.controllers.dashboard import router as dashboard_router
 from app.api.controllers.simulation import router as simulation_router, simulation_enabled
+from app.api.controllers.whatsapp_qr_webhook import router as whatsapp_qr_router
 from app.api.controllers.whatsapp_webhook import router as whatsapp_webhook_router
 from app.config import settings
 
@@ -39,6 +41,7 @@ def build_router() -> APIRouter:
     if simulation_enabled():
         api.include_router(simulation_router)
     api.include_router(whatsapp_webhook_router)
+    api.include_router(whatsapp_qr_router)
     return api
 
 

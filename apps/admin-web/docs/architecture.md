@@ -133,6 +133,19 @@ contrato al arrancar la API (`business_config_application/templates.py`, `domain
 título, descripción e ícono, y `POST /api/businesses` con `template` guarda el primer borrador. Al abrirse, el resumen avisa que hay
 que cambiar los ejemplos y agregar los medios de pago: nada se publica solo.
 
+### D8d — Canales: WhatsApp por código QR
+
+Canales muestra WhatsApp con su logo y dos formas de conectarlo: código QR (lista) y la API oficial de Meta (próximamente, el mismo
+contrato de canal con otro conector). El negocio pega la dirección de su servidor de uazapi y un token: el de su instancia o el de
+administrador del servidor, con el que la API crea la instancia del negocio. El token se guarda cifrado y nunca vuelve al panel (solo
+sus últimos caracteres). Al guardar se pide el QR y la pantalla pregunta el estado cada 3 segundos hasta que lo escaneen; a los dos
+minutos ofrece generar otro.
+
+`features/channels` usa `useChannels()` (`state/channelsContext.ts`), que cuelga del negocio abierto (`BusinessWorkspace`); el tipo
+vive en `domain/channels/types.ts` y el contrato en `repositories/channels.ts`, con su implementación en
+`infrastructure/api/apiChannels.ts` (`/api/businesses/{slug}/channels/whatsapp`). En las pruebas, `createMemoryWhatsApp` de
+`test/fakes.ts` simula el servidor. Telegram y el chat web aparecen como «Próximamente»; Instagram se retiró.
+
 ### D9 — API separada del motor y limitada a este equipo
 
 `app.main` publica rutas del motor y en Docker escucha en `0.0.0.0`. La API del panel es otra aplicación, con el host fijo a `127.0.0.1`

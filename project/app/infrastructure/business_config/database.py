@@ -13,12 +13,14 @@ from sqlalchemy import create_engine, event, inspect
 from sqlalchemy.engine import Engine, make_url
 
 from app.business_config_application.assistant_lab import AssistantLabService
+from app.business_config_application.channels import ProviderFactory, WhatsAppChannelService
 from app.business_config_application.ports import AIKeyVerifier, AIModelCatalog, AssistantRunner
 from app.business_config_application.service import BusinessConfigService
 from app.business_config_application.conversations import PlaygroundRecorder
 from app.infrastructure.business_config.conversation_store import ConversationStore
 from app.infrastructure.business_config.ai_settings_store import AISettingsStore
 from app.infrastructure.business_config.ai_usage_store import AIUsageStore
+from app.infrastructure.business_config.channel_store import ChannelStore
 from app.infrastructure.business_config.payment_secret_store import PaymentSecretStore
 from app.infrastructure.business_config.repository import BusinessConfigRepository
 from app.infrastructure.business_config.tables import metadata
@@ -120,3 +122,10 @@ def build_assistant_lab_service(
         catalog=catalog,
         default_model=default_model,
     )
+
+
+def build_whatsapp_channel_service(
+    engine: Engine, providers: ProviderFactory, *, secrets_key: str | None = None, webhook_base: str | None = None
+) -> WhatsAppChannelService:
+    """WhatsApp por código QR con la persistencia real. El cliente del servidor (uazapi) lo pone la raíz de composición."""
+    return WhatsAppChannelService(ChannelStore(engine, secrets_key), providers, webhook_base=webhook_base)

@@ -247,6 +247,14 @@ IA no responde mientras alguien atiende.
   panel, el webhook se registra solo y el token se guarda cifrado. Aviso en el panel: es una conexión no oficial; Meta puede
   bloquear números con envíos masivos.
 - **WhatsApp Cloud API de Meta** (después): mismo contrato de canal, otro conector.
+
+  **Avance (10 de noviembre de 2026):** WhatsApp por QR está hecho. Canales tiene su tarjeta con el logo de WhatsApp y la opción
+  de la API oficial como «Próximamente». Sirve el token de la instancia o el de administrador del servidor (con él se crea la
+  instancia del negocio). El token se guarda cifrado (migración 0008, `business_channels`), el webhook lleva un identificador
+  secreto por negocio y comprueba el token, y la dirección de uazapi pasa por la protección contra SSRF. El motor responde con lo
+  publicado y la conversación llega a la bandeja. Se probó contra `free.uazapi.com`: guardar, crear la instancia, recibir el QR,
+  desconectar y borrar. Falta escanearlo con un teléfono y ver la primera respuesta; en la nube falta aplicar la migración 0008 en
+  Neon. Responder desde el panel sigue pendiente.
 - Telegram por negocio: el negocio pega el token de su bot en Canales, el webhook se registra solo y el token se guarda cifrado.
 - Todos los canales detrás de una sola interfaz (`ChannelConnector`: recibir, enviar, verificar firma): agregar un canal es
   agregar un conector, no tocar el motor.

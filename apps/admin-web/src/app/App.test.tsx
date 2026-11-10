@@ -2,7 +2,7 @@ import { cleanup, render, screen, waitFor, within } from "@testing-library/react
 import userEvent from "@testing-library/user-event";
 import type { BusinessDocument } from "../domain/config/types";
 import { PersistenceError } from "../repositories/persistenceError";
-import { createMemoryBackend, createTestServices, createVerifyingAuthService, TEST_ACCOUNT, type MemoryBackend } from "../test/fakes";
+import { createMemoryBackend, createMemoryWhatsApp, createTestServices, createVerifyingAuthService, TEST_ACCOUNT, TEST_WHATSAPP_TOKEN, type MemoryBackend } from "../test/fakes";
 import { SAMPLE_DOCUMENT, SAMPLE_PLANS_DOCUMENT } from "../test/fixtures/sampleDocument";
 import { App } from "./App";
 import type { ApplicationServices } from "./compositionRoot";
@@ -1201,5 +1201,54 @@ describe("Revisión y publicación", () => {
     await user.click(await publishButton(1));
     expect(await screen.findByText("No se puede publicar: falta un dato de pago.")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Publicar versión 1" })).toBeEnabled();
+  });
+});
+
+describe("Canales: WhatsApp por código QR", () => {
+  async function renderChannels(options: { webhookReady?: boolean } = {}) {
+    const whatsapp = createMemoryWhatsApp(options);
+    const user = await renderAt(`${CAFE}/canales`, createTestServices(createMemoryBackend([SAMPLE_DOCUMENT]), { createChannels: () => whatsapp.channels }));
+    await screen.findByRole("form", { name: "Conectar WhatsApp por código QR" });
+    return { user, whatsapp };
+  }
+
+  it("ofrece el código QR, deja la API oficial para después y ya no muestra Instagram", async () => {
+    await renderChannels();
+    expect(screen.getByRole("heading", { name: /^WhatsApp/ })).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: /^Código QR/ })).toBeChecked();
+    expect(screen.getByRole("radio", { name: /^API oficial de Meta/ })).toBeDisabled();
+    expect(screen.queryByText("Instagram")).not.toBeInTheDocument();
+    expect(screen.getByText("Telegram")).toBeInTheDocument();
+  });
+
+  it("guarda el servidor y el token, muestra el QR y pasa a conectado cuando se escanea", async () => {
+    const { user, whatsapp } = await renderChannels();
+    const form = screen.getByRole("form", { name: "Conectar WhatsApp por código QR" });
+    expect(within(form).getByLabelText(/^Servidor de uazapi/)).toHaveValue("https://free.uazapi.com");
+    await user.type(within(form).getByLabelText(/^Token/), TEST_WHATSAPP_TOKEN);
+    await user.click(within(form).getByRole("button", { name: "Guardar y mostrar el código QR" }));
+
+    expect(await screen.findByRole("img", { name: "Código QR para vincular WhatsApp" })).toBeInTheDocument();
+    expect(whatsapp.saved).toEqual([{ serverUrl: "https://free.uazapi.com", token: TEST_WHATSAPP_TOKEN }]);
+    expect(screen.getByText("Esperando el escaneo")).toBeInTheDocument();
+
+    whatsapp.scan();
+    expect(await screen.findByText(/Conectado al \+573001112233/, {}, { timeout: 4500 })).toBeInTheDocument();
+    expect(screen.queryByRole("img", { name: "Código QR para vincular WhatsApp" })).not.toBeInTheDocument();
+  }, 10000);
+
+  it("muestra en su campo el token que el servidor rechaza", async () => {
+    const { user } = await renderChannels();
+    const form = screen.getByRole("form", { name: "Conectar WhatsApp por código QR" });
+    await user.type(within(form).getByLabelText(/^Token/), "otro-token");
+    await user.click(within(form).getByRole("button", { name: "Guardar y mostrar el código QR" }));
+    expect(await within(form).findByText("El servidor rechazó el token. Revisa que lo hayas copiado completo.")).toBeInTheDocument();
+  });
+
+  it("avisa cuando los mensajes todavía no pueden llegar al asistente", async () => {
+    const { user } = await renderChannels({ webhookReady: false });
+    await user.type(screen.getByLabelText(/^Token/), TEST_WHATSAPP_TOKEN);
+    await user.click(screen.getByRole("button", { name: "Guardar y mostrar el código QR" }));
+    expect(await screen.findByText("Los mensajes todavía no llegan al asistente")).toBeInTheDocument();
   });
 });

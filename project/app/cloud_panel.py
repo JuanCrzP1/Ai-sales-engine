@@ -29,6 +29,9 @@ def build_cloud_panel_api(auth_url: str) -> FastAPI:
     from app.config import settings
     from app.infrastructure.ai.openrouter_key_verifier import OpenRouterKeyVerifier
     from app.infrastructure.ai.openrouter_models import OpenRouterModelCatalog
+    from app.infrastructure.business_config.database import build_whatsapp_channel_service
+    from app.infrastructure.channels.public_url import webhook_base
+    from app.infrastructure.channels.uazapi import UazapiClient
 
     engine = create_business_config_engine()
     key = find_secrets_key()
@@ -51,4 +54,5 @@ def build_cloud_panel_api(auth_url: str) -> FastAPI:
         conversations=ConversationStore(engine),
         notifications=NotificationStore(engine),
         usage=UsageCounterStore(engine),
+        whatsapp=build_whatsapp_channel_service(engine, UazapiClient, secrets_key=key, webhook_base=webhook_base(settings.api_prefix)),
     )

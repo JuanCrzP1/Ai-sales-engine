@@ -105,6 +105,19 @@ ENABLE_WEBHOOK_PROCESSING=true
 - `META_VERIFY_TOKEN`: token de verificación del webhook.
 - `META_APP_SECRET`: secreto de aplicación de Meta.
 
+### WhatsApp Por Código QR (uazapi)
+
+- `ENGINE_PUBLIC_URL`: la dirección pública del motor (sin `/api/v1`). Con ella, al conectar un negocio la API del panel registra
+  en uazapi el webhook `{ENGINE_PUBLIC_URL}/api/v1/channels/whatsapp/{identificador secreto del negocio}`. En este equipo
+  `./run_local.sh` la toma sola de ngrok; en Vercel no hace falta, porque se usa `VERCEL_PROJECT_PRODUCTION_URL`. Sin ella la
+  conexión funciona, pero los mensajes no llegan al motor, y el panel lo avisa.
+- El servidor y el token de uazapi no van en variables: cada negocio los guarda en Canales (tabla `business_channels`, migración
+  0008), con el token cifrado con `BUSINESS_CONFIG_SECRETS_KEY`.
+- El webhook solo acepta mensajes cuyo token sea el de la instancia guardada, ignora grupos y los mensajes que envía el propio
+  número o la API, y responde con la configuración publicada y la clave de IA del negocio. La conversación queda en la bandeja.
+- El servidor gratuito (`https://free.uazapi.com`) sirve para probar: borra las instancias a la hora. Para clientes reales se usa un
+  servidor de pago de uazapi.
+
 ### Flags De Operación
 
 - `ENABLE_AI_RESPONSES`: habilita respuesta por IA.
@@ -328,7 +341,8 @@ Lo que el motor ya resuelve para correr ahí:
 - No escribe en disco al arrancar (Vercel solo permite leer).
 - Acepta la cadena de conexión de Neon tal como viene (`postgres://` o `postgresql://`): la pasa a psycopg 3, tanto para su base
   (`DATABASE_URL`) como para el almacén del panel (`BUSINESS_CONFIG_DATABASE_URL`).
-- En producción (`MODE=production`) y en Vercel solo publica `/health` y el webhook de WhatsApp.
+- En producción (`MODE=production`) y en Vercel solo publica `/health`, el webhook de WhatsApp de Meta y el de WhatsApp por código
+  QR (`/api/v1/channels/whatsapp/{identificador}`).
 
 Una sola base de Neon guarda las tablas del motor y el almacén del panel: sus tablas apuntan a `tenants`. Tiene dos ramas:
 
@@ -345,6 +359,9 @@ python scripts/setup_cloud_database.py --branch pruebas            # informa qu�
 python scripts/setup_cloud_database.py --branch pruebas --apply    # tablas, negocios de ejemplo y comprobación
 python scripts/setup_cloud_database.py --branch production --apply # solo las tablas
 ```
+
+Cada migración nueva (por ejemplo, la 0008 de los canales) se aplica volviendo a ejecutar el mismo comando con `--apply` en cada
+rama: el script recorre todas las de `project/db/migrations`, en orden, y las que ya están no cambian nada.
 
 En `pruebas` copia las versiones, los datos de pago (ya cifrados: la clave no viaja) y los ajustes técnicos de cada negocio, y
 comprueba que lo publicado compila igual que aquí. Se puede repetir: lo que ya está no se toca.
@@ -379,11 +396,13 @@ La IA no lleva variable: cada negocio guarda su clave de OpenRouter en el panel,
 - Conversaciones: cada hilo es un contacto en un canal y pertenece a un negocio (`conversations` y `conversation_entries`,
   migración 0004). Hoy llegan las de «Probar asistente», con el canal `prueba`; los canales reales escribirán en las mismas
   tablas. Los datos de pago se guardan ocultos.
+- Canales: WhatsApp por código QR con uazapi. El negocio pega su servidor y su token, escanea el QR desde el panel y el webhook
+  se registra solo. La API oficial de Meta, Telegram y el chat web aparecen como «Próximamente».
 - En la nube no se importan YAML ni se eliminan negocios. El dominio del panel debe estar en Neon Auth → Configure Auth →
   *Domains*.
 
-Pendiente: Telegram necesita webhook (Vercel no mantiene procesos de *polling*) y el canal de WhatsApp necesita su configuración
-por negocio. Mientras tanto, el bot sigue atendiendo desde `run_local`.
+Pendiente: Telegram necesita webhook (Vercel no mantiene procesos de *polling*) y la API oficial de Meta por negocio. Mientras
+tanto, el bot de Telegram sigue atendiendo desde `run_local`.
 
 ## Secuencia De Prueba Recomendada
 

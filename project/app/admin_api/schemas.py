@@ -9,6 +9,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from app.admin_api.errors import PAYMENT_PROBLEM
 from app.business_config_application.assistant_lab import PlaygroundReply
+from app.business_config_application.channels import WhatsAppView
 from app.business_config_application.service import ConfigReview, EditableConfig
 from app.domain.business_config.ai_settings import AISettings, KeyCheck
 from app.domain.business_config.ai_models import ModelCatalog
@@ -28,6 +29,13 @@ class CreateBusiness(_Request):
     name: str
     # Plantilla con la que empieza (restaurante, tienda...). Sin plantilla, empieza de cero.
     template: str | None = None
+
+
+class SaveWhatsAppChannel(_Request):
+    """La dirección del servidor de uazapi y un token (de la instancia o de administrador). El token nunca se devuelve."""
+
+    server_url: str
+    token: str
 
 
 class SaveConfig(_Request):
@@ -66,6 +74,24 @@ def _iso(value: datetime | None) -> str | None:
 
 def summary_payload(summary: BusinessSummary) -> dict[str, Any]:
     return asdict(summary)
+
+
+def whatsapp_payload(view: WhatsAppView) -> dict[str, Any]:
+    """La conexión de WhatsApp para el panel: sin tokens, solo sus últimos caracteres."""
+    connection = view.connection
+    return {
+        "configured": connection is not None,
+        "provider": connection.provider if connection else None,
+        "server_url": connection.server_url if connection else None,
+        "status": connection.status if connection else "disconnected",
+        "token_hint": connection.token_hint if connection else None,
+        "has_admin_token": connection.has_admin_token if connection else False,
+        "phone": connection.phone if connection else None,
+        "profile_name": connection.profile_name if connection else None,
+        "webhook_ready": view.webhook_ready,
+        "qrcode": view.qrcode,
+        "paircode": view.paircode,
+    }
 
 
 def template_payload(template: BusinessTemplate) -> dict[str, Any]:

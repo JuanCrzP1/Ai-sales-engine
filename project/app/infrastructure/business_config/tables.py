@@ -205,3 +205,22 @@ ai_usage = Table(
     Column("completion_tokens", BigInteger, nullable=False, default=0),
     Column("cost_usd", Numeric(14, 6, asdecimal=False)),
 )
+
+# Canales de cada negocio (migración 0008): por ahora WhatsApp por código QR con uazapi. Los tokens van cifrados con la clave de los
+# datos de pago; `webhook_id` es el identificador secreto de la ruta del webhook del negocio.
+business_channels = Table(
+    "business_channels",
+    metadata,
+    Column("tenant_id", Uuid, ForeignKey("tenants.id", ondelete="CASCADE"), primary_key=True),
+    Column("channel", Text, primary_key=True),
+    Column("provider", Text, nullable=False),
+    Column("server_url", Text, nullable=False),
+    Column("token_ciphertext", Text, nullable=False),
+    Column("admin_token_ciphertext", Text),
+    Column("token_hint", Text, nullable=False),
+    Column("webhook_id", Text, nullable=False, unique=True),
+    Column("status", Text, nullable=False, default="disconnected"),
+    Column("phone", Text),
+    Column("profile_name", Text),
+    Column("updated_at", DateTime(timezone=True), nullable=False, default=_now),
+)

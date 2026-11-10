@@ -14,6 +14,8 @@ from app.domain.business_config.access import Principal
 from app.domain.business_config.errors import UsageLimitExceededError
 from app.domain.business_config.usage_limits import (
     AI_KEY_CHECKS_PER_USER,
+    CHANNEL_SETUP_PER_USER,
+    CHANNEL_STATUS_PER_BUSINESS,
     PLAYGROUND_PER_BUSINESS,
     PLAYGROUND_PER_USER,
     UsageLimit,
@@ -43,6 +45,12 @@ class UsageGuard:
 
     def ai_key_check(self, user: Principal) -> None:
         self.spend(AI_KEY_CHECKS_PER_USER, user.user_id)
+
+    def channel_setup(self, user: Principal) -> None:
+        self.spend(CHANNEL_SETUP_PER_USER, user.user_id)
+
+    def channel_status(self, tenant_slug: str) -> None:
+        self.spend(CHANNEL_STATUS_PER_BUSINESS, tenant_slug)
 
 
 class MemoryUsageCounter:

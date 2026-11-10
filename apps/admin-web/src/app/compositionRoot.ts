@@ -1,6 +1,7 @@
 import { createAuthClient } from "@neon/auth";
 import { createApiAssistantLab } from "../infrastructure/api/apiAssistantLab";
 import { createApiBusinessDirectory } from "../infrastructure/api/apiBusinessDirectory";
+import { createApiChannels } from "../infrastructure/api/apiChannels";
 import { createApiConfigRepository } from "../infrastructure/api/apiConfigRepository";
 import { createApiInbox } from "../infrastructure/api/apiInbox";
 import { createHttpClient } from "../infrastructure/api/httpClient";
@@ -9,6 +10,7 @@ import { createNeonAuthService, type NeonAuthClient } from "../infrastructure/ne
 import type { AssistantLab } from "../repositories/assistantLab";
 import type { AuthService } from "../repositories/authService";
 import type { BusinessDirectory } from "../repositories/businessDirectory";
+import type { Channels } from "../repositories/channels";
 import type { ConfigRepository } from "../repositories/configRepository";
 import type { Inbox } from "../repositories/inbox";
 
@@ -24,6 +26,8 @@ export interface ApplicationServices {
   createAssistantLab: (slug: string) => AssistantLab;
   /** La bandeja de conversaciones de todos los negocios del usuario. */
   inbox: Inbox;
+  /** Los canales de un negocio (por ahora, WhatsApp por código QR). */
+  createChannels: (slug: string) => Channels;
 }
 
 /** Implementaciones actuales: la API local del panel, sin autenticación porque solo atiende en este equipo. */
@@ -35,6 +39,7 @@ export function createLocalServices(apiBaseUrl?: string): ApplicationServices {
     createConfigRepository: (slug) => createApiConfigRepository(http, slug),
     createAssistantLab: (slug) => createApiAssistantLab(http, slug),
     inbox: createApiInbox(http),
+    createChannels: (slug) => createApiChannels(http, slug),
   };
 }
 
@@ -48,6 +53,7 @@ export function createCloudServices(authUrl: string, apiBaseUrl?: string): Appli
     createConfigRepository: (slug) => createApiConfigRepository(http, slug),
     createAssistantLab: (slug) => createApiAssistantLab(http, slug),
     inbox: createApiInbox(http),
+    createChannels: (slug) => createApiChannels(http, slug),
   };
 }
 

@@ -24,3 +24,7 @@ PLAYGROUND_PER_USER = UsageLimit("playground_user", limit=20, window_seconds=60)
 PLAYGROUND_PER_BUSINESS = UsageLimit("playground_business", limit=300, window_seconds=3600)
 # Comprobar la clave llama a OpenRouter: basta con unas pocas veces seguidas.
 AI_KEY_CHECKS_PER_USER = UsageLimit("ai_key_check_user", limit=10, window_seconds=600)
+# Conectar WhatsApp llama al servidor de uazapi del negocio: guardar y pedir el QR, y consultar el estado mientras se escanea
+# (el panel pregunta cada pocos segundos).
+CHANNEL_SETUP_PER_USER = UsageLimit("channel_setup_user", limit=20, window_seconds=600)
+CHANNEL_STATUS_PER_BUSINESS = UsageLimit("channel_status_business", limit=400, window_seconds=600)

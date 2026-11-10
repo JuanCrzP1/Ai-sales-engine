@@ -9,6 +9,7 @@ import { createLocalOperatorAuthService } from "../infrastructure/local/localOpe
 import type { AIModelOption, AISettings, AIUsage, AssistantLab, ConfigSource, ModelCatalog } from "../repositories/assistantLab";
 import type { AuthService } from "../repositories/authService";
 import type { BusinessDirectory } from "../repositories/businessDirectory";
+import type { Channels, WhatsAppChannel } from "../repositories/channels";
 import type { ConfigRepository, StoredConfig } from "../repositories/configRepository";
 import type { ConversationSummary, ConversationThread, InboxFilter, Notification } from "../domain/inbox/types";
 import type { Inbox } from "../repositories/inbox";
@@ -339,14 +340,68 @@ export function createMemoryAssistantLabs(): MemoryAssistantLabs {
   };
 }
 
+/** Token que el WhatsApp en memoria acepta como el de una instancia (cualquier otro se rechaza en su campo). */
+export const TEST_WHATSAPP_TOKEN = "token-de-prueba-1234";
+export const TEST_QR = "data:image/png;base64,iVBORw0KGgo=";
+
+export interface MemoryWhatsApp {
+  channels: Channels;
+  /** Simula que el negocio escaneó el código: el próximo estado llega conectado. */
+  scan: () => void;
+  saved: { serverUrl: string; token: string }[];
+}
+
+/** WhatsApp por código QR en memoria: guarda, conecta con un QR fijo y pasa a conectado cuando la prueba «escanea». */
+export function createMemoryWhatsApp({ webhookReady = true }: { webhookReady?: boolean } = {}): MemoryWhatsApp {
+  const empty: WhatsAppChannel = {
+    configured: false, provider: null, serverUrl: null, status: "disconnected", tokenHint: null, hasAdminToken: false,
+    phone: null, profileName: null, webhookReady, qrcode: null, paircode: null,
+  };
+  let state: WhatsAppChannel = { ...empty };
+  let scanned = false;
+  const saved: { serverUrl: string; token: string }[] = [];
+  const view = (extra: Partial<WhatsAppChannel> = {}) => ({ ...state, ...extra });
+  const channels: Channels = {
+    whatsapp: async () => view(),
+    saveWhatsApp: async ({ serverUrl, token }) => {
+      if (token !== TEST_WHATSAPP_TOKEN) {
+        throw new PersistenceError("invalid", { message: "El servidor rechazó el token.", problems: [{ path: "token", message: "El servidor rechazó el token. Revisa que lo hayas copiado completo." }] });
+      }
+      saved.push({ serverUrl, token });
+      state = { ...state, configured: true, provider: "uazapi", serverUrl, tokenHint: `…${token.slice(-4)}`, status: "disconnected" };
+      return view();
+    },
+    connectWhatsApp: async () => {
+      state = { ...state, status: "connecting" };
+      return view({ qrcode: TEST_QR });
+    },
+    whatsAppStatus: async () => {
+      if (scanned) state = { ...state, status: "connected", phone: "573001112233", profileName: "Café Aroma" };
+      return view(state.status === "connecting" ? { qrcode: TEST_QR } : {});
+    },
+    disconnectWhatsApp: async () => {
+      scanned = false;
+      state = { ...state, status: "disconnected", phone: null, profileName: null };
+      return view();
+    },
+    removeWhatsApp: async () => {
+      scanned = false;
+      state = { ...empty };
+    },
+  };
+  return { channels, scan: () => (scanned = true), saved };
+}
+
 /** Servicios como los de la aplicación, sobre el backend en memoria. */
 export function createTestServices(backend: MemoryBackend = createMemoryBackend(), overrides: Partial<ApplicationServices> = {}): ApplicationServices {
+  const whatsapp = createMemoryWhatsApp();
   return {
     auth: createLocalOperatorAuthService(),
     directory: backend.directory,
     createConfigRepository: backend.createConfigRepository,
     createAssistantLab: createMemoryAssistantLabs().create,
     inbox: createMemoryInbox(),
+    createChannels: () => whatsapp.channels,
     ...overrides,
   };
 }

@@ -1,9 +1,10 @@
-"""Acceso del motor al almacén de BusinessConfig: lee lo publicado y anota el consumo de IA.
+"""Acceso del motor al almacén de BusinessConfig: lee lo publicado, anota el consumo de IA y atiende los canales.
 
 El motor lee la misma base que escribe el panel (`database_url()`: `BUSINESS_CONFIG_DATABASE_URL` o el SQLite local) con la misma
-clave de cifrado (`find_secrets_key()`): lo publicado, los datos de pago y la clave de IA de cada negocio. Lo único que escribe es
-el consumo de cada respuesta (`record_ai_usage`). Nunca crea la base, las tablas ni la clave: si algo falta, lo informa con una
-excepción y el llamador decide.
+clave de cifrado (`find_secrets_key()`): lo publicado, los datos de pago, la clave de IA y la conexión de WhatsApp de cada negocio.
+Lo único que escribe es el consumo de cada respuesta (`record_ai_usage`), el estado de la conexión de WhatsApp que avisa su servidor y
+cada intercambio de un canal en la bandeja de conversaciones. Nunca crea la base, las tablas ni la clave: si algo falta, lo informa con
+una excepción y el llamador decide.
 
 Es la única puerta del motor hacia este almacén: el motor no conoce tablas, conexiones ni cifrado.
 """
@@ -18,10 +19,14 @@ from sqlalchemy.engine import Engine
 
 from app.domain.business_config.ai_settings import AICredentials
 from app.domain.business_config.ai_usage import AIUsage
+from app.domain.business_config.channels import ConnectionStatus, WhatsAppSecrets
 from app.domain.business_config.contract import BusinessConfig, SecretRef
+from app.domain.business_config.conversations import NewMessage
 from app.domain.business_config.errors import BusinessConfigError
 from app.infrastructure.business_config.ai_settings_store import AISettingsStore
 from app.infrastructure.business_config.ai_usage_store import AIUsageStore
+from app.infrastructure.business_config.channel_store import ChannelStore
+from app.infrastructure.business_config.conversation_store import ConversationStore
 from app.infrastructure.business_config.database import create_business_config_engine, database_url, sqlite_file
 from app.infrastructure.business_config.payment_secret_store import SECRET_STORE_SOURCE, PaymentSecretStore
 from app.infrastructure.business_config.repository import BusinessConfigRepository
@@ -34,6 +39,9 @@ __all__ = [
     "open_published_reader",
     "reader_for",
     "record_ai_usage",
+    "record_conversation",
+    "set_whatsapp_status",
+    "whatsapp_for_webhook",
 ]
 
 
@@ -91,6 +99,25 @@ def open_published_reader() -> PublishedConfigReader:
 def record_ai_usage(tenant_slug: str, usage: AIUsage, *, day: date | None = None) -> None:
     """Suma una respuesta al consumo de IA del negocio (día en UTC)."""
     AIUsageStore(_store_engine()).add(tenant_slug, day or datetime.now(timezone.utc).date(), usage)
+
+
+def whatsapp_for_webhook(webhook_id: str) -> WhatsAppSecrets | None:
+    """La conexión de WhatsApp (negocio, servidor y token) del webhook con ese identificador secreto, o None si no existe."""
+    return ChannelStore(_store_engine(), find_secrets_key()).secrets_for_webhook(webhook_id)
+
+
+def set_whatsapp_status(tenant_slug: str, status: ConnectionStatus, *, phone: str | None = None, profile_name: str | None = None) -> None:
+    """El estado de la conexión que avisa el servidor de WhatsApp (se conectó, se desconectó)."""
+    ChannelStore(_store_engine(), find_secrets_key()).set_status(tenant_slug, status, phone=phone, profile_name=profile_name)
+
+
+def record_conversation(
+    tenant_slug: str, *, channel: str, contact_ref: str, contact_name: str | None, messages: list[NewMessage], handoff: bool = False
+) -> str:
+    """Agrega un intercambio de un canal al hilo de ese contacto en la bandeja. Los datos de pago ya deben venir ocultos."""
+    return ConversationStore(_store_engine()).record(
+        tenant_slug, channel=channel, contact_ref=contact_ref, contact_name=contact_name, messages=messages, handoff=handoff
+    )
 
 
 def dispose_shared_engines() -> None:

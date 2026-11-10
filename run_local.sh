@@ -96,6 +96,40 @@ fi
 echo "[INFO] Iniciando ngrok en puerto 8082..."
 start_background_process "ngrok" "ngrok http $APP_PORT"
 
+# La dirección pública del motor: con ella, la API del panel registra en uazapi el webhook
+# de WhatsApp por código QR de cada negocio. Si ya viene definida, se respeta.
+ngrok_public_url() {
+    "$PYTHON_BIN" - <<'PY'
+import json
+import time
+import urllib.request
+
+for _ in range(20):
+    try:
+        with urllib.request.urlopen("http://127.0.0.1:4040/api/tunnels", timeout=2) as response:
+            tunnels = json.load(response).get("tunnels", [])
+        for tunnel in tunnels:
+            url = str(tunnel.get("public_url") or "")
+            if url.startswith("https://"):
+                print(url)
+                raise SystemExit(0)
+    except (OSError, ValueError):
+        pass
+    time.sleep(0.5)
+raise SystemExit(1)
+PY
+}
+
+if [ -z "${ENGINE_PUBLIC_URL:-}" ]; then
+    if ENGINE_PUBLIC_URL="$(ngrok_public_url)"; then
+        export ENGINE_PUBLIC_URL
+        echo "[INFO] Dirección pública del motor: $ENGINE_PUBLIC_URL"
+    else
+        unset ENGINE_PUBLIC_URL
+        echo "[AVISO] No se pudo leer la dirección de ngrok. WhatsApp por código QR no recibirá mensajes en este equipo."
+    fi
+fi
+
 # -------------------------
 # TELEGRAM
 # -------------------------
