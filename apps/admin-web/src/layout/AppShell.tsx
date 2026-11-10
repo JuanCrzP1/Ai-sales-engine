@@ -3,7 +3,9 @@ import { Outlet, useLocation } from "react-router-dom";
 import { BrandMark } from "../components/brand/BrandMark";
 import { Button } from "../components/ui/Button";
 import { Icon } from "../components/ui/Icon";
+import { isAssistantPath } from "../navigation/navItems";
 import { useConfig } from "../state/useConfig";
+import { AssistantTabs } from "./AssistantTabs";
 import { ErrorBoundary } from "./ErrorBoundary";
 import { SaveProblems } from "./SaveProblems";
 import { Sidebar } from "./Sidebar";
@@ -51,6 +53,7 @@ export function AppShell() {
         {/* Mientras se guarda no se puede editar: lo escrito se perdería al recibir la versión del servidor. */}
         <fieldset className="main__edit-area" disabled={save.status === "saving"}>
           <div className="main__inner" key={location.pathname}>
+            {isAssistantPath(location.pathname) && <AssistantTabs />}
             <ErrorBoundary variant="section" resetKey={location.pathname}>
               <Outlet />
             </ErrorBoundary>

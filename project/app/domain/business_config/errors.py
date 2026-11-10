@@ -76,3 +76,7 @@ class AIKeyMissingError(BusinessConfigError):
 
 class AssistantUnavailableError(BusinessConfigError):
     """El área de pruebas no puede ejecutar el asistente en este servidor."""
+
+
+class ConversationNotFoundError(BusinessConfigError):
+    """La conversación no existe o es de un negocio al que este usuario no llega."""

@@ -23,11 +23,15 @@ async function open(path: string, labs: MemoryAssistantLabs = createMemoryAssist
 }
 
 describe("Inteligencia artificial", () => {
-  it("aparece en el menú junto al área de pruebas", async () => {
+  it("vive en Ajustes, y el área de pruebas es una pestaña del Asistente IA", async () => {
     await open("/ia");
-    const nav = screen.getByRole("navigation", { name: "Secciones de configuración" });
-    expect(within(nav).getByRole("link", { name: /Inteligencia artificial/ })).toBeInTheDocument();
-    expect(within(nav).getByRole("link", { name: /Probar asistente/ })).toBeInTheDocument();
+    const nav = screen.getByRole("navigation", { name: "Menú del negocio" });
+    expect(within(nav).getByRole("link", { name: /^Ajustes/ })).toHaveAttribute("aria-current", "page");
+    expect(screen.getByRole("heading", { level: 1, name: "Inteligencia artificial" })).toBeInTheDocument();
+    cleanup();
+    await open("/probar");
+    expect(within(screen.getByRole("navigation", { name: "Asistente IA" })).getByRole("link", { name: "Probar" })).toHaveAttribute("aria-current", "page");
+    expect(within(screen.getByRole("navigation", { name: "Menú del negocio" })).getByRole("link", { name: /^Asistente IA/ })).toHaveAttribute("aria-current", "page");
   });
 
   it("guarda la clave sin volver a mostrarla y la comprueba", async () => {

@@ -118,3 +118,38 @@ business_members = Table(
     CheckConstraint("role IN ('owner')", name="business_members_role_check"),
     Index("business_members_user_idx", "user_id"),
 )
+
+# Bandeja de conversaciones (ver `project/db/migrations/0004_conversations.sql`): el hilo de cada contacto en cada canal, de un
+# solo negocio, y sus mensajes. Los datos de pago se guardan ocultos.
+CONVERSATION_CHANNELS = ("whatsapp", "instagram", "telegram", "web", "prueba")
+conversations = Table(
+    "conversations",
+    metadata,
+    Column("id", Uuid, primary_key=True, default=uuid.uuid4),
+    Column("tenant_id", Uuid, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False),
+    Column("channel", Text, nullable=False),
+    Column("contact_ref", Text, nullable=False),
+    Column("contact_name", Text),
+    Column("status", Text, nullable=False, default="open"),
+    Column("started_at", DateTime(timezone=True), nullable=False, default=_now),
+    Column("last_message_at", DateTime(timezone=True), nullable=False, default=_now),
+    Column("last_message_preview", Text),
+    Column("message_count", Integer, nullable=False, default=0),
+    CheckConstraint("channel IN ('whatsapp', 'instagram', 'telegram', 'web', 'prueba')", name="conversations_channel_check"),
+    CheckConstraint("status IN ('open', 'closed')", name="conversations_status_check"),
+    UniqueConstraint("tenant_id", "channel", "contact_ref", name="conversations_contact_key"),
+    Index("conversations_tenant_recent_idx", "tenant_id", "last_message_at"),
+)
+
+conversation_entries = Table(
+    "conversation_entries",
+    metadata,
+    Column("id", Uuid, primary_key=True, default=uuid.uuid4),
+    Column("conversation_id", Uuid, ForeignKey("conversations.id", ondelete="CASCADE"), nullable=False),
+    Column("author", Text, nullable=False),
+    Column("body", Text, nullable=False),
+    Column("intent", Text),
+    Column("created_at", DateTime(timezone=True), nullable=False, default=_now),
+    CheckConstraint("author IN ('customer', 'assistant', 'agent')", name="conversation_entries_author_check"),
+    Index("conversation_entries_thread_idx", "conversation_id", "created_at"),
+)

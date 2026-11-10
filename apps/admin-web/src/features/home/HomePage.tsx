@@ -11,6 +11,7 @@ import { SectionPager } from "../../layout/SectionPager";
 import { REVIEW_ITEM, sectionPath } from "../../navigation/navItems";
 import { useWorkspacePath } from "../../navigation/useWorkspacePath";
 import { useConfig } from "../../state/useConfig";
+import { ActivityOverview } from "./ActivityOverview";
 import { AssistantSummary } from "./AssistantSummary";
 import { HomeHero } from "./HomeHero";
 
@@ -22,6 +23,8 @@ export function HomePage() {
   return (
     <>
       <HomeHero />
+
+      <ActivityOverview />
 
       <AssistantSummary />
 

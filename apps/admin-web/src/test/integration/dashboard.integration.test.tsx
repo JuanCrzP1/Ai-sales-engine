@@ -110,10 +110,19 @@ function seedCatalogBusiness(slug: string) {
   });
 }
 
+
+/** Abre una pestaña del Asistente IA; si no se está en él, primero entra desde el menú lateral. */
+async function openTab(user: ReturnType<typeof userEvent.setup>, name: RegExp) {
+  if (!screen.queryByRole("navigation", { name: "Asistente IA" })) {
+    await user.click(within(screen.getByRole("navigation", { name: "Menú del negocio" })).getByRole("link", { name: /^Asistente IA/ }));
+  }
+  await user.click(within(screen.getByRole("navigation", { name: "Asistente IA" })).getByRole("link", { name }));
+}
+
 describe("flujo principal: crear, recuperar, editar, guardar y sobrevivir al reinicio", () => {
   it("cumple el recorrido completo con persistencia real", async () => {
     // 1. Crear un negocio.
-    let user = await openPanel("/");
+    let user = await openPanel("/negocios");
     await user.click(screen.getAllByRole("button", { name: "Crear negocio" })[0]!);
     const form = within(screen.getByRole("form", { name: "Crear negocio" }));
     fill(form.getByLabelText(/^Nombre comercial/), "Tienda Integración");
@@ -124,14 +133,14 @@ describe("flujo principal: crear, recuperar, editar, guardar y sobrevivir al rei
     expect((await apiConfig("tienda_integracion")).latest_version).toBeNull();
 
     // 2. Recuperarlo: otra apertura del panel lo encuentra en la lista.
-    user = await openPanel("/");
+    user = await openPanel("/negocios");
     const row = within(screen.getByText("Tienda Integración").closest("li") as HTMLElement);
     expect(row.getByText("Sin configurar")).toBeInTheDocument();
     await user.click(row.getByRole("link", { name: "Abrir Tienda Integración" }));
     await screen.findByRole("heading", { level: 1, name: "Configura tu asistente de ventas" });
 
     // Incompleto todavía: el servidor lo rechaza con sus propios errores y no se guarda nada.
-    await user.click(within(screen.getByRole("navigation", { name: "Secciones de configuración" })).getByRole("link", { name: /^Mi negocio/ }));
+    await openTab(user, /^Mi negocio/);
     fill(screen.getByLabelText(/^¿A qué se dedica tu negocio\?/), "tienda de barrio");
     await user.click(screen.getByRole("button", { name: "Guardar cambios" }));
     await screen.findByText("No se pudo guardar");
@@ -142,7 +151,7 @@ describe("flujo principal: crear, recuperar, editar, guardar y sobrevivir al rei
     // 3 y 4. Editar y guardar.
     fill(screen.getByLabelText(/^Descripción del negocio/), "Tienda de barrio con domicilios.");
     fill(screen.getByLabelText(/^Propuesta de valor/), "Todo lo de la despensa en tu puerta.");
-    await user.click(within(screen.getByRole("navigation", { name: "Secciones de configuración" })).getByRole("link", { name: /^Productos y servicios/ }));
+    await openTab(user, /^Productos y servicios/);
     await user.click(screen.getAllByRole("button", { name: "Agregar plan o servicio" })[0]!);
     const editor = within(screen.getByRole("form", { name: "Nuevo plan o servicio" }));
     fill(editor.getByLabelText(/^Nombre/), "Mercado mensual");
@@ -163,7 +172,7 @@ describe("flujo principal: crear, recuperar, editar, guardar y sobrevivir al rei
     user = await openPanel("/negocios/tienda_integracion/negocio");
     expect(screen.getByLabelText(/^¿A qué se dedica tu negocio\?/)).toHaveValue("tienda de barrio");
     expect(screen.getByLabelText(/^Propuesta de valor/)).toHaveValue("Todo lo de la despensa en tu puerta.");
-    await user.click(within(screen.getByRole("navigation", { name: "Secciones de configuración" })).getByRole("link", { name: /^Productos y servicios/ }));
+    await openTab(user, /^Productos y servicios/);
     expect(within(screen.getByRole("list", { name: "Productos y servicios" })).getByText("Mercado mensual")).toBeInTheDocument();
     expect(screen.queryByText("Cambios sin guardar")).not.toBeInTheDocument();
   });
@@ -199,7 +208,7 @@ describe("secciones comerciales guardadas en la API real", () => {
     expect(catalog?.items.find((item) => item.id === "sample_cafe_americano")?.prices).toEqual([{ currency: "COP", amount: 6500 }]);
     expect(catalog?.items.some((item) => item.name === "Croissant de mantequilla")).toBe(false);
 
-    await user.click(within(screen.getByRole("navigation", { name: "Secciones de configuración" })).getByRole("link", { name: /^Pagos y cierre/ }));
+    await openTab(user, /^Pagos y cierre/);
     await user.click(screen.getByRole("button", { name: "Agregar promoción" }));
     const promotion = within(screen.getByRole("group", { name: "Promoción 2" }));
     fill(promotion.getByLabelText(/^Nombre/), "Dos por uno");
@@ -294,11 +303,11 @@ describe("secciones comerciales guardadas en la API real", () => {
     fill(screen.getByLabelText(/^Dirección/), "Calle 1 #2-3");
     fill(screen.getByLabelText(/^Ciudad/), "Ciudad Ejemplo");
     await user.click(screen.getByRole("checkbox", { name: /^Virtual/ }));
-    await user.click(within(screen.getByRole("navigation", { name: "Secciones de configuración" })).getByRole("link", { name: /^Mensajes y canales/ }));
+    await openTab(user, /^Mensajes y canales/);
     await user.click(screen.getByRole("switch", { name: "Enviar mensaje de bienvenida" }));
     fill(screen.getByLabelText(/^Mensaje/), "Hola, gracias por escribirnos.");
     await user.click(screen.getByRole("checkbox", { name: /^Telegram/ }));
-    await user.click(within(screen.getByRole("navigation", { name: "Secciones de configuración" })).getByRole("link", { name: /^Productos y servicios/ }));
+    await openTab(user, /^Productos y servicios/);
     await user.click(screen.getByRole("button", { name: "Agregar: domicilio" }));
     const delivery = within(screen.getByRole("group", { name: "Domicilio" }));
     await user.click(delivery.getByRole("switch", { name: /^Disponible/ }));
@@ -549,14 +558,14 @@ describe("13 y 14. validaciones y errores", () => {
     await expect(directory.create({ slug: "sin_nombre", name: "   " })).rejects.toMatchObject({ code: "invalid" });
     expect(storedDocument(await apiConfig("repetido_real")).identity.name).toBe("Software Norte");
 
-    const user = await openPanel("/");
+    const user = await openPanel("/negocios");
     await user.click(screen.getAllByRole("button", { name: "Crear negocio" })[0]!);
     const form = within(screen.getByRole("form", { name: "Crear negocio" }));
     fill(form.getByLabelText(/^Nombre comercial/), "Otro más");
     fill(form.getByLabelText(/^Identificador/), "Con Espacios");
     await user.click(form.getByRole("button", { name: "Crear negocio" }));
     expect(await form.findByText(/Usa solo minúsculas, números y guion bajo/)).toBeInTheDocument();
-    expect(window.location.pathname).toBe("/");
+    expect(window.location.pathname).toBe("/negocios");
   });
 
   it("si el servidor se cae lo informa, conserva lo escrito y guarda al volver", async () => {
@@ -603,7 +612,7 @@ describe("13 y 14. validaciones y errores", () => {
     expect(response.status).toBe(400);
     expect((await apiConfig("borrar_real")).latest_version).toBe(1);
 
-    const user = await openPanel("/");
+    const user = await openPanel("/negocios");
     await user.click(screen.getByRole("button", { name: "Eliminar Negocio para borrar" }));
     fill(screen.getByLabelText("Para confirmar, escribe borrar_real"), "borrar_real");
     await user.click(screen.getByRole("button", { name: "Eliminar definitivamente" }));
@@ -692,7 +701,7 @@ describe("17 y 18. persistencia real y contrato", () => {
     expect(published.draft_version).toBeNull();
 
     // Editar después de publicar crea otra versión y lo publicado no cambia hasta volver a publicar.
-    await user.click(within(screen.getByRole("navigation", { name: "Secciones de configuración" })).getByRole("link", { name: /^Mi negocio/ }));
+    await openTab(user, /^Mi negocio/);
     fill(screen.getByLabelText(/^Nombre comercial/), "Software Norte Dos");
     await saveInPanel(user);
     const edited = await apiConfig("contrato_real");
@@ -748,7 +757,7 @@ describe("17 y 18. persistencia real y contrato", () => {
 
   it("importa los negocios existentes y el panel los abre y guarda sin perder nada", async () => {
     const NINE = ["agencia_viajes", "asesor_ai_prod", "clinic", "demo", "ecommerce", "escuela_conduccion", "restaurant", "saas", "tienda_ropa"];
-    const user = await openPanel("/");
+    const user = await openPanel("/negocios");
     await user.click(screen.getByRole("button", { name: "Importar negocios existentes" }));
     await screen.findByText("Se importaron 9 negocios.");
     const slugs = (await api<{ slug: string }[]>("/businesses")).map((business) => business.slug);
@@ -762,9 +771,8 @@ describe("17 y 18. persistencia real y contrato", () => {
       const before = await apiConfig(slug);
       const compilesBefore = (await api<{ compiles: boolean }>(`/businesses/${slug}/review`)).compiles;
       const panel = await openPanel(`/negocios/${slug}`);
-      const nav = () => within(screen.getByRole("navigation", { name: "Secciones de configuración" }));
-      for (const link of [/^Productos y servicios/, /^Pagos y cierre/, /^Cómo atiende/, /^Mensajes y canales/, /^Revisión/, /^Mi negocio/]) {
-        await panel.click(nav().getByRole("link", { name: link }));
+      for (const link of [/^Productos y servicios/, /^Pagos y cierre/, /^Cómo atiende/, /^Mensajes y canales/, /^Publicar/, /^Mi negocio/]) {
+        await openTab(panel, link);
         expect(screen.queryByText("Esta sección no se pudo mostrar"), `${slug} ${link}`).not.toBeInTheDocument();
       }
       // Abrirlo y recorrerlo no lo marca como modificado ni crea versiones.

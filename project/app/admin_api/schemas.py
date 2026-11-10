@@ -11,6 +11,7 @@ from app.admin_api.errors import PAYMENT_PROBLEM
 from app.business_config_application.assistant_lab import PlaygroundReply
 from app.business_config_application.service import ConfigReview, EditableConfig
 from app.domain.business_config.ai_settings import AISettings, KeyCheck
+from app.domain.business_config.conversations import BusinessActivity, ChatMessage, ConversationSummary
 from app.domain.business_config.records import BusinessSummary, ConfigVersion
 
 
@@ -113,4 +114,31 @@ def playground_payload(reply: PlaygroundReply) -> dict[str, Any]:
         "reply": reply.turn.reply,
         "intent": reply.turn.intent,
         "ai_answered": reply.turn.ai_answered,
+    }
+
+
+def conversation_payload(summary: ConversationSummary) -> dict[str, Any]:
+    return {
+        "id": summary.id,
+        "business": {"slug": summary.business_slug, "name": summary.business_name},
+        "channel": summary.channel,
+        "contact_name": summary.contact_name,
+        "status": summary.status,
+        "started_at": _iso(summary.started_at),
+        "last_message_at": _iso(summary.last_message_at),
+        "last_message_preview": summary.last_message_preview,
+        "message_count": summary.message_count,
+    }
+
+
+def chat_message_payload(message: ChatMessage) -> dict[str, Any]:
+    return {"id": message.id, "author": message.author, "body": message.body, "intent": message.intent, "created_at": _iso(message.created_at)}
+
+
+def activity_payload(activity: BusinessActivity) -> dict[str, Any]:
+    return {
+        "conversations": activity.conversations,
+        "conversations_today": activity.conversations_since,
+        "messages_today": activity.messages_since,
+        "test_conversations": activity.test_conversations,
     }

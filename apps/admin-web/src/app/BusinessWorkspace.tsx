@@ -3,7 +3,7 @@ import { Outlet, useParams } from "react-router-dom";
 import { Button, LinkButton } from "../components/ui/Button";
 import type { ContractSchema } from "../domain/config/contractSchema";
 import { LoadingScreen, StatusScreen } from "../layout/StatusScreen";
-import { BUSINESSES_PATH } from "../navigation/navItems";
+import { ENTRY_PATH } from "../navigation/navItems";
 import { persistenceErrorMessage } from "../repositories/persistenceError";
 import { AssistantLabContext } from "../state/assistantLabContext";
 import { ConfigProvider } from "../state/ConfigProvider";
@@ -56,7 +56,7 @@ export function BusinessWorkspace() {
         renderError={({ message, notFound, retry }) => (
           <StatusScreen title={notFound ? "Ese negocio no existe" : "No se pudo cargar tu configuración"} message={notFound ? "Puede que el enlace esté incompleto o que se haya eliminado." : `${message} No se ha borrado nada.`}>
             {!notFound && <Button onClick={retry}>Reintentar</Button>}
-            <LinkButton to={BUSINESSES_PATH}>Ver todos los negocios</LinkButton>
+            <LinkButton to={ENTRY_PATH}>Volver al panel</LinkButton>
           </StatusScreen>
         )}
       >

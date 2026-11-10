@@ -12,4 +12,11 @@ export const NAV_ICONS: Record<NavItem["key"], IconName> = {
   review: "check",
   ai: "bolt",
   playground: "flask",
+  conversations: "inbox",
+  customers: "users",
+  sales: "wallet",
+  reports: "chart",
+  assistantHub: "sparkles",
+  channels: "plug",
+  settings: "settings",
 };

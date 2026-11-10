@@ -6,13 +6,15 @@ quien usa estos puertos. Toda operación recibe el negocio y solo alcanza sus da
 """
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Callable, Collection
+from datetime import datetime
 from enum import Enum
 from typing import Any, Protocol, runtime_checkable
 
 from app.domain.business_config.access import Principal
 from app.domain.business_config.ai_settings import AICredentials, AISettings, AssistantTurn, KeyCheck
 from app.domain.business_config.contract import BusinessConfig, SecretRef
+from app.domain.business_config.conversations import BusinessActivity, ChatMessage, ConversationSummary, NewMessage
 from app.domain.business_config.records import BusinessSummary, ConfigVersion, StoredConfig
 
 
@@ -118,3 +120,18 @@ class AccessTokenVerifier(Protocol):
     """Comprueba el token de la sesión: quién es el usuario, o None si el token no es válido o venció."""
 
     def verify(self, token: str) -> Principal | None: ...
+
+
+@runtime_checkable
+class ConversationStorage(Protocol):
+    """Las conversaciones de cada negocio. Toda consulta recibe los negocios que puede ver quien pregunta."""
+
+    def record(self, tenant_slug: str, *, channel: str, contact_ref: str, contact_name: str | None, messages: list[NewMessage]) -> str:
+        """Agrega mensajes al hilo de ese contacto en ese canal (lo crea si no existe) y devuelve su identificador."""
+        ...
+
+    def recent(self, tenant_slugs: Collection[str], *, channel: str | None, limit: int) -> list[ConversationSummary]: ...
+
+    def thread(self, conversation_id: str) -> tuple[ConversationSummary, list[ChatMessage]]: ...
+
+    def activity(self, tenant_slug: str, *, since: datetime) -> BusinessActivity: ...

@@ -100,7 +100,10 @@ def main() -> int:
     port = _port()
     print(f"[ok] API del panel en http://{HOST}:{port}")
     service = build_business_config_service(engine)
-    uvicorn.run(create_app(service, _assistant_lab(engine, service)), host=HOST, port=port, log_level="warning")
+    from app.infrastructure.business_config.conversation_store import ConversationStore
+
+    app = create_app(service, _assistant_lab(engine, service), conversations=ConversationStore(engine))
+    uvicorn.run(app, host=HOST, port=port, log_level="warning")
     return 0
 
 

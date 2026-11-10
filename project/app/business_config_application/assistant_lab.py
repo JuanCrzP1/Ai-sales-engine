@@ -12,6 +12,7 @@ import uuid
 from dataclasses import dataclass
 from typing import Literal
 
+from app.business_config_application.conversations import PlaygroundRecorder
 from app.business_config_application.ports import AIKeyVerifier, AISettingsStorage, AssistantRunner
 from app.business_config_application.service import BusinessConfigService
 from app.domain.business_config.ai_settings import AICredentials, AISettings, AssistantTurn, KeyCheck, clean_api_key, clean_model
@@ -48,11 +49,14 @@ class AssistantLabService:
         *,
         verifier: AIKeyVerifier | None = None,
         runner: AssistantRunner | None = None,
+        recorder: PlaygroundRecorder | None = None,
     ) -> None:
         self._configs = configs
         self._storage = storage
         self._verifier = verifier
         self._runner = runner
+        # Las conversaciones de prueba también quedan en la bandeja del panel, marcadas como «Prueba».
+        self._recorder = recorder
 
     # ------------------------------------------------------------------ inteligencia artificial
 
@@ -89,6 +93,8 @@ class AssistantLabService:
         except SecretResolutionError as exc:
             raise PaymentDataUnavailableError("faltan datos de pago de esta versión: complétalos para probarla") from exc
         turn = runner.reply(tenant_slug=tenant_slug, sections=sections, credentials=credentials, session_id=session, message=text)
+        if self._recorder is not None:
+            self._recorder.record(tenant_slug, session_id=session, sections=sections, message=text, reply=turn.reply, intent=turn.intent)
         return PlaygroundReply(session, source, version, turn)
 
     def reset(self, tenant_slug: str, session_id: str) -> None:

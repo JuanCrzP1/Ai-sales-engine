@@ -371,6 +371,11 @@ La IA no lleva variable: cada negocio guarda su clave de OpenRouter en el panel,
   una cuenta: es una plataforma.
 - Cada petición lleva el token de la sesión (JWT EdDSA de 15 minutos). La API lo comprueba con las claves públicas de Neon Auth
   y cada usuario solo llega a sus negocios (`business_members`, migración 0003); un negocio ajeno responde como inexistente.
+- Al entrar, el panel abre directo el primer negocio del usuario (o la bienvenida para crearlo). El menú: Inicio, Conversaciones,
+  Clientes, Ventas y Reportes; abajo, Asistente IA (pestañas de entrenamiento, Probar y Publicar), Canales y Ajustes.
+- Conversaciones: cada hilo es un contacto en un canal y pertenece a un negocio (`conversations` y `conversation_entries`,
+  migración 0004). Hoy llegan las de «Probar asistente», con el canal `prueba`; los canales reales escribirán en las mismas
+  tablas. Los datos de pago se guardan ocultos.
 - En la nube no se importan YAML ni se eliminan negocios. El dominio del panel debe estar en Neon Auth → Configure Auth →
   *Domains*.
 

@@ -30,7 +30,19 @@ async function renderWorkspace(path: string, seed: BusinessDocument[] = [SAMPLE_
   return { user, backend };
 }
 
-const sidebarNav = () => screen.getByRole("navigation", { name: "Secciones de configuración" });
+const sidebarNav = () => screen.getByRole("navigation", { name: "Menú del negocio" });
+
+/** Abre una pestaña del Asistente IA; si no se está en él, primero entra desde el menú lateral. */
+async function openTab(user: ReturnType<typeof userEvent.setup>, name: RegExp) {
+  if (!screen.queryByRole("navigation", { name: "Asistente IA" })) await user.click(within(sidebarNav()).getByRole("link", { name: /^Asistente IA/ }));
+  await user.click(within(screen.getByRole("navigation", { name: "Asistente IA" })).getByRole("link", { name }));
+}
+
+/** Cambia de negocio con el selector de arriba del menú. */
+async function switchTo(user: ReturnType<typeof userEvent.setup>, name: string | RegExp) {
+  await user.click(screen.getByRole("button", { name: /^Negocio/ }));
+  await user.click(await screen.findByRole("menuitem", { name }));
+}
 const saveButton = () => screen.getByRole("button", { name: "Guardar cambios" });
 
 async function saveAndWait(user: ReturnType<typeof userEvent.setup>) {
@@ -57,19 +69,31 @@ describe("Acceso local", () => {
     expect(screen.getByText("Abriendo tu panel…")).toBeInTheDocument();
   });
 
-  it("abre la lista de negocios sin pedir acceso, sin cuenta visible y avisando que solo funciona en este equipo", async () => {
-    await renderAt("/", createTestServices());
-    expect(screen.getByRole("heading", { level: 1, name: "Tus negocios" })).toBeInTheDocument();
-    expect(screen.getByText("Solo en este equipo")).toBeInTheDocument();
+  it("entra directo al panel del primer negocio, sin pedir acceso ni mostrar una cuenta", async () => {
+    await renderAt("/", createTestServices(createMemoryBackend([SAMPLE_DOCUMENT])));
+    expect(await screen.findByRole("heading", { level: 1, name: "Configura tu asistente de ventas" })).toBeInTheDocument();
+    expect(window.location.pathname).toBe(CAFE);
     expect(screen.queryByRole("button", { name: /^Cuenta de/ })).not.toBeInTheDocument();
-    expect(screen.queryByText(/\b(demo|demostración|prueba|prototipo)\b/i)).not.toBeInTheDocument();
   });
 
-  it("las pantallas de cuenta no aplican: llevan a la lista de negocios", async () => {
+  it("sin negocios da la bienvenida para crear el primero", async () => {
+    await renderAt("/", createTestServices());
+    expect(await screen.findByRole("heading", { level: 1, name: "Crea tu negocio" })).toBeInTheDocument();
+    expect(window.location.pathname).toBe("/nuevo-negocio");
+  });
+
+  it("la administración de negocios avisa que solo funciona en este equipo", async () => {
+    await renderAt("/negocios", createTestServices());
+    expect(screen.getByRole("heading", { level: 1, name: "Tus negocios" })).toBeInTheDocument();
+    expect(screen.getByText("Solo en este equipo")).toBeInTheDocument();
+    expect(screen.queryByText(/\b(demo|demostración|prototipo)\b/i)).not.toBeInTheDocument();
+  });
+
+  it("las pantallas de cuenta no aplican: llevan al panel", async () => {
     for (const path of ["/perfil", "/iniciar-sesion", "/crear-cuenta"]) {
       await renderAt(path, createTestServices());
-      expect(await screen.findByRole("heading", { level: 1, name: "Tus negocios" })).toBeInTheDocument();
-      expect(window.location.pathname).toBe("/");
+      expect(await screen.findByRole("heading", { level: 1, name: "Crea tu negocio" })).toBeInTheDocument();
+      expect(window.location.pathname).toBe("/nuevo-negocio");
       cleanup();
     }
   });
@@ -77,12 +101,12 @@ describe("Acceso local", () => {
 
 describe("Administración de negocios", () => {
   it("invita a crear el primero cuando no hay ninguno", async () => {
-    await renderAt("/", createTestServices());
+    await renderAt("/negocios", createTestServices());
     expect(screen.getByText("Aún no hay negocios")).toBeInTheDocument();
   });
 
   it("lista los negocios con su estado", async () => {
-    await renderAt("/", createTestServices(createMemoryBackend([SAMPLE_DOCUMENT, SAMPLE_PLANS_DOCUMENT])));
+    await renderAt("/negocios", createTestServices(createMemoryBackend([SAMPLE_DOCUMENT, SAMPLE_PLANS_DOCUMENT])));
     const list = screen.getByRole("list", { name: "Negocios" });
     expect(within(list).getAllByRole("listitem")).toHaveLength(2);
     expect(within(list).getByText("Café Aroma")).toBeInTheDocument();
@@ -92,7 +116,7 @@ describe("Administración de negocios", () => {
 
   it("crea un negocio con identificador deducido del nombre y abre su espacio de trabajo", async () => {
     const backend = createMemoryBackend();
-    const user = await renderAt("/", createTestServices(backend));
+    const user = await renderAt("/negocios", createTestServices(backend));
     await user.click(screen.getAllByRole("button", { name: "Crear negocio" })[0]!);
     const form = screen.getByRole("form", { name: "Crear negocio" });
     expect(within(form).getByRole("button", { name: "Crear negocio" })).toBeDisabled();
@@ -104,13 +128,13 @@ describe("Administración de negocios", () => {
     expect(await screen.findByRole("heading", { level: 1, name: "Configura tu asistente de ventas" })).toBeInTheDocument();
     expect(window.location.pathname).toBe("/negocios/panaderia_la_esquina");
     expect(screen.getByText("Este negocio aún no se ha guardado")).toBeInTheDocument();
-    expect(screen.getByText("Panadería La Esquina", { selector: ".sidebar__brand-sub" })).toBeInTheDocument();
+    expect(screen.getByText("Panadería La Esquina", { selector: ".switcher__name" })).toBeInTheDocument();
     // Registrar el negocio no crea ninguna versión: todavía no cumple el contrato.
     expect(backend.stored("panaderia_la_esquina")).toBeNull();
   });
 
   it("no permite repetir un identificador que ya está en la lista", async () => {
-    const user = await renderAt("/", createTestServices(createMemoryBackend([SAMPLE_DOCUMENT])));
+    const user = await renderAt("/negocios", createTestServices(createMemoryBackend([SAMPLE_DOCUMENT])));
     await user.click(screen.getByRole("button", { name: "Crear negocio" }));
     const form = screen.getByRole("form", { name: "Crear negocio" });
     await user.type(within(form).getByLabelText(/^Nombre comercial/), "Cafe Aroma");
@@ -120,19 +144,19 @@ describe("Administración de negocios", () => {
 
   it("muestra en su campo el error del servidor al crear, sin salir del formulario", async () => {
     const backend = createMemoryBackend();
-    const user = await renderAt("/", createTestServices(backend));
+    const user = await renderAt("/negocios", createTestServices(backend));
     await user.click(screen.getAllByRole("button", { name: "Crear negocio" })[0]!);
     const form = screen.getByRole("form", { name: "Crear negocio" });
     await user.type(within(form).getByLabelText(/^Nombre comercial/), "Otro");
     backend.failNext("create", new PersistenceError("invalid", { message: "Datos inválidos", problems: [{ path: "slug", message: "Usa solo minúsculas, números y guion bajo." }] }));
     await user.click(within(form).getByRole("button", { name: "Crear negocio" }));
     expect(await within(form).findByText("Usa solo minúsculas, números y guion bajo.")).toBeInTheDocument();
-    expect(window.location.pathname).toBe("/");
+    expect(window.location.pathname).toBe("/negocios");
   });
 
   it("eliminar exige escribir el identificador y no toca los demás negocios", async () => {
     const backend = createMemoryBackend([SAMPLE_DOCUMENT, SAMPLE_PLANS_DOCUMENT]);
-    const user = await renderAt("/", createTestServices(backend));
+    const user = await renderAt("/negocios", createTestServices(backend));
     await user.click(screen.getByRole("button", { name: "Eliminar Café Aroma" }));
     const confirm = screen.getByRole("button", { name: "Eliminar definitivamente" });
     expect(confirm).toBeDisabled();
@@ -148,7 +172,7 @@ describe("Administración de negocios", () => {
   });
 
   it("informa si no hay nada nuevo que importar", async () => {
-    const user = await renderAt("/", createTestServices(createMemoryBackend([SAMPLE_DOCUMENT])));
+    const user = await renderAt("/negocios", createTestServices(createMemoryBackend([SAMPLE_DOCUMENT])));
     await user.click(screen.getByRole("button", { name: "Importar negocios existentes" }));
     expect(await screen.findByText("No había nada nuevo: todos los negocios ya estaban importados.")).toBeInTheDocument();
   });
@@ -156,7 +180,7 @@ describe("Administración de negocios", () => {
   it("si no puede cargar los negocios lo informa y permite reintentar", async () => {
     const backend = createMemoryBackend([SAMPLE_DOCUMENT]);
     backend.failNext("list", new PersistenceError("unavailable"));
-    const user = await renderAt("/", createTestServices(backend));
+    const user = await renderAt("/negocios", createTestServices(backend));
     expect(screen.getByText("No se pudieron cargar los negocios")).toBeInTheDocument();
     expect(screen.getByText(/No se pudo conectar con el servidor local/)).toBeInTheDocument();
 
@@ -168,7 +192,7 @@ describe("Administración de negocios", () => {
     const backend = createMemoryBackend();
     await renderAt("/negocios/no_existe", createTestServices(backend));
     expect(screen.getByRole("heading", { level: 1, name: "Ese negocio no existe" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Ver todos los negocios" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Volver al panel" })).toBeInTheDocument();
     expect(backend.stored("no_existe")).toBeNull();
   });
 
@@ -191,9 +215,8 @@ describe("Administración de negocios", () => {
     await user.type(name, "Café Nuevo");
     await saveAndWait(user);
 
-    await user.click(screen.getByRole("link", { name: "← Todos los negocios" }));
-    await user.click(await screen.findByRole("link", { name: "Abrir Software Norte" }));
-    expect(await screen.findByText("Software Norte", { selector: ".sidebar__brand-sub" })).toBeInTheDocument();
+    await switchTo(user, "Software Norte");
+    expect(await screen.findByText("Software Norte", { selector: ".switcher__name" })).toBeInTheDocument();
     expect(storedOf(backend, SAMPLE_PLANS_DOCUMENT.tenant_slug).identity.name).toBe("Software Norte");
     expect(storedOf(backend).identity.name).toBe("Café Nuevo");
     expect(storedOf(backend).tenant_slug).toBe(SAMPLE_DOCUMENT.tenant_slug);
@@ -221,7 +244,7 @@ describe("Cuenta (servicio que verifica credenciales)", () => {
     await user.clear(screen.getByLabelText(/^Contraseña/));
     await user.type(screen.getByLabelText(/^Contraseña/), TEST_ACCOUNT.password);
     await user.click(screen.getByRole("button", { name: "Iniciar sesión" }));
-    expect(await screen.findByRole("heading", { level: 1, name: "Tus negocios" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { level: 1, name: "Configura tu asistente de ventas" })).toBeInTheDocument();
   });
 
   it("sin sesión envía a la entrada y vuelve a la página que se quería abrir", async () => {
@@ -296,10 +319,10 @@ describe("Secciones del negocio", () => {
       ["Pagos y cierre", "Pagos y cierre de ventas", "Paso 3"],
       ["Cómo atiende", "Cómo atiende el asistente", "Paso 4"],
       ["Mensajes y canales", "Mensajes y canales", "Paso 5"],
-      ["Revisión", "Revisión y publicación", "Último paso"],
+      ["Publicar", "Revisión y publicación", "Último paso"],
     ];
     for (const [link, heading, step] of expectations) {
-      await user.click(within(sidebarNav()).getByRole("link", { name: new RegExp(`^${link}`) }));
+      await openTab(user, new RegExp(`^${link}`));
       expect(screen.getByRole("heading", { level: 1, name: heading })).toBeInTheDocument();
       expect(screen.getByText(step)).toBeInTheDocument();
     }
@@ -314,7 +337,7 @@ describe("Secciones del negocio", () => {
 
     await user.type(name, "Panadería Central");
     expect(screen.queryByText("Escribe el nombre comercial de tu negocio.")).not.toBeInTheDocument();
-    expect(screen.getByText("Panadería Central", { selector: ".sidebar__brand-sub" })).toBeInTheDocument();
+    expect(screen.getByText("Panadería Central", { selector: ".switcher__name" })).toBeInTheDocument();
   });
 
   it("guarda identidad, ubicación y lo que hace falta para atender", async () => {
@@ -760,10 +783,10 @@ describe("Borrador de un producto o plan", () => {
     await user.click(screen.getByRole("button", { name: "Agregar producto" }));
     await user.type(within(screen.getByRole("form", { name: "Nuevo producto" })).getByLabelText(/^Nombre/), "Jugo de mango");
 
-    await user.click(within(sidebarNav()).getByRole("link", { name: /^Mi negocio/ }));
+    await openTab(user, /^Mi negocio/);
     expect(screen.getByRole("heading", { level: 1, name: "Mi negocio" })).toBeInTheDocument();
     expect(screen.getByText("Cambios sin guardar")).toBeInTheDocument();
-    await user.click(within(sidebarNav()).getByRole("link", { name: /^Productos y servicios/ }));
+    await openTab(user, /^Productos y servicios/);
     const editor = within(screen.getByRole("form", { name: "Nuevo producto" }));
     expect(editor.getByLabelText(/^Nombre/)).toHaveValue("Jugo de mango");
 
@@ -788,8 +811,8 @@ describe("Borrador de un producto o plan", () => {
     await user.type(editor.getByLabelText(/^Categoría/), "Bebidas");
     await user.clear(editor.getByLabelText(/^Precio/));
     await user.type(editor.getByLabelText(/^Precio/), "7000");
-    await user.click(within(sidebarNav()).getByRole("link", { name: /^Mi negocio/ }));
-    await user.click(within(sidebarNav()).getByRole("link", { name: /^Productos y servicios/ }));
+    await openTab(user, /^Mi negocio/);
+    await openTab(user, /^Productos y servicios/);
     await user.click(screen.getByRole("button", { name: "Agregar producto a la lista" }));
     await saveAndWait(user);
     expect(storedOf(backend).offer.catalog?.items.some((item) => item.name === "Jugo de mango")).toBe(true);
@@ -832,9 +855,9 @@ describe("Guardado", () => {
   it("los cambios siguen disponibles al pasar de una sección a otra", async () => {
     const { user } = await renderWorkspace("/negocio");
     await user.type(screen.getByLabelText(/Nombre comercial/), " Plus");
-    await user.click(within(sidebarNav()).getByRole("link", { name: /^Cómo atiende/ }));
+    await openTab(user, /^Cómo atiende/);
     expect(screen.getByRole("heading", { level: 1, name: "Cómo atiende el asistente" })).toBeInTheDocument();
-    await user.click(within(sidebarNav()).getByRole("link", { name: /^Mi negocio/ }));
+    await openTab(user, /^Mi negocio/);
     expect(screen.getByLabelText(/Nombre comercial/)).toHaveValue("Café Aroma Plus");
   });
 
@@ -933,24 +956,24 @@ describe("Guardado", () => {
     const { user, backend } = await renderWorkspace("/negocio");
     await user.type(screen.getByLabelText(/Nombre comercial/), " Plus");
 
-    await user.click(screen.getByRole("link", { name: "← Todos los negocios" }));
+    await switchTo(user, "Crear negocio");
     expect(await screen.findByText("Tienes cambios sin guardar")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Seguir editando" }));
     expect(screen.queryByText("Tienes cambios sin guardar")).not.toBeInTheDocument();
     expect(screen.getByLabelText(/Nombre comercial/)).toHaveValue("Café Aroma Plus");
 
-    await user.click(screen.getByRole("link", { name: "← Todos los negocios" }));
+    await switchTo(user, "Crear negocio");
     await user.click(await screen.findByRole("button", { name: "Guardar y salir" }));
-    expect(await screen.findByRole("heading", { level: 1, name: "Tus negocios" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { level: 1, name: "Crea tu negocio" })).toBeInTheDocument();
     expect(storedOf(backend).identity.name).toBe("Café Aroma Plus");
   });
 
   it("salir sin guardar pierde los cambios, como se avisa", async () => {
     const { user, backend } = await renderWorkspace("/negocio");
     await user.type(screen.getByLabelText(/Nombre comercial/), " Plus");
-    await user.click(screen.getByRole("link", { name: "← Todos los negocios" }));
+    await switchTo(user, "Crear negocio");
     await user.click(await screen.findByRole("button", { name: "Salir sin guardar" }));
-    expect(await screen.findByRole("heading", { level: 1, name: "Tus negocios" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { level: 1, name: "Crea tu negocio" })).toBeInTheDocument();
     expect(storedOf(backend).identity.name).toBe("Café Aroma");
   });
 
@@ -1063,10 +1086,10 @@ describe("Revisión y publicación", () => {
     expect(await screen.findByText("Se publicó la versión 1.")).toBeInTheDocument();
     expect(await screen.findByRole("button", { name: "Esta versión ya está publicada" })).toBeDisabled();
 
-    await user.click(within(sidebarNav()).getByRole("link", { name: /^Mi negocio/ }));
+    await openTab(user, /^Mi negocio/);
     await user.type(screen.getByLabelText(/Nombre comercial/), " Dos");
     await saveAndWait(user);
-    await user.click(within(sidebarNav()).getByRole("link", { name: /^Revisión/ }));
+    await openTab(user, /^Publicar/);
     await user.click(await publishButton(2));
     expect(await screen.findByText("Se publicó la versión 2.")).toBeInTheDocument();
 
@@ -1084,7 +1107,7 @@ describe("Revisión y publicación", () => {
     const { user, backend } = await renderWorkspace("/negocio");
     await user.type(screen.getByLabelText(/Nombre comercial/), " Dos");
     await saveAndWait(user);
-    await user.click(within(sidebarNav()).getByRole("link", { name: /^Revisión/ }));
+    await openTab(user, /^Publicar/);
 
     const history = await screen.findByRole("list", { name: "Historial de versiones" });
     const first = (await within(history).findByText(/^Versión 1/)).closest("li")!;
@@ -1098,7 +1121,7 @@ describe("Revisión y publicación", () => {
   it("no deja publicar con cambios sin guardar", async () => {
     const { user } = await renderWorkspace("/negocio");
     await user.type(screen.getByLabelText(/Nombre comercial/), " Dos");
-    await user.click(within(sidebarNav()).getByRole("link", { name: /^Revisión/ }));
+    await openTab(user, /^Publicar/);
     expect(screen.getByText("Tienes cambios sin guardar: guárdalos para poder publicarlos.")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /^Publicar versión/ })).not.toBeInTheDocument();
   });

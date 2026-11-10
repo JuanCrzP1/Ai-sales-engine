@@ -10,6 +10,8 @@ import type { AISettings, AssistantLab, ConfigSource } from "../repositories/ass
 import type { AuthService } from "../repositories/authService";
 import type { BusinessDirectory } from "../repositories/businessDirectory";
 import type { ConfigRepository, StoredConfig } from "../repositories/configRepository";
+import type { ConversationSummary, ConversationThread } from "../domain/inbox/types";
+import type { Inbox } from "../repositories/inbox";
 import { PersistenceError } from "../repositories/persistenceError";
 
 export const TEST_ACCOUNT = { name: "Laura Gómez", email: "laura@empresa.com", password: "clave1234" };
@@ -291,6 +293,7 @@ export function createTestServices(backend: MemoryBackend = createMemoryBackend(
     directory: backend.directory,
     createConfigRepository: backend.createConfigRepository,
     createAssistantLab: createMemoryAssistantLabs().create,
+    inbox: createMemoryInbox(),
     ...overrides,
   };
 }
@@ -329,6 +332,37 @@ export function createVerifyingAuthService(): AuthService {
       if (account) account.profile = profile;
       session = { ...session, user: profile };
       return profile;
+    },
+  };
+}
+
+
+/** Bandeja en memoria: hilos sembrados por la prueba; filtra por negocio y canal como el servidor. */
+export function createMemoryInbox(threads: ConversationThread[] = []): Inbox & { requests: { business?: string; channel?: string }[] } {
+  const requests: { business?: string; channel?: string }[] = [];
+  const newestFirst = (a: ConversationSummary, b: ConversationSummary) => b.lastMessageAt.localeCompare(a.lastMessageAt);
+  return {
+    requests,
+    list: async (filter = {}) => {
+      requests.push({ ...filter });
+      return threads
+        .map((thread) => thread.conversation)
+        .filter((item) => (!filter.business || item.business.slug === filter.business) && (!filter.channel || item.channel === filter.channel))
+        .sort(newestFirst);
+    },
+    thread: async (id) => {
+      const found = threads.find((thread) => thread.conversation.id === id);
+      if (!found) throw new PersistenceError("not_found", { message: "Esa conversación no existe." });
+      return found;
+    },
+    activity: async (slug) => {
+      const mine = threads.filter((thread) => thread.conversation.business.slug === slug);
+      return {
+        conversations: mine.length,
+        conversationsToday: mine.length,
+        messagesToday: mine.reduce((total, thread) => total + thread.messages.length, 0),
+        testConversations: mine.filter((thread) => thread.conversation.channel === "prueba").length,
+      };
     },
   };
 }

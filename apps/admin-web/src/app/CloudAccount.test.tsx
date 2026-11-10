@@ -26,12 +26,12 @@ describe("panel en la nube", () => {
     await user.type(screen.getByLabelText(/Confirmar contraseña/), "clave-segura-1");
     await user.click(screen.getByRole("button", { name: "Crear cuenta" }));
 
-    await waitFor(() => expect(screen.getByRole("heading", { level: 1, name: "Tus negocios" })).toBeInTheDocument());
-    expect(screen.getByText("Tu cuenta")).toBeInTheDocument();
-    expect(await screen.findByRole("link", { name: `Abrir ${SAMPLE_DOCUMENT.identity.name}` })).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByRole("heading", { level: 1, name: "Configura tu asistente de ventas" })).toBeInTheDocument());
+    expect(window.location.pathname).toBe(`/negocios/${SAMPLE_DOCUMENT.tenant_slug}`);
     expect(screen.queryByText("Solo en este equipo")).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Importar negocios existentes" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /^Eliminar/ })).not.toBeInTheDocument();
-    expect(screen.getAllByRole("button", { name: "Crear negocio" }).length).toBeGreaterThan(0);
+    await user.click(screen.getByRole("button", { name: /^Negocio/ }));
+    expect(await screen.findByRole("menuitem", { name: SAMPLE_DOCUMENT.identity.name })).toBeInTheDocument();
+    expect(screen.getByRole("menuitem", { name: "Crear negocio" })).toBeInTheDocument();
+    expect(screen.queryByRole("menuitem", { name: "Administrar negocios" })).not.toBeInTheDocument();
   });
 });

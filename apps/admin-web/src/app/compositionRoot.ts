@@ -2,6 +2,7 @@ import { createAuthClient } from "@neon/auth";
 import { createApiAssistantLab } from "../infrastructure/api/apiAssistantLab";
 import { createApiBusinessDirectory } from "../infrastructure/api/apiBusinessDirectory";
 import { createApiConfigRepository } from "../infrastructure/api/apiConfigRepository";
+import { createApiInbox } from "../infrastructure/api/apiInbox";
 import { createHttpClient } from "../infrastructure/api/httpClient";
 import { createLocalOperatorAuthService } from "../infrastructure/local/localOperatorAuthService";
 import { createNeonAuthService, type NeonAuthClient } from "../infrastructure/neon/neonAuthService";
@@ -9,6 +10,7 @@ import type { AssistantLab } from "../repositories/assistantLab";
 import type { AuthService } from "../repositories/authService";
 import type { BusinessDirectory } from "../repositories/businessDirectory";
 import type { ConfigRepository } from "../repositories/configRepository";
+import type { Inbox } from "../repositories/inbox";
 
 /**
  * Servicios de la aplicación. Es el ÚNICO punto donde se eligen las implementaciones: pantallas, estado y reglas solo
@@ -20,6 +22,8 @@ export interface ApplicationServices {
   createConfigRepository: (slug: string) => ConfigRepository;
   /** Inteligencia artificial y área de pruebas de un negocio. */
   createAssistantLab: (slug: string) => AssistantLab;
+  /** La bandeja de conversaciones de todos los negocios del usuario. */
+  inbox: Inbox;
 }
 
 /** Implementaciones actuales: la API local del panel, sin autenticación porque solo atiende en este equipo. */
@@ -30,6 +34,7 @@ export function createLocalServices(apiBaseUrl?: string): ApplicationServices {
     directory: createApiBusinessDirectory(http),
     createConfigRepository: (slug) => createApiConfigRepository(http, slug),
     createAssistantLab: (slug) => createApiAssistantLab(http, slug),
+    inbox: createApiInbox(http),
   };
 }
 
@@ -42,6 +47,7 @@ export function createCloudServices(authUrl: string, apiBaseUrl?: string): Appli
     directory: createApiBusinessDirectory(http, { local: false }),
     createConfigRepository: (slug) => createApiConfigRepository(http, slug),
     createAssistantLab: (slug) => createApiAssistantLab(http, slug),
+    inbox: createApiInbox(http),
   };
 }
 

@@ -32,7 +32,7 @@ export function AISettingsPage() {
   return (
     <>
       <PageHeader
-        eyebrow="Asistente"
+        eyebrow="Ajustes"
         title="Inteligencia artificial"
         description="Cada negocio responde con su propia clave de OpenRouter: el consumo de su asistente se cobra en esa cuenta."
       />
