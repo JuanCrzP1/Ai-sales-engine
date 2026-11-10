@@ -141,7 +141,7 @@ def prompt(runtime_yaml: dict) -> str:
     captured: dict[str, str] = {}
     original_generate = runtime.generate
 
-    def _capture_generate(prompt: str, *, user_message: str, bot_config=None):
+    def _capture_generate(prompt: str, *, user_message: str, bot_config=None, **_kwargs):
         del bot_config
         captured["prompt"] = str(prompt or "")
         captured["user_message"] = str(user_message or "")

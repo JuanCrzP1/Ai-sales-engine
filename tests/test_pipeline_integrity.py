@@ -33,19 +33,12 @@ from app.services.ai_service import AIService
 
 
 def _capabilities_block(runtime: dict) -> str:
-    """El bloque de capacidades del prompt para ese runtime."""
-    from app.infrastructure.ai.prompting.sections import capabilities
+    """El bloque «CÓMO SE PAGA Y SE CIERRA» del prompt para ese runtime."""
+    from app.infrastructure.ai.prompting.sections import payments
     from app.infrastructure.ai.prompting.view import PromptView
 
-    return capabilities.render(PromptView(runtime))
+    return payments.render(PromptView(runtime))
 
-
-def _post_payment_block(runtime: dict) -> str:
-    """El bloque de post-pago del prompt para ese runtime."""
-    from app.infrastructure.ai.prompting.sections import post_payment
-    from app.infrastructure.ai.prompting.view import PromptView
-
-    return post_payment.render(PromptView(runtime))
 
 
 def _tenant(slug: str = "asesor_ai_prod") -> SimpleNamespace:
@@ -291,10 +284,9 @@ def test_prompt_builder_includes_recent_customer_context_when_available() -> Non
         progression_rules=None,
     )
 
-    assert "Contexto reciente del cliente:" in str(prompt or "")
-    assert "Último mensaje: tengo muchos mensajes" not in str(prompt or "")
-    assert "Última intención detectada: pain" in str(prompt or "")
-    assert "Última respuesta enviada: te ayudo a organizarlos" in str(prompt or "")
+    # Lo reciente de la conversación viaja como mensajes; en las instrucciones solo queda el momento de la conversación.
+    assert "ESTA CONVERSACIÓN\nLa conversación sigue: continúa desde lo último que hablaron." in str(prompt or "")
+    assert "te ayudo a organizarlos" not in str(prompt or "")
 
 
 def test_prompt_builder_includes_global_grounding_block() -> None:
@@ -311,10 +303,10 @@ def test_prompt_builder_includes_global_grounding_block() -> None:
 
     prompt_text = str(prompt or "")
 
-    assert "REGLA CRÍTICA:" in prompt_text
-    assert "Responde SOLO con información que esté en el contexto proporcionado." in prompt_text
-    assert "NO inventes funcionalidades, canales o características que no estén explícitamente mencionadas." in prompt_text
-    assert "Si el usuario pregunta por algo que no aparece en el contexto:" in prompt_text
+    assert "LA VERDAD PRIMERO" in prompt_text
+    assert "Usa solo la información del negocio que aparece abajo." in prompt_text
+    assert "No inventes productos, ingredientes, características, precios," in prompt_text
+    assert "Si te preguntan algo que no está en la información del negocio" in prompt_text
 
 
 def test_prompt_builder_uses_simplified_commercial_behavior_block() -> None:
@@ -331,8 +323,8 @@ def test_prompt_builder_uses_simplified_commercial_behavior_block() -> None:
 
     prompt_text = str(prompt or "")
 
-    assert "Tu objetivo es ayudar al cliente a avanzar en la conversación hacia una decisión." in prompt_text
-    assert "Habla como una persona real vendiendo por chat." in prompt_text
+    assert "Tu trabajo es entender qué necesita cada cliente" in prompt_text
+    assert "Escribe como una persona del negocio" in prompt_text
     assert "No inicies con frases de soporte como 'claro, puedo ayudarte' o 'si quieres'." not in prompt_text
     assert "🚫 PROHIBIDO (EN CUALQUIER FORMA):" not in prompt_text
     assert "CIERRE COMERCIAL" not in prompt_text
@@ -359,8 +351,7 @@ def test_prompt_builder_includes_pricing_in_active_conversation() -> None:
     assert _conditions, "pricing.yaml no tiene conditions definidas"
     for condition in _conditions:
         assert str(condition) in prompt_text, f"Condición no encontrada en prompt: {condition!r}"
-    assert "LINK_AVAILABLE:" in prompt_text
-    assert "TRANSFER_METHODS:" in prompt_text
+    assert "Medios de pago:" in prompt_text
 
 
 def test_prompt_builder_uses_only_real_payment_routes_context() -> None:
@@ -378,9 +369,8 @@ def test_prompt_builder_uses_only_real_payment_routes_context() -> None:
 
     prompt_text = str(prompt or "")
 
-    assert "LINK_AVAILABLE:" in prompt_text
-    assert "TRANSFER_AVAILABLE:" in prompt_text
-    assert "TRANSFER_METHODS:" in prompt_text
+    assert "Medios de pago:" in prompt_text
+    assert "Nunca escribas números de cuenta, teléfonos de pago, referencias ni links" in prompt_text
     assert "payment_methods" not in prompt_text
 
 
@@ -398,14 +388,10 @@ def test_prompt_builder_injects_capabilities_block() -> None:
 
     prompt_text = str(prompt or "")
 
-    assert "CAPACIDADES DEL NEGOCIO:" in prompt_text
-    assert "TIPOS DE CANALES:" in prompt_text
-    assert "CANALES DE ATENCION (business_channels):" in prompt_text
-    assert "CANALES DEL SISTEMA (system_channels):" in prompt_text
-    assert "sin canales de atencion definidos" in prompt_text
-    assert "whatsapp" in prompt_text
-    assert "Acciones disponibles:" in prompt_text
-    assert "activar_servicio, seguimiento" in prompt_text
+    assert "CÓMO SE PAGA Y SE CIERRA" in prompt_text
+    assert "Lo que vende funciona en: whatsapp" in prompt_text
+    assert "Atiendes por:" not in prompt_text
+    assert "Puedes ayudarle a: activar servicio, seguimiento" in prompt_text
 
 
 def test_prompt_builder_supports_split_capability_channels_without_changing_actions() -> None:
@@ -424,12 +410,9 @@ def test_prompt_builder_supports_split_capability_channels_without_changing_acti
         }
     )
 
-    assert "CANALES DE ATENCION (business_channels):" in capabilities_context
-    assert "whatsapp, instagram" in capabilities_context
-    assert "CANALES DEL SISTEMA (system_channels):" in capabilities_context
-    assert "web" in capabilities_context
-    assert "Acciones disponibles:" in capabilities_context
-    assert "cerrar_venta, llamadas, contacto, seguimiento" in capabilities_context
+    assert "Atiendes por: whatsapp, instagram." in capabilities_context
+    assert "Lo que vende funciona en: web." in capabilities_context
+    assert "Puedes ayudarle a: cerrar venta, llamadas, contacto, seguimiento." in capabilities_context
 
 
 def test_structured_output_preserves_plain_text_response() -> None:

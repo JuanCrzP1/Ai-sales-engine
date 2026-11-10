@@ -1,5 +1,5 @@
-"""Arquitectura del prompt: bloques pequeños, instrucciones fijas en un solo lugar, un presupuesto por bloque y un catálogo grande que
-no infla cada mensaje. También la identidad del negocio en todos los mensajes (antes se perdía desde el segundo)."""
+"""Arquitectura del prompt: capas ordenadas de lo fijo a lo cambiante, bloques pequeños, instrucciones fijas en un solo lugar,
+presupuesto por capa, un catálogo grande que no infla cada mensaje y la conversación como mensajes, sin datos de pago."""
 from __future__ import annotations
 
 import copy
@@ -12,14 +12,18 @@ from app.domain.business_config import engine_policy as policy
 from app.domain.business_config.compiler import compile_business_config
 from app.domain.business_config.contract import BusinessConfig
 from app.domain.business_config.engine_settings import EngineSettings
+from app.domain.business_config.payment_data import REDACTED_PAYMENT_VALUE, payment_values
 from app.domain.memory.contracts import CommercialMemorySignal
-from app.infrastructure.ai.prompting import budgets, composer
-from app.infrastructure.ai.prompting.sections.profile import business_profile
+from app.infrastructure.ai.prompting import budgets, composer, instructions
+from app.infrastructure.ai.prompting.history import recent_messages
+from app.infrastructure.ai.prompting.sections import playbook
 from app.infrastructure.ai.prompting.view import PromptView
+from app.services.ai.output_contract import OUTPUT_CONTRACT
 from pipeline_harness import TENANTS, prepared_tenant, stored_document
 
 PROMPTING = Path(__file__).resolve().parents[1] / "project" / "app" / "infrastructure" / "ai" / "prompting"
-MAX_MODULE_LINES = 220
+MAX_MODULE_LINES = 200
+LAYERS = ("platform", "playbook", "business", "offer", "payments", "guidance", "knowledge", "conversation")
 
 STATES = {
     "presentacion": {"conversation_state": "new"},
@@ -38,11 +42,11 @@ def _view(slug: str, state: str, message: str = "¿Cuánto cuesta?") -> PromptVi
 
 
 def _sizes(view: PromptView) -> dict[str, int]:
-    return composer._sizes(composer.render_sections(view))
+    return {name: len(text) for name, text in composer.render_sections(view).items()}
 
 
 # ---------------------------------------------------------------------------
-# Módulos pequeños e instrucciones en un solo lugar
+# Módulos pequeños, instrucciones en un solo lugar y capas en orden
 # ---------------------------------------------------------------------------
 
 def test_no_prompt_module_is_a_mega_file():
@@ -52,7 +56,7 @@ def test_no_prompt_module_is_a_mega_file():
 
 def test_the_fixed_instructions_live_in_one_place():
     """Cambiar cómo vende el asistente es editar `instructions.py`, no buscar textos dentro del código."""
-    markers = ("REGLA CRÍTICA", "MODO DE RESPUESTA", "COMPORTAMIENTO CON MEMORIA", "POST-PAGO:", "Flujo: dolor")
+    markers = ("LA VERDAD PRIMERO", "CÓMO RESPONDES", "CÓMO SE VENDE EN ESTE NEGOCIO", "Nunca escribas números de cuenta")
     engine = PROMPTING.parents[2]
     offenders = sorted(
         f"{path.relative_to(engine)}: {marker}"
@@ -64,26 +68,52 @@ def test_the_fixed_instructions_live_in_one_place():
     assert offenders == []
 
 
+@pytest.mark.parametrize("slug", TENANTS)
+def test_the_layers_go_from_the_fixed_to_the_changing(slug):
+    """Lo igual para todos va primero (el proveedor lo reutiliza de su caché); lo de este mensaje, al final."""
+    views = [_view(slug, state) for state in STATES]
+    prompts = [composer.compose(view) for view in views]
+    assert all(prompt.startswith(f"{instructions.PLATFORM}\n\n{OUTPUT_CONTRACT}\n\n") for prompt in prompts)
+    assert list(composer.render_sections(views[0])) == list(LAYERS)
+    # Todo lo que va antes de «ESTA CONVERSACIÓN» es igual en todos los mensajes del mismo negocio.
+    prefixes = {prompt.split(instructions.CONVERSATION_HEADER, 1)[0] for prompt in prompts}
+    assert len(prefixes) == 1
+    assert prompts[0].rsplit("\n\n", 1)[1].startswith(instructions.CONVERSATION_HEADER)
+
+
+def test_each_kind_of_business_gets_its_own_playbook():
+    kinds = {slug: playbook.business_kind(_view(slug, "presentacion")) for slug in TENANTS}
+    assert kinds["restaurant"] == "catalog" and kinds["tienda_ropa"] == "catalog"
+    assert kinds["asesor_ai_prod"] == "plans" and kinds["saas"] == "plans"
+    assert set(kinds.values()) <= set(instructions.PLAYBOOKS)
+
+
+def test_a_booking_business_gets_the_booking_playbook():
+    runtime = load_tenant_runtime_yaml("clinic")
+    runtime["sales"] = {**runtime["sales"], "closing": {**(runtime["sales"].get("closing") or {}), "strategy": "booking"}}
+    assert playbook.business_kind(PromptView(runtime)) == "booking"
+
+
 # ---------------------------------------------------------------------------
-# Presupuesto por bloque
+# Presupuesto por capa
 # ---------------------------------------------------------------------------
 
 @pytest.mark.parametrize("state", STATES)
 @pytest.mark.parametrize("slug", TENANTS)
-def test_every_block_of_the_nine_businesses_fits_its_budget(slug, state):
+def test_every_layer_of_the_nine_businesses_fits_its_budget(slug, state):
     view = _view(slug, state)
     assert budgets.over_budget(_sizes(view)) == {}
     assert len(composer.compose(view)) <= budgets.TOTAL_BUDGET
 
 
-def test_an_over_budget_block_is_reported_and_never_cut(monkeypatch):
+def test_an_over_budget_layer_is_reported_and_never_cut(monkeypatch):
     warnings: list[tuple[str, dict]] = []
     monkeypatch.setattr(composer.logger, "warning", lambda event, extra=None: warnings.append((event, extra or {})))
-    monkeypatch.setitem(budgets.SECTION_BUDGETS, "pricing", 10)
+    monkeypatch.setitem(budgets.SECTION_BUDGETS, "offer", 10)
     view = _view("saas", "en_curso")
     prompt = composer.compose(view)
-    assert ("prompt_section_over_budget", {"tenant": "saas", "section": "pricing", "chars": _sizes(view)["pricing"], "budget": 10}) in warnings
-    assert "Precios: " in prompt and "TRANSFER_METHODS:" in prompt
+    assert ("prompt_section_over_budget", {"tenant": "saas", "section": "offer", "chars": _sizes(view)["offer"], "budget": 10}) in warnings
+    assert composer.render_sections(view)["offer"] in prompt
 
 
 # ---------------------------------------------------------------------------
@@ -93,7 +123,6 @@ def test_an_over_budget_block_is_reported_and_never_cut(monkeypatch):
 def _large_business(products: int) -> dict:
     """La hamburguesería de ejemplo con todo al máximo del contrato y `products` productos."""
     document = stored_document("restaurant")
-    items = 10
     text = lambda label, index: f"{label} {index} " + "x " * ((policy.MAX_PROFILE_ITEM_CHARS - 20) // 2)  # noqa: E731
     document["identity"].update(differentiators=[text("dif", i) for i in range(policy.MAX_PROFILE_ITEMS)])
     document["sales"].update(**{key: [text(key, i) for i in range(policy.MAX_PROFILE_ITEMS)] for key in ("benefits", "arguments", "instructions")})
@@ -103,7 +132,7 @@ def _large_business(products: int) -> dict:
     document["offer"]["catalog"].update(
         categories=categories,
         items=[
-            {**copy.deepcopy(template), "id": f"producto_{i}", "name": f"Producto número {i}", "category": categories[i % items]["id"],
+            {**copy.deepcopy(template), "id": f"producto_{i}", "name": f"Producto número {i}", "category": categories[i % 10]["id"],
              "description": f"Descripción del producto {i} " + "detalle " * 30, "features": [f"característica {j}" for j in range(5)]}
             for i in range(products)
         ],
@@ -128,33 +157,40 @@ def test_a_large_catalog_does_not_inflate_the_prompt():
 
 
 def test_the_product_the_customer_asks_for_reaches_the_prompt():
-    blocks = composer.render_sections(_large_view(300, "¿Tienen el producto número 250?"))
-    assert "- Producto número 250: Descripción del producto 250" in blocks["profile"]
-    assert "Producto número 250 -> COP:" in blocks["pricing"]
-    assert "opciones más que no aparecen aquí" in blocks["profile"]
-    assert " más." in blocks["pricing"].split("Precios: ", 1)[1].split("\n", 1)[0]
+    offer = composer.render_sections(_large_view(300, "¿Tienen el producto número 250?"))["offer"]
+    assert "- Producto número 250 — COP 18.000: Descripción del producto 250" in offer
+    assert "opciones más que no aparecen aquí" in offer
 
 
 def test_a_business_whose_catalog_fits_receives_it_whole():
     view = _view("restaurant", "presentacion", "¿Qué tienen?")
-    blocks = composer.render_sections(view)
-    items = view.pricing["catalog"]["items"]
-    assert "opciones más" not in blocks["profile"]
-    assert all(f"- {item['name']}:" in blocks["profile"] for item in items if item.get("description"))
+    offer = composer.render_sections(view)["offer"]
+    assert "opciones más" not in offer
+    assert all(f"- {item['name']} — " in offer for item in view.pricing["catalog"]["items"])
 
 
 # ---------------------------------------------------------------------------
-# La identidad del negocio en todos los mensajes
+# El negocio en todos los mensajes y la conversación como mensajes
 # ---------------------------------------------------------------------------
 
 @pytest.mark.parametrize("slug", TENANTS)
-def test_the_business_identity_is_in_every_message(slug):
-    """Antes, desde el segundo mensaje «CONTEXTO DEL NEGOCIO» iba vacío: el asistente ya no sabía para quién vendía."""
-    for state in ("en_curso", "pago", "memoria_fuerte"):
-        view = _view(slug, state)
-        name = business_profile(view.runtime)["name"]
-        context = composer.compose(view).split("REGLAS OPERATIVAS:", 1)[0]
-        assert f"Negocio: {name}." in context, state
-        assert "Industria del negocio: " in context, state
-    presentation = composer.compose(_view(slug, "presentacion"))
-    assert f"Negocio: {business_profile(_view(slug, 'presentacion').runtime)['name']}" in presentation
+def test_the_business_is_in_every_message(slug):
+    """Antes, desde el segundo mensaje el asistente dejaba de recibir quién era el negocio y qué vendía."""
+    for state in STATES:
+        blocks = composer.render_sections(_view(slug, state))
+        assert blocks["business"].startswith("EL NEGOCIO\nNombre: "), state
+        assert blocks["offer"].startswith("LO QUE VENDE\n- "), state
+
+
+def test_the_conversation_goes_as_messages_without_payment_data():
+    runtime = load_tenant_runtime_yaml("saas")
+    secret = next(iter(payment_values(runtime)))
+    runtime["conversation_history"] = [
+        {"role": "user", "text": "Quiero pagar por nequi"},
+        {"role": "assistant", "text": f"Listo, el número es {secret}."},
+        {"role": "user", "text": "x " * 600},
+    ]
+    messages = recent_messages(runtime)
+    assert [message["role"] for message in messages] == ["user", "assistant", "user"]
+    assert secret not in str(messages) and REDACTED_PAYMENT_VALUE in messages[1]["content"]
+    assert len(messages[2]["content"]) <= 701

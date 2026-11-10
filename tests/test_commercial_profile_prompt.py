@@ -1,7 +1,7 @@
 """Perfil comercial y preguntas frecuentes: cómo se compilan desde el contrato y cómo entran al prompt.
 
-Unitarias de `app/domain/business_config/commercial_profile.py`, `app/infrastructure/ai/prompting/business_profile.py` y
-`app/infrastructure/ai/prompting/business_knowledge.py`. Lo que se comprueba con el motor completo está en
+Unitarias de `app/domain/business_config/commercial_profile.py` y de los bloques del prompt que lo usan
+(`prompting/sections/business.py`, `offer.py`, `guidance.py` y `knowledge.py`). Lo que se comprueba con el motor completo está en
 `test_business_config_engine_integration.py`.
 """
 from __future__ import annotations
@@ -13,13 +13,9 @@ from pathlib import Path
 from app.domain.business_config.commercial_profile import compile_knowledge, compile_profile
 from app.domain.business_config.contract import BusinessConfig
 from app.domain.business_config.engine_policy import FAQ_PROMPT_MAX_CHARS
+from app.infrastructure.ai.prompting.sections import business, guidance, offer
 from app.infrastructure.ai.prompting.sections.knowledge import KNOWLEDGE_HEADER, build_knowledge_context, select_faqs
-from app.infrastructure.ai.prompting.sections.profile import (
-    DEFAULT_TONE,
-    PROFILE_HEADER,
-    build_business_profile_context,
-    response_tone,
-)
+from app.infrastructure.ai.prompting.view import PromptView
 
 PROJECT_DIR = Path(__file__).resolve().parents[1] / "project"
 EXAMPLE = PROJECT_DIR / "config" / "contracts" / "v1" / "business-config.example.json"
@@ -81,9 +77,10 @@ def test_knowledge_is_only_compiled_when_there_are_faqs():
 # Bloque del perfil
 # ---------------------------------------------------------------------------
 
-def test_without_profile_there_is_no_block_and_the_tone_is_the_usual_one():
-    assert build_business_profile_context({"config": {}}) == ""
-    assert response_tone({"config": {}}) == DEFAULT_TONE
+def test_without_profile_only_the_tone_and_length_are_said():
+    view = PromptView({"config": {}})
+    assert business.render(view) == f"{business.HEADER}\nTono: {business.DEFAULT_TONE}. Responde en máximo 80 palabras."
+    assert guidance.render(view) == ""
 
 
 def test_descriptions_reach_the_assistant_complete():
@@ -91,19 +88,21 @@ def test_descriptions_reach_the_assistant_complete():
     description = " ".join(f"palabra{index}" for index in range(40))
     runtime = _runtime(
         {"name": "Negocio", "description": description},
-        pricing={"catalog": {"items": [{"name": "Producto", "description": description, "price": {"COP": 1}}]}},
+        pricing={"catalog": {"items": [{"name": "Producto", "description": description, "price": {"COP": 1000}}]}},
     )
-    block = build_business_profile_context(runtime)
-    business_line = next(line for line in block.splitlines() if line.startswith("Descripción:"))
-    product_line = next(line for line in block.splitlines() if line.startswith("- Producto:"))
-    assert business_line.removeprefix("Descripción: ").rstrip(".") == description
-    assert product_line.removeprefix("- Producto: ").rstrip(".") == description
+    business_line = next(line for line in business.render(PromptView(runtime)).splitlines() if line.startswith("Qué es:"))
+    product_line = next(line for line in offer.render(PromptView(runtime)).splitlines() if line.startswith("- Producto"))
+    assert business_line.removeprefix("Qué es: ").rstrip(".") == description
+    assert product_line == f"- Producto — COP 1.000: {description}."
 
 
-def test_an_ongoing_conversation_without_rules_has_no_block():
+def test_the_business_is_the_same_in_every_message():
+    """Antes, desde el segundo mensaje el asistente dejaba de recibir quién es el negocio. Ahora va siempre, igual."""
     runtime = _runtime({"name": "Negocio", "description": "Hace cosas", "differentiators": ["rápido"]})
-    assert build_business_profile_context(runtime, include_facts=False) == ""
-    assert build_business_profile_context(runtime).startswith(f"{PROFILE_HEADER}\nNegocio: Negocio\nDescripción: Hace cosas")
+    first = business.render(PromptView({**runtime, "conversation_state": "new"}))
+    later = business.render(PromptView({**runtime, "conversation_state": "active", "memory_context": {"last_ai_response": "Hola"}}))
+    assert first == later
+    assert first.startswith(f"{business.HEADER}\nNombre: Negocio.\nQué es: Hace cosas.\nLo que lo diferencia: rápido.")
 
 
 def test_promotions_expire_by_date_and_an_unreadable_date_is_not_offered():
@@ -112,7 +111,7 @@ def test_promotions_expire_by_date_and_an_unreadable_date_is_not_offered():
         {"name": "Ayer", "details": "Venció ayer", "valid_until": "2026-11-09"},
         {"name": "Ilegible", "details": "Fecha rota", "valid_until": "pronto"},
     ]
-    block = build_business_profile_context(_runtime({"name": "N", "description": "D", "promotions": promotions}), today=date(2026, 11, 10))
+    block = guidance.render(PromptView(_runtime({"name": "N", "description": "D", "promotions": promotions})), today=date(2026, 11, 10))
     assert "- Hoy: Vence hoy (válida hasta 2026-11-10)" in block
     assert "Ayer" not in block and "Ilegible" not in block
 

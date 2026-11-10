@@ -233,7 +233,7 @@ def _run_with_metadata(slug: str, *, user_id: str, runtime_loader=None) -> list[
     for message, llm_reply in CONVERSATION:
         prompts: list[str] = []
 
-        def _generate(prompt, *, user_message, bot_config=None, _reply_text=llm_reply, _prompts=prompts):
+        def _generate(prompt, *, user_message, bot_config=None, _reply_text=llm_reply, _prompts=prompts, **_kwargs):
             _prompts.append(str(prompt))
             return _reply_text
 

@@ -33,7 +33,9 @@ from app.domain.business_config.engine_policy import MAX_INDUSTRY_CHARS, MAX_VAL
 from app.domain.business_config.payment_data import iter_payment_blocks
 from app.domain.conversation.memory import MemoryDomainService
 from app.infrastructure.ai.prompting.builder.prompt_builder import PromptBuilderService
-from app.infrastructure.ai.prompting.sections.profile import build_business_profile_context
+from app.infrastructure.ai.prompting.sections import business as business_section, guidance as guidance_section
+from app.infrastructure.ai.prompting.sections.knowledge import KNOWLEDGE_HEADER
+from app.infrastructure.ai.prompting.view import PromptView
 from app.infrastructure.business_config.database import create_business_config_engine
 from app.infrastructure.business_config.runtime_access import open_published_reader
 from app.infrastructure.business_config.tables import business_configs
@@ -102,7 +104,7 @@ def test_a_business_created_in_the_panel_answers_without_any_yaml_folder(monkeyp
     assert not (TENANTS_DIR / "panaderia_la_espiga").exists()
     (prompts, response), = run_conversation("panaderia_la_espiga", [("¿Qué venden?", reply("Pan recién horneado."))], user_id="nuevo")
     assert response == "Pan recién horneado."
-    assert "Negocio: La Espiga" in prompts[0]
+    assert "Nombre: La Espiga" in prompts[0]
 
 
 def test_an_unknown_business_gets_the_neutral_reply_and_an_alert(monkeypatch):
@@ -195,7 +197,7 @@ def test_tenants_stay_isolated(monkeypatch):
 def test_contract_response_length_controls_prompt_and_truncation(monkeypatch):
     long_text = " ".join(["palabra"] * 150) + "."
     (prompts, response), = run_conversation("asesor_ai_prod", [("Explícame todo", reply(long_text))], user_id="longitud")
-    assert "ESTILO: medium, máximo 75 palabras" in prompts[0]
+    assert "Responde en máximo 75 palabras." in prompts[0]
     assert len(response.split()) <= 75
     assert response == enforce_max_words(long_text, 75)
 
@@ -207,7 +209,7 @@ def test_changing_the_contract_changes_response_length(monkeypatch, tmp_path):
         lambda d: d.update(response_style={"length": "long", "max_words": 90}),
         [("Explícame todo", reply(long_text))],
     )
-    assert "ESTILO: long, máximo 90 palabras" in prompts[0]
+    assert "Responde en máximo 90 palabras." in prompts[0]
     assert len(response.split()) == 90
 
 
@@ -219,7 +221,7 @@ def test_each_response_length_option_controls_prompt_and_truncation(monkeypatch,
     (prompts, response), = run_with_document(
         monkeypatch, tmp_path, slug, lambda d: d.update(response_style={"length": length}), [("Explícame todo", reply(long_text))]
     )
-    assert f"ESTILO: {length}, máximo {words} palabras" in prompts[0]
+    assert f"Responde en máximo {words} palabras." in prompts[0]
     assert len(response.split()) == words
 
 
@@ -234,10 +236,11 @@ def test_response_length_is_the_same_on_every_channel(monkeypatch, channel):
 # Oferta, precios y pagos
 # ---------------------------------------------------------------------------
 
-def test_plan_prices_format_is_unchanged(monkeypatch):
+def test_plan_prices_are_said_like_a_salesperson_would(monkeypatch):
     turns = [("Hola, necesito información", reply("Claro.")), ("¿Precio?", reply("Te cuento."))]
-    (_, _), (prompts, _) = run_conversation("asesor_ai_prod", turns, user_id="planes")
-    assert "Precios: Plan Basico -> COP: implementation=100000, monthly=110000 | USD: implementation=40, monthly=45." in prompts[0]
+    (first, _), (prompts, _) = run_conversation("asesor_ai_prod", turns, user_id="planes")
+    line = "- Plan Basico — COP 100.000 de implementación + COP 110.000 al mes · USD 40 de implementación + USD 45 al mes"
+    assert line in prompts[0] and line in first[0], "los precios van desde el primer mensaje"
 
 
 def test_unavailable_offer_is_not_offered(monkeypatch, tmp_path):
@@ -350,9 +353,8 @@ def test_closing_and_data_collection_toggles_change_the_prompt(monkeypatch, tmp_
         document["capabilities"]["data_collection"] = {"enabled": False, "fields": []}
 
     (prompts, _), = run_with_document(monkeypatch, tmp_path, "saas", _disable, [("Quiero comprar", reply("Listo."))])
-    closing_line = prompts[0].split("Métodos activos en este negocio:\n", 1)[1].splitlines()[0]
-    assert closing_line == "human_handoff"
-    assert "Campos definidos para pedir al cliente:\nsin campos definidos" in prompts[0]
+    assert "Para cerrar puedes pasarlo con una persona del equipo." in prompts[0]
+    assert "enviarle el link de pago" not in prompts[0] and "Datos que pides para cerrar" not in prompts[0]
 
 
 @pytest.mark.parametrize("enabled", [True, False])
@@ -373,14 +375,6 @@ def test_payment_report_message_is_optional(monkeypatch, tmp_path):
     (_, without_message), = run_with_document(monkeypatch, tmp_path / "sin", "saas", lambda d: d["messages"].pop("payment_reported"), turns)
     assert with_message.strip() == _document("saas")["messages"]["payment_reported"].strip()
     assert without_message == "Gracias, lo reviso."
-
-
-def test_payment_confirmed_message_reaches_the_post_payment_prompt(monkeypatch, tmp_path):
-    turns = [("Quiero pagar por nequi", reply("Listo.", "buy", payment_method="nequi")), ("Ya casi", reply("Perfecto."))]
-    (_, _), (prompts, _) = run_with_document(
-        monkeypatch, tmp_path, "saas", lambda d: d["messages"].update(payment_confirmed="¡Pago recibido, gracias!"), turns
-    )
-    assert "ON_PAYMENT_CONFIRMED_MESSAGE: ¡Pago recibido, gracias!" in prompts[0]
 
 
 def test_conversation_windows_drive_the_conversation_state(monkeypatch, tmp_path):
@@ -420,9 +414,16 @@ PANEL_DOCUMENT = ROOT_DIR / "apps" / "admin-web" / "src" / "test" / "fixtures" /
 CATALOG_TENANTS = ["agencia_viajes", "escuela_conduccion", "restaurant", "tienda_ropa"]
 
 
+def _profile_text(compiled: dict) -> str:
+    """El negocio y sus indicaciones, como los arma el prompt a partir de lo compilado."""
+    view = PromptView(runtime_from_sections("ejemplo", compiled))
+    return f"{business_section.render(view)}\n{guidance_section.render(view)}"
+
+
 def _profile_block(prompt: str) -> str:
-    assert "PERFIL COMERCIAL DEL NEGOCIO:" in prompt
-    return prompt.split("PERFIL COMERCIAL DEL NEGOCIO:\n", 1)[1].split("\n\n", 1)[0]
+    """Lo que el prompt dice del negocio: desde «EL NEGOCIO» hasta antes de «ESTA CONVERSACIÓN»."""
+    assert "EL NEGOCIO\n" in prompt
+    return prompt.split("EL NEGOCIO\n", 1)[1].split("ESTA CONVERSACIÓN", 1)[0]
 
 
 def _stored(slug: str) -> BusinessConfig:
@@ -440,8 +441,8 @@ def test_example_document_compiles_with_every_option():
     assert profile["name"] == "La Masa Madre" and profile["tone"] == "cercano y alegre"
     assert profile["recommendations"] == [{"when": "celebra un cumpleaños", "recommend": "Torta de chocolate"}]
     assert profile["promotions"] == [{"name": "Lunes de pan", "details": "10 % de descuento en panes los lunes", "valid_until": "2030-12-31"}]
-    block = build_business_profile_context(compiled)
-    assert "Negocio: La Masa Madre" in block and "- Si celebra un cumpleaños: recomienda Torta de chocolate." in block
+    block = _profile_text(compiled)
+    assert "Nombre: La Masa Madre" in block and "- Si celebra un cumpleaños: recomienda Torta de chocolate." in block
 
 
 @pytest.mark.parametrize("slug", TENANTS)
@@ -449,28 +450,28 @@ def test_the_profile_block_reaches_the_prompt(monkeypatch, slug):
     (contract_prompts, _), = run_conversation(slug, [("Hola, info", reply("Claro."))], user_id="perfil")
     config = _stored(slug)
     block = _profile_block(contract_prompts[0])
-    assert f"Negocio: {config.identity.name}" in block
-    assert f"palabras, {config.response_style.tone.strip()}." in contract_prompts[0]
+    assert f"Nombre: {config.identity.brand_name or config.identity.name}" in block
+    assert f"Tono: {config.response_style.tone.strip().rstrip('.')}. Responde en máximo" in contract_prompts[0]
     for question in (config.sales.discovery.questions if config.sales.discovery else None) or []:
         assert f"- {question}" in block
 
 
 PROFILE_CASES = {
-    "marca": (lambda d: d["identity"].update(brand_name="Sabor Casero"), "Negocio: Sabor Casero"),
+    "marca": (lambda d: d["identity"].update(brand_name="Sabor Casero"), "Nombre: Sabor Casero"),
     "diferenciadores": (
         lambda d: d["identity"].update(differentiators=["ingredientes locales", "entrega en 30 minutos."]),
-        "Diferenciadores: ingredientes locales; entrega en 30 minutos.",
+        "Lo que lo diferencia: ingredientes locales; entrega en 30 minutos.",
     ),
     "ubicacion": (
         lambda d: d["identity"].update(location={"type": "mixto", "address": "Calle 1 #2-3", "city": "Bogotá", "coverage": {"type": "nacional", "zones": ["Colombia"]}}),
-        "Ubicación: local físico y atención virtual; Calle 1 #2-3, Bogotá.\nCobertura nacional: Colombia.",
+        "Dónde atiende: local físico y atención virtual; Calle 1 #2-3, Bogotá.\nCobertura nacional: Colombia.",
     ),
-    "modalidades": (lambda d: d["identity"].update(service_modes=["envio", "recoger"]), "Modalidades de atención: con envío, para recoger."),
+    "modalidades": (lambda d: d["identity"].update(service_modes=["envio", "recoger"]), "Cómo atiende: con envío, para recoger."),
     "beneficios": (lambda d: d["sales"].update(benefits=["comer bien sin salir de casa"]), "Beneficios para el cliente: comer bien sin salir de casa."),
     "argumentos": (lambda d: d["sales"].update(arguments=["Todo se prepara al momento."]), "Argumentos de venta:\n- Todo se prepara al momento."),
     "preguntas": (
         lambda d: d["sales"].setdefault("discovery", {}).update(questions=["¿Para cuántas personas es el pedido?"]),
-        "Preguntas para entender al cliente (como máximo una por mensaje y solo si aún no lo sabes):\n- ¿Para cuántas personas es el pedido?",
+        "Preguntas para entender al cliente (una por mensaje y solo si aún no lo sabes):\n- ¿Para cuántas personas es el pedido?",
     ),
     "recomendaciones": (
         lambda d: d["sales"].update(recommendation_rules=[{"when": "pide algo para compartir", "recommend": "hamburguesa_doble"}, {"when": "tiene sed", "recommend": "bebidas"}]),
@@ -478,7 +479,7 @@ PROFILE_CASES = {
     ),
     "instrucciones": (
         lambda d: d["sales"].update(instructions=["Confirma la dirección antes de cerrar el pedido."]),
-        "Instrucciones del negocio:\n- Confirma la dirección antes de cerrar el pedido.",
+        "Instrucciones:\n- Confirma la dirección antes de cerrar el pedido.",
     ),
     "promociones": (
         lambda d: d["terms"].update(promotions=[{"name": "Martes 2x1", "details": "Dos hamburguesas sencillas por el precio de una", "valid_until": "2999-12-31"}]),
@@ -486,11 +487,11 @@ PROFILE_CASES = {
     ),
     "caracteristicas": (
         lambda d: d["offer"]["catalog"]["items"][0].update(features=["pan artesanal", "papas incluidas"]),
-        "- Hamburguesa Sencilla: Carne artesanal, queso y vegetales frescos. Características: pan artesanal, papas incluidas.",
+        "- Hamburguesa Sencilla — COP 18.000: Carne artesanal, queso y vegetales frescos. Características: pan artesanal, papas incluidas.",
     ),
     "descripcion_producto": (
         lambda d: d["offer"]["catalog"]["items"][0].update(description="Doble carne y salsa de la casa."),
-        "- Hamburguesa Sencilla: Doble carne y salsa de la casa.",
+        "- Hamburguesa Sencilla — COP 18.000: Doble carne y salsa de la casa.",
     ),
 }
 
@@ -515,9 +516,12 @@ def test_removing_profile_options_removes_them_from_the_prompt(monkeypatch, tmp_
             item.pop("description", None)
 
     (prompts, _), = run_with_document(monkeypatch, tmp_path, "restaurant", _clear, [("Hola, info", reply("Claro."))])
-    identity = _stored("restaurant").identity
-    # Sin opciones del perfil solo quedan el nombre y la descripción, que siempre son obligatorios.
-    assert _profile_block(prompts[0]).splitlines() == [f"Negocio: {identity.name}", f"Descripción: {identity.description.strip()}"]
+    block = _profile_block(prompts[0])
+    # Sin esas opciones no queda ninguna de sus líneas; el tono vuelve al de la plataforma.
+    for gone in ("Lo que lo diferencia:", "Dónde atiende:", "Cómo atiende:", "Beneficios para el cliente:"):
+        assert gone not in block
+    assert "Tono: natural y claro. Responde en máximo" in block
+    assert "- Hamburguesa Sencilla — COP 18.000\n" in block
 
 
 def test_expired_promotions_are_not_offered(monkeypatch, tmp_path):
@@ -533,17 +537,18 @@ def test_expired_promotions_are_not_offered(monkeypatch, tmp_path):
     assert "Vencida" not in block
 
 
-def test_ongoing_conversation_keeps_only_the_profile_rules(monkeypatch, tmp_path):
+def test_ongoing_conversation_keeps_the_whole_business(monkeypatch, tmp_path):
+    """Antes, en una conversación en curso solo quedaban las reglas del perfil: el asistente olvidaba qué vendía."""
     def _with_rules(document):
         document["sales"]["instructions"] = ["Confirma la dirección antes de cerrar."]
 
     turns = [("Necesito información", reply("Claro.")), ("¿Y el domicilio?", reply("Te cuento."))]
     (first, _), (second, _) = run_with_document(monkeypatch, tmp_path, "restaurant", _with_rules, turns)
-    assert "Negocio: " in _profile_block(first[0]) and "Diferenciadores:" in _profile_block(first[0])
+    assert _profile_block(first[0]) == _profile_block(second[0])
     ongoing = _profile_block(second[0])
-    assert "Negocio: " not in ongoing and "Diferenciadores:" not in ongoing and "Detalle de la oferta:" not in ongoing
-    assert ongoing.splitlines() == ["Instrucciones del negocio:", "- Confirma la dirección antes de cerrar."]
-    assert "máximo 60 palabras, cercano, agil y orientado a orden." in second[0]
+    assert "Nombre: " in ongoing and "Lo que lo diferencia:" in ongoing and "LO QUE VENDE\n- " in ongoing
+    assert "Instrucciones:\n- Confirma la dirección antes de cerrar." in ongoing
+    assert "Tono: cercano, agil y orientado a orden. Responde en máximo 60 palabras." in second[0]
 
 
 def test_active_prompt_stays_within_budget(monkeypatch):
@@ -555,10 +560,9 @@ def test_active_prompt_stays_within_budget(monkeypatch):
     prompt, _, _ = PromptBuilderService().build(
         client_config_id="asesor_ai_prod", user_message="siguiente", yaml_config=runtime, faq_results=[], progression_rules=None
     )
-    # asesor_ai_prod no tiene instrucciones ni promociones, las reglas que siguen en una conversación en curso: solo cambia el tono.
-    assert "PERFIL COMERCIAL DEL NEGOCIO:" not in prompt
-    assert "máximo 75 palabras, humano, cercano, directo y comercial de cierre." in prompt
-    assert len(prompt) < 3200  # con la identidad del negocio, que desde la Fase 2 va en todos los mensajes
+    assert "Tono: humano, cercano, directo y comercial de cierre. Responde en máximo 75 palabras." in prompt
+    # El negocio completo va en todos los mensajes; lo fijo se repite igual y el proveedor lo cobra más barato desde su caché.
+    assert len(prompt) < 6_500
 
 
 def test_panel_document_is_valid_and_reaches_the_engine():
@@ -567,7 +571,7 @@ def test_panel_document_is_valid_and_reaches_the_engine():
     secrets = {}
     compiled = compile_business_config(config, lambda ref: secrets.setdefault(ref.secret_ref, f"valor-{len(secrets)}"))
     assert set(secrets) == {"secret_store:principal.link", "secret_store:principal.transfer.0.number"}
-    block = build_business_profile_context(compiled)
+    block = _profile_text(compiled)
     assert compiled["config"]["profile"]["tone"] == "cercano y amable"
     assert "- Si pide café: recomienda Croissant de mantequilla." in block
     assert "Desayuno del lunes: 10 % de descuento en desayunos los lunes" in block
@@ -597,21 +601,22 @@ def test_faqs_reach_the_prompt_only_when_configured(monkeypatch, tmp_path):
         lambda d: d.update(knowledge={"faqs": faqs}),
         [("¿Abren el domingo?", reply("Sí."))],
     )
-    assert "CONOCIMIENTO DEL NEGOCIO (preguntas frecuentes):\n- P: ¿Atienden los domingos?\n  R: Sí, de 9 a. m. a 1 p. m." in prompts[0]
+    assert f"{KNOWLEDGE_HEADER}\n- P: ¿Atienden los domingos?\n  R: Sí, de 9 a. m. a 1 p. m." in prompts[0]
 
     monkeypatch.undo()  # de vuelta al almacén de la suite, con los nueve negocios
     for slug in TENANTS:
         (plain_prompts, _), = run_conversation(slug, [("Hola, info", reply("Claro."))], user_id="sin-faq")
-        assert "CONOCIMIENTO DEL NEGOCIO" not in plain_prompts[0]
+        assert KNOWLEDGE_HEADER not in plain_prompts[0]
 
 
 @pytest.mark.parametrize("slug", CATALOG_TENANTS)
 def test_catalog_prices_reach_the_prompt(monkeypatch, slug):
     config = _stored(slug)
     (prompts, _), = run_conversation(slug, [("¿Cuánto cuesta?", reply("Te cuento."))], user_id="catalogo")
-    prices_line = next(line for line in prompts[0].splitlines() if line.startswith("Precios:"))
+    offer = prompts[0].split("LO QUE VENDE\n", 1)[1].split("\n\n", 1)[0]
     for item in config.offer.catalog.items:
-        assert f"{item.name} -> COP: {item.prices[0].amount}" in prices_line
+        if item.available:
+            assert f"- {item.name} — {item.prices[0].currency} {item.prices[0].amount:,}".replace(",", ".") in offer
 
 
 # ---------------------------------------------------------------------------
@@ -624,36 +629,36 @@ def _first_plan(document: dict) -> dict:
 
 CONNECTED_CASES = {
     # caso: (negocio, cambio en el documento, texto esperado en el prompt, turno)
-    "sector": ("saas", lambda d: d["identity"].update(industry="software contable para tiendas"), "Industria del negocio: software contable para tiendas.", 0),
-    "promesa": ("saas", lambda d: d["identity"].update(value_proposition="Cuadra tu caja en minutos"), "Promesa comercial: Cuadra tu caja en minutos.", 0),
+    "sector": ("saas", lambda d: d["identity"].update(industry="software contable para tiendas"), "— software contable para tiendas.", 0),
+    "promesa": ("saas", lambda d: d["identity"].update(value_proposition="Cuadra tu caja en minutos"), "Promesa: Cuadra tu caja en minutos.", 0),
     "motivos": ("saas", lambda d: d["sales"].update(buying_motivation={"primary": "ahorro", "secondary": "control"}),
-                "Motores de compra: ahorro y control.", 0),
+                "Por qué le compran: ahorro y control.", 0),
     "impactos": ("saas", lambda d: d["sales"].update(customer_problems=[{"id": "caja", "impacts": ["la caja no cuadra al cierre"]}]),
-                 "Casos típicos: la caja no cuadra al cierre.", 0),
+                 "Problemas que resuelve: la caja no cuadra al cierre.", 0),
     "casos_de_uso": ("saas", lambda d: (d["sales"].pop("customer_problems", None), d["sales"].update(
-        use_cases=[{"name": "cierre de caja", "signals": ["no cuadra"], "approach": "conciliar"}])), "Casos típicos: cierre de caja.", 0),
+        use_cases=[{"name": "cierre de caja", "signals": ["no cuadra"], "approach": "conciliar"}])), "Problemas que resuelve: cierre de caja.", 0),
     "incluye": ("saas", lambda d: _first_plan(d).update(includes=["soporte 24/7"]), "Incluye: soporte 24/7.", 1),
     "no_incluye": ("saas", lambda d: _first_plan(d).update(not_included=["hardware"]), "No incluye: hardware.", 1),
-    "primer_pago": ("saas", lambda d: _first_plan(d)["prices"][0].update(first_payment=77777), "first_payment=77777", 1),
-    "precio_unico": ("saas", lambda d: _first_plan(d)["prices"][0].update(price=55555), "price=55555", 1),
-    "categorias": ("restaurant", lambda d: d["offer"]["catalog"]["categories"][0].update(name="Combos"), "Qué se cobra: Combos", 0),
+    "primer_pago": ("saas", lambda d: _first_plan(d)["prices"][0].update(first_payment=77777), "primer pago de COP 77.777", 1),
+    "precio_unico": ("saas", lambda d: _first_plan(d)["prices"][0].update(price=55555), "COP 55.555", 1),
+    "categorias": ("restaurant", lambda d: d["offer"]["catalog"]["categories"][0].update(name="Combos"), "Categorías: Combos", 0),
     "condiciones": ("saas", lambda d: d["terms"].update(conditions=["pago anticipado"]), "Condiciones: pago anticipado.", 1),
-    "encuadre_precio": ("saas", lambda d: d["terms"].update(price_framing="directo"), "Si el cliente duda, muéstrale el valor real: directo.", 1),
-    "retorno": ("saas", lambda d: d["terms"].update(roi_break_even_sales=7), "Con 7 ventas al mes ya pagó el servicio.", 1),
+    "encuadre_precio": ("saas", lambda d: d["terms"].update(price_framing="directo"), "Si duda por el precio, dile con claridad cuánto cuesta y qué recibe, sin rodeos.", 1),
+    "retorno": ("saas", lambda d: d["terms"].update(roi_break_even_sales=7), "Argumento de valor: con 7 ventas al mes el cliente recupera lo que paga.", 1),
     "argumento_retorno": ("saas", lambda d: (d["terms"].pop("roi_break_even_sales", None), d["terms"].update(roi_hints=["una venta paga el mes"])),
-                          "una venta paga el mes.", 1),
+                          "Argumento de valor: una venta paga el mes.", 1),
     "acciones": ("saas", lambda d: d["capabilities"].update(actions_primary=["cerrar_venta"], actions_support=["seguimiento"]),
-                 "Acciones disponibles: cerrar_venta, seguimiento", 0),
+                 "Puedes ayudarle a: cerrar venta, seguimiento.", 0),
     "datos_propios_del_negocio": ("saas", lambda d: d["capabilities"]["data_collection"].update(fields=["cedula_de_prueba"]),
-                                  "Campos definidos para pedir al cliente:\ncedula_de_prueba", 0),
+                                  "Datos que pides para cerrar: cedula de prueba.", 0),
     "canales": ("saas", lambda d: d["capabilities"].update(service_channels=["whatsapp", "instagram"]),
-                "CANALES DE ATENCION (business_channels): whatsapp, instagram", 0),
-    "canales_producto": ("saas", lambda d: d["capabilities"].update(product_channels=["telegram"]), "CANALES DEL SISTEMA (system_channels): telegram", 0),
+                "Atiendes por: whatsapp, instagram.", 0),
+    "canales_producto": ("saas", lambda d: d["capabilities"].update(product_channels=["telegram"]), "Lo que vende funciona en: telegram.", 0),
     "modo_catalogo": ("restaurant", lambda d: d.update(features={"pricing_enabled": True, "catalog_mode": False}),
-                      "Tiene opciones de servicio disponibles con pricing definido.", 0),
-    "tono": ("restaurant", lambda d: d["response_style"].update(tone="paciente y muy claro"), "máximo 60 palabras, paciente y muy claro.", 1),
+                      "CÓMO SE VENDE EN ESTE NEGOCIO (servicios)", 0),
+    "tono": ("restaurant", lambda d: d["response_style"].update(tone="paciente y muy claro"), "Tono: paciente y muy claro.", 1),
     "descripcion_plan": ("saas", lambda d: _first_plan(d).update(name="Plan Caja", description="Incluye soporte por chat"),
-                         "- Plan Caja: Incluye soporte por chat", 0),
+                         "- Plan Caja — ", 0),
 }
 
 
@@ -675,10 +680,10 @@ CONNECTED_EVIDENCE: dict[str, str] = {
     "identity.value_proposition": "test_the_assistant_uses_the_whole_text_up_to_the_contract_limit",
     "offer.model": "test_tenants_stay_isolated",
     "offer.plans[].id": "test_payment_methods_reach_the_customer",
-    "offer.plans[].name": "test_plan_prices_format_is_unchanged",
-    "offer.plans[].prices[].currency": "test_plan_prices_format_is_unchanged",
-    "offer.plans[].prices[].implementation": "test_plan_prices_format_is_unchanged",
-    "offer.plans[].prices[].monthly": "test_plan_prices_format_is_unchanged",
+    "offer.plans[].name": "test_plan_prices_are_said_like_a_salesperson_would",
+    "offer.plans[].prices[].currency": "test_plan_prices_are_said_like_a_salesperson_would",
+    "offer.plans[].prices[].implementation": "test_plan_prices_are_said_like_a_salesperson_would",
+    "offer.plans[].prices[].monthly": "test_plan_prices_are_said_like_a_salesperson_would",
     "offer.plans[].prices[].first_payment": "test_connected_fields_change_the_prompt",
     "offer.plans[].prices[].price": "test_connected_fields_change_the_prompt",
     "offer.plans[].includes": "test_connected_fields_change_the_prompt",
@@ -722,7 +727,6 @@ CONNECTED_EVIDENCE: dict[str, str] = {
     "messages.welcome.enabled": "test_welcome_message_toggle",
     "messages.welcome.text": "test_welcome_message_toggle",
     "messages.payment_reported": "test_payment_report_message_is_optional",
-    "messages.payment_confirmed": "test_payment_confirmed_message_reaches_the_post_payment_prompt",
     "response_style.length": "test_each_response_length_option_controls_prompt_and_truncation",
     "response_style.max_words": "test_changing_the_contract_changes_response_length",
     "features.catalog_mode": "test_connected_fields_change_the_prompt",

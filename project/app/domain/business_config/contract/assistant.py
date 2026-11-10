@@ -93,7 +93,10 @@ class WelcomeMessage(ContractModel):
 class Messages(ContractModel):
     welcome: WelcomeMessage = Field(description="Saludo de cada conversación nueva: mensaje fijo o respuesta de la IA.", json_schema_extra=CONNECTED)
     payment_reported: MessageText | None = Field(default=None, description="Respuesta exacta cuando el cliente reporta un pago.", json_schema_extra=CONNECTED)
-    payment_confirmed: MessageText | None = Field(default=None, description="Mensaje cuando el pago queda confirmado.", json_schema_extra=CONNECTED)
+    payment_confirmed: MessageText | None = Field(
+        default=None,
+        description="Mensaje cuando el equipo confirma el pago. Se guarda; lo enviará la plataforma cuando el equipo pueda confirmar pagos desde el panel.",
+    )
     after_sale: MessageText | None = Field(default=None, description="Mensaje después de una compra.")
     data_request: MessageText | None = Field(default=None, description="Mensaje para pedir los datos del cliente.")
     follow_up: MessageText | None = Field(default=None, description="Mensaje de seguimiento a un cliente que no respondió.")

@@ -316,7 +316,7 @@ def test_the_engine_says_when_the_assistant_passes_the_chat_to_a_person():
 
     def answer(text):
         pipeline = AIPipeline(memory_service=MemoryDomainService(MemoryRepository()), ai_loader=lambda _slug: Credentials("openrouter", None, KEY))
-        pipeline.runtime.generate = lambda prompt, *, user_message, bot_config=None: reply(text)
+        pipeline.runtime.generate = lambda prompt, *, user_message, bot_config=None, **_kwargs: reply(text)
         _reply, _ai_used, metadata = pipeline.run(
             tenant=SimpleNamespace(slug="restaurant", name="restaurant", id="restaurant"), user_message="Necesito ayuda con mi pedido",
             user_id="cliente-1", bot_config=None, conversation_history=[], faq_results=[], yaml_config=None, include_metadata=True,

@@ -253,7 +253,7 @@ def test_each_imported_business_answers_from_its_own_store(store, key, monkeypat
     monkeypatch.setattr(loader.logger, "error", lambda event, extra=None: errors.append({"event": event, **(extra or {})}))
     from_store = run_conversation(slug, CONVERSATION, user_id="nueve_negocios")
     assert errors == [], "lo publicado debe poder leerse"
-    assert "PERFIL COMERCIAL DEL NEGOCIO:" in from_store[0][0][0]
+    assert "EL NEGOCIO\nNombre: " in from_store[0][0][0]
     assert from_store == from_suite
 
 

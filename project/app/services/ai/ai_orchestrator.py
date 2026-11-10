@@ -67,7 +67,8 @@ from __future__ import annotations
 import json
 import re
 
-from app.services.ai.output_contract import system_prompt
+from app.infrastructure.ai.prompting.history import recent_messages
+from app.infrastructure.ai.prompting.instructions import PROMPT_VERSION
 from app.services.ai.structured_output import parse_structured_output
 from app.utils.logger import logger
 
@@ -119,7 +120,6 @@ class AIOrchestrator:
         conversation_history: list,
         faq_results: list[dict],
         yaml_config: dict | None = None,
-        preamble: str = "",
     ) -> tuple[str, bool, dict]:
         del conversation_history
         prompt, _prompt_metadata, _minimal_context = service._build_prompt(
@@ -128,22 +128,24 @@ class AIOrchestrator:
             yaml_config=yaml_config,
             faq_results=faq_results,
         )
-        raw_text = service.generate(system_prompt(prompt, preamble=preamble), user_message=user_message, bot_config=bot_config)
+        # El prompt ya trae todo (instrucciones, negocio y formato); la conversación va como mensajes, antes del mensaje actual.
+        history = recent_messages(yaml_config if isinstance(yaml_config, dict) else {})
+        raw_text = service.generate(prompt, user_message=user_message, bot_config=bot_config, history=history)
         result = parse_structured_output(str(raw_text or ""))
         tenant_slug = str(getattr(tenant, "slug", "") or "")
 
         if bool(result.get("valid")):
             metadata = result.get("ai_metadata") if isinstance(result.get("ai_metadata"), dict) else {}
-            logger.info("ai_reply", extra={"tenant": tenant_slug, "intent": result.get("intent"), "format": "ok"})
-            return str(result.get("response") or ""), True, dict(metadata)
+            logger.info("ai_reply", extra={"tenant": tenant_slug, "intent": result.get("intent"), "format": "ok", "prompt_version": PROMPT_VERSION})
+            return str(result.get("response") or ""), True, {**metadata, "prompt_version": PROMPT_VERSION}
 
         # Sin datos del cliente en los registros: solo qué falló del formato.
         error = str(result.get("error") or "invalid_llm_output")
         reply = _usable_reply(result)
         if reply:
             legacy = result.get("_legacy_metadata") if isinstance(result.get("_legacy_metadata"), dict) else {}
-            metadata = {**legacy, "intent": "", "intent_missing": True, "format_error": error}
-            logger.warning("ai_reply", extra={"tenant": tenant_slug, "intent": "", "format": error})
+            metadata = {**legacy, "intent": "", "intent_missing": True, "format_error": error, "prompt_version": PROMPT_VERSION}
+            logger.warning("ai_reply", extra={"tenant": tenant_slug, "intent": "", "format": error, "prompt_version": PROMPT_VERSION})
             return reply, True, metadata
 
         logger.warning("ai_reply_unusable", extra={"tenant": tenant_slug, "format": error})

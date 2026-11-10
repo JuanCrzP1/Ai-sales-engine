@@ -56,15 +56,15 @@ REAL_TOKEN_VERIFICATION = AuthService.get_user_from_token
 
 @pytest.fixture
 def llm(monkeypatch):
-    """Sustituye al modelo: registra los prompts recibidos y responde lo indicado, sin red."""
+    """Sustituye al modelo: registra todo lo que recibiría (instrucciones y conversación) y responde lo indicado, sin red."""
     state = SimpleNamespace(prompts=[], reply=reply(FAKE_REPLY))
     original = AIPipeline.__init__
 
     def _init(self, *args, **kwargs):
         original(self, *args, **kwargs)
 
-        def _generate(prompt, *, user_message, bot_config=None):
-            state.prompts.append(str(prompt))
+        def _generate(prompt, *, user_message, bot_config=None, history=None, **_kwargs):
+            state.prompts.append("\n".join([str(prompt), *(str(item.get("content") or "") for item in history or [])]))
             return state.reply
 
         self.runtime.generate = _generate

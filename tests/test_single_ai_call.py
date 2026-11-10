@@ -15,7 +15,7 @@ from types import SimpleNamespace
 import pytest
 
 from app.application.ai_pipeline import AIPipeline
-from app.application.pipeline.ai_execution import FRAME_BLOCK
+from app.infrastructure.ai.prompting.instructions import PLATFORM
 from app.application.runtime import MessageAI
 from app.domain.business_config.ai_settings import AICredentials
 from app.domain.business_config.ai_usage import AIUsage
@@ -41,7 +41,7 @@ def _pipeline(outputs: list[str], **options) -> tuple[AIPipeline, list[str]]:
     prompts: list[str] = []
     pipeline = AIPipeline(memory_service=MemoryDomainService(MemoryRepository()), ai_loader=lambda _slug: CREDENTIALS, **options)
 
-    def _generate(prompt, *, user_message, bot_config=None):
+    def _generate(prompt, *, user_message, bot_config=None, **_kwargs):
         prompts.append(prompt)
         return outputs.pop(0)
 
@@ -100,19 +100,20 @@ def test_the_first_call_already_asks_for_the_format():
     pipeline, prompts = _pipeline([reply("Hola.")])
     _say(pipeline)
     [prompt] = prompts
-    assert prompt.startswith(FRAME_BLOCK.strip()) and prompt.endswith(OUTPUT_CONTRACT)
+    # El formato va con las instrucciones fijas, al principio: igual en todos los mensajes (el proveedor lo reutiliza de su caché).
+    assert prompt.startswith(f"{PLATFORM}\n\n{OUTPUT_CONTRACT}")
     for intent in ("pain", "info", "objection", "buy"):
         assert f'"{intent}"' in OUTPUT_CONTRACT
     assert "JSON" in OUTPUT_CONTRACT  # requisito de `response_format: json_object`
 
 
 def test_simultaneous_messages_do_not_mix_their_instructions():
-    """Antes se reemplazaba `runtime.generate` en un objeto compartido: dos mensajes a la vez acumulaban el marco del canal."""
+    """Antes se reemplazaba `runtime.generate` en un objeto compartido: dos mensajes a la vez acumulaban las instrucciones."""
     prompts: list[str] = []
     first_inside, release = threading.Event(), threading.Event()
     pipeline = AIPipeline(memory_service=MemoryDomainService(MemoryRepository()), ai_loader=lambda _slug: CREDENTIALS)
 
-    def _generate(prompt, *, user_message, bot_config=None):
+    def _generate(prompt, *, user_message, bot_config=None, **_kwargs):
         prompts.append(prompt)
         if len(prompts) == 1:
             first_inside.set()
@@ -129,7 +130,7 @@ def test_simultaneous_messages_do_not_mix_their_instructions():
     release.set()
     first.join(10)
     assert len(prompts) == 2
-    assert [prompt.count("MODO DE RESPUESTA:") for prompt in prompts] == [1, 1]
+    assert [prompt.count("CÓMO RESPONDES") for prompt in prompts] == [1, 1]
     assert pipeline.runtime.generate is _generate
 
 

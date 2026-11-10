@@ -38,7 +38,7 @@ def _engine(ai_loader=None) -> tuple[AIPipeline, list[MessageAI]]:
     calls: list[MessageAI] = []
     pipeline = AIPipeline(memory_service=MemoryDomainService(MemoryRepository()), ai_loader=ai_loader)
 
-    def _generate(prompt, *, user_message, bot_config=None):
+    def _generate(prompt, *, user_message, bot_config=None, **_kwargs):
         calls.append(bot_config)
         return reply("Respuesta.")
 

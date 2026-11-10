@@ -35,7 +35,7 @@ class _MemoryStub:
     def __init__(self) -> None:
         self.initial_message_last_sent_at = None
         self.last_user_message_at = None
-        self.saved_messages: list[tuple[str, str, str]] = []
+        self.saved_messages: list[tuple[str, str, str, str]] = []
 
     def get_last_user_message_at(self, *, tenant_slug: str, user_id: str):
         del tenant_slug, user_id
@@ -45,8 +45,8 @@ class _MemoryStub:
         del tenant_slug, user_id
         self.initial_message_last_sent_at = sent_at
 
-    def save_message(self, *, tenant_slug: str, user_id: str, message_text: str) -> None:
-        self.saved_messages.append((tenant_slug, user_id, message_text))
+    def save_message(self, *, tenant_slug: str, user_id: str, message_text: str, role: str = "user") -> None:
+        self.saved_messages.append((tenant_slug, user_id, message_text, role))
 
     def set_last_user_message_at(self, *, tenant_slug: str, user_id: str, sent_at) -> None:
         del tenant_slug, user_id
@@ -357,6 +357,8 @@ def test_the_initial_message_comes_from_the_published_config() -> None:
     assert result == ("Hola, este saludo viene de la config del tenant.", "initial_message")
     assert runtime_yaml.get("conversation_stage") == "connection"
     assert memory.initial_message_last_sent_at is not None
+    # El mensaje del cliente y el saludo quedan en la conversación, cada uno con su autor.
     assert memory.saved_messages == [
-        ("asesor_ai_prod", "runtime-config-initial-message", "hola")
+        ("asesor_ai_prod", "runtime-config-initial-message", "hola", "user"),
+        ("asesor_ai_prod", "runtime-config-initial-message", "Hola, este saludo viene de la config del tenant.", "assistant"),
     ]

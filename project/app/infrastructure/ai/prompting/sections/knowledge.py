@@ -12,7 +12,7 @@ from typing import Any
 from app.domain.business_config.engine_policy import FAQ_PROMPT_MAX_CHARS
 from app.infrastructure.ai.prompting import relevance
 
-KNOWLEDGE_HEADER = "CONOCIMIENTO DEL NEGOCIO (preguntas frecuentes):"
+KNOWLEDGE_HEADER = "PREGUNTAS FRECUENTES (respuestas oficiales del negocio)"
 
 
 def _faqs(runtime: dict) -> list[tuple[str, str]]:

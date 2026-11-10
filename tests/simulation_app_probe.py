@@ -43,7 +43,7 @@ model_calls = []
 def _fake_model(self, *args, **kwargs):
     _pipeline_init(self, *args, **kwargs)
 
-    def _generate(prompt, *, user_message, bot_config=None):
+    def _generate(prompt, *, user_message, bot_config=None, **_kwargs):
         model_calls.append(1)
         return reply("Respuesta simulada.")
 

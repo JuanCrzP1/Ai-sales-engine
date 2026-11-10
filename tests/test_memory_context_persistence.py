@@ -28,19 +28,19 @@ from app.services.ai_service import AIService
 
 
 def _capabilities_block(runtime: dict) -> str:
-    """El bloque de capacidades del prompt para ese runtime."""
-    from app.infrastructure.ai.prompting.sections import capabilities
+    """El bloque «CÓMO SE PAGA Y SE CIERRA» del prompt para ese runtime."""
+    from app.infrastructure.ai.prompting.sections import payments
     from app.infrastructure.ai.prompting.view import PromptView
 
-    return capabilities.render(PromptView(runtime))
+    return payments.render(PromptView(runtime))
 
 
 def _post_payment_block(runtime: dict) -> str:
-    """El bloque de post-pago del prompt para ese runtime."""
-    from app.infrastructure.ai.prompting.sections import post_payment
+    """El bloque «ESTA CONVERSACIÓN», donde va el pago en curso."""
+    from app.infrastructure.ai.prompting.sections import conversation
     from app.infrastructure.ai.prompting.view import PromptView
 
-    return post_payment.render(PromptView(runtime))
+    return conversation.render(PromptView(runtime))
 
 
 def _tenant(slug: str = "asesor_ai_prod") -> SimpleNamespace:
@@ -463,11 +463,11 @@ def _build_prompt_with_memory(memory_ctx: dict, conversation_state: str = "activ
 ## QUÉ PROTEGE:
 ## Eliminación de redundancia de intent en el prompt (5D-B).
 ## ----------------------------------------
-def test_intent_appears_only_once_in_prompt() -> None:
-    prompt = _build_prompt_with_memory({"last_intent": "price", "last_ai_response": "ok"})
-    count = prompt.count("Última intención detectada: price")
-    assert count == 1, f"Se esperaba 1 ocurrencia de last_intent, encontradas: {count}"
-
+def test_memory_facts_appear_only_once_in_prompt() -> None:
+    """Lo que se sabe del cliente va una sola vez, en «ESTA CONVERSACIÓN». La intención es interna: no se le dicta a la IA."""
+    prompt = _build_prompt_with_memory({"last_intent": "price", "last_pain": "mensajes perdidos", "last_ai_response": "ok"})
+    assert prompt.count("Lo que necesita: mensajes perdidos") == 1
+    assert "price" not in prompt.split("ESTA CONVERSACIÓN", 1)[1]
 
 ## ----------------------------------------
 ## QUÉ HACE ESTE TEST:
@@ -479,13 +479,10 @@ def test_intent_appears_only_once_in_prompt() -> None:
 ## QUÉ PROTEGE:
 ## Eliminación de redundancia de dolor en el prompt (5D-B).
 ## ----------------------------------------
-def test_pain_appears_only_once_in_prompt() -> None:
-    prompt = _build_prompt_with_memory(
-        {"last_intent": "pain", "last_pain": "mensajes perdidos", "last_ai_response": "ok"}
-    )
-    count = prompt.count("Dolor detectado: mensajes perdidos")
-    assert count == 1, f"Se esperaba 1 ocurrencia de last_pain, encontradas: {count}"
-
+def test_the_last_reply_is_not_repeated_inside_the_prompt() -> None:
+    """La última respuesta viaja como mensaje de la conversación (`history.py`), no copiada dentro de las instrucciones."""
+    prompt = _build_prompt_with_memory({"last_intent": "pain", "last_pain": "mensajes perdidos", "last_ai_response": "Respuesta anterior única"})
+    assert "Respuesta anterior única" not in prompt
 
 ## ----------------------------------------
 ## QUÉ HACE ESTE TEST:
@@ -497,22 +494,12 @@ def test_pain_appears_only_once_in_prompt() -> None:
 ## QUÉ PROTEGE:
 ## Eliminación de redundancia de estado de pago (5D-B).
 ## ----------------------------------------
-def test_payment_status_appears_only_once_in_prompt() -> None:
-    prompt = _build_prompt_with_memory(
-        {
-            "last_intent": "price",
-            "metodo_pago_elegido": "nequi",
-            "estado_pago": "pendiente",
-            "last_ai_response": "ok",
-        }
-    )
-    count = prompt.count("Estado de pago recordado: pendiente")
-    assert count == 1, f"Se esperaba 1 ocurrencia de estado_pago, encontradas: {count}"
-    # El bloque MEMORIA también debe tener el dato de pago (no de intent)
-    assert "ESTADO_PAGO_PREVIO: pendiente" in prompt
-    # intent NO debe aparecer en MEMORIA
-    assert "INTENT_DETECTADO_PREVIO" not in prompt
-
+def test_a_chosen_payment_is_said_once_and_never_restarted() -> None:
+    prompt = _build_prompt_with_memory({"last_intent": "price", "metodo_pago_elegido": "nequi", "estado_pago": "pendiente", "last_ai_response": "ok"})
+    assert prompt.count("Ya eligió pagar por Nequi: no le vuelvas a ofrecer medios de pago.") == 1
+    reported = _build_prompt_with_memory({"metodo_pago_elegido": "nequi", "estado_pago": "reportado", "last_ai_response": "ok"})
+    assert reported.count("Dijo que ya pagó: no le pidas que pague otra vez y no confirmes el pago; el equipo lo verifica.") == 1
+    assert "Ya eligió pagar" not in reported
 
 ## ----------------------------------------
 ## QUÉ HACE ESTE TEST:
@@ -524,12 +511,9 @@ def test_payment_status_appears_only_once_in_prompt() -> None:
 ## QUÉ PROTEGE:
 ## Supresión del bloque de memoria cuando no hay pago activo (5D-B).
 ## ----------------------------------------
-def test_memory_behavior_block_absent_without_payment_data() -> None:
-    prompt = _build_prompt_with_memory(
-        {"last_intent": "pain", "last_pain": "mensajes", "last_ai_response": "ok"}
-    )
-    assert "COMPORTAMIENTO CON MEMORIA:" not in prompt
-
+def test_without_a_payment_in_progress_nothing_about_it_is_said() -> None:
+    prompt = _build_prompt_with_memory({"last_intent": "pain", "last_pain": "mensajes", "last_ai_response": "ok"})
+    assert "Ya eligió pagar" not in prompt and "Dijo que ya pagó" not in prompt
 
 ## ----------------------------------------
 ## QUÉ HACE ESTE TEST:
@@ -543,10 +527,8 @@ def test_memory_behavior_block_absent_without_payment_data() -> None:
 ## ----------------------------------------
 def test_commercial_behavior_intact_after_5db() -> None:
     prompt = _build_prompt_with_memory({"last_intent": "price", "last_ai_response": "ok"})
-    assert "COMPORTAMIENTO COMERCIAL" in prompt
-    assert "Contexto reciente del cliente:" in prompt
-    assert "Estado de la conversaci\u00f3n:" in prompt
-
+    assert "CÓMO SE VENDE EN ESTE NEGOCIO" in prompt
+    assert "ESTA CONVERSACIÓN\nLa conversación sigue: continúa desde lo último que hablaron." in prompt
 
 ## ========================================
 ## FASE 5D-C: bloques permanentes optimizados
@@ -566,18 +548,15 @@ def test_commercial_behavior_intact_after_5db() -> None:
 def test_active_prompt_shorter_without_payment() -> None:
     from app.infrastructure.ai.prompting.builder.prompt_builder import PromptBuilderService
     from app.application.runtime import load_tenant_runtime_yaml
-
     b = PromptBuilderService()
     rt = load_tenant_runtime_yaml("asesor_ai_prod", extra_yaml={
         "conversation_state": "active",
         "memory_context": {"last_intent": "price", "last_pain": "mensajes", "last_ai_response": "ok"},
     })
     prompt, _, _ = b.build(client_config_id="asesor_ai_prod", user_message="siguiente", yaml_config=rt, faq_results=[], progression_rules=None)
-    # El prompt activo sin pago debe ser claramente menor que la referencia pre-5D (3253 chars)
-    # Umbral 3200: la Fase 2 agrega la identidad del negocio en todos los mensajes (~250 caracteres intencionales; antes se perdía
-    # desde el segundo mensaje). Los presupuestos por bloque están en `prompting/budgets.py`.
-    assert len(prompt) < 3200, f"Prompt activo sin pago demasiado largo: {len(prompt)} chars"
-
+    # Desde el prompt por capas el negocio completo va en todos los mensajes: lo fijo es igual en cada mensaje y el proveedor lo
+    # cobra más barato desde su caché. Los presupuestos por capa están en `prompting/budgets.py`.
+    assert len(prompt) < 6_500, f"Prompt activo sin pago demasiado largo: {len(prompt)} chars"
 
 ## ----------------------------------------
 ## QUÉ HACE ESTE TEST:
@@ -589,26 +568,21 @@ def test_active_prompt_shorter_without_payment() -> None:
 ## QUÉ PROTEGE:
 ## Compactación de capabilities en estados active/warm (5D-C).
 ## ----------------------------------------
-def test_capabilities_compact_in_active_state() -> None:
-    from app.infrastructure.ai.prompting.builder.prompt_builder import PromptBuilderService
-
-    rt_active = {
-        "conversation_state": "active",
-        "config": {
-            "capabilities": {
-                "business_channels": ["whatsapp"],
-                "system_channels": ["web"],
-                "closing_methods": {"link_payment": {"enabled": True}},
-                "actions": {"primary": ["cerrar_venta"]},
-            }
-        },
+def test_how_to_close_is_the_same_in_every_moment() -> None:
+    """Medios de pago, cierre, acciones y canales no cambian con el momento de la conversación: van en la parte fija del prompt."""
+    capabilities = {
+        "business_channels": ["whatsapp"],
+        "system_channels": ["web"],
+        "closing_methods": {"link_payment": {"enabled": True}, "human_handoff": {"enabled": True}},
+        "actions": {"primary": ["cerrar_venta"]},
     }
-    result = _capabilities_block(rt_active)
-    assert "TIPOS DE CANALES:" not in result
-    assert "CANALES DE ATENCION" not in result
-    assert "Métodos de cierre: link_payment" in result
-    assert "Acciones: cerrar_venta" in result
-
+    blocks = {state: _capabilities_block({"conversation_state": state, "config": {"capabilities": capabilities}}) for state in ("new", "active", "warm")}
+    assert len(set(blocks.values())) == 1
+    block = blocks["active"]
+    assert "Atiendes por: whatsapp." in block and "Lo que vende funciona en: web." in block
+    assert "Puedes ayudarle a: cerrar venta." in block
+    # Sin un link configurado no se ofrece enviarlo: el motor no puede mandar lo que no existe.
+    assert "Para cerrar puedes pasarlo con una persona del equipo." in block
 
 ## ----------------------------------------
 ## QUÉ HACE ESTE TEST:
@@ -620,24 +594,9 @@ def test_capabilities_compact_in_active_state() -> None:
 ## QUÉ PROTEGE:
 ## Que la compactación no afecte el primer turno (5D-C).
 ## ----------------------------------------
-def test_capabilities_full_in_new_state() -> None:
-    from app.infrastructure.ai.prompting.builder.prompt_builder import PromptBuilderService
-
-    rt_new = {
-        "conversation_state": "new",
-        "config": {
-            "capabilities": {
-                "business_channels": ["whatsapp"],
-                "system_channels": ["web"],
-                "closing_methods": {"link_payment": {"enabled": True}},
-                "actions": {"primary": ["cerrar_venta"]},
-            }
-        },
-    }
-    result = _capabilities_block(rt_new)
-    assert "TIPOS DE CANALES:" in result
-    assert "CANALES DE ATENCION (business_channels):" in result
-
+def test_without_payment_methods_the_assistant_says_the_team_confirms() -> None:
+    block = _capabilities_block({"conversation_state": "new", "config": {"capabilities": {}}})
+    assert "No hay medios de pago configurados" in block
 
 ## ----------------------------------------
 ## QUÉ HACE ESTE TEST:
@@ -650,16 +609,13 @@ def test_capabilities_full_in_new_state() -> None:
 ## Supresión de post_payment en turnos sin pago activo (5D-C).
 ## ----------------------------------------
 def test_post_payment_absent_without_active_payment() -> None:
-    from app.infrastructure.ai.prompting.builder.prompt_builder import PromptBuilderService
     from app.application.runtime import load_tenant_runtime_yaml
-
     rt = load_tenant_runtime_yaml("asesor_ai_prod", extra_yaml={
         "conversation_state": "active",
         "memory_context": {"last_intent": "pain", "last_ai_response": "ok"},
     })
     result = _post_payment_block(rt)
-    assert result == ""
-
+    assert "Ya eligió pagar" not in result and "Dijo que ya pagó" not in result
 
 ## ----------------------------------------
 ## QUÉ HACE ESTE TEST:
@@ -672,17 +628,13 @@ def test_post_payment_absent_without_active_payment() -> None:
 ## Que la supresión no afecte el flujo de pago activo (5D-C).
 ## ----------------------------------------
 def test_post_payment_present_with_active_payment() -> None:
-    from app.infrastructure.ai.prompting.builder.prompt_builder import PromptBuilderService
     from app.application.runtime import load_tenant_runtime_yaml
-
     rt = load_tenant_runtime_yaml("asesor_ai_prod", extra_yaml={
         "conversation_state": "active",
         "memory_context": {"metodo_pago_elegido": "nequi", "estado_pago": "pendiente"},
     })
     result = _post_payment_block(rt)
-    assert "POST-PAGO:" in result
-    assert "ON_USER_REPORT_MESSAGE:" in result
-
+    assert "Ya eligió pagar por Nequi" in result
 
 ## ----------------------------------------
 ## QUÉ HACE ESTE TEST:
@@ -696,10 +648,8 @@ def test_post_payment_present_with_active_payment() -> None:
 ## ----------------------------------------
 def test_pricing_present_in_active_state() -> None:
     prompt = _build_prompt_with_memory({"last_intent": "price", "last_ai_response": "ok"})
-    assert "PRICING:" in prompt
-    assert "LINK_AVAILABLE:" in prompt
-    assert "TRANSFER_METHODS:" in prompt
-
+    assert "LO QUE VENDE\n- Plan Basico — COP " in prompt
+    assert "Medios de pago:" in prompt
 
 ## ----------------------------------------
 ## QUÉ HACE ESTE TEST:
@@ -713,5 +663,5 @@ def test_pricing_present_in_active_state() -> None:
 ## ----------------------------------------
 def test_operational_restrictions_always_present() -> None:
     prompt = _build_prompt_with_memory({"last_intent": "price", "last_ai_response": "ok"})
-    assert "REGLA CR\u00cdTICA:" in prompt
-    assert "Responde SOLO con informaci\u00f3n que est\u00e9 en el contexto proporcionado." in prompt
+    assert "LA VERDAD PRIMERO" in prompt
+    assert "Usa solo la información del negocio que aparece abajo." in prompt

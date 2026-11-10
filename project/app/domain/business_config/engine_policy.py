@@ -75,7 +75,6 @@ MAX_CUSTOMER_PROBLEMS = 10
 # Caracteres de preguntas frecuentes por prompt. Si todas caben, van todas; si no, las más relacionadas con el mensaje del cliente.
 # Con el máximo del contrato (30 de hasta 1000 caracteres) llenarían el prompt.
 FAQ_PROMPT_MAX_CHARS = 1500
-# El catálogo en el prompt (planes o productos), con el mismo criterio: si todo cabe, va todo; si no, lo más relacionado con lo que
-# pregunta el cliente y un aviso de que hay más. El contrato no limita cuántos productos tiene un negocio.
-OFFER_DETAILS_PROMPT_MAX_CHARS = 3000
-PRICE_LIST_PROMPT_MAX_CHARS = 1500
+# La oferta en el prompt (planes o productos, con su precio y su detalle), con el mismo criterio: si todo cabe, va todo; si no, lo más
+# relacionado con lo que pregunta el cliente y un aviso de que hay más. El contrato no limita cuántos productos tiene un negocio.
+OFFER_PROMPT_MAX_CHARS = 4000

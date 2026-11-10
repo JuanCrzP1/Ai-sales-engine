@@ -85,11 +85,9 @@ from app.domain.operations.operational_extractor import extract_op_state
 from app.domain.operations.operational_renderer import render_op_anchor, render_op_rule
 from app.domain.operations.operational_state import OperationalState
 from app.utils.logger import logger
-from app.infrastructure.ai.prompting.instructions import CHANNEL_FRAME
 
 
-# El marco del canal (cómo responde quien vende por chat) es una instrucción fija de la plataforma: vive con las demás.
-FRAME_BLOCK = CHANNEL_FRAME
+
 
 def validate_runtime_yaml(runtime_yaml: dict) -> None:
     required = ["sales", "business", "pricing", "inventory", "config"]
@@ -583,7 +581,6 @@ class AIExecution:
             conversation_history=conversation_history,
             faq_results=faq_results,
             runtime_yaml=runtime_yaml_with_memory,
-            preamble=FRAME_BLOCK,
         )
 
         try:

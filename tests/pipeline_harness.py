@@ -15,7 +15,6 @@ from app.application.ai_pipeline import AIPipeline
 from app.domain.business_config.contract import BusinessConfig
 from app.domain.business_config.payment_data import iter_secret_refs
 from app.domain.conversation.memory import MemoryDomainService
-from app.infrastructure.ai.prompting.sections.profile import build_business_profile_context
 from app.infrastructure.business_config import runtime_access
 from app.infrastructure.business_config.database import (
     DATABASE_URL_ENV,
@@ -36,19 +35,6 @@ TENANTS = [
 ]
 
 
-def as_yaml_prompt(prompt: str, runtime: dict) -> str:
-    """El prompt del contrato sin lo que solo existe con el contrato: el bloque del perfil comercial (con los datos del negocio en la
-    presentación, solo sus reglas en una conversación en curso) y el tono en la línea ESTILO. Lo demás debe ser idéntico a los YAML.
-    """
-    for include_facts in (True, False):
-        block = build_business_profile_context(runtime, include_facts=include_facts)
-        if block and f"\n\n{block}\n\n" in prompt:
-            prompt = prompt.replace(f"\n\n{block}", "", 1)
-            break
-    tone = runtime["config"]["profile"].get("tone", "").strip()
-    return prompt.replace(f"palabras, {tone}.", "palabras, natural y claro.", 1) if tone else prompt
-
-
 def reply(text: str, intent: str = "info", **metadata) -> str:
     """Respuesta del LLM simulado en el formato estructurado que espera el motor."""
     return json.dumps({"response": text, "intent": intent, "metadata": metadata}, ensure_ascii=False)
@@ -61,7 +47,7 @@ def run_conversation(slug: str, turns: list[tuple[str, str]], *, user_id: str) -
     for message, llm_reply in turns:
         prompts: list[str] = []
 
-        def _generate(prompt, *, user_message, bot_config=None, _reply_text=llm_reply, _prompts=prompts):
+        def _generate(prompt, *, user_message, bot_config=None, _reply_text=llm_reply, _prompts=prompts, **_kwargs):
             _prompts.append(str(prompt))
             return _reply_text
 

@@ -1333,9 +1333,8 @@
             }
           ],
           "default": null,
-          "description": "Mensaje cuando el pago queda confirmado.",
-          "title": "Payment Confirmed",
-          "x-engine": "conectado"
+          "description": "Mensaje cuando el equipo confirma el pago. Se guarda; lo enviará la plataforma cuando el equipo pueda confirmar pagos desde el panel.",
+          "title": "Payment Confirmed"
         },
         "after_sale": {
           "anyOf": [

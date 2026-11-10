@@ -125,15 +125,25 @@ Tampoco existe como archivo aislado. La construcción narrativa del turno actual
 En la práctica:
 
 - `prompt_context.py` resume memoria y contexto reciente.
-- `prompting/` arma el prompt de cada mensaje:
-  - `instructions.py`: las instrucciones fijas de la plataforma (reglas, guías de venta, marco del canal), en un solo lugar.
-  - `sections/`: un bloque por tema (identidad, capacidades, perfil comercial, preguntas frecuentes, ventas, memoria, estilo, precios,
-    post-pago). Cada uno recibe la vista del mensaje (`view.py`) y devuelve su texto.
-  - `composer.py`: decide qué bloques van y en qué orden según la memoria comercial, mide cada bloque contra `budgets.py` y quita los
-    datos de pago antes de que el prompt salga.
+- `prompting/` arma el prompt de cada mensaje por capas, de lo más fijo a lo más cambiante:
+  1. Plataforma (`instructions.py`): cómo vende el asistente, la verdad primero, cómo responder una duda, pagos y el formato de
+     respuesta. Igual para todos los negocios, en una sola voz; lleva su versión (`PROMPT_VERSION`).
+  2. Manual del tipo de negocio (`sections/playbook.py`): productos, planes, servicios o servicios con cita.
+  3. El negocio (`sections/business.py`), lo que vende con sus precios en palabras (`offer.py`, `money.py`), cómo se paga y se cierra
+     (`payments.py`, sin datos de pago), sus indicaciones (`guidance.py`) y sus preguntas frecuentes (`knowledge.py`).
+  4. Esta conversación (`conversation.py`): el momento y lo que se sabe del cliente.
+  - `composer.py` las ordena así para que el proveedor reutilice de su caché el comienzo del prompt, mide cada capa contra
+    `budgets.py` y quita los datos de pago antes de que el prompt salga.
   - `relevance.py`: cuando las preguntas frecuentes o el catálogo no caben, elige lo más relacionado con lo que busca el cliente.
+  - `history.py`: los últimos mensajes van al modelo como conversación (cliente y asistente), sin datos de pago.
   - `builder/prompt_builder.py`: la entrada pública (`PromptBuilderService.build`), delgada.
-- `ai_orchestrator.py` entrega ese prompt al modelo, con el formato de respuesta al final, y parsea la salida estructurada.
+- `ai_orchestrator.py` hace una sola llamada al modelo (instrucciones, conversación reciente y mensaje del cliente), parsea la salida
+  estructurada y marca cada respuesta con la versión del prompt.
+
+Todo cambio al prompt se mide en dos laboratorios:
+- `experiments/pricing_lab/run_regression_experiment.py`: la mecánica del motor (rutas, webhook, entrega de pagos), sin IA.
+- `experiments/quality_lab/run_quality_eval.py`: la calidad con la IA real, con escenarios por tipo de negocio, revisiones exactas
+  (precios inventados, datos de pago, formato) y un juez IA con rúbrica que califica a ciegas. Usa la clave del `.env` y cuesta centavos.
 
 ### AI
 

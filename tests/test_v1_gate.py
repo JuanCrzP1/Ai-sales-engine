@@ -57,7 +57,7 @@ def _capture_prompts(pipeline, replies: list[dict]) -> list[str]:
     prompts: list[str] = []
     queue = [json.dumps(reply, ensure_ascii=False) for reply in replies]
 
-    def _generate(prompt, *, user_message, bot_config=None):
+    def _generate(prompt, *, user_message, bot_config=None, **_kwargs):
         prompts.append(str(prompt))
         return queue.pop(0)
 
@@ -128,9 +128,9 @@ def test_business_prices_and_conditions_reach_the_prompt():
     _response, ai_used, _meta = _run(pipeline, message="¿Y qué precio tiene?", user_id=user_id)
 
     assert ai_used is True
-    pricing_block = prompts[-1].split("PRICING:", 1)[1]
-    assert "Plan Basico -> COP: implementation=100000, monthly=110000" in pricing_block
-    assert "sin permanencia obligatoria" in pricing_block
+    offer = prompts[-1].split("LO QUE VENDE\n", 1)[1].split("\n\n", 1)[0]
+    assert "Plan Basico — COP 100.000 de implementación + COP 110.000 al mes" in offer
+    assert "sin permanencia obligatoria" in offer
 
 
 def test_business_payment_method_is_delivered_by_the_engine():

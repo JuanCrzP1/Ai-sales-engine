@@ -266,7 +266,7 @@ export interface Messages {
   welcome: WelcomeMessage;
   /** Respuesta exacta cuando el cliente reporta un pago. [motor: conectado] */
   payment_reported?: string | null;
-  /** Mensaje cuando el pago queda confirmado. [motor: conectado] */
+  /** Mensaje cuando el equipo confirma el pago. Se guarda; lo enviará la plataforma cuando el equipo pueda confirmar pagos desde el panel. */
   payment_confirmed?: string | null;
   /** Mensaje después de una compra. */
   after_sale?: string | null;

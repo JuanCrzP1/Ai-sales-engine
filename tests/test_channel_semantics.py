@@ -26,8 +26,6 @@ def test_saas_uses_system_channels_not_business() -> None:
 
     prompt_text = str(prompt or "").lower()
 
-    assert "canales de atencion (business_channels):" in prompt_text
-    assert "sin canales de atencion definidos" in prompt_text
-    assert "canales del sistema (system_channels):" in prompt_text
-    assert "whatsapp" in prompt_text
-    assert "si hablas de como funciona el sistema" in prompt_text
+    # Lo que vende funciona por WhatsApp (canal del producto); el negocio no declaró por dónde atiende: no se inventa uno.
+    assert "lo que vende funciona en: whatsapp." in prompt_text
+    assert "atiendes por:" not in prompt_text

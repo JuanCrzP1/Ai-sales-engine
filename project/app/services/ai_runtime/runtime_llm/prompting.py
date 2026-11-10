@@ -164,7 +164,8 @@ class RuntimeLLMImplementation:
             cost = usage_dict.get("cost")
             on_usage(model, prompt_tokens, completion_tokens, float(cost) if isinstance(cost, (int, float)) else None)
 
-    def generate(self, prompt: str, *, user_message: str, bot_config: BotConfig | None = None) -> str:
+    def generate(self, prompt: str, *, user_message: str, bot_config: BotConfig | None = None, history: list[dict] | None = None) -> str:
+        """Una llamada al modelo: las instrucciones del negocio, la conversación reciente (`history`) y el mensaje del cliente."""
         if str(os.getenv("LLM_MODE") or "").strip().lower() == "mock_fail":
             raise RuntimeError("mock_fail provider simulation")
 
@@ -186,6 +187,7 @@ class RuntimeLLMImplementation:
 
         messages = [
             {"role": "system", "content": str(prompt or "")},
+            *[{"role": item["role"], "content": item["content"]} for item in (history or []) if item.get("role") in ("user", "assistant")],
             {"role": "user", "content": str(user_message or "")},
         ]
         response = self._call_client(

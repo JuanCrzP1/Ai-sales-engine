@@ -18,6 +18,7 @@ from sqlalchemy import select
 from app.admin_api.main import create_app
 from app.application.ai_pipeline import AIPipeline
 from app.application.assistant_lab.engine_runner import EngineAssistantRunner
+from app.infrastructure.ai.prompting import instructions
 from app.business_config_application.assistant_lab import AssistantLabService
 from app.domain.business_config.ai_settings import AICredentials, AssistantTurn, KeyCheck, clean_api_key, clean_model, key_hint
 from app.domain.business_config.errors import (
@@ -252,7 +253,7 @@ class _Recorder:
     def __call__(self, **kwargs) -> AIPipeline:
         pipeline = AIPipeline(**kwargs)
 
-        def _generate(prompt, *, user_message, bot_config=None):
+        def _generate(prompt, *, user_message, bot_config=None, **_kwargs):
             self.prompts.append(str(prompt))
             self.keys.append(getattr(bot_config, "api_key", None))
             self.models.append(getattr(bot_config, "model_name", None))
@@ -276,7 +277,7 @@ def test_the_engine_answers_with_the_tested_configuration_and_the_business_key(s
         session_id="a" * 32, message="Hola, ¿qué venden?",
     )
     assert turn.reply == "Respuesta 1." and turn.ai_answered
-    assert "Negocio: Nombre Solo En Esta Versión" in recorder.prompts[0]
+    assert "Nombre: Nombre Solo En Esta Versión" in recorder.prompts[0]
     assert recorder.keys == [KEY_A] and recorder.models == ["openai/gpt-4o-mini"]
 
 
@@ -303,17 +304,19 @@ def test_each_conversation_has_its_own_memory(store):
     runner = EngineAssistantRunner(pipeline_factory=recorder)
     credentials = AICredentials("openrouter", None, KEY_A)
 
-    # La presentación del negocio (su descripción) solo va al empezar una conversación; su nombre va en todos los mensajes.
+    # La regla del comienzo de la conversación solo va al empezar: así se ve si la conversación continúa o empieza de cero.
+    start = instructions.STATE_RULES["start"]
+
     def say(session, slug="restaurant"):
         runner.reply(tenant_slug=slug, sections=_sections(store, slug), credentials=credentials, session_id=session, message="¿Qué venden y a qué precio?")
         return recorder.prompts[-1]
 
-    assert "Descripción: " in say("a" * 32)
-    assert "Descripción: " not in say("a" * 32), "la misma conversación continúa"
-    assert "Descripción: " in say("b" * 32), "otra conversación empieza de cero"
-    assert "Descripción: " in say("a" * 32, slug="clinic"), "la misma sesión en otro negocio es otra conversación"
+    assert start in say("a" * 32)
+    assert start not in say("a" * 32), "la misma conversación continúa"
+    assert start in say("b" * 32), "otra conversación empieza de cero"
+    assert start in say("a" * 32, slug="clinic"), "la misma sesión en otro negocio es otra conversación"
     runner.reset(tenant_slug="restaurant", session_id="a" * 32)
-    assert "Descripción: " in say("a" * 32), "reiniciada, empieza de cero"
+    assert start in say("a" * 32), "reiniciada, empieza de cero"
 
 
 def test_idle_and_excess_conversations_are_forgotten():

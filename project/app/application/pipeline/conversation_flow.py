@@ -353,6 +353,7 @@ class ConversationFlow:
                 intent="",
                 stage="",
             )
+            self._remember_reply(tenant_slug, user_id, initial_text)
             return initial_text, "initial_message"
 
         last_user_message_at = self.memory.get_last_user_message_at(tenant_slug=tenant_slug, user_id=user_id)
@@ -381,8 +382,12 @@ class ConversationFlow:
             intent="",
             stage="",
         )
-
+        self._remember_reply(tenant_slug, user_id, initial_text)
         return initial_text, "initial_message"
+
+    def _remember_reply(self, tenant_slug: str, user_id: str, text: str) -> None:
+        """El saludo que se envió queda en la conversación: la IA debe saber que ya se saludó al cliente y con qué palabras."""
+        self.memory.save_message(tenant_slug=tenant_slug, user_id=user_id, message_text=text, role="assistant")
 
     def process(
         self,

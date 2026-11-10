@@ -271,7 +271,7 @@ recibe lo mismo que con los YAML. Si los YAML de un negocio no coinciden, la imp
 | `pricing.plans[].description` | asesor_ai_prod, clinic, demo, ecommerce, saas | Descripción del plan | A | `offer.plans[].description` | — | pantalla | sí: perfil comercial del prompt, con la configuración del contrato (detalle de la oferta) | — | `test_connected_fields_change_the_prompt` |
 | `pricing.plans[].id` | asesor_ai_prod, clinic, demo, ecommerce, saas | Identificador estable del plan | A | `offer.plans[].id` | — | pantalla | sí: enlaza el plan con su pago | — | `test_payment_methods_reach_the_customer` |
 | `pricing.plans[].includes` | asesor_ai_prod, clinic, demo, ecommerce, saas | Qué incluye | A | `offer.plans[].includes` | — | pantalla | sí: prompt | — | `test_connected_fields_change_the_prompt` |
-| `pricing.plans[].name` | asesor_ai_prod, clinic, demo, ecommerce, saas | Nombre del plan | A | `offer.plans[].name` | — | pantalla | sí: prompt (qué se cobra y precios) | — | `test_plan_prices_format_is_unchanged` |
+| `pricing.plans[].name` | asesor_ai_prod, clinic, demo, ecommerce, saas | Nombre del plan | A | `offer.plans[].name` | — | pantalla | sí: prompt (qué se cobra y precios) | — | `test_plan_prices_are_said_like_a_salesperson_would` |
 | `pricing.plans[].not_included` | asesor_ai_prod, clinic, demo, ecommerce, saas | Qué no incluye | A | `offer.plans[].not_included` | — | pantalla | sí: prompt | — | `test_connected_fields_change_the_prompt` |
 | `pricing.plans[].payment.link` | asesor_ai_prod, clinic, demo, ecommerce, saas | Link de pago | D | referencia en `payments[].link` | valor → referencia `legacy_yaml:` | pantalla | sí: el motor lo entrega al elegir el método | — | `test_payment_methods_reach_the_customer` |
 | `pricing.plans[].payment.transfer.enabled` | asesor_ai_prod, clinic, demo, ecommerce, saas | Transferencias activas | A | `payments[].transfer_enabled` | perfil de pago con el id del plan | pantalla | sí: métodos disponibles | — | `test_payment_methods_reach_the_customer` |
@@ -281,8 +281,8 @@ recibe lo mismo que con los YAML. Si los YAML de un negocio no coinciden, la imp
 | `pricing.plans[].payment.transfer.methods[].number` | asesor_ai_prod, clinic, demo, ecommerce, saas | Celular Nequi o Daviplata | D | referencia en `payments[].transfer_methods[].number` | valor → referencia `legacy_yaml:` | pantalla | sí: el motor lo entrega al elegir el método | — | `test_payment_methods_reach_the_customer` |
 | `pricing.plans[].payment.transfer.methods[].reference` | asesor_ai_prod, clinic, demo, ecommerce, saas | Llave o referencia Bre-B | D | referencia en `payments[].transfer_methods[].reference` | valor → referencia `legacy_yaml:` | pantalla | sí: el motor lo entrega al elegir el método | — | `test_payment_methods_reach_the_customer` |
 | `pricing.plans[].payment.transfer.methods[].type` | asesor_ai_prod, clinic, demo, ecommerce, saas | Método de transferencia | A | `payments[].transfer_methods[].type` | — | pantalla | sí: métodos disponibles | — | `test_payment_methods_reach_the_customer` |
-| `pricing.plans[].pricing.<moneda>.implementation` | asesor_ai_prod, clinic, demo, ecommerce, saas | Precio del plan por moneda (instalación, mensual...) | A | `offer.plans[].prices[currency=<moneda>].implementation` | mapa por moneda → lista con `currency` | pantalla | sí: prompt (precios) | — | `test_plan_prices_format_is_unchanged`, `test_connected_fields_change_the_prompt` |
-| `pricing.plans[].pricing.<moneda>.monthly` | asesor_ai_prod, clinic, demo, ecommerce, saas | Precio del plan por moneda (instalación, mensual...) | A | `offer.plans[].prices[currency=<moneda>].monthly` | mapa por moneda → lista con `currency` | pantalla | sí: prompt (precios) | — | `test_plan_prices_format_is_unchanged`, `test_connected_fields_change_the_prompt` |
+| `pricing.plans[].pricing.<moneda>.implementation` | asesor_ai_prod, clinic, demo, ecommerce, saas | Precio del plan por moneda (instalación, mensual...) | A | `offer.plans[].prices[currency=<moneda>].implementation` | mapa por moneda → lista con `currency` | pantalla | sí: prompt (precios) | — | `test_plan_prices_are_said_like_a_salesperson_would`, `test_connected_fields_change_the_prompt` |
+| `pricing.plans[].pricing.<moneda>.monthly` | asesor_ai_prod, clinic, demo, ecommerce, saas | Precio del plan por moneda (instalación, mensual...) | A | `offer.plans[].prices[currency=<moneda>].monthly` | mapa por moneda → lista con `currency` | pantalla | sí: prompt (precios) | — | `test_plan_prices_are_said_like_a_salesperson_would`, `test_connected_fields_change_the_prompt` |
 | `pricing.plans[].target` | demo | Para quién es el plan | A | `offer.plans[].target` | — | no | no | — | — |
 | `pricing.price_framing.type` | todos | Cómo presentar el precio | B | `terms.price_framing` | se aplana `type` | no | sí: prompt | — | `test_connected_fields_change_the_prompt` |
 | `pricing.roi.break_even_reservas` | agencia_viajes | Reservas para recuperar la inversión | B | `terms.roi_break_even_bookings` | renombrado | no | no | Solo agencia_viajes; el motor solo lee `break_even_sales`. | — |
@@ -331,7 +331,7 @@ recibe lo mismo que con los YAML. Si los YAML de un negocio no coinciden, la imp
 | `config.initial_message.recency.active_minutes` | demo | Ventanas del mensaje inicial (antiguas) | E | ajustes técnicos: `legacy` (misma ruta) | — | no | no | Solo demo: ubicación antigua de las ventanas de conversación, con los mismos valores por defecto del motor (15 min, 4 h). | — |
 | `config.initial_message.recency.reset_hours` | demo | Ventanas del mensaje inicial (antiguas) | E | ajustes técnicos: `legacy` (misma ruta) | — | no | no | Solo demo: ubicación antigua de las ventanas de conversación, con los mismos valores por defecto del motor (15 min, 4 h). | — |
 | `config.initial_message.text` | todos | Texto de bienvenida | A | `messages.welcome.text` | — | pantalla | sí: primer mensaje | — | `test_welcome_message_toggle` |
-| `config.post_payment.on_payment_confirmed.message` | todos | Mensaje de pago confirmado | A | `messages.payment_confirmed` | renombrado | pantalla | sí: prompt post-pago | — | `test_connected_fields_change_the_prompt` |
+| `config.post_payment.on_payment_confirmed.message` | todos | Mensaje de pago confirmado | A | `messages.payment_confirmed` | renombrado | pantalla | no: se guarda; lo enviará la plataforma cuando el equipo confirme el pago | — | — |
 | `config.post_payment.on_user_report.message` | todos | Respuesta al reportar un pago | A | `messages.payment_reported` | renombrado | pantalla | sí: respuesta exacta | — | `test_payment_report_message_is_optional` |
 | `config.response.length` | todos | Largo de las respuestas | A | `response_style.length` | — | pantalla | sí: prompt y recorte | — | `test_each_response_length_option_controls_prompt_and_truncation` |
 | `config.response.max_words` | todos | Límite avanzado de palabras | B | `response_style.max_words` | — | modelo | sí: prompt y recorte | — | `test_changing_the_contract_changes_response_length` |
@@ -349,10 +349,10 @@ si el motor actual lo usa y de dónde viene.
 
 | Audiencia | Conectados | Pendientes |
 |---|---|---|
-| cliente | 79 | 56 |
+| cliente | 78 | 57 |
 | avanzado | 7 | 44 |
 | sistema | 2 | 0 |
-| **Total** | 88 | 100 |
+| **Total** | 87 | 101 |
 
 | Campo | Audiencia | Motor | Origen | Interfaz | Descripción |
 |---|---|---|---|---|---|
@@ -424,7 +424,7 @@ si el motor actual lo usa y de dónde viene.
 | `messages.fallback` | cliente | conectado | nuevo | pantalla | Mensaje exacto cuando la IA no puede responder (sin clave, sin saldo o con el proveedor caído). Si falta, uno neutro de la plataforma. |
 | `messages.follow_up` | cliente | pendiente | nuevo | no | Mensaje de seguimiento a un cliente que no respondió. |
 | `messages.human_handoff` | cliente | pendiente | nuevo | no | Mensaje al pasar la conversación a una persona. |
-| `messages.payment_confirmed` | cliente | conectado | `config.post_payment.on_payment_confirmed.message` | pantalla | Mensaje cuando el pago queda confirmado. |
+| `messages.payment_confirmed` | cliente | pendiente | `config.post_payment.on_payment_confirmed.message` | pantalla | Mensaje cuando el equipo confirma el pago. Se guarda; lo enviará la plataforma cuando el equipo pueda confirmar pagos desde el panel. |
 | `messages.payment_reported` | cliente | conectado | `config.post_payment.on_user_report.message` | pantalla | Respuesta exacta cuando el cliente reporta un pago. |
 | `messages.welcome.enabled` | cliente | conectado | `config.initial_message.enabled` | pantalla | true: envía el mensaje inicial fijo, sin IA. false: no lo envía y responde la IA. |
 | `messages.welcome.text` | cliente | conectado | `config.initial_message.text` | pantalla | Mensaje de apertura que recibe el cliente. |

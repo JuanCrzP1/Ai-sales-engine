@@ -1,7 +1,8 @@
 """El formato con el que el modelo responde cada mensaje, en una sola llamada.
 
-Va al final de las instrucciones de cada mensaje y la llamada pide JSON al proveedor (`response_format`), así el modelo responde
-bien a la primera. Antes este formato solo se pedía al repetir la llamada: casi cada mensaje costaba dos.
+Va con las instrucciones fijas de la plataforma, al principio del prompt (`prompting/composer.py`), y la llamada pide JSON al
+proveedor (`response_format`), así el modelo responde bien a la primera. Antes este formato solo se pedía al repetir la llamada:
+casi cada mensaje costaba dos.
 
 Los medios de pago son los tipos que la plataforma sabe entregar (`ejecutar_pago`); si el negocio no tiene ese medio, el motor
 no entrega nada y la respuesta queda como la escribió el modelo.
@@ -25,8 +26,3 @@ Responde solo con un objeto JSON, sin texto antes ni después:
 - metadata.payment_method: solo si el cliente ya eligió cómo pagar: {", ".join(f'"{name}"' for name in PAYMENT_METHOD_TYPES)}. Si no, "".
 - metadata.payment_status: "{PAYMENT_REPORTED}" solo si el cliente dice que ya pagó. Si no, "".
 """.strip()
-
-
-def system_prompt(prompt: str, *, preamble: str = "") -> str:
-    """Las instrucciones completas de un mensaje: el marco del canal, las del negocio y, al final, el formato de respuesta."""
-    return "\n\n".join(part for part in (str(preamble or "").strip(), str(prompt or "").strip(), OUTPUT_CONTRACT) if part)

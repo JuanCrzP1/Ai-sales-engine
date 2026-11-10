@@ -72,20 +72,8 @@ class PromptView:
         return str(self.runtime.get("conversation_state") or "new").strip().lower() or "new"
 
     @property
-    def state_label(self) -> str:
-        """El estado tal como lo dejó la memoria, para mostrarlo en el prompt."""
-        return as_text(self.runtime.get("conversation_state", "new")) or "new"
-
-    @property
     def prior_ai_response(self) -> str:
         return str(self.memory.get("last_ai_response") or self.memory.get("last_response") or "").strip()
-
-    @cached_property
-    def presents_business(self) -> bool:
-        """Si este mensaje presenta el negocio: en una conversación nueva o fría, o mientras el asistente no haya respondido.
-
-        En una conversación en curso (activa o tibia) en la que el asistente ya habló, no se repite la presentación."""
-        return not self.prior_ai_response or self.state in ("new", "cold")
 
     @property
     def relevance_query(self) -> str:

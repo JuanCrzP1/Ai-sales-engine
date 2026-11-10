@@ -74,22 +74,27 @@ def test_payment_values_never_reach_the_ai_but_reach_the_customer(monkeypatch, s
     for prompt in prompts:
         leaked = [secret for secret in secrets if secret in prompt]
         assert not leaked, f"{slug}: {len(leaked)} datos de pago en el prompt"
-    # El método sigue siendo visible para que la IA guíe la elección, sin su dato.
-    assert "TRANSFER_METHODS:" in prompts[0] and f"- {method}:" in prompts[0]
+    # La IA sabe qué medios hay para guiar la elección, sin ningún dato de pago.
+    assert "Medios de pago: " in prompts[0]
     assert value in results[1][1], "el cliente debe recibir el dato de pago al elegir el método"
 
 
 def test_payment_value_in_conversation_history_is_redacted_from_the_prompt():
+    """El motor le entregó al cliente su dato de pago: en la conversación que ve la IA solo aparece el marcador."""
+    from app.infrastructure.ai.prompting.history import recent_messages
+
     runtime = load_tenant_runtime_yaml("asesor_ai_prod")
     _method, value = _first_transfer_method(runtime)
     runtime["conversation_state"] = "active"
     runtime["memory_context"] = {"last_ai_response": f"Puedes transferir usando {value}.", "last_intent": "buy"}
+    runtime["conversation_history"] = [{"role": "user", "text": "Por nequi"}, {"role": "assistant", "text": f"Puedes transferir usando {value}."}]
 
     prompt, _metadata, _context = PromptBuilderService().build(
         client_config_id="asesor_ai_prod", user_message="¿Ya te llegó?", yaml_config=runtime, faq_results=[], progression_rules=None
     )
-    assert value not in prompt
-    assert f"Puedes transferir usando {REDACTED_PAYMENT_VALUE}." in prompt
+    messages = recent_messages(runtime)
+    assert value not in prompt and value not in str(messages)
+    assert messages[-1]["content"] == f"Puedes transferir usando {REDACTED_PAYMENT_VALUE}."
 
 
 def test_conversation_trace_log_never_stores_payment_values(monkeypatch):
