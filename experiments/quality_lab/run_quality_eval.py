@@ -6,7 +6,8 @@ y los mismos escenarios (`scenarios.py`). Luego:
 - un juez IA (`judge.py`) califica cada conversación con una rúbrica, sin saber qué versión es, y compara las dos a ciegas;
 - tokens, caché, tiempo y costo por mensaje.
 
-Usa la clave de OpenRouter del `.env` (nunca la imprime). Tiene costo: unos centavos de dólar por corrida con gpt-4o-mini.
+Usa la clave de OpenRouter del `.env` (nunca la imprime). Tiene costo: antes de correr calcula cuánto costará y no arranca si pasa
+de `--max-usd` (USD 0,30 por defecto); al terminar informa lo gastado de verdad.
 
     python experiments/quality_lab/run_quality_eval.py --experiment <id> --baseline <commit> [--samples 2] [--tenants a,b]
     python experiments/quality_lab/run_quality_eval.py --experiment <id> --rejudge     # vuelve a calificar sin repetir las conversaciones
@@ -39,6 +40,7 @@ REPO = LAB.parents[1]
 RESULTS = LAB / "results"
 sys.path.insert(0, str(LAB))
 
+import costs  # noqa: E402
 from checks import check_turn  # noqa: E402
 from judge import CRITERIA, compare, score_conversation  # noqa: E402
 
@@ -110,7 +112,8 @@ def main() -> int:
     parser.add_argument("--baseline", required=True)
     parser.add_argument("--samples", type=int, default=1)
     parser.add_argument("--tenants", default="")
-    parser.add_argument("--judge-model", default="openai/gpt-4.1")
+    parser.add_argument("--judge-model", default="deepseek/deepseek-chat-v3.1")
+    parser.add_argument("--max-usd", type=float, default=0.30, help="Tope de gasto de la corrida; no arranca si el cálculo lo supera")
     parser.add_argument("--rejudge", action="store_true", help="Califica de nuevo las conversaciones ya guardadas")
     args = parser.parse_args()
     output = RESULTS / args.experiment
@@ -121,6 +124,13 @@ def main() -> int:
     key, model = str(env_file.get("OPENROUTER_API_KEY") or "").strip(), str(env_file.get("OPENROUTER_MODEL") or "openai/gpt-4o-mini").strip()
     if not key:
         raise SystemExit("Falta OPENROUTER_API_KEY en el .env.")
+    tenants_count = len([slug for slug in args.tenants.split(",") if slug]) or 9
+    table = costs.prices({model, args.judge_model})
+    budget = costs.estimate(conversations=tenants_count * args.samples, turns=tenants_count * args.samples * 10, model=model, judge=args.judge_model,
+                            table=table, with_capture=not args.rejudge)
+    print(f"Costo calculado: USD {budget:.2f} (tope USD {args.max_usd:.2f}) · asistente {model} · juez {args.judge_model}", flush=True)
+    if budget > args.max_usd:
+        raise SystemExit("El cálculo supera el tope: baja las muestras, los negocios o sube --max-usd con autorización.")
     if args.rejudge:
         if not captures_file.exists():
             raise SystemExit(f"No hay conversaciones guardadas en {captures_file}.")
@@ -176,18 +186,25 @@ def judge_and_report(args, sides: dict, key: str, model: str, output: Path) -> i
                 checks.append(check_turn(turn["reply"], facts=facts, previous_reply=previous, ai_used=turn["ai_used"], format_error=turn["format_error"]))
                 previous = turn["reply"]
             # Las respuestas con datos de pago las arma el motor: el juez las ve como tales.
-            scored, _usage_judge = score_conversation(key, args.judge_model, facts, turns)
+            scored, usage_judge = score_conversation(key, args.judge_model, facts, turns)
             row[label] = {"checks": checks, "scores": scored.get("turnos", []), "general": scored.get("general", "")}
-        winner, reason, _usage_pair = compare(key, args.judge_model, facts, conversations["baseline"], conversations["candidate"], seed=zlib.crc32(f"{slug}:{sample}".encode()))
+            row.setdefault("_judge_usage", []).append(usage_judge)
+        winner, reason, usage_pair = compare(key, args.judge_model, facts, conversations["baseline"], conversations["candidate"], seed=zlib.crc32(f"{slug}:{sample}".encode()))
         row["pairwise"] = {"ganador": winner, "razon": reason}
+        row["_judge_usage"].append(usage_pair)
         return row
 
     with ThreadPoolExecutor(max_workers=6) as pool:
         rows = list(pool.map(evaluate, jobs))
+    table = costs.prices({model, args.judge_model})
+    assistant_usages = [call["usage"] for side in sides.values() for tenant in side["results"].values() for sample in tenant["samples"] for turn in sample for call in turn["calls"]]
+    judge_usages = [usage for row in rows for usage in row.pop("_judge_usage", [])]
+    spending = {"asistente_usd": costs.spent(assistant_usages, table[model]) if not args.rejudge else 0.0, "juez_usd": costs.spent(judge_usages, table[args.judge_model])}
+    print(f"Gastado de verdad: asistente USD {spending['asistente_usd']:.4f} · juez USD {spending['juez_usd']:.4f}", flush=True)
 
     data = {"experiment": args.experiment, "baseline": sides["baseline"]["commit"], "candidate": sides["candidate"]["commit"], "model": model,
             "judge_model": args.judge_model, "samples": args.samples, "rows": rows,
-            "usage": {label: _usage(sides[label], prices) for label in sides},
+            "usage": {label: _usage(sides[label], prices) for label in sides}, "gasto": spending,
             "network_attempts": {label: sides[label]["network_attempts"] for label in sides},
             "transcripts": {label: {slug: [[{k: v for k, v in turn.items() if k not in ("calls", "system_prompt")} for turn in sample] for sample in data_["samples"]]
                                     for slug, data_ in sides[label]["results"].items()} for label in sides},
@@ -219,6 +236,8 @@ def build_report(data: dict) -> str:
         lines.append(f"| {name.replace('_', ' ')} | {counts['baseline']} | {counts['candidate']} |")
     for key in ("tokens_entrada_promedio", "tokens_en_cache_promedio", "tokens_salida_promedio", "ms_promedio", "costo_usd_sin_cache"):
         lines.append(f"| {key.replace('_', ' ')} | {data['usage']['baseline'][key]} | {data['usage']['candidate'][key]} |")
+    gasto = data.get("gasto") or {}
+    lines += ["", f"Gasto de la corrida: asistente USD {gasto.get('asistente_usd', 0):.4f} · juez USD {gasto.get('juez_usd', 0):.4f}."]
     wins = {name: sum(1 for row in rows if row["pairwise"]["ganador"] == name) for name in ("baseline", "candidate", "empate")}
     lines += ["", f"Comparación a ciegas: candidate gana {wins['candidate']}, baseline gana {wins['baseline']}, empates {wins['empate']}.", ""]
 

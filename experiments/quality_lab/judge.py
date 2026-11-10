@@ -31,7 +31,7 @@ Califica CADA respuesta del asistente de 0 a 2 en:
 Las respuestas que entregan datos de pago con «[dato entregado por el motor]» y la respuesta al pago reportado las arma el sistema
 con textos del negocio: califícalas solo por si encajan en la conversación.
 Devuelve SOLO JSON: {"turnos": [{"turno": n, "resuelve": 0-2, "veraz": 0-2, "avanza": 0-2, "tono": 0-2, "claridad": 0-2,
-"nota": "qué estuvo mal, máximo 15 palabras"}], "general": "máximo 30 palabras"}
+"nota": "solo si algo falló: qué, en máximo 12 palabras; si no, vacío"}], "general": "máximo 20 palabras"}
 """.strip()
 
 PAIRWISE = """
@@ -39,7 +39,7 @@ Eres un evaluador experto de vendedores por chat. Tienes la FICHA del negocio y 
 el cliente dijo lo mismo; solo cambian las respuestas del asistente. ¿Cuál vende mejor sin inventar nada? Considera, en este
 orden: no inventa nada fuera de la ficha ni usa argumentos que no aplican al cliente; responde lo que preguntan; avanza la venta sin
 presionar; suena humano y es claro. Si son equivalentes, di empate.
-Devuelve SOLO JSON: {"mejor": "A" | "B" | "empate", "razon": "máximo 30 palabras"}
+Devuelve SOLO JSON: {"mejor": "A" | "B" | "empate", "razon": "máximo 20 palabras"}
 """.strip()
 
 
@@ -48,16 +48,15 @@ def _transcript(turns: list[dict]) -> str:
 
 
 def _call(api_key: str, model: str, system: str, user: str) -> tuple[dict, dict]:
+    # Con tope de salida (el proveedor reserva el costo máximo de cada llamada) y sin razonamiento oculto, que se cobra como salida.
+    payload = {"model": model, "temperature": 0, "max_tokens": 1500, "response_format": {"type": "json_object"}, "reasoning": {"enabled": False},
+               "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}]}
     for attempt in range(3):
         try:
-            response = httpx.post(
-                API,
-                headers={"Authorization": f"Bearer {api_key}"},
-                # Con tope de salida: el proveedor reserva el costo máximo de cada llamada, y sin tope podría rechazarla por saldo.
-                json={"model": model, "temperature": 0, "max_tokens": 1800, "response_format": {"type": "json_object"},
-                      "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}]},
-                timeout=120,
-            )
+            response = httpx.post(API, headers={"Authorization": f"Bearer {api_key}"}, json=payload, timeout=120)
+            if response.status_code == 400 and "reasoning" in payload:
+                payload.pop("reasoning")  # un modelo que no admite apagar el razonamiento: se pide sin ese ajuste
+                continue
             response.raise_for_status()
             body = response.json()
             return json.loads(body["choices"][0]["message"]["content"]), body.get("usage") or {}
