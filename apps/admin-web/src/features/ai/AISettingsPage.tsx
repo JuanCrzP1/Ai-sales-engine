@@ -2,7 +2,6 @@ import { useEffect, useState, type FormEvent } from "react";
 import { Button, LinkButton } from "../../components/ui/Button";
 import { ConfirmButton } from "../../components/ui/ConfirmButton";
 import { Alert, Badge } from "../../components/ui/Feedback";
-import { TextField } from "../../components/ui/FormFields";
 import { Card, PageHeader } from "../../components/ui/Layout";
 import { PasswordField } from "../../components/ui/PasswordField";
 import { LoadingScreen } from "../../layout/StatusScreen";
@@ -10,6 +9,7 @@ import { PLAYGROUND_ITEM } from "../../navigation/navItems";
 import { useWorkspacePath } from "../../navigation/useWorkspacePath";
 import { useAISettings } from "../../state/useAISettings";
 import { AIUsageCard } from "./AIUsageCard";
+import { ModelPicker } from "./ModelPicker";
 
 /** La clave de OpenRouter de este negocio y el modelo de su asistente. La clave nunca se vuelve a mostrar completa. */
 export function AISettingsPage() {
@@ -64,14 +64,7 @@ export function AISettingsPage() {
               hint="Empieza por sk-or-. La encuentras en openrouter.ai, en Keys."
               error={ai.problems.api_key}
             />
-            <TextField
-              label="Modelo"
-              value={model}
-              onChange={setModel}
-              placeholder="openai/gpt-4o-mini"
-              hint="Como aparece en OpenRouter. Déjalo vacío para usar el modelo predeterminado del sistema."
-              error={ai.problems.model}
-            />
+            <ModelPicker value={model} onChange={setModel} error={ai.problems.model} />
             {ai.error && Object.keys(ai.problems).length === 0 && <Alert tone="danger" title={ai.error} />}
             {ai.saved && <Alert tone="success" title="Guardado. El asistente de este negocio ya usa esta configuración." />}
             {ai.check && <Alert tone={ai.check.valid ? "success" : "danger"} title={ai.check.message} />}

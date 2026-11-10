@@ -1,4 +1,4 @@
-import type { AISettings, AIUsage, AssistantLab, AssistantReply, ConfigSource, KeyCheck } from "../../repositories/assistantLab";
+import type { AISettings, AIUsage, AssistantLab, AssistantReply, ConfigSource, KeyCheck, ModelCatalog } from "../../repositories/assistantLab";
 import type { HttpClient } from "./httpClient";
 
 interface ReplyPayload {
@@ -19,6 +19,20 @@ interface UsagePayload {
   days: { day: string; replies: number; tokens: number }[];
 }
 
+interface ModelsPayload {
+  default_model: string;
+  models: {
+    id: string;
+    name: string;
+    provider: string;
+    prompt_usd_per_million: number;
+    completion_usd_per_million: number;
+    context_length: number;
+    recommended: boolean;
+    free: boolean;
+  }[];
+}
+
 /** `AssistantLab` sobre la API del panel: `/api/businesses/{slug}/ai` y `/api/businesses/{slug}/playground`. */
 export function createApiAssistantLab(http: HttpClient, slug: string): AssistantLab {
   const base = `/businesses/${encodeURIComponent(slug)}`;
@@ -27,6 +41,22 @@ export function createApiAssistantLab(http: HttpClient, slug: string): Assistant
     saveAISettings: ({ model, apiKey, clearKey }) =>
       http.put<AISettings>(`${base}/ai`, { model, ...(apiKey ? { api_key: apiKey } : {}), ...(clearKey ? { clear_key: true } : {}) }),
     verifyAIKey: () => http.post<KeyCheck>(`${base}/ai/verify`),
+    async getAIModels(): Promise<ModelCatalog> {
+      const payload = await http.get<ModelsPayload>(`${base}/ai/models`);
+      return {
+        defaultModel: payload.default_model,
+        models: payload.models.map((model) => ({
+          id: model.id,
+          name: model.name,
+          provider: model.provider,
+          promptUsdPerMillion: model.prompt_usd_per_million,
+          completionUsdPerMillion: model.completion_usd_per_million,
+          contextLength: model.context_length,
+          recommended: model.recommended,
+          free: model.free,
+        })),
+      };
+    },
     async getAIUsage(): Promise<AIUsage> {
       const payload = await http.get<UsagePayload>(`${base}/ai/usage`);
       return {

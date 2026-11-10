@@ -26,12 +26,22 @@ from app.infrastructure.business_config.usage_store import UsageCounterStore
 
 def build_cloud_panel_api(auth_url: str) -> FastAPI:
     from app.application.assistant_lab.engine_runner import EngineAssistantRunner
+    from app.config import settings
     from app.infrastructure.ai.openrouter_key_verifier import OpenRouterKeyVerifier
+    from app.infrastructure.ai.openrouter_models import OpenRouterModelCatalog
 
     engine = create_business_config_engine()
     key = find_secrets_key()
     service = build_business_config_service(engine, secrets_key=key)
-    lab = build_assistant_lab_service(engine, service, secrets_key=key, verifier=OpenRouterKeyVerifier(), runner=EngineAssistantRunner())
+    lab = build_assistant_lab_service(
+        engine,
+        service,
+        secrets_key=key,
+        verifier=OpenRouterKeyVerifier(),
+        runner=EngineAssistantRunner(),
+        catalog=OpenRouterModelCatalog(),
+        default_model=settings.openrouter_model,
+    )
     access = BusinessAccess(service, BusinessMembersStore(engine))
     return create_app(
         service,

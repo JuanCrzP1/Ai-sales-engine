@@ -27,6 +27,7 @@ hallazgo dice dónde está y cómo se comprobó. Ninguna fase se da por terminad
 | S5 | Hecho en «Probar» | Límites en la base (`rate_limits`, migración 0006), compartidos por todas las instancias: 20 mensajes por minuto por persona, 300 por hora por negocio y 10 comprobaciones de clave cada 10 minutos. Más allá, 429 con `Retry-After` y un mensaje en español. Queda el límite por IP en Vercel (Fase 7). |
 | T1 | Hecho | Una sola llamada por mensaje (ver T1). |
 | T2 | Hecho | El panel usa las cuatro intenciones del motor; una prueba compara ambos lados. |
+| Modelo de IA | Hecho | El panel lista los modelos de OpenRouter que responden en JSON (consulta pública, guardada una hora), con buscador, recomendados y el costo aproximado de 1.000 respuestas. El servidor no guarda un modelo que no esté en la lista. |
 | T3 | Hecho | Cada respuesta suma a `ai_usage` (migración 0007) por negocio, día y modelo, con el costo si OpenRouter lo informa. El panel lo muestra en «Inteligencia artificial». |
 
 ## 2. Cómo funcionaba antes y cómo funciona hoy

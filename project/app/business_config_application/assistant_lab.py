@@ -15,15 +15,17 @@ from datetime import date, datetime, timedelta, timezone
 from typing import Literal
 
 from app.business_config_application.conversations import PlaygroundRecorder
-from app.business_config_application.ports import AIKeyVerifier, AISettingsStorage, AIUsageStorage, AssistantRunner
+from app.business_config_application.ports import AIKeyVerifier, AIModelCatalog, AISettingsStorage, AIUsageStorage, AssistantRunner
 from app.business_config_application.service import BusinessConfigService
 from app.domain.business_config.ai_settings import AICredentials, AISettings, AssistantTurn, KeyCheck, clean_api_key, clean_model
+from app.domain.business_config.ai_models import ModelCatalog, sorted_for_choice
 from app.domain.business_config.ai_usage import AIUsageSummary
 from app.domain.business_config.errors import (
     AIKeyMissingError,
     AssistantUnavailableError,
     FieldIssue,
     InvalidFieldsError,
+    ModelCatalogUnavailableError,
     PaymentDataUnavailableError,
     PublicationError,
     SecretResolutionError,
@@ -56,6 +58,8 @@ class AssistantLabService:
         runner: AssistantRunner | None = None,
         recorder: PlaygroundRecorder | None = None,
         usage: AIUsageStorage | None = None,
+        catalog: AIModelCatalog | None = None,
+        default_model: str | None = None,
         today: Callable[[], date] = lambda: datetime.now(timezone.utc).date(),
     ) -> None:
         self._configs = configs
@@ -65,6 +69,9 @@ class AssistantLabService:
         # Las conversaciones de prueba también quedan en la bandeja del panel, marcadas como «Prueba».
         self._recorder = recorder
         self._usage = usage
+        # Los modelos de OpenRouter para elegir, y el que usa el motor cuando el negocio no elige ninguno.
+        self._catalog = catalog
+        self._default_model = default_model
         self._today = today
 
     # ------------------------------------------------------------------ inteligencia artificial
@@ -79,7 +86,29 @@ class AssistantLabService:
         key = clean_api_key(api_key) if api_key else None
         if key and clear_key:
             raise InvalidFieldsError("Elige entre cambiar la clave o quitarla.", [FieldIssue("api_key", "Elige entre cambiar la clave o quitarla.")])
-        return self._storage.save_ai_settings(tenant_slug, model=clean_model(model), api_key=key, clear_key=clear_key)
+        chosen = clean_model(model)
+        self._check_offered(tenant_slug, chosen)
+        return self._storage.save_ai_settings(tenant_slug, model=chosen, api_key=key, clear_key=clear_key)
+
+    def ai_models(self, tenant_slug: str) -> ModelCatalog:
+        """Los modelos que se pueden elegir para este negocio, con los recomendados primero."""
+        self._configs.get_business(tenant_slug)
+        if self._catalog is None or not self._default_model:
+            raise AssistantUnavailableError("la lista de modelos no está disponible en este servidor")
+        return ModelCatalog(default_model=self._default_model, models=sorted_for_choice(self._catalog.models()))
+
+    def _check_offered(self, tenant_slug: str, model: str | None) -> None:
+        """Un modelo nuevo debe estar en la lista. Si la lista no se puede cargar, se acepta: OpenRouter lo rechazará si no existe.
+        El que el negocio ya tenía se conserva aunque haya salido de la lista."""
+        if model is None or self._catalog is None or model == self._storage.ai_settings(tenant_slug).model:
+            return
+        try:
+            offered = {item.id for item in self._catalog.models()}
+        except ModelCatalogUnavailableError:
+            return
+        if model not in offered:
+            message = "Ese modelo no está disponible en OpenRouter para el asistente. Elígelo de la lista."
+            raise InvalidFieldsError(message, [FieldIssue("model", message)])
 
     def ai_usage(self, tenant_slug: str) -> AIUsageSummary:
         """Respuestas, tokens y costo de la IA de este negocio en los últimos 30 días (días en UTC)."""

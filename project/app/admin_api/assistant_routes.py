@@ -13,6 +13,7 @@ from app.admin_api.routes import BusinessSlug, CurrentUser
 from app.admin_api.schemas import (
     PlaygroundMessage,
     SaveAISettings,
+    ai_models_payload,
     ai_settings_payload,
     ai_usage_payload,
     key_check_payload,
@@ -49,6 +50,11 @@ def get_ai_settings(slug: BusinessSlug, lab: Lab) -> dict[str, Any]:
 @router.put("/ai")
 def save_ai_settings(slug: BusinessSlug, body: SaveAISettings, lab: Lab) -> dict[str, Any]:
     return ai_settings_payload(lab.save_ai_settings(slug, model=body.model, api_key=body.api_key, clear_key=body.clear_key))
+
+
+@router.get("/ai/models")
+def get_ai_models(slug: BusinessSlug, lab: Lab) -> dict[str, Any]:
+    return ai_models_payload(lab.ai_models(slug))
 
 
 @router.get("/ai/usage")

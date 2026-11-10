@@ -16,6 +16,24 @@ export interface SaveAISettings {
   clearKey?: boolean;
 }
 
+/** Un modelo de OpenRouter que se puede elegir. Precios en dólares por millón de tokens. */
+export interface AIModelOption {
+  id: string;
+  name: string;
+  provider: string;
+  promptUsdPerMillion: number;
+  completionUsdPerMillion: number;
+  contextLength: number;
+  recommended: boolean;
+  free: boolean;
+}
+
+/** Los modelos para elegir (recomendados primero) y el que usa el sistema si no se elige ninguno. */
+export interface ModelCatalog {
+  defaultModel: string;
+  models: AIModelOption[];
+}
+
 /** Lo que gastó la IA de este negocio en los últimos 30 días. `costUsd` es null si OpenRouter no informó el costo. */
 export interface AIUsage {
   since: string;
@@ -49,6 +67,7 @@ export interface AssistantLab {
   saveAISettings(input: SaveAISettings): Promise<AISettings>;
   verifyAIKey(): Promise<KeyCheck>;
   getAIUsage(): Promise<AIUsage>;
+  getAIModels(): Promise<ModelCatalog>;
   sendMessage(input: { message: string; source: ConfigSource; sessionId: string | null }): Promise<AssistantReply>;
   resetConversation(sessionId: string): Promise<void>;
 }

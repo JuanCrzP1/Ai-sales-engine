@@ -77,9 +77,18 @@ def _assistant_lab(engine, service):
     """La inteligencia artificial de cada negocio y su área de pruebas, con el motor real. Se importa aquí, al arrancar: el motor
     trae su configuración (lee el `.env`), pero el área de pruebas solo usa la clave de IA de cada negocio."""
     from app.application.assistant_lab.engine_runner import EngineAssistantRunner
+    from app.config import settings
     from app.infrastructure.ai.openrouter_key_verifier import OpenRouterKeyVerifier
+    from app.infrastructure.ai.openrouter_models import OpenRouterModelCatalog
 
-    return build_assistant_lab_service(engine, service, verifier=OpenRouterKeyVerifier(), runner=EngineAssistantRunner())
+    return build_assistant_lab_service(
+        engine,
+        service,
+        verifier=OpenRouterKeyVerifier(),
+        runner=EngineAssistantRunner(),
+        catalog=OpenRouterModelCatalog(),
+        default_model=settings.openrouter_model,
+    )
 
 
 def main() -> int:

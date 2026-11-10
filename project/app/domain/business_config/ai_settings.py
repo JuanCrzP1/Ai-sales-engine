@@ -66,12 +66,17 @@ def key_hint(api_key: str) -> str:
     return f"{MASK}{api_key[-KEY_HINT_CHARS:]}"
 
 
+def is_model_id(text: str) -> bool:
+    """`proveedor/modelo`, como los escribe OpenRouter (por ejemplo `openai/gpt-4o-mini` o `meta-llama/llama-3.3-70b-instruct:free`)."""
+    return len(text) <= MAX_MODEL_CHARS and _MODEL.fullmatch(text) is not None
+
+
 def clean_model(model: str | None) -> str | None:
     """El modelo escrito por el negocio, o None para usar el del motor. Falla si no tiene la forma `proveedor/modelo`."""
     text = str(model or "").strip()
     if not text:
         return None
-    if len(text) > MAX_MODEL_CHARS or not _MODEL.fullmatch(text):
+    if not is_model_id(text):
         raise InvalidFieldsError(
             "Revisa el modelo.", [FieldIssue("model", "Escribe el modelo como aparece en OpenRouter, por ejemplo openai/gpt-4o-mini.")]
         )

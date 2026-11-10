@@ -6,7 +6,7 @@ import type { ContractSchema } from "../domain/config/contractSchema";
 import { paymentHolders } from "../domain/config/document";
 import type { BusinessDocument, BusinessSummary, Diagnostic, PaymentFields, PaymentFieldState, PaymentValues, VersionInfo, VersionStatus } from "../domain/config/types";
 import { createLocalOperatorAuthService } from "../infrastructure/local/localOperatorAuthService";
-import type { AISettings, AIUsage, AssistantLab, ConfigSource } from "../repositories/assistantLab";
+import type { AIModelOption, AISettings, AIUsage, AssistantLab, ConfigSource, ModelCatalog } from "../repositories/assistantLab";
 import type { AuthService } from "../repositories/authService";
 import type { BusinessDirectory } from "../repositories/businessDirectory";
 import type { ConfigRepository, StoredConfig } from "../repositories/configRepository";
@@ -240,7 +240,24 @@ export interface MemoryAssistantLabs {
   resets: string[];
   /** El consumo de IA de cada negocio; sin entrada, cero. */
   usage: Map<string, AIUsage>;
+  /** La lista de OpenRouter; null simula que no se pudo cargar. */
+  catalog: { current: ModelCatalog | null };
 }
+
+const model = (id: string, name: string, provider: string, prompt: number, completion: number, extra: Partial<AIModelOption> = {}): AIModelOption => ({
+  id, name, provider, promptUsdPerMillion: prompt, completionUsdPerMillion: completion, contextLength: 128000, recommended: false, free: false, ...extra,
+});
+
+/** Una muestra de la lista de OpenRouter, con recomendados, uno gratis y uno más caro. */
+export const SAMPLE_MODEL_CATALOG: ModelCatalog = {
+  defaultModel: "openai/gpt-4o-mini",
+  models: [
+    model("openai/gpt-4o-mini", "GPT-4o-mini", "OpenAI", 0.15, 0.6, { recommended: true }),
+    model("google/gemini-2.5-flash", "Gemini 2.5 Flash", "Google", 0.3, 2.5, { recommended: true }),
+    model("anthropic/claude-sonnet-4.5", "Claude Sonnet 4.5", "Anthropic", 3, 15),
+    model("meta-llama/llama-3.3-70b-instruct:free", "Llama 3.3 70B Instruct (free)", "Meta", 0, 0, { free: true }),
+  ],
+};
 
 /** Sustituto en memoria de la inteligencia artificial y del área de pruebas: responde «Respuesta a: …» sin red. */
 export function createMemoryAssistantLabs(): MemoryAssistantLabs {
@@ -249,6 +266,7 @@ export function createMemoryAssistantLabs(): MemoryAssistantLabs {
   const messages: MemoryAssistantLabs["messages"] = [];
   const resets: string[] = [];
   const usage = new Map<string, AIUsage>();
+  const catalog: MemoryAssistantLabs["catalog"] = { current: SAMPLE_MODEL_CATALOG };
   let sessions = 0;
   const settingsOf = (slug: string): AISettings => {
     const key = keys.get(slug);
@@ -261,6 +279,7 @@ export function createMemoryAssistantLabs(): MemoryAssistantLabs {
     messages,
     resets,
     usage,
+    catalog,
     create: (slug) => ({
       getAISettings: async () => settingsOf(slug),
       async saveAISettings({ model, apiKey, clearKey }) {
@@ -276,6 +295,10 @@ export function createMemoryAssistantLabs(): MemoryAssistantLabs {
       async verifyAIKey() {
         if (!keys.has(slug)) throw missingKey();
         return { valid: true, message: "La clave funciona." };
+      },
+      async getAIModels() {
+        if (!catalog.current) throw new PersistenceError("unavailable", { message: "No se pudo cargar la lista de modelos de OpenRouter." });
+        return catalog.current;
       },
       getAIUsage: async () => usage.get(slug) ?? { since: "2026-10-12", replies: 0, promptTokens: 0, completionTokens: 0, costUsd: null, days: [] },
       async sendMessage({ message, source, sessionId }) {

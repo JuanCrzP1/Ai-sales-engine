@@ -78,6 +78,10 @@ class AssistantUnavailableError(BusinessConfigError):
     """El área de pruebas no puede ejecutar el asistente en este servidor."""
 
 
+class ModelCatalogUnavailableError(AssistantUnavailableError):
+    """No se pudo cargar la lista de modelos de OpenRouter y no hay una anterior."""
+
+
 class ConversationNotFoundError(BusinessConfigError):
     """La conversación no existe o es de un negocio al que este usuario no llega."""
 

@@ -1088,6 +1088,7 @@ def test_the_api_only_has_the_routes_of_the_panel(api):
         ("GET", f"{business}/ai"),
         ("PUT", f"{business}/ai"),
         ("GET", f"{business}/ai/usage"),
+        ("GET", f"{business}/ai/models"),
         ("POST", f"{business}/ai/verify"),
         ("POST", f"{business}/playground"),
         ("DELETE", f"{business}/playground/{{session_id}}"),

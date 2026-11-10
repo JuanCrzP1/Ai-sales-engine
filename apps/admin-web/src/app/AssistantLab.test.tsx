@@ -39,7 +39,7 @@ describe("Inteligencia artificial", () => {
     expect(await screen.findByText("Sin clave")).toBeInTheDocument();
 
     await user.type(screen.getByLabelText(/Clave de OpenRouter/), KEY);
-    await user.type(screen.getByLabelText(/Modelo/), "openai/gpt-4o-mini");
+    await user.click(await screen.findByRole("radio", { name: /GPT-4o-mini OpenAI/ }));
     await user.click(screen.getByRole("button", { name: "Guardar" }));
 
     expect(await screen.findByText("Configurada ••••0001")).toBeInTheDocument();
@@ -139,5 +139,53 @@ describe("Probar asistente: lo que entendió la IA", () => {
     expect(Object.keys(INTENT_LABELS)).toEqual(["pain", "info", "objection", "buy"]);
     expect(intentLabel("buy")).toBe("Quiere comprar");
     expect([intentLabel(""), intentLabel(null), intentLabel("pricing")]).toEqual([null, null, null]);
+  });
+});
+
+describe("Elegir el modelo", () => {
+  it("se elige de la lista de OpenRouter buscando por nombre, sin copiarlo a mano", async () => {
+    const labs = createMemoryAssistantLabs();
+    labs.keys.set(SAMPLE_DOCUMENT.tenant_slug, KEY);
+    const { user } = await open("/ia", labs);
+    const picker = await screen.findByRole("group", { name: "Modelo" });
+    // Sin buscar: el del sistema elegido y los recomendados primero.
+    expect(within(picker).getByRole("radio", { name: /Predeterminado del sistema/ })).toBeChecked();
+    expect(within(picker).getByText(/Elegido:/).textContent).toMatch(/GPT-4o-mini · OpenAI \(el del sistema\)/);
+    expect(within(picker).getAllByText("Recomendado")).toHaveLength(2);
+
+    await user.type(within(picker).getByRole("searchbox", { name: "Buscar modelo" }), "gemini{Enter}");
+    expect(within(picker).getByText("1 resultado")).toBeInTheDocument();
+    expect(within(picker).queryByRole("radio", { name: /Claude/ })).not.toBeInTheDocument();
+    await user.click(within(picker).getByRole("radio", { name: /Gemini 2.5 Flash/ }));
+    await user.click(screen.getByRole("button", { name: "Guardar" }));
+
+    expect(await screen.findByText("Guardado. El asistente de este negocio ya usa esta configuración.")).toBeInTheDocument();
+    expect((await labs.create(SAMPLE_DOCUMENT.tenant_slug).getAISettings()).model).toBe("google/gemini-2.5-flash");
+  });
+
+  it("muestra cuánto cuestan 1.000 respuestas y marca los gratis", async () => {
+    await open("/ia");
+    const picker = await screen.findByRole("group", { name: "Modelo" });
+    const mini = within(picker).getByRole("radio", { name: /GPT-4o-mini OpenAI/ }).closest("label") as HTMLElement;
+    expect(within(mini).getByText(/USD\s?0,32 por cada 1\.000 respuestas/)).toBeInTheDocument();
+    expect(within(mini).getByText("Entrada 0,15 · salida 0,60 USD por millón de tokens")).toBeInTheDocument();
+    const free = within(picker).getByRole("radio", { name: /Llama 3.3/ }).closest("label") as HTMLElement;
+    expect(within(free).getByText("Gratis, con límites de uso de OpenRouter")).toBeInTheDocument();
+  });
+
+  it("si la lista de OpenRouter no carga, deja escribir el modelo", async () => {
+    const labs = createMemoryAssistantLabs();
+    labs.catalog.current = null;
+    await open("/ia", labs);
+    expect(await screen.findByLabelText(/Modelo/)).toHaveAttribute("placeholder", "openai/gpt-4o-mini");
+    expect(screen.getByText(/No se pudo cargar la lista de OpenRouter/)).toBeInTheDocument();
+  });
+
+  it("calcula el costo de una respuesta típica y busca sin importar tildes", async () => {
+    const { costPerThousandReplies, searchModels } = await import("../domain/assistant/models");
+    const { SAMPLE_MODEL_CATALOG } = await import("../test/fakes");
+    expect(costPerThousandReplies({ promptUsdPerMillion: 0.15, completionUsdPerMillion: 0.6 })).toBeCloseTo(0.315);
+    expect(searchModels(SAMPLE_MODEL_CATALOG.models, "GÉMINI flash").map((model) => model.id)).toEqual(["google/gemini-2.5-flash"]);
+    expect(searchModels(SAMPLE_MODEL_CATALOG.models, "  ")).toHaveLength(SAMPLE_MODEL_CATALOG.models.length);
   });
 });

@@ -13,6 +13,7 @@ from typing import Any, Protocol, runtime_checkable
 
 from app.domain.business_config.access import Principal
 from app.domain.business_config.ai_settings import AICredentials, AISettings, AssistantTurn, KeyCheck
+from app.domain.business_config.ai_models import AIModel
 from app.domain.business_config.ai_usage import AIUsageSummary
 from app.domain.business_config.contract import BusinessConfig, SecretRef
 from app.domain.business_config.conversations import BusinessActivity, ChatMessage, ConversationSummary, NewMessage, Notification
@@ -93,6 +94,13 @@ class AIUsageStorage(Protocol):
     """El consumo de IA de cada negocio. Lo escribe el motor en cada respuesta; el panel solo lo lee."""
 
     def summary(self, tenant_slug: str, *, since: date) -> AIUsageSummary: ...
+
+
+@runtime_checkable
+class AIModelCatalog(Protocol):
+    """Los modelos que se pueden elegir. Si no se pueden cargar, falla con `ModelCatalogUnavailableError`."""
+
+    def models(self) -> list[AIModel]: ...
 
 
 @runtime_checkable

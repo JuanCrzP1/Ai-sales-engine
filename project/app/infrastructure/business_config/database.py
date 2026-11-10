@@ -13,7 +13,7 @@ from sqlalchemy import create_engine, event, inspect
 from sqlalchemy.engine import Engine, make_url
 
 from app.business_config_application.assistant_lab import AssistantLabService
-from app.business_config_application.ports import AIKeyVerifier, AssistantRunner
+from app.business_config_application.ports import AIKeyVerifier, AIModelCatalog, AssistantRunner
 from app.business_config_application.service import BusinessConfigService
 from app.business_config_application.conversations import PlaygroundRecorder
 from app.infrastructure.business_config.conversation_store import ConversationStore
@@ -102,6 +102,8 @@ def build_assistant_lab_service(
     secrets_key: str | None = None,
     verifier: AIKeyVerifier | None = None,
     runner: AssistantRunner | None = None,
+    catalog: AIModelCatalog | None = None,
+    default_model: str | None = None,
 ) -> AssistantLabService:
     """La inteligencia artificial y el área de pruebas, con la clave de IA de cada negocio cifrada en la misma base.
 
@@ -109,5 +111,12 @@ def build_assistant_lab_service(
     disponible: el motor se conecta en el arranque de la API (`scripts/run_admin_api.py`)."""
     recorder = PlaygroundRecorder(ConversationStore(engine))
     return AssistantLabService(
-        configs, AISettingsStore(engine, secrets_key), verifier=verifier, runner=runner, recorder=recorder, usage=AIUsageStore(engine)
+        configs,
+        AISettingsStore(engine, secrets_key),
+        verifier=verifier,
+        runner=runner,
+        recorder=recorder,
+        usage=AIUsageStore(engine),
+        catalog=catalog,
+        default_model=default_model,
     )
