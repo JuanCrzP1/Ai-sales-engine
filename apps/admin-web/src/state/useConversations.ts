@@ -6,11 +6,11 @@ import { useInbox } from "./inboxContext";
 export type Loadable<T> = { status: "loading" } | { status: "error"; message: string } | { status: "ready"; data: T };
 
 /** La lista de conversaciones con su filtro, y el hilo abierto. Se recarga al cambiar el filtro o al pedirlo. */
-export function useConversations(initialFilter: InboxFilter) {
+export function useConversations(initialFilter: InboxFilter, initialSelected: string | null = null) {
   const inbox = useInbox();
   const [filter, setFilter] = useState<InboxFilter>(initialFilter);
   const [list, setList] = useState<Loadable<ConversationSummary[]>>({ status: "loading" });
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(initialSelected);
   const [thread, setThread] = useState<Loadable<ConversationThread> | null>(null);
   const [attempt, setAttempt] = useState(0);
 
@@ -43,7 +43,17 @@ export function useConversations(initialFilter: InboxFilter) {
   }, [inbox, selectedId, attempt]);
 
   const reload = useCallback(() => setAttempt((count) => count + 1), []);
-  return { filter, setFilter, list, selectedId, select: setSelectedId, thread, reload };
+
+  /** Alguien del equipo ya atendió a quien pidió una persona: deja de esperar y se recargan la lista y el hilo. */
+  const resolveHandoff = useCallback(
+    async (conversationId: string) => {
+      await inbox.resolveHandoff(conversationId);
+      reload();
+    },
+    [inbox, reload],
+  );
+
+  return { filter, setFilter, list, selectedId, select: setSelectedId, thread, reload, resolveHandoff };
 }
 
 /** La actividad de hoy de un negocio, para su inicio. */

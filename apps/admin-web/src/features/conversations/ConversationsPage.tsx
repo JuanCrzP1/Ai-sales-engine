@@ -1,5 +1,5 @@
-import { useEffect, useRef } from "react";
-import { useParams } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { useParams, useSearchParams } from "react-router-dom";
 import { Button } from "../../components/ui/Button";
 import { Alert, EmptyState } from "../../components/ui/Feedback";
 import { Icon } from "../../components/ui/Icon";
@@ -13,7 +13,9 @@ const AUTHOR_LABELS: Record<ChatMessage["author"], string> = { customer: "Client
 /** Bandeja de conversaciones: los chats de tus clientes con su historial, y de qué negocio y canal viene cada uno. */
 export function ConversationsPage() {
   const { slug = "" } = useParams();
-  const { filter, setFilter, list, selectedId, select, thread, reload } = useConversations({ business: slug });
+  // Desde un aviso se llega con `?c=` y la conversación se abre directo.
+  const [params] = useSearchParams();
+  const { filter, setFilter, list, selectedId, select, thread, reload, resolveHandoff } = useConversations({ business: slug }, params.get("c"));
   const allBusinesses = filter.business === undefined;
 
   return (
@@ -40,6 +42,14 @@ export function ConversationsPage() {
                 Todos mis negocios
               </button>
             </div>
+            <button
+              type="button"
+              className="filter-chip"
+              aria-pressed={Boolean(filter.waitingHuman)}
+              onClick={() => setFilter({ ...filter, waitingHuman: filter.waitingHuman ? undefined : true })}
+            >
+              <Icon name="headset" size={14} /> Esperan a una persona
+            </button>
             <label className="inbox__channel">
               <span className="visually-hidden">Canal</span>
               <select
@@ -102,7 +112,7 @@ export function ConversationsPage() {
             </p>
           )}
           {selectedId && thread?.status === "error" && <Alert tone="danger" title={thread.message} />}
-          {selectedId && thread?.status === "ready" && <ThreadView thread={thread.data} onBack={() => select(null)} />}
+          {selectedId && thread?.status === "ready" && <ThreadView thread={thread.data} onBack={() => select(null)} onResolve={resolveHandoff} />}
         </section>
       </div>
     </>
@@ -125,6 +135,7 @@ function ConversationItem({ conversation, selected, onSelect }: { conversation: 
         </span>
         {conversation.lastMessagePreview && <span className="inbox-item__preview">{conversation.lastMessagePreview}</span>}
         <span className="inbox-item__tags">
+          {conversation.needsHuman && <span className="handoff-badge">Pide una persona</span>}
           <span className={`channel-badge channel-color--${conversation.channel}`}>{CHANNEL_LABELS[conversation.channel]}</span>
           <span className="business-badge" title="Negocio">
             {conversation.business.name}
@@ -135,10 +146,24 @@ function ConversationItem({ conversation, selected, onSelect }: { conversation: 
   );
 }
 
-function ThreadView({ thread, onBack }: { thread: ConversationThread; onBack: () => void }) {
+function ThreadView({ thread, onBack, onResolve }: { thread: ConversationThread; onBack: () => void; onResolve: (id: string) => Promise<void> }) {
   const { conversation, messages } = thread;
   const end = useRef<HTMLDivElement>(null);
   const name = contactLabel(conversation);
+  const [resolving, setResolving] = useState(false);
+  const [problem, setProblem] = useState<string | null>(null);
+
+  const resolve = async () => {
+    setResolving(true);
+    setProblem(null);
+    try {
+      await onResolve(conversation.id);
+    } catch {
+      setProblem("No se pudo marcar como atendida. Vuelve a intentarlo.");
+    } finally {
+      setResolving(false);
+    }
+  };
 
   useEffect(() => {
     end.current?.scrollIntoView?.({ block: "end" });
@@ -161,6 +186,27 @@ function ThreadView({ thread, onBack }: { thread: ConversationThread; onBack: ()
         </div>
         <span className="thread__count">{conversation.messageCount} mensajes</span>
       </header>
+
+      {conversation.needsHuman && (
+        <div className="handoff-banner" role="status">
+          <span className="handoff-banner__icon" aria-hidden="true">
+            <Icon name="headset" size={18} />
+          </span>
+          <div className="handoff-banner__text">
+            <strong>{conversation.channel === "prueba" ? "Prueba: el cliente pidió hablar con una persona" : "Este cliente pidió hablar con una persona"}</strong>
+            <span>
+              {conversation.handoffRequestedAt ? `Lo pidió ${relativeTime(conversation.handoffRequestedAt)}. ` : ""}
+              {conversation.channel === "prueba"
+                ? "Así te avisaremos cuando un cliente real lo pida."
+                : `Atiéndelo por ${CHANNEL_LABELS[conversation.channel]} y márcalo cuando esté listo.`}
+            </span>
+            {problem && <span className="handoff-banner__problem">{problem}</span>}
+          </div>
+          <Button size="small" onClick={() => void resolve()} disabled={resolving}>
+            {resolving ? "Guardando…" : "Ya lo atendí"}
+          </Button>
+        </div>
+      )}
 
       <div className="thread__messages" role="log" aria-label={`Mensajes con ${name}`}>
         {messages.map((message) => (

@@ -175,10 +175,10 @@ describe("validateDocument", () => {
     expect(errorFields(document)).toContain("capabilities.data_collection");
   });
 
-  it("advierte que la atención humana todavía no notifica a nadie", () => {
+  it("la atención humana ya no es una advertencia: el equipo recibe un aviso", () => {
     const document = clone(SAMPLE_DOCUMENT);
     document.capabilities.closing_methods.human_handoff = true;
-    expect(warningFields(document)).toContain("capabilities.closing_methods.human_handoff");
+    expect(warningFields(document)).not.toContain("capabilities.closing_methods.human_handoff");
   });
 
   it("exige texto cuando la bienvenida está activada", () => {

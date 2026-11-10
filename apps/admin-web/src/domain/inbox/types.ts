@@ -24,6 +24,9 @@ export interface ConversationSummary {
   lastMessageAt: string;
   lastMessagePreview: string | null;
   messageCount: number;
+  /** El asistente la pasó a una persona y nadie del equipo la ha atendido todavía. */
+  needsHuman: boolean;
+  handoffRequestedAt: string | null;
 }
 
 export interface ChatMessage {
@@ -45,10 +48,30 @@ export interface BusinessActivity {
   conversationsToday: number;
   messagesToday: number;
   testConversations: number;
+  waitingHuman: number;
+}
+
+/** Un aviso para el equipo: por ahora, que el asistente pasó una conversación a una persona. `read` es de quien lo ve. */
+export interface Notification {
+  id: string;
+  business: { slug: string; name: string };
+  conversationId: string | null;
+  kind: "handoff";
+  title: string;
+  body: string | null;
+  createdAt: string;
+  read: boolean;
+}
+
+export interface NotificationFeed {
+  items: Notification[];
+  unread: number;
 }
 
 export interface InboxFilter {
   /** Sin negocio: todos los del usuario. */
   business?: string;
   channel?: Channel;
+  /** Solo las que esperan a una persona. */
+  waitingHuman?: boolean;
 }

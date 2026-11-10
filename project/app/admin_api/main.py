@@ -21,8 +21,8 @@ from app.admin_api.errors import register_error_handlers
 from app.admin_api.routes import router
 from app.business_config_application.access import BusinessAccess
 from app.business_config_application.assistant_lab import AssistantLabService
-from app.business_config_application.conversations import ConversationsService
-from app.business_config_application.ports import AccessTokenVerifier, ConversationStorage
+from app.business_config_application.conversations import ConversationsService, NotificationsService
+from app.business_config_application.ports import AccessTokenVerifier, ConversationStorage, NotificationStorage
 from app.business_config_application.service import BusinessConfigService
 from app.domain.business_config.contract import business_config_json_schema
 
@@ -65,6 +65,7 @@ def create_app(
     access: BusinessAccess | None = None,
     verifier: AccessTokenVerifier | None = None,
     conversations: ConversationStorage | None = None,
+    notifications: NotificationStorage | None = None,
 ) -> FastAPI:
     """La API del panel. Sin `assistant_lab`, la inteligencia artificial y el área de pruebas responden que no están disponibles.
 
@@ -79,6 +80,7 @@ def create_app(
     app.state.access = access or BusinessAccess(service)
     app.state.verifier = verifier
     app.state.conversations = ConversationsService(conversations, app.state.access) if conversations is not None else None
+    app.state.notifications = NotificationsService(notifications, app.state.access) if notifications is not None else None
     app.state.contract_schema = business_config_json_schema()
 
     @app.middleware("http")

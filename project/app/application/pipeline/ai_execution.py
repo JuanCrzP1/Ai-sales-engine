@@ -717,7 +717,10 @@ class AIExecution:
                 response=persisted_response,
                 intent=str(route_meta.get("intent") or "").strip().lower(),
             )
-            safe_context = route_meta if isinstance(route_meta, dict) else {}
+            safe_context = dict(route_meta) if isinstance(route_meta, dict) else {}
+            # El asistente pasó la conversación a una persona: quien la guarda avisa al equipo del negocio.
+            if _new_op_state.active_process == "handoff":
+                safe_context["handoff"] = True
             return final_response, bool(ai_used), safe_context
         except Exception:
             fallback = build_fallback_response(user_message=user_message, tenant_config=tenant_config)

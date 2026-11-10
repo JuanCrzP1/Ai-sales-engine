@@ -27,6 +27,7 @@ from app.infrastructure.business_config.database import (
     create_local_schema,
 )
 from app.infrastructure.business_config.members_store import BusinessMembersStore
+from app.infrastructure.business_config.notification_store import NotificationStore
 from app.infrastructure.business_config.tables import business_members, conversation_entries, conversations, tenants
 from app.infrastructure.config.config_service import ConfigService
 from app.infrastructure.config.legacy_store_migration import import_prepared, prepare_tenant
@@ -78,7 +79,9 @@ def platform(tmp_path):
             conn.execute(business_members.insert().values(tenant_id=ids[slug], user_id=user.user_id, role="owner", created_at=datetime.now(timezone.utc)))
     store = ConversationStore(engine)
     lab = build_assistant_lab_service(engine, service, secrets_key=key, verifier=Verifier(), runner=Runner())
-    app = create_app(service, lab, access=BusinessAccess(service, BusinessMembersStore(engine)), verifier=Tokens(), conversations=store)
+    app = create_app(
+        service, lab, access=BusinessAccess(service, BusinessMembersStore(engine)), verifier=Tokens(), conversations=store, notifications=NotificationStore(engine)
+    )
     yield engine, store, lab, TestClient(app)
     engine.dispose()
 
@@ -115,7 +118,9 @@ def test_the_migration_matches_the_tables():
     for table in (conversations, conversation_entries):
         body = re.search(rf"CREATE TABLE IF NOT EXISTS {table.name} \((.*?)\n\);", sql, re.S).group(1)
         columns = {match.group(1) for match in re.finditer(r"^\s+([a-z_]+)\s+[A-Z]+", body, re.M)} - {"constraint"}
-        assert columns == {column.name for column in table.columns}, table.name
+        # La 0005 agregó a `conversations` las columnas del traspaso a una persona.
+        added_later = {"needs_human", "handoff_requested_at"} if table is conversations else set()
+        assert columns == {column.name for column in table.columns} - added_later, table.name
     assert "REFERENCES tenants(id) ON DELETE CASCADE" in sql and "REFERENCES conversations(id) ON DELETE CASCADE" in sql
 
 
@@ -160,7 +165,7 @@ def test_the_home_shows_what_happened_today(platform):
     store.record("restaurant", channel="whatsapp", contact_ref="+571", contact_name="Laura", messages=[NewMessage("customer", "Hola"), NewMessage("assistant", "Hola, ¿en qué te ayudo?")])
     store.record("restaurant", channel="prueba", contact_ref="a" * 32, contact_name="Prueba en el panel", messages=[NewMessage("customer", "Hola")])
     activity = client.get("/api/businesses/restaurant/activity", headers=_as("ana")).json()
-    assert activity == {"conversations": 2, "conversations_today": 2, "messages_today": 3, "test_conversations": 1}
+    assert activity == {"conversations": 2, "conversations_today": 2, "messages_today": 3, "test_conversations": 1, "waiting_human": 0}
     tomorrow = store.activity("restaurant", since=datetime.now(timezone.utc) + timedelta(days=1))
     assert (tomorrow.conversations, tomorrow.conversations_since, tomorrow.messages_since) == (2, 0, 0)
     assert client.get("/api/businesses/restaurant/activity", headers=_as("beto")).status_code == 404
@@ -196,3 +201,120 @@ def test_if_the_inbox_fails_the_playground_still_answers(platform, monkeypatch):
     response = client.post("/api/businesses/restaurant/playground", headers=_as("ana"), json={"message": "Hola", "source": "published"})
     assert response.status_code == 200 and response.json()["reply"]
     assert isinstance(AICredentials("openrouter", None, KEY), AICredentials)
+
+
+# ---------------------------------------------------------------------------
+# Pasar a una persona: la conversación queda marcada y el equipo recibe un aviso
+# ---------------------------------------------------------------------------
+
+def _handoff(store, slug="restaurant", contact="+571", name="Laura"):
+    return store.record(
+        slug, channel="whatsapp", contact_ref=contact, contact_name=name,
+        messages=[NewMessage("customer", "Quiero hablar con alguien"), NewMessage("assistant", "Te paso con un asesor.")], handoff=True,
+    )
+
+
+def test_a_handoff_marks_the_conversation_and_notifies_once_per_wait(platform):
+    engine, store, _lab, client = platform
+    conversation = _handoff(store)
+    _handoff(store)  # El cliente sigue escribiendo mientras espera: no se repite el aviso.
+    summary, _messages = store.thread(conversation)
+    assert summary.needs_human and summary.handoff_requested_at is not None
+
+    body = client.get("/api/notifications", headers=_as("ana")).json()
+    assert body["unread"] == 1
+    [item] = body["items"]
+    assert (item["kind"], item["title"], item["body"], item["conversation_id"], item["read"]) == (
+        "handoff", "Laura pidió hablar con una persona", "Quiero hablar con alguien", conversation, False,
+    )
+    assert item["business"] == {"slug": "restaurant", "name": summary.business_name}
+
+    resolved = client.post(f"/api/conversations/{conversation}/handoff/resolve", headers=_as("ana")).json()
+    assert resolved["needs_human"] is False
+    _handoff(store)  # Una espera nueva sí avisa otra vez.
+    assert client.get("/api/notifications", headers=_as("ana")).json()["unread"] == 2
+
+
+def test_each_person_marks_their_own_notifications_and_never_sees_others(platform):
+    engine, store, _lab, client = platform
+    with engine.begin() as conn:
+        restaurant = conn.execute(select(tenants.c.id).where(tenants.c.slug == "restaurant")).scalar_one()
+        conn.execute(business_members.insert().values(tenant_id=restaurant, user_id="usuario-carla", role="owner", created_at=datetime.now(timezone.utc)))
+    TOKENS["token-de-carla"] = Principal(user_id="usuario-carla", email="carla@example.com")
+    try:
+        _handoff(store)
+        _handoff(store, slug="saas", contact="+579", name="Cliente de Beto")
+        assert client.post("/api/notifications/read", headers=_as("ana"), json={}).json() == {"marked": 1}
+        assert client.get("/api/notifications", headers=_as("ana")).json()["unread"] == 0
+        assert client.get("/api/notifications", headers=_as("carla")).json()["unread"] == 1, "lo leído es de cada persona"
+        assert [item["title"] for item in client.get("/api/notifications", headers=_as("beto")).json()["items"]] == ["Cliente de Beto pidió hablar con una persona"]
+        theirs = client.get("/api/notifications", headers=_as("beto")).json()["items"][0]["id"]
+        assert client.post("/api/notifications/read", headers=_as("ana"), json={"ids": [theirs]}).json() == {"marked": 0}
+        assert client.get("/api/notifications", headers=_as("beto")).json()["unread"] == 1
+    finally:
+        TOKENS.pop("token-de-carla")
+
+
+def test_the_inbox_filters_who_waits_for_a_person_and_only_the_owner_resolves(platform):
+    _engine, store, _lab, client = platform
+    waiting = _handoff(store)
+    store.record("restaurant", channel="web", contact_ref="w1", contact_name="Pedro", messages=[NewMessage("customer", "Hola")])
+    assert [item["contact_name"] for item in client.get("/api/conversations?waiting_human=true", headers=_as("ana")).json()] == ["Laura"]
+    assert client.get("/api/businesses/restaurant/activity", headers=_as("ana")).json()["waiting_human"] == 1
+    assert client.post(f"/api/conversations/{waiting}/handoff/resolve", headers=_as("beto")).status_code == 404
+    assert store.thread(waiting)[0].needs_human
+    assert client.get("/api/notifications").status_code == 401
+
+
+def test_the_playground_handoff_reaches_the_team_as_a_test(platform, monkeypatch):
+    _engine, _store, _lab, client = platform
+    monkeypatch.setattr(Runner, "reply", lambda self, **_kwargs: AssistantTurn(reply="Te paso con un asesor.", intent="support", handoff=True))
+    client.put("/api/businesses/restaurant/ai", headers=_as("ana"), json={"model": None, "api_key": KEY})
+    client.post("/api/businesses/restaurant/playground", headers=_as("ana"), json={"message": "Quiero una persona", "source": "published"})
+    [conversation] = client.get("/api/conversations?waiting_human=true", headers=_as("ana")).json()
+    assert conversation["channel"] == "prueba"
+    assert client.get("/api/notifications", headers=_as("ana")).json()["items"][0]["title"] == "Prueba: Prueba en el panel pidió hablar con una persona"
+
+
+def test_the_handoff_migration_matches_the_tables():
+    from app.infrastructure.business_config.tables import notification_reads, notifications
+
+    sql = (ROOT_DIR / "project" / "db" / "migrations" / "0005_handoff_notifications.sql").read_text(encoding="utf-8")
+    for table in (notifications, notification_reads):
+        body = re.search(rf"CREATE TABLE IF NOT EXISTS {table.name} \((.*?)\n\);", sql, re.S).group(1)
+        columns = {match.group(1) for match in re.finditer(r"^\s+([a-z_]+)\s+[A-Z]+", body, re.M)} - {"constraint", "primary"}
+        assert columns == {column.name for column in table.columns}, table.name
+    assert "ADD COLUMN IF NOT EXISTS needs_human" in sql and "ADD COLUMN IF NOT EXISTS handoff_requested_at" in sql
+
+
+def test_a_local_database_from_before_receives_the_new_columns(tmp_path):
+    from sqlalchemy import inspect, text
+
+    engine = create_business_config_engine(f"sqlite:///{(tmp_path / 'vieja.sqlite3').as_posix()}")
+    with engine.begin() as conn:
+        conn.execute(text("CREATE TABLE conversations (id CHAR(32) PRIMARY KEY, tenant_id CHAR(32), channel TEXT, contact_ref TEXT, contact_name TEXT, status TEXT, started_at DATETIME, last_message_at DATETIME, last_message_preview TEXT, message_count INTEGER)"))
+    create_local_schema(engine)
+    assert {"needs_human", "handoff_requested_at"} <= {column["name"] for column in inspect(engine).get_columns("conversations")}
+    engine.dispose()
+
+
+def test_the_engine_says_when_the_assistant_passes_the_chat_to_a_person():
+    from types import SimpleNamespace
+
+    from app.application.ai_pipeline import AIPipeline
+    from app.domain.business_config.ai_settings import AICredentials as Credentials
+    from app.domain.conversation.memory import MemoryDomainService
+    from app.infrastructure.persistence.memory_repository import MemoryRepository
+    from pipeline_harness import reply
+
+    def answer(text):
+        pipeline = AIPipeline(memory_service=MemoryDomainService(MemoryRepository()), ai_loader=lambda _slug: Credentials("openrouter", None, KEY))
+        pipeline.runtime.generate = lambda prompt, *, user_message, bot_config=None: reply(text)
+        _reply, _ai_used, metadata = pipeline.run(
+            tenant=SimpleNamespace(slug="restaurant", name="restaurant", id="restaurant"), user_message="Necesito ayuda con mi pedido",
+            user_id="cliente-1", bot_config=None, conversation_history=[], faq_results=[], yaml_config=None, include_metadata=True,
+        )
+        return metadata
+
+    assert answer("Claro, te paso con un asesor de nuestro equipo.").get("handoff") is True
+    assert not answer("Claro, ¿qué pedido es?").get("handoff")

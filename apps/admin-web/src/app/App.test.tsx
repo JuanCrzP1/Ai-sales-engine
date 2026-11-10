@@ -574,7 +574,7 @@ describe("Secciones del negocio", () => {
     await user.click(screen.getByRole("checkbox", { name: /^Agendar citas/ }));
     await user.click(screen.getByRole("checkbox", { name: /^Responder dudas/ }));
     await user.click(screen.getByRole("switch", { name: /^Ofrecer atención de una persona/ }));
-    expect(screen.getByText(/aún no avisa a nadie de tu equipo/)).toBeInTheDocument();
+    expect(screen.queryByText(/aún no avisa a nadie de tu equipo/)).not.toBeInTheDocument();
     await saveAndWait(user);
 
     const { capabilities } = storedOf(backend);

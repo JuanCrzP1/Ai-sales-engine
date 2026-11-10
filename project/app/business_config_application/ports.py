@@ -14,7 +14,7 @@ from typing import Any, Protocol, runtime_checkable
 from app.domain.business_config.access import Principal
 from app.domain.business_config.ai_settings import AICredentials, AISettings, AssistantTurn, KeyCheck
 from app.domain.business_config.contract import BusinessConfig, SecretRef
-from app.domain.business_config.conversations import BusinessActivity, ChatMessage, ConversationSummary, NewMessage
+from app.domain.business_config.conversations import BusinessActivity, ChatMessage, ConversationSummary, NewMessage, Notification
 from app.domain.business_config.records import BusinessSummary, ConfigVersion, StoredConfig
 
 
@@ -126,12 +126,28 @@ class AccessTokenVerifier(Protocol):
 class ConversationStorage(Protocol):
     """Las conversaciones de cada negocio. Toda consulta recibe los negocios que puede ver quien pregunta."""
 
-    def record(self, tenant_slug: str, *, channel: str, contact_ref: str, contact_name: str | None, messages: list[NewMessage]) -> str:
-        """Agrega mensajes al hilo de ese contacto en ese canal (lo crea si no existe) y devuelve su identificador."""
+    def record(
+        self, tenant_slug: str, *, channel: str, contact_ref: str, contact_name: str | None, messages: list[NewMessage], handoff: bool = False
+    ) -> str:
+        """Agrega mensajes al hilo de ese contacto en ese canal (lo crea si no existe) y devuelve su identificador. Con `handoff`,
+        la conversación queda esperando a una persona y el equipo recibe un aviso, en la misma transacción."""
         ...
 
-    def recent(self, tenant_slugs: Collection[str], *, channel: str | None, limit: int) -> list[ConversationSummary]: ...
+    def recent(self, tenant_slugs: Collection[str], *, channel: str | None, limit: int, needs_human: bool | None = None) -> list[ConversationSummary]: ...
 
     def thread(self, conversation_id: str) -> tuple[ConversationSummary, list[ChatMessage]]: ...
 
+    def business_of(self, conversation_id: str) -> str: ...
+
+    def resolve_handoff(self, conversation_id: str) -> None: ...
+
     def activity(self, tenant_slug: str, *, since: datetime) -> BusinessActivity: ...
+
+
+@runtime_checkable
+class NotificationStorage(Protocol):
+    """Los avisos de los negocios. Lo leído es de cada persona."""
+
+    def recent(self, tenant_slugs: Collection[str], user_id: str, *, limit: int) -> tuple[list[Notification], int]: ...
+
+    def mark_read(self, tenant_slugs: Collection[str], user_id: str, ids: Collection[str] | None = None) -> int: ...

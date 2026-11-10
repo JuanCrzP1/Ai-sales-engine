@@ -188,9 +188,6 @@ function validatePayments(document: BusinessDocument, paymentValues: PaymentValu
   if (capabilities.data_collection.enabled && (capabilities.data_collection.fields ?? []).length === 0) {
     add("capabilities.data_collection", "error", "Elige qué datos puede pedir el asistente.");
   }
-  if (closing.human_handoff) {
-    add("capabilities.closing_methods.human_handoff", "warning", "El asistente podrá ofrecer pasar a una persona, pero esta versión aún no avisa a nadie de tu equipo.");
-  }
   if ((capabilities.actions_primary ?? []).length + (capabilities.actions_support ?? []).length === 0) {
     add("capabilities.actions", "error", "Elige al menos una acción que pueda realizar el asistente.");
   }

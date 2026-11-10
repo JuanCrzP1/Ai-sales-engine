@@ -11,7 +11,7 @@ from app.admin_api.errors import PAYMENT_PROBLEM
 from app.business_config_application.assistant_lab import PlaygroundReply
 from app.business_config_application.service import ConfigReview, EditableConfig
 from app.domain.business_config.ai_settings import AISettings, KeyCheck
-from app.domain.business_config.conversations import BusinessActivity, ChatMessage, ConversationSummary
+from app.domain.business_config.conversations import BusinessActivity, ChatMessage, ConversationSummary, Notification
 from app.domain.business_config.records import BusinessSummary, ConfigVersion
 
 
@@ -128,6 +128,8 @@ def conversation_payload(summary: ConversationSummary) -> dict[str, Any]:
         "last_message_at": _iso(summary.last_message_at),
         "last_message_preview": summary.last_message_preview,
         "message_count": summary.message_count,
+        "needs_human": summary.needs_human,
+        "handoff_requested_at": _iso(summary.handoff_requested_at),
     }
 
 
@@ -141,4 +143,25 @@ def activity_payload(activity: BusinessActivity) -> dict[str, Any]:
         "conversations_today": activity.conversations_since,
         "messages_today": activity.messages_since,
         "test_conversations": activity.test_conversations,
+        "waiting_human": activity.waiting_human,
     }
+
+
+def notification_payload(item: Notification) -> dict[str, Any]:
+    return {
+        "id": item.id,
+        "business": {"slug": item.business_slug, "name": item.business_name},
+        "conversation_id": item.conversation_id,
+        "kind": item.kind,
+        "title": item.title,
+        "body": item.body,
+        "created_at": _iso(item.created_at),
+        "read": item.read,
+    }
+
+
+class MarkNotificationsRead(BaseModel):
+    """Sin `ids`, marca como leídos todos los avisos de quien pregunta."""
+
+    model_config = ConfigDict(extra="forbid")
+    ids: list[str] | None = Field(default=None, max_length=100)

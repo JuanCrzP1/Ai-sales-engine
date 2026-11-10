@@ -1094,6 +1094,9 @@ def test_the_api_only_has_the_routes_of_the_panel(api):
         ("GET", "/conversations"),
         ("GET", "/conversations/{conversation_id}"),
         ("GET", f"{business}/activity"),
+        ("POST", "/conversations/{conversation_id}/handoff/resolve"),
+        ("GET", "/notifications"),
+        ("POST", "/notifications/read"),
     }
     assert api.client.post("/api/v1/simulate", json={}).status_code == 404
 

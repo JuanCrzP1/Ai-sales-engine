@@ -58,6 +58,8 @@ class AssistantTurn:
     reply: str
     intent: str | None = None
     ai_answered: bool = True
+    # El asistente pasó la conversación a una persona del equipo.
+    handoff: bool = False
 
 
 def key_hint(api_key: str) -> str:

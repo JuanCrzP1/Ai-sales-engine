@@ -10,7 +10,7 @@ import type { AISettings, AssistantLab, ConfigSource } from "../repositories/ass
 import type { AuthService } from "../repositories/authService";
 import type { BusinessDirectory } from "../repositories/businessDirectory";
 import type { ConfigRepository, StoredConfig } from "../repositories/configRepository";
-import type { ConversationSummary, ConversationThread } from "../domain/inbox/types";
+import type { ConversationSummary, ConversationThread, InboxFilter, Notification } from "../domain/inbox/types";
 import type { Inbox } from "../repositories/inbox";
 import { PersistenceError } from "../repositories/persistenceError";
 
@@ -337,24 +337,34 @@ export function createVerifyingAuthService(): AuthService {
 }
 
 
-/** Bandeja en memoria: hilos sembrados por la prueba; filtra por negocio y canal como el servidor. */
-export function createMemoryInbox(threads: ConversationThread[] = []): Inbox & { requests: { business?: string; channel?: string }[] } {
-  const requests: { business?: string; channel?: string }[] = [];
+/** Bandeja en memoria: hilos y avisos sembrados por la prueba; filtra y marca como el servidor. */
+export function createMemoryInbox(
+  seededThreads: ConversationThread[] = [],
+  seededNotifications: Notification[] = [],
+): Inbox & { requests: InboxFilter[]; resolved: string[]; notificationList: Notification[] } {
+  // Copias: lo que cambia una prueba (marcar como atendida) no toca los datos sembrados de las demás.
+  const threads = seededThreads.map((thread) => ({ conversation: { ...thread.conversation }, messages: [...thread.messages] }));
+  const requests: InboxFilter[] = [];
+  const resolved: string[] = [];
+  const notificationList = seededNotifications.map((item) => ({ ...item }));
   const newestFirst = (a: ConversationSummary, b: ConversationSummary) => b.lastMessageAt.localeCompare(a.lastMessageAt);
+  const find = (id: string) => {
+    const found = threads.find((thread) => thread.conversation.id === id);
+    if (!found) throw new PersistenceError("not_found", { message: "Esa conversación no existe." });
+    return found;
+  };
   return {
     requests,
+    resolved,
+    notificationList,
     list: async (filter = {}) => {
       requests.push({ ...filter });
       return threads
         .map((thread) => thread.conversation)
-        .filter((item) => (!filter.business || item.business.slug === filter.business) && (!filter.channel || item.channel === filter.channel))
+        .filter((item) => (!filter.business || item.business.slug === filter.business) && (!filter.channel || item.channel === filter.channel) && (!filter.waitingHuman || item.needsHuman))
         .sort(newestFirst);
     },
-    thread: async (id) => {
-      const found = threads.find((thread) => thread.conversation.id === id);
-      if (!found) throw new PersistenceError("not_found", { message: "Esa conversación no existe." });
-      return found;
-    },
+    thread: async (id) => find(id),
     activity: async (slug) => {
       const mine = threads.filter((thread) => thread.conversation.business.slug === slug);
       return {
@@ -362,7 +372,18 @@ export function createMemoryInbox(threads: ConversationThread[] = []): Inbox & {
         conversationsToday: mine.length,
         messagesToday: mine.reduce((total, thread) => total + thread.messages.length, 0),
         testConversations: mine.filter((thread) => thread.conversation.channel === "prueba").length,
+        waitingHuman: mine.filter((thread) => thread.conversation.needsHuman).length,
       };
+    },
+    resolveHandoff: async (id) => {
+      const thread = find(id);
+      resolved.push(id);
+      thread.conversation = { ...thread.conversation, needsHuman: false };
+      return thread.conversation;
+    },
+    notifications: async () => ({ items: notificationList.map((item) => ({ ...item })), unread: notificationList.filter((item) => !item.read).length }),
+    markNotificationsRead: async (ids) => {
+      for (const item of notificationList) if (!ids || ids.includes(item.id)) item.read = true;
     },
   };
 }

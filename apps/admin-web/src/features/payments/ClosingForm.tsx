@@ -38,7 +38,7 @@ export function ClosingForm() {
 
       <Toggle
         label="Ofrecer atención de una persona"
-        description="El asistente puede proponer que alguien de tu equipo continúe la conversación."
+        description="El asistente puede proponer que alguien de tu equipo continúe la conversación. Cuando lo haga, te avisamos en la campana de notificaciones y el chat queda marcado en Conversaciones."
         checked={methods.human_handoff}
         onChange={(human_handoff) => update({ closing_methods: { ...methods, human_handoff } })}
       />

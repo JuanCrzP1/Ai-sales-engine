@@ -14,8 +14,8 @@ export function ActivityOverview() {
   const metrics: { label: string; value: number | null; icon: IconName }[] = [
     { label: "Conversaciones hoy", value: data?.conversationsToday ?? null, icon: "inbox" },
     { label: "Mensajes hoy", value: data?.messagesToday ?? null, icon: "chat" },
+    { label: "Esperan a una persona", value: data?.waitingHuman ?? null, icon: "headset" },
     { label: "Conversaciones en total", value: data?.conversations ?? null, icon: "users" },
-    { label: "Pruebas del asistente", value: data?.testConversations ?? null, icon: "flask" },
   ];
 
   return (

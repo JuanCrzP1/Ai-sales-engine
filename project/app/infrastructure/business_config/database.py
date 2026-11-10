@@ -9,7 +9,7 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-from sqlalchemy import create_engine, event
+from sqlalchemy import create_engine, event, inspect
 from sqlalchemy.engine import Engine, make_url
 
 from app.business_config_application.assistant_lab import AssistantLabService
@@ -68,11 +68,24 @@ def create_business_config_engine(url: str | None = None) -> Engine:
     return engine
 
 
+# Columnas que una migración agregó a una tabla que ya existía: una base local anterior las recibe al arrancar el panel.
+_ADDED_COLUMNS = {
+    "conversations": {"needs_human": "BOOLEAN NOT NULL DEFAULT 0", "handoff_requested_at": "DATETIME"},
+}
+
+
 def create_local_schema(engine: Engine) -> None:
-    """Crea las tablas en una base SQLite local. En PostgreSQL se usa la migración SQL revisada."""
+    """Crea las tablas en una base SQLite local y agrega las columnas nuevas a las que ya existían. En PostgreSQL se usa la
+    migración SQL revisada."""
     if engine.dialect.name != "sqlite":
         raise ValueError("el esquema solo se crea desde aquí en SQLite: en PostgreSQL se aplica la migración SQL")
     metadata.create_all(engine)
+    with engine.begin() as conn:
+        for table, columns in _ADDED_COLUMNS.items():
+            present = {column["name"] for column in inspect(conn).get_columns(table)}
+            for name, definition in columns.items():
+                if name not in present:
+                    conn.exec_driver_sql(f"ALTER TABLE {table} ADD COLUMN {name} {definition}")
 
 
 def build_business_config_service(engine: Engine, *, secrets_key: str | None = None) -> BusinessConfigService:
