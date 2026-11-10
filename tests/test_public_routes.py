@@ -35,6 +35,15 @@ def test_production_only_publishes_what_the_channels_need(monkeypatch, mode, ver
     assert any(path.startswith("/whatsapp") for path in paths)
 
 
+def test_health_does_not_name_any_business():
+    from fastapi.testclient import TestClient
+
+    from app.main import app
+
+    response = TestClient(app).get("/health")
+    assert (response.status_code, response.json()) == (200, {"status": "ok"})
+
+
 def test_outside_production_the_routes_stay_as_they_were(monkeypatch):
     paths = _paths(monkeypatch, mode="development")
     assert {"/auth/register", "/auth/login"} <= paths
