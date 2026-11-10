@@ -94,10 +94,13 @@ export function neighbours(key: NavItem["key"]): { previous?: NavItem; next?: Na
 
 export const MAIN_ITEMS: NavItem[] = [HOME_ITEM, CONVERSATIONS_ITEM, CUSTOMERS_ITEM, SALES_ITEM, REPORTS_ITEM];
 
+/** Nombre corto de una sección en la barra de pestañas, para que quepan todas en una fila (el completo sigue siendo su nombre accesible). */
+const SHORT_TAB_LABELS: Partial<Record<ConfigSectionId, string>> = { catalog: "Productos", payments: "Pagos", messages: "Mensajes" };
+
 /** Pestañas del Asistente IA: su entrenamiento, probarlo y publicarlo. */
-export const ASSISTANT_TABS: { item: NavItem; label: string }[] = [
+export const ASSISTANT_TABS: { item: NavItem; label: string; short?: string }[] = [
   { item: OVERVIEW_ITEM, label: "Resumen" },
-  ...SECTION_ITEMS.map((item) => ({ item, label: item.title })),
+  ...SECTION_ITEMS.map((item) => ({ item, label: item.title, short: item.section ? SHORT_TAB_LABELS[item.section] : undefined })),
   { item: PLAYGROUND_ITEM, label: "Probar" },
   { item: REVIEW_ITEM, label: "Publicar" },
 ];

@@ -662,3 +662,12 @@
   right: 12px;
   color: var(--color-accent);
 }
+
+/* Probar y Publicar: acciones del asistente, con el color de acción. */
+.tabs__link--tool {
+  color: var(--color-accent);
+}
+
+.tabs__link--tool:hover {
+  color: var(--color-accent-hover);
+}

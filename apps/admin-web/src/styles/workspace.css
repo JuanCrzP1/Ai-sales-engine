@@ -164,20 +164,27 @@
   color: var(--color-accent);
 }
 
+/* Todas las pestañas a la vista: si no caben en una fila, pasan a la siguiente (nunca hay que desplazarse de lado). */
 .tabs {
   display: flex;
-  gap: var(--space-1);
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px;
   padding: 4px;
   border-radius: var(--radius-md);
   background: var(--color-surface);
   border: 1px solid var(--color-border);
-  overflow-x: auto;
-  scrollbar-width: none;
+}
+
+/* Probar y Publicar son acciones, no secciones: van a la derecha. */
+.tabs__spacer {
+  flex: 1 1 0;
+  min-width: var(--space-2);
 }
 
 .tabs__link {
   flex: none;
-  padding: var(--space-2) var(--space-4);
+  padding: 7px 11px;
   border-radius: var(--radius-sm);
   color: var(--color-text-muted);
   font-size: var(--text-sm);
