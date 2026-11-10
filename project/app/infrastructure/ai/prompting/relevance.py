@@ -1,7 +1,7 @@
 """Qué entradas de una lista van al prompt cuando no caben todas: las que más palabras comparten con lo que pregunta el cliente.
 
-Lo usan las preguntas frecuentes y el catálogo, para que un negocio con muchas entradas no infle cada mensaje. Si todo cabe, va todo;
-si no, se eligen por relevancia hasta llenar el espacio y se escriben siempre en el orden del negocio.
+Lo usan las preguntas frecuentes, el catálogo y la estrategia avanzada, para que un negocio con muchas entradas no infle cada mensaje.
+Si todo cabe, va todo; si no, se eligen por relevancia hasta llenar el espacio y se escriben siempre en el orden del negocio.
 """
 from __future__ import annotations
 
@@ -31,6 +31,25 @@ def _stem(word: str) -> str:
 def words(text: str) -> set[str]:
     plain = "".join(char for char in unicodedata.normalize("NFKD", text.lower()) if not unicodedata.combining(char))
     return {_stem(word) for word in re.findall(r"[a-z0-9]+", plain) if word not in STOPWORDS}
+
+
+def grouped_lines(entries: Sequence[tuple[str | None, str]], *, query: str, max_chars: int) -> list[str]:
+    """Las líneas de una capa que caben: cada entrada es (título del grupo o None, texto). Las elegidas se escriben bajo su título,
+    como viñetas, en el orden del negocio; un título sin entradas elegidas no se escribe."""
+    # El título cuenta para la relevancia: «Si duda por el precio» acerca todas sus líneas a un cliente que habla del precio.
+    shown = select(entries, size=lambda entry: len(entry[1]) + 3 + len(entry[0] or ""), text=lambda entry: f"{entry[0] or ''} {entry[1]}",
+                   query=query, max_chars=max_chars)
+    lines: list[str] = []
+    current: str | None = None
+    for title, text in shown:
+        if title is None:
+            lines.append(text)
+            continue
+        if title != current:
+            lines.append(title)
+            current = title
+        lines.append(f"- {text}")
+    return lines
 
 
 def select(entries: Sequence[T], *, size: Callable[[T], int], text: Callable[[T], str], query: str, max_chars: int) -> list[T]:

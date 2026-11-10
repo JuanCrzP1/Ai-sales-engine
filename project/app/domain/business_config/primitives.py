@@ -15,13 +15,17 @@ from app.domain.business_config.engine_policy import (
 SCHEMA_VERSION = "1.0"
 
 Audience = Literal["cliente", "avanzado", "sistema"]
-EngineStatus = Literal["conectado", "pendiente"]
+EngineStatus = Literal["conectado", "pendiente", "programado", "solo panel"]
 
 CLIENT = {"x-audience": "cliente"}
 ADVANCED = {"x-audience": "avanzado"}
 SYSTEM = {"x-audience": "sistema"}
 CONNECTED = {"x-engine": "conectado"}
 PENDING = {"x-engine": "pendiente"}
+# Lo enviará la plataforma cuando exista el evento que lo dispara (p. ej. el equipo confirma un pago): se guarda y no va a la IA.
+SCHEDULED = {"x-engine": "programado"}
+# Solo para el equipo en el panel (una etiqueta, un código interno): nunca va al motor ni al cliente.
+PANEL_ONLY = {"x-engine": "solo panel"}
 
 
 def _not_blank(value: str) -> str:

@@ -20,10 +20,14 @@ from app.domain.business_config.primitives import ADVANCED, CLIENT, CONNECTED, S
 class Features(ContractModel):
     """Cómo vende el negocio. Los valores se conservan tal cual; las contradicciones con la oferta las señala el diagnóstico."""
 
-    pricing_enabled: bool = Field(description="true: permite usar precios en la conversación.")
+    pricing_enabled: bool = Field(description="true: permite usar precios en la conversación. false: el asistente no da valores.", json_schema_extra=CONNECTED)
     catalog_mode: bool = Field(description="true: vende opciones tipo catálogo. false: vende un servicio o plan.", json_schema_extra=CONNECTED)
-    multi_currency: bool | None = Field(default=None, description="true: permite manejar más de una moneda.")
-    multi_plan: bool | None = Field(default=None, description="true: permite ofrecer varios planes.")
+    multi_currency: bool | None = Field(
+        default=None, description="true: da los precios en todas sus monedas. false: solo en la primera de cada precio.", json_schema_extra=CONNECTED
+    )
+    multi_plan: bool | None = Field(
+        default=None, description="true: puede ofrecer varios planes. false: recomienda uno solo, el que mejor encaje.", json_schema_extra=CONNECTED
+    )
     business_model: Literal["saas", "catalog", "checkout", "service_booking", "process"] | None = Field(
         default=None, description="Tipo de negocio; con él el motor decide cuándo mostrar precios.", json_schema_extra=CONNECTED
     )
@@ -45,8 +49,8 @@ class BusinessConfig(ContractModel):
     messages: Messages = Field(json_schema_extra=CLIENT)
     response_style: ResponseStyle = Field(default_factory=ResponseStyle, json_schema_extra=CLIENT)
     knowledge: Knowledge = Field(default_factory=Knowledge, json_schema_extra=CLIENT)
-    fulfillment: Fulfillment | None = Field(default=None, json_schema_extra=CLIENT)
-    inventory: Inventory = Field(default_factory=Inventory, json_schema_extra=CLIENT)
+    fulfillment: Fulfillment | None = Field(default=None, json_schema_extra={**CLIENT, **CONNECTED})
+    inventory: Inventory = Field(default_factory=Inventory, json_schema_extra={**CLIENT, **CONNECTED})
     features: Features | None = Field(
         default=None, description="Interruptores comerciales. Si faltan, se derivan de la oferta (catálogo o planes).", json_schema_extra=ADVANCED
     )

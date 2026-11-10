@@ -9,7 +9,6 @@ from app.domain.business_config.engine_policy import MAX_CATEGORIES, MAX_OFFER_D
 
 from app.domain.business_config.primitives import (
     CONNECTED,
-    PENDING,
     Amount,
     ContractModel,
     CurrencyCode,
@@ -31,7 +30,7 @@ class PlanPrice(ContractModel):
     monthly: Amount | None = Field(default=None, description="Cobro mensual.")
     first_payment: Amount | None = Field(default=None, description="Valor del primer pago, si difiere de los siguientes.")
     price: Amount | None = Field(default=None, description="Precio de pago único.")
-    annual: Amount | None = Field(default=None, description="Cobro anual.", json_schema_extra=PENDING)
+    annual: Amount | None = Field(default=None, description="Cobro anual.", json_schema_extra=CONNECTED)
 
     @model_validator(mode="after")
     def _has_amount(self) -> "PlanPrice":
@@ -50,7 +49,7 @@ class Plan(ContractModel):
     includes: list[Text] | None = Field(default=None, json_schema_extra=CONNECTED)
     not_included: list[Text] | None = Field(default=None, json_schema_extra=CONNECTED)
     payment_profile: Identifier | None = Field(default=None, description="Perfil de pago con el que se cobra.", json_schema_extra=CONNECTED)
-    target: Text | None = Field(default=None, description="Para quién es este plan.")
+    target: Text | None = Field(default=None, description="Para quién es este plan.", json_schema_extra=CONNECTED)
     available: bool = Field(default=True, description="Si es false, el plan se conserva pero no se ofrece.", json_schema_extra=CONNECTED)
 
     @model_validator(mode="after")

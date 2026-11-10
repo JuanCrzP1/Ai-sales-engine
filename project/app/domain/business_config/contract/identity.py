@@ -52,12 +52,14 @@ class Identity(ContractModel):
     industry: Text = Field(max_length=MAX_INDUSTRY_CHARS, description="Sector o tipo de negocio, en pocas palabras.", json_schema_extra=CONNECTED)
     description: Text = Field(max_length=MAX_DESCRIPTION_CHARS, description="Qué hace el negocio.", json_schema_extra=CONNECTED)
     value_proposition: Text = Field(max_length=MAX_VALUE_PROPOSITION_CHARS, description="Promesa comercial: qué gana el cliente.", json_schema_extra=CONNECTED)
-    positioning: Text | None = Field(default=None, description="A quién se dirige y qué problema resuelve.")
+    positioning: Text | None = Field(default=None, description="A quién se dirige y qué problema resuelve.", json_schema_extra=CONNECTED)
     differentiators: Phrases | None = Field(default=None, description="Por qué elegir este negocio y no otro.", json_schema_extra=CONNECTED)
     location: Location | None = Field(default=None, description="Dónde está y a qué zonas atiende.", json_schema_extra=CONNECTED)
     service_modes: Annotated[list[ServiceMode], Field(max_length=5)] | None = Field(
         default=None, description="Cómo recibe el cliente el servicio o producto.", json_schema_extra=CONNECTED
     )
-    target_customer: TargetCustomer | None = Field(default=None, description="Cliente ideal.")
-    credibility: Phrases | None = Field(default=None, description="Pruebas de confianza: casos, resultados, trayectoria.")
-    opening_hours: Annotated[list[OpeningHours], Field(max_length=14)] | None = Field(default=None, description="Horarios de atención.")
+    target_customer: TargetCustomer | None = Field(default=None, description="Cliente ideal.", json_schema_extra=CONNECTED)
+    credibility: Phrases | None = Field(default=None, description="Pruebas de confianza: casos, resultados, trayectoria.", json_schema_extra=CONNECTED)
+    opening_hours: Annotated[list[OpeningHours], Field(max_length=14)] | None = Field(
+        default=None, description="Horarios de atención.", json_schema_extra=CONNECTED
+    )

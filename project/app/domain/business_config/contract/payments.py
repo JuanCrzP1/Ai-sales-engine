@@ -5,7 +5,7 @@ from typing import Literal
 
 from pydantic import Field, model_validator
 
-from app.domain.business_config.primitives import CONNECTED, PENDING, ContractModel, Identifier, Phrase, SecretRef
+from app.domain.business_config.primitives import CONNECTED, PANEL_ONLY, ContractModel, Identifier, Phrase, SecretRef
 
 
 class TransferMethod(ContractModel):
@@ -16,7 +16,7 @@ class TransferMethod(ContractModel):
     account_number: SecretRef | None = None
     reference: SecretRef | None = None
     label: Phrase | None = Field(
-        default=None, description="Titular o etiqueta para reconocer la cuenta en el panel. No se comparte con el cliente.", json_schema_extra=PENDING
+        default=None, description="Titular o etiqueta para reconocer la cuenta en el panel. No se comparte con el cliente.", json_schema_extra=PANEL_ONLY
     )
     # Sin indicar equivale a activa: los documentos que no lo usan no cambian.
     enabled: bool | None = Field(default=None, description="Si es false, la cuenta se conserva pero no se ofrece.")

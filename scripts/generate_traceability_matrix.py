@@ -58,6 +58,9 @@ CLASSES = {
 }
 
 
+# Estados del motor de un campo del contrato (`x-engine`), en el orden de la tabla de la referencia.
+ENGINE_STATUSES = ("conectado", "programado", "solo panel", "pendiente")
+
 def _tenants(service: ConfigService) -> list[str]:
     return sorted(path.name for path in service.tenants_root.iterdir() if (path / CONTRACT_FILENAME).is_file())
 
@@ -200,8 +203,8 @@ def render_matrix() -> str:
         f"  `{CONSERVED}`: el valor original está en el destino declarado.",
         "- **Representado en el contrato:** la columna Destino. `ajustes técnicos` significa que el dato está en",
         "  `engine-settings.json`, fuera del documento comercial (ver Justificación).",
-        "- **Interfaz:** `pantalla` (el panel tiene un control), `modelo` (el modelo y el adaptador del panel",
-        "  lo admiten, pero aún no hay pantalla) o `no`.",
+        "- **Interfaz:** `pantalla` (el panel tiene un control, propio o en sus opciones avanzadas), `modelo` (el modelo",
+        "  y el adaptador del panel lo admiten, pero aún no hay pantalla) o `no`.",
         "- **Motor:** `sí` solo con evidencia (columna Prueba) de que el motor actual lo usa; `no` si solo está",
         "  representado. Las pruebas de uso están en `tests/test_business_config_engine_integration.py`.",
         "- `[]` es un índice de lista; `<nombre>` una clave variable (id de problema, moneda...).",
@@ -257,17 +260,18 @@ def render_matrix() -> str:
         "",
         "- **Audiencia:** `cliente` (lo configura el negocio), `avanzado` (estrategia comercial detallada, opcional)",
         "  o `sistema`.",
-        "- **Motor:** `conectado` (el motor actual lo usa; prueba en `tests/test_business_config_engine_integration.py`)",
-        "  o `pendiente` (representado y conservado, sin uso en el motor actual).",
+        "- **Motor:** `conectado` (el motor actual lo usa; prueba en `tests/test_business_config_engine_integration.py`),",
+        "  `programado` (lo enviará la plataforma cuando exista el evento que lo dispara; no va a la IA), `solo panel`",
+        "  (es solo para el equipo; nunca va a la IA) o `pendiente` (representado y conservado, sin uso en el motor actual).",
         "- **Origen:** campo de los YAML, `nuevo` (solo existe en el contrato) o `derivado` (lo crea la importación).",
         "",
-        "| Audiencia | Conectados | Pendientes |",
-        "|---|---|---|",
+        "| Audiencia | Conectados | Programados | Solo panel | Pendientes |",
+        "|---|---|---|---|---|",
         *[
-            f"| {audience} | {status[(audience, 'conectado')]} | {status[(audience, 'pendiente')]} |"
+            f"| {audience} | " + " | ".join(str(status[(audience, engine)]) for engine in ENGINE_STATUSES) + " |"
             for audience in ("cliente", "avanzado", "sistema")
         ],
-        f"| **Total** | {sum(v for (_, e), v in status.items() if e == 'conectado')} | {sum(v for (_, e), v in status.items() if e == 'pendiente')} |",
+        "| **Total** | " + " | ".join(str(sum(v for (_, e), v in status.items() if e == engine)) for engine in ENGINE_STATUSES) + " |",
         "",
         "| Campo | Audiencia | Motor | Origen | Interfaz | Descripción |",
         "|---|---|---|---|---|---|",

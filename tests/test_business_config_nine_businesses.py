@@ -296,14 +296,23 @@ def test_commercial_fields_are_stored_published_and_recovered(store, slug):
     store.service.publish(slug, 2)
     assert _published_document(store, slug) == enriched
     compiled_after = store.service.compile_sections(slug)
-    # Promociones, instrucciones, preguntas frecuentes y características llegan al motor por sus claves propias; las políticas,
-    # los horarios, los mensajes de posventa y los precios anual y por variante todavía no.
-    assert compiled_after["config"]["profile"]["promotions"] == enriched["terms"]["promotions"]
-    assert compiled_after["config"]["profile"]["instructions"] == enriched["sales"]["instructions"]
+    # Todo llega al motor por sus claves propias o por campos que los YAML no tenían: lo demás no cambia.
+    profile = compiled_after["config"]["profile"]
+    assert profile["promotions"] == enriched["terms"]["promotions"]
+    assert profile["instructions"] == enriched["sales"]["instructions"]
+    assert profile["policies"] == enriched["terms"]["policies"]
+    assert profile["opening_hours"] == enriched["identity"]["opening_hours"]
+    assert (profile["formality"], profile["emojis"], profile["style_instructions"]) == ("neutral", False, ["Sin tecnicismos."])
     assert compiled_after["config"]["knowledge"] == enriched["knowledge"]
+    assert compiled_after["config"]["messages"] == {"after_sale": "Gracias", "data_request": "Tus datos", "human_handoff": "Te paso con alguien"}
+    for plan in compiled_after["pricing"].get("plans") or []:
+        assert next(iter(plan["pricing"].values())).pop("annual") == 1200
     for item in (compiled_after["pricing"].get("catalog") or {}).get("items", []):
         item.pop("features", None)
-    assert comparable_with_yaml(compiled_after) == comparable_with_yaml(compiled_before), "el resto aún no llega al motor"
+    for entry in compiled_after["inventory"].get("items", []):
+        for variant in entry.get("variants", []):
+            assert variant.pop("prices")[0]["amount"] == 10
+    assert comparable_with_yaml(compiled_after) == comparable_with_yaml(compiled_before), "nada más cambia"
 
     assert store.service.rollback(slug) == 1
     assert _published_document(store, slug) == original

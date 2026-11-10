@@ -30,14 +30,6 @@ export function CatalogPage() {
         actions={!editor ? <Button onClick={startNew}>{addLabel}</Button> : undefined}
       />
 
-      {catalog && (
-        <Alert tone="info">
-          <p>
-            En modo catálogo, la versión actual del asistente presenta tus <strong>categorías</strong>. Los nombres y precios de cada producto se guardan para una próxima versión.
-          </p>
-        </Alert>
-      )}
-
       {editor && (
         <OfferingEditor
           draft={editor.draft}
@@ -84,7 +76,13 @@ export function CatalogPage() {
         </Card>
       )}
 
-      {catalog && <ContractSection title="Variantes y existencias" description="Tallas, colores y unidades disponibles de cada producto." section="inventory" />}
+      {catalog && (
+        <ContractSection
+          title="Variantes y existencias"
+          description="Tallas, colores y unidades disponibles de cada producto. El asistente dice qué opciones están agotadas, nunca cuántas quedan."
+          section="inventory"
+        />
+      )}
       <ContractSection title="Entrega y agenda" description="Domicilio, envío, recogida y si el servicio requiere agendar." section="fulfillment" />
 
       <SectionPager current="catalog" />

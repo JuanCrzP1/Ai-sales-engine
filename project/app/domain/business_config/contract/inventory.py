@@ -6,11 +6,11 @@ from typing import Annotated
 from pydantic import Field, model_validator
 
 from app.domain.business_config.contract.offer import ItemPrice
-from app.domain.business_config.primitives import ContractModel, Identifier, Text, ensure_unique
+from app.domain.business_config.primitives import PANEL_ONLY, ContractModel, Identifier, Text, ensure_unique
 
 
 class Variant(ContractModel):
-    sku: Text
+    sku: Text = Field(description="Código interno de la variante, para el equipo.", json_schema_extra=PANEL_ONLY)
     attributes: dict[str, str | int] = Field(default_factory=dict, description="Talla, color u otras características.")
     stock: Annotated[int, Field(ge=0)]
     prices: list[ItemPrice] | None = Field(default=None, description="Precio de la variante, solo si difiere del precio del producto.")

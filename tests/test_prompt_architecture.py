@@ -23,7 +23,7 @@ from pipeline_harness import TENANTS, prepared_tenant, stored_document
 
 PROMPTING = Path(__file__).resolve().parents[1] / "project" / "app" / "infrastructure" / "ai" / "prompting"
 MAX_MODULE_LINES = 200
-LAYERS = ("platform", "playbook", "business", "offer", "payments", "guidance", "knowledge", "conversation")
+LAYERS = ("platform", "playbook", "business", "offer", "delivery", "payments", "policies", "guidance", "customer", "strategy", "knowledge", "conversation")
 
 STATES = {
     "presentacion": {"conversation_state": "new"},
@@ -127,6 +127,20 @@ def _large_business(products: int) -> dict:
     document["identity"].update(differentiators=[text("dif", i) for i in range(policy.MAX_PROFILE_ITEMS)])
     document["sales"].update(**{key: [text(key, i) for i in range(policy.MAX_PROFILE_ITEMS)] for key in ("benefits", "arguments", "instructions")})
     document["terms"]["promotions"] = [{"name": f"Promo {i}", "details": text("detalle", i), "valid_until": "2999-12-31"} for i in range(policy.MAX_PROMOTIONS)]
+    # Lo que conectó la Fase 3, también al máximo del contrato.
+    long_text = lambda size: "palabra " * (size // 8)  # noqa: E731
+    document["identity"].update(credibility=[text("prueba", i) for i in range(policy.MAX_PROFILE_ITEMS)])
+    document["response_style"]["instructions"] = [text("estilo", i) for i in range(policy.MAX_PROFILE_ITEMS)]
+    document["terms"]["policies"] = {key: long_text(policy.MAX_POLICY_CHARS) for key in ("warranty", "returns", "cancellation")}
+    document["messages"].update(**{key: long_text(policy.MAX_MESSAGE_CHARS) for key in ("data_request", "human_handoff", "after_sale")})
+    document["sales"]["solution"] = {key: [text("paso", i) for i in range(policy.MAX_PROFILE_ITEMS)] for key in ("process_steps", "requirements")}
+    document["sales"]["objections"] = [
+        {"topic": topic, **{layer: [text("capa", i) for i in range(policy.MAX_PROFILE_ITEMS)] for layer in ("acknowledge", "reframe", "proof", "redirect", "rules")}}
+        for topic in ("precio", "tiempo", "confianza", "competencia", "garantia", "envio", "calidad", "porciones", "sabor", "domicilio")
+    ]
+    document["sales"]["closing"].update(**{key: [text("cierre", i) for i in range(policy.MAX_PROFILE_ITEMS)]
+                                           for key in ("purchase_signals", "high_intent_actions", "next_steps", "micro_commitments", "rules")})
+    document["sales"]["support"] = {"explain_first": True, "rules": [text("regla", i) for i in range(policy.MAX_PROFILE_ITEMS)]}
     categories = [{"id": f"cat_{i}", "name": f"Categoría {i}"} for i in range(policy.MAX_CATEGORIES)]
     template = document["offer"]["catalog"]["items"][0]
     document["offer"]["catalog"].update(
@@ -154,6 +168,16 @@ def test_a_large_catalog_does_not_inflate_the_prompt():
     assert len(composer.compose(large)) <= budgets.TOTAL_BUDGET
     # Quince veces más productos casi no cambian el tamaño del mensaje.
     assert len(composer.compose(large)) - len(composer.compose(small)) < 1_500
+
+
+def test_a_huge_sales_strategy_stays_within_its_cap_and_keeps_what_the_customer_talks_about():
+    """Diez objeciones al máximo, reglas de cierre y de atención: la estrategia no crece sin límite y la objeción de la que habla el
+    cliente llega al prompt."""
+    layers = composer.render_sections(_large_view(20, "¿Y si no me gusta el sabor?"))
+    assert len(layers["customer"]) <= policy.CUSTOMER_PROMPT_MAX_CHARS + len("EL CLIENTE: QUÉ LO MUEVE Y QUÉ LO FRENA") + 200
+    assert len(layers["strategy"]) <= policy.STRATEGY_PROMPT_MAX_CHARS + len("ESTRATEGIA DE VENTA DEL NEGOCIO") + 200
+    assert "Si duda por sabor (ideas del negocio" in layers["customer"]
+    assert "Si duda por domicilio (ideas del negocio" not in layers["customer"]
 
 
 def test_the_product_the_customer_asks_for_reaches_the_prompt():

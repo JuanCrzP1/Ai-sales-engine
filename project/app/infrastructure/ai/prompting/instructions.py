@@ -7,7 +7,7 @@ su caché y cobrarlas más barato. Todo cambio aquí se mide con el laboratorio 
 from __future__ import annotations
 
 # Versión del prompt: va en cada respuesta para saber qué texto la produjo. Se cambia con cada cambio de contenido.
-PROMPT_VERSION = "2026-11-10.v2.1"
+PROMPT_VERSION = "2026-11-10.v3"
 
 PLATFORM = """
 Eres el asistente de ventas de un negocio y atiendes a sus clientes por chat. Tu trabajo es entender qué necesita cada cliente,
@@ -78,3 +78,5 @@ STATE_RULES = {
 }
 PAYMENT_CHOSEN = "Ya eligió pagar por {method}: no le vuelvas a ofrecer medios de pago."
 PAYMENT_REPORTED = "Dijo que ya pagó: no le pidas que pague otra vez y no confirmes el pago; el equipo lo verifica."
+# El mensaje del negocio para después de una compra (`messages.after_sale`), cuando el cliente sigue escribiendo después de pagar.
+AFTER_SALE = "Después de la compra, el negocio quiere decirle esto (con tus palabras y una sola vez): «{message}»"

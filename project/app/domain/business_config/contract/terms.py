@@ -41,17 +41,17 @@ class Terms(ContractModel):
         default=None, description="Ventas al mes con las que el cliente recupera la inversión.", json_schema_extra={**CONNECTED, **ADVANCED}
     )
     roi_break_even_bookings: Annotated[int, Field(ge=1)] | None = Field(
-        default=None, description="Reservas con las que el cliente recupera la inversión.", json_schema_extra=ADVANCED
+        default=None, description="Reservas con las que el cliente recupera la inversión.", json_schema_extra={**CONNECTED, **ADVANCED}
     )
     roi_hints: list[Text] | None = Field(
         default=None, description="Argumentos de retorno de la inversión.", json_schema_extra={**CONNECTED, **ADVANCED}
     )
-    price_note: Text | None = Field(default=None, description="Aclaración sobre cómo se confirma el precio.")
+    price_note: Text | None = Field(default=None, description="Aclaración sobre cómo se confirma el precio.", json_schema_extra=CONNECTED)
     promotions: Annotated[list[Promotion], Field(max_length=MAX_PROMOTIONS)] | None = Field(
         default=None, description="Únicas promociones o descuentos que el asistente puede ofrecer.", json_schema_extra=CONNECTED
     )
-    financing: Financing | None = Field(default=None, description="Financiación disponible.")
-    policies: Policies | None = Field(default=None, description="Garantía, devoluciones y cancelaciones.")
+    financing: Financing | None = Field(default=None, description="Financiación disponible.", json_schema_extra=CONNECTED)
+    policies: Policies | None = Field(default=None, description="Garantía, devoluciones y cancelaciones.", json_schema_extra=CONNECTED)
 
     @model_validator(mode="after")
     def _unique_promotions(self) -> "Terms":

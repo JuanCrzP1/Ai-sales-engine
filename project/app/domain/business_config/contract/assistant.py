@@ -17,7 +17,7 @@ from app.domain.business_config.engine_policy import (
     RESPONSE_LENGTH_WORD_RANGES,
     ResponseLength,
 )
-from app.domain.business_config.primitives import ADVANCED, CONNECTED, ContractModel, MessageText, Phrases, Text, ensure_unique
+from app.domain.business_config.primitives import ADVANCED, CONNECTED, SCHEDULED, ContractModel, MessageText, Phrases, Text, ensure_unique
 
 
 class ClosingMethods(ContractModel):
@@ -35,7 +35,11 @@ class ClosingMethods(ContractModel):
 class DataCollection(ContractModel):
     enabled: bool = Field(json_schema_extra=CONNECTED)
     # Lista abierta: los YAML no la limitan y el motor usa cualquier valor (p. ej. nombre, telefono, direccion).
-    fields: Phrases = Field(default_factory=list, description="Datos que el asistente puede pedir al cliente; solo esos.", json_schema_extra=CONNECTED)
+    fields: Phrases = Field(
+        default_factory=list,
+        description="Datos que el asistente puede pedir al cliente: solo esos y los que necesita el cierre (`sales.closing.required_data`).",
+        json_schema_extra=CONNECTED,
+    )
 
     @model_validator(mode="after")
     def _fields_when_enabled(self) -> "DataCollection":
@@ -60,7 +64,7 @@ class Capabilities(ContractModel):
     actions_support: list[Text] = Field(default_factory=list, description="Acciones de apoyo.", json_schema_extra=CONNECTED)
     closing_methods: ClosingMethods = Field(description="Cómo puede cerrar el asistente una venta.", json_schema_extra=CONNECTED)
     data_collection: DataCollection = Field(description="Datos que el asistente pide al cliente.")
-    restrictions: Restrictions | None = Field(default=None, description="Lo que el negocio no hace.")
+    restrictions: Restrictions | None = Field(default=None, description="Lo que el negocio no hace.", json_schema_extra=CONNECTED)
 
     @model_validator(mode="after")
     def _coherent(self) -> "Capabilities":
@@ -96,11 +100,18 @@ class Messages(ContractModel):
     payment_confirmed: MessageText | None = Field(
         default=None,
         description="Mensaje cuando el equipo confirma el pago. Se guarda; lo enviará la plataforma cuando el equipo pueda confirmar pagos desde el panel.",
+        json_schema_extra=SCHEDULED,
     )
-    after_sale: MessageText | None = Field(default=None, description="Mensaje después de una compra.")
-    data_request: MessageText | None = Field(default=None, description="Mensaje para pedir los datos del cliente.")
-    follow_up: MessageText | None = Field(default=None, description="Mensaje de seguimiento a un cliente que no respondió.")
-    human_handoff: MessageText | None = Field(default=None, description="Mensaje al pasar la conversación a una persona.")
+    after_sale: MessageText | None = Field(
+        default=None, description="Mensaje después de una compra: la IA lo usa cuando el cliente escribe después de pagar.", json_schema_extra=CONNECTED
+    )
+    data_request: MessageText | None = Field(default=None, description="Mensaje para pedir los datos del cliente.", json_schema_extra=CONNECTED)
+    follow_up: MessageText | None = Field(
+        default=None,
+        description="Mensaje de seguimiento a un cliente que no respondió. Se guarda; lo enviará la plataforma cuando los canales puedan escribir primero.",
+        json_schema_extra=SCHEDULED,
+    )
+    human_handoff: MessageText | None = Field(default=None, description="Mensaje al pasar la conversación a una persona.", json_schema_extra=CONNECTED)
     fallback: MessageText | None = Field(
         default=None,
         description="Mensaje exacto cuando la IA no puede responder (sin clave, sin saldo o con el proveedor caído). Si falta, uno neutro de la plataforma.",
@@ -116,10 +127,12 @@ class ResponseStyle(ContractModel):
     """
 
     tone: Annotated[Text, Field(max_length=MAX_TONE_CHARS)] | None = Field(default=None, description="Tono del asistente (p. ej. cercano y claro).", json_schema_extra=CONNECTED)
-    voice: Annotated[Text, Field(max_length=MAX_TONE_CHARS)] | None = Field(default=None, description="Personalidad de la marca.")
-    formality: Literal["informal", "neutral", "formal"] | None = Field(default=None, description="informal (tutea), neutral o formal (usted).")
-    emojis: bool | None = Field(default=None, description="Si el asistente puede usar emojis.")
-    instructions: Phrases | None = Field(default=None, description="Cómo debe expresarse el asistente en este negocio.")
+    voice: Annotated[Text, Field(max_length=MAX_TONE_CHARS)] | None = Field(default=None, description="Personalidad de la marca.", json_schema_extra=CONNECTED)
+    formality: Literal["informal", "neutral", "formal"] | None = Field(
+        default=None, description="informal (tutea), neutral o formal (usted).", json_schema_extra=CONNECTED
+    )
+    emojis: bool | None = Field(default=None, description="Si el asistente puede usar emojis.", json_schema_extra=CONNECTED)
+    instructions: Phrases | None = Field(default=None, description="Cómo debe expresarse el asistente en este negocio.", json_schema_extra=CONNECTED)
     length: ResponseLength = Field(
         default=DEFAULT_RESPONSE_LENGTH, description="short (cortas), medium (equilibradas) o long (detalladas).", json_schema_extra=CONNECTED
     )

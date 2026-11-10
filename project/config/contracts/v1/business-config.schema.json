@@ -87,7 +87,8 @@
             }
           ],
           "default": null,
-          "description": "Lo que el negocio no hace."
+          "description": "Lo que el negocio no hace.",
+          "x-engine": "conectado"
         }
       },
       "required": [
@@ -679,7 +680,7 @@
           "x-engine": "conectado"
         },
         "fields": {
-          "description": "Datos que el asistente puede pedir al cliente; solo esos.",
+          "description": "Datos que el asistente puede pedir al cliente: solo esos y los que necesita el cierre (`sales.closing.required_data`).",
           "items": {
             "maxLength": 300,
             "type": "string"
@@ -794,7 +795,8 @@
           "default": null,
           "description": "Qué debe averiguar el asistente.",
           "title": "Objectives",
-          "x-audience": "avanzado"
+          "x-audience": "avanzado",
+          "x-engine": "conectado"
         }
       },
       "title": "Discovery",
@@ -828,9 +830,10 @@
       "description": "Cómo vende el negocio. Los valores se conservan tal cual; las contradicciones con la oferta las señala el diagnóstico.",
       "properties": {
         "pricing_enabled": {
-          "description": "true: permite usar precios en la conversación.",
+          "description": "true: permite usar precios en la conversación. false: el asistente no da valores.",
           "title": "Pricing Enabled",
-          "type": "boolean"
+          "type": "boolean",
+          "x-engine": "conectado"
         },
         "catalog_mode": {
           "description": "true: vende opciones tipo catálogo. false: vende un servicio o plan.",
@@ -848,8 +851,9 @@
             }
           ],
           "default": null,
-          "description": "true: permite manejar más de una moneda.",
-          "title": "Multi Currency"
+          "description": "true: da los precios en todas sus monedas. false: solo en la primera de cada precio.",
+          "title": "Multi Currency",
+          "x-engine": "conectado"
         },
         "multi_plan": {
           "anyOf": [
@@ -861,8 +865,9 @@
             }
           ],
           "default": null,
-          "description": "true: permite ofrecer varios planes.",
-          "title": "Multi Plan"
+          "description": "true: puede ofrecer varios planes. false: recomienda uno solo, el que mejor encaje.",
+          "title": "Multi Plan",
+          "x-engine": "conectado"
         },
         "business_model": {
           "anyOf": [
@@ -1030,7 +1035,8 @@
           ],
           "default": null,
           "description": "A quién se dirige y qué problema resuelve.",
-          "title": "Positioning"
+          "title": "Positioning",
+          "x-engine": "conectado"
         },
         "differentiators": {
           "anyOf": [
@@ -1099,7 +1105,8 @@
             }
           ],
           "default": null,
-          "description": "Cliente ideal."
+          "description": "Cliente ideal.",
+          "x-engine": "conectado"
         },
         "credibility": {
           "anyOf": [
@@ -1117,7 +1124,8 @@
           ],
           "default": null,
           "description": "Pruebas de confianza: casos, resultados, trayectoria.",
-          "title": "Credibility"
+          "title": "Credibility",
+          "x-engine": "conectado"
         },
         "opening_hours": {
           "anyOf": [
@@ -1134,7 +1142,8 @@
           ],
           "default": null,
           "description": "Horarios de atención.",
-          "title": "Opening Hours"
+          "title": "Opening Hours",
+          "x-engine": "conectado"
         }
       },
       "required": [
@@ -1334,7 +1343,8 @@
           ],
           "default": null,
           "description": "Mensaje cuando el equipo confirma el pago. Se guarda; lo enviará la plataforma cuando el equipo pueda confirmar pagos desde el panel.",
-          "title": "Payment Confirmed"
+          "title": "Payment Confirmed",
+          "x-engine": "programado"
         },
         "after_sale": {
           "anyOf": [
@@ -1347,8 +1357,9 @@
             }
           ],
           "default": null,
-          "description": "Mensaje después de una compra.",
-          "title": "After Sale"
+          "description": "Mensaje después de una compra: la IA lo usa cuando el cliente escribe después de pagar.",
+          "title": "After Sale",
+          "x-engine": "conectado"
         },
         "data_request": {
           "anyOf": [
@@ -1362,7 +1373,8 @@
           ],
           "default": null,
           "description": "Mensaje para pedir los datos del cliente.",
-          "title": "Data Request"
+          "title": "Data Request",
+          "x-engine": "conectado"
         },
         "follow_up": {
           "anyOf": [
@@ -1375,8 +1387,9 @@
             }
           ],
           "default": null,
-          "description": "Mensaje de seguimiento a un cliente que no respondió.",
-          "title": "Follow Up"
+          "description": "Mensaje de seguimiento a un cliente que no respondió. Se guarda; lo enviará la plataforma cuando los canales puedan escribir primero.",
+          "title": "Follow Up",
+          "x-engine": "programado"
         },
         "human_handoff": {
           "anyOf": [
@@ -1390,7 +1403,8 @@
           ],
           "default": null,
           "description": "Mensaje al pasar la conversación a una persona.",
-          "title": "Human Handoff"
+          "title": "Human Handoff",
+          "x-engine": "conectado"
         },
         "fallback": {
           "anyOf": [
@@ -1915,7 +1929,8 @@
           ],
           "default": null,
           "description": "Para quién es este plan.",
-          "title": "Target"
+          "title": "Target",
+          "x-engine": "conectado"
         },
         "available": {
           "default": true,
@@ -2046,7 +2061,7 @@
           "default": null,
           "description": "Cobro anual.",
           "title": "Annual",
-          "x-engine": "pendiente"
+          "x-engine": "conectado"
         }
       },
       "required": [
@@ -2216,7 +2231,8 @@
           ],
           "default": null,
           "description": "Personalidad de la marca.",
-          "title": "Voice"
+          "title": "Voice",
+          "x-engine": "conectado"
         },
         "formality": {
           "anyOf": [
@@ -2234,7 +2250,8 @@
           ],
           "default": null,
           "description": "informal (tutea), neutral o formal (usted).",
-          "title": "Formality"
+          "title": "Formality",
+          "x-engine": "conectado"
         },
         "emojis": {
           "anyOf": [
@@ -2247,7 +2264,8 @@
           ],
           "default": null,
           "description": "Si el asistente puede usar emojis.",
-          "title": "Emojis"
+          "title": "Emojis",
+          "x-engine": "conectado"
         },
         "instructions": {
           "anyOf": [
@@ -2265,7 +2283,8 @@
           ],
           "default": null,
           "description": "Cómo debe expresarse el asistente en este negocio.",
-          "title": "Instructions"
+          "title": "Instructions",
+          "x-engine": "conectado"
         },
         "length": {
           "default": "short",
@@ -2354,7 +2373,8 @@
           "default": null,
           "description": "Cada motivo de compra: qué significa, cómo reconocerlo y con qué ángulo venderle.",
           "title": "Motivations",
-          "x-audience": "avanzado"
+          "x-audience": "avanzado",
+          "x-engine": "conectado"
         },
         "customer_problems": {
           "anyOf": [
@@ -2371,7 +2391,8 @@
           ],
           "default": null,
           "description": "Problemas del cliente que el negocio resuelve.",
-          "title": "Customer Problems"
+          "title": "Customer Problems",
+          "x-engine": "conectado"
         },
         "pain_points": {
           "anyOf": [
@@ -2389,7 +2410,8 @@
           ],
           "default": null,
           "description": "Problemas del cliente en sus palabras.",
-          "title": "Pain Points"
+          "title": "Pain Points",
+          "x-engine": "conectado"
         },
         "use_cases": {
           "anyOf": [
@@ -2406,7 +2428,8 @@
           "default": null,
           "description": "Casos de uso típicos.",
           "title": "Use Cases",
-          "x-audience": "avanzado"
+          "x-audience": "avanzado",
+          "x-engine": "conectado"
         },
         "benefits": {
           "anyOf": [
@@ -2456,7 +2479,8 @@
             }
           ],
           "default": null,
-          "description": "Qué pasos sigue el cliente y qué requisitos debe cumplir."
+          "description": "Qué pasos sigue el cliente y qué requisitos debe cumplir.",
+          "x-engine": "conectado"
         },
         "offer_mix": {
           "anyOf": [
@@ -2469,7 +2493,8 @@
           ],
           "default": null,
           "description": "Ofertas principales, mejoras y complementos.",
-          "x-audience": "avanzado"
+          "x-audience": "avanzado",
+          "x-engine": "conectado"
         },
         "offer_presentation": {
           "anyOf": [
@@ -2482,7 +2507,8 @@
           ],
           "default": null,
           "description": "Cómo presentar las opciones.",
-          "x-audience": "avanzado"
+          "x-audience": "avanzado",
+          "x-engine": "conectado"
         },
         "recommendation_rules": {
           "anyOf": [
@@ -2524,7 +2550,8 @@
           ],
           "default": null,
           "description": "Cómo calificar al cliente.",
-          "x-audience": "avanzado"
+          "x-audience": "avanzado",
+          "x-engine": "conectado"
         },
         "support": {
           "anyOf": [
@@ -2537,7 +2564,8 @@
           ],
           "default": null,
           "description": "Cómo atender preguntas de información.",
-          "x-audience": "avanzado"
+          "x-audience": "avanzado",
+          "x-engine": "conectado"
         },
         "conversation_flow": {
           "anyOf": [
@@ -2550,7 +2578,8 @@
           ],
           "default": null,
           "description": "Pasos de la conversación y reglas para avanzar.",
-          "x-audience": "avanzado"
+          "x-audience": "avanzado",
+          "x-engine": "conectado"
         },
         "objections": {
           "anyOf": [
@@ -2567,7 +2596,8 @@
           "default": null,
           "description": "Manejo de objeciones (precio y otras).",
           "title": "Objections",
-          "x-audience": "avanzado"
+          "x-audience": "avanzado",
+          "x-engine": "conectado"
         },
         "closing": {
           "anyOf": [
@@ -2580,7 +2610,8 @@
           ],
           "default": null,
           "description": "Estrategia y reglas de cierre.",
-          "x-audience": "avanzado"
+          "x-audience": "avanzado",
+          "x-engine": "conectado"
         },
         "instructions": {
           "anyOf": [
@@ -2938,7 +2969,8 @@
           "default": null,
           "description": "Reservas con las que el cliente recupera la inversión.",
           "title": "Roi Break Even Bookings",
-          "x-audience": "avanzado"
+          "x-audience": "avanzado",
+          "x-engine": "conectado"
         },
         "roi_hints": {
           "anyOf": [
@@ -2969,7 +3001,8 @@
           ],
           "default": null,
           "description": "Aclaración sobre cómo se confirma el precio.",
-          "title": "Price Note"
+          "title": "Price Note",
+          "x-engine": "conectado"
         },
         "promotions": {
           "anyOf": [
@@ -2999,7 +3032,8 @@
             }
           ],
           "default": null,
-          "description": "Financiación disponible."
+          "description": "Financiación disponible.",
+          "x-engine": "conectado"
         },
         "policies": {
           "anyOf": [
@@ -3011,7 +3045,8 @@
             }
           ],
           "default": null,
-          "description": "Garantía, devoluciones y cancelaciones."
+          "description": "Garantía, devoluciones y cancelaciones.",
+          "x-engine": "conectado"
         }
       },
       "title": "Terms",
@@ -3118,7 +3153,7 @@
           "default": null,
           "description": "Titular o etiqueta para reconocer la cuenta en el panel. No se comparte con el cliente.",
           "title": "Label",
-          "x-engine": "pendiente"
+          "x-engine": "solo panel"
         },
         "enabled": {
           "anyOf": [
@@ -3172,8 +3207,10 @@
       "additionalProperties": false,
       "properties": {
         "sku": {
+          "description": "Código interno de la variante, para el equipo.",
           "title": "Sku",
-          "type": "string"
+          "type": "string",
+          "x-engine": "solo panel"
         },
         "attributes": {
           "additionalProperties": {
@@ -3310,11 +3347,13 @@
         }
       ],
       "default": null,
-      "x-audience": "cliente"
+      "x-audience": "cliente",
+      "x-engine": "conectado"
     },
     "inventory": {
       "$ref": "#/$defs/Inventory",
-      "x-audience": "cliente"
+      "x-audience": "cliente",
+      "x-engine": "conectado"
     },
     "features": {
       "anyOf": [

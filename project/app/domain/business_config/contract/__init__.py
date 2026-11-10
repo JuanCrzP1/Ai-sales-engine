@@ -18,8 +18,9 @@ Marcas de cada campo en el esquema (se heredan: un campo sin marca toma la de su
 - `x-audience`: quién lo configura. `cliente` (el negocio, en lenguaje comercial), `avanzado`
   (estrategia comercial detallada, opcional) o `sistema` (versión y dueño del documento).
 - `x-engine`: `conectado` si el motor actual lo usa (con una prueba en
-  `tests/test_business_config_engine_integration.py`), `pendiente` si solo está representado y
-  conservado. Sin marca en ningún nivel: `pendiente`.
+  `tests/test_business_config_engine_integration.py`); `programado` si lo enviará la plataforma cuando
+  exista el evento que lo dispara; `solo panel` si es solo para el equipo (nunca va a la IA); `pendiente`
+  si solo está representado y conservado. Sin marca en ningún nivel: `pendiente`.
 
 Los datos sensibles de pago (links, números de cuenta, referencias) nunca se guardan en el contrato:
 se representan con `SecretRef`.

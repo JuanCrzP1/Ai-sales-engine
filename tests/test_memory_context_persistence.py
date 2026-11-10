@@ -555,8 +555,9 @@ def test_active_prompt_shorter_without_payment() -> None:
     })
     prompt, _, _ = b.build(client_config_id="asesor_ai_prod", user_message="siguiente", yaml_config=rt, faq_results=[], progression_rules=None)
     # Desde el prompt por capas el negocio completo va en todos los mensajes: lo fijo es igual en cada mensaje y el proveedor lo
-    # cobra más barato desde su caché. Los presupuestos por capa están en `prompting/budgets.py`.
-    assert len(prompt) < 6_500, f"Prompt activo sin pago demasiado largo: {len(prompt)} chars"
+    # cobra más barato desde su caché. Este negocio trae toda su estrategia avanzada (unos 3.000 tokens). Los presupuestos por capa
+    # están en `prompting/budgets.py`.
+    assert len(prompt) < 12_500, f"Prompt activo sin pago demasiado largo: {len(prompt)} chars"
 
 ## ----------------------------------------
 ## QUÉ HACE ESTE TEST:

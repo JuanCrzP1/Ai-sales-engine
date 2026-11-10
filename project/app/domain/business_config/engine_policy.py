@@ -78,3 +78,7 @@ FAQ_PROMPT_MAX_CHARS = 1500
 # La oferta en el prompt (planes o productos, con su precio y su detalle), con el mismo criterio: si todo cabe, va todo; si no, lo más
 # relacionado con lo que pregunta el cliente y un aviso de que hay más. El contrato no limita cuántos productos tiene un negocio.
 OFFER_PROMPT_MAX_CHARS = 4000
+# La estrategia avanzada en el prompt («EL CLIENTE» y «ESTRATEGIA DE VENTA»), con el mismo criterio. El contrato no limita cuántas
+# objeciones, problemas o motivos escribe un negocio: si no cabe todo, va lo más relacionado con lo que dice el cliente.
+CUSTOMER_PROMPT_MAX_CHARS = 5000
+STRATEGY_PROMPT_MAX_CHARS = 5000

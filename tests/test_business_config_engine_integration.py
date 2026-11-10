@@ -561,8 +561,13 @@ def test_active_prompt_stays_within_budget(monkeypatch):
         client_config_id="asesor_ai_prod", user_message="siguiente", yaml_config=runtime, faq_results=[], progression_rules=None
     )
     assert "Tono: humano, cercano, directo y comercial de cierre. Responde en máximo 75 palabras." in prompt
-    # El negocio completo va en todos los mensajes; lo fijo se repite igual y el proveedor lo cobra más barato desde su caché.
-    assert len(prompt) < 6_500
+    # El negocio completo va en todos los mensajes; lo fijo se repite igual y el proveedor lo cobra más barato desde su caché. Es el
+    # negocio de ejemplo con más estrategia avanzada (problemas, motivos, objeciones, reglas de cierre): cabe en unos 3.000 tokens.
+    assert len(prompt) < 12_500
+    # Un negocio con poca estrategia avanzada sigue con un prompt corto.
+    small = load_tenant_runtime_yaml("restaurant", extra_yaml={"conversation_state": "active", "memory_context": {"last_ai_response": "ok"}})
+    small_prompt, _, _ = PromptBuilderService().build(client_config_id="restaurant", user_message="siguiente", yaml_config=small, faq_results=[], progression_rules=None)
+    assert len(small_prompt) < 6_500
 
 
 def test_panel_document_is_valid_and_reaches_the_engine():
@@ -627,6 +632,114 @@ def _first_plan(document: dict) -> dict:
     return document["offer"]["plans"][0]
 
 
+# Fase 3: todo lo que el panel deja configurar llega al motor. Cada caso cambia uno o varios campos y busca su texto en el prompt.
+_WEEK = ["lunes", "martes", "miercoles", "jueves", "viernes"]
+PHASE_3_CASES = {
+    # «EL NEGOCIO»
+    "posicionamiento": ("restaurant", lambda d: d["identity"].update(positioning="La hamburguesería del barrio"),
+                        "Posicionamiento: La hamburguesería del barrio.", 0),
+    "pruebas_de_confianza": ("restaurant", lambda d: d["identity"].update(credibility=["10 años en el barrio", "4,8 estrellas"]),
+                             "Pruebas de confianza: 10 años en el barrio; 4,8 estrellas.", 0),
+    "cliente_ideal": ("restaurant", lambda d: d["identity"].update(target_customer={
+        "segment": "familias", "company_size": "de 2 a 5 personas", "maturity": "piden los fines de semana", "roles": ["mamá", "papá"]}),
+        "Cliente ideal: familias (de 2 a 5 personas).\nCómo suele llegar: piden los fines de semana.\nQuién suele escribir o decidir: mamá, papá.", 0),
+    "horario": ("restaurant", lambda d: d["identity"].update(opening_hours=[
+        {"days": _WEEK, "opens": "11:00", "closes": "22:00"}, {"days": ["sabado", "domingo"], "opens": "12:00", "closes": "23:00"}]),
+        "Horario de atención: lunes a viernes de 11:00 a 22:00; sábado y domingo de 12:00 a 23:00.", 0),
+    "estilo": ("restaurant", lambda d: d["response_style"].update(voice="alegre y cercana", formality="formal", emojis=False, instructions=["Sin tecnicismos."]),
+               "Personalidad de la marca: alegre y cercana.\nTrata al cliente de usted.\nNo uses emojis.\nCómo te expresas:\n- Sin tecnicismos.", 0),
+    "estilo_tuteo": ("restaurant", lambda d: d["response_style"].update(formality="informal", emojis=True),
+                     "Trata al cliente de tú.\nPuedes usar algún emoji, con moderación.", 0),
+    # «LO QUE VENDE»
+    "cobro_anual": ("saas", lambda d: _first_plan(d)["prices"][0].update(annual=999000), "COP 999.000 al año", 1),
+    "para_quien": ("saas", lambda d: _first_plan(d).update(target="equipos de ventas"), "Para: equipos de ventas.", 1),
+    "variantes": ("tienda_ropa", lambda d: d["inventory"]["items"][0]["variants"][0].update(
+        attributes={"talla": "XL", "color": "verde"}, stock=0, prices=[{"currency": "COP", "amount": 50000}]),
+        "talla XL, color verde (COP 50.000) (agotada)", 1),
+    "producto_agotado": ("tienda_ropa", lambda d: [variant.update(stock=0) for variant in d["inventory"]["items"][1]["variants"]],
+                         "(agotada). Agotado por ahora: no lo ofrezcas como disponible.", 1),
+    "sin_control_de_existencias": ("tienda_ropa", lambda d: d["inventory"].update(track_stock=False), "talla M, color blanco;", 1),
+    "aclaracion_del_precio": ("restaurant", lambda d: d["terms"].update(price_note="El domicilio se cobra aparte."),
+                              "Sobre el precio: El domicilio se cobra aparte.", 0),
+    "mezcla_de_oferta": ("restaurant", lambda d: d["sales"].update(offer_mix={"core": ["hamburguesas"], "upsell": ["papas grandes"], "cross_sell": ["malteada"]}),
+                         "Lo principal que vende: hamburguesas.\nMejoras que puedes sugerir (solo si están en lo que vende): papas grandes.\n"
+                         "Complementos que puedes sugerir con la compra (solo si están en lo que vende): malteada.", 0),
+    "retorno_en_reservas": ("saas", lambda d: (d["terms"].pop("roi_break_even_sales", None), d["terms"].update(roi_break_even_bookings=4)),
+                            "Argumento de valor: con 4 reservas el cliente recupera lo que paga.", 1),
+    "un_solo_plan": ("demo", lambda d: d["features"].update(multi_plan=False),
+                     "Recomienda un solo plan, el que mejor encaje con lo que necesita; no le muestres todos.", 1),
+    "una_sola_moneda": ("demo", lambda d: d["features"].update(multi_currency=False), "COP 120.000 al mes:", 1),
+    "sin_precios": ("restaurant", lambda d: d["features"].update(pricing_enabled=False), "Los precios los confirma el equipo: no des valores.", 0),
+    # «CÓMO COMPRA Y RECIBE EL CLIENTE»
+    "domicilio": ("restaurant", lambda d: d["fulfillment"].update(delivery={
+        "available": True, "type": "tercero", "zones": ["centro"], "cost": {"type": "fijo", "value": 3500}, "time": {"min": "20 min", "max": "40 min"}}),
+        "Domicilio con mensajería externa en centro: cuesta COP 3.500; tarda de 20 min a 40 min.", 0),
+    "sin_domicilio": ("restaurant", lambda d: d["fulfillment"]["delivery"].update(available=False), "No hace domicilios.", 0),
+    "envio": ("restaurant", lambda d: d["fulfillment"].update(shipping={
+        "available": True, "scope": "nacional", "providers": ["Coordinadora"], "cost": {"type": "variable", "value": 8000},
+        "time": {"min": "2 días", "max": "4 días"}}),
+        "Envíos nacionales con Coordinadora: el costo depende del destino (desde COP 8.000); tarda de 2 días a 4 días.", 0),
+    "recogida": ("restaurant", lambda d: d["fulfillment"].update(pickup={"available": True, "instructions": "Pasa por la caja 2"}),
+                 "Recogida: Pasa por la caja 2.", 0),
+    "agenda": ("restaurant", lambda d: d["fulfillment"].update(scheduling={"required": True}), "Este servicio requiere agendar una cita o reserva.", 0),
+    "pasos_y_requisitos": ("restaurant", lambda d: d["sales"].update(solution={"process_steps": ["Elige tu combo", "Paga"], "requirements": ["Ser mayor de edad"]}),
+                           "Pasos para comprar o recibir el servicio: 1) Elige tu combo; 2) Paga.\nRequisitos del cliente: Ser mayor de edad.", 0),
+    # «CÓMO SE PAGA Y SE CIERRA»
+    "financiacion": ("restaurant", lambda d: d["terms"].update(financing={"available": True, "providers": ["Addi"], "options": ["cuotas_sin_interes"]}),
+                     "Ofrece financiación: con Addi; modalidades: cuotas sin interes.", 0),
+    "datos_del_cierre": ("restaurant", lambda d: d["sales"]["closing"].update(required_data=["license_type", "email"]),
+                         "Datos que pides para cerrar: nombre, teléfono, dirección, detalles, tipo de licencia, correo.", 0),
+    "mensaje_para_pedir_datos": ("restaurant", lambda d: d["messages"].update(data_request="¿Me regalas tu nombre y dirección?"),
+                                 "Para pedirle sus datos, usa este mensaje del negocio: «¿Me regalas tu nombre y dirección?»", 0),
+    "mensaje_al_pasar_a_una_persona": ("tienda_ropa", lambda d: d["messages"].update(human_handoff="Ya te comunico con Laura."),
+                                       "Si lo pasas con una persona del equipo, usa este mensaje del negocio: «Ya te comunico con Laura.»", 0),
+    "restricciones": ("restaurant", lambda d: d["capabilities"].update(restrictions={"disallowed_channels": ["tiktok"], "disallowed_actions": ["envios_internacionales"]}),
+                      "Canales por los que el negocio no atiende: tiktok.\nEl negocio no hace: envios internacionales.", 0),
+    # «POLÍTICAS DEL NEGOCIO»
+    "politicas": ("restaurant", lambda d: d["terms"].update(policies={"warranty": "Si llega frío, lo cambiamos", "returns": "No hay devoluciones",
+                                                                       "cancellation": "Puedes cancelar antes de que salga"}),
+                  "Garantía: Si llega frío, lo cambiamos.\nCambios y devoluciones: No hay devoluciones.\nCancelaciones y reembolsos: Puedes cancelar antes de que salga.", 0),
+    # «EL CLIENTE: QUÉ LO MUEVE Y QUÉ LO FRENA»
+    "problemas_en_sus_palabras": ("restaurant", lambda d: d["sales"].update(pain_points=["no sé qué pedir"]), "Así describe sus problemas: no sé qué pedir.", 0),
+    "detalle_de_problemas": ("restaurant", lambda d: d["sales"].update(customer_problems=[{
+        "id": "hambre_rapida", "impacts": ["llega tarde al trabajo"], "signals": ["tengo afán"], "monetization": ["pierde la hora de almuerzo"],
+        "urgency_levels": {"alto": ["te lo llevamos ya"]}, "recommended_angles": ["tiempo"], "solutions": ["combo_express"]}]),
+        "- hambre rapida: lo notas si dice «tengo afán»; le pasa esto: llega tarde al trabajo; le cuesta: pierde la hora de almuerzo; "
+        "se resuelve con: combo express; si es urgente: «te lo llevamos ya»; háblale desde: tiempo.", 0),
+    "casos_de_uso": ("restaurant", lambda d: d["sales"].update(use_cases=[{"name": "almuerzo de oficina", "signals": ["somos 10"], "approach": "combo_familiar"}]),
+                     "- almuerzo de oficina: si dice «somos 10», enfócate en combo familiar.", 0),
+    "motivos_de_compra": ("restaurant", lambda d: d["sales"].update(motivations=[{
+        "motivation": "antojo", "description": "darse un gusto", "signals": ["se me antojó"], "angle": {"signals": ["algo rico"], "messages": ["date el gusto hoy"]}}]),
+        "- antojo: darse un gusto; lo notas si dice «se me antojó», «algo rico»; cómo hablarle: «date el gusto hoy».", 0),
+    "objeciones": ("restaurant", lambda d: d["sales"].update(objections=[{
+        "topic": "price", "acknowledge": ["Te entiendo."], "reframe": ["Es carne artesanal."], "proof": ["4,8 estrellas"], "redirect": ["¿Te la preparo?"],
+        "rules": ["No ofrezcas descuentos."]}]),
+        "Si duda por el precio (ideas del negocio; dilas con tus palabras):\n- Reconócelo: «Te entiendo.»\n- Replantéalo: «Es carne artesanal.»\n"
+        "- Da una prueba: «4,8 estrellas»\n- Vuelve al siguiente paso: «¿Te la preparo?»\n- Regla: No ofrezcas descuentos.", 0),
+    # «ESTRATEGIA DE VENTA DEL NEGOCIO»
+    "orden_de_la_conversacion": ("restaurant", lambda d: d["sales"].update(conversation_flow={
+        "steps": ["detect_pain", "present_solution", "paso_propio"], "required_flow": ["detect_pain", "guide_next_step"], "forbid": ["responder_sin_solucion"],
+        "no_skip_steps": True, "guided_process": True}),
+        "Orden de la conversación: entender qué necesita → presentarle la opción que lo resuelve → paso propio. No te saltes pasos.\n"
+        "Pasos que no pueden faltar: entender qué necesita → guiarlo al siguiente paso.\nGuíalo paso a paso por el proceso.\n"
+        "No hagas esto: responder sin ofrecer una solución.", 0),
+    "atencion": ("restaurant", lambda d: d["sales"].update(support={"explain_first": False, "sell_after": True, "rules": ["Nunca discutas."]},
+                                                            qualification={"detect_offer_fit": True}),
+                 "Si pide información, responde breve y conéctala con lo que necesita para avanzar.\nDespués de aclarar su duda, invítalo a avanzar.\n"
+                 "Antes de llevarlo a comprar, confirma que la opción le sirve para lo que necesita.\nReglas de atención del negocio:\n- Nunca discutas.", 0),
+    "averiguar_y_presentar": ("restaurant", lambda d: d["sales"].update(discovery={"objectives": ["para cuántas personas es"]},
+                                                                         offer_presentation={"single_offer": ["muéstrale el combo"], "multiple_offers": ["compara dos opciones"]}),
+                              "Lo que debes averiguar del cliente: para cuántas personas es.\nSi hay una sola opción para él: muéstrale el combo.\n"
+                              "Si hay varias opciones: compara dos opciones.", 0),
+    "cierre": ("restaurant", lambda d: d["sales"].update(closing={
+        "strategy": "direct_sale", "purchase_signals": ["me lo llevo"], "high_intent_actions": ["confirmar el pedido"], "next_steps": ["preparar el pedido"],
+        "micro_commitments": ["¿te lo dejo listo?"], "rules": ["No frenes un pedido."]}),
+        "Señales de que quiere comprar: «me lo llevo».\nSi muestra mucha intención de compra: confirmar el pedido.\n"
+        "Siguientes pasos de la venta (guía al cliente hacia ellos; no digas que ya están hechos): preparar el pedido.\n"
+        "Compromisos pequeños para avanzar: ¿te lo dejo listo?\nReglas de cierre del negocio:\n- No frenes un pedido.", 0),
+    "estrategia_de_cierre": ("restaurant", lambda d: d["sales"]["closing"].update(strategy="booking"), "CÓMO SE VENDE EN ESTE NEGOCIO (servicios con cita)", 0),
+}
+
 CONNECTED_CASES = {
     # caso: (negocio, cambio en el documento, texto esperado en el prompt, turno)
     "sector": ("saas", lambda d: d["identity"].update(industry="software contable para tiendas"), "— software contable para tiendas.", 0),
@@ -659,6 +772,7 @@ CONNECTED_CASES = {
     "tono": ("restaurant", lambda d: d["response_style"].update(tone="paciente y muy claro"), "Tono: paciente y muy claro.", 1),
     "descripcion_plan": ("saas", lambda d: _first_plan(d).update(name="Plan Caja", description="Incluye soporte por chat"),
                          "- Plan Caja — ", 0),
+    **{f"fase3_{name}": case for name, case in PHASE_3_CASES.items()},
 }
 
 
@@ -669,6 +783,28 @@ def test_connected_fields_change_the_prompt(monkeypatch, tmp_path, case):
     after = run_with_document(monkeypatch, tmp_path / "despues", slug, mutate, TWO_TURNS)
     assert expected not in before[turn][0][0]
     assert expected in after[turn][0][0]
+
+
+def test_the_after_sale_message_reaches_the_ai_once_the_customer_paid(monkeypatch, tmp_path):
+    turns = [("Ya pagué", reply("Gracias, lo reviso.", "buy", payment_status="reportado")), ("¿Cuándo me llega?", reply("Pronto."))]
+    message = "Gracias por tu compra, te avisamos cuando salga."
+    (_, _), (prompts, _) = run_with_document(monkeypatch, tmp_path, "saas", lambda d: d["messages"].update(after_sale=message), turns)
+    assert f"«{message}»" in prompts[0]
+    (_, _), (without, _) = run_with_document(monkeypatch, tmp_path / "sin", "saas", lambda d: None, turns)
+    assert "Después de la compra, el negocio quiere decirle" not in without[0]
+
+
+def test_what_only_the_team_sees_or_the_platform_sends_later_never_reaches_the_ai(monkeypatch, tmp_path):
+    """La etiqueta de una cuenta y el código de una variante son del equipo; el pago confirmado y el seguimiento los enviará la plataforma."""
+    def _team_only(document):
+        document["payments"][0]["transfer_methods"][0]["label"] = "Cuenta de Laura"
+        document["inventory"]["items"][0]["variants"][0]["sku"] = "CODIGO-INTERNO-9"
+        document["messages"].update(payment_confirmed="Pago confirmado, gracias.", follow_up="¿Seguimos con tu pedido?")
+
+    before = run_with_document(monkeypatch, tmp_path / "antes", "tienda_ropa", lambda d: None, TWO_TURNS)
+    after = run_with_document(monkeypatch, tmp_path / "despues", "tienda_ropa", _team_only, TWO_TURNS)
+    assert [prompts for prompts, _ in after] == [prompts for prompts, _ in before]
+    assert not any(text in prompt for prompts, _ in after for prompt in prompts for text in ("Laura", "CODIGO-INTERNO-9", "¿Seguimos con tu pedido?"))
 
 
 # Campo del contrato marcado `conectado` → prueba de este archivo que demuestra que el motor actual lo usa.
@@ -761,6 +897,104 @@ CONNECTED_EVIDENCE: dict[str, str] = {
     "response_style.tone": "test_connected_fields_change_the_prompt",
     "knowledge.faqs[].question": "test_faqs_reach_the_prompt_only_when_configured",
     "knowledge.faqs[].answer": "test_faqs_reach_the_prompt_only_when_configured",
+    # Fase 3: estilo, horarios, cliente ideal, entrega, inventario, políticas, financiación, mensajes y estrategia avanzada.
+    "capabilities.restrictions.disallowed_actions": "test_connected_fields_change_the_prompt",
+    "capabilities.restrictions.disallowed_channels": "test_connected_fields_change_the_prompt",
+    "features.multi_currency": "test_connected_fields_change_the_prompt",
+    "features.multi_plan": "test_connected_fields_change_the_prompt",
+    "features.pricing_enabled": "test_connected_fields_change_the_prompt",
+    "fulfillment.delivery.available": "test_connected_fields_change_the_prompt",
+    "fulfillment.delivery.cost.type": "test_connected_fields_change_the_prompt",
+    "fulfillment.delivery.cost.value": "test_connected_fields_change_the_prompt",
+    "fulfillment.delivery.time.max": "test_connected_fields_change_the_prompt",
+    "fulfillment.delivery.time.min": "test_connected_fields_change_the_prompt",
+    "fulfillment.delivery.type": "test_connected_fields_change_the_prompt",
+    "fulfillment.delivery.zones": "test_connected_fields_change_the_prompt",
+    "fulfillment.pickup.available": "test_connected_fields_change_the_prompt",
+    "fulfillment.pickup.instructions": "test_connected_fields_change_the_prompt",
+    "fulfillment.scheduling.required": "test_connected_fields_change_the_prompt",
+    "fulfillment.shipping.available": "test_connected_fields_change_the_prompt",
+    "fulfillment.shipping.cost.type": "test_connected_fields_change_the_prompt",
+    "fulfillment.shipping.cost.value": "test_connected_fields_change_the_prompt",
+    "fulfillment.shipping.providers": "test_connected_fields_change_the_prompt",
+    "fulfillment.shipping.scope": "test_connected_fields_change_the_prompt",
+    "fulfillment.shipping.time.max": "test_connected_fields_change_the_prompt",
+    "fulfillment.shipping.time.min": "test_connected_fields_change_the_prompt",
+    "identity.credibility": "test_connected_fields_change_the_prompt",
+    "identity.opening_hours[].closes": "test_connected_fields_change_the_prompt",
+    "identity.opening_hours[].days": "test_connected_fields_change_the_prompt",
+    "identity.opening_hours[].opens": "test_connected_fields_change_the_prompt",
+    "identity.positioning": "test_connected_fields_change_the_prompt",
+    "identity.target_customer.company_size": "test_connected_fields_change_the_prompt",
+    "identity.target_customer.maturity": "test_connected_fields_change_the_prompt",
+    "identity.target_customer.roles": "test_connected_fields_change_the_prompt",
+    "identity.target_customer.segment": "test_connected_fields_change_the_prompt",
+    "inventory.items[].product_id": "test_connected_fields_change_the_prompt",
+    "inventory.items[].variants[].attributes": "test_connected_fields_change_the_prompt",
+    "inventory.items[].variants[].prices[].amount": "test_connected_fields_change_the_prompt",
+    "inventory.items[].variants[].prices[].currency": "test_connected_fields_change_the_prompt",
+    "inventory.items[].variants[].stock": "test_connected_fields_change_the_prompt",
+    "inventory.track_stock": "test_connected_fields_change_the_prompt",
+    "messages.data_request": "test_connected_fields_change_the_prompt",
+    "messages.human_handoff": "test_connected_fields_change_the_prompt",
+    "offer.plans[].prices[].annual": "test_connected_fields_change_the_prompt",
+    "offer.plans[].target": "test_connected_fields_change_the_prompt",
+    "response_style.emojis": "test_connected_fields_change_the_prompt",
+    "response_style.formality": "test_connected_fields_change_the_prompt",
+    "response_style.instructions": "test_connected_fields_change_the_prompt",
+    "response_style.voice": "test_connected_fields_change_the_prompt",
+    "sales.closing.high_intent_actions": "test_connected_fields_change_the_prompt",
+    "sales.closing.micro_commitments": "test_connected_fields_change_the_prompt",
+    "sales.closing.next_steps": "test_connected_fields_change_the_prompt",
+    "sales.closing.purchase_signals": "test_connected_fields_change_the_prompt",
+    "sales.closing.required_data": "test_connected_fields_change_the_prompt",
+    "sales.closing.rules": "test_connected_fields_change_the_prompt",
+    "sales.closing.strategy": "test_connected_fields_change_the_prompt",
+    "sales.conversation_flow.forbid": "test_connected_fields_change_the_prompt",
+    "sales.conversation_flow.guided_process": "test_connected_fields_change_the_prompt",
+    "sales.conversation_flow.no_skip_steps": "test_connected_fields_change_the_prompt",
+    "sales.conversation_flow.required_flow": "test_connected_fields_change_the_prompt",
+    "sales.conversation_flow.steps": "test_connected_fields_change_the_prompt",
+    "sales.customer_problems[].monetization": "test_connected_fields_change_the_prompt",
+    "sales.customer_problems[].recommended_angles": "test_connected_fields_change_the_prompt",
+    "sales.customer_problems[].signals": "test_connected_fields_change_the_prompt",
+    "sales.customer_problems[].solutions": "test_connected_fields_change_the_prompt",
+    "sales.customer_problems[].urgency_levels": "test_connected_fields_change_the_prompt",
+    "sales.discovery.objectives": "test_connected_fields_change_the_prompt",
+    "sales.motivations[].angle.messages": "test_connected_fields_change_the_prompt",
+    "sales.motivations[].angle.signals": "test_connected_fields_change_the_prompt",
+    "sales.motivations[].description": "test_connected_fields_change_the_prompt",
+    "sales.motivations[].motivation": "test_connected_fields_change_the_prompt",
+    "sales.motivations[].signals": "test_connected_fields_change_the_prompt",
+    "sales.objections[].acknowledge": "test_connected_fields_change_the_prompt",
+    "sales.objections[].proof": "test_connected_fields_change_the_prompt",
+    "sales.objections[].redirect": "test_connected_fields_change_the_prompt",
+    "sales.objections[].reframe": "test_connected_fields_change_the_prompt",
+    "sales.objections[].rules": "test_connected_fields_change_the_prompt",
+    "sales.objections[].topic": "test_connected_fields_change_the_prompt",
+    "sales.offer_mix.core": "test_connected_fields_change_the_prompt",
+    "sales.offer_mix.cross_sell": "test_connected_fields_change_the_prompt",
+    "sales.offer_mix.upsell": "test_connected_fields_change_the_prompt",
+    "sales.offer_presentation.multiple_offers": "test_connected_fields_change_the_prompt",
+    "sales.offer_presentation.single_offer": "test_connected_fields_change_the_prompt",
+    "sales.pain_points": "test_connected_fields_change_the_prompt",
+    "sales.qualification.detect_offer_fit": "test_connected_fields_change_the_prompt",
+    "sales.solution.process_steps": "test_connected_fields_change_the_prompt",
+    "sales.solution.requirements": "test_connected_fields_change_the_prompt",
+    "sales.support.explain_first": "test_connected_fields_change_the_prompt",
+    "sales.support.rules": "test_connected_fields_change_the_prompt",
+    "sales.support.sell_after": "test_connected_fields_change_the_prompt",
+    "sales.use_cases[].approach": "test_connected_fields_change_the_prompt",
+    "sales.use_cases[].signals": "test_connected_fields_change_the_prompt",
+    "terms.financing.available": "test_connected_fields_change_the_prompt",
+    "terms.financing.options": "test_connected_fields_change_the_prompt",
+    "terms.financing.providers": "test_connected_fields_change_the_prompt",
+    "terms.policies.cancellation": "test_connected_fields_change_the_prompt",
+    "terms.policies.returns": "test_connected_fields_change_the_prompt",
+    "terms.policies.warranty": "test_connected_fields_change_the_prompt",
+    "terms.price_note": "test_connected_fields_change_the_prompt",
+    "terms.roi_break_even_bookings": "test_connected_fields_change_the_prompt",
+    "messages.after_sale": "test_the_after_sale_message_reaches_the_ai_once_the_customer_paid",
 }
 
 

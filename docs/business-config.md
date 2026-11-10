@@ -23,7 +23,7 @@ existe en el contrato: el perfil comercial, el tono y las preguntas frecuentes (
 | Esquema JSON, tipos TypeScript, matriz y referencia de campos | **Terminados**, generados desde el modelo canónico |
 | Nueve documentos comerciales y sus ajustes técnicos | **Terminados**: válidos, sin pérdida, sin datos de pago |
 | Pruebas del contrato y de su integración con el motor actual | **Pasan** |
-| Integración con el motor | **Primera parte terminada**: perfil comercial, tono, preguntas frecuentes, precios del catálogo y datos de pago fuera de la IA (85 campos conectados). Faltan los campos `pendiente`: horarios, políticas, entrega, mensajes de posventa... |
+| Integración con el motor | **Terminada** (Fase 3): los 184 campos que el panel deja configurar llegan al motor, cada uno con su prueba. Fuera, a propósito: lo que es solo del equipo (`solo panel`) y lo que enviará la plataforma ante un evento (`programado`) |
 | Persistencia local (SQLite) | **Terminada** y conectada al panel por la API local |
 | API local y panel de administración | **Terminados** (Fase 2): funcionan solo en este equipo; ver [Panel De Administración](#panel-de-administración) |
 | Funcionamiento del almacén sin YAML | **Terminado y comprobado** en un árbol sin YAML ni motor (ver [Independencia De Los YAML](#independencia-de-los-yaml)) |
@@ -149,8 +149,8 @@ negocio, está en [business-config-traceability.md](business-config-traceability
 - **Interruptores:** `features.*`, `capabilities.closing_methods.*`, `capabilities.data_collection.enabled`,
   `sales.support.explain_first` y `sell_after`, `sales.qualification.detect_offer_fit`,
   `sales.conversation_flow.no_skip_steps` y `guided_process`, y los de entrega, financiación e inventario.
-  Conservan su nombre y su significado. Los que el motor aún no lee están marcados `pendiente`: se
-  conservan y se validan, pero cambiarlos no altera hoy la conversación.
+  Conservan su nombre y su significado, y el motor los usa todos (ver la prueba de cada uno en
+  `CONNECTED_EVIDENCE`).
 
 ## Marcas De Cada Campo
 
@@ -162,7 +162,10 @@ y en los comentarios de los tipos TypeScript:
 - `x-engine` (si el motor actual lo usa): `conectado` solo con una prueba en
   `tests/test_business_config_engine_integration.py` que demuestra que cambiarlo cambia el prompt, la
   respuesta o la acción del motor (`CONNECTED_EVIDENCE`; una prueba exige que la lista coincida con las
-  marcas); `pendiente` si está representado y conservado pero el motor actual no lo usa.
+  marcas); `programado` si lo enviará la plataforma cuando exista el evento que lo dispara (pago confirmado por el
+  equipo, seguimiento a quien no respondió); `solo panel` si es solo para el equipo y nunca va a la IA (la etiqueta de
+  una cuenta, el código de una variante); `pendiente` si está representado y conservado pero el motor no lo usa (hoy,
+  ninguno).
 
 Con esto la matriz distingue cuatro situaciones que no son equivalentes:
 
@@ -171,8 +174,8 @@ Con esto la matriz distingue cuatro situaciones que no son equivalentes:
   campo por campo): 1166 desde el documento comercial, los datos de pago y los ajustes técnicos, y 45 desde la
   definición común del cierre.
 - **Configurable en la interfaz:** columna Interfaz (`pantalla`, `modelo` o `no`).
-- **Ejecutado por el motor:** `x-engine = conectado` (85 campos hoja). Las ventanas de conversación
-  también las usa el motor, pero son ajustes técnicos: no cuentan aquí.
+- **Ejecutado por el motor:** `x-engine = conectado` (184 campos hoja; 2 `programado`, 2 `solo panel`, 0
+  `pendiente`). Las ventanas de conversación también las usa el motor, pero son ajustes técnicos: no cuentan aquí.
 
 Conectados hoy: sector, propuesta de valor, tipo de oferta, planes (id, nombre, precios por moneda,
 incluye, no incluye, perfil de pago, disponibilidad), categorías del catálogo y categoría y
@@ -184,9 +187,15 @@ marca y descripción del negocio, diferenciadores, ubicación, modalidades, bene
 diagnóstico, recomendaciones, instrucciones, promociones, tono, preguntas frecuentes, descripción de cada plan, y
 nombre, descripción, precios y características de cada producto.
 
-Pendientes (todo lo demás), entre ellos: horarios, posicionamiento, cliente ideal, credibilidad, voz, formalidad,
-emojis e instrucciones de estilo, políticas, financiación, estrategia avanzada, mensajes de posventa y
-seguimiento, entrega, inventario, precio anual y precio por variante.
+Desde la Fase 3, también: posicionamiento, pruebas de confianza, cliente ideal y horario; personalidad, trato (tú o
+usted), emojis e indicaciones de estilo; para quién es cada plan, cobro anual, opciones y existencias de cada producto
+(nunca cuántas unidades quedan) y precio propio de una variante; aclaración del precio, ofertas principales, mejoras y
+complementos (solo si están en la oferta); pasos y requisitos para comprar, domicilio, envío, recogida y agenda;
+financiación; datos del cierre (unidos a los que se piden); lo que el negocio no hace; políticas; los mensajes para pedir
+datos, pasar a una persona y después de una compra; y toda la estrategia avanzada (problemas, casos, motivos, objeciones,
+orden de la conversación, atención, qué averiguar, cómo presentar las opciones y cierre). Los interruptores
+`pricing_enabled`, `multi_currency` y `multi_plan` deciden si se dan precios, en cuántas monedas y si se recomienda un solo
+plan.
 
 ## Decisiones De Diseño
 
@@ -234,15 +243,15 @@ seguimiento, entrega, inventario, precio anual y precio por variante.
 | `sales.solution.mapping` y `sales.pain.clusters` | mismos problemas con la misma clave | **Unificados** en `sales.customer_problems[].solutions` |
 | `sales.conversation_flow` y `sales.progression_rules` | reglas de cómo avanza la conversación | **Unificados** en `sales.conversation_flow`. `steps` (pasos ideales) y `required_flow` (secuencia mínima) se conservan: significan y valen distinto |
 | `business.city` y `business.location.city` | mismo dato, mismo valor en los nueve negocios | **Unificado** en `identity.location.city`; la compilación lo devuelve a las dos rutas |
-| `sales.closing.required_data` y `capabilities.data_collection.fields` | solapados (inglés/español) | Se conservan; diagnóstico `dato_de_cierre_no_solicitado` si el cierre pide un dato que no se recoge |
+| `sales.closing.required_data` y `capabilities.data_collection.fields` | solapados (inglés/español) | Se conservan; diagnóstico `dato_de_cierre_no_solicitado` si el cierre pide un dato que no se recoge. El prompt los une en una sola lista en español, sin repetir |
 | `closing_methods.data_collection` y `data_collection.enabled` | dependientes | Validación: cerrar pidiendo datos exige recogida de datos activa |
 | `features.catalog_mode`, `business_model` | relacionados con `offer.model` | Interruptores comerciales con sus valores; si faltan, se derivan; diagnóstico `modo_catalogo_contradice_oferta` (ecommerce) |
 | `features.multi_currency`, `multi_plan` | permiten, no obligan | Interruptores comerciales con sus valores; el diagnóstico solo señala `false` con varias monedas o planes |
-| `features.pricing_enabled` | el motor solo lo consulta sin precios ni pagos, que el contrato exige | Interruptor comercial, `pendiente` |
+| `features.pricing_enabled` | si el asistente da precios | Interruptor comercial, conectado: con `false` no da valores y dice que el equipo los confirma |
 | `response_style.max_words` | ajuste fino de `length` | Audiencia `avanzado`; rango validado contra `length` |
 | `response_style.tone` y `voice` | cercanos | Se conservan: valen distinto en los nueve negocios (tono de las respuestas / personalidad de marca) |
 | `sales.pain_points` y `customer_problems` | cercanos | Se conservan: contenido distinto (frases del cliente / problemas con impacto) |
-| `terms.roi_break_even_sales` y `roi_break_even_bookings` | mismo concepto, distinta unidad | Se conservan; solo el de ventas está conectado |
+| `terms.roi_break_even_sales` y `roi_break_even_bookings` | mismo concepto, distinta unidad | Se conservan; el de reservas se usa si no hay el de ventas (argumento de valor de los negocios de planes) |
 | `sales.offer_mix` | texto libre, no referencias | Documentado como texto libre: no se valida contra los ids de la oferta |
 | `conversation` con 0 (ajustes técnicos) | el motor trata 0 como "sin valor" | Validación: mínimo 1 |
 
@@ -602,17 +611,18 @@ prueba nueva que no se añada allí no entra en la suite ni en el CI.
 `pytest` a secas no consume API ni usa las credenciales ni la base del `.env` local (`tests/conftest.py`): se
 comporta como el CI y omite las pruebas contra el modelo real. Esas solo corren con `pytest -m integration`.
 
-## Integración Pendiente Con El Motor
+## Integración Con El Motor
 
-La primera parte está hecha: perfil comercial con su tono, preguntas frecuentes, productos y precios del catálogo, datos de
+Terminada en la Fase 3: todo lo que el panel deja configurar llega al motor, cada campo con su prueba (ver
+[Marcas De Cada Campo](#marcas-de-cada-campo)). La primera parte fue: perfil comercial con su tono, preguntas frecuentes, productos y precios del catálogo, datos de
 pago fuera de la IA y del registro, y el presupuesto del prompt en una conversación en curso (ver
 [Lo Que El Motor Usa Del Contrato](#lo-que-el-motor-usa-del-contrato)). Sus 63 pruebas, antes `xfail` estricto, pasan como
 pruebas normales en `test_business_config_engine_integration.py` y `test_payment_data_protection.py`, sin cambios en sus
 aserciones.
 
-Quedan los campos `pendiente` (horarios, políticas, financiación, entrega, estilo y voz, estrategia avanzada, mensajes de
-posventa y seguimiento, precio anual y por variante...). Cada uno necesitará su prueba al conectarse; el marcador
-`engine_pending` (xfail estricto) queda para eso, y hoy no lo usa ninguna prueba.
+La Fase 3 conectó el resto con 36 casos de prueba más (`PHASE_3_CASES`), una prueba del mensaje posventa y otra que
+comprueba que lo que es solo del equipo o lo enviará la plataforma nunca llega a la IA. El marcador `engine_pending`
+(xfail estricto) queda para un campo nuevo que se agregue al contrato antes de conectarse; hoy no lo usa ninguna prueba.
 
 ## Pendientes Fuera Del Contrato
 

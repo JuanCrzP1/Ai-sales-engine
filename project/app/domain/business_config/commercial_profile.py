@@ -6,6 +6,8 @@ YAML no cambia, y el motor solo añade el perfil al prompt cuando lo encuentra.
 - Las recomendaciones apuntan por id a un plan, un producto o una categoría: aquí se cambia el id por su nombre. Las que apuntan a
   algo que no se ofrece se descartan, para que la IA nunca recomiende algo inexistente; el diagnóstico ya se las señala al negocio.
 - Las promociones se compilan todas, con su fecha: el motor descarta las vencidas cada vez que arma el prompt, sin volver a publicar.
+- El estilo (trato, emojis, indicaciones), los horarios y las políticas solo existen en el contrato: van al perfil tal como se escribieron.
+- Los mensajes que la IA usa en un momento de la venta (pedir datos, pasar a una persona, después de comprar) van en `compile_messages`.
 - Los textos se compilan completos y el motor los usa completos: su largo lo limita el contrato (`MAX_*_CHARS`).
 """
 from __future__ import annotations
@@ -65,7 +67,27 @@ def compile_profile(config: BusinessConfig) -> dict[str, Any]:
     )
     _put_list(profile, "instructions", sales.instructions)
     _put_list(profile, "promotions", (promotion.model_dump(mode="json", exclude_none=True) for promotion in config.terms.promotions or []))
+    style = config.response_style
+    if style.formality is not None:
+        profile["formality"] = style.formality
+    if style.emojis is not None:
+        profile["emojis"] = style.emojis
+    _put_list(profile, "style_instructions", style.instructions)
+    _put_list(profile, "opening_hours", (hours.model_dump(mode="json") for hours in identity.opening_hours or []))
+    policies = config.terms.policies.model_dump(mode="json", exclude_none=True) if config.terms.policies is not None else {}
+    if policies:
+        profile["policies"] = policies
     return profile
+
+
+# Mensajes del negocio que la IA usa en un momento de la venta. Los que envía la plataforma ante un evento (pago confirmado,
+# seguimiento) no están aquí: no van a la IA.
+AI_MESSAGES = ("data_request", "human_handoff", "after_sale")
+
+
+def compile_messages(config: BusinessConfig) -> dict[str, str]:
+    """Los mensajes que el negocio escribió para pedir datos, pasar a una persona y después de una compra; vacío si no hay."""
+    return {key: text.strip() for key in AI_MESSAGES if (text := getattr(config.messages, key)) and text.strip()}
 
 
 def compile_knowledge(config: BusinessConfig) -> dict[str, Any] | None:

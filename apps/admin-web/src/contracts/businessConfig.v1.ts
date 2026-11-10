@@ -43,7 +43,7 @@ export interface Capabilities {
   closing_methods: ClosingMethods;
   /** Datos que el asistente pide al cliente. */
   data_collection: DataCollection;
-  /** Lo que el negocio no hace. */
+  /** Lo que el negocio no hace. [motor: conectado] */
   restrictions?: Restrictions | null;
 }
 
@@ -145,7 +145,7 @@ export interface CustomerProblem {
 export interface DataCollection {
   /** [motor: conectado] */
   enabled: boolean;
-  /** Datos que el asistente puede pedir al cliente; solo esos. [motor: conectado] */
+  /** Datos que el asistente puede pedir al cliente: solo esos y los que necesita el cierre (`sales.closing.required_data`). [motor: conectado] */
   fields?: string[];
 }
 
@@ -160,7 +160,7 @@ export interface Delivery {
 export interface Discovery {
   /** Preguntas para entender al cliente. [motor: conectado] */
   questions?: string[] | null;
-  /** Qué debe averiguar el asistente. [audiencia: avanzado] */
+  /** Qué debe averiguar el asistente. [audiencia: avanzado; motor: conectado] */
   objectives?: string[] | null;
 }
 
@@ -173,13 +173,13 @@ export interface Faq {
 
 /** Cómo vende el negocio. Los valores se conservan tal cual; las contradicciones con la oferta las señala el diagnóstico. */
 export interface Features {
-  /** true: permite usar precios en la conversación. */
+  /** true: permite usar precios en la conversación. false: el asistente no da valores. [motor: conectado] */
   pricing_enabled: boolean;
   /** true: vende opciones tipo catálogo. false: vende un servicio o plan. [motor: conectado] */
   catalog_mode: boolean;
-  /** true: permite manejar más de una moneda. */
+  /** true: da los precios en todas sus monedas. false: solo en la primera de cada precio. [motor: conectado] */
   multi_currency?: boolean | null;
-  /** true: permite ofrecer varios planes. */
+  /** true: puede ofrecer varios planes. false: recomienda uno solo, el que mejor encaje. [motor: conectado] */
   multi_plan?: boolean | null;
   /** Tipo de negocio; con él el motor decide cuándo mostrar precios. [motor: conectado] */
   business_model?: "saas" | "catalog" | "checkout" | "service_booking" | "process" | null;
@@ -212,7 +212,7 @@ export interface Identity {
   description: string;
   /** Promesa comercial: qué gana el cliente. [motor: conectado] */
   value_proposition: string;
-  /** A quién se dirige y qué problema resuelve. */
+  /** A quién se dirige y qué problema resuelve. [motor: conectado] */
   positioning?: string | null;
   /** Por qué elegir este negocio y no otro. [motor: conectado] */
   differentiators?: string[] | null;
@@ -220,11 +220,11 @@ export interface Identity {
   location?: Location | null;
   /** Cómo recibe el cliente el servicio o producto. [motor: conectado] */
   service_modes?: ("virtual" | "presencial" | "domicilio" | "recoger" | "envio")[] | null;
-  /** Cliente ideal. */
+  /** Cliente ideal. [motor: conectado] */
   target_customer?: TargetCustomer | null;
-  /** Pruebas de confianza: casos, resultados, trayectoria. */
+  /** Pruebas de confianza: casos, resultados, trayectoria. [motor: conectado] */
   credibility?: string[] | null;
-  /** Horarios de atención. */
+  /** Horarios de atención. [motor: conectado] */
   opening_hours?: OpeningHours[] | null;
 }
 
@@ -266,15 +266,15 @@ export interface Messages {
   welcome: WelcomeMessage;
   /** Respuesta exacta cuando el cliente reporta un pago. [motor: conectado] */
   payment_reported?: string | null;
-  /** Mensaje cuando el equipo confirma el pago. Se guarda; lo enviará la plataforma cuando el equipo pueda confirmar pagos desde el panel. */
+  /** Mensaje cuando el equipo confirma el pago. Se guarda; lo enviará la plataforma cuando el equipo pueda confirmar pagos desde el panel. [motor: programado] */
   payment_confirmed?: string | null;
-  /** Mensaje después de una compra. */
+  /** Mensaje después de una compra: la IA lo usa cuando el cliente escribe después de pagar. [motor: conectado] */
   after_sale?: string | null;
-  /** Mensaje para pedir los datos del cliente. */
+  /** Mensaje para pedir los datos del cliente. [motor: conectado] */
   data_request?: string | null;
-  /** Mensaje de seguimiento a un cliente que no respondió. */
+  /** Mensaje de seguimiento a un cliente que no respondió. Se guarda; lo enviará la plataforma cuando los canales puedan escribir primero. [motor: programado] */
   follow_up?: string | null;
-  /** Mensaje al pasar la conversación a una persona. */
+  /** Mensaje al pasar la conversación a una persona. [motor: conectado] */
   human_handoff?: string | null;
   /** Mensaje exacto cuando la IA no puede responder (sin clave, sin saldo o con el proveedor caído). Si falta, uno neutro de la plataforma. [motor: conectado] */
   fallback?: string | null;
@@ -375,7 +375,7 @@ export interface Plan {
   not_included?: string[] | null;
   /** Perfil de pago con el que se cobra. [motor: conectado] */
   payment_profile?: string | null;
-  /** Para quién es este plan. */
+  /** Para quién es este plan. [motor: conectado] */
   target?: string | null;
   /** Si es false, el plan se conserva pero no se ofrece. [motor: conectado] */
   available?: boolean;
@@ -392,7 +392,7 @@ export interface PlanPrice {
   first_payment?: number | null;
   /** Precio de pago único. */
   price?: number | null;
-  /** Cobro anual. [motor: pendiente] */
+  /** Cobro anual. [motor: conectado] */
   annual?: number | null;
 }
 
@@ -431,13 +431,13 @@ export interface RecommendationRule {
 export interface ResponseStyle {
   /** Tono del asistente (p. ej. cercano y claro). [motor: conectado] */
   tone?: string | null;
-  /** Personalidad de la marca. */
+  /** Personalidad de la marca. [motor: conectado] */
   voice?: string | null;
-  /** informal (tutea), neutral o formal (usted). */
+  /** informal (tutea), neutral o formal (usted). [motor: conectado] */
   formality?: "informal" | "neutral" | "formal" | null;
-  /** Si el asistente puede usar emojis. */
+  /** Si el asistente puede usar emojis. [motor: conectado] */
   emojis?: boolean | null;
-  /** Cómo debe expresarse el asistente en este negocio. */
+  /** Cómo debe expresarse el asistente en este negocio. [motor: conectado] */
   instructions?: string[] | null;
   /** short (cortas), medium (equilibradas) o long (detalladas). [motor: conectado] */
   length?: "short" | "medium" | "long";
@@ -456,36 +456,36 @@ export interface Restrictions {
 export interface Sales {
   /** Motivo principal y secundario de compra. [motor: conectado] */
   buying_motivation?: BuyingMotivation | null;
-  /** Cada motivo de compra: qué significa, cómo reconocerlo y con qué ángulo venderle. [audiencia: avanzado] */
+  /** Cada motivo de compra: qué significa, cómo reconocerlo y con qué ángulo venderle. [audiencia: avanzado; motor: conectado] */
   motivations?: Motivation[] | null;
-  /** Problemas del cliente que el negocio resuelve. */
+  /** Problemas del cliente que el negocio resuelve. [motor: conectado] */
   customer_problems?: CustomerProblem[] | null;
-  /** Problemas del cliente en sus palabras. */
+  /** Problemas del cliente en sus palabras. [motor: conectado] */
   pain_points?: string[] | null;
-  /** Casos de uso típicos. [audiencia: avanzado] */
+  /** Casos de uso típicos. [audiencia: avanzado; motor: conectado] */
   use_cases?: UseCase[] | null;
   /** Resultados que obtiene el cliente. [motor: conectado] */
   benefits?: string[] | null;
   /** Argumentos de venta. [motor: conectado] */
   arguments?: string[] | null;
-  /** Qué pasos sigue el cliente y qué requisitos debe cumplir. */
+  /** Qué pasos sigue el cliente y qué requisitos debe cumplir. [motor: conectado] */
   solution?: Solution | null;
-  /** Ofertas principales, mejoras y complementos. [audiencia: avanzado] */
+  /** Ofertas principales, mejoras y complementos. [audiencia: avanzado; motor: conectado] */
   offer_mix?: OfferMix | null;
-  /** Cómo presentar las opciones. [audiencia: avanzado] */
+  /** Cómo presentar las opciones. [audiencia: avanzado; motor: conectado] */
   offer_presentation?: OfferPresentation | null;
   /** Qué recomendar en cada situación. [motor: conectado] */
   recommendation_rules?: RecommendationRule[] | null;
   discovery?: Discovery | null;
-  /** Cómo calificar al cliente. [audiencia: avanzado] */
+  /** Cómo calificar al cliente. [audiencia: avanzado; motor: conectado] */
   qualification?: Qualification | null;
-  /** Cómo atender preguntas de información. [audiencia: avanzado] */
+  /** Cómo atender preguntas de información. [audiencia: avanzado; motor: conectado] */
   support?: SupportPolicy | null;
-  /** Pasos de la conversación y reglas para avanzar. [audiencia: avanzado] */
+  /** Pasos de la conversación y reglas para avanzar. [audiencia: avanzado; motor: conectado] */
   conversation_flow?: ConversationFlow | null;
-  /** Manejo de objeciones (precio y otras). [audiencia: avanzado] */
+  /** Manejo de objeciones (precio y otras). [audiencia: avanzado; motor: conectado] */
   objections?: ObjectionHandling[] | null;
-  /** Estrategia y reglas de cierre. [audiencia: avanzado] */
+  /** Estrategia y reglas de cierre. [audiencia: avanzado; motor: conectado] */
   closing?: Closing | null;
   /** Cómo debe vender el asistente en este negocio. [motor: conectado] */
   instructions?: string[] | null;
@@ -550,17 +550,17 @@ export interface Terms {
   price_framing?: "directo" | "comparativo" | null;
   /** Ventas al mes con las que el cliente recupera la inversión. [audiencia: avanzado; motor: conectado] */
   roi_break_even_sales?: number | null;
-  /** Reservas con las que el cliente recupera la inversión. [audiencia: avanzado] */
+  /** Reservas con las que el cliente recupera la inversión. [audiencia: avanzado; motor: conectado] */
   roi_break_even_bookings?: number | null;
   /** Argumentos de retorno de la inversión. [audiencia: avanzado; motor: conectado] */
   roi_hints?: string[] | null;
-  /** Aclaración sobre cómo se confirma el precio. */
+  /** Aclaración sobre cómo se confirma el precio. [motor: conectado] */
   price_note?: string | null;
   /** Únicas promociones o descuentos que el asistente puede ofrecer. [motor: conectado] */
   promotions?: Promotion[] | null;
-  /** Financiación disponible. */
+  /** Financiación disponible. [motor: conectado] */
   financing?: Financing | null;
-  /** Garantía, devoluciones y cancelaciones. */
+  /** Garantía, devoluciones y cancelaciones. [motor: conectado] */
   policies?: Policies | null;
 }
 
@@ -577,7 +577,7 @@ export interface TransferMethod {
   account_type?: string | null;
   account_number?: SecretRef | null;
   reference?: SecretRef | null;
-  /** Titular o etiqueta para reconocer la cuenta en el panel. No se comparte con el cliente. [motor: pendiente] */
+  /** Titular o etiqueta para reconocer la cuenta en el panel. No se comparte con el cliente. [motor: solo panel] */
   label?: string | null;
   /** Si es false, la cuenta se conserva pero no se ofrece. */
   enabled?: boolean | null;
@@ -592,6 +592,7 @@ export interface UseCase {
 }
 
 export interface Variant {
+  /** Código interno de la variante, para el equipo. [motor: solo panel] */
   sku: string;
   /** Talla, color u otras características. */
   attributes?: Record<string, string | number>;
@@ -631,9 +632,9 @@ export interface BusinessConfig {
   response_style?: ResponseStyle;
   /** [audiencia: cliente] */
   knowledge?: Knowledge;
-  /** [audiencia: cliente] */
+  /** [audiencia: cliente; motor: conectado] */
   fulfillment?: Fulfillment | null;
-  /** [audiencia: cliente] */
+  /** [audiencia: cliente; motor: conectado] */
   inventory?: Inventory;
   /** Interruptores comerciales. Si faltan, se derivan de la oferta (catálogo o planes). [audiencia: avanzado] */
   features?: Features | null;

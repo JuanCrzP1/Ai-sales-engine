@@ -118,7 +118,14 @@ def test_every_contract_field_has_an_audience_and_an_engine_status():
     assert len(fields) > 150
     for path, field in fields.items():
         assert field.audience in {"cliente", "avanzado", "sistema"}, path
-        assert field.engine in {"conectado", "pendiente"}, path
+        assert field.engine in {"conectado", "pendiente", "programado", "solo panel"}, path
+    # Todo lo que el panel deja configurar llega al motor, salvo lo que es solo del equipo o lo enviará la plataforma ante un evento.
+    assert {path: field.engine for path, field in fields.items() if field.engine != "conectado"} == {
+        "payments[].transfer_methods[].label": "solo panel",
+        "inventory.items[].variants[].sku": "solo panel",
+        "messages.payment_confirmed": "programado",
+        "messages.follow_up": "programado",
+    }
     # Los interruptores y el flujo de conversación son decisiones comerciales.
     assert all(fields[path].audience == "avanzado" for path in fields if path.startswith(("features.", "sales.conversation_flow.")))
     # Las descripciones no repiten el estado en el motor: sale de `x-engine`.
@@ -192,7 +199,7 @@ def test_offer_prices_and_payment_methods_are_preserved(slug):
 # Compilación: lo que solo existe en el contrato no altera lo que recibe el motor
 # ---------------------------------------------------------------------------
 
-def _with_every_field_the_engine_does_not_read(document: dict) -> dict:
+def _with_style_hours_policies_and_messages(document: dict) -> dict:
     document = copy.deepcopy(document)
     document["identity"].update(opening_hours=[{"days": ["lunes"], "opens": "08:00", "closes": "18:00"}])
     document["terms"].update(policies={"warranty": "30 días", "returns": "Cambios en 5 días", "cancellation": "Hasta 1 día antes"})
@@ -202,7 +209,7 @@ def _with_every_field_the_engine_does_not_read(document: dict) -> dict:
 
 
 def _with_every_contract_only_field(document: dict) -> dict:
-    document = _with_every_field_the_engine_does_not_read(document)
+    document = _with_style_hours_policies_and_messages(document)
     document["offer"]["catalog"]["items"][0]["features"] = ["pan artesanal"]
     document["terms"].update(promotions=[{"name": "Promo", "details": "2x1", "valid_until": "2999-12-31"}])
     document["sales"].update(instructions=["Confirma la dirección."])
@@ -210,9 +217,11 @@ def _with_every_contract_only_field(document: dict) -> dict:
     return document
 
 
-def test_fields_the_engine_does_not_read_yet_do_not_change_what_it_receives():
+def test_the_follow_up_message_is_kept_for_the_platform_and_never_compiled_for_the_ai():
     base = _document("restaurant")
-    assert _compile(_with_every_field_the_engine_does_not_read(base), "restaurant") == _compile(base, "restaurant")
+    document = copy.deepcopy(base)
+    document["messages"]["follow_up"] = "¿Seguimos?"
+    assert _compile(document, "restaurant") == _compile(base, "restaurant")
 
 
 def test_contract_only_fields_reach_the_engine_only_through_their_own_keys():
@@ -222,6 +231,12 @@ def test_contract_only_fields_reach_the_engine_only_through_their_own_keys():
     assert compiled["config"]["profile"]["instructions"] == ["Confirma la dirección."]
     assert compiled["config"]["profile"]["promotions"] == [{"name": "Promo", "details": "2x1", "valid_until": "2999-12-31"}]
     assert compiled["pricing"]["catalog"]["items"][0].pop("features") == ["pan artesanal"]
+    profile = compiled["config"]["profile"]
+    assert profile["opening_hours"] == [{"days": ["lunes"], "opens": "08:00", "closes": "18:00"}]
+    assert profile["policies"] == {"warranty": "30 días", "returns": "Cambios en 5 días", "cancellation": "Hasta 1 día antes"}
+    assert (profile["formality"], profile["emojis"], profile["style_instructions"]) == ("formal", False, ["sin tecnicismos"])
+    # Los mensajes que usa la IA; el de seguimiento lo enviará la plataforma.
+    assert compiled["config"]["messages"] == {"after_sale": "Gracias", "data_request": "Tus datos", "human_handoff": "Te paso con alguien"}
     assert comparable_with_yaml(compiled) == comparable_with_yaml(plain)
 
 
@@ -270,7 +285,9 @@ def test_example_document_compiles_to_the_engine_shape():
     }
     # Lo que solo existe en el contrato y el motor ya lee va a sus claves propias; el precio por variante todavía no se compila.
     assert {"profile", "knowledge"} <= set(compiled["config"])
-    assert compiled["inventory"]["items"][0]["variants"][1] == {"sku": "torta_chocolate_24", "attributes": {"porciones": 24}, "stock": 1}
+    assert compiled["inventory"]["items"][0]["variants"][1] == {
+        "sku": "torta_chocolate_24", "attributes": {"porciones": 24}, "stock": 1, "prices": [{"currency": "COP", "amount": 95000}],
+    }
 
 
 def test_unavailable_offers_are_not_compiled():

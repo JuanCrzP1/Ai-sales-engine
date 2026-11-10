@@ -2,7 +2,8 @@
 
 1. Plataforma: cómo vende el asistente y el formato de respuesta (igual para todos los negocios).
 2. Manual del tipo de negocio (productos, planes, servicios o citas).
-3. El negocio, lo que vende, cómo se paga y se cierra, sus indicaciones y sus preguntas frecuentes (cambian cuando publica).
+3. El negocio, lo que vende, cómo compra y recibe el cliente, cómo se paga y se cierra, sus políticas, sus indicaciones, su cliente, su
+   estrategia de venta y sus preguntas frecuentes (cambian cuando publica).
 4. Esta conversación: el momento y lo que se sabe del cliente (cambia en cada mensaje).
 
 El orden permite que el proveedor reutilice de su caché el comienzo del prompt, que se repite en cada mensaje del mismo negocio, y deja
@@ -13,7 +14,19 @@ from __future__ import annotations
 
 from app.domain.business_config.payment_data import redact_payment_values
 from app.infrastructure.ai.prompting import budgets, instructions
-from app.infrastructure.ai.prompting.sections import business, conversation, guidance, knowledge, offer, payments, playbook
+from app.infrastructure.ai.prompting.sections import (
+    business,
+    conversation,
+    customer,
+    delivery,
+    guidance,
+    knowledge,
+    offer,
+    payments,
+    playbook,
+    policies,
+    strategy,
+)
 from app.infrastructure.ai.prompting.view import PromptView
 from app.services.ai.output_contract import OUTPUT_CONTRACT
 from app.utils.logger import logger
@@ -26,8 +39,12 @@ def render_sections(view: PromptView) -> dict[str, str]:
         "playbook": playbook.render(view),
         "business": business.render(view),
         "offer": offer.render(view),
+        "delivery": delivery.render(view),
         "payments": payments.render(view),
+        "policies": policies.render(view),
         "guidance": guidance.render(view),
+        "customer": customer.render(view),
+        "strategy": strategy.render(view),
         "knowledge": knowledge.build_knowledge_context(view.runtime, user_message=view.user_message),
         "conversation": conversation.render(view),
     }

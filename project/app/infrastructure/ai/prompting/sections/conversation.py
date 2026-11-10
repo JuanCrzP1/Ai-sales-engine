@@ -1,13 +1,13 @@
 """«ESTA CONVERSACIÓN»: el momento de la conversación y lo que ya se sabe del cliente. Va al final, lo más cerca del mensaje actual.
 
 Solo la regla del momento (no la lista de todos los estados), y los hechos que importan para no repetir ni reiniciar: qué necesita,
-si ya eligió cómo pagar o dijo que pagó, el proceso en curso y la continuidad comercial. La conversación misma (los últimos mensajes)
+si ya eligió cómo pagar o dijo que pagó (y el mensaje del negocio para después de la compra), el proceso en curso y la continuidad comercial. La conversación misma (los últimos mensajes)
 no va aquí: viaja como mensajes (`history.py`).
 """
 from __future__ import annotations
 
 from app.infrastructure.ai.prompting import instructions
-from app.infrastructure.ai.prompting.text import as_text, bullets, one_line, section
+from app.infrastructure.ai.prompting.text import as_dict, as_text, bullets, one_line, section
 from app.infrastructure.ai.prompting.view import PromptView
 
 _METHODS = {"nequi": "Nequi", "daviplata": "Daviplata", "bank": "transferencia bancaria", "breb": "Bre-B", "link": "link de pago"}
@@ -41,6 +41,9 @@ def render(view: PromptView) -> str:
     status = as_text(memory.get("estado_pago")).lower()
     if status == "reportado":
         facts.append(instructions.PAYMENT_REPORTED)
+        after_sale = one_line(as_dict(view.config.get("messages")).get("after_sale"))
+        if after_sale:
+            facts.append(instructions.AFTER_SALE.format(message=after_sale))
     elif method:
         facts.append(instructions.PAYMENT_CHOSEN.format(method=_METHODS.get(method, method)))
     anchor, rule = one_line(memory.get("operational_anchor")), one_line(memory.get("operational_rule"))

@@ -9,11 +9,12 @@ reinyectan en su posición original.
   motor o no: un documento importado compila exactamente a sus YAML y el motor responde igual.
 - La definición común del cierre (`COMMON_CLOSING_POLICY`) no está en ningún documento: se añade aquí a
   `sales.closing`, en la posición que tiene en los YAML, a todo negocio que tenga esa sección.
-- Los campos que solo existen en el contrato y el motor ya lee van a claves que los YAML no tienen: `config.profile`
-  (perfil comercial, tono, recomendaciones, instrucciones y promociones), `config.knowledge` (preguntas frecuentes) y las
-  características de cada producto. Un negocio que sigue con sus YAML no cambia (ver `commercial_profile.py`).
-- El resto de los campos que solo existen en el contrato (horarios, políticas, entrega, mensajes de seguimiento...) no se
-  compilan: ningún lector del motor los consume todavía (ver docs/business-config.md).
+- Los campos que solo existen en el contrato van a claves que los YAML no tienen: `config.profile` (perfil comercial, tono, estilo,
+  horarios, políticas, recomendaciones, instrucciones y promociones), `config.knowledge` (preguntas frecuentes), `config.messages`
+  (los mensajes que la IA usa al pedir datos, al pasar a una persona y después de una compra), el cobro anual de los planes, las
+  características de cada producto y el precio propio de una variante. Un documento importado de sus YAML compila igual a ellos
+  (ver `commercial_profile.py` y `comparable_with_yaml`).
+- Los mensajes que enviará la plataforma ante un evento (pago confirmado por el equipo, seguimiento) se compilan pero no van a la IA.
 - Los planes y productos no disponibles no se compilan: el motor no los ofrece. Tampoco las cuentas ni los enlaces de
   pago inactivos, y por eso no hace falta poder leer sus datos para publicar.
 """
@@ -23,14 +24,14 @@ import copy
 from collections.abc import Callable
 from typing import Any
 
-from app.domain.business_config.commercial_profile import compile_knowledge, compile_profile
+from app.domain.business_config.commercial_profile import compile_knowledge, compile_messages, compile_profile
 from app.domain.business_config.contract import BusinessConfig, PaymentProfile, Plan, SecretRef
 from app.domain.business_config.engine_policy import COMMON_CLOSING_POLICY
 
 SecretResolver = Callable[[SecretRef], str]
 
 # Claves de `config` que solo produce el contrato: los YAML no las tienen (ver `commercial_profile.py`).
-CONTRACT_ONLY_CONFIG_KEYS = ("profile", "knowledge")
+CONTRACT_ONLY_CONFIG_KEYS = ("profile", "knowledge", "messages")
 
 
 def _put(target: dict, key: str, value: Any) -> None:
@@ -66,7 +67,7 @@ def _plan(plan: Plan, profiles: dict[str, PaymentProfile], resolve_secret: Secre
     pricing: dict[str, dict] = {}
     for price in plan.prices:
         values: dict[str, Any] = {}
-        for field in ("implementation", "monthly", "first_payment", "price"):
+        for field in ("implementation", "monthly", "first_payment", "price", "annual"):
             _put(values, field, getattr(price, field))
         pricing[price.currency] = values
     entry: dict[str, Any] = {"id": plan.id, "name": plan.name}
@@ -255,8 +256,8 @@ def _pricing(config: BusinessConfig, resolve_secret: SecretResolver) -> dict:
 
 
 def _inventory(config: BusinessConfig) -> dict:
-    # El precio por variante solo existe en el contrato: no se compila.
-    items = [item.model_dump(mode="json", exclude={"variants": {"__all__": {"prices"}}}, exclude_none=True) for item in config.inventory.items]
+    # El precio propio de una variante solo existe en el contrato: se compila solo si el negocio lo escribió.
+    items = [item.model_dump(mode="json", exclude_none=True) for item in config.inventory.items]
     inventory: dict[str, Any] = {"items": items}
     _put(inventory, "track_stock", config.inventory.track_stock)
     return inventory
@@ -289,6 +290,9 @@ def _config(config: BusinessConfig) -> dict:
     knowledge = compile_knowledge(config)
     if knowledge is not None:
         section["knowledge"] = knowledge
+    messages = compile_messages(config)
+    if messages:
+        section["messages"] = messages
     post_payment: dict[str, dict] = {}
     if config.messages.payment_reported is not None:
         post_payment["on_user_report"] = {"message": config.messages.payment_reported}

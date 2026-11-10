@@ -129,8 +129,11 @@ En la práctica:
   1. Plataforma (`instructions.py`): cómo vende el asistente, la verdad primero, cómo responder una duda, pagos y el formato de
      respuesta. Igual para todos los negocios, en una sola voz; lleva su versión (`PROMPT_VERSION`).
   2. Manual del tipo de negocio (`sections/playbook.py`): productos, planes, servicios o servicios con cita.
-  3. El negocio (`sections/business.py`), lo que vende con sus precios en palabras (`offer.py`, `money.py`), cómo se paga y se cierra
-     (`payments.py`, sin datos de pago), sus indicaciones (`guidance.py`) y sus preguntas frecuentes (`knowledge.py`).
+  3. El negocio (`sections/business.py`: identidad, cliente ideal, horario y estilo), lo que vende con sus precios en palabras, sus
+     opciones y existencias (`offer.py`, `money.py`, `inventory.py`), cómo compra y recibe el cliente (`delivery.py`), cómo se paga y
+     se cierra (`payments.py`, sin datos de pago), sus políticas (`policies.py`), sus indicaciones (`guidance.py`), su cliente
+     (`customer.py`: problemas, motivos, objeciones), su estrategia de venta (`strategy.py`) y sus preguntas frecuentes
+     (`knowledge.py`). `vocabulary.py` dice en español los identificadores del panel (`detect_pain`, `license_type`).
   4. Esta conversación (`conversation.py`): el momento y lo que se sabe del cliente.
   - `composer.py` las ordena así para que el proveedor reutilice de su caché el comienzo del prompt, mide cada capa contra
     `budgets.py` y quita los datos de pago antes de que el prompt salga.
