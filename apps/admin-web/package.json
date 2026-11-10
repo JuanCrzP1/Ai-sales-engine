@@ -3,10 +3,13 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
+  "engines": {
+    "node": "^22.22.2 || ^24.15.0 || >=26.0.0"
+  },
   "description": "Panel de administración local de los negocios. Edita BusinessConfig v1 a través de la API local; los datos se guardan en el servidor.",
   "scripts": {
     "dev": "vite",
-    "panel": "vite --port 5173 --strictPort",
+    "panel": "vite --port 5180 --strictPort",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",

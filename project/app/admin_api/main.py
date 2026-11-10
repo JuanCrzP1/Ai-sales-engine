@@ -21,16 +21,18 @@ logger = logging.getLogger("admin-api")
 
 LOOPBACK_CLIENTS = {"127.0.0.1", "::1", "::ffff:127.0.0.1"}
 LOOPBACK_HOSTNAMES = {"127.0.0.1", "localhost", "[::1]"}
+# El puerto de la interfaz del panel (`apps/admin-web/vite.config.ts`). El 4173 es el de su vista previa.
+ADMIN_WEB_PORT = 5180
 PANEL_ORIGINS = {
-    "http://127.0.0.1:5173",
-    "http://localhost:5173",
+    f"http://127.0.0.1:{ADMIN_WEB_PORT}",
+    f"http://localhost:{ADMIN_WEB_PORT}",
     "http://127.0.0.1:4173",
     "http://localhost:4173",
 }
 
 
 def _hostname(host_header: str) -> str:
-    """El nombre sin el puerto: `localhost:5173`, `127.0.0.1:8010` o `[::1]:8010`."""
+    """El nombre sin el puerto: `localhost:5180`, `127.0.0.1:8010` o `[::1]:8010`."""
     if host_header.startswith("["):
         return host_header.split("]", 1)[0] + "]"
     return host_header.split(":", 1)[0]

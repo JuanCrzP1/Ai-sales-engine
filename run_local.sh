@@ -117,10 +117,10 @@ else
 fi
 
 # -------------------------
-# PANEL WEB (API en 8010, interfaz en 5173)
+# PANEL WEB (API en 8010, interfaz en ADMIN_WEB_PORT)
 # -------------------------
 ADMIN_WEB_DIR="$SCRIPT_DIR/apps/admin-web"
-ADMIN_WEB_PORT=5173
+ADMIN_WEB_PORT=5180
 
 if ! command -v npm >/dev/null 2>&1; then
     echo "[AVISO] npm no esta instalado. El panel web no se inicia."

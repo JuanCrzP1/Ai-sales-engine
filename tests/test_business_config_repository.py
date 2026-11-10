@@ -23,6 +23,7 @@ from app.application.pipeline.ai_execution import ejecutar_pago
 from app.application.runtime import load_tenant_runtime_yaml
 from app.application.runtime import tenant_runtime_loader as loader
 from app.domain.business_config.compiler import compile_business_config
+from app.infrastructure.business_config.runtime_access import reader_for
 from app.infrastructure.business_config.repository import BusinessConfigRepository
 from app.infrastructure.config.business_config_store import BusinessConfigError, BusinessConfigStore
 from app.infrastructure.business_config.tables import business_config_secrets, business_configs, business_engine_settings, metadata, tenants
@@ -180,7 +181,7 @@ def test_payment_secrets_require_the_right_key(engine, monkeypatch):
 def database_source(engine, monkeypatch):
     monkeypatch.setenv(loader.CONTRACT_TENANTS_ENV, "restaurant")
     monkeypatch.setenv(loader.CONTRACT_STORE_ENV, "database")
-    monkeypatch.setattr(loader, "get_engine", lambda: engine)
+    monkeypatch.setattr(loader, "open_published_reader", lambda: reader_for(engine))
     repository = BusinessConfigRepository(engine)
     repository.save_engine_settings("restaurant", _engine_settings("restaurant"))
     return repository
@@ -218,7 +219,7 @@ def test_runtime_falls_back_to_yaml_without_a_valid_published_version(database_s
     def _database_down():
         raise OperationalError("SELECT 1", {}, Exception("postgresql://usuario:clave@host/db"))
 
-    monkeypatch.setattr(loader, "get_engine", _database_down)
+    monkeypatch.setattr(loader, "open_published_reader", _database_down)
     assert load_tenant_runtime_yaml("restaurant") == from_yaml  # base de datos caída
     assert [error["event"] for error in errors] == ["business_config_contract_invalid"] * 3
     assert errors[-1]["error"] == "OperationalError" and "clave" not in json.dumps(errors)

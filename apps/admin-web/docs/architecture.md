@@ -7,7 +7,7 @@ el motor comercial todavía no consume lo que aquí se publica.
 Navegador                    Este equipo (127.0.0.1)
 ┌──────────────────┐  /api   ┌──────────────┐    ┌──────────────────────┐    ┌────────────────────┐
 │ Panel (React)    │ ──────▶ │ Proxy de Vite│ ─▶ │ API local (FastAPI)  │ ─▶ │ BusinessConfigSer- │
-│ edita el         │         │ :5173        │    │ project/app/admin_api│    │ vice: contrato,    │
+│ edita el         │         │ :5180        │    │ project/app/admin_api│    │ vice: contrato,    │
 │ documento del    │ ◀────── │              │ ◀─ │ :8010                │ ◀─ │ versiones, cifrado │
 │ contrato         │         └──────────────┘    └──────────────────────┘    └─────────┬──────────┘
 └──────────────────┘                                                                   ▼

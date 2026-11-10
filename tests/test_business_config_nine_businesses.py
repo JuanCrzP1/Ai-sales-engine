@@ -24,8 +24,9 @@ from app.application.runtime.tenant_runtime_loader import _load_legacy_sections
 from app.domain.business_config.contract import SecretRef
 from app.domain.business_config.errors import BusinessConfigError, SecretResolutionError
 from app.domain.business_config.payment_data import SECRET_STORE_SOURCE, iter_payment_blocks, iter_secret_refs, payment_values
-from app.infrastructure.business_config.database import build_business_config_service, create_business_config_engine, create_local_schema
+from app.infrastructure.business_config.database import DATABASE_URL_ENV, build_business_config_service, create_business_config_engine, create_local_schema
 from app.infrastructure.business_config.payment_secret_store import SECRETS_KEY_ENV, PaymentSecretStore
+from app.infrastructure.business_config.runtime_access import dispose_shared_engines
 from app.infrastructure.business_config.tables import business_config_secrets, business_configs, tenants
 from app.infrastructure.config.config_service import ConfigService
 from app.infrastructure.config.legacy_field_catalog import COMMERCIAL_CONTROLS, check_leaf, destination_path, find_entry, legacy_leaves, resolve_path
@@ -237,7 +238,7 @@ def test_compilation_has_no_differences_with_the_yaml(store, slug):
 
 
 @pytest.mark.parametrize("slug", TENANTS)
-def test_stored_configuration_gives_the_same_prompts_and_replies_as_the_yaml(store, key, monkeypatch, slug):
+def test_stored_configuration_gives_the_same_prompts_and_replies_as_the_yaml(store, key, monkeypatch, request, slug):
     """Solo dentro de esta prueba: el cargador actual, apuntado a la base temporal. El motor sigue con su fuente."""
     monkeypatch.delenv(loader.CONTRACT_TENANTS_ENV, raising=False)
     from_yaml = run_conversation(slug, CONVERSATION, user_id="nueve_negocios")
@@ -245,7 +246,9 @@ def test_stored_configuration_gives_the_same_prompts_and_replies_as_the_yaml(sto
     monkeypatch.setenv(SECRETS_KEY_ENV, key)
     monkeypatch.setenv(loader.CONTRACT_TENANTS_ENV, slug)
     monkeypatch.setenv(loader.CONTRACT_STORE_ENV, "database")
-    monkeypatch.setattr(loader, "get_engine", lambda: store.engine)
+    # Como en producción: el motor encuentra el almacén solo por su URL, sin sustituir ninguna pieza.
+    monkeypatch.setenv(DATABASE_URL_ENV, f"sqlite:///{store.path.as_posix()}")
+    request.addfinalizer(dispose_shared_engines)
     errors: list[dict] = []
     monkeypatch.setattr(loader.logger, "error", lambda event, extra=None: errors.append({"event": event, **(extra or {})}))
     assert run_conversation(slug, CONVERSATION, user_id="nueve_negocios") == from_yaml

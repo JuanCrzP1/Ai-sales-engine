@@ -13,7 +13,7 @@ Dos computadores **no** comparten datos. Cada uno tiene su propio archivo SQLite
 ## Arquitectura Final Implementada
 
 ```text
-Navegador -> Vite (127.0.0.1:5173, proxy /api) -> API FastAPI (127.0.0.1:8010) -> BusinessConfigService
+Navegador -> Vite (127.0.0.1:5180, proxy /api) -> API FastAPI (127.0.0.1:8010) -> BusinessConfigService
           -> repositorio y almacén de datos de pago -> SQLite (project/data/business_config.sqlite3)
 ```
 
@@ -95,7 +95,7 @@ Comprobadas en Microsoft Edge real contra la API y SQLite reales: 126 comprobaci
 
 La prueba quedó en el repositorio, sin depender del sistema operativo: `tests/test_local_network_binding.py`.
 
-- **Loopback:** la tabla de sockets de Windows muestra `127.0.0.1` y nada más en los puertos 8010 y 5173. `netstat` no sirve en este equipo: muestra unos 10 de 50 sockets. Estas pruebas se hacen desde el propio equipo; la comprobación desde otro está en «Bloqueo Y Cómo Levantarlo».
+- **Loopback:** la tabla de sockets de Windows muestra `127.0.0.1` y nada más en los puertos 8010 y 5173 (el panel pasó después al 5180, con la misma dirección). `netstat` no sirve en este equipo: muestra unos 10 de 50 sockets. Estas pruebas se hacen desde el propio equipo; la comprobación desde otro está en «Bloqueo Y Cómo Levantarlo».
 - **Host y Origin ajenos:** rechazados por la API y a través del proxy del panel. La API no publica documentación y sus respuestas no se guardan en caché.
 - **Aislamiento multiempresa:** 9 pruebas específicas, más los recorridos sobre la copia real. Ninguno de los 9 negocios cambia cuando se opera sobre otro.
 - **Cifrado:** los 46 datos están cifrados con Fernet en la base real, y ningún valor aparece en claro en el archivo.
@@ -253,7 +253,7 @@ cd C:\dev\ai-sales-engine
 npm --prefix apps/admin-web run panel
 ```
 
-Abre <http://127.0.0.1:5173>. Para detener: `Ctrl+C` en cada consola, o `bash run_local_stop.sh` desde Git Bash.
+Abre <http://127.0.0.1:5180>. Para detener: `Ctrl+C` en cada consola, o `bash run_local_stop.sh` desde Git Bash.
 
 **En otro equipo con Windows**, con Python 3.13, Node 20.19 o 22.12 en adelante y Git:
 
@@ -307,7 +307,7 @@ Y en otra terminal, desde la misma carpeta:
 npm --prefix apps/admin-web run panel
 ```
 
-Abre <http://127.0.0.1:5173>. Para detener: `Ctrl+C` en cada terminal, o `bash run_local_stop.sh`. Apaga el Inicio de sesión remoto al terminar. La guía completa, incluidos el cambio de equipo y la recuperación, está en `docs/operations.md`, «Trabajar Desde Windows Y macOS».
+Abre <http://127.0.0.1:5180>. Para detener: `Ctrl+C` en cada terminal, o `bash run_local_stop.sh`. Apaga el Inicio de sesión remoto al terminar. La guía completa, incluidos el cambio de equipo y la recuperación, está en `docs/operations.md`, «Trabajar Desde Windows Y macOS».
 
 `./run_local.sh` enciende también el motor, ngrok y Telegram. Además necesita `brew install ngrok`, su token y un PostgreSQL local, porque `DATABASE_URL` apunta al propio equipo, y los datos de ese PostgreSQL no se copian.
 
@@ -342,7 +342,7 @@ Abre <http://127.0.0.1:5173>. Para detener: `Ctrl+C` en cada terminal, o `bash r
 
    ```bash
    nc -vz -G 3 <IP-del-PC> 8010
-   nc -vz -G 3 <IP-del-PC> 5173
+   nc -vz -G 3 <IP-del-PC> 5180
    ```
 
 Si los cuatro puntos se cumplen, no queda nada pendiente de esta fase y el dictamen pasa a FASE 2 COMPLETADA. Si alguno falla, es un defecto de esta fase y se corrige aquí.
@@ -350,3 +350,34 @@ Si los cuatro puntos se cumplen, no queda nada pendiente de esta fase y el dicta
 Lo demás (decisiones sobre el repositorio, `legacy/` y el respaldo de la clave) está documentado y no impide este criterio.
 
 **FASE 2 NO COMPLETADA:** el único bloqueo real es que la compatibilidad con macOS, requisito obligatorio de esta fase, está implementada pero no se ha ejecutado en un Mac. No hay ningún fallo de pruebas ni defecto conocido abierto.
+
+## Anexo: Verificación En macOS (2026-11-09)
+
+Primera ejecución en un Mac real (macOS 26, Apple Silicon), sobre `469c6e9` más las correcciones de este anexo. Sin modelo de IA,
+sin la base real y sin la clave real.
+
+| Comprobación del bloqueo | Resultado |
+|---|---|
+| 3. `python -m pytest` termina con `0 failed` | **Cumplida** tras corregir un defecto de la prueba de red (abajo): 1181 aprobadas, 0 fallidas, 55 omitidas, 63 pendientes de Fase 4. Con Python 3.14, el único instalado; el CI cubre 3.11 y 3.13 |
+| Panel: TypeScript, Vitest, integración contra la API real | **Cumplida**: sin errores, 180/180 y 23/23 |
+| 1. `local_secrets.py check` con 9 negocios y 46 de 46 | **Cumplida** el mismo día, con `secrets.local.env` y la base copiados desde Windows: 9 negocios, 46 de 46 |
+| 2. Panel con los 9 negocios y cambio que sobrevive al reinicio | **Parcial** (2026-11-10): `./run_local.sh` abre el panel en `127.0.0.1:5180` con los 9 negocios publicados. Falta guardar un cambio y comprobar que sobrevive al reinicio |
+| 4. `nc` desde el Mac contra el panel encendido en Windows | **Pendiente**: necesita los dos equipos en la misma red |
+
+**Defectos encontrados en macOS y corregidos:**
+
+| Defecto | Corrección |
+|---|---|
+| La prueba de red daba un falso fallo: macOS no incluye la interfaz en el texto de las direcciones IPv6 de enlace local (`fe80::`), y Python ignora el `%interfaz` del texto al conectar. Además, las comprobaciones de «solo en loopback» pasaban sin probar de verdad esas direcciones | La prueba conserva el `scope_id` y conecta con él |
+| `node_modules` copiado desde Windows no arranca Vite en macOS | Documentado: se instala en cada equipo con `npm ci` |
+| El README pedía Node 20.19 o 22.12, pero Vitest 5 y jsdom 30 exigen 22.22+, 24.15+ o 26+ | Node 24 LTS fijado en `apps/admin-web/.nvmrc` y `engines` |
+| El panel usaba el 5173, el puerto que Vite toma por defecto: no abría si otro proyecto de Vite del mismo equipo ya lo ocupaba, y `run_local_stop.sh` cerraba cualquier programa que escuchara en sus puertos | Panel en el 5180, igual en la API, Vite y los lanzadores (lo vigila una prueba). La parada solo detiene procesos de este repositorio |
+
+**Riesgos de la tabla anterior que cambian:**
+
+- *Repositorio público con valores de pago:* los valores de pago de los YAML versionados son ficticios (`1234567890`,
+  `usuario@correo.com`, enlaces de `checkout.aisalesengine.com`). Los reales solo están en `secrets.local.env` y en la base cifrada.
+- *El CI no ejecuta las pruebas del panel:* resuelto, el job `panel` corre tipos, Vitest, integración y build.
+- *El motor no podía leer lo publicado en el panel:* con `BUSINESS_CONFIG_STORE=database` abría la base del motor (`DATABASE_URL`) en
+  vez de la del panel, y la prueba que lo cubría sustituía la conexión. Resuelto con `runtime_access.py`: ver
+  `docs/business-config.md`, «Conexión Con El Motor».

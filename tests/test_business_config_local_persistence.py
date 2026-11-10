@@ -41,6 +41,7 @@ from app.domain.business_config.errors import (
 from app.domain.business_config.diagnostics import review as diagnose
 from app.domain.business_config.payment_data import iter_payment_fields, iter_secret_refs, mask_payment_value, payment_value_problem, payment_values
 from app.infrastructure.business_config import database as business_config_database
+from app.infrastructure.business_config import runtime_access
 from app.infrastructure.business_config.database import (
     build_business_config_service,
     create_business_config_engine,
@@ -158,14 +159,51 @@ def test_all_nine_businesses_coexist_without_payment_values_in_the_file(service,
     assert [value for value in values if value.encode("utf-8") in raw] == []
 
 
-def test_runtime_reads_the_stored_business_without_changing_the_engine(service, engine, monkeypatch):
-    """El cargador actual del motor, con `BUSINESS_CONFIG_STORE=database`, lee este almacén tal cual."""
-    import_prepared(service, prepare_tenant(ConfigService(), "restaurant"))
-    from_yaml = load_tenant_runtime_yaml("restaurant")
+@pytest.fixture
+def engine_reads_this_store(database, monkeypatch):
+    """El motor configurado como en producción: solo variables de entorno, sin sustituir ninguna pieza."""
+    monkeypatch.setenv(business_config_database.DATABASE_URL_ENV, f"sqlite:///{database[1].as_posix()}")
     monkeypatch.setenv(loader.CONTRACT_TENANTS_ENV, "restaurant")
     monkeypatch.setenv(loader.CONTRACT_STORE_ENV, "database")
-    monkeypatch.setattr(loader, "get_engine", lambda: engine)
+    yield
+    runtime_access.dispose_shared_engines()
+
+
+def test_runtime_reads_the_stored_business_without_changing_the_engine(service, engine_reads_this_store, monkeypatch):
+    """El cargador del motor, con `BUSINESS_CONFIG_STORE=database`, lee el mismo archivo que escribe el panel."""
+    import_prepared(service, prepare_tenant(ConfigService(), "restaurant"))
+    monkeypatch.delenv(loader.CONTRACT_TENANTS_ENV)
+    from_yaml = load_tenant_runtime_yaml("restaurant")
+    monkeypatch.setenv(loader.CONTRACT_TENANTS_ENV, "restaurant")
     assert load_tenant_runtime_yaml("restaurant") == from_yaml
+
+
+def test_what_the_panel_publishes_reaches_the_engine(service, engine_reads_this_store):
+    """Publicar desde el panel cambia lo que recibe el motor; volver atrás lo devuelve."""
+    import_prepared(service, prepare_tenant(ConfigService(), "restaurant"))
+    before = load_tenant_runtime_yaml("restaurant")
+    editable = service.get_editable("restaurant")
+    document = editable.stored.config.model_dump(mode="json", exclude_none=True)
+    document["messages"]["welcome"]["text"] = "Bienvenido a la versión publicada desde el panel"
+    saved = service.save_changes("restaurant", document)
+    service.publish("restaurant", saved.version)
+
+    after = load_tenant_runtime_yaml("restaurant")
+    assert after != before
+    assert "Bienvenido a la versión publicada desde el panel" in json.dumps(after, ensure_ascii=False)
+    service.rollback("restaurant")
+    assert load_tenant_runtime_yaml("restaurant") == before
+
+
+def test_the_engine_never_creates_the_store(tmp_path, monkeypatch):
+    """Sin almacén, el motor sigue con sus YAML y no crea ningún archivo."""
+    missing = tmp_path / "no-existe" / "business_config.sqlite3"
+    monkeypatch.setenv(business_config_database.DATABASE_URL_ENV, f"sqlite:///{missing.as_posix()}")
+    monkeypatch.setenv(loader.CONTRACT_STORE_ENV, "database")
+    from_yaml = load_tenant_runtime_yaml("restaurant")
+    monkeypatch.setenv(loader.CONTRACT_TENANTS_ENV, "restaurant")
+    assert load_tenant_runtime_yaml("restaurant") == from_yaml
+    assert not missing.parent.exists()
 
 
 # ---------------------------------------------------------------------------

@@ -5,7 +5,33 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 RUNTIME_DIR="$SCRIPT_DIR/.run_local"
 APP_PORT=8082
 ADMIN_API_PORT=8010
-ADMIN_WEB_PORT=5173
+ADMIN_WEB_PORT=5180
+
+# Solo se detiene lo que es de este proyecto: un proceso cuya carpeta de trabajo o cuya orden están dentro del repositorio. Otro
+# programa en los mismos puertos o con una orden parecida, como el Vite de otro proyecto, no se toca.
+PROJECT_ROOT="$(cd "$SCRIPT_DIR" && pwd -P)"
+
+process_dir() {
+    lsof -a -p "$1" -d cwd -Fn 2>/dev/null | sed -n 's/^n//p' | head -n 1
+}
+
+belongs_to_project() {
+    case "$(process_dir "$1")" in
+        "$PROJECT_ROOT" | "$PROJECT_ROOT"/*) return 0 ;;
+    esac
+    ps -o command= -p "$1" 2>/dev/null | grep -qF "$PROJECT_ROOT"
+}
+
+stop_process() {
+    local label="$1"
+    local pid="$2"
+    if belongs_to_project "$pid"; then
+        echo "[INFO] Matando $label (PID $pid)"
+        kill "$pid" 2>/dev/null || true
+    else
+        echo "[AVISO] No se detiene el PID $pid ($label): es de otro programa, en $(process_dir "$pid")."
+    fi
+}
 
 kill_if_exists() {
     local name="$1"
@@ -14,8 +40,8 @@ kill_if_exists() {
         local pid
         pid=$(cat "$pid_file")
         if kill -0 "$pid" 2>/dev/null; then
-            echo "[INFO] Matando $name (PID $pid)"
-            kill "$pid" || true
+            # Tras un reinicio, el número puede ser ya de otro programa.
+            stop_process "$name" "$pid"
         else
             echo "[INFO] $name (PID $pid) ya no está corriendo."
         fi
@@ -28,28 +54,18 @@ kill_if_exists() {
 kill_matching_processes() {
     local label="$1"
     local pattern="$2"
-    local pids
-
-    pids=$(pgrep -f "$pattern" || true)
-    if [ -n "$pids" ]; then
-        echo "[INFO] Matando procesos de $label: $pids"
-        while IFS= read -r pid; do
-            [ -n "$pid" ] && kill "$pid" 2>/dev/null || true
-        done <<< "$pids"
-    fi
+    local pid
+    for pid in $(pgrep -f "$pattern" || true); do
+        stop_process "$label" "$pid"
+    done
 }
 
 kill_port_listener() {
     local port="$1"
-    local pids
-
-    pids=$(lsof -tiTCP:"$port" -sTCP:LISTEN || true)
-    if [ -n "$pids" ]; then
-        echo "[INFO] Matando procesos que escuchan en el puerto $port: $pids"
-        while IFS= read -r pid; do
-            [ -n "$pid" ] && kill "$pid" 2>/dev/null || true
-        done <<< "$pids"
-    fi
+    local pid
+    for pid in $(lsof -tiTCP:"$port" -sTCP:LISTEN || true); do
+        stop_process "lo que escucha en el puerto $port" "$pid"
+    done
 }
 
 # En Windows no hay lsof ni pgrep, y run_local.bat abre una ventana por servicio: se detiene cada ventana con todo lo que

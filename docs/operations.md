@@ -141,7 +141,7 @@ Límite conocido: `reply` es texto del modelo, igual que el que recibe un client
 Permite administrar los negocios sin editar YAML. Su API no lee `.env`, y lo que publica todavía no llega a los clientes: el motor sigue leyendo sus YAML hasta la Fase 4.
 
 1. Desde la raíz del repositorio, ejecuta uno de los únicos lanzadores del sistema: `run_local.bat` en Windows o `./run_local.sh` en Linux y macOS. Encienden el motor con el `.env`, ngrok, Telegram y la API del panel en `127.0.0.1:8010`.
-2. Cuando esa API responde, arrancan la interfaz y se abre <http://127.0.0.1:5173>. Si no responde, la interfaz no se abre y el motor sigue arrancando.
+2. Cuando esa API responde, arrancan la interfaz y se abre <http://127.0.0.1:5180>. Si no responde, la interfaz no se abre y el motor sigue arrancando.
 3. Para detener todo: `bash run_local_stop.sh`, desde Git Bash en Windows.
 
 Los lanzadores abren también el túnel de `ngrok` y Telegram. Para administrar los negocios sin encender el motor ni exponer nada, basta con la API y la interfaz: ver `apps/admin-web/README.md`.
@@ -196,7 +196,7 @@ Las rutas salen de la ubicación del repositorio y de la carpeta del usuario de 
 
 | Secreto | Para qué | Cuándo hace falta |
 |---|---|---|
-| `BUSINESS_CONFIG_SECRETS_KEY` | Cifra los datos de pago | Siempre que la base tenga datos. Debe ser la misma en los dos equipos |
+| `BUSINESS_CONFIG_SECRETS_KEY` | Cifra los datos de pago. El motor la usa para leerlos cuando un negocio lee lo publicado en el panel (`BUSINESS_CONFIG_STORE=database`, ver `docs/business-config.md`, «Conexión Con El Motor») | Siempre que la base tenga datos. Debe ser la misma en los dos equipos y en el motor |
 | `OPENROUTER_API_KEY` | Modelo de IA | Motor |
 | `DATABASE_URL` | PostgreSQL del motor | Motor. Si apunta al propio equipo, el otro necesita su PostgreSQL |
 | `TELEGRAM_TOKEN`, `TELEGRAM_ADMIN_ID` | Canal de Telegram | Motor, si se usa Telegram |
@@ -261,7 +261,7 @@ python scripts/run_admin_api.py
 npm --prefix apps/admin-web run panel
 ```
 
-Se abre en <http://127.0.0.1:5173> y se detiene con `bash run_local_stop.sh` (desde Git Bash en Windows). El sistema completo se arranca con `./run_local.sh` en macOS o `run_local.bat` en Windows. En macOS requiere además `brew install ngrok`, su token y el PostgreSQL de `DATABASE_URL`: `docker compose up -d db` levanta una base vacía con las credenciales de `docker-compose.yml`, y los datos del PostgreSQL del otro equipo no se copian.
+Se abre en <http://127.0.0.1:5180> y se detiene con `bash run_local_stop.sh` (desde Git Bash en Windows). El sistema completo se arranca con `./run_local.sh` en macOS o `run_local.bat` en Windows. En macOS requiere además `brew install ngrok`, su token y el PostgreSQL de `DATABASE_URL`: `docker compose up -d db` levanta una base vacía con las credenciales de `docker-compose.yml`, y los datos del PostgreSQL del otro equipo no se copian.
 
 **Cambiar de equipo.** Cada equipo tiene su propio archivo SQLite y nada los sincroniza: la última copia reemplaza a la otra. Edita en un solo equipo a la vez y, antes de cambiar, apaga el sistema y copia la base. Para traerla del Mac a Windows, también desde Windows:
 

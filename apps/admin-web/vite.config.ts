@@ -4,7 +4,10 @@ import react from "@vitejs/plugin-react";
 
 /** La API local del panel. Solo escucha en este equipo: ver `scripts/run_admin_api.py`. */
 const { ADMIN_API_PORT = "8010" } = loadEnv("", ".", "ADMIN_API_");
-const LOCAL_SERVER = { host: "127.0.0.1", port: 5173, strictPort: true, proxy: { "/api": `http://127.0.0.1:${ADMIN_API_PORT}` } };
+/** La interfaz. No usa el 5173 que Vite toma por defecto, para convivir con otros proyectos de Vite en este equipo. La API, los
+ *  lanzadores y el script `panel` lo repiten porque no pueden leerlo de aquí: `tests/test_admin_api.py` comprueba que coincidan. */
+const ADMIN_WEB_PORT = 5180;
+const LOCAL_SERVER = { host: "127.0.0.1", port: ADMIN_WEB_PORT, strictPort: true, proxy: { "/api": `http://127.0.0.1:${ADMIN_API_PORT}` } };
 
 export default defineConfig({
   plugins: [react()],

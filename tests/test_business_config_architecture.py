@@ -24,14 +24,15 @@ APPLICATION = "app.business_config_application"
 PERSISTENCE = "app.infrastructure.business_config"
 API = "app.admin_api"
 BRIDGE = (
-    "app.infrastructure.config.business_config_repository",
+    "app.application.runtime.tenant_runtime_loader",
     "app.infrastructure.config.business_config_store",
     "app.infrastructure.config.legacy_field_catalog",
     "app.infrastructure.config.legacy_store_migration",
     "app.infrastructure.config.legacy_yaml_importer",
-    "app.infrastructure.config.payment_secret_store",
     "app.infrastructure.config.payment_secrets",
 )
+# La única puerta del motor hacia el almacén: solo lee lo publicado y nunca crea ni escribe.
+ENGINE_GATEWAY = f"{PERSISTENCE}.runtime_access"
 
 # Qué puede importar cada capa, del proyecto y de fuera. Nadie puede importar el motor.
 INTERNAL = {
@@ -143,6 +144,25 @@ def test_the_layer_check_detects_a_forbidden_import(tmp_path, monkeypatch):
     (package / "malo.py").write_text("from sqlalchemy import select\nfrom app.infrastructure.business_config import tables\n", encoding="utf-8")
     monkeypatch.setattr(sys.modules[__name__], "PROJECT_DIR", tmp_path)
     assert len(list(_violations(DOMAIN))) == 4
+
+
+def _engine_modules() -> dict[str, Path]:
+    """Todo `app` salvo las capas de BusinessConfig: el motor y sus adaptadores."""
+    modules = _layer_modules("app")
+    return {name: path for name, path in modules.items() if not any(name == layer or name.startswith(f"{layer}.") for layer in INTERNAL)}
+
+
+def test_the_engine_reaches_the_store_only_through_its_gateway():
+    engine = _engine_modules()
+    assert "app.application.runtime.tenant_runtime_loader" in engine, "la comprobación debe ver el motor"
+    reaching = {
+        f"{name} -> {target}"
+        for name, path in engine.items()
+        for target in _imports(name, path)
+        if target.startswith(f"{PERSISTENCE}.") and not (target == ENGINE_GATEWAY or target.startswith(f"{ENGINE_GATEWAY}."))
+    }
+    assert sorted(reaching) == []
+    assert any(target.startswith(ENGINE_GATEWAY) for target in _imports("app.application.runtime.tenant_runtime_loader", engine["app.application.runtime.tenant_runtime_loader"]))
 
 
 def test_the_routes_only_talk_to_the_service():

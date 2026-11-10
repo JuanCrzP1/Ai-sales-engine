@@ -28,8 +28,21 @@ def _enable_foreign_keys(connection, _record) -> None:
     cursor.close()
 
 
+def database_url() -> str:
+    """La URL del almacén: la de `BUSINESS_CONFIG_DATABASE_URL` o, si no hay, el archivo SQLite local. Panel y motor usan esta."""
+    return os.getenv(DATABASE_URL_ENV) or f"sqlite:///{DEFAULT_LOCAL_DATABASE.as_posix()}"
+
+
+def sqlite_file(url: str) -> Path | None:
+    """El archivo de una URL de SQLite; None si la base no es un archivo SQLite."""
+    parsed = make_url(url)
+    if parsed.get_backend_name() != "sqlite" or not parsed.database or parsed.database == ":memory:":
+        return None
+    return Path(parsed.database)
+
+
 def create_business_config_engine(url: str | None = None) -> Engine:
-    url = url or os.getenv(DATABASE_URL_ENV) or f"sqlite:///{DEFAULT_LOCAL_DATABASE.as_posix()}"
+    url = url or database_url()
     parsed = make_url(url)
     # Sin parámetros en los errores ni en los registros: incluyen documentos y datos de pago cifrados.
     if parsed.get_backend_name() != "sqlite":

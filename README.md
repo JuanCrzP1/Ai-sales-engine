@@ -31,7 +31,7 @@ uvicorn app.main:app --reload
 
 `POST /api/v1/simulate` está apagado por defecto y responde 404. No se puede usar hasta que exista la autenticación definitiva, pendiente de la fase de nube: ver [docs/operations.md](docs/operations.md).
 
-Panel de administración local, para gestionar los negocios sin editar YAML: `run_local.bat` o `./run_local.sh` lo arrancan junto con el resto del sistema y abren <http://127.0.0.1:5173>. Solo atiende en este equipo, y su clave de cifrado se crea sola fuera del repositorio: ver [apps/admin-web/README.md](apps/admin-web/README.md). Lo que publica todavía no llega a los clientes, porque el motor sigue usando sus YAML.
+Panel de administración local, para gestionar los negocios sin editar YAML: `run_local.bat` o `./run_local.sh` lo arrancan junto con el resto del sistema y abren <http://127.0.0.1:5180>. Solo atiende en este equipo, y su clave de cifrado se crea sola fuera del repositorio: ver [apps/admin-web/README.md](apps/admin-web/README.md). Lo que publica todavía no llega a los clientes, porque el motor sigue usando sus YAML.
 
 Para trabajar con los mismos datos desde Windows y macOS: [docs/operations.md](docs/operations.md), «Trabajar Desde Windows Y macOS». `secrets.local.env` lleva los secretos de un equipo a otro; nunca se sube a GitHub.
 

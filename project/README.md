@@ -108,10 +108,16 @@ La suite protege:
 
 ## Scripts Útiles
 
-- `scripts/check_backend.py`: chequeo rápido del backend
-- `scripts/chat_console.py`: simulación conversacional local
-- `scripts/migrate_faqs_to_db.py`: migración de datos FAQ heredados a base de datos
-- `scripts/run_tests_multi.py`: ejecución auxiliar de pruebas
+Desde la raíz del repositorio (`scripts/`):
+
+| Script | Para qué |
+|---|---|
+| `run_admin_api.py` | API local del panel, solo en `127.0.0.1:8010` |
+| `init_local_business_config.py` | Crea el almacén de BusinessConfig; con `--import-tenants`, migración inicial desde los YAML |
+| `local_secrets.py` | Instala y comprueba los secretos locales (`secrets.local.env`) sin mostrarlos |
+| `export_business_config_schema.py`, `generate_business_config_types.py`, `migrate_tenants_to_contract.py`, `generate_traceability_matrix.py` | Regeneran lo derivado del contrato (ver `docs/business-config.md`) |
+| `sync_tenants_to_db.py`, `bootstrap_saas_data.py` | Registran los negocios en la base del motor |
+| `reset_conversation_state.py` | Borra la memoria conversacional en PostgreSQL |
 
 ## Documentación Complementaria
 

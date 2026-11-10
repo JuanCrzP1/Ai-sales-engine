@@ -6,13 +6,11 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from app.application.runtime.runtime_yaml_builder import RuntimeYamlBuilder
 from app.domain.business_config.compiler import compile_business_config
-from app.infrastructure.config.business_config_repository import BusinessConfigRepository
+from app.infrastructure.business_config.runtime_access import SECRET_STORE_SOURCE, open_published_reader
 from app.infrastructure.config.business_config_store import BusinessConfigError, BusinessConfigStore
 from app.infrastructure.config.config_service import ConfigService
 from app.infrastructure.config.legacy_yaml_importer import LEGACY_SECRET_SOURCE
-from app.infrastructure.config.payment_secret_store import SECRET_STORE_SOURCE, PaymentSecretStore
 from app.infrastructure.config.payment_secrets import LegacyYamlSecretResolver, SecretResolutionError, resolve_by_source
-from app.infrastructure.db.connection import get_engine
 from app.utils.logger import logger
 
 # Negocios que leen su configuración del contrato global.
@@ -20,7 +18,8 @@ from app.utils.logger import logger
 CONTRACT_TENANTS_ENV = "BUSINESS_CONFIG_CONTRACT_TENANTS"
 
 # Dónde está el contrato de esos negocios: "file" (por defecto, `business-config.json` en la carpeta
-# del tenant) o "database" (versión publicada en `business_configs`, con datos de pago cifrados).
+# del tenant) o "database" (la versión publicada desde el panel, en el almacén de BusinessConfig:
+# `BUSINESS_CONFIG_DATABASE_URL` o el SQLite local, con sus datos de pago cifrados).
 CONTRACT_STORE_ENV = "BUSINESS_CONFIG_STORE"
 
 
@@ -89,12 +88,11 @@ def compile_contract_sections(service: ConfigService, tenant_slug: str) -> dict[
     """Contrato del negocio → validación → compilación a las secciones que consume el motor."""
     legacy_secrets = LegacyYamlSecretResolver(lambda: _load_legacy_sections(service, tenant_slug))
     if contract_store() == "database":
-        engine = get_engine()
-        config = BusinessConfigRepository(engine).published(tenant_slug)
+        reader = open_published_reader()
         resolver = resolve_by_source(
-            {LEGACY_SECRET_SOURCE: legacy_secrets, SECRET_STORE_SOURCE: PaymentSecretStore(engine).resolver(tenant_slug)}
+            {LEGACY_SECRET_SOURCE: legacy_secrets, SECRET_STORE_SOURCE: reader.payment_resolver(tenant_slug)}
         )
-        return compile_business_config(config, resolver)
+        return compile_business_config(reader.published(tenant_slug), resolver)
     config = BusinessConfigStore(service.tenants_root).load(tenant_slug)
     return compile_business_config(config, legacy_secrets)
 

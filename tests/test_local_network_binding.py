@@ -24,10 +24,26 @@ WEB_DIR = ROOT_DIR / "apps" / "admin-web"
 VITE = WEB_DIR / "node_modules" / "vite" / "bin" / "vite.js"
 
 
+def _with_scope(sockaddr: tuple) -> str:
+    """La dirección con su interfaz (`fe80::1%12`). Una IPv6 de enlace local no se alcanza sin ella, y macOS no la incluye en el
+    texto sino en el cuarto campo (`scope_id`): sin conservarla, el control de IPv6 fallaría siempre en un Mac."""
+    address = sockaddr[0].partition("%")[0]
+    scope_id = sockaddr[3] if len(sockaddr) == 4 else 0
+    return f"{address}%{scope_id}" if scope_id else address
+
+
+def _sockaddr(address: str, port: int, family: socket.AddressFamily) -> tuple:
+    """Lo que recibe `connect`. La interfaz va como `scope_id` numérico: macOS ignora el `%` dentro del texto."""
+    if family != socket.AF_INET6:
+        return (address, port)
+    host, _, scope = address.partition("%")
+    return (host, port, 0, int(scope)) if scope.isdigit() else (address, port, 0, 0)
+
+
 def _own_addresses(family: socket.AddressFamily) -> list[str]:
     """Las direcciones de este equipo, sin las locales."""
     try:
-        found = {info[4][0] for info in socket.getaddrinfo(socket.gethostname(), None, family)}
+        found = {_with_scope(info[4]) for info in socket.getaddrinfo(socket.gethostname(), None, family)}
     except OSError:
         found = set()
     if family == socket.AF_INET:
@@ -56,7 +72,7 @@ def _connects(address: str, port: int, family: socket.AddressFamily) -> bool:
         # En Windows, un puerto cerrado tarda unos 2 s en rechazar la conexión.
         probe.settimeout(3)
         try:
-            probe.connect((address, port))
+            probe.connect(_sockaddr(address, port, family))
             return True
         except OSError:
             return False

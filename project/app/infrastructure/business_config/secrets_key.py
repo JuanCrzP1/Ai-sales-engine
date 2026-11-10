@@ -44,6 +44,17 @@ def read_shared_key(path: Path) -> str:
     return key
 
 
+def find_secrets_key(key_file: Path = KEY_FILE) -> str | None:
+    """La clave disponible en este equipo, en el mismo orden que `ensure_secrets_key`, sin crearla ni cambiar el entorno.
+
+    La usa quien solo lee (el motor): si no hay clave, los datos de pago no se pueden leer y el llamador decide qué hacer.
+    """
+    key = os.getenv(SECRETS_KEY_ENV) or read_shared_key(secrets_file())
+    if not key and key_file.is_file():
+        key = key_file.read_text(encoding="ascii").strip()
+    return key or None
+
+
 def ensure_secrets_key(engine: Engine, key_file: Path = KEY_FILE) -> bool:
     """Deja la clave disponible para este proceso y dice si tuvo que crearla.
 

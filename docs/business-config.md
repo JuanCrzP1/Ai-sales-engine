@@ -25,7 +25,7 @@ validaciones, conserva sus opciones y valores y no añade comportamientos nuevos
 | Persistencia local (SQLite) | **Terminada** y conectada al panel por la API local |
 | API local y panel de administración | **Terminados** (Fase 2): funcionan solo en este equipo; ver [Panel De Administración](#panel-de-administración) |
 | Funcionamiento del almacén sin YAML | **Terminado y comprobado** en un árbol sin YAML ni motor (ver [Independencia De Los YAML](#independencia-de-los-yaml)) |
-| Motor comercial | **Sin cambios**: sigue leyendo sus YAML hasta la Fase 4; no funciona desde este almacén |
+| Motor comercial | Lee sus YAML por defecto. Puede leer lo publicado en el panel, negocio por negocio, con `BUSINESS_CONFIG_STORE=database` (ver [Conexión Con El Motor](#conexión-con-el-motor)); ningún negocio está activado |
 | Activación del contrato en algún negocio | **No realizada**: todos siguen con sus YAML |
 | Retiro de los YAML | **No realizado** ni autorizado |
 
@@ -39,7 +39,7 @@ validaciones, conserva sus opciones y valores y no añade comportamientos nuevos
 | Repositorio, tablas, datos de pago, clave y conexión | `project/app/infrastructure/business_config/{repository,tables,tenancy,payment_secret_store,secrets_key,database}.py` | a mano |
 | API local del panel | `project/app/admin_api/{main,routes,schemas,errors}.py` | a mano |
 | Migración inicial desde los YAML | `project/app/infrastructure/config/legacy_store_migration.py` | a mano |
-| Rutas anteriores que usa el cargador del motor | `project/app/infrastructure/config/{business_config_repository,payment_secret_store}.py` | reexportan, hasta la Fase 4 |
+| Lectura del motor (solo lo publicado, sin escribir ni crear nada) | `project/app/infrastructure/business_config/runtime_access.py` | a mano |
 | Ajustes técnicos (fuera del contrato comercial) | `project/app/domain/business_config/engine_settings.py` | a mano |
 | Políticas del motor y límites del contrato | `project/app/domain/business_config/engine_policy.py` | a mano |
 | Diagnóstico (incoherencias que no bloquean) | `project/app/domain/business_config/diagnostics.py` | a mano |
@@ -71,38 +71,7 @@ su propia comprobación en `apps/admin-web/src/test/architecture.test.ts`.
 |---|---|---|---|
 | Dominio y contrato | `project/app/domain/business_config/` | Modelos, validación, reglas de los datos de pago, compilador, diagnóstico y errores | Solo Pydantic |
 | Aplicación | `project/app/business_config_application/` | Casos de uso (`service.py`) y lo que necesitan de la persistencia (`ports.py`) | Dominio |
-| Persistencia | `project/app/infrastructure/business_config/` | SQLAlchemy, transacciones, versionado, cifrado y aislamiento por negocio | Aplicación y dominio |
-| API | `project/app/admin_api/` | Rutas, peticiones y respuestas, errores HTTP y acceso solo local | Aplicación y dominio |
-| Panel | `apps/admin-web/` | Formularios, estado de interfaz y consumo de la API, con los tipos generados del contrato | La API |
-
-`scripts/run_admin_api.py` arma las piezas: crea la conexión, construye el servicio y se lo entrega a la API, que no conoce la
-base de datos. La capa de aplicación no vive en `app.application` porque importar ese paquete carga el motor comercial.
-
-Hay una sola excepción a las capas, explícita en esa prueba y temporal: la ruta `POST /api/businesses/import` usa la migración
-desde los YAML, que se retira con ellos en la Fase 4.
-
-**Multi-tenant.** Un único contrato para todos los negocios: las diferencias se expresan con datos y capacidades, nunca con
-código por tipo de negocio. Toda operación recibe el identificador del negocio y la persistencia filtra por su id
-(`tenancy.py`): las versiones, los datos de pago y los ajustes técnicos no se pueden alcanzar desde otro negocio, aunque se
-conozca su número de versión o su referencia. La base lo refuerza con claves foráneas en cascada, una versión publicada como
-máximo por negocio y números de versión únicos por negocio.
-
-**Transacciones.** Una versión y sus datos de pago se guardan juntos, y el conflicto con otro guardado se decide dentro de esa
-transacción. Publicar y revertir comprueban y cambian el estado en una sola transacción: si algo falla, lo publicado no cambia.
-
-**SQLite es un detalle de la persistencia.** Ni el dominio, ni la aplicación, ni la API dependen de él. Pasar a PostgreSQL es
-cambiar la URL de conexión y aplicar la migración SQL.
-
-## Arquitectura
-
-Las dependencias van hacia adentro y no hay ciclos. Lo comprueba `tests/test_business_config_architecture.py`; el panel tiene
-su propia comprobación en `apps/admin-web/src/test/architecture.test.ts`.
-
-| Capa | Paquete | Responsabilidad | Depende de |
-|---|---|---|---|
-| Dominio y contrato | `project/app/domain/business_config/` | Modelos, validación, reglas de los datos de pago, compilador, diagnóstico y errores | Solo Pydantic |
-| Aplicación | `project/app/business_config_application/` | Casos de uso (`service.py`) y lo que necesitan de la persistencia (`ports.py`) | Dominio |
-| Persistencia | `project/app/infrastructure/business_config/` | SQLAlchemy, transacciones, versionado, cifrado y aislamiento por negocio | Aplicación y dominio |
+| Persistencia | `project/app/infrastructure/business_config/` | SQLAlchemy, transacciones, versionado, cifrado y aislamiento por negocio; `runtime_access.py` es la única puerta del motor | Aplicación y dominio |
 | API | `project/app/admin_api/` | Rutas, peticiones y respuestas, errores HTTP y acceso solo local | Aplicación y dominio |
 | Panel | `apps/admin-web/` | Formularios, estado de interfaz y consumo de la API, con los tipos generados del contrato | La API |
 
@@ -411,9 +380,30 @@ Estos archivos son globales: valen igual para todos y no se representan en Busin
 
 ## Conexión Con El Motor
 
-`load_tenant_runtime_yaml` elige la fuente por negocio con `BUSINESS_CONFIG_CONTRACT_TENANTS` (vacío:
-todos con YAML, que es el estado actual; lista de slugs; `*`: todos). Si el documento no existe o no es
-válido, se registra `business_config_contract_invalid` y el negocio sigue con sus YAML.
+`load_tenant_runtime_yaml` elige la fuente de cada negocio con dos variables:
+
+| Variable | Valores |
+|---|---|
+| `BUSINESS_CONFIG_CONTRACT_TENANTS` | Qué negocios usan el contrato. Vacío: todos con YAML (estado actual); lista de slugs separada por comas; `*`: todos |
+| `BUSINESS_CONFIG_STORE` | De dónde sale el contrato. `file` (por defecto): `business-config.json` de la carpeta del negocio. `database`: lo publicado desde el panel |
+
+Con `database`, el motor lee **la misma base que escribe el panel** (`BUSINESS_CONFIG_DATABASE_URL` o, si no está, el SQLite local)
+con la misma clave (`BUSINESS_CONFIG_SECRETS_KEY`, `secrets.local.env` o el archivo de la carpeta del usuario, en ese orden). Lo hace
+solo a través de `runtime_access.py`, que lee lo publicado y nunca crea la base, las tablas ni la clave, ni escribe nada. Una prueba
+de arquitectura impide que otra parte del motor entre al almacén por otro camino.
+
+Si el documento no existe, no es válido, falta la clave o la base no responde, se registra `business_config_contract_invalid` y el
+negocio sigue con sus YAML: un error de configuración nunca deja a un negocio sin servicio.
+
+Para que un negocio responda con lo publicado en el panel:
+
+```bash
+export BUSINESS_CONFIG_STORE=database
+export BUSINESS_CONFIG_CONTRACT_TENANTS=restaurant   # o "*" para todos
+```
+
+`tests/test_business_config_local_persistence.py` lo comprueba sin sustituir ninguna pieza: solo con esas variables, publicar en el
+panel cambia lo que recibe el motor, volver atrás lo devuelve y, sin almacén, el motor sigue con sus YAML sin crear ningún archivo.
 
 Comprobado en los nueve negocios con el motor actual: con el contrato como fuente, el runtime es
 idéntico al de los YAML y una conversación de cuatro turnos produce exactamente los mismos prompts y
@@ -476,7 +466,7 @@ Lo único que sigue relacionado con los YAML:
 |---|---|---|
 | `legacy_store_migration.py` y `init_local_business_config.py --import-tenants` | Migración inicial; solo con esa opción se carga, y lee únicamente los cinco YAML de cada negocio, sin motor ni `.env` | Fase 4 |
 | `legacy_yaml_importer.py`, `payment_secrets.py`, `migrate_tenants_to_contract.py` y los `business-config.json` con `legacy_yaml:` | Fuente opcional del motor por contrato y documentos de referencia | Fase 4 |
-| `tenant_runtime_loader.py` y `config_service.py` | El motor sigue leyendo sus YAML | Fase 4 |
+| `tenant_runtime_loader.py` y `config_service.py` | El motor sigue leyendo sus YAML salvo en los negocios activados (ver [Conexión Con El Motor](#conexión-con-el-motor)) | Fase 4 |
 | `legacy_field_catalog.py`, `generate_traceability_matrix.py` y las pruebas | Trazabilidad y comparación con la referencia original | Fase 4 |
 | `legacy` en los ajustes técnicos | Copia en la base de tres estructuras antiguas; no lee los YAML | Fase 4 |
 
@@ -488,8 +478,10 @@ pantalla propia se generan del esquema y lo demás se conserva al guardar. Cómo
 ficticio con el que se prueba (`src/test/fixtures/sampleContractDocument.json`) lo valida
 `test_panel_document_is_valid_against_the_contract`.
 
-**El motor no usa todavía lo que se guarda aquí** y sigue leyendo sus YAML hasta la Fase 4. Publicar deja una versión oficial en el
-almacén, comprobada con el compilador, pero no llega a los clientes. El panel lo dice en la pantalla de publicación. Algunos avisos
+**Mientras un negocio no esté activado, el motor no usa lo que se guarda aquí** y sigue con sus YAML. Publicar deja una versión
+oficial en el almacén, comprobada con el compilador; llega a los clientes solo en los negocios activados con
+`BUSINESS_CONFIG_STORE=database` (ver [Conexión Con El Motor](#conexión-con-el-motor)). Aun activado, el motor solo usa los campos
+marcados `conectado`. El panel lo dice en la pantalla de publicación. Algunos avisos
 suponen la integración del perfil comercial que el motor actual no tiene: ver [Integración Pendiente](#integración-pendiente-con-el-motor).
 
 | Pantalla | Contrato |
@@ -558,8 +550,7 @@ cual (cambiarlos es decisión del negocio):
 | `tests/test_business_config_yaml_independence.py` | El almacén funciona en un árbol sin YAML ni motor; procedimiento documentado; base fuera del control de versiones | pasan |
 | `tests/test_business_config_engine_integration.py` | Contrato con el motor actual: equivalencia exacta con los YAML, fuente opcional y respaldo, evidencia de cada campo conectado | pasan |
 | `tests/test_admin_api.py` | API local: negocios, secciones comerciales, validaciones, conflictos, reinicio, aislamiento, datos de pago, acceso solo local, versiones e importación de los nueve negocios sin pérdida | pasan |
-| `tests/test_business_config_architecture.py` | Capas, ausencia de ciclos y de dependencias del motor; rutas sin lógica; nada técnico en el contrato | pasan |
-| `tests/test_business_config_architecture.py` | Capas, ausencia de ciclos y de dependencias del motor; rutas sin lógica; nada técnico en el contrato | pasan |
+| `tests/test_business_config_architecture.py` | Capas, ausencia de ciclos y de dependencias del motor; el motor entra al almacén solo por `runtime_access.py`; rutas sin lógica; nada técnico en el contrato | pasan |
 | `apps/admin-web`: `npm test` | Interfaz con un backend en memoria, reglas, operaciones y arquitectura (sin `localStorage`, sin recursos externos) | pasan |
 | `apps/admin-web`: `npm run test:integration` | Interfaz real, API real, contrato y SQLite temporal, con reinicios reales de la API: el recorrido completo y los nueve negocios guardados desde el panel | pasan |
 | `tests/test_business_config_engine_pending.py` (`-m engine_pending`) | Comportamiento que exige cambios futuros en el motor | **xfail estricto**: se ejecutan siempre y fallan (63 "xfailed"); si una pasa, la suite falla hasta convertirla en prueba normal. Solo cuenta como fallo esperado la excepción con la que hoy falla cada prueba (`AssertionError`; `KeyError` y `AttributeError` en dos pruebas documentadas): cualquier otro error, incluido un fixture roto, es un fallo real. Detalle: `pytest -m engine_pending --runxfail` |

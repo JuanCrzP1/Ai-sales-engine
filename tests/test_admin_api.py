@@ -23,7 +23,7 @@ from fastapi.routing import APIRoute
 from fastapi.testclient import TestClient
 from sqlalchemy import select
 
-from app.admin_api.main import PANEL_ORIGINS, create_app
+from app.admin_api.main import ADMIN_WEB_PORT, PANEL_ORIGINS, create_app
 from app.business_config_application.service import BusinessConfigService
 from app.domain.business_config.contract import BusinessConfig
 from app.domain.business_config.errors import SecretResolutionError
@@ -445,12 +445,30 @@ def test_the_only_launchers_are_the_existing_ones_and_stop_covers_the_api():
     assert "*run*dev*--port*" in stop
     assert "*vite*--port*" in stop
     scripts = json.loads((ROOT_DIR / "apps" / "admin-web" / "package.json").read_text(encoding="utf-8"))["scripts"]
-    assert scripts["panel"] == "vite --port 5173 --strictPort"
+    assert scripts["panel"] == f"vite --port {ADMIN_WEB_PORT} --strictPort"
+
+
+def test_the_panel_port_is_the_same_wherever_it_is_repeated():
+    """La API, Vite y los lanzadores no pueden compartir el puerto de la interfaz: cada uno lo define una vez y aquí se comprueba que
+    coincidan. Si uno cambiara solo, el panel no abriría, la parada no lo encontraría o la API rechazaría sus peticiones."""
+    definitions = {
+        "apps/admin-web/vite.config.ts": f"const ADMIN_WEB_PORT = {ADMIN_WEB_PORT};",
+        "run_local.sh": f"ADMIN_WEB_PORT={ADMIN_WEB_PORT}",
+        "run_local_stop.sh": f"ADMIN_WEB_PORT={ADMIN_WEB_PORT}",
+        "run_local.bat": f"set ADMIN_WEB_PORT={ADMIN_WEB_PORT}",
+    }
+    sources = {path: (ROOT_DIR / path).read_text(encoding="utf-8") for path in definitions}
+    for path, definition in definitions.items():
+        assert definition in sources[path].splitlines(), path
+    assert "port: ADMIN_WEB_PORT," in sources["apps/admin-web/vite.config.ts"]
+    assert "--port $ADMIN_WEB_PORT" in sources["run_local.sh"]
+    assert "--port %ADMIN_WEB_PORT%" in sources["run_local.bat"]
+    assert {f"http://127.0.0.1:{ADMIN_WEB_PORT}", f"http://localhost:{ADMIN_WEB_PORT}"} <= PANEL_ORIGINS
 
 
 @pytest.mark.parametrize("guide", ["apps/admin-web/README.md", "docs/operations.md"])
 def test_the_guides_open_the_panel_with_an_order_that_works_in_every_shell(guide):
-    """En PowerShell, `npm.ps1` pierde el `--`: `run dev -- --port 5173` ejecuta `vite 5173` y arranca sin configuración ni panel."""
+    """En PowerShell, `npm.ps1` pierde el `--`: `run dev -- --port 5180` ejecuta `vite 5180` y arranca sin configuración ni panel."""
     text = (ROOT_DIR / guide).read_text(encoding="utf-8")
     assert "npm --prefix apps/admin-web run panel" in text
     assert "npm --prefix apps/admin-web run dev --" not in text
@@ -1041,9 +1059,10 @@ def test_the_panel_is_accepted(api, origin):
 
 
 def test_no_other_website_is_allowed_to_read_the_responses(api):
-    response = api.client.get("/api/businesses", headers={"Origin": "http://localhost:5173"})
+    panel = f"http://localhost:{ADMIN_WEB_PORT}"
+    response = api.client.get("/api/businesses", headers={"Origin": panel})
     assert "access-control-allow-origin" not in response.headers
-    assert api.client.options("/api/businesses", headers={"Origin": "http://localhost:5173", "Access-Control-Request-Method": "POST"}).status_code == 405
+    assert api.client.options("/api/businesses", headers={"Origin": panel, "Access-Control-Request-Method": "POST"}).status_code == 405
     assert response.headers["cache-control"] == "no-store"
 
 

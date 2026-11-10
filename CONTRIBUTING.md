@@ -30,30 +30,60 @@ cd project
 
 ## Como Probar Tus Cambios
 
-```powershell
-pytest tests/unit -q
-pytest tests/integration -q
-pytest tests/e2e -q
-pytest -q
+Desde la raíz del repositorio. Nada de esto consume API ni toca la base del `.env`:
+
+```bash
+pytest                                   # suite completa del motor y de BusinessConfig (la misma del CI)
+pytest -m engine_pending --runxfail      # detalle de la integración pendiente con el motor (Fase 4)
+npm --prefix apps/admin-web run typecheck
+npm --prefix apps/admin-web test         # panel con un backend en memoria
+npm --prefix apps/admin-web run test:integration   # panel contra la API real y un SQLite temporal
+```
+
+`pytest -m integration` habla con el modelo real y consume API: solo con `OPENROUTER_API_KEY` y cuando haga falta.
+
+Si cambias el contrato de BusinessConfig, regenera lo derivado en este orden (cada script acepta `--check`):
+
+```bash
+python scripts/export_business_config_schema.py
+python scripts/generate_business_config_types.py
+python scripts/migrate_tenants_to_contract.py
+python scripts/generate_traceability_matrix.py
 ```
 
 ## Reglas De Contribucion
 
-1. Haz cambios pequeños y enfocados.
-2. Si tocas comportamiento conversacional, actualiza o agrega pruebas por capa.
-3. Si tocas configuración global, modifica primero la base en `config/`.
-4. Usa overrides en `config/tenants/` solo cuando el cambio sea exclusivo de un cliente.
-5. No subas secretos reales ni archivos `.env`.
-6. Evita asserts frágiles sobre texto exacto si el comportamiento puede validarse semánticamente.
-7. Reutiliza fixtures y helpers compartidos desde `tests/conftest.py` y `tests/behavior_assertions.py`.
+1. Haz cambios pequeños y enfocados: un commit por cambio lógico, nunca "todo lo de la fase" en uno.
+2. Si tocas comportamiento conversacional, actualiza o agrega pruebas.
+3. Si tocas configuración global, modifica primero la base en `project/config/`.
+4. Usa overrides en `project/config/tenants/` solo cuando el cambio sea exclusivo de un cliente.
+5. No subas secretos reales, archivos `.env` ni `secrets.local.env`.
+6. Evita asserts frágiles sobre texto exacto si el comportamiento puede validarse semánticamente (`tests/semantic_guard.py`).
+7. Reutiliza fixtures y helpers compartidos: `tests/conftest.py`, `tests/pipeline_harness.py`.
+8. Respeta las capas de BusinessConfig (dominio → aplicación → persistencia / API → panel). El motor solo entra al almacén por
+   `project/app/infrastructure/business_config/runtime_access.py`. Lo vigila `tests/test_business_config_architecture.py`.
 
 ## Convenciones De Testing
 
-- `tests/unit/`: lógica pura y determinista
-- `tests/integration/`: conexión entre capas, endpoints y runtime policies
-- `tests/e2e/`: pocos flujos completos y representativos
+- Las pruebas viven en `tests/`, un archivo por tema (`test_<tema>.py`).
+- `pytest.ini` usa una **lista cerrada** (`python_files`): una prueba nueva que no se añada allí no corre ni en local ni en el CI.
+- Marcadores: `integration` (modelo real), `engine_pending` (xfail estricto de la Fase 4).
+- El panel tiene sus pruebas junto al código (`apps/admin-web/src/**/*.test.ts(x)`) y su comprobación de arquitectura en
+  `apps/admin-web/src/test/architecture.test.ts`.
 
 Cada test debe validar una sola cosa. Si una prueba mezcla intencion, contenido, formato y negocio al mismo tiempo, esta demasiado acoplada y debe dividirse.
+
+## Mensajes De Commit
+
+Formato `tipo(ámbito): qué cambia`, en presente y en una línea; en el cuerpo, el porqué. Tipos: `feat`, `fix`, `refactor`,
+`test`, `docs`, `ci`, `chore`. Ejemplo:
+
+```text
+fix(business-config): el motor lee el almacén que escribe el panel
+
+Con BUSINESS_CONFIG_STORE=database el cargador abría la base del motor (DATABASE_URL),
+no la del panel: lo publicado nunca llegaba a los clientes.
+```
 
 ## Pull Requests
 

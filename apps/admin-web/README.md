@@ -16,9 +16,10 @@ El panel edita **BusinessConfig v1** a través de una **API local** (`project/ap
 
 Los únicos lanzadores del sistema son `run_local.bat` (Windows) y `run_local.sh` (Linux y macOS). Encienden el motor con el
 `.env`, ngrok, Telegram y la API de este panel; cuando esa API responde, arrancan la interfaz y se abre
-<http://127.0.0.1:5173>. Si la API no responde, la interfaz no se abre y el motor sigue arrancando.
+<http://127.0.0.1:5180>. Si la API no responde, la interfaz no se abre y el motor sigue arrancando.
+La interfaz usa el 5180, y no el 5173 que Vite toma por defecto, para convivir con otros proyectos de Vite en el mismo equipo.
 
-Requisitos: el entorno de Python del proyecto en `.venv`, Node 20.19 o 22.12 en adelante, y lo que ya necesita el motor (`ngrok` y `.env`).
+Requisitos: el entorno de Python del proyecto en `.venv`, Node 24 LTS (`.nvmrc`; también sirven 22.22+ y 26+, ver `engines` en `package.json`), y lo que ya necesita el motor (`ngrok` y `.env`).
 `run_local.sh` además se detiene al empezar si PostgreSQL no está disponible.
 
 Para detener todo: `bash run_local_stop.sh`, desde Git Bash en Windows.
@@ -28,12 +29,12 @@ basta con la API y la interfaz, cada una en su consola, desde la raíz del repos
 
 ```bash
 python scripts/run_admin_api.py          # API en 127.0.0.1:8010. También crea las tablas y la clave si faltan
-npm --prefix apps/admin-web run panel    # interfaz en http://127.0.0.1:5173
+npm --prefix apps/admin-web run panel    # interfaz en http://127.0.0.1:5180
 ```
 
 Son las mismas órdenes en Windows y macOS. No uses `run dev -- --port ...` desde PowerShell: su `npm.ps1` pierde el `--`, Vite toma el puerto por carpeta raíz y arranca sin configuración, sin proxy y sin el panel. Para usar los mismos datos en los dos equipos: `docs/operations.md`, «Trabajar Desde Windows Y macOS».
 
-Se detienen igual, con `bash run_local_stop.sh`, que reconoce la interfaz por el `--port 5173` del script `panel`. La interfaz llega a la API por el proxy
+Se detienen igual, con `bash run_local_stop.sh`, que reconoce la interfaz por el `--port 5180` del script `panel`. La interfaz llega a la API por el proxy
 de Vite (`/api`), en el mismo origen: no hay CORS y el navegador no habla con nadie más.
 
 **Clave de cifrado.** Cifra los datos de pago. La primera vez se crea sola en `.ai-sales-engine/business_config_secrets.key`,
