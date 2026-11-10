@@ -17,6 +17,7 @@ const CODES: Record<string, PersistenceErrorCode> = {
   duplicate: "duplicate",
   not_found: "not_found",
   payment_key: "payment_key",
+  ai_key_missing: "ai_key_missing",
 };
 
 async function toError(response: Response): Promise<PersistenceError> {

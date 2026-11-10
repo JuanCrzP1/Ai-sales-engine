@@ -3,12 +3,14 @@ from __future__ import annotations
 
 from dataclasses import asdict
 from datetime import datetime
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.admin_api.errors import PAYMENT_PROBLEM
+from app.business_config_application.assistant_lab import PlaygroundReply
 from app.business_config_application.service import ConfigReview, EditableConfig
+from app.domain.business_config.ai_settings import AISettings, KeyCheck
 from app.domain.business_config.records import BusinessSummary, ConfigVersion
 
 
@@ -36,6 +38,20 @@ class ValidateConfig(_Request):
 
 class PublishVersion(_Request):
     version: int
+
+
+class SaveAISettings(_Request):
+    model: str | None = None
+    # La clave nueva, solo cuando cambia. Nunca se devuelve.
+    api_key: str | None = None
+    clear_key: bool = False
+
+
+class PlaygroundMessage(_Request):
+    message: str
+    # Lo que se está editando (para probar antes de publicar) o lo publicado.
+    source: Literal["draft", "published"] = "draft"
+    session_id: str | None = None
 
 
 def _iso(value: datetime | None) -> str | None:
@@ -77,4 +93,24 @@ def review_payload(review: ConfigReview) -> dict[str, Any]:
         "diagnostics": [asdict(item) for item in review.diagnostics],
         "compiles": review.compiles,
         "compile_error": compile_error,
+    }
+
+
+def ai_settings_payload(settings: AISettings) -> dict[str, Any]:
+    """Nunca incluye la clave: solo si está configurada y sus últimos caracteres."""
+    return {"provider": settings.provider, "model": settings.model, "key": {"configured": settings.key_configured, "hint": settings.key_hint}}
+
+
+def key_check_payload(check: KeyCheck) -> dict[str, Any]:
+    return {"valid": check.valid, "message": check.message}
+
+
+def playground_payload(reply: PlaygroundReply) -> dict[str, Any]:
+    return {
+        "session_id": reply.session_id,
+        "source": reply.source,
+        "version": reply.version,
+        "reply": reply.turn.reply,
+        "intent": reply.turn.intent,
+        "ai_answered": reply.turn.ai_answered,
     }

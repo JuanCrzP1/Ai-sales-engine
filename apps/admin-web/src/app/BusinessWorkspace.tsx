@@ -5,6 +5,7 @@ import type { ContractSchema } from "../domain/config/contractSchema";
 import { LoadingScreen, StatusScreen } from "../layout/StatusScreen";
 import { BUSINESSES_PATH } from "../navigation/navItems";
 import { persistenceErrorMessage } from "../repositories/persistenceError";
+import { AssistantLabContext } from "../state/assistantLabContext";
 import { ConfigProvider } from "../state/ConfigProvider";
 import { ContractSchemaContext } from "../state/directoryContext";
 import { useApplicationServices } from "./servicesContext";
@@ -14,8 +15,9 @@ type SchemaState = { status: "loading" } | { status: "error"; message: string } 
 /** Espacio de trabajo del negocio de la ruta: cada negocio tiene su propia configuración, y la ruta decide cuál se edita. */
 export function BusinessWorkspace() {
   const { slug = "" } = useParams();
-  const { createConfigRepository, directory } = useApplicationServices();
+  const { createConfigRepository, createAssistantLab, directory } = useApplicationServices();
   const repository = useMemo(() => createConfigRepository(slug), [createConfigRepository, slug]);
+  const assistantLab = useMemo(() => createAssistantLab(slug), [createAssistantLab, slug]);
   const [schema, setSchema] = useState<SchemaState>({ status: "loading" });
   const [attempt, setAttempt] = useState(0);
 
@@ -58,7 +60,9 @@ export function BusinessWorkspace() {
           </StatusScreen>
         )}
       >
-        <Outlet />
+        <AssistantLabContext.Provider value={assistantLab}>
+          <Outlet />
+        </AssistantLabContext.Provider>
       </ConfigProvider>
     </ContractSchemaContext.Provider>
   );

@@ -58,9 +58,10 @@ class RuntimeLLMImplementation:
         self.settings = settings
         self.provider = settings.llm_provider or "openrouter"
         self.bot_config = bot_config or {}
-        provider_token = settings.openrouter_api_key
-        if not provider_token and isinstance(self.bot_config, dict):
-            provider_token = self.bot_config.get("openrouter_api_key")
+        # La clave propia del negocio manda; la general del `.env` queda solo como respaldo mientras cada negocio no tenga la suya.
+        provider_token = self.bot_config.get("openrouter_api_key") if isinstance(self.bot_config, dict) else None
+        if not str(provider_token or "").strip():
+            provider_token = settings.openrouter_api_key
         self.provider_api_key = self.core_api_key(provider_token)
         self.message_repository = message_repository
         self.request_timeout = settings.llm_timeout_seconds

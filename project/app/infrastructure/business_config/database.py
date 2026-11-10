@@ -12,7 +12,10 @@ from pathlib import Path
 from sqlalchemy import create_engine, event
 from sqlalchemy.engine import Engine, make_url
 
+from app.business_config_application.assistant_lab import AssistantLabService
+from app.business_config_application.ports import AIKeyVerifier, AssistantRunner
 from app.business_config_application.service import BusinessConfigService
+from app.infrastructure.business_config.ai_settings_store import AISettingsStore
 from app.infrastructure.business_config.payment_secret_store import PaymentSecretStore
 from app.infrastructure.business_config.repository import BusinessConfigRepository
 from app.infrastructure.business_config.tables import metadata
@@ -74,3 +77,18 @@ def build_business_config_service(engine: Engine, *, secrets_key: str | None = N
     """El servicio con la persistencia real. El repositorio comparte el almacén para guardar versión y datos de pago juntos."""
     secrets = PaymentSecretStore(engine, secrets_key)
     return BusinessConfigService(BusinessConfigRepository(engine, secrets), secrets)
+
+
+def build_assistant_lab_service(
+    engine: Engine,
+    configs: BusinessConfigService,
+    *,
+    secrets_key: str | None = None,
+    verifier: AIKeyVerifier | None = None,
+    runner: AssistantRunner | None = None,
+) -> AssistantLabService:
+    """La inteligencia artificial y el área de pruebas, con la clave de IA de cada negocio cifrada en la misma base.
+
+    Sin `runner` ni `verifier` (por ejemplo, en pruebas), guardar la configuración funciona y conversar responde que no está
+    disponible: el motor se conecta en el arranque de la API (`scripts/run_admin_api.py`)."""
+    return AssistantLabService(configs, AISettingsStore(engine, secrets_key), verifier=verifier, runner=runner)

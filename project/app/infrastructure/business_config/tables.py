@@ -91,3 +91,16 @@ business_engine_settings = Table(
     Column("document", JSON().with_variant(JSONB(), "postgresql"), nullable=False),
     Column("updated_at", DateTime(timezone=True), nullable=False, default=_now),
 )
+
+# Inteligencia artificial de cada negocio: su modelo y su propia clave de OpenRouter, cifrada como los datos de pago. Fuera del
+# contrato comercial; `key_hint` son los últimos caracteres de la clave, para reconocerla sin descifrarla.
+business_ai_settings = Table(
+    "business_ai_settings",
+    metadata,
+    Column("tenant_id", Uuid, ForeignKey("tenants.id", ondelete="CASCADE"), primary_key=True),
+    Column("provider", Text, nullable=False),
+    Column("model", Text),
+    Column("key_ciphertext", Text),
+    Column("key_hint", Text),
+    Column("updated_at", DateTime(timezone=True), nullable=False, default=_now),
+)

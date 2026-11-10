@@ -39,6 +39,7 @@ import uvicorn  # noqa: E402
 from app.admin_api.main import create_app  # noqa: E402
 from app.domain.business_config.errors import SecretResolutionError  # noqa: E402
 from app.infrastructure.business_config.database import (  # noqa: E402
+    build_assistant_lab_service,
     build_business_config_service,
     create_business_config_engine,
     create_local_schema,
@@ -72,6 +73,15 @@ def _wait_until_ready(port: int, timeout: float = WAIT_SECONDS) -> int:
     return 1
 
 
+def _assistant_lab(engine, service):
+    """La inteligencia artificial de cada negocio y su área de pruebas, con el motor real. Se importa aquí, al arrancar: el motor
+    trae su configuración (lee el `.env`), pero el área de pruebas solo usa la clave de IA de cada negocio."""
+    from app.application.assistant_lab.engine_runner import EngineAssistantRunner
+    from app.infrastructure.ai.openrouter_key_verifier import OpenRouterKeyVerifier
+
+    return build_assistant_lab_service(engine, service, verifier=OpenRouterKeyVerifier(), runner=EngineAssistantRunner())
+
+
 def main() -> int:
     if "--wait" in sys.argv[1:]:
         return _wait_until_ready(_port())
@@ -89,7 +99,8 @@ def main() -> int:
         return 1
     port = _port()
     print(f"[ok] API del panel en http://{HOST}:{port}")
-    uvicorn.run(create_app(build_business_config_service(engine)), host=HOST, port=port, log_level="warning")
+    service = build_business_config_service(engine)
+    uvicorn.run(create_app(service, _assistant_lab(engine, service)), host=HOST, port=port, log_level="warning")
     return 0
 
 

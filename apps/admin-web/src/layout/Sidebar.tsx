@@ -4,7 +4,7 @@ import { SectionStatusDot } from "../components/config/SectionStatusBadge";
 import { BrandMark } from "../components/brand/BrandMark";
 import { ProgressBar } from "../components/ui/Feedback";
 import { Icon } from "../components/ui/Icon";
-import { BUSINESSES_PATH, HOME_ITEM, REVIEW_ITEM, SECTION_ITEMS, type NavItem } from "../navigation/navItems";
+import { AI_ITEM, BUSINESSES_PATH, HOME_ITEM, PLAYGROUND_ITEM, REVIEW_ITEM, SECTION_ITEMS, type NavItem } from "../navigation/navItems";
 import { useWorkspacePath } from "../navigation/useWorkspacePath";
 import { useConfig } from "../state/useConfig";
 import { NAV_ICONS } from "./navIcons";
@@ -50,6 +50,11 @@ export function Sidebar({ id, open }: SidebarProps) {
         })}
         <div className="nav__divider" role="presentation" />
         <NavEntry item={REVIEW_ITEM} />
+        <p className="nav__heading" aria-hidden="true">
+          Asistente
+        </p>
+        <NavEntry item={AI_ITEM} />
+        <NavEntry item={PLAYGROUND_ITEM} />
       </nav>
     </aside>
   );

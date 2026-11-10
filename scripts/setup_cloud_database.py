@@ -1,22 +1,29 @@
-"""Deja lista la base PostgreSQL de la nube (Neon) desde este equipo.
+"""Deja lista una rama de la base PostgreSQL de la nube (Neon) desde este equipo.
 
-Lee `CLOUD_DATABASE_URL` del entorno o del `.env` de la raíz: la cadena que da Neon, tal como viene. Nunca la imprime.
+Cada rama lee su cadena de conexión del entorno o del `.env` de la raíz, tal como la da Neon; nunca se imprime:
 
-  python scripts/setup_cloud_database.py           # informa qué haría, sin escribir nada
-  python scripts/setup_cloud_database.py --apply   # lo hace
+| Rama | Variable | Qué recibe |
+|---|---|---|
+| `production` | `CLOUD_DATABASE_URL_PRODUCTION` | Solo el esquema: los negocios los crean las cuentas reales |
+| `pruebas` | `CLOUD_DATABASE_URL_PRUEBAS` | El esquema y los negocios de ejemplo de este equipo |
+
+  python scripts/setup_cloud_database.py --branch pruebas           # informa qué haría, sin escribir nada
+  python scripts/setup_cloud_database.py --branch pruebas --apply   # lo hace
 
 Todos los pasos se pueden repetir; lo que ya está no se toca:
 1. Esquema del motor (`project/docs/postgresql_schema.sql`), si falta la tabla `tenants`.
-2. Almacén de BusinessConfig (`project/db/migrations/0001_business_config_store.sql`), si falta `business_configs`.
+2. Almacén de BusinessConfig: las migraciones de `project/db/migrations`, en orden (todas se pueden repetir).
+Solo en `pruebas`:
 3. Filas operativas de cada negocio (`scripts/bootstrap_saas_data.py`, apuntado a la nube).
-4. Copia de lo que guarda el panel en este equipo: versiones, datos de pago y ajustes técnicos de cada negocio. Los datos de pago
-   viajan cifrados: la clave no sale de este equipo. Un negocio que ya tiene versiones en la nube no se toca.
+4. Copia de lo que guarda el panel en este equipo: versiones, datos de pago, ajustes técnicos y clave de IA de cada negocio. Los
+   secretos viajan cifrados: la clave de cifrado no sale de este equipo. Un negocio que ya tiene versiones en la nube no se toca.
 5. Comprobación: con la clave de este equipo, lo publicado en la nube compila igual que lo publicado aquí.
 """
 from __future__ import annotations
 
 import argparse
 import os
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -36,23 +43,29 @@ from app.infrastructure.business_config.database import database_url, sqlite_fil
 from app.infrastructure.business_config.runtime_access import reader_for  # noqa: E402
 from app.infrastructure.business_config.secrets_key import find_secrets_key  # noqa: E402
 from app.infrastructure.business_config.tables import (  # noqa: E402
+    business_ai_settings,
     business_config_secrets,
     business_configs,
     business_engine_settings,
     tenants,
 )
 
-URL_ENV = "CLOUD_DATABASE_URL"
+# Por rama: la variable con su cadena de conexión y si recibe los negocios de ejemplo.
+BRANCHES = {
+    "production": ("CLOUD_DATABASE_URL_PRODUCTION", False),
+    "pruebas": ("CLOUD_DATABASE_URL_PRUEBAS", True),
+}
 ENGINE_SCHEMA = PROJECT_DIR / "docs" / "postgresql_schema.sql"
-STORE_MIGRATION = PROJECT_DIR / "db" / "migrations" / "0001_business_config_store.sql"
+# Las migraciones del almacén, en orden. Todas se pueden aplicar más de una vez.
+MIGRATIONS = sorted((PROJECT_DIR / "db" / "migrations").glob("[0-9][0-9][0-9][0-9]_*.sql"))
 BOOTSTRAP = ROOT_DIR / "scripts" / "bootstrap_saas_data.py"
-STORE_TABLES = (business_configs, business_config_secrets, business_engine_settings)
+STORE_TABLES = (business_configs, business_config_secrets, business_engine_settings, business_ai_settings)
 
 
-def cloud_url() -> str:
-    url = os.getenv(URL_ENV) or dotenv_values(ROOT_DIR / ".env").get(URL_ENV) or ""
+def cloud_url(variable: str) -> str:
+    url = os.getenv(variable) or dotenv_values(ROOT_DIR / ".env").get(variable) or ""
     if not url.strip():
-        raise SystemExit(f"[error] Falta {URL_ENV}: pega la cadena de conexión de Neon en el .env de la raíz.")
+        raise SystemExit(f"[error] Falta {variable}: pega la cadena de conexión de esa rama de Neon en el .env de la raíz.")
     return normalize_database_url(url)
 
 
@@ -77,6 +90,11 @@ def _run_sql_file(cloud: Engine, path: Path) -> None:
         connection.exec_driver_sql(f"BEGIN;\n{sql}\nCOMMIT;")
 
 
+def _migration_tables(path: Path) -> set[str]:
+    """Las tablas que crea una migración."""
+    return set(re.findall(r"CREATE TABLE IF NOT EXISTS ([a-z_]+)", path.read_text(encoding="utf-8")))
+
+
 def _cloud_tenant_ids(connection: Connection) -> dict[str, object]:
     return {row.slug: row.id for row in connection.execute(text("SELECT id, slug FROM tenants"))}
 
@@ -85,14 +103,16 @@ def _has_versions(connection: Connection, tenant_id: object) -> bool:
     return connection.execute(select(business_configs.c.id).where(business_configs.c.tenant_id == tenant_id).limit(1)).first() is not None
 
 
-def plan(cloud: Engine, local: Engine) -> list[str]:
-    """Lo que falta en la nube, sin escribir nada."""
+def plan(cloud: Engine, local: Engine | None) -> list[str]:
+    """Lo que falta en la nube, sin escribir nada. Sin `local`, solo el esquema."""
     tables = set(inspect(cloud).get_table_names())
     steps = []
     if "tenants" not in tables:
         steps.append("crear el esquema del motor")
-    if "business_configs" not in tables:
-        steps.append("crear el almacén de BusinessConfig")
+    missing = [path.name for path in MIGRATIONS if _migration_tables(path) - tables]
+    steps += [f"aplicar {name}" for name in missing]
+    if local is None:
+        return steps
     with local.connect() as source:
         slugs = [row.slug for row in source.execute(select(tenants.c.slug).order_by(tenants.c.slug))]
     if "tenants" in tables and "business_configs" in tables:
@@ -155,27 +175,33 @@ def verify(cloud: Engine, local: Engine) -> list[tuple[str, bool]]:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("--branch", choices=sorted(BRANCHES), required=True, help="rama de Neon que se prepara")
     parser.add_argument("--apply", action="store_true", help="hacer los cambios (sin esto solo informa)")
     args = parser.parse_args()
 
-    url = cloud_url()
-    cloud, local = create_engine(url, pool_pre_ping=True), local_store()
-    print(f"[info] Base de la nube: {describe(url)}")
+    variable, with_samples = BRANCHES[args.branch]
+    url = cloud_url(variable)
+    cloud = create_engine(url, pool_pre_ping=True)
+    local = local_store() if with_samples else None
+    print(f"[info] Rama {args.branch}: {describe(url)}")
     steps = plan(cloud, local)
     if not args.apply:
         print("[info] Pendiente:" if steps else "[ok] No falta nada.")
         for step in steps:
             print(f"  - {step}")
-        print("[info] Nada se escribió. Para hacerlo: python scripts/setup_cloud_database.py --apply")
+        print(f"[info] Nada se escribió. Para hacerlo: python scripts/setup_cloud_database.py --branch {args.branch} --apply")
         return 0
 
     tables = set(inspect(cloud).get_table_names())
     if "tenants" not in tables:
         _run_sql_file(cloud, ENGINE_SCHEMA)
         print("[ok] Esquema del motor creado")
-    if "business_configs" not in tables:
-        _run_sql_file(cloud, STORE_MIGRATION)
-        print("[ok] Almacén de BusinessConfig creado")
+    for migration in MIGRATIONS:
+        _run_sql_file(cloud, migration)
+    print(f"[ok] Almacén de BusinessConfig al día ({', '.join(path.name for path in MIGRATIONS)})")
+    if local is None:
+        print("[ok] Esquema listo. Sin negocios de ejemplo: los crean las cuentas reales.")
+        return 0
     bootstrap(url)
     print("[ok] Filas operativas de cada negocio")
     for slug, outcome in copy_businesses(cloud, local):

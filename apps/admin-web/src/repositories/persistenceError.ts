@@ -1,6 +1,6 @@
 /** Fallo al leer o guardar datos en el servidor local. */
 
-export type PersistenceErrorCode = "unavailable" | "invalid" | "conflict" | "duplicate" | "not_found" | "payment_key" | "unknown";
+export type PersistenceErrorCode = "unavailable" | "invalid" | "conflict" | "duplicate" | "not_found" | "payment_key" | "ai_key_missing" | "unknown";
 
 /** Problema en un campo concreto, con su ruta en el documento (`identity.name`). */
 export interface FieldProblem {
@@ -28,6 +28,7 @@ const MESSAGES: Record<PersistenceErrorCode, string> = {
   duplicate: "Ya existe un negocio con ese identificador.",
   not_found: "Ese negocio no existe.",
   payment_key: "Falta la clave de cifrado de los datos de pago en el servidor local.",
+  ai_key_missing: "Este negocio todavía no tiene su clave de IA. Agrégala en Inteligencia artificial.",
   unknown: "No se pudo completar la operación.",
 };
 

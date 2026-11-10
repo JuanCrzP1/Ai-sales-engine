@@ -138,7 +138,7 @@ Límite conocido: `reply` es texto del modelo, igual que el que recibe un client
 
 ## Panel De Administración Local
 
-Permite administrar los negocios sin editar YAML. Su API no lee `.env`. Lo que publica es lo que responde el asistente cuando el `.env` del motor tiene `BUSINESS_CONFIG_STORE=database` y `BUSINESS_CONFIG_CONTRACT_TENANTS=*`; sin ellas, el motor sigue con sus YAML.
+Permite administrar los negocios sin editar YAML. Su API no usa las credenciales del `.env`: el área de pruebas carga el motor, pero responde solo con la clave de IA de cada negocio. Lo que publica es lo que responde el asistente cuando el `.env` del motor tiene `BUSINESS_CONFIG_STORE=database` y `BUSINESS_CONFIG_CONTRACT_TENANTS=*`; sin ellas, el motor sigue con sus YAML.
 
 1. Desde la raíz del repositorio, ejecuta uno de los únicos lanzadores del sistema: `run_local.bat` en Windows o `./run_local.sh` en Linux y macOS. Encienden el motor con el `.env`, ngrok, Telegram y la API del panel en `127.0.0.1:8010`.
 2. Cuando esa API responde, arrancan la interfaz y se abre <http://127.0.0.1:5180>. Si no responde, la interfaz no se abre y el motor sigue arrancando.
@@ -329,30 +329,34 @@ Lo que el motor ya resuelve para correr ahí:
   (`DATABASE_URL`) como para el almacén del panel (`BUSINESS_CONFIG_DATABASE_URL`).
 - En producción (`MODE=production`) y en Vercel solo publica `/health` y el webhook de WhatsApp.
 
-Una sola base de Neon guarda las tablas del motor y el almacén del panel: sus tablas apuntan a `tenants`.
+Una sola base de Neon guarda las tablas del motor y el almacén del panel: sus tablas apuntan a `tenants`. Tiene dos ramas:
 
-**1. Preparar la base desde este equipo.** Pega la cadena de conexión de Neon en el `.env` de la raíz como `CLOUD_DATABASE_URL`
-y ejecuta:
+| Rama de Neon | Entorno de Vercel | Para qué |
+|---|---|---|
+| `production` | Production | Clientes reales: solo los negocios que crean las cuentas reales |
+| `pruebas` | Preview | Todas las pruebas, con los negocios de ejemplo de este equipo |
+
+**1. Preparar cada rama desde este equipo.** Pega la cadena de conexión de cada rama (Neon → la rama → Connect) en el `.env`
+de la raíz, como `CLOUD_DATABASE_URL_PRODUCTION` y `CLOUD_DATABASE_URL_PRUEBAS`, y ejecuta:
 
 ```bash
-python scripts/setup_cloud_database.py           # informa qué falta, sin escribir
-python scripts/setup_cloud_database.py --apply   # crea las tablas, registra los negocios y copia lo publicado
+python scripts/setup_cloud_database.py --branch pruebas            # informa qué falta, sin escribir
+python scripts/setup_cloud_database.py --branch pruebas --apply    # tablas, negocios de ejemplo y comprobación
+python scripts/setup_cloud_database.py --branch production --apply # solo las tablas
 ```
 
-Copia las versiones, los datos de pago (ya cifrados: la clave no viaja) y los ajustes técnicos de cada negocio, y comprueba que
-lo publicado en la nube compila igual que aquí. Se puede repetir: lo que ya está no se toca.
+En `pruebas` copia las versiones, los datos de pago (ya cifrados: la clave no viaja) y los ajustes técnicos de cada negocio, y
+comprueba que lo publicado compila igual que aquí. Se puede repetir: lo que ya está no se toca.
 
-**2. Variables del proyecto en Vercel** (Settings → Environment Variables, para Production):
+**2. Variables del proyecto en Vercel** (Settings → Environment Variables). Ya están `MODE=production`,
+`BUSINESS_CONFIG_STORE=database` y `BUSINESS_CONFIG_CONTRACT_TENANTS=*` en Production y Preview. Faltan las secretas, que escribe
+la persona dueña de las cuentas (nunca en el chat ni en el repositorio):
 
-| Variable | Valor |
-|---|---|
-| `DATABASE_URL` y `BUSINESS_CONFIG_DATABASE_URL` | La cadena de conexión de Neon con *pooling* (servidor `-pooler`), la misma en las dos |
-| `BUSINESS_CONFIG_SECRETS_KEY` | La misma clave de este equipo (`secrets.local.env`): sin ella no se leen los datos de pago |
-| `OPENROUTER_API_KEY` | La clave de la IA |
-| `BUSINESS_CONFIG_STORE` y `BUSINESS_CONFIG_CONTRACT_TENANTS` | `database` y `*` |
-| `MODE` | `production` |
-
-Los valores secretos los escribe la persona dueña de las cuentas; nunca se pegan en el chat ni en el repositorio.
+| Variable | Production | Preview |
+|---|---|---|
+| `DATABASE_URL` y `BUSINESS_CONFIG_DATABASE_URL` | Cadena de `production` con *pooling* | Cadena de `pruebas` con *pooling* |
+| `BUSINESS_CONFIG_SECRETS_KEY` | Una clave propia de producción | La de este equipo (`secrets.local.env`) |
+| `OPENROUTER_API_KEY` | La clave de la IA | La clave de la IA |
 
 **3. Volver a desplegar** y comprobar `/health`.
 

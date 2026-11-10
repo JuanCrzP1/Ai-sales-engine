@@ -13,6 +13,10 @@ El panel edita **BusinessConfig v1** a través de una **API local** (`project/ap
 > `BUSINESS_CONFIG_CONTRACT_TENANTS=*` en el `.env` (ver `docs/business-config.md`, «Conexión Con El Motor»). Sin esas dos
 > variables, el motor sigue con sus YAML.
 
+Además de configurar cada negocio, el panel tiene **Inteligencia artificial** (la clave de OpenRouter y el modelo de cada negocio)
+y **Probar asistente** (conversar con la IA real usando lo que se está editando o lo publicado). Ver
+`docs/business-config.md`, «Inteligencia Artificial Y Área De Pruebas».
+
 ## Ejecutar
 
 Los únicos lanzadores del sistema son `run_local.bat` (Windows) y `run_local.sh` (Linux y macOS). Encienden el motor con el

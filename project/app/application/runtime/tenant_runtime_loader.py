@@ -71,6 +71,11 @@ def _assemble_runtime_yaml(sections: dict[str, dict], channel: str | None = None
     return runtime_yaml
 
 
+def runtime_from_sections(tenant_slug: str, sections: dict[str, dict], *, channel: str | None = None) -> dict:
+    """El runtime que usa el motor, armado desde lo compilado de una versión concreta (lo usa el área de pruebas del panel)."""
+    return RuntimeYamlBuilder().build(tenant_slug=tenant_slug, partial_yaml=_assemble_runtime_yaml(sections, channel=channel))
+
+
 def _load_raw_runtime_yaml(service: ConfigService, tenant_slug: str, channel: str | None = None) -> dict:
     return _assemble_runtime_yaml(_load_legacy_sections(service, tenant_slug), channel=channel)
 

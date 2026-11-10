@@ -1,4 +1,5 @@
 import { Route } from "react-router-dom";
+import { AISettingsPage } from "../features/ai/AISettingsPage";
 import { AssistantPage } from "../features/assistant/AssistantPage";
 import { AuthLayout } from "../features/auth/AuthLayout";
 import { SignInPage } from "../features/auth/SignInPage";
@@ -9,11 +10,12 @@ import { CatalogPage } from "../features/catalog/CatalogPage";
 import { HomePage } from "../features/home/HomePage";
 import { MessagesPage } from "../features/messages/MessagesPage";
 import { PaymentsPage } from "../features/payments/PaymentsPage";
+import { PlaygroundPage } from "../features/playground/PlaygroundPage";
 import { ProfilePage } from "../features/profile/ProfilePage";
 import { ReviewPage } from "../features/review/ReviewPage";
 import { AppShell } from "../layout/AppShell";
 import { ACCOUNT_PATHS } from "../navigation/accountPaths";
-import { BUSINESSES_PATH, REVIEW_ITEM, sectionPath } from "../navigation/navItems";
+import { AI_ITEM, BUSINESSES_PATH, PLAYGROUND_ITEM, REVIEW_ITEM, sectionPath } from "../navigation/navItems";
 import { BusinessWorkspace } from "./BusinessWorkspace";
 import { GuestOnly } from "./GuestOnly";
 import { NotFoundPage } from "./NotFoundPage";
@@ -44,6 +46,8 @@ export const appRoutes = (
           <Route path={sectionPath("assistant")} element={<AssistantPage />} />
           <Route path={sectionPath("messages")} element={<MessagesPage />} />
           <Route path={REVIEW_ITEM.path} element={<ReviewPage />} />
+          <Route path={AI_ITEM.path} element={<AISettingsPage />} />
+          <Route path={PLAYGROUND_ITEM.path} element={<PlaygroundPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Route>

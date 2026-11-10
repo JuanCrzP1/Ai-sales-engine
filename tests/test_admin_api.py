@@ -1084,6 +1084,12 @@ def test_the_api_only_has_the_routes_of_the_panel(api):
         ("POST", f"{business}/versions/{{version}}/restore"),
         ("POST", f"{business}/publish"),
         ("POST", f"{business}/rollback"),
+        # Inteligencia artificial y área de pruebas (`assistant_routes.py`).
+        ("GET", f"{business}/ai"),
+        ("PUT", f"{business}/ai"),
+        ("POST", f"{business}/ai/verify"),
+        ("POST", f"{business}/playground"),
+        ("DELETE", f"{business}/playground/{{session_id}}"),
     }
     assert api.client.post("/api/v1/simulate", json={}).status_code == 404
 

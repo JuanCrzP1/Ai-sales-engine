@@ -12,8 +12,10 @@ import logging
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
 
+from app.admin_api.assistant_routes import router as assistant_router
 from app.admin_api.errors import register_error_handlers
 from app.admin_api.routes import router
+from app.business_config_application.assistant_lab import AssistantLabService
 from app.business_config_application.service import BusinessConfigService
 from app.domain.business_config.contract import business_config_json_schema
 
@@ -49,10 +51,12 @@ def _refusal(request: Request) -> str | None:
     return None
 
 
-def create_app(service: BusinessConfigService) -> FastAPI:
+def create_app(service: BusinessConfigService, assistant_lab: AssistantLabService | None = None) -> FastAPI:
+    """La API del panel. Sin `assistant_lab`, la inteligencia artificial y el área de pruebas responden que no están disponibles."""
     # Sin /docs ni /openapi.json: el único cliente es el panel y no hace falta anunciar las rutas.
     app = FastAPI(title="AI Sales Engine: API local del panel", docs_url=None, redoc_url=None, openapi_url=None)
     app.state.service = service
+    app.state.assistant_lab = assistant_lab
     app.state.contract_schema = business_config_json_schema()
 
     @app.middleware("http")
@@ -67,4 +71,5 @@ def create_app(service: BusinessConfigService) -> FastAPI:
 
     register_error_handlers(app)
     app.include_router(router)
+    app.include_router(assistant_router)
     return app

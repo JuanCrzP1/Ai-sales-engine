@@ -26,13 +26,14 @@ from app.domain.business_config.compiler import compile_business_config
 from app.infrastructure.business_config.runtime_access import reader_for
 from app.infrastructure.business_config.repository import BusinessConfigRepository
 from app.infrastructure.config.business_config_store import BusinessConfigError, BusinessConfigStore
-from app.infrastructure.business_config.tables import business_config_secrets, business_configs, business_engine_settings, metadata, tenants
+from app.infrastructure.business_config.tables import business_ai_settings, business_config_secrets, business_configs, business_engine_settings, metadata, tenants
 from app.infrastructure.config.config_service import ConfigService
 from app.infrastructure.business_config.payment_secret_store import SECRETS_KEY_ENV, PaymentSecretStore
 from app.infrastructure.config.payment_secrets import SecretResolutionError
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
 MIGRATION = ROOT_DIR / "project" / "db" / "migrations" / "0001_business_config_store.sql"
+AI_MIGRATION = ROOT_DIR / "project" / "db" / "migrations" / "0002_business_ai_settings.sql"
 ENGINE_SCHEMA = ROOT_DIR / "project" / "docs" / "postgresql_schema.sql"
 
 
@@ -307,3 +308,11 @@ def test_migration_matches_the_application_tables_and_uses_uuid_tenants():
     schema_tenants = re.search(r"CREATE TABLE tenants \((.*?)\n\);", ENGINE_SCHEMA.read_text(encoding="utf-8"), re.S).group(1)
     required = {match.group(1) for match in re.finditer(r"^\s+([a-z_]+) .*NOT NULL", schema_tenants, re.M)}
     assert required <= {column.name for column in tenants.columns}
+
+
+def test_ai_settings_migration_matches_the_application_table():
+    """La clave de IA de cada negocio en PostgreSQL: mismas columnas que en SQLite, por negocio y repetible."""
+    sql = AI_MIGRATION.read_text(encoding="utf-8")
+    assert set(_sql_columns(sql, business_ai_settings.name)) == {column.name for column in business_ai_settings.columns}
+    assert _sql_columns(sql, "business_ai_settings")["tenant_id"] == "UUID"
+    assert "REFERENCES tenants(id) ON DELETE CASCADE" in sql and "CREATE TABLE IF NOT EXISTS" in sql

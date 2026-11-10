@@ -546,6 +546,28 @@ incorporarse antes de desplegarla en la nube.
 Los errores son `{code, message, issues: [{path, message}]}` en español y nunca repiten el valor recibido. Códigos: `invalid`, `duplicate`,
 `conflict`, `not_found`, `confirmation_required`, `forbidden`, `payment_key`, `unexpected`.
 
+## Inteligencia Artificial Y Área De Pruebas
+
+Cada negocio responde con **su propia clave de OpenRouter** y, si quiere, con su propio modelo. No es parte del contrato
+comercial: vive en `business_ai_settings` (migración `0002`), con la clave cifrada como los datos de pago. La API solo devuelve si
+está configurada y sus últimos caracteres. En todo el motor, la clave del negocio tiene prioridad sobre la general del `.env`, que
+queda de respaldo mientras cada negocio no tenga la suya.
+
+| Ruta | Para qué |
+|---|---|
+| `GET` y `PUT /api/businesses/{slug}/ai` | Ver y guardar el modelo y la clave |
+| `POST /api/businesses/{slug}/ai/verify` | Comprobar la clave con OpenRouter (`GET /api/v1/key`, sin gastar créditos) |
+| `POST /api/businesses/{slug}/playground` | Conversar con el asistente, con lo que se está editando o con lo publicado |
+| `DELETE /api/businesses/{slug}/playground/{session_id}` | Empezar otra conversación |
+
+El área de pruebas («Probar asistente» en el panel) ejecuta **el motor real** con la versión elegida y la clave del negocio, detrás
+del puerto `AssistantRunner` (`app/business_config_application/ports.py`). El adaptador
+(`app/application/assistant_lab/engine_runner.py`) se conecta al arrancar la API, así que las capas del panel siguen sin conocer el
+motor. Cada conversación tiene su propia memoria en RAM, separada por negocio y sesión, que caduca sin uso: nunca toca la base ni
+las conversaciones de los clientes reales.
+
+Pendiente para la nube: en funciones sin estado, las conversaciones de prueba tendrán que guardarse en la base.
+
 ## Hallazgos En Los Nueve Negocios
 
 Diagnóstico automático: ver `migration-report.md`. Además, datos dudosos que la migración conserva tal

@@ -1,7 +1,7 @@
 import { CONFIG_SECTIONS, type ConfigSectionId } from "../domain/sections";
 
 export interface NavItem {
-  key: "home" | ConfigSectionId | "review";
+  key: "home" | ConfigSectionId | "review" | "ai" | "playground";
   /** Ruta dentro del espacio de trabajo del negocio. */
   path: string;
   title: string;
@@ -21,6 +21,9 @@ export const BUSINESSES_PATH = "/";
 
 export const HOME_ITEM: NavItem = { key: "home", path: "", title: "Inicio" };
 export const REVIEW_ITEM: NavItem = { key: "review", path: "revision", title: "Revisión y publicación" };
+/** Herramientas del asistente: fuera del recorrido guiado de configuración. */
+export const AI_ITEM: NavItem = { key: "ai", path: "ia", title: "Inteligencia artificial" };
+export const PLAYGROUND_ITEM: NavItem = { key: "playground", path: "probar", title: "Probar asistente" };
 
 export const SECTION_ITEMS: NavItem[] = CONFIG_SECTIONS.map((section) => ({
   key: section.id,

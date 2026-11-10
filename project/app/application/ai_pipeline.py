@@ -50,6 +50,7 @@
 from __future__ import annotations
 
 import copy
+from collections.abc import Callable
 
 from app.application.pipeline import AIExecution, ConversationFlow, SalesFlow, log_trace, tenant_slug
 from app.application.runtime import load_tenant_runtime_yaml
@@ -68,7 +69,11 @@ class AIPipeline:
         message_repository=None,
         runtime: AIRuntimeService | None = None,
         memory_service: MemoryDomainService | None = None,
+        runtime_loader: Callable[..., dict] | None = None,
     ) -> None:
+        # De dónde sale la configuración del negocio en cada mensaje. Por defecto, `load_tenant_runtime_yaml`; el área de pruebas
+        # del panel pasa la versión que se está probando. Se resuelve en cada llamada.
+        self._runtime_loader = runtime_loader
         runtime_service = runtime or AIRuntimeService(
             prompt_path=prompt_path,
             bot_config=bot_config,
@@ -100,8 +105,9 @@ class AIPipeline:
         include_metadata: bool = False,
     ) -> tuple[str, bool] | tuple[str, bool, dict]:
         tenant_slug_value = tenant_slug(tenant)
+        load_runtime = self._runtime_loader or load_tenant_runtime_yaml
         try:
-            runtime_yaml = load_tenant_runtime_yaml(
+            runtime_yaml = load_runtime(
                 tenant_slug_value,
                 extra_yaml=yaml_config if isinstance(yaml_config, dict) else None,
             )

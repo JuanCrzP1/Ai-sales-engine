@@ -6,6 +6,7 @@ import type { ContractSchema } from "../domain/config/contractSchema";
 import { paymentHolders } from "../domain/config/document";
 import type { BusinessDocument, BusinessSummary, Diagnostic, PaymentFields, PaymentFieldState, PaymentValues, VersionInfo, VersionStatus } from "../domain/config/types";
 import { createLocalOperatorAuthService } from "../infrastructure/local/localOperatorAuthService";
+import type { AISettings, AssistantLab, ConfigSource } from "../repositories/assistantLab";
 import type { AuthService } from "../repositories/authService";
 import type { BusinessDirectory } from "../repositories/businessDirectory";
 import type { ConfigRepository, StoredConfig } from "../repositories/configRepository";
@@ -227,12 +228,67 @@ export function createMemoryBackend(seed: BusinessDocument[] = []): MemoryBacken
   };
 }
 
+export interface MemoryAssistantLabs {
+  create: (slug: string) => AssistantLab;
+  /** La clave guardada de cada negocio: comprueba que la interfaz la envía y nunca la recibe de vuelta. */
+  keys: Map<string, string>;
+  messages: { slug: string; message: string; source: ConfigSource; sessionId: string | null }[];
+  resets: string[];
+}
+
+/** Sustituto en memoria de la inteligencia artificial y del área de pruebas: responde «Respuesta a: …» sin red. */
+export function createMemoryAssistantLabs(): MemoryAssistantLabs {
+  const keys = new Map<string, string>();
+  const models = new Map<string, string | null>();
+  const messages: MemoryAssistantLabs["messages"] = [];
+  const resets: string[] = [];
+  let sessions = 0;
+  const settingsOf = (slug: string): AISettings => {
+    const key = keys.get(slug);
+    return { provider: "openrouter", model: models.get(slug) ?? null, key: { configured: Boolean(key), hint: key ? `••••${key.slice(-4)}` : null } };
+  };
+  const missingKey = () => new PersistenceError("ai_key_missing", { message: "Este negocio no tiene clave de IA; agrégala en Inteligencia artificial." });
+
+  return {
+    keys,
+    messages,
+    resets,
+    create: (slug) => ({
+      getAISettings: async () => settingsOf(slug),
+      async saveAISettings({ model, apiKey, clearKey }) {
+        if (apiKey !== undefined && (apiKey.length < 20 || /\s/.test(apiKey))) {
+          const message = "Pega la clave completa de OpenRouter, sin espacios.";
+          throw new PersistenceError("invalid", { message, problems: [{ path: "api_key", message }] });
+        }
+        models.set(slug, model);
+        if (apiKey) keys.set(slug, apiKey);
+        else if (clearKey) keys.delete(slug);
+        return settingsOf(slug);
+      },
+      async verifyAIKey() {
+        if (!keys.has(slug)) throw missingKey();
+        return { valid: true, message: "La clave funciona." };
+      },
+      async sendMessage({ message, source, sessionId }) {
+        if (!keys.has(slug)) throw missingKey();
+        messages.push({ slug, message, source, sessionId });
+        const session = sessionId ?? (++sessions).toString(16).padStart(32, "0");
+        return { sessionId: session, source, version: source === "published" ? 1 : 2, reply: `Respuesta a: ${message}`, intent: "info", aiAnswered: true };
+      },
+      async resetConversation(sessionId) {
+        resets.push(sessionId);
+      },
+    }),
+  };
+}
+
 /** Servicios como los de la aplicación, sobre el backend en memoria. */
 export function createTestServices(backend: MemoryBackend = createMemoryBackend(), overrides: Partial<ApplicationServices> = {}): ApplicationServices {
   return {
     auth: createLocalOperatorAuthService(),
     directory: backend.directory,
     createConfigRepository: backend.createConfigRepository,
+    createAssistantLab: createMemoryAssistantLabs().create,
     ...overrides,
   };
 }

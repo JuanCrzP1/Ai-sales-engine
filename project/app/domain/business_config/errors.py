@@ -68,3 +68,11 @@ class SecretNotFoundError(SecretResolutionError):
 
 class PaymentDataUnavailableError(PublicationError, SecretResolutionError):
     """Una versión no se puede publicar porque falta uno de sus datos de pago o no se puede leer."""
+
+
+class AIKeyMissingError(BusinessConfigError):
+    """El negocio no tiene clave de IA: su asistente no puede responder."""
+
+
+class AssistantUnavailableError(BusinessConfigError):
+    """El área de pruebas no puede ejecutar el asistente en este servidor."""
