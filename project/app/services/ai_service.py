@@ -71,10 +71,9 @@ def _extract_price_anchor(text: str, runtime_yaml: dict) -> str:
 class AIService:
     """Adapter liviano: delega todo el flujo al AIPipeline."""
 
-    def __init__(self, prompt_path: str | None = None, bot_config: dict | None = None, message_repository=None) -> None:
+    def __init__(self, prompt_path: str | None = None, message_repository=None) -> None:
         self.pipeline = AIPipeline(
             prompt_path=prompt_path,
-            bot_config=bot_config,
             message_repository=message_repository,
             memory_service=GLOBAL_MEMORY_SERVICE,
         )

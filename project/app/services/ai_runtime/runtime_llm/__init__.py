@@ -23,10 +23,6 @@ from .prompting import RuntimeLLMImplementation
 class RuntimeLLM(RuntimeLLMImplementation):
 	"""Facade del runtime LLM con componentes separados."""
 
-	def __init__(self, *args, **kwargs) -> None:
-		super().__init__(*args, **kwargs)
-		self.client_component = Client(provider=self.provider, api_key=self.provider_api_key, request_timeout=self.request_timeout)
-
 
 class AIService(RuntimeLLM):
 	"""Alias de compatibilidad para el runtime."""

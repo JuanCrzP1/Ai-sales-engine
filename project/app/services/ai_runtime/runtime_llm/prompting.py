@@ -54,22 +54,18 @@ from app.utils.logger import logger
 class RuntimeLLMImplementation:
     STRICT_FALLBACK_MESSAGE = "Se me paso tu mensaje, me cuentas otra vez que necesitas?"
 
-    def __init__(self, prompt_path: str | None = None, bot_config: dict | None = None, message_repository: MessageRepository | None = None) -> None:
+    def __init__(self, prompt_path: str | None = None, message_repository: MessageRepository | None = None) -> None:
         self.settings = settings
         self.provider = settings.llm_provider or "openrouter"
-        self.bot_config = bot_config or {}
-        # La clave propia del negocio manda; la general del `.env` queda solo como respaldo mientras cada negocio no tenga la suya.
-        provider_token = self.bot_config.get("openrouter_api_key") if isinstance(self.bot_config, dict) else None
-        if not str(provider_token or "").strip():
-            provider_token = settings.openrouter_api_key
-        self.provider_api_key = self.core_api_key(provider_token)
         self.message_repository = message_repository
         self.request_timeout = settings.llm_timeout_seconds
-        self.core_ai = CoreAIService(provider=self.provider, api_key=self.provider_api_key, request_timeout=self.request_timeout)
-        self.client = self.core_ai.client
+        # Sin clave propia: la plataforma no tiene ninguna. Cada mensaje trae la de su negocio (ver `generate`).
+        self.core_ai = CoreAIService(provider=self.provider, request_timeout=self.request_timeout)
+        # Solo para pruebas: un cliente ya armado que sustituye la llamada al proveedor.
+        self.client = None
         self.prompt_builder = PromptBuilderService(prompt_path=prompt_path)
         self.ai_orchestrator = AIOrchestrator()
-        logger.info("ai_service_initialized", extra={"provider": self.provider, "api_key_present": bool(self.provider_api_key)})
+        logger.info("ai_service_initialized", extra={"provider": self.provider})
 
     @staticmethod
     def core_api_key(value: str | None) -> str:
@@ -82,10 +78,6 @@ class RuntimeLLMImplementation:
         if not self.message_repository:
             return []
         return self.message_repository.list_recent(client_id=client_id, limit=limit)
-
-    def _build_client(self, provider_override: str | None = None, api_key_override: str | None = None):
-        self.client = self.core_ai.build_client(provider_override=provider_override, api_key_override=api_key_override)
-        return self.client
 
     def _default_model(self) -> str:
         return self.core_ai.default_model()
@@ -157,9 +149,14 @@ class RuntimeLLMImplementation:
         if str(os.getenv("LLM_MODE") or "").strip().lower() == "mock_fail":
             raise RuntimeError("mock_fail provider simulation")
 
-        client_to_use = self.client or self._build_client(provider_override=self.provider, api_key_override=self.provider_api_key)
+        # La clave es la del negocio de este mensaje. El cliente se arma para esta llamada y no se guarda: un mensaje nunca sale
+        # con la clave de otro negocio. Sin clave, no hay IA y responde el respaldo del motor.
+        business_key = self.core_api_key(getattr(bot_config, "api_key", None))
+        client_to_use = self.client or (
+            self.core_ai.build_client(provider_override=self.provider, api_key_override=business_key) if business_key else None
+        )
         if not client_to_use:
-            raise RuntimeError("LLM client not configured")
+            raise RuntimeError("business_ai_key_missing")
 
         configured_max_tokens = getattr(bot_config, "max_tokens", None)
         try:

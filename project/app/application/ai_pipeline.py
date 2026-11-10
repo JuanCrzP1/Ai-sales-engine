@@ -53,7 +53,8 @@ import copy
 from collections.abc import Callable
 
 from app.application.pipeline import AIExecution, ConversationFlow, SalesFlow, log_trace, tenant_slug
-from app.application.runtime import load_tenant_runtime_yaml
+from app.application.runtime import load_business_ai, load_tenant_runtime_yaml, message_ai
+from app.domain.business_config.ai_settings import AICredentials
 from app.domain.conversation.memory import MemoryDomainService
 from app.infrastructure.persistence.memory_repository import MemoryRepository, SQLMemoryRepository
 from app.services.ai_runtime.runtime_core import AIService as AIRuntimeService
@@ -65,18 +66,20 @@ class AIPipeline:
         self,
         *,
         prompt_path: str | None = None,
-        bot_config: dict | None = None,
         message_repository=None,
         runtime: AIRuntimeService | None = None,
         memory_service: MemoryDomainService | None = None,
         runtime_loader: Callable[..., dict] | None = None,
+        ai_loader: Callable[[str], AICredentials | None] | None = None,
     ) -> None:
-        # De dónde sale la configuración del negocio en cada mensaje. Por defecto, `load_tenant_runtime_yaml`; el área de pruebas
-        # del panel pasa la versión que se está probando. Se resuelve en cada llamada.
+        # De dónde salen, en cada mensaje, la configuración del negocio y su IA (su clave de OpenRouter y su modelo). Por defecto,
+        # `load_tenant_runtime_yaml` y `load_business_ai`; el área de pruebas del panel pasa la versión que se está probando y la
+        # clave de ese negocio. Se resuelven en cada llamada: un mismo motor atiende a muchos negocios y la plataforma no tiene
+        # clave propia, así que un mensaje nunca sale con la clave de otro negocio.
         self._runtime_loader = runtime_loader
+        self._ai_loader = ai_loader
         runtime_service = runtime or AIRuntimeService(
             prompt_path=prompt_path,
-            bot_config=bot_config,
             message_repository=message_repository,
         )
         if memory_service is None:
@@ -160,10 +163,11 @@ class AIPipeline:
             "has_pricing": bool(runtime_yaml_for_ai.get("pricing")),
             "has_business": bool(runtime_yaml_for_ai.get("business")),
         })
+        load_ai = self._ai_loader or load_business_ai
         final_response, ai_used, route_context = self.ai_execution.run(
             runtime=self.runtime,
             tenant=tenant,
-            bot_config=bot_config,
+            bot_config=message_ai(bot_config, load_ai(tenant_slug_value)),
             user_message=user_message,
             conversation_history=conversation_history,
             faq_results=faq_results,

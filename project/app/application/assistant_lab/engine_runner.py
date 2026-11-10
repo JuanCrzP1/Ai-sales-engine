@@ -1,6 +1,7 @@
 """El motor real respondiendo en el área de pruebas del panel (implementa `AssistantRunner`).
 
-- Usa la configuración que se le entrega (la versión que se está probando) y la clave de IA de ese negocio: nunca la general.
+- Usa la configuración que se le entrega (la versión que se está probando) y la clave de IA de ese negocio, por el mismo camino
+  que un mensaje real.
 - Cada conversación tiene su propia memoria en RAM: no toca la base de los clientes reales ni sus conversaciones.
 - Las conversaciones se identifican por negocio y sesión: una sesión de un negocio no sirve en otro.
 - Se olvidan tras un tiempo sin uso y hay un máximo; en ese caso, se descarta la usada hace más tiempo.
@@ -50,15 +51,15 @@ class EngineAssistantRunner:
     def reply(self, *, tenant_slug: str, sections: dict[str, dict], credentials: AICredentials, session_id: str, message: str) -> AssistantTurn:
         runtime = runtime_from_sections(tenant_slug, sections)
         pipeline = self._pipeline_factory(
-            bot_config={"openrouter_api_key": credentials.api_key},
             memory_service=self._memory(tenant_slug, session_id),
             runtime_loader=lambda _slug, **_options: copy.deepcopy(runtime),
+            ai_loader=lambda _slug: credentials,
         )
         answer, ai_used, metadata = pipeline.run(
             tenant=SimpleNamespace(slug=tenant_slug, name=tenant_slug, id=tenant_slug),
             user_message=message,
             user_id=f"prueba-{session_id}",
-            bot_config=SimpleNamespace(model_name=credentials.model),
+            bot_config=None,
             conversation_history=[],
             faq_results=[],
             yaml_config=None,

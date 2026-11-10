@@ -7,7 +7,7 @@ motor (`AICredentials`), y siempre la de ese negocio.
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from app.domain.business_config.errors import FieldIssue, InvalidFieldsError
 
@@ -35,11 +35,11 @@ class AISettings:
 
 @dataclass(frozen=True)
 class AICredentials:
-    """Lo que necesita el motor para responder por este negocio. Nunca se serializa hacia el panel."""
+    """Lo que necesita el motor para responder por este negocio. Nunca se serializa hacia el panel ni aparece en un registro."""
 
     provider: str
     model: str | None
-    api_key: str
+    api_key: str = field(repr=False)
 
 
 @dataclass(frozen=True)

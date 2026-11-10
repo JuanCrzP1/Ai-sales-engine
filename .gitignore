@@ -13,6 +13,7 @@ project/.env
 
 # Secretos reales para trabajar desde varios equipos. El ejemplo sí se versiona.
 /secrets.local.env
+/secrets.production.env
 /secrets.local.env.tmp
 
 .pytest_cache/

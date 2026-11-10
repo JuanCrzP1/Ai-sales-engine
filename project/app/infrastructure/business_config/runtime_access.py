@@ -1,7 +1,7 @@
 """Acceso de solo lectura del motor a lo publicado en el almacén de BusinessConfig.
 
 El motor lee la misma base que escribe el panel (`database_url()`: `BUSINESS_CONFIG_DATABASE_URL` o el SQLite local) con la misma
-clave de cifrado (`find_secrets_key()`). Nunca crea la base, las tablas ni la clave, y nunca escribe: si algo falta, lo informa con una
+clave de cifrado (`find_secrets_key()`): lo publicado, los datos de pago y la clave de IA de cada negocio. Nunca crea la base, las tablas ni la clave, y nunca escribe: si algo falta, lo informa con una
 excepción y el llamador decide (el cargador del motor vuelve a los YAML).
 
 Es la única puerta del motor hacia este almacén: el motor no conoce tablas, conexiones ni cifrado.
@@ -14,8 +14,10 @@ from dataclasses import dataclass
 
 from sqlalchemy.engine import Engine
 
+from app.domain.business_config.ai_settings import AICredentials
 from app.domain.business_config.contract import BusinessConfig, SecretRef
 from app.domain.business_config.errors import BusinessConfigError
+from app.infrastructure.business_config.ai_settings_store import AISettingsStore
 from app.infrastructure.business_config.database import create_business_config_engine, database_url, sqlite_file
 from app.infrastructure.business_config.payment_secret_store import SECRET_STORE_SOURCE, PaymentSecretStore
 from app.infrastructure.business_config.repository import BusinessConfigRepository
@@ -26,10 +28,11 @@ __all__ = ["SECRET_STORE_SOURCE", "PublishedConfigReader", "dispose_shared_engin
 
 @dataclass(frozen=True)
 class PublishedConfigReader:
-    """Lo publicado de cada negocio y el resolutor de sus datos de pago cifrados."""
+    """Lo publicado de cada negocio, el resolutor de sus datos de pago cifrados y su propia clave de IA."""
 
     _repository: BusinessConfigRepository
     _secrets: PaymentSecretStore
+    _ai_settings: AISettingsStore
 
     def published(self, tenant_slug: str) -> BusinessConfig:
         return self._repository.published(tenant_slug)
@@ -37,11 +40,15 @@ class PublishedConfigReader:
     def payment_resolver(self, tenant_slug: str) -> Callable[[SecretRef], str]:
         return self._secrets.resolver(tenant_slug)
 
+    def ai_credentials(self, tenant_slug: str) -> AICredentials | None:
+        """La clave de OpenRouter y el modelo de este negocio, o None si no tiene clave."""
+        return self._ai_settings.ai_credentials(tenant_slug)
+
 
 def reader_for(engine: Engine, key: str | None = None) -> PublishedConfigReader:
     """Un lector sobre una conexión ya abierta. Sin `key`, la clave sale de `BUSINESS_CONFIG_SECRETS_KEY`."""
     secrets = PaymentSecretStore(engine, key)
-    return PublishedConfigReader(BusinessConfigRepository(engine, secrets), secrets)
+    return PublishedConfigReader(BusinessConfigRepository(engine, secrets), secrets, AISettingsStore(engine, key))
 
 
 # Una conexión por URL para todo el proceso: el motor consulta el almacén en cada mensaje.

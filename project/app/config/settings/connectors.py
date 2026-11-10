@@ -8,7 +8,6 @@ CORE_CONNECTOR_KEYS = (
     "jwt_secret",
     "jwt_algorithm",
     "jwt_expire_minutes",
-    "openrouter_api_key",
     "twilio_account_sid",
     "twilio_auth_token",
     "twilio_whatsapp_number",

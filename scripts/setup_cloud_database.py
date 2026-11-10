@@ -134,6 +134,9 @@ def bootstrap(url: str) -> None:
 
 def copy_businesses(cloud: Engine, local: Engine) -> list[tuple[str, str]]:
     report = []
+    # Una base local anterior a una migración no tiene sus tablas (el panel las crea al arrancar): no hay nada que copiar de ellas.
+    present = set(inspect(local).get_table_names())
+    copied_tables = [table for table in STORE_TABLES if table.name in present]
     with local.connect() as source:
         local_tenants = list(source.execute(select(tenants.c.id, tenants.c.slug).order_by(tenants.c.slug)))
         with cloud.begin() as target:
@@ -146,7 +149,7 @@ def copy_businesses(cloud: Engine, local: Engine) -> list[tuple[str, str]]:
                 if _has_versions(target, cloud_id):
                     report.append((slug, "ya estaba"))
                     continue
-                for table in STORE_TABLES:
+                for table in copied_tables:
                     rows = [dict(row._mapping) for row in source.execute(select(table).where(table.c.tenant_id == local_id))]
                     if rows:
                         target.execute(insert(table), [{**row, "tenant_id": cloud_id} for row in rows])

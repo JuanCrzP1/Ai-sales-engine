@@ -37,7 +37,6 @@ from app.infrastructure.business_config.database import (
 from app.infrastructure.business_config.tables import business_ai_settings
 from app.infrastructure.config.config_service import ConfigService
 from app.infrastructure.config.legacy_store_migration import import_prepared, prepare_tenant
-from app.services.ai_runtime.runtime_llm.prompting import RuntimeLLMImplementation
 from pipeline_harness import reply
 
 KEY_A = "sk-or-v1-clave-ficticia-del-restaurante-0001"
@@ -242,14 +241,6 @@ def test_without_the_lab_the_routes_answer_unavailable(store):
 # El motor real en el área de pruebas
 # ---------------------------------------------------------------------------
 
-def test_the_business_key_comes_before_the_general_one(monkeypatch):
-    from app.config import settings
-
-    monkeypatch.setattr(settings, "openrouter_api_key", "clave-general-del-env-0000000000")
-    assert RuntimeLLMImplementation(bot_config={"openrouter_api_key": KEY_A}).provider_api_key == KEY_A
-    assert RuntimeLLMImplementation(bot_config={}).provider_api_key == "clave-general-del-env-0000000000"
-
-
 class _Recorder:
     """Construye el motor real y sustituye solo la llamada al modelo: registra lo que recibe y responde lo indicado."""
 
@@ -260,10 +251,10 @@ class _Recorder:
 
     def __call__(self, **kwargs) -> AIPipeline:
         pipeline = AIPipeline(**kwargs)
-        self.keys.append(kwargs["bot_config"]["openrouter_api_key"])
 
         def _generate(prompt, *, user_message, bot_config=None):
             self.prompts.append(str(prompt))
+            self.keys.append(getattr(bot_config, "api_key", None))
             self.models.append(getattr(bot_config, "model_name", None))
             return reply(f"Respuesta {len(self.prompts)}.")
 

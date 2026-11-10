@@ -59,7 +59,6 @@ Las más importantes para operación real son:
 DATABASE_URL=
 
 LLM_PROVIDER=openrouter
-OPENROUTER_API_KEY=
 OPENROUTER_BASE_URL=https://openrouter.ai/api/v1
 OPENROUTER_MODEL=openai/gpt-4o-mini
 OPENROUTER_ADVANCED_MODEL=openai/gpt-4.1-mini
@@ -91,9 +90,11 @@ ENABLE_WEBHOOK_PROCESSING=true
 ### Runtime AI
 
 - `LLM_PROVIDER`: proveedor activo; hoy el runtime espera OpenRouter.
-- `OPENROUTER_API_KEY`: credencial obligatoria para generación real.
+- La clave de la IA no es una variable del motor: cada negocio guarda la suya en el panel (Inteligencia artificial) y el motor
+  la usa en cada mensaje de ese negocio, con su modelo. La plataforma no tiene clave propia: un negocio sin clave no responde
+  con IA y nunca usa la de otro. `OPENROUTER_API_KEY` en el `.env` solo la usan las pruebas en vivo (`pytest -m integration`).
 - `OPENROUTER_BASE_URL`: endpoint base del proveedor.
-- `OPENROUTER_MODEL`: modelo por defecto del runtime.
+- `OPENROUTER_MODEL`: modelo para los negocios que no eligen uno.
 - `OPENROUTER_ADVANCED_MODEL`: modelo adicional para casos que lo requieran.
 - `LLM_TIMEOUT_SECONDS`: timeout de request al modelo.
 
@@ -197,7 +198,7 @@ Las rutas salen de la ubicación del repositorio y de la carpeta del usuario de 
 | Secreto | Para qué | Cuándo hace falta |
 |---|---|---|
 | `BUSINESS_CONFIG_SECRETS_KEY` | Cifra los datos de pago. El motor la usa para leerlos cuando un negocio lee lo publicado en el panel (`BUSINESS_CONFIG_STORE=database`, ver `docs/business-config.md`, «Conexión Con El Motor») | Siempre que la base tenga datos. Debe ser la misma en los dos equipos y en el motor |
-| `OPENROUTER_API_KEY` | Modelo de IA | Motor |
+| `OPENROUTER_API_KEY` | Pruebas en vivo (`pytest -m integration`) | Solo para esas pruebas. El motor no la usa: cada negocio guarda su clave en el panel |
 | `DATABASE_URL` | PostgreSQL del motor | Motor. Si apunta al propio equipo, el otro necesita su PostgreSQL |
 | `TELEGRAM_TOKEN`, `TELEGRAM_ADMIN_ID` | Canal de Telegram | Motor, si se usa Telegram |
 | `META_VERIFY_TOKEN` | Webhook de WhatsApp | Motor, si se usa WhatsApp |
@@ -356,7 +357,8 @@ la persona dueña de las cuentas (nunca en el chat ni en el repositorio):
 |---|---|---|
 | `DATABASE_URL` y `BUSINESS_CONFIG_DATABASE_URL` | Cadena de `production` con *pooling* | Cadena de `pruebas` con *pooling* |
 | `BUSINESS_CONFIG_SECRETS_KEY` | Una clave propia de producción | La de este equipo (`secrets.local.env`) |
-| `OPENROUTER_API_KEY` | La clave de la IA | La clave de la IA |
+
+La IA no lleva variable: cada negocio guarda su clave de OpenRouter en el panel, y la plataforma no tiene clave propia.
 
 **3. Volver a desplegar** y comprobar `/health`.
 
@@ -429,7 +431,7 @@ Esos eventos ayudan a detectar:
 Revisar:
 
 - `/health`
-- `OPENROUTER_API_KEY`
+- que el negocio tenga su clave de IA (panel → Inteligencia artificial)
 - flags `ENABLE_AI_RESPONSES`, `ENABLE_SIMULATION_ENDPOINT`, `ENABLE_WEBHOOK_PROCESSING`
 - que el tenant exista y esté activo
 

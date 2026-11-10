@@ -322,7 +322,6 @@ class Settings(BaseSettings):
     jwt_expire_minutes: int = 60 * 8
 
     llm_provider: str = "openrouter"
-    openrouter_api_key: str = ""
     openrouter_base_url: str = "https://openrouter.ai/api/v1"
     openrouter_model: str = "openai/gpt-4o-mini"
     openrouter_advanced_model: str = "openai/gpt-4.1-mini"
@@ -470,16 +469,9 @@ def get_environment_status() -> Dict[str, Any]:
         "selected_env_file": str(ACTIVE_ENV_FILE) if ACTIVE_ENV_FILE is not None and ACTIVE_ENV_FILE.exists() else None,
         "root_env_exists": root_env.exists(),
         "project_env_exists": project_env.exists(),
-        "openrouter_api_key_present": bool(str(settings.openrouter_api_key or "").strip()),
         "openai_api_key_present": bool(str(os.getenv("OPENAI_API_KEY") or "").strip()),
         "provider": str(settings.llm_provider or "").strip(),
         "ai_enabled": bool(settings.enable_ai_responses),
     }
 
 
-def ensure_ai_runtime_ready() -> Dict[str, Any]:
-    status = get_environment_status()
-    provider = str(settings.llm_provider or "").strip().lower()
-    if bool(settings.enable_ai_responses) and provider == "openrouter" and not bool(status["openrouter_api_key_present"]):
-        raise RuntimeError("API KEY NOT LOADED")
-    return status

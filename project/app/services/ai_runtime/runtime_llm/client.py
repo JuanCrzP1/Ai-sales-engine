@@ -87,10 +87,11 @@ class _OpenRouterCompletions:
 class AIService:
     def __init__(self, *, provider: str = 'openrouter', api_key: str | None = None, request_timeout: int | None = None) -> None:
         self.provider = provider
-        self.api_key = self._normalize_api_key(api_key or settings.openrouter_api_key)
+        # No hay clave general: sin la clave de un negocio no se arma ningún cliente.
+        self.api_key = self._normalize_api_key(api_key)
         self.request_timeout = request_timeout or settings.llm_timeout_seconds
         self.max_retries = 0
-        self.client = self.build_client(provider_override=provider, api_key_override=self.api_key)
+        self.client = self.build_client(provider_override=provider, api_key_override=self.api_key) if self.api_key else None
 
     @staticmethod
     def _normalize_api_key(value: str | None) -> str:

@@ -113,6 +113,19 @@ def _llm_key_available() -> bool:
     return bool(key) and key not in {"<<TOKEN>>", "<TOKEN>"}
 
 
+@pytest.fixture(autouse=True)
+def _live_tests_answer_with_their_own_business_key(request, monkeypatch):
+    """La plataforma no tiene clave general: cada negocio usa la suya. En las pruebas en vivo, el negocio probado usa la
+    `OPENROUTER_API_KEY` de quien las corre, como si la hubiera guardado en el panel."""
+    if "integration" not in request.keywords:
+        return
+    from app.application import ai_pipeline
+    from app.domain.business_config.ai_settings import AICredentials
+
+    key = str(os.getenv("OPENROUTER_API_KEY") or "").strip()
+    monkeypatch.setattr(ai_pipeline, "load_business_ai", lambda _slug: AICredentials("openrouter", None, key))
+
+
 def pytest_collection_modifyitems(config, items):
     """Omite los tests marcados como integración cuando no hay OPENROUTER_API_KEY.
 

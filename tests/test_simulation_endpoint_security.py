@@ -315,7 +315,6 @@ def _run_real_app(tmp_path: Path, **values: str) -> dict:
     env.update(
         MODE="test",
         ENABLE_FILE_LOGS="0",
-        OPENROUTER_API_KEY="clave-ficticia",
         DATABASE_URL=f"sqlite:///{(tmp_path / 'aplicacion.db').as_posix()}",
         **values,
     )
@@ -529,7 +528,6 @@ def test_the_reply_is_free_text_and_is_the_only_field_that_can_mention_a_price(a
 def test_credentials_are_not_exposed(api, monkeypatch):
     markers = {
         "jwt_secret": "MARCA_SECRETO_JWT",
-        "openrouter_api_key": "MARCA_CLAVE_MODELO",
         "meta_access_token": "MARCA_TOKEN_META",
         "meta_app_secret": "MARCA_SECRETO_META",
         "meta_verify_token": "MARCA_VERIFICACION_META",

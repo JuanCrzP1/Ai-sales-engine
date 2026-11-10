@@ -153,8 +153,7 @@ def test_normal_run_ignores_the_credentials_of_the_local_env_file():
     credentials = (suite_conftest._local_env_names() | {"OPENROUTER_API_KEY"}) - {"MODE"} - suite_conftest._non_text_settings()
     exposed = sorted(name for name in credentials if os.environ.get(name))
     assert exposed == []
-    key_in_settings = bool(str(settings.openrouter_api_key or "").strip())
-    assert key_in_settings is False
+    assert not hasattr(settings, "openrouter_api_key")
 
 
 def test_flags_of_the_local_env_file_do_not_stop_the_run(monkeypatch):
