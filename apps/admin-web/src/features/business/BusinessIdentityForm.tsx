@@ -1,19 +1,18 @@
 import { TextAreaField, TextField } from "../../components/ui/FormFields";
-import { Card } from "../../components/ui/Layout";
+import { SettingsCard } from "../../components/ui/SettingsCard";
 import { optionalText } from "../../domain/config/document";
 import { TEXT_LIMITS } from "../../domain/config/engineLimits";
 import { useFieldIssue, useSection } from "../../state/useConfig";
 
+/** Quién es el negocio: su nombre, su marca y a qué se dedica. */
 export function BusinessIdentityForm() {
   const [identity, update] = useSection("identity");
   const nameIssue = useFieldIssue("identity.name");
   const brandIssue = useFieldIssue("identity.brand_name");
   const industryIssue = useFieldIssue("identity.industry");
-  const descriptionIssue = useFieldIssue("identity.description");
-  const valueIssue = useFieldIssue("identity.value_proposition");
 
   return (
-    <Card title="Datos del negocio">
+    <SettingsCard icon="store" tone="indigo" title="Datos del negocio" description="Cómo se llama y a qué se dedica.">
       <div className="grid-2">
         <TextField label="Nombre comercial" required value={identity.name} onChange={(name) => update({ name })} placeholder="Ej.: Panadería La Esquina" issue={nameIssue} />
         <TextField
@@ -34,6 +33,18 @@ export function BusinessIdentityForm() {
         issue={industryIssue}
         hint="Resúmelo en pocas palabras. Es lo primero que el asistente sabe de ti."
       />
+    </SettingsCard>
+  );
+}
+
+/** Qué hace el negocio y qué promete: lo que el asistente cuenta cuando le preguntan. */
+export function BusinessPromiseForm() {
+  const [identity, update] = useSection("identity");
+  const descriptionIssue = useFieldIssue("identity.description");
+  const valueIssue = useFieldIssue("identity.value_proposition");
+
+  return (
+    <SettingsCard icon="sparkles" tone="violet" title="Qué haces y qué prometes" description="Escríbelo como se lo explicarías a un cliente nuevo." wide>
       <TextAreaField
         label="Descripción del negocio"
         required
@@ -60,6 +71,6 @@ export function BusinessIdentityForm() {
         rows={2}
         hint="A quién te diriges y qué problema resuelves."
       />
-    </Card>
+    </SettingsCard>
   );
 }

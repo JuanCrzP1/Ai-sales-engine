@@ -1,5 +1,7 @@
+import type { ReactNode } from "react";
 import { ContractField } from "../components/config/ContractField";
-import { Disclosure } from "../components/ui/Disclosure";
+import type { IconName } from "../components/ui/Icon";
+import { SettingsCard, type CardTone } from "../components/ui/SettingsCard";
 import { fieldShape, nodeAt } from "../domain/config/contractSchema";
 import type { BusinessDocument } from "../domain/config/types";
 import { issuesFor } from "../domain/validation/issues";
@@ -13,13 +15,19 @@ interface ContractSectionProps {
   section: keyof BusinessDocument;
   /** Campos de la sección que se muestran; sin indicar, la sección completa. */
   fields?: string[];
+  icon?: IconName;
+  tone?: CardTone;
+  badge?: ReactNode;
+  wide?: boolean;
+  /** Plegada por defecto (opciones avanzadas). Con `false` se muestra abierta, como una tarjeta más. */
+  collapsible?: boolean;
 }
 
 /**
- * Formulario de los campos del contrato que no tienen pantalla propia, generado desde el esquema que publica el servidor.
- * Plegado por defecto: son opciones avanzadas, y lo que contienen se conserva aunque nadie lo abra.
+ * Tarjeta con los campos del contrato que no tienen pantalla propia, generada desde el esquema que publica el servidor. Lo que contiene
+ * se conserva aunque nadie la abra. Con un solo campo, la tarjeta ya lo nombra: el campo no repite su título.
  */
-export function ContractSection({ title, description, section, fields, ...props }: ContractSectionProps) {
+export function ContractSection({ title, description, section, fields, icon = "settings", tone = "slate", badge, wide = false, collapsible = true }: ContractSectionProps) {
   const schema = useContractSchema();
   const { document, issues, actions } = useConfig();
   const sectionNode = nodeAt(schema, [section]);
@@ -38,6 +46,7 @@ export function ContractSection({ title, description, section, fields, ...props 
             node={node}
             value={value?.[name]}
             path={`${String(section)}.${name}`}
+            untitled={fields.length === 1}
             issueAt={issueAt}
             onChange={(next) => actions.setRootValue(section, { ...(value ?? {}), [name]: next })}
           />
@@ -48,8 +57,8 @@ export function ContractSection({ title, description, section, fields, ...props 
     );
 
   return (
-    <Disclosure title={title} description={description} {...props}>
+    <SettingsCard icon={icon} tone={tone} title={title} description={description} badge={badge} wide={wide} collapsible={collapsible}>
       {content}
-    </Disclosure>
+    </SettingsCard>
   );
 }

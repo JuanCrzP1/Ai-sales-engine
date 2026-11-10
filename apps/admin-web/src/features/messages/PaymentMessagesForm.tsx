@@ -10,7 +10,7 @@ export function PaymentMessagesForm() {
   const confirmedIssue = useFieldIssue("messages.payment_confirmed");
 
   return (
-    <Card title="Mensajes de pago" description="El asistente no verifica pagos: estos mensajes solo acompañan lo que el cliente informa.">
+    <Card icon="wallet" tone="emerald" title="Mensajes de pago" description="El asistente no verifica pagos: estos mensajes solo acompañan lo que el cliente informa.">
       <div className="grid-2">
         <TextAreaField
           label="Cuando el cliente dice que ya pagó"

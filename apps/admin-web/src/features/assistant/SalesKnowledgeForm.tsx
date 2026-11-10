@@ -22,7 +22,7 @@ export function SalesKnowledgeForm() {
   };
 
   return (
-    <Card title="Instrucciones comerciales" description="Ayuda al asistente a entender por qué te compran y cómo debe vender.">
+    <Card icon="lightbulb" tone="amber" title="Instrucciones comerciales" description="Ayuda al asistente a entender por qué te compran y cómo debe vender.">
       {problemsIssue && <Alert tone="warning">{problemsIssue.message}</Alert>}
       <div className="grid-2">
         <TextField

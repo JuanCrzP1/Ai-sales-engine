@@ -1,6 +1,6 @@
 import { LinkButton } from "../../components/ui/Button";
 import { EmptyState } from "../../components/ui/Feedback";
-import { Card } from "../../components/ui/Layout";
+import { SettingsCard } from "../../components/ui/SettingsCard";
 import { isAvailable, offerEntries } from "../../domain/config/document";
 import { sectionPath } from "../../navigation/navItems";
 import { useWorkspacePath } from "../../navigation/useWorkspacePath";
@@ -18,12 +18,18 @@ export function OfferingsOverview() {
   );
 
   return (
-    <Card title="Productos o servicios que ofreces" actions={available.length > 0 ? manageLink : undefined}>
+    <SettingsCard icon="box" tone="sky" title="Productos o servicios que ofreces" description="Se administran en la pestaña de productos y servicios." actions={available.length > 0 ? manageLink : undefined} wide>
       {available.length === 0 ? (
         <EmptyState title="Todavía no hay productos ni servicios disponibles" description="Agrégalos en la sección de productos y servicios." action={manageLink} />
       ) : (
-        <p>{available.map((entry) => entry.name.trim() || "Sin nombre").join(" · ")}</p>
+        <div className="overview-card__facts">
+          {available.map((entry, index) => (
+            <span key={`${entry.id}-${index}`} className="overview-card__fact">
+              {entry.name.trim() || "Sin nombre"}
+            </span>
+          ))}
+        </div>
       )}
-    </Card>
+    </SettingsCard>
   );
 }

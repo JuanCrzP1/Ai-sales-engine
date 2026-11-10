@@ -108,8 +108,22 @@ es el servidor, que aplica las mismas reglas antes de guardar.
 ### D8 — Formularios generados desde el esquema
 
 `ContractField` y `ContractSection` construyen los campos avanzados desde `GET /api/contract`, que es el esquema publicado. Un campo
-nuevo del contrato queda editable sin duplicar su definición; `contractSchema.ts` solo aporta nombres en lenguaje del negocio. Los
-datos de pago no pasan por aquí: `payments` tiene su propia pantalla.
+nuevo del contrato queda editable sin duplicar su definición; `contractSchema.ts` solo aporta nombres y ayudas en lenguaje del negocio.
+Los datos de pago no pasan por aquí: `payments` tiene su propia pantalla.
+
+Para que nadie se enrede, el formulario se adapta al tipo de campo: un «sí / no / sin indicar» o una lista cerrada de hasta cuatro
+opciones se elige con botones (`SegmentedControl`); los pasos de la conversación, lo que no debe hacer y los datos del cierre se eligen
+con etiquetas en español (`ChipPicker` y `domain/config/vocabulary.ts`, el mismo vocabulario que el motor le dice a la IA); las horas
+usan el reloj del navegador, el tema de una objeción se elige de una lista y cada elemento de una lista lleva un título con sentido
+(«Objeciones: el precio»).
+
+### D8b — Configuración por tarjetas
+
+Cada sección del Asistente IA se arma con `SettingsGroup` y `SettingsCard` (`components/ui/SettingsCard.tsx`): un bloque «Lo esencial» y
+otro de opciones para afinar, en una cuadrícula de dos columnas que pasa a una en el celular. Cada tarjeta tiene ícono, color, título y
+para qué sirve; las avanzadas son plegables (elemento `<details>`, accesible por teclado) y al abrirlas ocupan todo el ancho. `Card` con
+`icon` se dibuja igual, así los formularios existentes no cambian de estructura. El resumen (`features/overview`) muestra cada sección
+con su estado, sus datos clave y el acceso a probar y publicar; es la entrada desde el menú.
 
 ### D9 — API separada del motor y limitada a este equipo
 

@@ -25,7 +25,7 @@ export function ClosingForm() {
   };
 
   return (
-    <Card title="Cómo se cierra una venta" description="Lo que el asistente puede hacer cuando el cliente está listo.">
+    <Card icon="handshake" tone="indigo" wide title="Cómo se cierra una venta" description="Lo que el asistente puede hacer cuando el cliente está listo.">
       {methodsIssue && <Alert tone="danger">{methodsIssue.message}</Alert>}
 
       <Toggle

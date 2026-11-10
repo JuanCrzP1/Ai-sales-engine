@@ -5,13 +5,13 @@
     "name": "Tienda Ropa",
     "brand_name": "Tienda Ropa",
     "industry": "moda y retail",
-    "description": "Sistema comercial para tienda de ropa que cierra pedidos por chat.",
-    "value_proposition": "convertir interes en compra con entrega o recogida segun preferencia.",
-    "positioning": "ejecucion comercial para cerrar pedidos de ropa por chat.",
+    "description": "Tienda de ropa básica en Medellín (camisetas y jeans), con envíos a todo Colombia y recogida en la tienda.",
+    "value_proposition": "ropa básica y cómoda que te llega a casa o recoges en la tienda.",
+    "positioning": "básicos de algodón para el día a día, fáciles de pedir por chat.",
     "differentiators": [
-      "cierre de compra por chat",
-      "envio y recogida en tienda",
-      "recomendacion de complementos"
+      "prendas básicas de algodón",
+      "envíos a todo Colombia y recogida en la tienda",
+      "te ayudamos a elegir tu talla"
     ],
     "location": {
       "type": "mixto",
@@ -29,8 +29,7 @@
       "envio"
     ],
     "target_customer": {
-      "segment": "tiendas de ropa",
-      "company_size": "2 a 20 personas"
+      "segment": "personas que buscan ropa básica y cómoda para el día a día"
     }
   },
   "offer": {
@@ -82,7 +81,6 @@
       "cambios segun politica de la tienda"
     ],
     "price_framing": "directo",
-    "roi_break_even_sales": 2,
     "financing": {
       "available": true,
       "providers": [
@@ -131,12 +129,12 @@
   ],
   "sales": {
     "pain_points": [
-      "conversaciones que no cierran compra",
-      "demora para confirmar entrega"
+      "no sé qué talla pedir",
+      "quiero saber cuándo me llega"
     ],
     "benefits": [
-      "cerrar pedidos rapido",
-      "mejorar conversion de chat a venta"
+      "vestir cómodo todos los días",
+      "recibir la ropa sin salir de casa"
     ],
     "offer_mix": {
       "core": [
@@ -144,17 +142,16 @@
         "jean_clasico"
       ],
       "upsell": [
-        "look_completo",
-        "prenda_premium"
+        "llevar camiseta y jean juntos"
       ],
       "cross_sell": [
-        "accesorios",
-        "cinturon"
+        "jean_clasico",
+        "camiseta_basica"
       ]
     },
     "discovery": {
       "objectives": [
-        "entender preferencia de compra y entrega"
+        "saber qué prenda busca, su talla y si prefiere envío o recogida"
       ]
     },
     "support": {
@@ -164,7 +161,6 @@
     "conversation_flow": {
       "required_flow": [
         "detect_pain",
-        "amplify_impact",
         "present_solution",
         "guide_next_step"
       ]
@@ -180,7 +176,7 @@
         "lo quiero",
         "quiero comprar",
         "me lo llevo",
-        "quiero empezar"
+        "la separo"
       ],
       "next_steps": [
         "confirmar talla y color",

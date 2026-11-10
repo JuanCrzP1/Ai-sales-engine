@@ -1,3 +1,4 @@
+import { AssistantOverviewPage } from "../features/overview/AssistantOverviewPage";
 import { Route } from "react-router-dom";
 import { AISettingsPage } from "../features/ai/AISettingsPage";
 import { AssistantPage } from "../features/assistant/AssistantPage";
@@ -29,6 +30,7 @@ import {
   CUSTOMERS_ITEM,
   ENTRY_PATH,
   NEW_BUSINESS_PATH,
+  OVERVIEW_ITEM,
   PLAYGROUND_ITEM,
   REPORTS_ITEM,
   REVIEW_ITEM,
@@ -68,6 +70,7 @@ export const appRoutes = (
           <Route path={SALES_ITEM.path} element={<SalesPage />} />
           <Route path={REPORTS_ITEM.path} element={<ReportsPage />} />
           <Route path={CHANNELS_ITEM.path} element={<ChannelsPage />} />
+          <Route path={OVERVIEW_ITEM.path} element={<AssistantOverviewPage />} />
           <Route path={sectionPath("business")} element={<BusinessPage />} />
           <Route path={sectionPath("catalog")} element={<CatalogPage />} />
           <Route path={sectionPath("payments")} element={<PaymentsPage />} />

@@ -1,8 +1,8 @@
 sales:
   discovery:  # Lo que se busca entender al inicio de la conversacion
     objectives:  # Objetivos de descubrimiento
-      - entender volumen de cotizaciones y reservas
-      - identificar donde se cae el seguimiento
+      - saber a qué destino quiere ir, en qué fechas y cuántas personas viajan
+      - entender su presupuesto
 
   support:
     info_handling:
@@ -11,25 +11,25 @@ sales:
 
   pain:
     clusters:  # Problemas frecuentes que justifican mover la conversacion
-      seguimiento_perdido:
+      presupuesto_ajustado:
         signals:
-          - cotizacion fria
-          - no responden a tiempo
-          - reserva sin cierre
+          - está muy caro
+          - no me alcanza
+          - qué tienes más económico
         impacts:
-          - reservas perdidas por demora comercial
+          - deja el viaje para después y pierde las fechas que quería
         monetization:
-          - cada cotizacion no atendida reduce cierres
+          - los precios cambian según la temporada y la disponibilidad
 
   objection:  # Respuestas sugeridas cuando el cliente duda por precio
     price:
       layers:  # Capas para manejar la objecion sin sonar robotico
         acknowledge:
-          - es normal evaluar inversion antes de reservar
+          - es normal querer comparar antes de reservar
         reframe:
-          - perder reservas por falta de seguimiento tambien cuesta dinero
+          - los paquetes ya incluyen vuelo y hotel, así que no tienes que organizar eso por aparte
         redirect:
-          - avanzamos con reserva guiada segun destino y fechas
+          - avanzamos con tu reserva según el destino y las fechas que elijas
 
   closing:
     strategy: booking  # Tipo de cierre: direct_sale | checkout | booking
@@ -54,19 +54,17 @@ sales:
       - quiero cotizar viaje
       - quiero reservar viaje
       - me interesa viajar
-      - quiero empezar
+      - quiero ese paquete
     next_steps:  # Pasos que debe seguir la IA para cerrar
       - coordinar destino y fechas
       - confirmar datos de contacto para reserva
     hard_rules:  # Reglas que no se deben romper al cerrar
-      - seguir strategy booking como regla principal de cierre
-      - ejecutar cierre orientado a reserva
-      - no vender planes ni mensualidades en viajes
-      - pedir solo datos necesarios para coordinar viaje
+      - confirma destino, fechas y número de viajeros antes de pedir datos
+      - pide solo los datos necesarios para la reserva
+      - "no confirmes disponibilidad: el equipo la confirma"
 
   progression_rules:
     required_flow:  # Secuencia minima que debe respetar la conversacion
       - detect_pain
-      - amplify_impact
       - present_solution
       - guide_next_step

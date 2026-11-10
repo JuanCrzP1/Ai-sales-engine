@@ -1,11 +1,29 @@
 import { emptyValue, fieldHint, fieldLabel, fieldShape, valueLabel, type ContractSchema, type SchemaNode } from "../../domain/config/contractSchema";
+import { OBJECTION_TOPICS, VOCABULARY_BY_FIELD } from "../../domain/config/vocabulary";
 import { Button } from "../ui/Button";
 import { CheckboxGroup } from "../ui/ChoiceGroup";
+import { ChipPicker } from "../ui/ChipPicker";
 import { ConfirmButton } from "../ui/ConfirmButton";
 import type { FieldFeedback } from "../ui/fieldFeedback";
 import { NumberField, SelectField, TextAreaField, TextField } from "../ui/FormFields";
 import { ListEditor } from "../ui/ListEditor";
+import { SegmentedControl } from "../ui/SegmentedControl";
 import { Toggle } from "../ui/Toggle";
+
+/** Hora del día (HH:MM) en el contrato: se elige con el reloj del navegador. */
+const CLOCK_PATTERN = "^([01]\\d|2[0-3]):[0-5]\\d$";
+/** Hasta cuántas opciones se eligen con botones en lugar de una lista desplegable. */
+const MAX_SEGMENTS = 4;
+/** Campos que dan nombre a un elemento de una lista («Objeción: el precio» en lugar de «Objeción: 1»). */
+const TITLE_KEYS = ["topic", "motivation", "name", "id", "product_id", "question", "segment"];
+
+function itemTitle(label: string, item: unknown, index: number): string {
+  const record = item && typeof item === "object" ? (item as Record<string, unknown>) : {};
+  const key = TITLE_KEYS.find((candidate) => typeof record[candidate] === "string" && (record[candidate] as string).trim());
+  if (!key) return `${label} ${index + 1}`;
+  const value = record[key] as string;
+  return `${label}: ${(key === "topic" ? OBJECTION_TOPICS[value]?.toLowerCase() : undefined) ?? valueLabel(value).toLowerCase()}`;
+}
 
 interface ContractFieldProps {
   root: ContractSchema;
@@ -18,12 +36,14 @@ interface ContractFieldProps {
   required?: boolean;
   /** Muestra solo los campos del objeto, sin título ni opción de quitarlo. */
   bare?: boolean;
+  /** Sin título propio: la tarjeta que lo contiene ya lo nombra. */
+  untitled?: boolean;
   issueAt: (path: string) => FieldFeedback | undefined;
   onChange: (value: unknown) => void;
 }
 
 /** Un campo del contrato, según lo que dice su esquema. Es recursivo: objetos y listas contienen más campos. */
-export function ContractField({ root, name, node, value, path, required = false, bare = false, issueAt, onChange }: ContractFieldProps) {
+export function ContractField({ root, name, node, value, path, required = false, bare = false, untitled = false, issueAt, onChange }: ContractFieldProps) {
   const shape = fieldShape(root, node);
   const label = fieldLabel(name, shape.node);
   const hint = fieldHint(name, shape.node);
@@ -33,7 +53,13 @@ export function ContractField({ root, name, node, value, path, required = false,
   switch (shape.kind) {
     case "text":
     case "date": {
-      const type = shape.kind === "date" ? "date" : "text";
+      if (name === "topic") {
+        const current = (value as string | null | undefined) ?? "";
+        const options = Object.entries(OBJECTION_TOPICS).map(([option, text]) => ({ value: option, label: text }));
+        if (current && !OBJECTION_TOPICS[current]) options.push({ value: current, label: valueLabel(current) });
+        return <SelectField label="Cuando el cliente duda por" hint={hint} value={current} options={[{ value: "", label: "Elige un tema" }, ...options]} issue={issue} onChange={onChange} />;
+      }
+      const type = shape.kind === "date" ? "date" : shape.node.pattern === CLOCK_PATTERN ? "time" : "text";
       return (
         <TextField
           label={label}
@@ -62,14 +88,14 @@ export function ContractField({ root, name, node, value, path, required = false,
     case "boolean":
       if (!shape.nullable) return <Toggle label={label} description={hint} checked={value === true} onChange={onChange} />;
       return (
-        <SelectField
+        <SegmentedControl
           label={label}
           hint={hint}
           value={value === true ? "yes" : value === false ? "no" : ""}
           options={[
-            { value: "", label: "Sin indicar" },
             { value: "yes", label: "Sí" },
             { value: "no", label: "No" },
+            { value: "", label: "Sin indicar" },
           ]}
           issue={issue}
           onChange={(choice) => onChange(choice === "" ? null : choice === "yes")}
@@ -77,6 +103,18 @@ export function ContractField({ root, name, node, value, path, required = false,
       );
     case "choice": {
       const options = (shape.node.enum ?? []).map((option) => ({ value: option, label: valueLabel(option) }));
+      if (options.length <= MAX_SEGMENTS) {
+        return (
+          <SegmentedControl
+            label={label}
+            hint={hint}
+            value={(value as string | null | undefined) ?? ""}
+            options={optional ? [...options, { value: "", label: "Sin indicar" }] : options}
+            issue={issue}
+            onChange={(choice) => onChange(choice === "" ? null : choice)}
+          />
+        );
+      }
       return (
         <SelectField
           label={label}
@@ -89,6 +127,20 @@ export function ContractField({ root, name, node, value, path, required = false,
       );
     }
     case "list":
+      if (VOCABULARY_BY_FIELD[name]) {
+        return (
+          <div className="contract-list">
+            <ChipPicker
+              label={label}
+              hint={hint}
+              options={VOCABULARY_BY_FIELD[name]}
+              values={(value as string[] | null | undefined) ?? []}
+              onChange={(items) => onChange(shape.nullable && items.length === 0 ? null : items)}
+            />
+            {issue && <p className={`field__message field__message--${issue.severity}`}>{issue.message}</p>}
+          </div>
+        );
+      }
       return (
         <div className="contract-list">
           <ListEditor label={label} hint={hint} items={(value as string[] | null | undefined) ?? []} onChange={(items) => onChange(shape.nullable && items.length === 0 ? null : items)} />
@@ -97,7 +149,11 @@ export function ContractField({ root, name, node, value, path, required = false,
       );
     case "choiceList": {
       const options = (fieldShape(root, shape.node.items ?? {}).node.enum ?? []).map((option) => ({ value: option, label: valueLabel(option) }));
-      return <CheckboxGroup legend={label} hint={hint} name={path} options={options} values={(value as string[] | null | undefined) ?? []} issue={issue} onChange={onChange} />;
+      return (
+        <div className="contract-choices">
+          <CheckboxGroup legend={label} hint={hint} name={path} options={options} values={(value as string[] | null | undefined) ?? []} issue={issue} onChange={onChange} />
+        </div>
+      );
     }
     case "objectList": {
       const items = (value as unknown[] | null | undefined) ?? [];
@@ -105,15 +161,13 @@ export function ContractField({ root, name, node, value, path, required = false,
       const change = (next: unknown[]) => onChange(shape.nullable && next.length === 0 ? null : next);
       return (
         <fieldset className="contract-group">
-          <legend className="field__label">{label}</legend>
-          {hint && <p className="field__hint">{hint}</p>}
+          {!untitled && <legend className="field__label">{label}</legend>}
+          {hint && !untitled && <p className="field__hint">{hint}</p>}
           {issue && <p className={`field__message field__message--${issue.severity}`}>{issue.message}</p>}
           {items.map((item, index) => (
             <div className="subcard" key={index}>
               <div className="card__header">
-                <h3 className="field__label">
-                  {label}: {index + 1}
-                </h3>
+                <h3 className="field__label">{itemTitle(label, item, index)}</h3>
                 <ConfirmButton confirmLabel="Sí, quitar" onConfirm={() => change(items.filter((_, position) => position !== index))}>
                   Quitar
                 </ConfirmButton>
@@ -130,7 +184,7 @@ export function ContractField({ root, name, node, value, path, required = false,
           ))}
           <div>
             <Button variant="secondary" size="small" onClick={() => change([...items, emptyValue(root, itemNode)])}>
-              Agregar a {label.toLowerCase()}
+              {untitled ? "Agregar" : `Agregar a ${label.toLowerCase()}`}
             </Button>
           </div>
         </fieldset>
@@ -142,13 +196,28 @@ export function ContractField({ root, name, node, value, path, required = false,
       if (!current) {
         return (
           <div className="contract-group">
-            <p className="field__label">{label}</p>
-            {hint && <p className="field__hint">{hint}</p>}
+            {!untitled && <p className="field__label">{label}</p>}
+            {hint && !untitled && <p className="field__hint">{hint}</p>}
             <div>
               <Button variant="secondary" size="small" onClick={() => onChange(emptyValue(root, node))}>
-                Agregar: {label.toLowerCase()}
+                {untitled ? "Configurar" : `Agregar: ${label.toLowerCase()}`}
               </Button>
             </div>
+          </div>
+        );
+      }
+      if (untitled) {
+        return (
+          <div className="contract-group">
+            {issue && <p className={`field__message field__message--${issue.severity}`}>{issue.message}</p>}
+            <ObjectFields root={root} node={node} value={current} path={path} issueAt={issueAt} onChange={onChange} />
+            {optional && (
+              <div>
+                <ConfirmButton confirmLabel="Sí, quitar" onConfirm={() => onChange(null)}>
+                  Quitar
+                </ConfirmButton>
+              </div>
+            )}
           </div>
         );
       }

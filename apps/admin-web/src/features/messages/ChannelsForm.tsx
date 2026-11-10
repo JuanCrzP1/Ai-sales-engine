@@ -10,7 +10,7 @@ export function ChannelsForm() {
   const channels = capabilities.service_channels ?? [];
 
   return (
-    <Card title="Canales de atención" description="Por dónde atiende tu negocio. El asistente los menciona cuando el cliente pregunta.">
+    <Card icon="plug" tone="indigo" title="Canales de atención" description="Por dónde atiende tu negocio. El asistente los menciona cuando el cliente pregunta.">
       <Alert tone="info">
         <p>
           Marcar un canal aquí <strong>no lo conecta</strong>. La conexión de WhatsApp o Telegram se hará en una fase posterior; por ahora todos aparecen como sin conectar.

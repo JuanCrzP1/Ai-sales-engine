@@ -11,7 +11,7 @@ export function WelcomeMessageForm() {
   const groupIssue = useFieldIssue("messages.welcome");
 
   return (
-    <Card title="Mensaje de bienvenida" description="Se envía tal cual cuando un cliente nuevo solo saluda. Si lo desactivas, responde el asistente.">
+    <Card icon="message" tone="violet" title="Mensaje de bienvenida" description="Se envía tal cual cuando un cliente nuevo solo saluda. Si lo desactivas, responde el asistente.">
       <Toggle label="Enviar mensaje de bienvenida" checked={welcome.enabled} onChange={(enabled) => update({ welcome: { ...welcome, enabled } })} />
       {welcome.enabled && (
         <div className="grid-2">

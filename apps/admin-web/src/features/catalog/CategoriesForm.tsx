@@ -11,7 +11,7 @@ export function CategoriesForm() {
   if (!catalog || catalog.categories.length === 0) return null;
 
   return (
-    <Card title="Categorías" description="Cómo se agrupan tus productos. Cambiar el nombre no afecta a los productos.">
+    <Card icon="layers" tone="violet" title="Categorías" description="Cómo se agrupan tus productos. Cambiar el nombre no afecta a los productos.">
       {catalog.categories.map((category, index) => {
         const used = catalog.items.filter((item) => item.category === category.id).length;
         return (

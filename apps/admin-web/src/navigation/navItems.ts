@@ -2,6 +2,7 @@ import { CONFIG_SECTIONS, type ConfigSectionId } from "../domain/sections";
 
 export type NavKey =
   | "home"
+  | "overview"
   | ConfigSectionId
   | "review"
   | "ai"
@@ -39,6 +40,8 @@ export const NEW_BUSINESS_PATH = "/nuevo-negocio";
 
 export const HOME_ITEM: NavItem = { key: "home", path: "", title: "Inicio" };
 export const REVIEW_ITEM: NavItem = { key: "review", path: "revision", title: "Revisión y publicación" };
+/** Resumen del Asistente IA: cada sección en una tarjeta, con su estado. Es la entrada desde el menú. */
+export const OVERVIEW_ITEM: NavItem = { key: "overview", path: "asistente", title: "Resumen" };
 /** Herramientas del asistente: fuera del recorrido guiado de configuración. */
 export const AI_ITEM: NavItem = { key: "ai", path: "ia", title: "Inteligencia artificial" };
 export const PLAYGROUND_ITEM: NavItem = { key: "playground", path: "probar", title: "Probar asistente" };
@@ -88,13 +91,14 @@ export const MAIN_ITEMS: NavItem[] = [HOME_ITEM, CONVERSATIONS_ITEM, CUSTOMERS_I
 
 /** Pestañas del Asistente IA: su entrenamiento, probarlo y publicarlo. */
 export const ASSISTANT_TABS: { item: NavItem; label: string }[] = [
+  { item: OVERVIEW_ITEM, label: "Resumen" },
   ...SECTION_ITEMS.map((item) => ({ item, label: item.title })),
   { item: PLAYGROUND_ITEM, label: "Probar" },
   { item: REVIEW_ITEM, label: "Publicar" },
 ];
 
-/** Entrada del menú hacia el Asistente IA: abre su primera pestaña. */
-export const ASSISTANT_HUB_ITEM: NavItem = { key: "assistantHub", path: sectionPath("business"), title: "Asistente IA" };
+/** Entrada del menú hacia el Asistente IA: abre su resumen. */
+export const ASSISTANT_HUB_ITEM: NavItem = { key: "assistantHub", path: OVERVIEW_ITEM.path, title: "Asistente IA" };
 
 /** Si la ruta es una pestaña del Asistente IA (`/negocios/x/pagos`). */
 export function isAssistantPath(pathname: string): boolean {

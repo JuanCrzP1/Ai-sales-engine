@@ -24,18 +24,20 @@ const FIELDS: { key: "data_request" | "human_handoff" | "after_sale" | "follow_u
 export function OtherMessagesForm() {
   const [messages, update] = useSection("messages");
   return (
-    <Card title="Otros mensajes" description="Opcionales. Si no los escribes, el asistente responde con sus propias palabras.">
-      {FIELDS.map(({ key, label, placeholder, hint }) => (
-        <MessageField
-          key={key}
-          path={`messages.${key}`}
-          label={label}
-          placeholder={placeholder}
-          hint={hint}
-          value={messages[key] ?? ""}
-          onChange={(text) => update({ [key]: optionalText(text) })}
-        />
-      ))}
+    <Card icon="chat" tone="sky" wide title="Otros mensajes" description="Opcionales. Si no los escribes, el asistente responde con sus propias palabras.">
+      <div className="grid-2">
+        {FIELDS.map(({ key, label, placeholder, hint }) => (
+          <MessageField
+            key={key}
+            path={`messages.${key}`}
+            label={label}
+            placeholder={placeholder}
+            hint={hint}
+            value={messages[key] ?? ""}
+            onChange={(text) => update({ [key]: optionalText(text) })}
+          />
+        ))}
+      </div>
     </Card>
   );
 }

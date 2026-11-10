@@ -1,4 +1,6 @@
 import type { ReactNode } from "react";
+import type { IconName } from "./Icon";
+import { SettingsCard, type CardTone } from "./SettingsCard";
 
 /** Bloques de maquetación de página: cabecera y tarjetas. */
 
@@ -28,9 +30,22 @@ interface CardProps {
   actions?: ReactNode;
   children?: ReactNode;
   as?: "section" | "div";
+  /** Con ícono, la tarjeta es de configuración: ícono de color, título y cuerpo (ver `SettingsCard`). */
+  icon?: IconName;
+  tone?: CardTone;
+  badge?: ReactNode;
+  /** Ocupa el ancho completo de la cuadrícula de tarjetas. */
+  wide?: boolean;
 }
 
-export function Card({ title, description, actions, children, as: Tag = "section" }: CardProps) {
+export function Card({ title, description, actions, children, as: Tag = "section", icon, tone, badge, wide }: CardProps) {
+  if (icon && title) {
+    return (
+      <SettingsCard icon={icon} tone={tone} title={title} description={description} badge={badge} actions={actions} wide={wide}>
+        {children}
+      </SettingsCard>
+    );
+  }
   return (
     <Tag className="card">
       {(title || actions) && (

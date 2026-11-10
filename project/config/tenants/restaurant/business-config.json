@@ -5,13 +5,13 @@
     "name": "Mesa Activa",
     "brand_name": "Mesa Activa",
     "industry": "restaurante y domicilios",
-    "description": "Sistema comercial para restaurantes que toman pedidos por chat.",
-    "value_proposition": "tomar pedidos rapido y reducir perdidas por demora.",
-    "positioning": "asistencia comercial para convertir chats en pedidos confirmados.",
+    "description": "Restaurante de hamburguesas artesanales en Medellín, con domicilio en El Poblado y Laureles y para recoger en el local.",
+    "value_proposition": "hamburguesas artesanales recién hechas que llegan calientes a tu casa.",
+    "positioning": "la hamburguesa artesanal del barrio, fácil de pedir por chat.",
     "differentiators": [
-      "toma de pedido por chat",
-      "confirmacion de orden",
-      "seguimiento de entrega"
+      "carne artesanal preparada al momento",
+      "domicilio propio en El Poblado y Laureles",
+      "pedido fácil por chat"
     ],
     "location": {
       "type": "fisico",
@@ -31,8 +31,7 @@
       "recoger"
     ],
     "target_customer": {
-      "segment": "restaurantes",
-      "company_size": "3 a 40 personas"
+      "segment": "personas y familias de El Poblado y Laureles que piden comida a domicilio"
     }
   },
   "offer": {
@@ -110,7 +109,6 @@
       "precios de menu sujetos a disponibilidad diaria"
     ],
     "price_framing": "directo",
-    "roi_break_even_sales": 2,
     "financing": {
       "available": false,
       "providers": [],
@@ -153,12 +151,12 @@
   ],
   "sales": {
     "pain_points": [
-      "pedidos sin confirmar",
-      "demoras en toma de orden"
+      "tengo hambre y no quiero esperar mucho",
+      "no sé qué pedir"
     ],
     "benefits": [
-      "confirmar pedido rapido",
-      "mejorar flujo de ordenes"
+      "comer rico sin salir de casa",
+      "recibir el pedido caliente"
     ],
     "offer_mix": {
       "core": [
@@ -166,19 +164,16 @@
         "hamburguesa_doble"
       ],
       "upsell": [
-        "combo_agrandado",
-        "doble_carne",
-        "papas_grandes"
+        "hamburguesa_doble"
       ],
       "cross_sell": [
         "gaseosa",
-        "jugo",
-        "postre"
+        "jugo_natural"
       ]
     },
     "discovery": {
       "objectives": [
-        "entender volumen de pedidos por chat"
+        "saber qué se le antoja y para cuántas personas es el pedido"
       ]
     },
     "support": {
@@ -188,7 +183,6 @@
     "conversation_flow": {
       "required_flow": [
         "detect_pain",
-        "amplify_impact",
         "present_solution",
         "guide_next_step"
       ]
@@ -204,7 +198,7 @@
         "quiero pedir",
         "quiero ordenar",
         "lo quiero",
-        "quiero empezar"
+        "me la mandas"
       ],
       "next_steps": [
         "confirmar pedido",

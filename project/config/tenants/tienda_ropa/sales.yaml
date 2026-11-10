@@ -1,7 +1,7 @@
 sales:
   discovery:  # Lo que se busca entender al inicio de la conversacion
     objectives:  # Objetivos de descubrimiento
-      - entender preferencia de compra y entrega
+      - saber qué prenda busca, su talla y si prefiere envío o recogida
   support:
     info_handling:
       explain_first: true  # true = primero aclara la duda / false = vende directo
@@ -27,7 +27,7 @@ sales:
       - lo quiero
       - quiero comprar
       - me lo llevo
-      - quiero empezar
+      - la separo
     next_steps:  # Pasos que debe seguir la IA para cerrar
       - confirmar talla y color
       - confirmar envio o recogida
@@ -38,6 +38,5 @@ sales:
   progression_rules:
     required_flow:  # Secuencia minima que debe respetar la conversacion
       - detect_pain
-      - amplify_impact
       - present_solution
       - guide_next_step

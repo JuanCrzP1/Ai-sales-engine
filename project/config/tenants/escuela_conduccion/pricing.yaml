@@ -83,12 +83,8 @@ pricing:
   business_offers:  # Mapa simple de oferta principal, upsell y cross-sell
     core:  # Oferta principal que mas se vende
       - licencias
-    upsell:  # Oferta para subir valor de la venta
-      - paquete_intensivo
-      - clases_adicionales
-    cross_sell:  # Oferta complementaria que suma al cierre
-      - examen_medico
-      - asesoria_tramites
+    upsell: []  # Oferta para subir valor de la venta
+    cross_sell: []  # Oferta complementaria que suma al cierre
     financing:
       available: true  # true = permite financiacion / false = no ofrece financiacion
       providers:

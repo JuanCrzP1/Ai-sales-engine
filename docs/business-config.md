@@ -170,8 +170,8 @@ y en los comentarios de los tipos TypeScript:
 Con esto la matriz distingue cuatro situaciones que no son equivalentes:
 
 - **Representado en el contrato:** el campo existe con tipo y validaciones (184 campos hoja).
-- **Conservado en los datos:** los 1211 campos de los nueve negocios vuelven intactos al compilar (comprobado
-  campo por campo): 1166 desde el documento comercial, los datos de pago y los ajustes técnicos, y 45 desde la
+- **Conservado en los datos:** los 1206 campos de los nueve negocios vuelven intactos al compilar (comprobado
+  campo por campo): 1161 desde el documento comercial, los datos de pago y los ajustes técnicos, y 45 desde la
   definición común del cierre.
 - **Configurable en la interfaz:** columna Interfaz (`pantalla`, `modelo` o `no`).
 - **Ejecutado por el motor:** `x-engine = conectado` (184 campos hoja; 2 `programado`, 2 `solo panel`, 0

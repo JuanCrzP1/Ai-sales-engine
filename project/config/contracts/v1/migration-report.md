@@ -10,17 +10,17 @@ contiene datos de pago.
 
 | Negocio | Oferta | Campos comerciales | Ajustes técnicos | Referencias a secretos |
 |---|---|---|---|---|
-| agencia_viajes | catalog | 194 | 7 | 4 |
+| agencia_viajes | catalog | 187 | 7 | 4 |
 | asesor_ai_prod | plans | 241 | 8 | 5 |
-| clinic | plans | 134 | 6 | 5 |
+| clinic | plans | 136 | 6 | 5 |
 | demo | plans | 223 | 6 | 10 |
 | ecommerce | plans | 135 | 6 | 5 |
-| escuela_conduccion | catalog | 189 | 6 | 4 |
-| restaurant | catalog | 160 | 7 | 4 |
+| escuela_conduccion | catalog | 187 | 6 | 4 |
+| restaurant | catalog | 154 | 7 | 4 |
 | saas | plans | 131 | 6 | 5 |
-| tienda_ropa | catalog | 165 | 6 | 4 |
+| tienda_ropa | catalog | 161 | 6 | 4 |
 
-Totales: 1572 campos comerciales, 58 ajustes técnicos, 46 referencias a secretos.
+Totales: 1555 campos comerciales, 58 ajustes técnicos, 46 referencias a secretos.
 
 ## Diagnóstico de los documentos
 

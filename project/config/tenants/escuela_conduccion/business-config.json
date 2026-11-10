@@ -7,7 +7,7 @@
     "industry": "educacion vial colombia",
     "description": "Escuela que forma conductores y gestiona el proceso completo para obtener licencias A1, A2, B1, B2, C1, C2.\n",
     "value_proposition": "guiar al alumno hasta su licencia con pasos claros.",
-    "positioning": "acompanamiento comercial para convertir interes en inscripcion y agenda.",
+    "positioning": "la escuela que te acompaña en todo el proceso, del curso al trámite de tu licencia.",
     "location": {
       "type": "fisico",
       "address": "Cra 52 #49-20",
@@ -221,14 +221,8 @@
       "core": [
         "licencias"
       ],
-      "upsell": [
-        "paquete_intensivo",
-        "clases_adicionales"
-      ],
-      "cross_sell": [
-        "examen_medico",
-        "asesoria_tramites"
-      ]
+      "upsell": [],
+      "cross_sell": []
     },
     "discovery": {
       "objectives": [
@@ -276,9 +270,9 @@
         "confirmar datos y agendar asesoria"
       ],
       "rules": [
-        "seguir strategy booking como regla principal de cierre",
-        "cuando haya trigger de licencia, guiar proceso y pedir datos para agenda",
-        "no vender planes ni mensualidades"
+        "explica el proceso según la licencia antes de pedir datos",
+        "cuando quiera inscribirse, pide los datos para agendar la asesoría",
+        "no ofrezcas planes ni mensualidades: se paga por licencia"
       ]
     }
   },

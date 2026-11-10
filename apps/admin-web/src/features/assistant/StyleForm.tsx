@@ -15,7 +15,7 @@ export function StyleForm() {
   const instructionsIssue = useFieldIssue("response_style.instructions");
 
   return (
-    <Card title="Personalidad y estilo de atención">
+    <Card icon="palette" tone="violet" title="Personalidad y estilo de atención" description="Cómo habla el asistente con tus clientes.">
       <div className="grid-2">
         <TextField label="Tono de comunicación" value={style.tone ?? ""} onChange={(tone) => update({ tone: optionalText(tone) })} placeholder="Ej.: cercano y claro" issue={toneIssue} />
         <TextField label="Personalidad de la marca" value={style.voice ?? ""} onChange={(voice) => update({ voice: optionalText(voice) })} placeholder="Ej.: experta pero sencilla" issue={voiceIssue} />

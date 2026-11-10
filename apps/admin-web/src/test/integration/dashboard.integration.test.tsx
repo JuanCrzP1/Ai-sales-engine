@@ -308,8 +308,9 @@ describe("secciones comerciales guardadas en la API real", () => {
     fill(screen.getByLabelText(/^Mensaje/), "Hola, gracias por escribirnos.");
     await user.click(screen.getByRole("checkbox", { name: /^Telegram/ }));
     await openTab(user, /^Productos y servicios/);
-    await user.click(screen.getByRole("button", { name: "Agregar: domicilio" }));
-    const delivery = within(screen.getByRole("group", { name: "Domicilio" }));
+    // Domicilio es una tarjeta de opciones avanzadas: se configura desde su propio botón.
+    const delivery = within(screen.getByRole("heading", { name: /^Domicilio/ }).closest("details") as HTMLElement);
+    await user.click(delivery.getByRole("button", { name: "Configurar" }));
     await user.click(delivery.getByRole("switch", { name: /^Disponible/ }));
     await saveInPanel(user);
 
@@ -321,7 +322,7 @@ describe("secciones comerciales guardadas en la API real", () => {
 
     // Lo editado desde el formulario generado vuelve a aparecer al abrir de nuevo el panel.
     await openPanel("/negocios/otros_real/productos");
-    expect(within(screen.getByRole("group", { name: "Domicilio" })).getByRole("switch", { name: /^Disponible/ })).toBeChecked();
+    expect(within(screen.getByRole("heading", { name: /^Domicilio/ }).closest("details") as HTMLElement).getByRole("switch", { name: /^Disponible/ })).toBeChecked();
   });
 });
 

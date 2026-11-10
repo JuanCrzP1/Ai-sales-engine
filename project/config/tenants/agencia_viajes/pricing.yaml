@@ -60,22 +60,17 @@ pricing:
   roi:  # Referencia simple para medir retorno esperado
     break_even_reservas: 1
 
-  roi_hints:  # Ideas simples para explicar el retorno de la inversion
-    - una reserva cerrada puede cubrir el costo del sistema
-    - responder y retomar cotizaciones eleva conversion de reservas
-
   note: >  # Nota operativa que la IA puede usar sin inventar condiciones
     La reserva se confirma segun destino, fechas y disponibilidad.
 
   business_offers:  # Mapa simple de oferta principal, upsell y cross-sell
     core:  # Oferta principal que mas se vende
-      - paquetes_destino
+      - cartagena_3_noches
+      - san_andres_4_noches
     upsell:  # Oferta para subir valor de la venta
-      - hotel_superior
-      - actividades_premium
+      - san_andres_4_noches
     cross_sell:  # Oferta complementaria que suma al cierre
-      - tour_adicional
-      - seguro_viajero
+      - tour_guatape
     financing:
       available: true  # true = permite financiacion / false = no ofrece financiacion
       providers:

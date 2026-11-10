@@ -16,7 +16,7 @@ export function FaqForm() {
   const issue = listIssue ?? groupIssue;
 
   return (
-    <Card title="Preguntas frecuentes" description="El asistente usa estas respuestas tal como las escribas.">
+    <Card icon="question" tone="indigo" title="Preguntas frecuentes" description="El asistente usa estas respuestas tal como las escribas.">
       {issue && <Alert tone={issue.severity === "error" ? "danger" : "warning"}>{issue.message}</Alert>}
       {faqs.length === 0 && <p className="field__hint">Aún no hay preguntas frecuentes.</p>}
       {faqs.map((faq, index) => (

@@ -1,26 +1,25 @@
 business:
   name: Tienda Ropa
   brand_name: Tienda Ropa
-  description: Sistema comercial para tienda de ropa que cierra pedidos por chat.
+  description: Tienda de ropa básica en Medellín (camisetas y jeans), con envíos a todo Colombia y recogida en la tienda.
   industry: moda y retail
   tone: cercano, directo y comercial
   voice: claro y orientado a cierre
   city: Medellin
-  promise: convertir interes en compra con entrega o recogida segun preferencia.
-  positioning: ejecucion comercial para cerrar pedidos de ropa por chat.
+  promise: ropa básica y cómoda que te llega a casa o recoges en la tienda.
+  positioning: básicos de algodón para el día a día, fáciles de pedir por chat.
   differentiators:
-    - cierre de compra por chat
-    - envio y recogida en tienda
-    - recomendacion de complementos
+    - prendas básicas de algodón
+    - envíos a todo Colombia y recogida en la tienda
+    - te ayudamos a elegir tu talla
   customer_profile:
-    segment: tiendas de ropa
-    company_size: 2 a 20 personas
+    segment: personas que buscan ropa básica y cómoda para el día a día
   pain_points:
-    - conversaciones que no cierran compra
-    - demora para confirmar entrega
+    - no sé qué talla pedir
+    - quiero saber cuándo me llega
   desired_outcomes:
-    - cerrar pedidos rapido
-    - mejorar conversion de chat a venta
+    - vestir cómodo todos los días
+    - recibir la ropa sin salir de casa
 
   location:
     type: mixto

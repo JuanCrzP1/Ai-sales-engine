@@ -2,26 +2,25 @@ business:
   type: restaurant
   name: Mesa Activa
   brand_name: Mesa Activa
-  description: Sistema comercial para restaurantes que toman pedidos por chat.
+  description: Restaurante de hamburguesas artesanales en Medellín, con domicilio en El Poblado y Laureles y para recoger en el local.
   industry: restaurante y domicilios
   tone: cercano, agil y orientado a orden
   voice: claro y rapido
   city: Medellin
-  promise: tomar pedidos rapido y reducir perdidas por demora.
-  positioning: asistencia comercial para convertir chats en pedidos confirmados.
+  promise: hamburguesas artesanales recién hechas que llegan calientes a tu casa.
+  positioning: la hamburguesa artesanal del barrio, fácil de pedir por chat.
   differentiators:
-    - toma de pedido por chat
-    - confirmacion de orden
-    - seguimiento de entrega
+    - carne artesanal preparada al momento
+    - domicilio propio en El Poblado y Laureles
+    - pedido fácil por chat
   customer_profile:
-    segment: restaurantes
-    company_size: 3 a 40 personas
+    segment: personas y familias de El Poblado y Laureles que piden comida a domicilio
   pain_points:
-    - pedidos sin confirmar
-    - demoras en toma de orden
+    - tengo hambre y no quiero esperar mucho
+    - no sé qué pedir
   desired_outcomes:
-    - confirmar pedido rapido
-    - mejorar flujo de ordenes
+    - comer rico sin salir de casa
+    - recibir el pedido caliente
 
   location:
     type: fisico

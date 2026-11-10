@@ -23,7 +23,7 @@ export function PaymentMethodsOverview() {
   if (methods.length === 0) return null;
 
   return (
-    <Card title="Métodos configurados" description="Solo se muestra una parte de cada dato, para reconocerlo.">
+    <Card icon="card" tone="emerald" wide title="Métodos configurados" description="Solo se muestra una parte de cada dato, para reconocerlo.">
       <ul className="item-list" aria-label="Métodos de pago configurados">
         {methods.map((method) => (
           <li key={method.path} className="item-row">

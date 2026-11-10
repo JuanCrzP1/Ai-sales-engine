@@ -1,4 +1,5 @@
 import { Button } from "../../components/ui/Button";
+import { SettingsGroup } from "../../components/ui/SettingsCard";
 import { Alert, EmptyState } from "../../components/ui/Feedback";
 import { Card, PageHeader } from "../../components/ui/Layout";
 import { SelectField } from "../../components/ui/FormFields";
@@ -46,7 +47,8 @@ export function CatalogPage() {
         />
       )}
 
-      <Card title={catalog ? "Catálogo" : "Planes y servicios"} description={`${entries.length} en total · ${entries.filter(isAvailable).length} disponibles`}>
+      <SettingsGroup title="Tu oferta" description="Lo que el asistente puede ofrecer, con su precio.">
+      <Card icon="box" tone="sky" wide title={catalog ? "Catálogo" : "Planes y servicios"} description={`${entries.length} en total · ${entries.filter(isAvailable).length} disponibles`}>
         {listIssue && <Alert tone="warning">{listIssue.message}</Alert>}
         {entries.length === 0 ? (
           <EmptyState title="Aún no has agregado nada" description="Agrega lo que vendes para que el asistente pueda ofrecerlo." action={!editor ? <Button onClick={startNew}>{addLabel}</Button> : undefined} />
@@ -63,7 +65,7 @@ export function CatalogPage() {
       {catalog && <CategoriesForm />}
 
       {catalog && document.payments.length > 1 && (
-        <Card title="Perfil de pago del catálogo">
+        <Card icon="wallet" tone="emerald" title="Perfil de pago del catálogo">
           <SelectField
             label="Con qué perfil se cobra"
             value={document.offer.catalog?.payment_profile ?? ""}
@@ -76,14 +78,24 @@ export function CatalogPage() {
         </Card>
       )}
 
-      {catalog && (
-        <ContractSection
-          title="Variantes y existencias"
-          description="Tallas, colores y unidades disponibles de cada producto. El asistente dice qué opciones están agotadas, nunca cuántas quedan."
-          section="inventory"
-        />
-      )}
-      <ContractSection title="Entrega y agenda" description="Domicilio, envío, recogida y si el servicio requiere agendar." section="fulfillment" />
+      </SettingsGroup>
+
+      <SettingsGroup title="Entrega y existencias" description="Cómo recibe el cliente lo que compra. El asistente lo dice cuando le preguntan y no promete lo que no está aquí.">
+        <ContractSection title="Domicilio" description="Si llevas los pedidos a domicilio: zonas, costo y tiempo." section="fulfillment" fields={["delivery"]} icon="truck" tone="sky" />
+        <ContractSection title="Envíos" description="Envíos a otras ciudades o países, con transportadora." section="fulfillment" fields={["shipping"]} icon="send" tone="indigo" />
+        <ContractSection title="Recogida en el local" description="Si el cliente puede pasar a recoger su pedido." section="fulfillment" fields={["pickup"]} icon="store" tone="amber" />
+        <ContractSection title="Citas o reservas" description="Si tu servicio requiere agendar una cita o una reserva." section="fulfillment" fields={["scheduling"]} icon="clock" tone="violet" />
+        {catalog && (
+          <ContractSection
+            title="Variantes y existencias"
+            description="Tallas, colores y unidades disponibles de cada producto. El asistente dice qué opciones están agotadas, nunca cuántas quedan."
+            section="inventory"
+            icon="layers"
+            tone="rose"
+            wide
+          />
+        )}
+      </SettingsGroup>
 
       <SectionPager current="catalog" />
     </>

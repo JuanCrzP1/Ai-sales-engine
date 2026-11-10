@@ -64,6 +64,10 @@
     ],
     "price_framing": "comparativo",
     "roi_break_even_sales": 2,
+    "roi_hints": [
+      "recuperar dos citas al mes ya cubre el plan",
+      "confirmar las citas por chat reduce las inasistencias"
+    ],
     "financing": {
       "available": true,
       "providers": [

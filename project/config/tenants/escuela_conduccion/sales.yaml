@@ -64,9 +64,9 @@ sales:
       - explicar proceso segun licencia
       - confirmar datos y agendar asesoria
     hard_rules:  # Reglas que no se deben romper al cerrar
-      - seguir strategy booking como regla principal de cierre
-      - cuando haya trigger de licencia, guiar proceso y pedir datos para agenda
-      - no vender planes ni mensualidades
+      - explica el proceso según la licencia antes de pedir datos
+      - cuando quiera inscribirse, pide los datos para agendar la asesoría
+      - "no ofrezcas planes ni mensualidades: se paga por licencia"
 
   conversation_flow:
     steps:  # Pasos que idealmente sigue la conversacion

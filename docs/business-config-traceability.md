@@ -26,16 +26,16 @@ Clases: **A** configuración que edita el cliente; **B** configuración comercia
 
 | Negocio | Campos | Comerciales | Datos de pago (referencias) | Técnicos | Definición común | A | B | C | D | E |
 |---|---|---|---|---|---|---|---|---|---|---|
-| agencia_viajes | 145 | 129 | 5 | 6 | 5 | 92 | 36 | 6 | 5 | 6 |
+| agencia_viajes | 143 | 127 | 5 | 6 | 5 | 91 | 35 | 6 | 5 | 6 |
 | asesor_ai_prod | 164 | 148 | 5 | 6 | 5 | 83 | 64 | 6 | 5 | 6 |
-| clinic | 109 | 93 | 5 | 6 | 5 | 72 | 20 | 6 | 5 | 6 |
+| clinic | 110 | 94 | 5 | 6 | 5 | 72 | 21 | 6 | 5 | 6 |
 | demo | 162 | 141 | 10 | 6 | 5 | 93 | 47 | 4 | 10 | 8 |
 | ecommerce | 109 | 93 | 5 | 6 | 5 | 72 | 20 | 6 | 5 | 6 |
 | escuela_conduccion | 144 | 128 | 5 | 6 | 5 | 103 | 24 | 6 | 5 | 6 |
-| restaurant | 128 | 111 | 5 | 7 | 5 | 90 | 20 | 6 | 5 | 7 |
+| restaurant | 126 | 109 | 5 | 7 | 5 | 89 | 19 | 6 | 5 | 7 |
 | saas | 112 | 96 | 5 | 6 | 5 | 72 | 23 | 6 | 5 | 6 |
-| tienda_ropa | 138 | 122 | 5 | 6 | 5 | 101 | 20 | 6 | 5 | 6 |
-| **Total** | 1211 | 1061 | 50 | 55 | 45 | 778 | 274 | 52 | 50 | 57 |
+| tienda_ropa | 136 | 120 | 5 | 6 | 5 | 100 | 19 | 6 | 5 | 6 |
+| **Total** | 1206 | 1056 | 50 | 55 | 45 | 775 | 272 | 52 | 50 | 57 |
 
 ## Funcionalidades comerciales conservadas
 
@@ -59,7 +59,7 @@ JSON Schema: es la validación que aplica el contrato. **Valores actuales** cuen
 | Flujo de conversación | `sales.conversation_flow.steps` | Pasos que idealmente sigue la conversación. | `sales.conversation_flow.steps` | lista de texto con formato validado | ["detect_pain", "amplify_impact", "present_solution", "guide_next_step"] (2), ["detect_pain", "present_solution", "validate_requirements", "guide_next_step"] (1) | conectado |
 | Flujo de conversación | `sales.conversation_flow.rules.no_skip_steps` | `true`: no se saltan pasos. | `sales.conversation_flow.no_skip_steps` | interruptor true/false | true (3) | conectado |
 | Flujo de conversación | `sales.conversation_flow.rules.guided_process` | `true`: guía al cliente paso a paso en un proceso. | `sales.conversation_flow.guided_process` | interruptor true/false | true (1) | conectado |
-| Flujo de conversación | `sales.progression_rules.required_flow` | Secuencia mínima que debe respetar la conversación. | `sales.conversation_flow.required_flow` | lista de texto con formato validado | ["detect_pain", "amplify_impact", "present_solution", "guide_next_step"] (9) | conectado |
+| Flujo de conversación | `sales.progression_rules.required_flow` | Secuencia mínima que debe respetar la conversación. | `sales.conversation_flow.required_flow` | lista de texto con formato validado | ["detect_pain", "amplify_impact", "present_solution", "guide_next_step"] (6), ["detect_pain", "present_solution", "guide_next_step"] (3) | conectado |
 | Flujo de conversación | `sales.progression_rules.forbid` | Lo que el asistente no debe hacer en este negocio. | `sales.conversation_flow.forbid` | lista de texto con formato validado | ["responder_sin_direccion", "responder_sin_solucion"] (2) | conectado |
 | Cierre | `sales.closing.strategy` | Tipo de cierre. | `sales.closing.strategy` | direct_sale \| lead_capture \| booking \| checkout | booking (4), direct_sale (3), checkout (2) | conectado |
 | Cierre | `config.capabilities.closing_methods.link_payment.enabled` | `true`: permite enviar un enlace de pago directo al cliente. | `capabilities.closing_methods.payment_link` | interruptor true/false | true (9) | conectado |
@@ -150,7 +150,7 @@ recibe lo mismo que con los YAML. Si los YAML de un negocio no coinciden, la imp
 | `business.buying_motivation.secondary` | agencia_viajes, asesor_ai_prod | Motivo secundario de compra | A | `sales.buying_motivation.secondary` | cambia de sección | pantalla | sí: prompt (motores de compra) | — | `test_connected_fields_change_the_prompt` |
 | `business.city` | todos | Ciudad | E | `identity.location.city` | duplicado unificado con `business.location.city` | no | sí: perfil comercial del prompt, con la configuración del contrato | Mismo valor que `business.location.city` en los 9 negocios: el contrato la guarda una sola vez y la compilación la devuelve a las dos rutas. | `test_each_profile_option_reaches_the_prompt` |
 | `business.credibility` | agencia_viajes, asesor_ai_prod | Pruebas de confianza | A | `identity.credibility` | — | pantalla | sí: prompt (pruebas de confianza) | — | `test_connected_fields_change_the_prompt` |
-| `business.customer_profile.company_size` | agencia_viajes, asesor_ai_prod, clinic, demo, ecommerce, restaurant, saas, tienda_ropa | Cliente ideal | A | `identity.target_customer.company_size` | renombrado | pantalla | sí: prompt (cliente ideal) | — | `test_connected_fields_change_the_prompt` |
+| `business.customer_profile.company_size` | asesor_ai_prod, clinic, demo, ecommerce, saas | Cliente ideal | A | `identity.target_customer.company_size` | renombrado | pantalla | sí: prompt (cliente ideal) | — | `test_connected_fields_change_the_prompt` |
 | `business.customer_profile.maturity` | agencia_viajes, asesor_ai_prod | Cliente ideal | A | `identity.target_customer.maturity` | renombrado | pantalla | sí: prompt (cliente ideal) | — | `test_connected_fields_change_the_prompt` |
 | `business.customer_profile.roles` | agencia_viajes, asesor_ai_prod | Cliente ideal | A | `identity.target_customer.roles` | renombrado | pantalla | sí: prompt (cliente ideal) | — | `test_connected_fields_change_the_prompt` |
 | `business.customer_profile.segment` | agencia_viajes, asesor_ai_prod, clinic, demo, ecommerce, restaurant, saas, tienda_ropa | Cliente ideal | A | `identity.target_customer.segment` | renombrado | pantalla | sí: prompt (cliente ideal) | — | `test_connected_fields_change_the_prompt` |
@@ -286,8 +286,8 @@ recibe lo mismo que con los YAML. Si los YAML de un negocio no coinciden, la imp
 | `pricing.plans[].target` | demo | Para quién es el plan | A | `offer.plans[].target` | — | pantalla | sí: prompt (para quién es el plan) | — | `test_connected_fields_change_the_prompt` |
 | `pricing.price_framing.type` | todos | Cómo presentar el precio | B | `terms.price_framing` | se aplana `type` | no | sí: prompt | — | `test_connected_fields_change_the_prompt` |
 | `pricing.roi.break_even_reservas` | agencia_viajes | Reservas para recuperar la inversión | B | `terms.roi_break_even_bookings` | renombrado | pantalla | sí: prompt (argumento de valor, si no hay `break_even_sales`) | Solo agencia_viajes, que vende con cita: el argumento de valor solo va en negocios de planes. | `test_connected_fields_change_the_prompt` |
-| `pricing.roi.break_even_sales` | asesor_ai_prod, clinic, demo, ecommerce, restaurant, saas, tienda_ropa | Ventas para recuperar la inversión | B | `terms.roi_break_even_sales` | se aplana `roi` | no | sí: prompt | — | `test_connected_fields_change_the_prompt` |
-| `pricing.roi_hints` | agencia_viajes | Argumentos de retorno de la inversión | B | `terms.roi_hints` | cambia de sección | no | sí: prompt (si no hay break_even_sales) | — | `test_connected_fields_change_the_prompt` |
+| `pricing.roi.break_even_sales` | asesor_ai_prod, clinic, demo, ecommerce, saas | Ventas para recuperar la inversión | B | `terms.roi_break_even_sales` | se aplana `roi` | no | sí: prompt | — | `test_connected_fields_change_the_prompt` |
+| `pricing.roi_hints` | clinic | Argumentos de retorno de la inversión | B | `terms.roi_hints` | cambia de sección | no | sí: prompt (si no hay break_even_sales) | — | `test_connected_fields_change_the_prompt` |
 
 ## inventory.yaml
 

@@ -40,6 +40,10 @@ pricing:
   roi:  # Referencia simple para medir retorno esperado
     break_even_sales: 2
 
+  roi_hints:  # Ideas simples para explicar el retorno de la inversion
+    - recuperar dos citas al mes ya cubre el plan
+    - confirmar las citas por chat reduce las inasistencias
+
   business_offers:  # Mapa simple de oferta principal, upsell y cross-sell
     core:  # Oferta principal que mas se vende
       - limpieza

@@ -12,6 +12,9 @@ export function FallbackMessageForm() {
 
   return (
     <Card
+      icon="alert"
+      tone="amber"
+      wide
       title="Si el asistente no puede responder"
       description="Se envía tal cual cuando la IA falla: por ejemplo, si tu clave de OpenRouter se queda sin saldo o el proveedor no responde."
     >

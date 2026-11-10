@@ -18,6 +18,7 @@ export interface SchemaNode {
   propertyNames?: SchemaNode;
   default?: unknown;
   maxLength?: number;
+  pattern?: string;
   "x-audience"?: string;
 }
 
@@ -265,7 +266,7 @@ const VALUE_LABELS: Record<string, string> = {
 };
 
 export function fieldLabel(key: string, node: SchemaNode): string {
-  return FIELD_LABELS[key] ?? node.description ?? key.replace(/_/g, " ");
+  return FIELD_LABELS[key] ?? node.description?.replace(/\.$/, "") ?? key.replace(/_/g, " ");
 }
 
 /** Nombre del campo de una ruta del documento (`knowledge.faqs.0.answer` → Respuesta), si tiene uno en lenguaje del negocio. */
@@ -274,9 +275,27 @@ export function pathLabel(path: string): string | null {
   return (key && FIELD_LABELS[key]) || null;
 }
 
-/** La descripción del contrato como ayuda, cuando no es ya la etiqueta. */
+/**
+ * Ayudas en lenguaje del negocio para los campos cuya descripción en el contrato es técnica («true: ...», identificadores). El resto
+ * usa la descripción del contrato.
+ */
+const FIELD_HINTS: Record<string, string> = {
+  strategy: "Qué busca el asistente cuando el cliente está listo para comprar.",
+  forbid: "Lo que el asistente nunca debe hacer al responder.",
+  no_skip_steps: "Si es «Sí», sigue los pasos en orden sin saltarse ninguno.",
+  guided_process: "Si es «Sí», acompaña al cliente paso a paso (útil para trámites o inscripciones).",
+  pricing_enabled: "Si es «No», el asistente no da precios: dice que el equipo los confirma.",
+  catalog_mode: "«Sí» si vendes productos de un catálogo; «No» si vendes planes o servicios.",
+  multi_currency: "Si es «No», da cada precio solo en su primera moneda.",
+  multi_plan: "Si es «No», recomienda un solo plan, el que mejor encaje, en lugar de mostrarlos todos.",
+  detect_offer_fit: "Si es «Sí», confirma que la opción le sirve al cliente antes de llevarlo a comprar.",
+  explain_first: "«Sí»: primero aclara la duda. «No»: responde breve y lleva a la compra.",
+  sell_after: "Si es «Sí», después de aclarar una duda invita al cliente a avanzar.",
+};
+
+/** La ayuda de un campo: la propia si su descripción es técnica, o la descripción del contrato cuando no es ya la etiqueta. */
 export function fieldHint(key: string, node: SchemaNode): string | undefined {
-  return FIELD_LABELS[key] ? node.description : undefined;
+  return FIELD_HINTS[key] ?? (FIELD_LABELS[key] ? node.description : undefined);
 }
 
 export function valueLabel(value: string): string {

@@ -1,7 +1,7 @@
 sales:
   discovery:  # Lo que se busca entender al inicio de la conversacion
     objectives:  # Objetivos de descubrimiento
-      - entender volumen de pedidos por chat
+      - saber qué se le antoja y para cuántas personas es el pedido
   support:
     info_handling:
       explain_first: true  # true = primero aclara la duda / false = vende directo
@@ -27,7 +27,7 @@ sales:
       - quiero pedir
       - quiero ordenar
       - lo quiero
-      - quiero empezar
+      - me la mandas
     next_steps:  # Pasos que debe seguir la IA para cerrar
       - confirmar pedido
       - enviar orden a cocina
@@ -38,6 +38,5 @@ sales:
   progression_rules:
     required_flow:  # Secuencia minima que debe respetar la conversacion
       - detect_pain
-      - amplify_impact
       - present_solution
       - guide_next_step

@@ -17,7 +17,7 @@ export function RecommendationsForm() {
   const options = [{ value: "", label: "Elige qué recomendar" }, ...entries.map((entry) => ({ value: entry.id, label: entry.name || entry.id }))];
 
   return (
-    <Card title="Recomendaciones" description="Qué plan o producto debe sugerir el asistente según la situación del cliente.">
+    <Card icon="target" tone="sky" title="Recomendaciones" description="Qué plan o producto debe sugerir el asistente según la situación del cliente.">
       {rules.length === 0 && <p className="field__hint">Aún no hay recomendaciones.</p>}
       {rules.map((rule, index) => (
         <RuleRow

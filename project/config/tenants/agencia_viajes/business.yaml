@@ -2,68 +2,65 @@ business:
   name: Viajes Demo
   brand_name: Viajes Demo
   description: >
-    Sistema que responde prospectos, retoma cotizaciones y sostiene seguimiento para que
-    la agencia no pierda reservas por demora o falta de continuidad.
-  industry: automatizacion comercial para agencias de viajes que venden por chat
+    Agencia de viajes en Medellín que arma paquetes por Colombia con vuelo y hotel incluidos,
+    y tours de un día desde la ciudad.
+  industry: agencia de viajes y turismo
   tone: humano, claro y consultivo
   voice: cercano, directo y orientado a cierres
   city: Medellin
   promise: >
-    Responder rapido, retomar cotizaciones frias y convertir mas conversaciones en reservas cerradas.
+    Viajes organizados de principio a fin para que solo te preocupes por disfrutar.
   positioning: >
-    No es solo responder mensajes. Es orden comercial para que la agencia cierre mas viajes
-    sin depender de perseguir cada chat manualmente.
+    Paquetes de viaje listos por Colombia, cotizados y reservados por chat.
   differentiators:
-    - seguimiento automatico de cotizaciones y reservas
-    - recomendacion de plan segun volumen y momento comercial
-    - integracion multicanal para captacion y seguimiento
-    - implementacion guiada con enfoque en cierre
+    - paquetes con vuelo y hotel incluidos
+    - asesoría personalizada por chat
+    - financiación con Addi y Sistecrédito
+    - tours de un día desde Medellín
   customer_profile:
-    segment: agencias de viajes pequenas y medianas que venden por WhatsApp e Instagram
-    company_size: 2 a 25 personas
-    maturity: reciben cotizaciones por chat pero pierden seguimiento y reservas
+    segment: personas, parejas y familias que quieren viajar por Colombia
+    maturity: llegan con un destino o unas fechas en mente y quieren saber el precio y qué incluye
     roles:
-      - dueno
-      - asesor comercial
-      - agente de viajes
+      - el viajero
+      - quien organiza el viaje del grupo
   pain_points:
-    - no alcanzan a responder todas las cotizaciones a tiempo
-    - el seguimiento se cae despues del primer contacto
-    - reservas que se enfrian por demora o falta de orden
-    - conversaciones dispersas entre varios canales
+    - no sé qué destino me alcanza con mi presupuesto
+    - no quiero preocuparme por organizar todo
+    - necesito saber qué incluye antes de reservar
+    - quiero viajar en unas fechas específicas
   desired_outcomes:
-    - responder mas rapido sin depender del tiempo humano
-    - recuperar cotizaciones que se estaban perdiendo
-    - aumentar conversion de chats a reservas
-    - ordenar el proceso comercial del equipo
+    - viajar sin preocuparse por la logística
+    - saber desde el principio qué incluye y cuánto cuesta
+    - pagar con facilidad, también a cuotas
+    - aprovechar sus días de descanso
   credibility:
-    - implementaciones reales en negocios que venden por chat
-    - casos donde se retoman conversaciones que ya estaban frias
+    - viajeros que vuelven a reservar con nosotros
+    - acompañamiento antes y durante el viaje
   value_drivers:
     tiempo:
-      description: ahorro de tiempo en respuesta y seguimiento comercial
+      description: no tener que organizar vuelo y hotel por su cuenta
       triggers:
-        - "no me da el tiempo"
-        - "muchos mensajes"
+        - "no tengo tiempo de organizar"
+        - "quiero algo listo"
     dinero:
-      description: recuperacion de cotizaciones y reservas perdidas
+      description: saber exactamente cuánto cuesta el viaje y poder pagarlo a cuotas
       triggers:
-        - "pierdo reservas"
-        - "no cierro"
+        - "cuánto me sale todo"
+        - "se puede a cuotas"
   buying_motivation:
     primary: dinero
     secondary: tiempo
   use_cases:
-    - nombre: cotizaciones acumuladas
+    - nombre: escapada corta
       senales:
-        - "muchas cotizaciones"
-        - "no alcanzo a responder"
-      enfoque: automatizar_respuesta
-    - nombre: seguimiento perdido
+        - "un fin de semana"
+        - "algo cerca"
+      enfoque: ofrecer el tour de un día a Guatapé
+    - nombre: vacaciones en familia
       senales:
-        - "no hago seguimiento"
-        - "se enfria la reserva"
-      enfoque: seguimiento_automatico
+        - "vamos con los niños"
+        - "somos cuatro"
+      enfoque: recomendar Cartagena o San Andrés según sus fechas
 
   location:
     type: virtual

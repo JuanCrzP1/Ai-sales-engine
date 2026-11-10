@@ -1026,11 +1026,16 @@ describe("Guardado", () => {
   });
 });
 
+/** La tarjeta de opciones avanzadas con ese título (plegable: su contenido está en la página aunque esté cerrada). */
+function advancedCard(title: string): HTMLElement {
+  return screen.getByRole("heading", { name: new RegExp(`^${title}`) }).closest("details") as HTMLElement;
+}
+
 describe("Formularios generados desde el contrato", () => {
   it("edita un objeto del contrato sin pantalla propia", async () => {
     const { user, backend } = await renderWorkspace("/productos");
-    await user.click(screen.getByRole("button", { name: "Agregar: domicilio" }));
-    const delivery = screen.getByRole("group", { name: "Domicilio" });
+    const delivery = advancedCard("Domicilio");
+    await user.click(within(delivery).getByRole("button", { name: "Configurar" }));
     await user.click(within(delivery).getByRole("switch", { name: /^Disponible/ }));
     await user.type(within(delivery).getByLabelText("Zonas"), "Centro{Enter}");
     await saveAndWait(user);
@@ -1039,16 +1044,17 @@ describe("Formularios generados desde el contrato", () => {
 
   it("agrega y quita elementos de una lista del contrato, con sus opciones cerradas", async () => {
     const { user, backend } = await renderWorkspace("/atencion");
-    await user.click(screen.getByRole("button", { name: "Agregar a objeciones" }));
-    await user.type(screen.getByLabelText(/^Objeción/), "precio");
+    const objections = advancedCard("Cuando el cliente duda");
+    await user.click(within(objections).getByRole("button", { name: "Agregar" }));
+    await user.selectOptions(within(objections).getByLabelText(/^Cuando el cliente duda por/), "price");
     await saveAndWait(user);
-    expect(storedOf(backend).sales.objections?.[0]).toMatchObject({ topic: "precio" });
+    expect(storedOf(backend).sales.objections?.[0]).toMatchObject({ topic: "price" });
 
     await user.selectOptions(screen.getByLabelText(/^Tipo de negocio/), "saas");
     await saveAndWait(user);
     expect(storedOf(backend).features?.business_model).toBe("saas");
 
-    const objection = screen.getByRole("heading", { name: "Objeciones: 1" }).closest(".subcard") as HTMLElement;
+    const objection = screen.getByRole("heading", { name: "Objeciones: el precio" }).closest(".subcard") as HTMLElement;
     await user.click(within(objection).getByRole("button", { name: "Quitar" }));
     await user.click(within(objection).getByRole("button", { name: "Sí, quitar" }));
     await saveAndWait(user);
@@ -1057,10 +1063,10 @@ describe("Formularios generados desde el contrato", () => {
 
   it("señala en el campo generado el error que devuelve el servidor", async () => {
     const { user, backend } = await renderWorkspace("/atencion");
-    await user.click(screen.getByRole("button", { name: "Agregar a objeciones" }));
+    await user.click(within(advancedCard("Cuando el cliente duda")).getByRole("button", { name: "Agregar" }));
     backend.failNext("save", new PersistenceError("invalid", { message: "Hay datos por corregir.", problems: [{ path: "sales.objections.0.topic", message: "Escribe la objeción." }] }));
     await user.click(saveButton());
-    expect(await screen.findByLabelText(/^Objeción/)).toHaveAttribute("aria-invalid", "true");
+    expect(await screen.findByLabelText(/^Cuando el cliente duda por/)).toHaveAttribute("aria-invalid", "true");
     expect(screen.getAllByText("Escribe la objeción.").length).toBeGreaterThan(0);
   });
 

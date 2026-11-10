@@ -16,7 +16,7 @@ export function PaymentProfilesForm() {
 
   if (profiles.length === 0) {
     return (
-      <Card title="Medios de pago">
+      <Card icon="wallet" tone="emerald" title="Medios de pago" wide>
         <EmptyState
           title="Todavía no hay medios de pago"
           description="Agrega un enlace de pago o las cuentas a las que te pueden transferir."
@@ -46,6 +46,9 @@ function ProfileCard({ profile, index, several }: { profile: PaymentProfile; ind
 
   return (
     <Card
+      icon="wallet"
+      tone="emerald"
+      wide
       title={title}
       description={several ? "Cada plan o catálogo indica con qué perfil se cobra." : "Un enlace de tu pasarela de pagos (Wompi, Mercado Pago, PayU u otra) y las cuentas a las que te pueden transferir."}
       actions={

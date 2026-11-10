@@ -15,7 +15,7 @@ export function PromotionsForm() {
   const set = (next: Promotion[]) => update({ promotions: optionalList(next) });
 
   return (
-    <Card title="Promociones" description="El asistente solo ofrece las que estén aquí y sigan vigentes.">
+    <Card icon="tag" tone="rose" title="Promociones" description="El asistente solo ofrece las que estén aquí y sigan vigentes.">
       {listIssue && <p className={`field__message field__message--${listIssue.severity}`}>{listIssue.message}</p>}
       {promotions.length === 0 && <p className="field__hint">Aún no hay promociones.</p>}
       {promotions.map((promotion, index) => (

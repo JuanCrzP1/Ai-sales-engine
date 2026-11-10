@@ -8,6 +8,7 @@ import "./styles/components.css";
 import "./styles/account.css";
 import "./styles/businesses.css";
 import "./styles/workspace.css";
+import "./styles/settings.css";
 
 const root = document.getElementById("root");
 if (!root) throw new Error("No se encontró el elemento #root.");

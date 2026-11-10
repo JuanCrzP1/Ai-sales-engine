@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button } from "../../components/ui/Button";
 import { RadioGroup } from "../../components/ui/ChoiceGroup";
 import { Alert } from "../../components/ui/Feedback";
-import { Card } from "../../components/ui/Layout";
+import { SettingsCard } from "../../components/ui/SettingsCard";
 import { offerEntries } from "../../domain/config/document";
 import { OFFER_MODELS } from "../../domain/config/options";
 import type { OfferModel } from "../../domain/config/types";
@@ -21,7 +21,7 @@ export function SalesModeForm() {
   };
 
   return (
-    <Card title="¿Cómo vendes?" description="Define cómo se presentan tus productos o servicios al cliente.">
+    <SettingsCard icon="tag" tone="amber" title="¿Cómo vendes?" description="Define cómo se presentan tus productos o servicios al cliente.">
       <RadioGroup legend="Forma de venta" name="sales-mode" options={OFFER_MODELS} value={document.offer.model} onChange={choose} />
       {pending && (
         <Alert tone="warning" title="Se convertirá lo que ya tienes">
@@ -47,6 +47,6 @@ export function SalesModeForm() {
           </div>
         </Alert>
       )}
-    </Card>
+    </SettingsCard>
   );
 }

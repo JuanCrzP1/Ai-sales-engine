@@ -1,28 +1,18 @@
 import { CheckboxGroup } from "../../components/ui/ChoiceGroup";
 import { SelectField, TextField } from "../../components/ui/FormFields";
-import { Card } from "../../components/ui/Layout";
+import { SettingsCard } from "../../components/ui/SettingsCard";
 import { ListEditor } from "../../components/ui/ListEditor";
 import type { Identity, Location } from "../../domain/config/types";
 import { optionalList, optionalText } from "../../domain/config/document";
 import { COVERAGE_TYPES, LOCATION_TYPES, SERVICE_MODES } from "../../domain/config/options";
 import { useFieldIssue, useSection } from "../../state/useConfig";
 
-/** Lo que el asistente necesita para hablar del negocio: confianza, ubicación y cómo se atiende. */
-export function BusinessDetailsForm() {
+/** Por qué elegir este negocio: sus diferenciadores y sus pruebas de confianza. */
+export function BusinessTrustForm() {
   const [identity, update] = useSection("identity");
   const differentiatorsIssue = useFieldIssue("identity.differentiators");
-  const addressIssue = useFieldIssue("identity.location.address");
-  const location = identity.location;
-
-  const changeLocation = (patch: Partial<Location>) => {
-    if (location) update({ location: { ...location, ...patch } });
-  };
-  const changeType = (type: "" | Location["type"]) => {
-    update({ location: type === "" ? null : { coverage: { type: "local", zones: [] }, ...location, type } });
-  };
-
   return (
-    <Card title="Información para atender a tus clientes" description="Lo que el asistente debe saber para responder sobre tu negocio.">
+    <SettingsCard icon="shield" tone="emerald" title="Por qué elegirte" description="Lo que te diferencia y lo que da confianza.">
       <ListEditor
         label="Por qué elegirte"
         items={identity.differentiators ?? []}
@@ -39,7 +29,25 @@ export function BusinessDetailsForm() {
         addLabel="Agregar prueba"
         hint="Casos, resultados o trayectoria."
       />
+    </SettingsCard>
+  );
+}
 
+/** Dónde está el negocio, a qué zonas llega y cómo recibe el cliente lo que compra. */
+export function BusinessDetailsForm() {
+  const [identity, update] = useSection("identity");
+  const addressIssue = useFieldIssue("identity.location.address");
+  const location = identity.location;
+
+  const changeLocation = (patch: Partial<Location>) => {
+    if (location) update({ location: { ...location, ...patch } });
+  };
+  const changeType = (type: "" | Location["type"]) => {
+    update({ location: type === "" ? null : { coverage: { type: "local", zones: [] }, ...location, type } });
+  };
+
+  return (
+    <SettingsCard icon="mapPin" tone="sky" title="Dónde y cómo atiendes" description="Tu ubicación, las zonas a las que llegas y cómo recibe el cliente.">
       <div className="grid-2">
         <SelectField label="¿Dónde atiendes?" value={location?.type ?? ""} options={LOCATION_TYPES} onChange={changeType} />
         {location && location.type !== "virtual" && (
@@ -73,6 +81,6 @@ export function BusinessDetailsForm() {
         values={identity.service_modes ?? []}
         onChange={(modes) => update({ service_modes: optionalList(modes) })}
       />
-    </Card>
+    </SettingsCard>
   );
 }
