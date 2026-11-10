@@ -361,7 +361,7 @@ sin la base real y sin la clave real.
 | 3. `python -m pytest` termina con `0 failed` | **Cumplida** tras corregir un defecto de la prueba de red (abajo): 1181 aprobadas, 0 fallidas, 55 omitidas, 63 pendientes de Fase 4. Con Python 3.14, el único instalado; el CI cubre 3.11 y 3.13 |
 | Panel: TypeScript, Vitest, integración contra la API real | **Cumplida**: sin errores, 180/180 y 23/23 |
 | 1. `local_secrets.py check` con 9 negocios y 46 de 46 | **Cumplida** el mismo día, con `secrets.local.env` y la base copiados desde Windows: 9 negocios, 46 de 46 |
-| 2. Panel con los 9 negocios y cambio que sobrevive al reinicio | **Parcial** (2026-11-10): `./run_local.sh` abre el panel en `127.0.0.1:5180` con los 9 negocios publicados. Falta guardar un cambio y comprobar que sobrevive al reinicio |
+| 2. Panel con los 9 negocios y cambio que sobrevive al reinicio | **Cumplida** (2026-11-10): `./run_local.sh` abre el panel en `127.0.0.1:5180` con los 9 negocios publicados. Un cambio guardado desde el panel en Demo (versión 2, en borrador) sigue ahí después de reiniciar la API y la interfaz. Se hizo sobre una copia de la base, para no dejar versiones de prueba en el historial real, que no se puede borrar; la base real no cambió |
 | 4. `nc` desde el Mac contra el panel encendido en Windows | **Pendiente**: necesita los dos equipos en la misma red |
 
 **Defectos encontrados en macOS y corregidos:**

@@ -29,7 +29,7 @@ if str(PROJECT_DIR) not in sys.path:
     sys.path.insert(0, str(PROJECT_DIR))
 
 from app.application.runtime.tenant_runtime_loader import _load_legacy_sections  # noqa: E402
-from app.domain.business_config.compiler import compile_business_config  # noqa: E402
+from app.domain.business_config.compiler import comparable_with_yaml, compile_business_config  # noqa: E402
 from app.domain.business_config.diagnostics import review  # noqa: E402
 from app.domain.business_config.payment_data import payment_values  # noqa: E402
 from app.infrastructure.config.business_config_store import BusinessConfigStore  # noqa: E402
@@ -52,7 +52,7 @@ def build() -> tuple[dict[Path, str], str, list[tuple[str, str]]]:
         try:
             sections = _load_legacy_sections(service, slug)
             result = import_legacy_sections(slug, sections)
-            if compile_business_config(result.config, LegacyYamlSecretResolver(lambda s=sections: s)) != sections:
+            if comparable_with_yaml(compile_business_config(result.config, LegacyYamlSecretResolver(lambda s=sections: s))) != sections:
                 raise ValueError("la compilación no reproduce las secciones YAML de origen")
             document, settings = store.dump(result.config), store.dump(result.engine_settings)
             leaked = [value for value in payment_values(sections) if value in document or value in settings]

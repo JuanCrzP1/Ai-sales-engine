@@ -108,24 +108,31 @@ def reopen(spec: dict) -> dict:
 
 
 def nine(spec: dict) -> dict:
-    """Los negocios importados, ya sin YAML: compilan, se recuperan, se editan, se publican y se revierten."""
+    """Los negocios importados, ya sin YAML: compilan a su referencia (lo de sus YAML, más el perfil comercial), se recuperan, se
+    editan, se publican y se revierten."""
+    from app.domain.business_config.compiler import comparable_with_yaml
+
     service, engine = open_service()
+
+    def yaml_digest(slug: str) -> str:
+        return digest(comparable_with_yaml(service.compile_sections(slug)))
+
     facts: dict = {"businesses": [item.slug for item in service.list_businesses()], "by_slug": {}}
     for slug in spec["slugs"]:
-        before = digest(service.compile_sections(slug))
+        before = yaml_digest(slug)
         document = _dump(service.get_published(slug))
         document["identity"]["description"] += " (editado)"
         version = service.save_changes(slug, document).version
         recovered = service.get_draft(slug).config.identity.description == document["identity"]["description"]
         service.publish(slug, version)
-        edited = digest(service.compile_sections(slug))
+        edited = yaml_digest(slug)
         rollback_to = service.rollback(slug)
         facts["by_slug"][slug] = {
             "digest": before,
             "edited_changes_compilation": edited != before,
             "draft_recovered": recovered,
             "rollback_to": rollback_to,
-            "digest_after_rollback": digest(service.compile_sections(slug)),
+            "digest_after_rollback": yaml_digest(slug),
             "history": [[item.version, item.status] for item in service.history(slug)],
         }
     engine.dispose()

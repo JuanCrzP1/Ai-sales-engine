@@ -14,6 +14,7 @@ from app.application.runtime import tenant_runtime_loader as loader
 from app.domain.business_config.contract import BusinessConfig
 from app.domain.conversation.memory import MemoryDomainService
 from app.infrastructure.config.business_config_store import BusinessConfigStore
+from app.infrastructure.ai.prompting.builder.prompt_builder import PromptBuilderService
 from app.infrastructure.config.config_service import ConfigService
 from app.infrastructure.persistence.memory_repository import MemoryRepository
 
@@ -23,6 +24,19 @@ TENANTS = [
     "agencia_viajes", "asesor_ai_prod", "clinic", "demo", "ecommerce",
     "escuela_conduccion", "restaurant", "saas", "tienda_ropa",
 ]
+
+
+def as_yaml_prompt(prompt: str, runtime: dict) -> str:
+    """El prompt del contrato sin lo que solo existe con el contrato: el bloque del perfil comercial (con los datos del negocio en la
+    presentación, solo sus reglas en una conversación en curso) y el tono en la línea ESTILO. Lo demás debe ser idéntico a los YAML.
+    """
+    for include_facts in (True, False):
+        block = PromptBuilderService.build_business_profile_context(runtime, include_facts=include_facts)
+        if block and f"\n\n{block}\n\n" in prompt:
+            prompt = prompt.replace(f"\n\n{block}", "", 1)
+            break
+    tone = runtime["config"]["profile"].get("tone", "").strip()
+    return prompt.replace(f"palabras, {tone}.", "palabras, natural y claro.", 1) if tone else prompt
 
 
 def reply(text: str, intent: str = "info", **metadata) -> str:

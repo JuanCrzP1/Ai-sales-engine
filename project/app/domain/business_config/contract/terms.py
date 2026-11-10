@@ -48,7 +48,7 @@ class Terms(ContractModel):
     )
     price_note: Text | None = Field(default=None, description="Aclaración sobre cómo se confirma el precio.")
     promotions: Annotated[list[Promotion], Field(max_length=MAX_PROMOTIONS)] | None = Field(
-        default=None, description="Únicas promociones o descuentos que el asistente puede ofrecer."
+        default=None, description="Únicas promociones o descuentos que el asistente puede ofrecer.", json_schema_extra=CONNECTED
     )
     financing: Financing | None = Field(default=None, description="Financiación disponible.")
     policies: Policies | None = Field(default=None, description="Garantía, devoluciones y cancelaciones.")

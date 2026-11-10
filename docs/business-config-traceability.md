@@ -69,8 +69,8 @@ JSON Schema: es la validación que aplica el contrato. **Valores actuales** cuen
 | Cierre | `config.capabilities.data_collection.fields` | Datos que el asistente pide. | `capabilities.data_collection.fields` | lista de texto | ["nombre", "telefono", "detalles"] (6), ["nombre", "telefono", "direccion", "detalles"] (3) | conectado |
 | Precio | `pricing.price_framing.type` | Forma de presentar el precio. | `terms.price_framing` | directo \| comparativo | comparativo (5), directo (4) | conectado |
 | Precio | `pricing.business_offers.financing.available` | `true`: permite financiación. `false`: no la ofrece. | `terms.financing.available` | interruptor true/false | true (5), false (3) | pendiente |
-| Recomendaciones | `sales.offer.recommendation_rules[].condition` | Situación que activa una recomendación. | `sales.recommendation_rules[].when` | texto | texto libre (4 valores) | pendiente |
-| Recomendaciones | `sales.offer.recommendation_rules[].recommend` | Plan que se recomienda en esa situación. | `sales.recommendation_rules[].recommend` | texto con formato validado | texto libre (4 valores) | pendiente |
+| Recomendaciones | `sales.offer.recommendation_rules[].condition` | Situación que activa una recomendación. | `sales.recommendation_rules[].when` | texto | texto libre (4 valores) | conectado |
+| Recomendaciones | `sales.offer.recommendation_rules[].recommend` | Plan que se recomienda en esa situación. | `sales.recommendation_rules[].recommend` | texto con formato validado | texto libre (4 valores) | conectado |
 | Entrega | `business.logistics.delivery.available` | `true`: ofrece domicilio. | `fulfillment.delivery.available` | interruptor true/false | false (7), true (2) | pendiente |
 | Entrega | `business.logistics.shipping.available` | `true`: ofrece envío. | `fulfillment.shipping.available` | interruptor true/false | false (7), true (2) | pendiente |
 | Entrega | `business.logistics.pickup.available` | `true`: ofrece recogida. | `fulfillment.pickup.available` | interruptor true/false | false (7), true (2) | pendiente |
@@ -100,14 +100,14 @@ Finalidad comercial, sin origen en los YAML. No se compilan salvo los marcados `
 | identity | `identity.opening_hours[].opens` | Hora de apertura (HH:MM, 24 h). | texto con formato validado | cliente | pendiente | no |
 | inventory | `inventory.items[].variants[].prices[].amount` | Precio en esa moneda. | número | cliente | pendiente | no |
 | inventory | `inventory.items[].variants[].prices[].currency` | Moneda (código ISO de tres letras). | texto con formato validado | cliente | pendiente | no |
-| knowledge | `knowledge.faqs[].answer` | Respuesta oficial del negocio. | texto | cliente | pendiente | pantalla |
-| knowledge | `knowledge.faqs[].question` | Pregunta tal como la haría el cliente. | texto | cliente | pendiente | pantalla |
+| knowledge | `knowledge.faqs[].answer` | Respuesta oficial del negocio. | texto | cliente | conectado | pantalla |
+| knowledge | `knowledge.faqs[].question` | Pregunta tal como la haría el cliente. | texto | cliente | conectado | pantalla |
 | messages | `messages.after_sale` | Mensaje después de una compra. | texto | cliente | pendiente | no |
 | messages | `messages.data_request` | Mensaje para pedir los datos del cliente. | texto | cliente | pendiente | no |
 | messages | `messages.follow_up` | Mensaje de seguimiento a un cliente que no respondió. | texto | cliente | pendiente | no |
 | messages | `messages.human_handoff` | Mensaje al pasar la conversación a una persona. | texto | cliente | pendiente | no |
 | offer | `offer.catalog.items[].available` | Si es false, el producto se conserva pero no se ofrece (ni su categoría, si se queda sin productos). | interruptor true/false | cliente | conectado | pantalla |
-| offer | `offer.catalog.items[].features` | Características del producto. | lista de texto | cliente | pendiente | pantalla |
+| offer | `offer.catalog.items[].features` | Características del producto. | lista de texto | cliente | conectado | pantalla |
 | offer | `offer.plans[].available` | Si es false, el plan se conserva pero no se ofrece. | interruptor true/false | cliente | conectado | pantalla |
 | offer | `offer.plans[].prices[].annual` | Cobro anual. | número | cliente | pendiente | no |
 | offer | `offer.plans[].prices[].first_payment` | Valor del primer pago, si difiere de los siguientes. | número | cliente | conectado | no |
@@ -118,13 +118,13 @@ Finalidad comercial, sin origen en los YAML. No se compilan salvo los marcados `
 | response_style | `response_style.emojis` | Si el asistente puede usar emojis. | interruptor true/false | cliente | pendiente | no |
 | response_style | `response_style.formality` | informal (tutea), neutral o formal (usted). | informal \| neutral \| formal | cliente | pendiente | no |
 | response_style | `response_style.instructions` | Cómo debe expresarse el asistente en este negocio. | lista de texto | cliente | pendiente | no |
-| sales | `sales.instructions` | Cómo debe vender el asistente en este negocio. | lista de texto | cliente | pendiente | modelo |
+| sales | `sales.instructions` | Cómo debe vender el asistente en este negocio. | lista de texto | cliente | conectado | modelo |
 | terms | `terms.policies.cancellation` | Cancelaciones y reembolsos (citas, reservas, suscripciones). | texto | cliente | pendiente | no |
 | terms | `terms.policies.returns` | Cambios y devoluciones. | texto | cliente | pendiente | no |
 | terms | `terms.policies.warranty` | Garantía: qué cubre y por cuánto tiempo. | texto | cliente | pendiente | no |
-| terms | `terms.promotions[].details` | Qué incluye la promoción y a qué aplica. | texto | cliente | pendiente | modelo |
-| terms | `terms.promotions[].name` | Nombre con el que se presenta la promoción. | texto | cliente | pendiente | modelo |
-| terms | `terms.promotions[].valid_until` | Último día de vigencia. | fecha | cliente | pendiente | modelo |
+| terms | `terms.promotions[].details` | Qué incluye la promoción y a qué aplica. | texto | cliente | conectado | modelo |
+| terms | `terms.promotions[].name` | Nombre con el que se presenta la promoción. | texto | cliente | conectado | modelo |
+| terms | `terms.promotions[].valid_until` | Último día de vigencia. | fecha | cliente | conectado | modelo |
 
 ## Definición común del sistema
 
@@ -144,24 +144,24 @@ recibe lo mismo que con los YAML. Si los YAML de un negocio no coinciden, la imp
 
 | Campo antiguo | Negocios | Significado | Clase | Destino | Transformación | Interfaz | Motor | Justificación | Prueba |
 |---|---|---|---|---|---|---|---|---|---|
-| `business.brand_name` | todos | Marca | A | `identity.brand_name` | — | no | no | Igual a `name` en los 9 negocios; se conserva su valor. | — |
+| `business.brand_name` | todos | Marca | A | `identity.brand_name` | — | no | sí: perfil comercial del prompt, con la configuración del contrato | Igual a `name` en los 9 negocios; se conserva su valor. | `test_each_profile_option_reaches_the_prompt` |
 | `business.buying_motivation.primary` | agencia_viajes, asesor_ai_prod | Motivo principal de compra | A | `sales.buying_motivation.primary` | cambia de sección | pantalla | sí: prompt (motores de compra) | — | `test_connected_fields_change_the_prompt` |
 | `business.buying_motivation.secondary` | agencia_viajes, asesor_ai_prod | Motivo secundario de compra | A | `sales.buying_motivation.secondary` | cambia de sección | pantalla | sí: prompt (motores de compra) | — | `test_connected_fields_change_the_prompt` |
-| `business.city` | todos | Ciudad | E | `identity.location.city` | duplicado unificado con `business.location.city` | no | no | Mismo valor que `business.location.city` en los 9 negocios: el contrato la guarda una sola vez y la compilación la devuelve a las dos rutas. | — |
+| `business.city` | todos | Ciudad | E | `identity.location.city` | duplicado unificado con `business.location.city` | no | sí: perfil comercial del prompt, con la configuración del contrato | Mismo valor que `business.location.city` en los 9 negocios: el contrato la guarda una sola vez y la compilación la devuelve a las dos rutas. | `test_each_profile_option_reaches_the_prompt` |
 | `business.credibility` | agencia_viajes, asesor_ai_prod | Pruebas de confianza | A | `identity.credibility` | — | no | no | — | — |
 | `business.customer_profile.company_size` | agencia_viajes, asesor_ai_prod, clinic, demo, ecommerce, restaurant, saas, tienda_ropa | Cliente ideal | A | `identity.target_customer.company_size` | renombrado | no | no | — | — |
 | `business.customer_profile.maturity` | agencia_viajes, asesor_ai_prod | Cliente ideal | A | `identity.target_customer.maturity` | renombrado | no | no | — | — |
 | `business.customer_profile.roles` | agencia_viajes, asesor_ai_prod | Cliente ideal | A | `identity.target_customer.roles` | renombrado | no | no | — | — |
 | `business.customer_profile.segment` | agencia_viajes, asesor_ai_prod, clinic, demo, ecommerce, restaurant, saas, tienda_ropa | Cliente ideal | A | `identity.target_customer.segment` | renombrado | no | no | — | — |
-| `business.description` | todos | Descripción del negocio | A | `identity.description` | — | pantalla | no: el prompt solo la usa si falta `industry`, que el contrato exige | — | — |
-| `business.desired_outcomes` | todos | Resultados que busca el cliente | A | `sales.benefits` | renombrado y cambia de sección | modelo | no: el prompt actual no lo usa | — | — |
-| `business.differentiators` | agencia_viajes, asesor_ai_prod, clinic, demo, ecommerce, restaurant, saas, tienda_ropa | Diferenciadores | A | `identity.differentiators` | — | modelo | no: el prompt actual no lo usa | — | — |
+| `business.description` | todos | Descripción del negocio | A | `identity.description` | — | pantalla | sí: perfil comercial del prompt, con la configuración del contrato (y en el contexto del negocio si falta `industry`) | — | `test_removing_profile_options_removes_them_from_the_prompt` |
+| `business.desired_outcomes` | todos | Resultados que busca el cliente | A | `sales.benefits` | renombrado y cambia de sección | modelo | sí: perfil comercial del prompt, con la configuración del contrato | — | `test_each_profile_option_reaches_the_prompt` |
+| `business.differentiators` | agencia_viajes, asesor_ai_prod, clinic, demo, ecommerce, restaurant, saas, tienda_ropa | Diferenciadores | A | `identity.differentiators` | — | modelo | sí: perfil comercial del prompt, con la configuración del contrato | — | `test_each_profile_option_reaches_the_prompt` |
 | `business.industry` | todos | Sector o tipo de negocio | A | `identity.industry` | — | pantalla | sí: prompt (sector) | — | `test_connected_fields_change_the_prompt` |
-| `business.location.address` | todos | Ubicación y cobertura | A | `identity.location.address` | — | modelo | no: el prompt actual no lo usa | — | — |
-| `business.location.city` | todos | Ubicación y cobertura | A | `identity.location.city` | — | modelo | no: el prompt actual no lo usa | — | — |
-| `business.location.coverage.type` | todos | Ubicación y cobertura | A | `identity.location.coverage.type` | — | modelo | no: el prompt actual no lo usa | — | — |
-| `business.location.coverage.zones` | todos | Ubicación y cobertura | A | `identity.location.coverage.zones` | — | modelo | no: el prompt actual no lo usa | — | — |
-| `business.location.type` | todos | Ubicación y cobertura | A | `identity.location.type` | — | modelo | no: el prompt actual no lo usa | — | — |
+| `business.location.address` | todos | Ubicación y cobertura | A | `identity.location.address` | — | modelo | sí: perfil comercial del prompt, con la configuración del contrato | — | `test_each_profile_option_reaches_the_prompt` |
+| `business.location.city` | todos | Ubicación y cobertura | A | `identity.location.city` | — | modelo | sí: perfil comercial del prompt, con la configuración del contrato | — | `test_each_profile_option_reaches_the_prompt` |
+| `business.location.coverage.type` | todos | Ubicación y cobertura | A | `identity.location.coverage.type` | — | modelo | sí: perfil comercial del prompt, con la configuración del contrato | — | `test_each_profile_option_reaches_the_prompt` |
+| `business.location.coverage.zones` | todos | Ubicación y cobertura | A | `identity.location.coverage.zones` | — | modelo | sí: perfil comercial del prompt, con la configuración del contrato | — | `test_each_profile_option_reaches_the_prompt` |
+| `business.location.type` | todos | Ubicación y cobertura | A | `identity.location.type` | — | modelo | sí: perfil comercial del prompt, con la configuración del contrato | — | `test_each_profile_option_reaches_the_prompt` |
 | `business.logistics.delivery.available` | todos | Domicilio, envío, recogida y agenda | A | `fulfillment.delivery.available` | sección propia `fulfillment` | no | no | — | — |
 | `business.logistics.delivery.cost.type` | todos | Domicilio, envío, recogida y agenda | A | `fulfillment.delivery.cost.type` | sección propia `fulfillment` | no | no | — | — |
 | `business.logistics.delivery.cost.value` | todos | Domicilio, envío, recogida y agenda | A | `fulfillment.delivery.cost.value` | sección propia `fulfillment` | no | no | — | — |
@@ -179,12 +179,12 @@ recibe lo mismo que con los YAML. Si los YAML de un negocio no coinciden, la imp
 | `business.logistics.shipping.scope` | todos | Domicilio, envío, recogida y agenda | A | `fulfillment.shipping.scope` | sección propia `fulfillment` | no | no | — | — |
 | `business.logistics.shipping.time.max` | todos | Domicilio, envío, recogida y agenda | A | `fulfillment.shipping.time.max` | sección propia `fulfillment` | no | no | — | — |
 | `business.logistics.shipping.time.min` | todos | Domicilio, envío, recogida y agenda | A | `fulfillment.shipping.time.min` | sección propia `fulfillment` | no | no | — | — |
-| `business.name` | todos | Nombre comercial | A | `identity.name` | — | pantalla | no: el prompt actual no lo usa | — | — |
+| `business.name` | todos | Nombre comercial | A | `identity.name` | — | pantalla | sí: perfil comercial del prompt, con la configuración del contrato | — | `test_profile_block_exists_only_with_contract_source` |
 | `business.pain_points` | todos | Problemas del cliente en sus palabras | A | `sales.pain_points` | cambia de sección | no | no | — | — |
 | `business.positioning` | todos | A quién se dirige y qué problema resuelve | A | `identity.positioning` | — | no | no | — | — |
 | `business.promise` | todos | Propuesta de valor | A | `identity.value_proposition` | renombrado | pantalla | sí: prompt (promesa comercial) | — | `test_connected_fields_change_the_prompt` |
-| `business.service_modes` | todos | Modalidades de atención | A | `identity.service_modes` | — | modelo | no: el prompt actual no lo usa | — | — |
-| `business.tone` | todos | Tono de comunicación | A | `response_style.tone` | cambia de sección | modelo | no: el prompt actual no lo usa | — | — |
+| `business.service_modes` | todos | Modalidades de atención | A | `identity.service_modes` | — | modelo | sí: perfil comercial del prompt, con la configuración del contrato | — | `test_each_profile_option_reaches_the_prompt` |
+| `business.tone` | todos | Tono de comunicación | A | `response_style.tone` | cambia de sección | modelo | sí: línea ESTILO del prompt, con la configuración del contrato | — | `test_connected_fields_change_the_prompt` |
 | `business.type` | restaurant | Tipo de negocio | E | ajustes técnicos: `legacy` (misma ruta) | — | no | no | Solo restaurant; repite el sector (`industry`) y el tipo de negocio de `features`. | — |
 | `business.use_cases[].enfoque` | agencia_viajes, asesor_ai_prod | Enfoque de la solución para el caso | B | `sales.use_cases[].approach` | `enfoque` → `approach` | no | no | — | — |
 | `business.use_cases[].nombre` | agencia_viajes, asesor_ai_prod | Caso de uso típico | B | `sales.use_cases[].name` | `nombre` → `name` | no | sí: respaldo de 'Casos típicos' si no hay impactos | — | `test_connected_fields_change_the_prompt` |
@@ -212,14 +212,14 @@ recibe lo mismo que con los YAML. Si los YAML de un negocio no coinciden, la imp
 | `sales.conversation_flow.rules.no_skip_steps` | asesor_ai_prod, demo, escuela_conduccion | No saltar etapas | B | `sales.conversation_flow.no_skip_steps` | se aplana `rules` | no | no | — | — |
 | `sales.conversation_flow.steps` | asesor_ai_prod, demo, escuela_conduccion | Etapas de la conversación | B | `sales.conversation_flow.steps` | — | no | no | — | — |
 | `sales.discovery.objectives` | todos | Qué debe averiguar el asistente | B | `sales.discovery.objectives` | — | no | no | — | — |
-| `sales.discovery.questions` | asesor_ai_prod, demo | Preguntas de diagnóstico | A | `sales.discovery.questions` | — | modelo | no: el prompt actual no lo usa | — | — |
+| `sales.discovery.questions` | asesor_ai_prod, demo | Preguntas de diagnóstico | A | `sales.discovery.questions` | — | modelo | sí: perfil comercial del prompt, con la configuración del contrato | — | `test_each_profile_option_reaches_the_prompt` |
 | `sales.objection.<objecion>.hard_rules` | asesor_ai_prod | Reglas al responder la objeción | B | `sales.objections[topic=<objecion>].rules` | `hard_rules` → `rules` | no | no | — | — |
 | `sales.objection.<objecion>.layers.acknowledge` | agencia_viajes, asesor_ai_prod, demo, saas | Manejo de la objeción por capas | B | `sales.objections[topic=<objecion>].acknowledge` | mapa por objeción → lista con `topic`; se aplana `layers` | no | no | — | — |
 | `sales.objection.<objecion>.layers.proof` | asesor_ai_prod, demo | Manejo de la objeción por capas | B | `sales.objections[topic=<objecion>].proof` | mapa por objeción → lista con `topic`; se aplana `layers` | no | no | — | — |
 | `sales.objection.<objecion>.layers.redirect` | agencia_viajes, asesor_ai_prod, demo, saas | Manejo de la objeción por capas | B | `sales.objections[topic=<objecion>].redirect` | mapa por objeción → lista con `topic`; se aplana `layers` | no | no | — | — |
 | `sales.objection.<objecion>.layers.reframe` | agencia_viajes, asesor_ai_prod, demo, saas | Manejo de la objeción por capas | B | `sales.objections[topic=<objecion>].reframe` | mapa por objeción → lista con `topic`; se aplana `layers` | no | no | — | — |
-| `sales.offer.recommendation_rules[].condition` | asesor_ai_prod, demo | Situación que activa una recomendación | B | `sales.recommendation_rules[].when` | `condition` → `when` | no | no | — | — |
-| `sales.offer.recommendation_rules[].recommend` | asesor_ai_prod, demo | Plan recomendado | B | `sales.recommendation_rules[].recommend` | — | no | no | En asesor_ai_prod y demo apunta a planes que no existen: se conserva y lo señala el diagnóstico `recomienda_oferta_no_disponible`. | — |
+| `sales.offer.recommendation_rules[].condition` | asesor_ai_prod, demo | Situación que activa una recomendación | B | `sales.recommendation_rules[].when` | `condition` → `when` | no | sí: perfil comercial del prompt, con la configuración del contrato | — | `test_each_profile_option_reaches_the_prompt` |
+| `sales.offer.recommendation_rules[].recommend` | asesor_ai_prod, demo | Plan recomendado | B | `sales.recommendation_rules[].recommend` | — | no | sí: perfil comercial del prompt, con la configuración del contrato | En asesor_ai_prod (una) y demo (las dos) apunta a planes que no existen: se conserva, lo señala el diagnóstico `recomienda_oferta_no_disponible` y el motor no la recomienda. | `test_each_profile_option_reaches_the_prompt` |
 | `sales.offer.strategy.multi` | asesor_ai_prod, demo | Cómo presentar varias opciones | B | `sales.offer_presentation.multiple_offers` | renombrado | no | no | — | — |
 | `sales.offer.strategy.single` | asesor_ai_prod, demo | Cómo presentar una sola opción | B | `sales.offer_presentation.single_offer` | renombrado | no | no | — | — |
 | `sales.pain.clusters.<problema>.impacts` | agencia_viajes, asesor_ai_prod, demo, escuela_conduccion | Impactos del problema | A | `sales.customer_problems[id=<problema>].impacts` | mapa por problema → lista con `id` | pantalla | sí: prompt (casos típicos) | — | `test_connected_fields_change_the_prompt` |
@@ -231,7 +231,7 @@ recibe lo mismo que con los YAML. Si los YAML de un negocio no coinciden, la imp
 | `sales.progression_rules.forbid` | asesor_ai_prod, demo | Lo que el asistente no debe hacer | B | `sales.conversation_flow.forbid` | se une con `sales.conversation_flow` | no | no | — | — |
 | `sales.progression_rules.required_flow` | todos | Secuencia mínima de la conversación | B | `sales.conversation_flow.required_flow` | se une con `sales.conversation_flow` | no | no | — | — |
 | `sales.qualification.detect_offer_fit` | asesor_ai_prod, demo | Comprobar que la oferta encaja con el cliente | B | `sales.qualification.detect_offer_fit` | — | no | no | — | — |
-| `sales.solution.framing` | asesor_ai_prod, demo, escuela_conduccion | Argumentos de venta | A | `sales.arguments` | renombrado | modelo | no: el prompt actual no lo usa | — | — |
+| `sales.solution.framing` | asesor_ai_prod, demo, escuela_conduccion | Argumentos de venta | A | `sales.arguments` | renombrado | modelo | sí: perfil comercial del prompt, con la configuración del contrato | — | `test_each_profile_option_reaches_the_prompt` |
 | `sales.solution.mapping.<problema>` | asesor_ai_prod, demo | Qué parte de la solución atiende cada problema | B | `sales.customer_problems[id=<problema>].solutions` | se une con `sales.pain.clusters`, que usa la misma clave de problema | no | no | — | — |
 | `sales.solution.process_steps` | escuela_conduccion | Pasos del proceso de compra o servicio | A | `sales.solution.process_steps` | — | no | no | — | — |
 | `sales.solution.requirements` | escuela_conduccion | Requisitos del cliente | A | `sales.solution.requirements` | — | no | no | — | — |
@@ -252,10 +252,10 @@ recibe lo mismo que con los YAML. Si los YAML de un negocio no coinciden, la imp
 | `pricing.catalog.categories[].id` | agencia_viajes, escuela_conduccion, restaurant, tienda_ropa | Identificador de la categoría | A | `offer.catalog.categories[].id` | — | pantalla | sí: categorías con productos disponibles | — | `test_unavailable_offer_is_not_offered` |
 | `pricing.catalog.categories[].name` | agencia_viajes, escuela_conduccion, restaurant, tienda_ropa | Nombre de la categoría | A | `offer.catalog.categories[].name` | — | pantalla | sí: prompt (primeras 4 categorías) | — | `test_connected_fields_change_the_prompt` |
 | `pricing.catalog.items[].category` | agencia_viajes, escuela_conduccion, restaurant, tienda_ropa | Categoría del producto | A | `offer.catalog.items[].category` | — | pantalla | sí: decide qué categorías se ofrecen | — | `test_product_category_decides_which_categories_are_offered` |
-| `pricing.catalog.items[].description` | agencia_viajes, escuela_conduccion, restaurant, tienda_ropa | Descripción del producto | A | `offer.catalog.items[].description` | — | pantalla | no: el prompt actual no lo usa | — | — |
-| `pricing.catalog.items[].id` | agencia_viajes, escuela_conduccion, restaurant, tienda_ropa | Identificador estable del producto | A | `offer.catalog.items[].id` | — | pantalla | no | — | — |
-| `pricing.catalog.items[].name` | agencia_viajes, escuela_conduccion, restaurant, tienda_ropa | Nombre del producto | A | `offer.catalog.items[].name` | — | pantalla | no: el prompt de catálogo no lista productos (dice 'valores definidos en pricing') | — | — |
-| `pricing.catalog.items[].price.<moneda>` | agencia_viajes, escuela_conduccion, restaurant, tienda_ropa | Precio del producto por moneda | A | `offer.catalog.items[].prices[currency=<moneda>].amount` | mapa por moneda → lista con `currency` y `amount` | pantalla | no: el prompt de catálogo no lista precios (dice 'valores definidos en pricing') | — | — |
+| `pricing.catalog.items[].description` | agencia_viajes, escuela_conduccion, restaurant, tienda_ropa | Descripción del producto | A | `offer.catalog.items[].description` | — | pantalla | sí: perfil comercial del prompt, con la configuración del contrato (detalle de la oferta) | — | `test_each_profile_option_reaches_the_prompt` |
+| `pricing.catalog.items[].id` | agencia_viajes, escuela_conduccion, restaurant, tienda_ropa | Identificador estable del producto | A | `offer.catalog.items[].id` | — | pantalla | sí: perfil comercial del prompt, con la configuración del contrato (destino de las recomendaciones) | — | `test_each_profile_option_reaches_the_prompt` |
+| `pricing.catalog.items[].name` | agencia_viajes, escuela_conduccion, restaurant, tienda_ropa | Nombre del producto | A | `offer.catalog.items[].name` | — | pantalla | sí: prompt (precio de cada producto) | — | `test_catalog_prices_reach_the_prompt` |
+| `pricing.catalog.items[].price.<moneda>` | agencia_viajes, escuela_conduccion, restaurant, tienda_ropa | Precio del producto por moneda | A | `offer.catalog.items[].prices[currency=<moneda>].amount` | mapa por moneda → lista con `currency` y `amount` | pantalla | sí: prompt (precio de cada producto) | — | `test_catalog_prices_reach_the_prompt` |
 | `pricing.catalog.payment.link` | agencia_viajes, escuela_conduccion, restaurant, tienda_ropa | Link de pago del catálogo | D | referencia en `payments[id=catalog].link` | valor → referencia `legacy_yaml:` | pantalla | sí: el motor lo entrega al elegir el método | — | `test_payment_methods_reach_the_customer` |
 | `pricing.catalog.payment.transfer.enabled` | agencia_viajes, escuela_conduccion, restaurant, tienda_ropa | Transferencias activas | A | `payments[id=catalog].transfer_enabled` | perfil de pago `catalog` | pantalla | sí: métodos disponibles | — | `test_payment_methods_reach_the_customer` |
 | `pricing.catalog.payment.transfer.methods[].account_number` | agencia_viajes, escuela_conduccion, restaurant, tienda_ropa | Número de cuenta | D | referencia en `payments[id=catalog].transfer_methods[].account_number` | valor → referencia `legacy_yaml:` | pantalla | sí: el motor lo entrega al elegir el método | — | `test_payment_methods_reach_the_customer` |
@@ -267,7 +267,7 @@ recibe lo mismo que con los YAML. Si los YAML de un negocio no coinciden, la imp
 | `pricing.conditions` | todos | Condiciones comerciales | A | `terms.conditions` | cambia de sección | pantalla | sí: prompt | — | `test_connected_fields_change_the_prompt` |
 | `pricing.model` | agencia_viajes, escuela_conduccion, restaurant, tienda_ropa | Venta por catálogo | A | `offer.model` | — | pantalla | sí: prompt (planes o categorías del catálogo) | — | `test_tenants_stay_isolated_with_contract_source` |
 | `pricing.note` | agencia_viajes | Aclaración sobre cómo se confirma el precio | A | `terms.price_note` | renombrado | no | no | — | — |
-| `pricing.plans[].description` | asesor_ai_prod, clinic, demo, ecommerce, saas | Descripción del plan | A | `offer.plans[].description` | — | pantalla | no: el prompt actual no lo usa | — | — |
+| `pricing.plans[].description` | asesor_ai_prod, clinic, demo, ecommerce, saas | Descripción del plan | A | `offer.plans[].description` | — | pantalla | sí: perfil comercial del prompt, con la configuración del contrato (detalle de la oferta) | — | `test_connected_fields_change_the_prompt` |
 | `pricing.plans[].id` | asesor_ai_prod, clinic, demo, ecommerce, saas | Identificador estable del plan | A | `offer.plans[].id` | — | pantalla | sí: enlaza el plan con su pago | — | `test_payment_methods_reach_the_customer` |
 | `pricing.plans[].includes` | asesor_ai_prod, clinic, demo, ecommerce, saas | Qué incluye | A | `offer.plans[].includes` | — | pantalla | sí: prompt | — | `test_connected_fields_change_the_prompt` |
 | `pricing.plans[].name` | asesor_ai_prod, clinic, demo, ecommerce, saas | Nombre del plan | A | `offer.plans[].name` | — | pantalla | sí: prompt (qué se cobra y precios) | — | `test_plan_prices_format_is_unchanged` |
@@ -348,10 +348,10 @@ si el motor actual lo usa y de dónde viene.
 
 | Audiencia | Conectados | Pendientes |
 |---|---|---|
-| cliente | 49 | 85 |
+| cliente | 78 | 56 |
 | avanzado | 7 | 44 |
 | sistema | 2 | 0 |
-| **Total** | 58 | 129 |
+| **Total** | 87 | 100 |
 
 | Campo | Audiencia | Motor | Origen | Interfaz | Descripción |
 |---|---|---|---|---|---|
@@ -388,22 +388,22 @@ si el motor actual lo usa y de dónde viene.
 | `fulfillment.shipping.scope` | cliente | pendiente | `business.logistics.**` | no | Domicilio, envío, recogida y agenda |
 | `fulfillment.shipping.time.max` | cliente | pendiente | `business.logistics.**` | no | Domicilio, envío, recogida y agenda |
 | `fulfillment.shipping.time.min` | cliente | pendiente | `business.logistics.**` | no | Tiempo mínimo, en texto (p. ej. 30 min, 2 dias). |
-| `identity.brand_name` | cliente | pendiente | `business.brand_name` | no | Marca con la que el asistente presenta al negocio, si es distinta del nombre. |
+| `identity.brand_name` | cliente | conectado | `business.brand_name` | no | Marca con la que el asistente presenta al negocio, si es distinta del nombre. |
 | `identity.credibility` | cliente | pendiente | `business.credibility` | no | Pruebas de confianza: casos, resultados, trayectoria. |
-| `identity.description` | cliente | pendiente | `business.description` | pantalla | Qué hace el negocio. |
-| `identity.differentiators` | cliente | pendiente | `business.differentiators` | modelo | Por qué elegir este negocio y no otro. |
+| `identity.description` | cliente | conectado | `business.description` | pantalla | Qué hace el negocio. |
+| `identity.differentiators` | cliente | conectado | `business.differentiators` | modelo | Por qué elegir este negocio y no otro. |
 | `identity.industry` | cliente | conectado | `business.industry` | pantalla | Sector o tipo de negocio, en pocas palabras. |
-| `identity.location.address` | cliente | pendiente | `business.location.**` | modelo | Ubicación y cobertura |
-| `identity.location.city` | cliente | pendiente | `business.city`, `business.location.**` | modelo/no | Ciudad |
-| `identity.location.coverage.type` | cliente | pendiente | `business.location.**` | modelo | Ubicación y cobertura |
-| `identity.location.coverage.zones` | cliente | pendiente | `business.location.**` | modelo | Ubicación y cobertura |
-| `identity.location.type` | cliente | pendiente | `business.location.**` | modelo | virtual, fisico (local propio) o mixto. |
-| `identity.name` | cliente | pendiente | `business.name` | pantalla | Nombre del negocio. |
+| `identity.location.address` | cliente | conectado | `business.location.**` | modelo | Ubicación y cobertura |
+| `identity.location.city` | cliente | conectado | `business.city`, `business.location.**` | modelo/no | Ciudad |
+| `identity.location.coverage.type` | cliente | conectado | `business.location.**` | modelo | Ubicación y cobertura |
+| `identity.location.coverage.zones` | cliente | conectado | `business.location.**` | modelo | Ubicación y cobertura |
+| `identity.location.type` | cliente | conectado | `business.location.**` | modelo | virtual, fisico (local propio) o mixto. |
+| `identity.name` | cliente | conectado | `business.name` | pantalla | Nombre del negocio. |
 | `identity.opening_hours[].closes` | cliente | pendiente | nuevo | no | Hora de cierre (HH:MM, 24 h). |
 | `identity.opening_hours[].days` | cliente | pendiente | nuevo | no | Días en los que aplica este horario. |
 | `identity.opening_hours[].opens` | cliente | pendiente | nuevo | no | Hora de apertura (HH:MM, 24 h). |
 | `identity.positioning` | cliente | pendiente | `business.positioning` | no | A quién se dirige y qué problema resuelve. |
-| `identity.service_modes` | cliente | pendiente | `business.service_modes` | modelo | Cómo recibe el cliente el servicio o producto. |
+| `identity.service_modes` | cliente | conectado | `business.service_modes` | modelo | Cómo recibe el cliente el servicio o producto. |
 | `identity.target_customer.company_size` | cliente | pendiente | `business.customer_profile.**` | no | Cliente ideal |
 | `identity.target_customer.maturity` | cliente | pendiente | `business.customer_profile.**` | no | Situación típica del cliente al llegar. |
 | `identity.target_customer.roles` | cliente | pendiente | `business.customer_profile.**` | no | Quién suele escribir o decidir la compra. |
@@ -416,8 +416,8 @@ si el motor actual lo usa y de dónde viene.
 | `inventory.items[].variants[].sku` | cliente | pendiente | `inventory.items[].**` | no | Producto con variantes y existencias |
 | `inventory.items[].variants[].stock` | cliente | pendiente | `inventory.items[].**` | no | Producto con variantes y existencias |
 | `inventory.track_stock` | cliente | pendiente | `inventory.track_stock` | no | Si el negocio controla existencias. |
-| `knowledge.faqs[].answer` | cliente | pendiente | nuevo | pantalla | Respuesta oficial del negocio. |
-| `knowledge.faqs[].question` | cliente | pendiente | nuevo | pantalla | Pregunta tal como la haría el cliente. |
+| `knowledge.faqs[].answer` | cliente | conectado | nuevo | pantalla | Respuesta oficial del negocio. |
+| `knowledge.faqs[].question` | cliente | conectado | nuevo | pantalla | Pregunta tal como la haría el cliente. |
 | `messages.after_sale` | cliente | pendiente | nuevo | no | Mensaje después de una compra. |
 | `messages.data_request` | cliente | pendiente | nuevo | no | Mensaje para pedir los datos del cliente. |
 | `messages.follow_up` | cliente | pendiente | nuevo | no | Mensaje de seguimiento a un cliente que no respondió. |
@@ -430,16 +430,16 @@ si el motor actual lo usa y de dónde viene.
 | `offer.catalog.categories[].name` | cliente | conectado | `pricing.catalog.categories[].name` | pantalla | Nombre de la categoría |
 | `offer.catalog.items[].available` | cliente | conectado | nuevo | pantalla | Si es false, el producto se conserva pero no se ofrece (ni su categoría, si se queda sin productos). |
 | `offer.catalog.items[].category` | cliente | conectado | `pricing.catalog.items[].category` | pantalla | Id de su categoría; una categoría sin productos disponibles no se ofrece. |
-| `offer.catalog.items[].description` | cliente | pendiente | `pricing.catalog.items[].description` | pantalla | Detalle del producto. |
-| `offer.catalog.items[].features` | cliente | pendiente | nuevo | pantalla | Características del producto. |
-| `offer.catalog.items[].id` | cliente | pendiente | `pricing.catalog.items[].id` | pantalla | Identificador estable del producto |
-| `offer.catalog.items[].name` | cliente | pendiente | `pricing.catalog.items[].name` | pantalla | Nombre del producto |
-| `offer.catalog.items[].prices[].amount` | cliente | pendiente | `pricing.catalog.items[].price.<moneda>` | pantalla | Precio en esa moneda. |
-| `offer.catalog.items[].prices[].currency` | cliente | pendiente | derivado | — | Moneda (código ISO de tres letras). |
+| `offer.catalog.items[].description` | cliente | conectado | `pricing.catalog.items[].description` | pantalla | Detalle del producto. |
+| `offer.catalog.items[].features` | cliente | conectado | nuevo | pantalla | Características del producto. |
+| `offer.catalog.items[].id` | cliente | conectado | `pricing.catalog.items[].id` | pantalla | Identificador estable del producto |
+| `offer.catalog.items[].name` | cliente | conectado | `pricing.catalog.items[].name` | pantalla | Nombre del producto |
+| `offer.catalog.items[].prices[].amount` | cliente | conectado | `pricing.catalog.items[].price.<moneda>` | pantalla | Precio en esa moneda. |
+| `offer.catalog.items[].prices[].currency` | cliente | conectado | derivado | — | Moneda (código ISO de tres letras). |
 | `offer.catalog.payment_profile` | cliente | conectado | derivado | — | Perfil de pago con el que se cobra. |
 | `offer.model` | cliente | conectado | `pricing.model` | pantalla | plans: planes o servicios; catalog: productos de un catálogo. |
 | `offer.plans[].available` | cliente | conectado | nuevo | pantalla | Si es false, el plan se conserva pero no se ofrece. |
-| `offer.plans[].description` | cliente | pendiente | `pricing.plans[].description` | pantalla | Detalle del plan. |
+| `offer.plans[].description` | cliente | conectado | `pricing.plans[].description` | pantalla | Detalle del plan. |
 | `offer.plans[].id` | cliente | conectado | `pricing.plans[].id` | pantalla | Identificador estable del plan |
 | `offer.plans[].includes` | cliente | conectado | `pricing.plans[].includes` | pantalla | Qué incluye |
 | `offer.plans[].name` | cliente | conectado | `pricing.plans[].name` | pantalla | Nombre del plan |
@@ -469,10 +469,10 @@ si el motor actual lo usa y de dónde viene.
 | `response_style.instructions` | cliente | pendiente | nuevo | no | Cómo debe expresarse el asistente en este negocio. |
 | `response_style.length` | cliente | conectado | `config.response.length` | pantalla | short (cortas), medium (equilibradas) o long (detalladas). |
 | `response_style.max_words` | avanzado | conectado | `config.response.max_words` | modelo | Ajuste dentro del rango de la opción elegida. Si falta, el límite de la opción. |
-| `response_style.tone` | cliente | pendiente | `business.tone` | modelo | Tono del asistente (p. ej. cercano y claro). |
+| `response_style.tone` | cliente | conectado | `business.tone` | modelo | Tono del asistente (p. ej. cercano y claro). |
 | `response_style.voice` | cliente | pendiente | `business.voice` | no | Personalidad de la marca. |
-| `sales.arguments` | cliente | pendiente | `sales.solution.framing` | modelo | Argumentos de venta. |
-| `sales.benefits` | cliente | pendiente | `business.desired_outcomes` | modelo | Resultados que obtiene el cliente. |
+| `sales.arguments` | cliente | conectado | `sales.solution.framing` | modelo | Argumentos de venta. |
+| `sales.benefits` | cliente | conectado | `business.desired_outcomes` | modelo | Resultados que obtiene el cliente. |
 | `sales.buying_motivation.primary` | cliente | conectado | `business.buying_motivation.primary` | pantalla | Motivo principal de compra |
 | `sales.buying_motivation.secondary` | cliente | conectado | `business.buying_motivation.secondary` | pantalla | Motivo secundario de compra |
 | `sales.closing.high_intent_actions` | avanzado | pendiente | `sales.closing.actions.high_intent` | no | Qué hacer ante una intención de compra alta. |
@@ -495,8 +495,8 @@ si el motor actual lo usa y de dónde viene.
 | `sales.customer_problems[].solutions` | avanzado | pendiente | `sales.solution.mapping.<problema>` | no | Qué parte de la solución atiende este problema. |
 | `sales.customer_problems[].urgency_levels` | avanzado | pendiente | `sales.pain.clusters.<problema>.urgency_levels.**` | no | Mensajes según la urgencia. |
 | `sales.discovery.objectives` | avanzado | pendiente | `sales.discovery.objectives` | no | Qué debe averiguar el asistente. |
-| `sales.discovery.questions` | cliente | pendiente | `sales.discovery.questions` | modelo | Preguntas para entender al cliente. |
-| `sales.instructions` | cliente | pendiente | nuevo | modelo | Cómo debe vender el asistente en este negocio. |
+| `sales.discovery.questions` | cliente | conectado | `sales.discovery.questions` | modelo | Preguntas para entender al cliente. |
+| `sales.instructions` | cliente | conectado | nuevo | modelo | Cómo debe vender el asistente en este negocio. |
 | `sales.motivations[].angle.messages` | avanzado | pendiente | `sales.angles.<motivo>.execution` | no | Qué decir con este ángulo. |
 | `sales.motivations[].angle.signals` | avanzado | pendiente | `sales.angles.<motivo>.when` | no | Cuándo usar el ángulo: frases del cliente. |
 | `sales.motivations[].description` | avanzado | pendiente | `business.value_drivers.<motivo>.description` | no | Qué significa este motivo para el cliente. |
@@ -515,8 +515,8 @@ si el motor actual lo usa y de dónde viene.
 | `sales.offer_presentation.single_offer` | avanzado | pendiente | `sales.offer.strategy.single` | no | Cómo presentar cuando hay una sola opción. |
 | `sales.pain_points` | cliente | pendiente | `business.pain_points` | no | Problemas del cliente en sus palabras. |
 | `sales.qualification.detect_offer_fit` | avanzado | pendiente | `sales.qualification.detect_offer_fit` | no | true: valida si la oferta encaja antes de empujar el cierre. |
-| `sales.recommendation_rules[].recommend` | cliente | pendiente | `sales.offer.recommendation_rules[].recommend` | no | Plan, producto o categoría que se recomienda. Si no está en la oferta, el diagnóstico lo señala. |
-| `sales.recommendation_rules[].when` | cliente | pendiente | `sales.offer.recommendation_rules[].condition` | no | Situación o necesidad del cliente. |
+| `sales.recommendation_rules[].recommend` | cliente | conectado | `sales.offer.recommendation_rules[].recommend` | no | Plan, producto o categoría que se recomienda. Si no está en la oferta, el diagnóstico lo señala. |
+| `sales.recommendation_rules[].when` | cliente | conectado | `sales.offer.recommendation_rules[].condition` | no | Situación o necesidad del cliente. |
 | `sales.solution.process_steps` | cliente | pendiente | `sales.solution.process_steps` | no | Pasos que sigue el cliente para comprar o recibir el servicio. |
 | `sales.solution.requirements` | cliente | pendiente | `sales.solution.requirements` | no | Requisitos que debe cumplir el cliente. |
 | `sales.support.explain_first` | avanzado | pendiente | `sales.support.info_handling.explain_first` | no | true: primero aclara la duda. false: vende directo. |
@@ -536,9 +536,9 @@ si el motor actual lo usa y de dónde viene.
 | `terms.policies.warranty` | cliente | pendiente | nuevo | no | Garantía: qué cubre y por cuánto tiempo. |
 | `terms.price_framing` | avanzado | conectado | `pricing.price_framing.type` | no | Cómo responder si el cliente duda del precio. |
 | `terms.price_note` | cliente | pendiente | `pricing.note` | no | Aclaración sobre cómo se confirma el precio. |
-| `terms.promotions[].details` | cliente | pendiente | nuevo | modelo | Qué incluye la promoción y a qué aplica. |
-| `terms.promotions[].name` | cliente | pendiente | nuevo | modelo | Nombre con el que se presenta la promoción. |
-| `terms.promotions[].valid_until` | cliente | pendiente | nuevo | modelo | Último día de vigencia. |
+| `terms.promotions[].details` | cliente | conectado | nuevo | modelo | Qué incluye la promoción y a qué aplica. |
+| `terms.promotions[].name` | cliente | conectado | nuevo | modelo | Nombre con el que se presenta la promoción. |
+| `terms.promotions[].valid_until` | cliente | conectado | nuevo | modelo | Último día de vigencia. |
 | `terms.roi_break_even_bookings` | avanzado | pendiente | `pricing.roi.break_even_reservas` | no | Reservas con las que el cliente recupera la inversión. |
 | `terms.roi_break_even_sales` | avanzado | conectado | `pricing.roi.break_even_sales` | no | Ventas al mes con las que el cliente recupera la inversión. |
 | `terms.roi_hints` | avanzado | conectado | `pricing.roi_hints` | no | Argumentos de retorno de la inversión. |

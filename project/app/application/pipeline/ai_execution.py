@@ -72,9 +72,12 @@
 ################################
 from __future__ import annotations
 
+import re
+
 from app.application.pipeline.fallback import build_fallback_response
 from app.application.pipeline.response_postprocessor import enforce_max_words
 from app.application.pipeline.response_router import route_response
+from app.domain.business_config.payment_data import REDACTED_PAYMENT_VALUE
 from app.domain.conversation.memory import ConversationState, MemoryDomainService
 from app.domain.memory.observability.audit import emit_memory_audit
 from app.domain.memory.salience.selector import select as select_commercial_memory
@@ -222,6 +225,21 @@ def ejecutar_pago(runtime_yaml: dict, payment_method: str) -> str:
         return ""
 
     return ""
+
+
+def without_payment_placeholder(response_text: str, runtime_yaml: dict, payment_method: str) -> str:
+    """La IA no recibe los datos de pago, solo su marcador. Si lo repite, el cliente nunca lo ve: recibe el dato real si la IA
+    identificó el método; si no, la respuesta sin esas frases o, si no queda nada, la pregunta por el medio de pago."""
+    if REDACTED_PAYMENT_VALUE not in response_text:
+        return response_text
+    delivered = ejecutar_pago(runtime_yaml, payment_method)
+    if delivered:
+        return delivered
+    kept = [sentence for sentence in re.split(r"(?<=[.!?])\s+", response_text) if REDACTED_PAYMENT_VALUE not in sentence]
+    if kept:
+        return " ".join(kept)
+    methods = _get_configured_payment_methods(runtime_yaml)
+    return f"¿Con qué medio prefieres pagar: {', '.join(methods)}?" if methods else "¿Con qué medio prefieres pagar?"
 
 
 def _build_memory_context(memory_service: MemoryDomainService | None, *, tenant_slug: str, user_id: str) -> dict:
@@ -650,6 +668,7 @@ class AIExecution:
                     payment_status=payment_status,
                 )
                 response_text = ejecutar_pago(runtime_yaml_with_memory, payment_method) or response_text
+            response_text = without_payment_placeholder(response_text, runtime_yaml_with_memory, payment_method)
 
             raw_response = response_text
             persisted_response = raw_response

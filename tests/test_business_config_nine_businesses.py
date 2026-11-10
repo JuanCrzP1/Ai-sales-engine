@@ -19,8 +19,10 @@ import pytest
 from cryptography.fernet import Fernet
 from sqlalchemy import func, select
 
+from app.application.runtime import load_tenant_runtime_yaml
 from app.application.runtime import tenant_runtime_loader as loader
 from app.application.runtime.tenant_runtime_loader import _load_legacy_sections
+from app.domain.business_config.compiler import comparable_with_yaml
 from app.domain.business_config.contract import SecretRef
 from app.domain.business_config.errors import BusinessConfigError, SecretResolutionError
 from app.domain.business_config.payment_data import SECRET_STORE_SOURCE, iter_payment_blocks, iter_secret_refs, payment_values
@@ -31,7 +33,7 @@ from app.infrastructure.business_config.tables import business_config_secrets, b
 from app.infrastructure.config.config_service import ConfigService
 from app.infrastructure.config.legacy_field_catalog import COMMERCIAL_CONTROLS, check_leaf, destination_path, find_entry, legacy_leaves, resolve_path
 from app.infrastructure.config.legacy_store_migration import MIGRATION_AUTHOR, import_all
-from pipeline_harness import TENANTS, reply, run_conversation
+from pipeline_harness import TENANTS, as_yaml_prompt, reply, run_conversation
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
 CONVERSATION = [
@@ -232,7 +234,8 @@ def _differences(left, right, path: str = "") -> list[str]:
 
 @pytest.mark.parametrize("slug", TENANTS)
 def test_compilation_has_no_differences_with_the_yaml(store, slug):
-    compiled, reference = store.service.compile_sections(slug), _sections(slug)
+    # Más el perfil comercial, que los YAML no tienen.
+    compiled, reference = comparable_with_yaml(store.service.compile_sections(slug)), _sections(slug)
     assert _differences(compiled, reference) == []
     assert compiled == reference
 
@@ -251,8 +254,12 @@ def test_stored_configuration_gives_the_same_prompts_and_replies_as_the_yaml(sto
     request.addfinalizer(dispose_shared_engines)
     errors: list[dict] = []
     monkeypatch.setattr(loader.logger, "error", lambda event, extra=None: errors.append({"event": event, **(extra or {})}))
-    assert run_conversation(slug, CONVERSATION, user_id="nueve_negocios") == from_yaml
+    from_store = run_conversation(slug, CONVERSATION, user_id="nueve_negocios")
+    runtime = load_tenant_runtime_yaml(slug)
     assert errors == [], "no debe usar el respaldo de los YAML"
+    # Única diferencia intencional de lo publicado: el perfil comercial (bloque y tono).
+    assert "PERFIL COMERCIAL DEL NEGOCIO:" in from_store[0][0][0]
+    assert [([as_yaml_prompt(prompt, runtime) for prompt in prompts], response) for prompts, response in from_store] == from_yaml
 
 
 # ---------------------------------------------------------------------------
@@ -293,7 +300,15 @@ def test_commercial_fields_are_stored_published_and_recovered(store, slug):
 
     store.service.publish(slug, 2)
     assert _published_document(store, slug) == enriched
-    assert store.service.compile_sections(slug) == compiled_before, "estos campos aún no llegan al motor"
+    compiled_after = store.service.compile_sections(slug)
+    # Promociones, instrucciones, preguntas frecuentes y características llegan al motor por sus claves propias; las políticas,
+    # los horarios, los mensajes de posventa y los precios anual y por variante todavía no.
+    assert compiled_after["config"]["profile"]["promotions"] == enriched["terms"]["promotions"]
+    assert compiled_after["config"]["profile"]["instructions"] == enriched["sales"]["instructions"]
+    assert compiled_after["config"]["knowledge"] == enriched["knowledge"]
+    for item in (compiled_after["pricing"].get("catalog") or {}).get("items", []):
+        item.pop("features", None)
+    assert comparable_with_yaml(compiled_after) == comparable_with_yaml(compiled_before), "el resto aún no llega al motor"
 
     assert store.service.rollback(slug) == 1
     assert _published_document(store, slug) == original

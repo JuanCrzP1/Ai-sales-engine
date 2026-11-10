@@ -1,16 +1,16 @@
 """
-Integración del contrato con el motor ACTUAL (sin cambios en el motor).
+Integración del contrato con el motor.
 
-- Con el contrato como fuente, el motor produce exactamente los mismos prompts y respuestas que con
-  los YAML, en los nueve negocios: el contrato no cambia el comportamiento de la IA.
+- Con el contrato como fuente, el motor produce los mismos prompts y respuestas que con los YAML, en los nueve negocios, más
+  lo que solo existe en el contrato: el perfil comercial (bloque del prompt y tono), las preguntas frecuentes y las
+  características de cada producto. Un negocio que sigue con sus YAML no cambia.
 - El contrato es opcional por negocio (`BUSINESS_CONFIG_CONTRACT_TENANTS`) y, si es inválido, el
   motor vuelve a los YAML.
 - Cada campo marcado `x-engine: conectado` en el contrato tiene aquí una prueba de que cambiarlo
-  cambia lo que hace el motor (`CONNECTED_EVIDENCE`). Lo que el motor actual no usa está marcado
-  `pendiente`, y sus pruebas de integración futura están en `test_business_config_engine_pending.py`.
+  cambia lo que hace el motor (`CONNECTED_EVIDENCE`). Lo que el motor no usa todavía está marcado `pendiente`.
 
 Sin base de datos ni llamadas reales a la IA: memoria en RAM y LLM simulado. Los datos de pago se
-comparan sin imprimirse.
+comparan sin imprimirse (ver `test_payment_data_protection.py`).
 """
 from __future__ import annotations
 
@@ -26,12 +26,15 @@ from app.application.pipeline.conversation_flow import get_conversation_state
 from app.application.pipeline.response_postprocessor import enforce_max_words
 from app.application.runtime import load_tenant_runtime_yaml
 from app.application.runtime import tenant_runtime_loader as loader
+from app.domain.business_config.compiler import comparable_with_yaml, compile_business_config
+from app.domain.business_config.contract import BusinessConfig
 from app.domain.business_config.engine_policy import PROMPT_WORD_LIMITS, RESPONSE_LENGTH_MAX_WORDS
 from app.domain.business_config.payment_data import iter_payment_blocks
+from app.infrastructure.ai.prompting.builder.prompt_builder import PromptBuilderService
 from app.infrastructure.config.business_config_store import CONTRACT_FILENAME, BusinessConfigStore
 from app.infrastructure.config.config_service import ConfigService
 from app.infrastructure.config.legacy_field_catalog import contract_fields
-from pipeline_harness import TENANTS, copy_tenant, reply, run_conversation, run_with_document
+from pipeline_harness import TENANTS, as_yaml_prompt, copy_tenant, reply, run_conversation, run_with_document
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
 SCHEMA_PATH = ROOT_DIR / "project" / "config" / "contracts" / "v1" / "business-config.schema.json"
@@ -117,7 +120,7 @@ def test_store_rejects_documents_of_another_tenant(monkeypatch, tmp_path):
 
 
 # ---------------------------------------------------------------------------
-# Equivalencia: el contrato no cambia el comportamiento de la IA
+# Equivalencia: con el contrato, el motor hace lo mismo que con los YAML, más el perfil comercial
 # ---------------------------------------------------------------------------
 
 @pytest.mark.parametrize("slug", TENANTS)
@@ -125,7 +128,10 @@ def test_runtime_from_contract_equals_runtime_from_yaml(monkeypatch, slug):
     monkeypatch.delenv(loader.CONTRACT_TENANTS_ENV, raising=False)
     from_yaml = load_tenant_runtime_yaml(slug, channel="whatsapp")
     monkeypatch.setenv(loader.CONTRACT_TENANTS_ENV, slug)
-    assert load_tenant_runtime_yaml(slug, channel="whatsapp") == from_yaml
+    from_contract = load_tenant_runtime_yaml(slug, channel="whatsapp")
+    # Lo único que añade el contrato es el perfil comercial: ninguno de los nueve tiene preguntas frecuentes.
+    assert set(from_contract["config"]) - set(from_yaml["config"]) == {"profile"}
+    assert comparable_with_yaml(from_contract) == from_yaml
 
 
 @pytest.mark.parametrize("slug", TENANTS)
@@ -134,8 +140,14 @@ def test_engine_prompts_and_replies_are_identical_with_contract_source(monkeypat
     from_yaml = run_conversation(slug, CONVERSATION, user_id="equivalencia")
     monkeypatch.setenv(loader.CONTRACT_TENANTS_ENV, slug)
     from_contract = run_conversation(slug, CONVERSATION, user_id="equivalencia")
+    runtime = load_tenant_runtime_yaml(slug)
+
+    # Única diferencia intencional: el perfil comercial (bloque y tono). Sin él, prompts y respuestas coinciden.
+    assert "PERFIL COMERCIAL DEL NEGOCIO:" in from_contract[0][0][0]
+    assert all("PERFIL COMERCIAL DEL NEGOCIO:" not in prompt for prompts, _ in from_yaml for prompt in prompts)
     assert all(prompts for prompts, _response in from_contract[:3])
-    assert from_contract == from_yaml
+    assert [([as_yaml_prompt(prompt, runtime) for prompt in prompts], response) for prompts, response in from_contract] == from_yaml
+    assert from_contract[-1][1].startswith("Avanzamos con el siguiente paso.")
 
 
 def test_tenants_stay_isolated_with_contract_source(monkeypatch):
@@ -378,6 +390,219 @@ def test_prompt_word_limits_match_the_current_engine(monkeypatch, tmp_path):
 
 
 # ---------------------------------------------------------------------------
+# Perfil comercial: solo con el contrato
+# ---------------------------------------------------------------------------
+
+CONTRACTS_DIR = ROOT_DIR / "project" / "config" / "contracts" / "v1"
+PANEL_DOCUMENT = ROOT_DIR / "apps" / "admin-web" / "src" / "test" / "fixtures" / "sampleContractDocument.json"
+CATALOG_TENANTS = ["agencia_viajes", "escuela_conduccion", "restaurant", "tienda_ropa"]
+
+
+def _profile_block(prompt: str) -> str:
+    assert "PERFIL COMERCIAL DEL NEGOCIO:" in prompt
+    return prompt.split("PERFIL COMERCIAL DEL NEGOCIO:\n", 1)[1].split("\n\n", 1)[0]
+
+
+def _stored(slug: str) -> BusinessConfig:
+    return BusinessConfigStore(ConfigService().tenants_root).load(slug)
+
+
+def test_example_document_compiles_with_every_option():
+    config = BusinessConfig.model_validate_json((CONTRACTS_DIR / "business-config.example.json").read_text(encoding="utf-8"))
+    compiled = compile_business_config(config, lambda ref: "valor-de-prueba")
+    assert compiled["config"]["response"] == {"length": "medium", "max_words": 75}
+    assert len(compiled["config"]["knowledge"]["faqs"]) == 2
+    assert compiled["pricing"]["catalog"]["items"][0]["price"] == {"COP": 18000}
+    assert compiled["pricing"]["catalog"]["items"][1]["features"] == ["para 12 porciones", "decoración personalizada"]
+    profile = compiled["config"]["profile"]
+    assert profile["name"] == "La Masa Madre" and profile["tone"] == "cercano y alegre"
+    assert profile["recommendations"] == [{"when": "celebra un cumpleaños", "recommend": "Torta de chocolate"}]
+    assert profile["promotions"] == [{"name": "Lunes de pan", "details": "10 % de descuento en panes los lunes", "valid_until": "2030-12-31"}]
+    block = PromptBuilderService.build_business_profile_context(compiled)
+    assert "Negocio: La Masa Madre" in block and "- Si celebra un cumpleaños: recomienda Torta de chocolate." in block
+
+
+@pytest.mark.parametrize("slug", TENANTS)
+def test_profile_block_exists_only_with_contract_source(monkeypatch, slug):
+    turns = [("Hola, info", reply("Claro."))]
+    monkeypatch.delenv(loader.CONTRACT_TENANTS_ENV, raising=False)
+    (yaml_prompts, _), = run_conversation(slug, turns, user_id="perfil")
+    monkeypatch.setenv(loader.CONTRACT_TENANTS_ENV, slug)
+    (contract_prompts, _), = run_conversation(slug, turns, user_id="perfil")
+
+    config = _stored(slug)
+    assert "PERFIL COMERCIAL DEL NEGOCIO:" not in yaml_prompts[0]
+    block = _profile_block(contract_prompts[0])
+    assert f"Negocio: {config.identity.name}" in block
+    assert f"palabras, {config.response_style.tone.strip()}." in contract_prompts[0]
+    assert "palabras, natural y claro." in yaml_prompts[0]
+    for question in (config.sales.discovery.questions if config.sales.discovery else None) or []:
+        assert f"- {question}" in block
+
+
+PROFILE_CASES = {
+    "marca": (lambda d: d["identity"].update(brand_name="Sabor Casero"), "Negocio: Sabor Casero"),
+    "diferenciadores": (
+        lambda d: d["identity"].update(differentiators=["ingredientes locales", "entrega en 30 minutos."]),
+        "Diferenciadores: ingredientes locales; entrega en 30 minutos.",
+    ),
+    "ubicacion": (
+        lambda d: d["identity"].update(location={"type": "mixto", "address": "Calle 1 #2-3", "city": "Bogotá", "coverage": {"type": "nacional", "zones": ["Colombia"]}}),
+        "Ubicación: local físico y atención virtual; Calle 1 #2-3, Bogotá.\nCobertura nacional: Colombia.",
+    ),
+    "modalidades": (lambda d: d["identity"].update(service_modes=["envio", "recoger"]), "Modalidades de atención: con envío, para recoger."),
+    "beneficios": (lambda d: d["sales"].update(benefits=["comer bien sin salir de casa"]), "Beneficios para el cliente: comer bien sin salir de casa."),
+    "argumentos": (lambda d: d["sales"].update(arguments=["Todo se prepara al momento."]), "Argumentos de venta:\n- Todo se prepara al momento."),
+    "preguntas": (
+        lambda d: d["sales"].setdefault("discovery", {}).update(questions=["¿Para cuántas personas es el pedido?"]),
+        "Preguntas para entender al cliente (como máximo una por mensaje y solo si aún no lo sabes):\n- ¿Para cuántas personas es el pedido?",
+    ),
+    "recomendaciones": (
+        lambda d: d["sales"].update(recommendation_rules=[{"when": "pide algo para compartir", "recommend": "hamburguesa_doble"}, {"when": "tiene sed", "recommend": "bebidas"}]),
+        "Recomendaciones:\n- Si pide algo para compartir: recomienda Hamburguesa Doble.\n- Si tiene sed: recomienda Bebidas.",
+    ),
+    "instrucciones": (
+        lambda d: d["sales"].update(instructions=["Confirma la dirección antes de cerrar el pedido."]),
+        "Instrucciones del negocio:\n- Confirma la dirección antes de cerrar el pedido.",
+    ),
+    "promociones": (
+        lambda d: d["terms"].update(promotions=[{"name": "Martes 2x1", "details": "Dos hamburguesas sencillas por el precio de una", "valid_until": "2999-12-31"}]),
+        "Promociones vigentes (no ofrezcas otras promociones ni descuentos):\n- Martes 2x1: Dos hamburguesas sencillas por el precio de una (válida hasta 2999-12-31)",
+    ),
+    "caracteristicas": (
+        lambda d: d["offer"]["catalog"]["items"][0].update(features=["pan artesanal", "papas incluidas"]),
+        "- Hamburguesa Sencilla: Carne artesanal, queso y vegetales frescos. Características: pan artesanal, papas incluidas.",
+    ),
+    "descripcion_producto": (
+        lambda d: d["offer"]["catalog"]["items"][0].update(description="Doble carne y salsa de la casa."),
+        "- Hamburguesa Sencilla: Doble carne y salsa de la casa.",
+    ),
+}
+
+
+@pytest.mark.parametrize("case", PROFILE_CASES)
+def test_each_profile_option_reaches_the_prompt(monkeypatch, tmp_path, case):
+    mutate, expected = PROFILE_CASES[case]
+    turns = [("Hola, info", reply("Claro."))]
+    (before, _), = run_with_document(monkeypatch, tmp_path / "antes", "restaurant", lambda d: None, turns)
+    (after, _), = run_with_document(monkeypatch, tmp_path / "despues", "restaurant", mutate, turns)
+    assert expected not in before[0]
+    assert expected in _profile_block(after[0])
+
+
+def test_removing_profile_options_removes_them_from_the_prompt(monkeypatch, tmp_path):
+    def _clear(document):
+        for key in ("differentiators", "location", "service_modes"):
+            document["identity"].pop(key, None)
+        document["response_style"].pop("tone", None)
+        document["sales"].pop("benefits", None)
+        for item in document["offer"]["catalog"]["items"]:
+            item.pop("description", None)
+
+    (prompts, _), = run_with_document(monkeypatch, tmp_path, "restaurant", _clear, [("Hola, info", reply("Claro."))])
+    identity = _stored("restaurant").identity
+    # Sin opciones del perfil solo quedan el nombre y la descripción, que siempre son obligatorios.
+    assert _profile_block(prompts[0]).splitlines() == [f"Negocio: {identity.name}", f"Descripción: {identity.description.strip()}"]
+
+
+def test_expired_promotions_are_not_offered(monkeypatch, tmp_path):
+    promotions = [
+        {"name": "Vencida", "details": "Ya no aplica", "valid_until": "2000-01-01"},
+        {"name": "Permanente", "details": "Siempre vigente"},
+    ]
+    (prompts, _), = run_with_document(
+        monkeypatch, tmp_path, "restaurant", lambda d: d["terms"].update(promotions=promotions), [("¿Promociones?", reply("Claro."))]
+    )
+    block = _profile_block(prompts[0])
+    assert "- Permanente: Siempre vigente" in block
+    assert "Vencida" not in block
+
+
+def test_ongoing_conversation_keeps_only_the_profile_rules(monkeypatch, tmp_path):
+    def _with_rules(document):
+        document["sales"]["instructions"] = ["Confirma la dirección antes de cerrar."]
+
+    turns = [("Necesito información", reply("Claro.")), ("¿Y el domicilio?", reply("Te cuento."))]
+    (first, _), (second, _) = run_with_document(monkeypatch, tmp_path, "restaurant", _with_rules, turns)
+    assert "Negocio: " in _profile_block(first[0]) and "Diferenciadores:" in _profile_block(first[0])
+    ongoing = _profile_block(second[0])
+    assert "Negocio: " not in ongoing and "Diferenciadores:" not in ongoing and "Detalle de la oferta:" not in ongoing
+    assert ongoing.splitlines() == ["Instrucciones del negocio:", "- Confirma la dirección antes de cerrar."]
+    assert "máximo 60 palabras, cercano, agil y orientado a orden." in second[0]
+
+
+def test_active_prompt_stays_within_budget_with_contract_source(monkeypatch):
+    """Mismo límite que tests/test_memory_context_persistence.py, ahora con la fuente del contrato."""
+    monkeypatch.setenv(loader.CONTRACT_TENANTS_ENV, "asesor_ai_prod")
+    runtime = load_tenant_runtime_yaml("asesor_ai_prod", extra_yaml={
+        "conversation_state": "active",
+        "memory_context": {"last_intent": "price", "last_pain": "mensajes", "last_ai_response": "ok"},
+    })
+    prompt, _, _ = PromptBuilderService().build(
+        client_config_id="asesor_ai_prod", user_message="siguiente", yaml_config=runtime, faq_results=[], progression_rules=None
+    )
+    # asesor_ai_prod no tiene instrucciones ni promociones, las reglas que siguen en una conversación en curso: solo cambia el tono.
+    assert "PERFIL COMERCIAL DEL NEGOCIO:" not in prompt
+    assert "máximo 75 palabras, humano, cercano, directo y comercial de cierre." in prompt
+    assert len(prompt) < 2800
+
+
+def test_panel_document_is_valid_and_reaches_the_engine():
+    """El documento con el que se prueba el panel (`src/test/fixtures`) debe cumplir el contrato."""
+    config = BusinessConfig.model_validate_json(PANEL_DOCUMENT.read_text(encoding="utf-8"))
+    secrets = {}
+    compiled = compile_business_config(config, lambda ref: secrets.setdefault(ref.secret_ref, f"valor-{len(secrets)}"))
+    assert set(secrets) == {"secret_store:principal.link", "secret_store:principal.transfer.0.number"}
+    block = PromptBuilderService.build_business_profile_context(compiled)
+    assert compiled["config"]["profile"]["tone"] == "cercano y amable"
+    assert "- Si pide café: recomienda Croissant de mantequilla." in block
+    assert "Desayuno del lunes: 10 % de descuento en desayunos los lunes" in block
+    # El producto no disponible viaja en el contrato, pero el motor no lo ofrece.
+    assert [item.available for item in config.offer.catalog.items] == [True, True, False]
+    assert [item["name"] for item in compiled["pricing"]["catalog"]["items"]] == ["Café americano", "Croissant de mantequilla"]
+
+
+def test_recommendations_to_something_not_offered_are_dropped(monkeypatch, tmp_path):
+    rules = [{"when": "quiere algo nuevo", "recommend": "no_existe"}, {"when": "tiene sed", "recommend": "bebidas"}]
+    (prompts, _), = run_with_document(
+        monkeypatch, tmp_path, "restaurant", lambda d: d["sales"].update(recommendation_rules=rules), [("Hola, info", reply("Claro."))]
+    )
+    block = _profile_block(prompts[0])
+    assert "- Si tiene sed: recomienda Bebidas." in block
+    assert "quiere algo nuevo" not in block and "no_existe" not in block
+
+
+# ---------------------------------------------------------------------------
+# Preguntas frecuentes y precios del catálogo: solo con el contrato
+# ---------------------------------------------------------------------------
+
+def test_faqs_reach_the_prompt_only_when_configured(monkeypatch, tmp_path):
+    faqs = [{"question": "¿Atienden los domingos?", "answer": "Sí, de 9 a. m. a 1 p. m."}]
+    (prompts, _), = run_with_document(
+        monkeypatch, tmp_path, "restaurant",
+        lambda d: d.update(knowledge={"faqs": faqs}),
+        [("¿Abren el domingo?", reply("Sí."))],
+    )
+    assert "CONOCIMIENTO DEL NEGOCIO (preguntas frecuentes):\n- P: ¿Atienden los domingos?\n  R: Sí, de 9 a. m. a 1 p. m." in prompts[0]
+
+    monkeypatch.setattr(ai_pipeline_module, "load_tenant_runtime_yaml", load_tenant_runtime_yaml)
+    monkeypatch.setenv(loader.CONTRACT_TENANTS_ENV, "*")
+    for slug in TENANTS:
+        (plain_prompts, _), = run_conversation(slug, [("Hola, info", reply("Claro."))], user_id="sin-faq")
+        assert "CONOCIMIENTO DEL NEGOCIO" not in plain_prompts[0]
+
+
+@pytest.mark.parametrize("slug", CATALOG_TENANTS)
+def test_catalog_prices_reach_the_prompt(monkeypatch, slug):
+    monkeypatch.setenv(loader.CONTRACT_TENANTS_ENV, slug)
+    config = _stored(slug)
+    (prompts, _), = run_conversation(slug, [("¿Cuánto cuesta?", reply("Te cuento."))], user_id="catalogo")
+    prices_line = next(line for line in prompts[0].splitlines() if line.startswith("Precios:"))
+    for item in config.offer.catalog.items:
+        assert f"{item.name} -> COP: {item.prices[0].amount}" in prices_line
+
+
+# ---------------------------------------------------------------------------
 # Evidencia de uso: al cambiar el campo en el contrato, cambia el prompt del motor actual
 # ---------------------------------------------------------------------------
 
@@ -414,6 +639,9 @@ CONNECTED_CASES = {
     "canales_producto": ("saas", lambda d: d["capabilities"].update(product_channels=["telegram"]), "CANALES DEL SISTEMA (system_channels): telegram", 0),
     "modo_catalogo": ("restaurant", lambda d: d.update(features={"pricing_enabled": True, "catalog_mode": False}),
                       "Tiene opciones de servicio disponibles con pricing definido.", 0),
+    "tono": ("restaurant", lambda d: d["response_style"].update(tone="paciente y muy claro"), "máximo 60 palabras, paciente y muy claro.", 1),
+    "descripcion_plan": ("saas", lambda d: _first_plan(d).update(name="Plan Caja", description="Incluye soporte por chat"),
+                         "- Plan Caja: Incluye soporte por chat", 0),
 }
 
 
@@ -486,6 +714,36 @@ CONNECTED_EVIDENCE: dict[str, str] = {
     "response_style.max_words": "test_changing_the_contract_changes_response_length",
     "features.catalog_mode": "test_connected_fields_change_the_prompt",
     "features.business_model": "test_connected_fields_change_the_prompt",
+    # Perfil comercial, tono, preguntas frecuentes y precios del catálogo: solo con el contrato.
+    "identity.name": "test_profile_block_exists_only_with_contract_source",
+    "identity.brand_name": "test_each_profile_option_reaches_the_prompt",
+    "identity.description": "test_removing_profile_options_removes_them_from_the_prompt",
+    "identity.differentiators": "test_each_profile_option_reaches_the_prompt",
+    "identity.location.type": "test_each_profile_option_reaches_the_prompt",
+    "identity.location.address": "test_each_profile_option_reaches_the_prompt",
+    "identity.location.city": "test_each_profile_option_reaches_the_prompt",
+    "identity.location.coverage.type": "test_each_profile_option_reaches_the_prompt",
+    "identity.location.coverage.zones": "test_each_profile_option_reaches_the_prompt",
+    "identity.service_modes": "test_each_profile_option_reaches_the_prompt",
+    "offer.plans[].description": "test_connected_fields_change_the_prompt",
+    "offer.catalog.items[].id": "test_each_profile_option_reaches_the_prompt",
+    "offer.catalog.items[].name": "test_catalog_prices_reach_the_prompt",
+    "offer.catalog.items[].description": "test_each_profile_option_reaches_the_prompt",
+    "offer.catalog.items[].prices[].currency": "test_catalog_prices_reach_the_prompt",
+    "offer.catalog.items[].prices[].amount": "test_catalog_prices_reach_the_prompt",
+    "offer.catalog.items[].features": "test_each_profile_option_reaches_the_prompt",
+    "sales.benefits": "test_each_profile_option_reaches_the_prompt",
+    "sales.arguments": "test_each_profile_option_reaches_the_prompt",
+    "sales.discovery.questions": "test_each_profile_option_reaches_the_prompt",
+    "sales.recommendation_rules[].when": "test_each_profile_option_reaches_the_prompt",
+    "sales.recommendation_rules[].recommend": "test_each_profile_option_reaches_the_prompt",
+    "sales.instructions": "test_each_profile_option_reaches_the_prompt",
+    "terms.promotions[].name": "test_each_profile_option_reaches_the_prompt",
+    "terms.promotions[].details": "test_each_profile_option_reaches_the_prompt",
+    "terms.promotions[].valid_until": "test_expired_promotions_are_not_offered",
+    "response_style.tone": "test_connected_fields_change_the_prompt",
+    "knowledge.faqs[].question": "test_faqs_reach_the_prompt_only_when_configured",
+    "knowledge.faqs[].answer": "test_faqs_reach_the_prompt_only_when_configured",
 }
 
 

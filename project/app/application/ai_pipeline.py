@@ -126,7 +126,14 @@ class AIPipeline:
             runtime_yaml=runtime_yaml,
         )
         if conversation.early_response:
-            log_trace(tenant_slug_value=tenant_slug_value, user_id=conversation.user_id, intent="info", user_message=user_message, final_response=conversation.early_response)
+            log_trace(
+                tenant_slug_value=tenant_slug_value,
+                user_id=conversation.user_id,
+                intent="info",
+                user_message=user_message,
+                final_response=conversation.early_response,
+                runtime_yaml=runtime_yaml,
+            )
             metadata = {
                 "source": str(conversation.early_source or "early_response"),
                 "intent": "info",
@@ -162,7 +169,14 @@ class AIPipeline:
         route_context = route_context if isinstance(route_context, dict) else {}
         route_intent = str(route_context.get("intent") or "").strip().lower()
 
-        log_trace(tenant_slug_value=tenant_slug_value, user_id=conversation.user_id, intent=route_intent, user_message=user_message, final_response=str(final_response or ""))
+        log_trace(
+            tenant_slug_value=tenant_slug_value,
+            user_id=conversation.user_id,
+            intent=route_intent,
+            user_message=user_message,
+            final_response=str(final_response or ""),
+            runtime_yaml=runtime_yaml,
+        )
         if include_metadata:
             metadata = route_context if isinstance(route_context, dict) else {}
             if "source" not in metadata:

@@ -26,7 +26,7 @@ from app.application.runtime import load_tenant_runtime_yaml
 from app.application.runtime import tenant_runtime_loader as loader
 from app.business_config_application import service as business_config_service
 from app.business_config_application.ports import BusinessConfigStorage, PaymentSecretStorage
-from app.domain.business_config.compiler import compile_business_config
+from app.domain.business_config.compiler import comparable_with_yaml, compile_business_config
 from app.domain.business_config.contract import BusinessConfig, SecretRef
 from app.domain.business_config.errors import (
     BusinessAlreadyExistsError,
@@ -138,7 +138,7 @@ def test_each_business_is_stored_and_compiles_to_its_yaml(service, engine, slug)
     refs = [holder["secret_ref"] for holder in iter_secret_refs(published.model_dump(mode="json"))]
     assert refs and all(ref.startswith("secret_store:") for ref in refs), "la base no debe depender de los YAML"
     sections = loader._load_legacy_sections(config_service, slug)
-    assert compile_business_config(published, PaymentSecretStore(engine).resolver(slug)) == sections
+    assert comparable_with_yaml(compile_business_config(published, PaymentSecretStore(engine).resolver(slug))) == sections
 
 
 def test_all_nine_businesses_coexist_without_payment_values_in_the_file(service, database):
@@ -170,12 +170,15 @@ def engine_reads_this_store(database, monkeypatch):
 
 
 def test_runtime_reads_the_stored_business_without_changing_the_engine(service, engine_reads_this_store, monkeypatch):
-    """El cargador del motor, con `BUSINESS_CONFIG_STORE=database`, lee el mismo archivo que escribe el panel."""
+    """El cargador del motor, con `BUSINESS_CONFIG_STORE=database`, lee el mismo archivo que escribe el panel: lo de los YAML,
+    más el perfil comercial."""
     import_prepared(service, prepare_tenant(ConfigService(), "restaurant"))
     monkeypatch.delenv(loader.CONTRACT_TENANTS_ENV)
     from_yaml = load_tenant_runtime_yaml("restaurant")
     monkeypatch.setenv(loader.CONTRACT_TENANTS_ENV, "restaurant")
-    assert load_tenant_runtime_yaml("restaurant") == from_yaml
+    from_store = load_tenant_runtime_yaml("restaurant")
+    assert from_store["config"]["profile"]["name"] == "Mesa Activa"
+    assert comparable_with_yaml(from_store) == from_yaml
 
 
 def test_what_the_panel_publishes_reaches_the_engine(service, engine_reads_this_store):

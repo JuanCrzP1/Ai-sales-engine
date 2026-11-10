@@ -43,7 +43,7 @@ class Plan(ContractModel):
 
     id: Identifier = Field(json_schema_extra=CONNECTED)
     name: Text = Field(json_schema_extra=CONNECTED)
-    description: str | None = Field(default=None, description="Detalle del plan.")
+    description: str | None = Field(default=None, description="Detalle del plan.", json_schema_extra=CONNECTED)
     prices: list[PlanPrice] = Field(min_length=1, json_schema_extra=CONNECTED)
     includes: list[Text] | None = Field(default=None, json_schema_extra=CONNECTED)
     not_included: list[Text] | None = Field(default=None, json_schema_extra=CONNECTED)
@@ -70,14 +70,14 @@ class ItemPrice(ContractModel):
 class CatalogItem(ContractModel):
     """Producto del catálogo."""
 
-    id: Identifier
-    name: Text
+    id: Identifier = Field(json_schema_extra=CONNECTED)
+    name: Text = Field(json_schema_extra=CONNECTED)
     category: Identifier = Field(
         description="Id de su categoría; una categoría sin productos disponibles no se ofrece.", json_schema_extra=CONNECTED
     )
-    description: str | None = Field(default=None, description="Detalle del producto.")
-    prices: list[ItemPrice] = Field(min_length=1)
-    features: Phrases | None = Field(default=None, description="Características del producto.")
+    description: str | None = Field(default=None, description="Detalle del producto.", json_schema_extra=CONNECTED)
+    prices: list[ItemPrice] = Field(min_length=1, json_schema_extra=CONNECTED)
+    features: Phrases | None = Field(default=None, description="Características del producto.", json_schema_extra=CONNECTED)
     available: bool = Field(
         default=True,
         description="Si es false, el producto se conserva pero no se ofrece (ni su categoría, si se queda sin productos).",

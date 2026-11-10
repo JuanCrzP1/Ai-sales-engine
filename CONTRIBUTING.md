@@ -34,7 +34,6 @@ Desde la raíz del repositorio. Nada de esto consume API ni toca la base del `.e
 
 ```bash
 pytest                                   # suite completa del motor y de BusinessConfig (la misma del CI)
-pytest -m engine_pending --runxfail      # detalle de la integración pendiente con el motor (Fase 4)
 npm --prefix apps/admin-web run typecheck
 npm --prefix apps/admin-web test         # panel con un backend en memoria
 npm --prefix apps/admin-web run test:integration   # panel contra la API real y un SQLite temporal
@@ -67,7 +66,9 @@ python scripts/generate_traceability_matrix.py
 
 - Las pruebas viven en `tests/`, un archivo por tema (`test_<tema>.py`).
 - `pytest.ini` usa una **lista cerrada** (`python_files`): una prueba nueva que no se añada allí no corre ni en local ni en el CI.
-- Marcadores: `integration` (modelo real), `engine_pending` (xfail estricto de la Fase 4).
+- Marcadores: `integration` (modelo real) y `engine_pending` (xfail estricto). Este último es para conectar un campo `pendiente`
+  del contrato: su prueba se escribe antes que el cambio del motor y pasa a prueba normal cuando el motor lo usa. Hoy no lo
+  usa ninguna prueba (`pytest -m engine_pending --runxfail` muestra el detalle cuando las haya).
 - El panel tiene sus pruebas junto al código (`apps/admin-web/src/**/*.test.ts(x)`) y su comprobación de arquitectura en
   `apps/admin-web/src/test/architecture.test.ts`.
 

@@ -22,7 +22,7 @@ import app.application.ai_pipeline as ai_pipeline_module
 from app.application.ai_pipeline import AIPipeline
 from app.application.runtime import load_tenant_runtime_yaml
 from app.application.runtime import tenant_runtime_loader as loader
-from app.domain.business_config.compiler import compile_business_config
+from app.domain.business_config.compiler import comparable_with_yaml, compile_business_config
 from app.domain.business_config.contract import BusinessConfig, Closing
 from app.domain.business_config.engine_policy import COMMON_CLOSING_POLICY
 from app.domain.business_config.engine_settings import EngineSettings
@@ -36,7 +36,7 @@ from app.infrastructure.config.legacy_store_migration import import_all, import_
 from app.infrastructure.config.legacy_yaml_importer import import_legacy_sections
 from app.infrastructure.config.payment_secrets import LegacyYamlSecretResolver
 from app.infrastructure.persistence.memory_repository import MemoryRepository
-from pipeline_harness import TENANTS, TENANTS_DIR, copy_tenant, reply, run_conversation
+from pipeline_harness import TENANTS, TENANTS_DIR, as_yaml_prompt, copy_tenant, reply, run_conversation
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
 SCHEMA_PATH = ROOT_DIR / "project" / "config" / "contracts" / "v1" / "business-config.schema.json"
@@ -114,7 +114,8 @@ def test_each_business_keeps_the_five_values(service, slug):
 @pytest.mark.parametrize("slug", TENANTS)
 def test_compilation_has_the_same_structure_as_the_yaml(slug):
     compiled = _compile_from_files(slug)
-    assert compiled == _sections(slug)
+    # Más el perfil comercial, que los YAML no tienen.
+    assert comparable_with_yaml(compiled) == _sections(slug)
     # También el mismo orden de claves: los metadatos internos del motor llevan esta sección tal cual.
     assert json.dumps(compiled["sales"]["closing"], ensure_ascii=False) == json.dumps(_raw_closing(slug), ensure_ascii=False)
 
@@ -260,10 +261,12 @@ def test_contract_source_gives_the_same_prompts_replies_and_metadata(monkeypatch
     from_yaml = _run_with_metadata(slug, user_id="politica_yaml")
     monkeypatch.setenv(loader.CONTRACT_TENANTS_ENV, slug)
     from_contract = _run_with_metadata(slug, user_id="politica_contrato")
+    runtime = load_tenant_runtime_yaml(slug)
 
     assert all(prompts for prompts, _response, _metadata in from_contract)
     for (yaml_prompts, yaml_response, yaml_metadata), (contract_prompts, contract_response, contract_metadata) in zip(from_yaml, from_contract):
-        assert contract_prompts == yaml_prompts and contract_response == yaml_response
+        # Única diferencia intencional del contrato: el perfil comercial (bloque y tono).
+        assert [as_yaml_prompt(prompt, runtime) for prompt in contract_prompts] == yaml_prompts and contract_response == yaml_response
         for section in ("sales", "business", "pricing", "features", "inventory"):
             assert contract_metadata[section] == yaml_metadata[section], section
         assert json.dumps(contract_metadata["sales"]["closing"], ensure_ascii=False) == json.dumps(yaml_metadata["sales"]["closing"], ensure_ascii=False)
@@ -316,7 +319,7 @@ def test_variable_closing_fields_stay_under_the_control_of_each_business(slug, s
 
     settings = BusinessConfigStore(ConfigService().tenants_root).load_engine_settings(slug)
     compiled = _compile_from_files(slug, BusinessConfig.model_validate(document).with_engine_settings(settings))
-    assert compiled == expected
+    assert comparable_with_yaml(compiled) == expected
     assert {key: compiled["sales"]["closing"][key] for key in EXPECTED} == EXPECTED, "la definición común no depende del tipo de cierre elegido"
 
 

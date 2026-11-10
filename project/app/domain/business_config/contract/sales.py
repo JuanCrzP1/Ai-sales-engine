@@ -79,7 +79,7 @@ class RecommendationRule(ContractModel):
 
 
 class Discovery(ContractModel):
-    questions: Phrases | None = Field(default=None, description="Preguntas para entender al cliente.")
+    questions: Phrases | None = Field(default=None, description="Preguntas para entender al cliente.", json_schema_extra=CONNECTED)
     objectives: Phrases | None = Field(default=None, description="Qué debe averiguar el asistente.", json_schema_extra=ADVANCED)
 
 
@@ -142,13 +142,13 @@ class Sales(ContractModel):
     customer_problems: list[CustomerProblem] | None = Field(default=None, description="Problemas del cliente que el negocio resuelve.")
     pain_points: Phrases | None = Field(default=None, description="Problemas del cliente en sus palabras.")
     use_cases: list[UseCase] | None = Field(default=None, description="Casos de uso típicos.", json_schema_extra=ADVANCED)
-    benefits: Phrases | None = Field(default=None, description="Resultados que obtiene el cliente.")
-    arguments: Phrases | None = Field(default=None, description="Argumentos de venta.")
+    benefits: Phrases | None = Field(default=None, description="Resultados que obtiene el cliente.", json_schema_extra=CONNECTED)
+    arguments: Phrases | None = Field(default=None, description="Argumentos de venta.", json_schema_extra=CONNECTED)
     solution: Solution | None = Field(default=None, description="Qué pasos sigue el cliente y qué requisitos debe cumplir.")
     offer_mix: OfferMix | None = Field(default=None, description="Ofertas principales, mejoras y complementos.", json_schema_extra=ADVANCED)
     offer_presentation: OfferPresentation | None = Field(default=None, description="Cómo presentar las opciones.", json_schema_extra=ADVANCED)
     recommendation_rules: Annotated[list[RecommendationRule], Field(max_length=MAX_PROFILE_ITEMS)] | None = Field(
-        default=None, description="Qué recomendar en cada situación."
+        default=None, description="Qué recomendar en cada situación.", json_schema_extra=CONNECTED
     )
     discovery: Discovery | None = None
     qualification: Qualification | None = Field(default=None, description="Cómo calificar al cliente.", json_schema_extra=ADVANCED)
@@ -156,7 +156,7 @@ class Sales(ContractModel):
     conversation_flow: ConversationFlow | None = Field(default=None, description="Pasos de la conversación y reglas para avanzar.", json_schema_extra=ADVANCED)
     objections: list[ObjectionHandling] | None = Field(default=None, description="Manejo de objeciones (precio y otras).", json_schema_extra=ADVANCED)
     closing: Closing | None = Field(default=None, description="Estrategia y reglas de cierre.", json_schema_extra=ADVANCED)
-    instructions: Phrases | None = Field(default=None, description="Cómo debe vender el asistente en este negocio.")
+    instructions: Phrases | None = Field(default=None, description="Cómo debe vender el asistente en este negocio.", json_schema_extra=CONNECTED)
 
     @model_validator(mode="after")
     def _references_exist(self) -> "Sales":

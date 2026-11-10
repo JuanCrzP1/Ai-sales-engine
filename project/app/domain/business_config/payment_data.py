@@ -4,9 +4,8 @@ Define qué valores son sensibles según el contrato (los que se guardan como `S
 qué formato deben tener y cómo se enmascaran para reconocerlos. El panel avisa con las mismas reglas mientras se escribe,
 pero la autoridad es esta: el servidor las aplica antes de guardar, venga la petición de donde venga.
 
-Integración pendiente (fuera del contrato): el motor actual sí escribe estos valores en el prompt de
-la IA y en el registro `conversation_trace`. `redact_payment_values` es la redacción que esa
-integración necesitará; las pruebas que la exigen están en `tests/test_business_config_engine_pending.py`.
+El motor usa `redact_payment_values` para que estos valores nunca lleguen a la IA (todo el prompt, incluido el historial)
+ni al registro `conversation_trace`; el cliente los recibe cuando elige el método. Ver `tests/test_payment_data_protection.py`.
 """
 from __future__ import annotations
 

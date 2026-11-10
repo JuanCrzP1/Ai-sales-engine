@@ -59,14 +59,17 @@ export interface CatalogCategory {
 
 /** Producto del catálogo. */
 export interface CatalogItem {
+  /** [motor: conectado] */
   id: string;
+  /** [motor: conectado] */
   name: string;
   /** Id de su categoría; una categoría sin productos disponibles no se ofrece. [motor: conectado] */
   category: string;
-  /** Detalle del producto. */
+  /** Detalle del producto. [motor: conectado] */
   description?: string | null;
+  /** [motor: conectado] */
   prices: ItemPrice[];
-  /** Características del producto. */
+  /** Características del producto. [motor: conectado] */
   features?: string[] | null;
   /** Si es false, el producto se conserva pero no se ofrece (ni su categoría, si se queda sin productos). [motor: conectado] */
   available?: boolean;
@@ -152,7 +155,7 @@ export interface Delivery {
 }
 
 export interface Discovery {
-  /** Preguntas para entender al cliente. */
+  /** Preguntas para entender al cliente. [motor: conectado] */
   questions?: string[] | null;
   /** Qué debe averiguar el asistente. [audiencia: avanzado] */
   objectives?: string[] | null;
@@ -196,23 +199,23 @@ export interface Fulfillment {
 }
 
 export interface Identity {
-  /** Nombre del negocio. */
+  /** Nombre del negocio. [motor: conectado] */
   name: string;
-  /** Marca con la que el asistente presenta al negocio, si es distinta del nombre. */
+  /** Marca con la que el asistente presenta al negocio, si es distinta del nombre. [motor: conectado] */
   brand_name?: string | null;
   /** Sector o tipo de negocio, en pocas palabras. [motor: conectado] */
   industry: string;
-  /** Qué hace el negocio. */
+  /** Qué hace el negocio. [motor: conectado] */
   description: string;
   /** Promesa comercial: qué gana el cliente. [motor: conectado] */
   value_proposition: string;
   /** A quién se dirige y qué problema resuelve. */
   positioning?: string | null;
-  /** Por qué elegir este negocio y no otro. */
+  /** Por qué elegir este negocio y no otro. [motor: conectado] */
   differentiators?: string[] | null;
-  /** Dónde está y a qué zonas atiende. */
+  /** Dónde está y a qué zonas atiende. [motor: conectado] */
   location?: Location | null;
-  /** Cómo recibe el cliente el servicio o producto. */
+  /** Cómo recibe el cliente el servicio o producto. [motor: conectado] */
   service_modes?: ("virtual" | "presencial" | "domicilio" | "recoger" | "envio")[] | null;
   /** Cliente ideal. */
   target_customer?: TargetCustomer | null;
@@ -243,7 +246,7 @@ export interface ItemPrice {
 }
 
 export interface Knowledge {
-  /** Preguntas frecuentes con su respuesta oficial. */
+  /** Preguntas frecuentes con su respuesta oficial. [motor: conectado] */
   faqs?: Faq[];
 }
 
@@ -357,7 +360,7 @@ export interface Plan {
   id: string;
   /** [motor: conectado] */
   name: string;
-  /** Detalle del plan. */
+  /** Detalle del plan. [motor: conectado] */
   description?: string | null;
   /** [motor: conectado] */
   prices: PlanPrice[];
@@ -421,7 +424,7 @@ export interface RecommendationRule {
 
 /** Cómo se comunica el asistente. Longitud (en el prompt y al recortar la respuesta, en todos los canales): short = cortas, medium = equilibradas, long = detalladas; límites en `engine_policy`. */
 export interface ResponseStyle {
-  /** Tono del asistente (p. ej. cercano y claro). */
+  /** Tono del asistente (p. ej. cercano y claro). [motor: conectado] */
   tone?: string | null;
   /** Personalidad de la marca. */
   voice?: string | null;
@@ -456,9 +459,9 @@ export interface Sales {
   pain_points?: string[] | null;
   /** Casos de uso típicos. [audiencia: avanzado] */
   use_cases?: UseCase[] | null;
-  /** Resultados que obtiene el cliente. */
+  /** Resultados que obtiene el cliente. [motor: conectado] */
   benefits?: string[] | null;
-  /** Argumentos de venta. */
+  /** Argumentos de venta. [motor: conectado] */
   arguments?: string[] | null;
   /** Qué pasos sigue el cliente y qué requisitos debe cumplir. */
   solution?: Solution | null;
@@ -466,7 +469,7 @@ export interface Sales {
   offer_mix?: OfferMix | null;
   /** Cómo presentar las opciones. [audiencia: avanzado] */
   offer_presentation?: OfferPresentation | null;
-  /** Qué recomendar en cada situación. */
+  /** Qué recomendar en cada situación. [motor: conectado] */
   recommendation_rules?: RecommendationRule[] | null;
   discovery?: Discovery | null;
   /** Cómo calificar al cliente. [audiencia: avanzado] */
@@ -479,7 +482,7 @@ export interface Sales {
   objections?: ObjectionHandling[] | null;
   /** Estrategia y reglas de cierre. [audiencia: avanzado] */
   closing?: Closing | null;
-  /** Cómo debe vender el asistente en este negocio. */
+  /** Cómo debe vender el asistente en este negocio. [motor: conectado] */
   instructions?: string[] | null;
 }
 
@@ -548,7 +551,7 @@ export interface Terms {
   roi_hints?: string[] | null;
   /** Aclaración sobre cómo se confirma el precio. */
   price_note?: string | null;
-  /** Únicas promociones o descuentos que el asistente puede ofrecer. */
+  /** Únicas promociones o descuentos que el asistente puede ofrecer. [motor: conectado] */
   promotions?: Promotion[] | null;
   /** Financiación disponible. */
   financing?: Financing | null;

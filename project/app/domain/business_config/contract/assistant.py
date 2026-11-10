@@ -107,7 +107,7 @@ class ResponseStyle(ContractModel):
     medium = equilibradas, long = detalladas; límites en `engine_policy`.
     """
 
-    tone: Annotated[Text, Field(max_length=MAX_TONE_CHARS)] | None = Field(default=None, description="Tono del asistente (p. ej. cercano y claro).")
+    tone: Annotated[Text, Field(max_length=MAX_TONE_CHARS)] | None = Field(default=None, description="Tono del asistente (p. ej. cercano y claro).", json_schema_extra=CONNECTED)
     voice: Annotated[Text, Field(max_length=MAX_TONE_CHARS)] | None = Field(default=None, description="Personalidad de la marca.")
     formality: Literal["informal", "neutral", "formal"] | None = Field(default=None, description="informal (tutea), neutral o formal (usted).")
     emojis: bool | None = Field(default=None, description="Si el asistente puede usar emojis.")
@@ -140,7 +140,7 @@ class Faq(ContractModel):
 
 
 class Knowledge(ContractModel):
-    faqs: list[Faq] = Field(default_factory=list, max_length=MAX_FAQS, description="Preguntas frecuentes con su respuesta oficial.")
+    faqs: list[Faq] = Field(default_factory=list, max_length=MAX_FAQS, description="Preguntas frecuentes con su respuesta oficial.", json_schema_extra=CONNECTED)
 
     @model_validator(mode="after")
     def _unique_questions(self) -> "Knowledge":

@@ -9,9 +9,11 @@ reinyectan en su posición original.
   motor o no: un documento importado compila exactamente a sus YAML y el motor responde igual.
 - La definición común del cierre (`COMMON_CLOSING_POLICY`) no está en ningún documento: se añade aquí a
   `sales.closing`, en la posición que tiene en los YAML, a todo negocio que tenga esa sección.
-- Los campos que solo existen en el contrato (horarios, promociones, instrucciones, preguntas
-  frecuentes, políticas...) no se compilan: ningún lector del motor actual los consume.
-  Conectarlos exige cambiar el motor y acordar su clave de compilación (ver docs/business-config.md).
+- Los campos que solo existen en el contrato y el motor ya lee van a claves que los YAML no tienen: `config.profile`
+  (perfil comercial, tono, recomendaciones, instrucciones y promociones), `config.knowledge` (preguntas frecuentes) y las
+  características de cada producto. Un negocio que sigue con sus YAML no cambia (ver `commercial_profile.py`).
+- El resto de los campos que solo existen en el contrato (horarios, políticas, entrega, mensajes de seguimiento...) no se
+  compilan: ningún lector del motor los consume todavía (ver docs/business-config.md).
 - Los planes y productos no disponibles no se compilan: el motor no los ofrece. Tampoco las cuentas ni los enlaces de
   pago inactivos, y por eso no hace falta poder leer sus datos para publicar.
 """
@@ -21,10 +23,14 @@ import copy
 from collections.abc import Callable
 from typing import Any
 
+from app.domain.business_config.commercial_profile import compile_knowledge, compile_profile
 from app.domain.business_config.contract import BusinessConfig, PaymentProfile, Plan, SecretRef
 from app.domain.business_config.engine_policy import COMMON_CLOSING_POLICY
 
 SecretResolver = Callable[[SecretRef], str]
+
+# Claves de `config` que solo produce el contrato: los YAML no las tienen (ver `commercial_profile.py`).
+CONTRACT_ONLY_CONFIG_KEYS = ("profile", "knowledge")
 
 
 def _put(target: dict, key: str, value: Any) -> None:
@@ -224,6 +230,7 @@ def _pricing(config: BusinessConfig, resolve_secret: SecretResolver) -> dict:
         for item in items:
             entry: dict[str, Any] = {"id": item.id, "name": item.name, "category": item.category}
             _put(entry, "description", item.description)
+            _put(entry, "features", item.features)
             entry["price"] = {price.currency: price.amount for price in item.prices}
             catalog_section["items"].append(entry)
         _put(catalog_section, "payment", _payment_block(profiles.get(catalog.payment_profile or ""), resolve_secret))
@@ -276,6 +283,10 @@ def _config(config: BusinessConfig) -> dict:
     section["initial_message"] = {"enabled": config.messages.welcome.enabled, "text": config.messages.welcome.text}
     section["features"] = _features(config)
     section["response"] = {"length": config.response_style.length, "max_words": config.response_style.effective_max_words()}
+    section["profile"] = compile_profile(config)
+    knowledge = compile_knowledge(config)
+    if knowledge is not None:
+        section["knowledge"] = knowledge
     post_payment: dict[str, dict] = {}
     if config.messages.payment_reported is not None:
         post_payment["on_user_report"] = {"message": config.messages.payment_reported}
@@ -309,6 +320,13 @@ def merge_legacy(base: Any, extra: Any, path: str = "") -> Any:
     if isinstance(base, list) and isinstance(extra, list) and len(base) == len(extra):
         return [merge_legacy(item, extra_item, f"{path}[{index}]") for index, (item, extra_item) in enumerate(zip(base, extra))]
     raise ValueError(f"conflicto con los campos heredados en '{path}'")
+
+
+def comparable_with_yaml(sections: dict[str, Any]) -> dict[str, Any]:
+    """Lo compilado (o el runtime que se arma con ello) sin las claves que solo existen en el contrato: lo que debe coincidir con los
+    YAML de un negocio importado. Sirve para comprobar una migración sin que el perfil comercial la haga fallar."""
+    config = sections.get("config") if isinstance(sections.get("config"), dict) else {}
+    return {**sections, "config": {key: value for key, value in config.items() if key not in CONTRACT_ONLY_CONFIG_KEYS}}
 
 
 def compile_business_config(config: BusinessConfig, resolve_secret: SecretResolver) -> dict[str, dict]:

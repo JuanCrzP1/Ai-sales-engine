@@ -14,7 +14,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from app.business_config_application.service import BusinessConfigService
-from app.domain.business_config.compiler import compile_business_config
+from app.domain.business_config.compiler import comparable_with_yaml, compile_business_config
 from app.domain.business_config.contract import BusinessConfig, SecretRef
 from app.domain.business_config.errors import BusinessConfigError
 from app.domain.business_config.payment_data import SECRET_STORE_SOURCE, iter_secret_refs
@@ -68,7 +68,7 @@ def prepare_tenant(config_service: ConfigService, slug: str) -> PreparedTenant:
         holder["secret_ref"] = stored_ref
 
     config = BusinessConfig.model_validate(document).with_engine_settings(result.engine_settings)
-    if compile_business_config(config, lambda ref: values[ref.secret_ref]) != sections:
+    if comparable_with_yaml(compile_business_config(config, lambda ref: values[ref.secret_ref])) != sections:
         raise BusinessConfigError(f"{slug}: la configuración preparada no reproduce sus YAML")
     return PreparedTenant(slug, result.config.identity.name, document, values, result.engine_settings.model_dump(mode="json", exclude_none=True))
 

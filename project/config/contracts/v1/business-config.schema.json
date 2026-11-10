@@ -167,11 +167,13 @@
         "id": {
           "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$",
           "title": "Id",
-          "type": "string"
+          "type": "string",
+          "x-engine": "conectado"
         },
         "name": {
           "title": "Name",
-          "type": "string"
+          "type": "string",
+          "x-engine": "conectado"
         },
         "category": {
           "description": "Id de su categoría; una categoría sin productos disponibles no se ofrece.",
@@ -191,7 +193,8 @@
           ],
           "default": null,
           "description": "Detalle del producto.",
-          "title": "Description"
+          "title": "Description",
+          "x-engine": "conectado"
         },
         "prices": {
           "items": {
@@ -199,7 +202,8 @@
           },
           "minItems": 1,
           "title": "Prices",
-          "type": "array"
+          "type": "array",
+          "x-engine": "conectado"
         },
         "features": {
           "anyOf": [
@@ -217,7 +221,8 @@
           ],
           "default": null,
           "description": "Características del producto.",
-          "title": "Features"
+          "title": "Features",
+          "x-engine": "conectado"
         },
         "available": {
           "default": true,
@@ -767,7 +772,8 @@
           ],
           "default": null,
           "description": "Preguntas para entender al cliente.",
-          "title": "Questions"
+          "title": "Questions",
+          "x-engine": "conectado"
         },
         "objectives": {
           "anyOf": [
@@ -973,7 +979,8 @@
         "name": {
           "description": "Nombre del negocio.",
           "title": "Name",
-          "type": "string"
+          "type": "string",
+          "x-engine": "conectado"
         },
         "brand_name": {
           "anyOf": [
@@ -986,7 +993,8 @@
           ],
           "default": null,
           "description": "Marca con la que el asistente presenta al negocio, si es distinta del nombre.",
-          "title": "Brand Name"
+          "title": "Brand Name",
+          "x-engine": "conectado"
         },
         "industry": {
           "description": "Sector o tipo de negocio, en pocas palabras.",
@@ -997,7 +1005,8 @@
         "description": {
           "description": "Qué hace el negocio.",
           "title": "Description",
-          "type": "string"
+          "type": "string",
+          "x-engine": "conectado"
         },
         "value_proposition": {
           "description": "Promesa comercial: qué gana el cliente.",
@@ -1034,7 +1043,8 @@
           ],
           "default": null,
           "description": "Por qué elegir este negocio y no otro.",
-          "title": "Differentiators"
+          "title": "Differentiators",
+          "x-engine": "conectado"
         },
         "location": {
           "anyOf": [
@@ -1046,7 +1056,8 @@
             }
           ],
           "default": null,
-          "description": "Dónde está y a qué zonas atiende."
+          "description": "Dónde está y a qué zonas atiende.",
+          "x-engine": "conectado"
         },
         "service_modes": {
           "anyOf": [
@@ -1070,7 +1081,8 @@
           ],
           "default": null,
           "description": "Cómo recibe el cliente el servicio o producto.",
-          "title": "Service Modes"
+          "title": "Service Modes",
+          "x-engine": "conectado"
         },
         "target_customer": {
           "anyOf": [
@@ -1220,7 +1232,8 @@
           },
           "maxItems": 30,
           "title": "Faqs",
-          "type": "array"
+          "type": "array",
+          "x-engine": "conectado"
         }
       },
       "title": "Knowledge",
@@ -1812,7 +1825,8 @@
           ],
           "default": null,
           "description": "Detalle del plan.",
-          "title": "Description"
+          "title": "Description",
+          "x-engine": "conectado"
         },
         "prices": {
           "items": {
@@ -2167,7 +2181,8 @@
           ],
           "default": null,
           "description": "Tono del asistente (p. ej. cercano y claro).",
-          "title": "Tone"
+          "title": "Tone",
+          "x-engine": "conectado"
         },
         "voice": {
           "anyOf": [
@@ -2388,7 +2403,8 @@
           ],
           "default": null,
           "description": "Resultados que obtiene el cliente.",
-          "title": "Benefits"
+          "title": "Benefits",
+          "x-engine": "conectado"
         },
         "arguments": {
           "anyOf": [
@@ -2406,7 +2422,8 @@
           ],
           "default": null,
           "description": "Argumentos de venta.",
-          "title": "Arguments"
+          "title": "Arguments",
+          "x-engine": "conectado"
         },
         "solution": {
           "anyOf": [
@@ -2461,7 +2478,8 @@
           ],
           "default": null,
           "description": "Qué recomendar en cada situación.",
-          "title": "Recommendation Rules"
+          "title": "Recommendation Rules",
+          "x-engine": "conectado"
         },
         "discovery": {
           "anyOf": [
@@ -2559,7 +2577,8 @@
           ],
           "default": null,
           "description": "Cómo debe vender el asistente en este negocio.",
-          "title": "Instructions"
+          "title": "Instructions",
+          "x-engine": "conectado"
         }
       },
       "title": "Sales",
@@ -2946,7 +2965,8 @@
           ],
           "default": null,
           "description": "Únicas promociones o descuentos que el asistente puede ofrecer.",
-          "title": "Promotions"
+          "title": "Promotions",
+          "x-engine": "conectado"
         },
         "financing": {
           "anyOf": [

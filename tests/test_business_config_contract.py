@@ -2,11 +2,10 @@
 Contrato global de configuración (BusinessConfig v1): pruebas unitarias, sin ejecutar el motor.
 
 Valida: esquema y tipos generados desde el modelo canónico, marcas de audiencia y estado en el motor,
-migración sin pérdida de los nueve negocios (compilado = YAML de origen), ausencia de datos de pago en
-los documentos, que los campos solo del contrato no alteran lo que recibe el motor, validaciones,
-diagnóstico de los nueve negocios y correspondencia con el documento que produce el panel.
-La integración con el motor está en `test_business_config_engine_integration.py` (motor actual) y
-`test_business_config_engine_pending.py` (cambios futuros del motor).
+migración sin pérdida de los nueve negocios (compilado = YAML de origen, más el perfil comercial), ausencia
+de datos de pago en los documentos, que los campos solo del contrato llegan al motor únicamente por sus claves
+propias, validaciones, diagnóstico de los nueve negocios y correspondencia con el documento que produce el panel.
+La integración con el motor está en `test_business_config_engine_integration.py`.
 """
 from __future__ import annotations
 
@@ -21,7 +20,7 @@ import yaml
 from pydantic import ValidationError
 
 from app.application.runtime.tenant_runtime_loader import _load_legacy_sections
-from app.domain.business_config.compiler import compile_business_config
+from app.domain.business_config.compiler import comparable_with_yaml, compile_business_config
 from app.domain.business_config.contract import BusinessConfig
 from app.domain.business_config.diagnostics import review
 from app.domain.business_config.engine_settings import EngineSettings
@@ -145,8 +144,8 @@ def test_tenant_document_is_valid_and_belongs_to_its_folder(slug):
 
 @pytest.mark.parametrize("slug", TENANTS)
 def test_compiled_document_reproduces_the_original_yaml_exactly(slug):
-    """Sin pérdida: lo que el motor recibe desde el contrato es idéntico a sus YAML."""
-    assert _compile(_document(slug), slug, settings=_engine_settings(slug)) == _sections(slug)
+    """Sin pérdida: lo que el motor recibe desde el contrato es idéntico a sus YAML, más el perfil comercial."""
+    assert comparable_with_yaml(_compile(_document(slug), slug, settings=_engine_settings(slug))) == _sections(slug)
 
 
 def test_committed_documents_and_migration_report_are_up_to_date():
@@ -193,25 +192,37 @@ def test_offer_prices_and_payment_methods_are_preserved(slug):
 # Compilación: lo que solo existe en el contrato no altera lo que recibe el motor
 # ---------------------------------------------------------------------------
 
-def _with_every_contract_only_field(document: dict) -> dict:
+def _with_every_field_the_engine_does_not_read(document: dict) -> dict:
     document = copy.deepcopy(document)
-    first_item = document["offer"]["catalog"]["items"][0]
-    first_item["features"] = ["pan artesanal"]
     document["identity"].update(opening_hours=[{"days": ["lunes"], "opens": "08:00", "closes": "18:00"}])
-    document["terms"].update(
-        promotions=[{"name": "Promo", "details": "2x1", "valid_until": "2999-12-31"}],
-        policies={"warranty": "30 días", "returns": "Cambios en 5 días", "cancellation": "Hasta 1 día antes"},
-    )
-    document["sales"].update(instructions=["Confirma la dirección."])
+    document["terms"].update(policies={"warranty": "30 días", "returns": "Cambios en 5 días", "cancellation": "Hasta 1 día antes"})
     document["messages"].update(after_sale="Gracias", data_request="Tus datos", follow_up="¿Seguimos?", human_handoff="Te paso con alguien")
     document["response_style"].update(formality="formal", emojis=False, instructions=["sin tecnicismos"])
+    return document
+
+
+def _with_every_contract_only_field(document: dict) -> dict:
+    document = _with_every_field_the_engine_does_not_read(document)
+    document["offer"]["catalog"]["items"][0]["features"] = ["pan artesanal"]
+    document["terms"].update(promotions=[{"name": "Promo", "details": "2x1", "valid_until": "2999-12-31"}])
+    document["sales"].update(instructions=["Confirma la dirección."])
     document["knowledge"] = {"faqs": [{"question": "¿Abren domingos?", "answer": "Sí."}]}
     return document
 
 
-def test_contract_only_fields_do_not_change_what_the_engine_receives():
+def test_fields_the_engine_does_not_read_yet_do_not_change_what_it_receives():
     base = _document("restaurant")
-    assert _compile(_with_every_contract_only_field(base), "restaurant") == _compile(base, "restaurant")
+    assert _compile(_with_every_field_the_engine_does_not_read(base), "restaurant") == _compile(base, "restaurant")
+
+
+def test_contract_only_fields_reach_the_engine_only_through_their_own_keys():
+    base = _document("restaurant")
+    compiled, plain = _compile(_with_every_contract_only_field(base), "restaurant"), _compile(base, "restaurant")
+    assert compiled["config"]["knowledge"] == {"faqs": [{"question": "¿Abren domingos?", "answer": "Sí."}]}
+    assert compiled["config"]["profile"]["instructions"] == ["Confirma la dirección."]
+    assert compiled["config"]["profile"]["promotions"] == [{"name": "Promo", "details": "2x1", "valid_until": "2999-12-31"}]
+    assert compiled["pricing"]["catalog"]["items"][0].pop("features") == ["pan artesanal"]
+    assert comparable_with_yaml(compiled) == comparable_with_yaml(plain)
 
 
 def test_commercial_fields_return_to_their_original_yaml_route():
@@ -257,8 +268,8 @@ def test_example_document_compiles_to_the_engine_shape():
     assert compiled["pricing"]["catalog"]["items"][0] == {
         "id": "pan_masa_madre", "name": "Pan de masa madre", "category": "panes", "description": "Hogaza de 800 g", "price": {"COP": 18000},
     }
-    # Lo que solo existe en el contrato no se compila: perfil, preguntas frecuentes, precio por variante.
-    assert "profile" not in compiled["config"] and "knowledge" not in compiled["config"]
+    # Lo que solo existe en el contrato y el motor ya lee va a sus claves propias; el precio por variante todavía no se compila.
+    assert {"profile", "knowledge"} <= set(compiled["config"])
     assert compiled["inventory"]["items"][0]["variants"][1] == {"sku": "torta_chocolate_24", "attributes": {"porciones": 24}, "stock": 1}
 
 

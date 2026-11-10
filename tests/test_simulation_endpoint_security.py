@@ -722,7 +722,8 @@ def test_the_real_flow_still_delivers_payment_data_and_its_full_metadata(llm, sl
         real_reply, _ai_used, metadata = _real_flow(slug, "quiero pagar")
         delivered += _leaked(values, real_reply)
     assert delivered > 0
-    assert _leaked(values, " ".join(llm.prompts)) > 0
+    # El cliente recibe el dato al elegir el método; la IA nunca lo ve (ver test_payment_data_protection.py).
+    assert _leaked(values, " ".join(llm.prompts)) == 0
     assert {"sales", "business", "pricing", "memory_context"} <= set(metadata)
 
 

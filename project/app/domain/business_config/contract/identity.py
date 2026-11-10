@@ -47,16 +47,16 @@ class TargetCustomer(ContractModel):
 
 
 class Identity(ContractModel):
-    name: Text = Field(description="Nombre del negocio.")
-    brand_name: Text | None = Field(default=None, description="Marca con la que el asistente presenta al negocio, si es distinta del nombre.")
+    name: Text = Field(description="Nombre del negocio.", json_schema_extra=CONNECTED)
+    brand_name: Text | None = Field(default=None, description="Marca con la que el asistente presenta al negocio, si es distinta del nombre.", json_schema_extra=CONNECTED)
     industry: Text = Field(description="Sector o tipo de negocio, en pocas palabras.", json_schema_extra=CONNECTED)
-    description: Text = Field(description="Qué hace el negocio.")
+    description: Text = Field(description="Qué hace el negocio.", json_schema_extra=CONNECTED)
     value_proposition: Text = Field(description="Promesa comercial: qué gana el cliente.", json_schema_extra=CONNECTED)
     positioning: Text | None = Field(default=None, description="A quién se dirige y qué problema resuelve.")
-    differentiators: Phrases | None = Field(default=None, description="Por qué elegir este negocio y no otro.")
-    location: Location | None = Field(default=None, description="Dónde está y a qué zonas atiende.")
+    differentiators: Phrases | None = Field(default=None, description="Por qué elegir este negocio y no otro.", json_schema_extra=CONNECTED)
+    location: Location | None = Field(default=None, description="Dónde está y a qué zonas atiende.", json_schema_extra=CONNECTED)
     service_modes: Annotated[list[ServiceMode], Field(max_length=5)] | None = Field(
-        default=None, description="Cómo recibe el cliente el servicio o producto."
+        default=None, description="Cómo recibe el cliente el servicio o producto.", json_schema_extra=CONNECTED
     )
     target_customer: TargetCustomer | None = Field(default=None, description="Cliente ideal.")
     credibility: Phrases | None = Field(default=None, description="Pruebas de confianza: casos, resultados, trayectoria.")

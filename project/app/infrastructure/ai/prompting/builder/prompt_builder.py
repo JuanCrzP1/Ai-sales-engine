@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from app.domain.ai.prompt_context import build_prompt_context
+from app.domain.business_config.payment_data import redact_payment_values
+from app.infrastructure.ai.prompting import business_knowledge, business_profile
 from app.infrastructure.config.config_service import ConfigService
 from app.utils.logger import logger
 
@@ -157,6 +159,16 @@ class PromptBuilderService:
     def build_customer_context(yaml_config: dict) -> str:
         del yaml_config
         return ""
+
+    @staticmethod
+    def build_business_profile_context(yaml_config: dict, *, include_facts: bool = True) -> str:
+        """Perfil comercial del negocio; solo existe con la configuración del contrato (ver `business_profile.py`)."""
+        return business_profile.build_business_profile_context(yaml_config, include_facts=include_facts)
+
+    @staticmethod
+    def build_knowledge_context(yaml_config: dict, *, user_message: str = "") -> str:
+        """Preguntas frecuentes del negocio; solo existen con la configuración del contrato (ver `business_knowledge.py`)."""
+        return business_knowledge.build_knowledge_context(yaml_config, user_message=user_message)
 
     @staticmethod
     def build_capabilities_context(yaml_config: dict) -> str:
@@ -396,12 +408,21 @@ class PromptBuilderService:
                 plan_price_summaries.append(f"{summary_name} -> {' | '.join(currency_chunks)}")
 
         product_names = []
+        product_price_summaries = []
         for item in catalog_items:
             if not isinstance(item, dict):
                 continue
             product_name = PromptBuilderService._as_text(item.get("name", "") or item.get("id", ""))
             if product_name:
                 product_names.append(product_name)
+            item_prices = item.get("price") if isinstance(item.get("price"), dict) else {}
+            amounts = [
+                f"{PromptBuilderService._as_text(currency_key).upper()}: {amount}"
+                for currency_key, amount in item_prices.items()
+                if amount not in (None, "")
+            ]
+            if product_name and amounts:
+                product_price_summaries.append(f"{product_name} -> {' | '.join(amounts)}")
 
         catalog_payment_cfg = catalog.get("payment", {}) if isinstance(catalog.get("payment"), dict) else {}
         catalog_payment_link = PromptBuilderService._as_text(catalog_payment_cfg.get("link", ""))
@@ -444,7 +465,8 @@ class PromptBuilderService:
         else:
             offer_reference_text = "sin nombres específicos en pricing"
 
-        pricing_structure_text = "; ".join(plan_price_summaries) if plan_price_summaries else "valores definidos en pricing para este negocio"
+        # Los precios de los planes o, en un catálogo, los de cada producto: sin ellos la IA no puede decir cuánto cuesta algo.
+        pricing_structure_text = "; ".join(plan_price_summaries or product_price_summaries) or "valores definidos en pricing para este negocio"
         payment_links_text = " | ".join(payment_links) if payment_links else "sin links de pago definidos"
         link_available_text = "true" if payment_links else "false"
         transfer_available_text = "true" if transfer_method_lines else "false"
@@ -824,6 +846,10 @@ Estado de la conversación: {conversation_state}
         else:
             business_context = self.build_business_context(safe_yaml)
             customer_context = self.build_customer_context(safe_yaml)
+        # Perfil comercial y preguntas frecuentes: solo existen con la configuración del contrato. Con los YAML quedan vacíos
+        # y el prompt es exactamente el de siempre.
+        profile_context = self.build_business_profile_context(safe_yaml, include_facts=not _suppress_intro)
+        knowledge_context = self.build_knowledge_context(safe_yaml, user_message=user_message)
         capabilities_context = self.build_capabilities_context(safe_yaml)
         post_payment_context = self.build_post_payment_context(safe_yaml)
         memory_behavior_context = self.build_memory_behavior_context(safe_yaml)
@@ -848,7 +874,7 @@ Estado de la conversación: {conversation_state}
         operational_rules_block = grounding_block
 
         response_style_block = f"""
-ESTILO: {response_length}, máximo {response_max_words} palabras, natural y claro.
+ESTILO: {response_length}, máximo {response_max_words} palabras, {business_profile.response_tone(safe_yaml)}.
 """.strip()
 
         # Context Budget — Phase 2
@@ -873,12 +899,13 @@ CAPACIDADES DEL NEGOCIO:
 {catalog_behavior_context}
 {capabilities_context}
 """.strip()
+        _head = "\n\n".join(block for block in (_base, profile_context, knowledge_context) if block)
 
         if _use_commercial_memory and _context_weight == "strong":
             # Memory after pricing: maximum proximity to the user message.
             # The model processes the last dense block with more attention.
             existing_prompt = f"""
-{_base}
+{_head}
 
 COMPORTAMIENTO COMERCIAL:
 {operational_context}
@@ -899,7 +926,7 @@ CONTINUIDAD COMERCIAL:
         elif _use_commercial_memory:
             # Moderate: memory replaces three legacy blocks before pricing.
             existing_prompt = f"""
-{_base}
+{_head}
 
 COMPORTAMIENTO COMERCIAL:
 {operational_context}
@@ -918,7 +945,7 @@ PRICING:
         else:
             # Fallback: legacy layout. Full backward compatibility.
             existing_prompt = f"""
-{_base}
+{_head}
 
 COMPORTAMIENTO COMERCIAL:
 {operational_context}
@@ -936,4 +963,6 @@ PRICING:
 {post_payment_context}
 """.strip()
 
-        return existing_prompt, prompt_metadata, context
+        # Los datos de pago nunca llegan a la IA, ni desde la configuración ni desde el historial: el motor se los entrega al
+        # cliente cuando elige el método (`ejecutar_pago`).
+        return redact_payment_values(existing_prompt, safe_yaml), prompt_metadata, context

@@ -51,8 +51,8 @@ COMMON_CLOSING_POLICY: dict[str, dict] = {
     },
 }
 
-# Límites del contrato (validación de los documentos). Los campos que limitan aún no llegan al motor
-# (preguntas frecuentes, listas de frases, tono, promociones, políticas): ver docs/business-config.md.
+# Límites del contrato (validación de los documentos). Las preguntas frecuentes, las listas de frases, el tono y las
+# promociones llegan al motor cuando la configuración viene del contrato; las políticas todavía no: ver docs/business-config.md.
 MAX_FAQS = 30
 MAX_FAQ_QUESTION_CHARS = 200
 MAX_FAQ_ANSWER_CHARS = 800
@@ -66,9 +66,9 @@ MAX_MESSAGE_CHARS = 800
 # Recortes que el prompt actual aplica a los textos del negocio (en palabras). El panel los muestra
 # al cliente para que sepa qué parte de cada texto usa el asistente.
 # - industry y value_proposition: siempre (`PromptBuilderService`, sector y promesa comercial).
-# - description: solo cuando falta `industry`, que el contrato exige; en la práctica no se usa.
-# - offer_description: límite reservado para la integración pendiente del detalle de la oferta; el
-#   prompt actual no usa las descripciones de planes ni productos.
+# - description: en el perfil comercial, cuando la configuración viene del contrato (y en el contexto del negocio cuando
+#   falta `industry`, que el contrato exige).
+# - offer_description: la descripción de cada plan y producto en el detalle de la oferta del perfil comercial.
 PROMPT_WORD_LIMITS: dict[str, int] = {
     "industry": 8,
     "value_proposition": 30,
@@ -78,3 +78,6 @@ PROMPT_WORD_LIMITS: dict[str, int] = {
 # El prompt actual menciona como máximo estos problemas del cliente y categorías del catálogo.
 PROMPT_MAX_PROBLEMS = 2
 PROMPT_MAX_CATEGORIES = 4
+# Caracteres de preguntas frecuentes por prompt. Si todas caben, van todas; si no, las más relacionadas con el mensaje del cliente.
+# Con el máximo del contrato (30 de hasta 1000 caracteres) llenarían el prompt.
+FAQ_PROMPT_MAX_CHARS = 1500

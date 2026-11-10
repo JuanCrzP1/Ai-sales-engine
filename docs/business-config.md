@@ -6,7 +6,9 @@ versionado; cada uno tiene su propio documento con sus datos. Será la única fu
 cuando el motor se conecte a ella en la Fase 4; hasta entonces, el motor sigue leyendo sus YAML.
 
 El contrato consolida las funcionalidades que ya existían en los YAML: las representa con tipos y
-validaciones, conserva sus opciones y valores y no añade comportamientos nuevos al motor.
+validaciones y conserva sus opciones y valores. Cuando es la fuente de un negocio, el motor usa además lo que solo
+existe en el contrato: el perfil comercial, el tono y las preguntas frecuentes (ver
+[Lo Que El Motor Usa Del Contrato](#lo-que-el-motor-usa-del-contrato)).
 
 - Correspondencia de cada funcionalidad comercial con su campo original, referencia campo por campo y
   matriz de la configuración antigua: [business-config-traceability.md](business-config-traceability.md)
@@ -21,7 +23,7 @@ validaciones, conserva sus opciones y valores y no añade comportamientos nuevos
 | Esquema JSON, tipos TypeScript, matriz y referencia de campos | **Terminados**, generados desde el modelo canónico |
 | Nueve documentos comerciales y sus ajustes técnicos | **Terminados**: válidos, sin pérdida, sin datos de pago |
 | Pruebas del contrato y de su integración con el motor actual | **Pasan** |
-| Integración con el motor de los campos `pendiente` | **No iniciada** (requiere cambios en el motor, no autorizados) |
+| Integración con el motor | **Primera parte terminada**: perfil comercial, tono, preguntas frecuentes, precios del catálogo y datos de pago fuera de la IA (85 campos conectados). Faltan los campos `pendiente`: horarios, políticas, entrega, mensajes de posventa... |
 | Persistencia local (SQLite) | **Terminada** y conectada al panel por la API local |
 | API local y panel de administración | **Terminados** (Fase 2): funcionan solo en este equipo; ver [Panel De Administración](#panel-de-administración) |
 | Funcionamiento del almacén sin YAML | **Terminado y comprobado** en un árbol sin YAML ni motor (ver [Independencia De Los YAML](#independencia-de-los-yaml)) |
@@ -170,7 +172,7 @@ Con esto la matriz distingue cuatro situaciones que no son equivalentes:
   campo por campo): 1166 desde el documento comercial, los datos de pago y los ajustes técnicos, y 45 desde la
   definición común del cierre.
 - **Configurable en la interfaz:** columna Interfaz (`pantalla`, `modelo` o `no`).
-- **Ejecutado por el motor:** `x-engine = conectado` (56 campos hoja). Las ventanas de conversación
+- **Ejecutado por el motor:** `x-engine = conectado` (85 campos hoja). Las ventanas de conversación
   también las usa el motor, pero son ajustes técnicos: no cuentan aquí.
 
 Conectados hoy: sector, propuesta de valor, tipo de oferta, planes (id, nombre, precios por moneda,
@@ -178,13 +180,14 @@ incluye, no incluye, perfil de pago, disponibilidad), categorías del catálogo 
 disponibilidad de cada producto (deciden qué categorías se ofrecen), condiciones, encuadre del precio y retorno en ventas, pagos (link y transferencias: el motor
 entrega los datos al elegir el método), motivos de compra, impactos de los dos primeros problemas,
 casos de uso (respaldo), canales, acciones, métodos de cierre, datos a pedir, mensajes de bienvenida
-y de pago, largo de respuesta, modo de catálogo y tipo de negocio.
+y de pago, largo de respuesta, modo de catálogo y tipo de negocio. Con el contrato como fuente, también: nombre,
+marca y descripción del negocio, diferenciadores, ubicación, modalidades, beneficios, argumentos, preguntas de
+diagnóstico, recomendaciones, instrucciones, promociones, tono, preguntas frecuentes, descripción de cada plan, y
+nombre, descripción, precios y características de cada producto.
 
-Pendientes (todo lo demás), entre ellos: nombre, marca y descripción del negocio, diferenciadores,
-ubicación, modalidades, horarios, tono y estilo, productos y precios del catálogo, descripciones de
-planes y productos, promociones, políticas, financiación, preguntas frecuentes,
-recomendaciones, instrucciones, preguntas de diagnóstico, beneficios, argumentos, estrategia avanzada,
-mensajes de posventa y seguimiento, entrega, inventario y precio por variante.
+Pendientes (todo lo demás), entre ellos: horarios, posicionamiento, cliente ideal, credibilidad, voz, formalidad,
+emojis e instrucciones de estilo, políticas, financiación, estrategia avanzada, mensajes de posventa y
+seguimiento, entrega, inventario, precio anual y precio por variante.
 
 ## Decisiones De Diseño
 
@@ -405,9 +408,32 @@ export BUSINESS_CONFIG_CONTRACT_TENANTS=restaurant   # o "*" para todos
 `tests/test_business_config_local_persistence.py` lo comprueba sin sustituir ninguna pieza: solo con esas variables, publicar en el
 panel cambia lo que recibe el motor, volver atrás lo devuelve y, sin almacén, el motor sigue con sus YAML sin crear ningún archivo.
 
-Comprobado en los nueve negocios con el motor actual: con el contrato como fuente, el runtime es
-idéntico al de los YAML y una conversación de cuatro turnos produce exactamente los mismos prompts y
-respuestas. Activar el contrato hoy no cambia el comportamiento de la IA.
+Comprobado en los nueve negocios: con el contrato como fuente, el runtime es el de los YAML más `config.profile`, y una
+conversación de cuatro turnos produce los mismos prompts y respuestas salvo el perfil comercial (su bloque y el tono).
+Activar el contrato en un negocio solo le añade eso.
+
+### Lo Que El Motor Usa Del Contrato
+
+El compilador deja lo que solo existe en el contrato en claves que los YAML no tienen (`commercial_profile.py`), y el motor
+lo usa solo cuando las encuentra. Un negocio que sigue con sus YAML no cambia.
+
+| Clave | En el prompt |
+|---|---|
+| `config.profile` | Bloque «PERFIL COMERCIAL DEL NEGOCIO» (`business_profile.py`). En la presentación: nombre o marca, descripción, diferenciadores, ubicación, modalidades, beneficios, argumentos, preguntas de diagnóstico, recomendaciones y detalle de la oferta. En cada turno: instrucciones y promociones vigentes. El tono reemplaza a «natural y claro» en la línea ESTILO |
+| `config.knowledge` | Bloque de preguntas frecuentes (`business_knowledge.py`): todas si caben en `FAQ_PROMPT_MAX_CHARS` (1500 caracteres); si no, las que más palabras comparten con el mensaje del cliente, en el orden del negocio |
+| `pricing.catalog.items[].features` | Características de cada producto, en el detalle de la oferta |
+
+- Las recomendaciones apuntan por id a un plan, producto o categoría y llegan con su nombre. Las que apuntan a algo que no
+  se ofrece se descartan: la IA nunca recomienda algo inexistente, y el diagnóstico se lo señala al negocio.
+- Las descripciones del negocio (20 palabras) y de cada plan o producto (25) se recortan con `PROMPT_WORD_LIMITS`, los mismos
+  límites que el panel le muestra al negocio.
+- Las promociones vencidas se descartan al armar cada prompt, sin volver a publicar.
+- Con cualquiera de las dos fuentes, la línea «Precios» de un catálogo lista el precio de cada producto.
+- Los datos de pago nunca llegan a la IA, ni desde la configuración ni desde el historial, ni al registro
+  `conversation_trace`: el motor se los entrega al cliente cuando elige el método (`ejecutar_pago`). Si la IA repitiera el
+  marcador `[dato de pago]`, el cliente recibe el dato real si eligió un método o, si no, la respuesta sin esa frase.
+- Para comprobar una migración, `comparable_with_yaml` quita las claves exclusivas del contrato antes de comparar con los
+  YAML (lo usan el panel al importar, `scripts/migrate_tenants_to_contract.py` y las pruebas).
 
 ## Persistencia Local
 
@@ -542,18 +568,18 @@ cual (cambiarlos es decisión del negocio):
 |---|---|---|
 | `tests/test_business_config_contract.py` | Modelo, esquema y tipos generados, marcas, conservación de los nueve negocios, compilación, validaciones, diagnóstico, panel | pasan |
 | `tests/test_business_config_traceability.py` | Cada campo antiguo en su destino; funcionalidades comerciales con sus valores y opciones; nada técnico en el documento comercial; catálogo coherente con las marcas; evidencias existentes; matriz al día | pasan |
-| `tests/test_payment_data_protection.py` | Detección y redacción de datos de pago | pasan |
+| `tests/test_payment_data_protection.py` | Detección y redacción de datos de pago; fuera del prompt y del registro con YAML y con el contrato; el cliente los recibe y nunca ve el marcador | pasan |
 | `tests/test_business_config_repository.py` | Versiones, publicación, reversión, cifrado y runtime desde base de datos | pasan |
 | `tests/test_business_config_closing_policy.py` | Definición común del cierre: los cinco valores en los nueve negocios, misma estructura que los YAML, fuera del contrato, divergencias rechazadas y motor sin cambios | pasan |
 | `tests/test_business_config_local_persistence.py` | Persistencia local en archivo SQLite: creación, aislamiento, borradores, historial, reversión, protección de pagos y migración segura ante fallos | pasan |
 | `tests/test_business_config_nine_businesses.py` | Los nueve negocios en una base temporal: cada campo de los YAML, compilación frente a la referencia, prompts iguales, aislamiento y repetición de la importación | pasan |
 | `tests/test_business_config_yaml_independence.py` | El almacén funciona en un árbol sin YAML ni motor; procedimiento documentado; base fuera del control de versiones | pasan |
-| `tests/test_business_config_engine_integration.py` | Contrato con el motor actual: equivalencia exacta con los YAML, fuente opcional y respaldo, evidencia de cada campo conectado | pasan |
+| `tests/test_business_config_engine_integration.py` | Contrato con el motor: equivalencia con los YAML más el perfil comercial; perfil, preguntas frecuentes y precios del catálogo; fuente opcional y respaldo; evidencia de cada campo conectado | pasan |
+| `tests/test_commercial_profile_prompt.py` | Compilación del perfil y de las preguntas frecuentes; recortes, vigencia de las promociones, recomendaciones sin destino y selección de preguntas por espacio | pasan |
 | `tests/test_admin_api.py` | API local: negocios, secciones comerciales, validaciones, conflictos, reinicio, aislamiento, datos de pago, acceso solo local, versiones e importación de los nueve negocios sin pérdida | pasan |
 | `tests/test_business_config_architecture.py` | Capas, ausencia de ciclos y de dependencias del motor; el motor entra al almacén solo por `runtime_access.py`; rutas sin lógica; nada técnico en el contrato | pasan |
 | `apps/admin-web`: `npm test` | Interfaz con un backend en memoria, reglas, operaciones y arquitectura (sin `localStorage`, sin recursos externos) | pasan |
 | `apps/admin-web`: `npm run test:integration` | Interfaz real, API real, contrato y SQLite temporal, con reinicios reales de la API: el recorrido completo y los nueve negocios guardados desde el panel | pasan |
-| `tests/test_business_config_engine_pending.py` (`-m engine_pending`) | Comportamiento que exige cambios futuros en el motor | **xfail estricto**: se ejecutan siempre y fallan (63 "xfailed"); si una pasa, la suite falla hasta convertirla en prueba normal. Solo cuenta como fallo esperado la excepción con la que hoy falla cada prueba (`AssertionError`; `KeyError` y `AttributeError` en dos pruebas documentadas): cualquier otro error, incluido un fixture roto, es un fallo real. Detalle: `pytest -m engine_pending --runxfail` |
 
 Los informes de fallo de cualquier prueba ocultan los datos de pago de los YAML (`tests/conftest.py`), para que no
 lleguen a la consola ni a los logs de CI. `pytest.ini` usa una lista cerrada de archivos (`python_files`): una
@@ -564,25 +590,20 @@ comporta como el CI y omite las pruebas contra el modelo real. Esas solo corren 
 
 ## Integración Pendiente Con El Motor
 
-Requieren cambios en el motor (no autorizados en esta fase). Sus pruebas están en
-`test_business_config_engine_pending.py`, sin cambios en sus aserciones:
+La primera parte está hecha: perfil comercial con su tono, preguntas frecuentes, productos y precios del catálogo, datos de
+pago fuera de la IA y del registro, y el presupuesto del prompt en una conversación en curso (ver
+[Lo Que El Motor Usa Del Contrato](#lo-que-el-motor-usa-del-contrato)). Sus 63 pruebas, antes `xfail` estricto, pasan como
+pruebas normales en `test_business_config_engine_integration.py` y `test_payment_data_protection.py`, sin cambios en sus
+aserciones.
 
-1. **Perfil comercial en el prompt:** nombre o marca, descripción, diferenciadores, ubicación,
-   modalidades, beneficios, argumentos, preguntas, recomendaciones, instrucciones, promociones vigentes y
-   detalle de la oferta; tono en la línea de estilo. Exige que el motor lea un bloque de perfil y que el
-   compilador lo emita (clave a acordar con esa integración; `config.profile` en la versión retirada).
-2. **Preguntas frecuentes en el prompt** (misma situación: motor + clave de compilación).
-3. **Productos y precios del catálogo en el prompt:** el prompt actual de catálogo no los lista.
-4. **Datos de pago fuera del prompt y del registro de la conversación.**
-5. **Presupuesto del prompt** en conversación activa con el perfil incluido.
-6. Resto de campos `pendiente` (políticas, horarios, entrega, estrategia avanzada, mensajes
-   de seguimiento, precio anual y por variante...): sin pruebas pendientes aún; cada uno necesitará la
-   suya al conectarse.
+Quedan los campos `pendiente` (horarios, políticas, financiación, entrega, estilo y voz, estrategia avanzada, mensajes de
+posventa y seguimiento, precio anual y por variante...). Cada uno necesitará su prueba al conectarse; el marcador
+`engine_pending` (xfail estricto) queda para eso, y hoy no lo usa ninguna prueba.
 
 ## Pendientes Fuera Del Contrato
 
 1. Decisiones del negocio sobre el diagnóstico y los hallazgos.
-2. Activar el contrato por negocio (`BUSINESS_CONFIG_CONTRACT_TENANTS`): hoy no cambia respuestas.
+2. Activar el contrato por negocio (`BUSINESS_CONFIG_CONTRACT_TENANTS`): le añade el perfil comercial; el resto queda igual.
 3. Retirar los YAML y `legacy` solo cuando ningún negocio dependa de ellos.
 4. Persistencia en PostgreSQL, rotación de la clave de cifrado y limpieza de datos de pago de versiones
    antiguas: fase de nube.
