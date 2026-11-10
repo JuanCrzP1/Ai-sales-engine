@@ -40,6 +40,11 @@ export const NEW_BUSINESS_PATH = "/nuevo-negocio";
 
 export const HOME_ITEM: NavItem = { key: "home", path: "", title: "Inicio" };
 export const REVIEW_ITEM: NavItem = { key: "review", path: "revision", title: "Revisión y publicación" };
+/** Lo que recibe el resumen del negocio al abrirse recién creado con una plantilla: para recordar cambiar los ejemplos. */
+export interface CreatedFromTemplate {
+  template: string;
+}
+
 /** Resumen del Asistente IA: cada sección en una tarjeta, con su estado. Es la entrada desde el menú. */
 export const OVERVIEW_ITEM: NavItem = { key: "overview", path: "asistente", title: "Resumen" };
 /** Herramientas del asistente: fuera del recorrido guiado de configuración. */

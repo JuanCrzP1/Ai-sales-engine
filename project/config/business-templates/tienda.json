@@ -1,0 +1,304 @@
+{
+  "id": "tienda",
+  "order": 2,
+  "title": "Tienda de productos",
+  "description": "Catálogo con tallas y colores, envíos y recogida.",
+  "icon": "shirt",
+  "document": {
+    "schema_version": "1.0",
+    "identity": {
+      "name": "",
+      "industry": "Tienda de ropa",
+      "description": "Tienda de ropa básica (camisetas y jeans) con envíos a todo el país y recogida en la tienda.",
+      "value_proposition": "Ropa básica y cómoda que te llega a casa o recoges en la tienda.",
+      "positioning": "Básicos de algodón para el día a día, fáciles de pedir por chat.",
+      "differentiators": [
+        "Prendas básicas de algodón",
+        "Envíos a todo el país y recogida en la tienda",
+        "Te ayudamos a elegir tu talla"
+      ],
+      "location": {
+        "type": "mixto",
+        "coverage": {
+          "type": "nacional",
+          "zones": []
+        }
+      },
+      "service_modes": [
+        "presencial",
+        "envio"
+      ],
+      "target_customer": {
+        "segment": "Personas que buscan ropa básica y cómoda para el día a día"
+      }
+    },
+    "offer": {
+      "model": "catalog",
+      "catalog": {
+        "categories": [
+          {
+            "id": "camisetas",
+            "name": "Camisetas"
+          },
+          {
+            "id": "jeans",
+            "name": "Jeans"
+          }
+        ],
+        "items": [
+          {
+            "id": "camiseta_basica",
+            "name": "Camiseta básica",
+            "category": "camisetas",
+            "description": "Camiseta de algodón para uso diario.",
+            "prices": [
+              {
+                "currency": "COP",
+                "amount": 45000
+              }
+            ],
+            "available": true
+          },
+          {
+            "id": "jean_clasico",
+            "name": "Jean clásico",
+            "category": "jeans",
+            "description": "Jean azul de corte regular.",
+            "prices": [
+              {
+                "currency": "COP",
+                "amount": 95000
+              }
+            ],
+            "available": true
+          }
+        ]
+      }
+    },
+    "terms": {
+      "conditions": [
+        "Los cambios se hacen según la política de la tienda."
+      ],
+      "price_framing": "directo",
+      "financing": {
+        "available": true,
+        "providers": [
+          "addi",
+          "sistecredito"
+        ],
+        "options": [
+          "cuotas",
+          "pago_inicial"
+        ]
+      }
+    },
+    "payments": [],
+    "sales": {
+      "pain_points": [
+        "no sé qué talla pedir",
+        "quiero saber cuándo me llega"
+      ],
+      "benefits": [
+        "vestir cómodo todos los días",
+        "recibir la ropa sin salir de casa"
+      ],
+      "offer_mix": {
+        "core": [
+          "camiseta_basica",
+          "jean_clasico"
+        ],
+        "upsell": [
+          "llevar camiseta y jean juntos"
+        ],
+        "cross_sell": [
+          "jean_clasico",
+          "camiseta_basica"
+        ]
+      },
+      "discovery": {
+        "objectives": [
+          "saber qué prenda busca, su talla y si prefiere envío o recogida"
+        ]
+      },
+      "support": {
+        "explain_first": true,
+        "sell_after": true
+      },
+      "conversation_flow": {
+        "required_flow": [
+          "detect_pain",
+          "present_solution",
+          "guide_next_step"
+        ]
+      },
+      "closing": {
+        "strategy": "checkout",
+        "required_data": [
+          "name",
+          "phone",
+          "address"
+        ],
+        "purchase_signals": [
+          "lo quiero",
+          "quiero comprar",
+          "me lo llevo",
+          "la separo"
+        ],
+        "next_steps": [
+          "confirmar talla y color",
+          "confirmar envío o recogida",
+          "confirmar el pago"
+        ],
+        "rules": [
+          "Cuando el cliente quiera comprar, avanza al pago sin frenarlo."
+        ]
+      }
+    },
+    "capabilities": {
+      "service_channels": [
+        "whatsapp"
+      ],
+      "product_channels": [],
+      "actions_primary": [
+        "cerrar_venta",
+        "enviar_pago"
+      ],
+      "actions_support": [
+        "responder_dudas",
+        "seguimiento",
+        "confirmar_datos"
+      ],
+      "closing_methods": {
+        "payment_link": false,
+        "human_handoff": true,
+        "data_collection": true
+      },
+      "data_collection": {
+        "enabled": true,
+        "fields": [
+          "nombre",
+          "telefono",
+          "direccion",
+          "detalles"
+        ]
+      }
+    },
+    "messages": {
+      "welcome": {
+        "enabled": true,
+        "text": "¡Hola! Bienvenido a nuestra tienda. ¿Qué prenda estás buscando?"
+      },
+      "payment_reported": "Perfecto, ya lo reviso y te confirmo en un momento.",
+      "payment_confirmed": "¡Listo! Tu pago quedó confirmado. Seguimos con el siguiente paso."
+    },
+    "response_style": {
+      "tone": "cercano, directo y amable",
+      "voice": "clara y práctica",
+      "length": "short",
+      "max_words": 60
+    },
+    "knowledge": {
+      "faqs": []
+    },
+    "fulfillment": {
+      "delivery": {
+        "available": true,
+        "type": "propio",
+        "zones": [],
+        "cost": {
+          "type": "fijo",
+          "value": 6000
+        },
+        "time": {
+          "min": "1 hora",
+          "max": "3 horas"
+        }
+      },
+      "shipping": {
+        "available": true,
+        "scope": "nacional",
+        "providers": [
+          "servientrega",
+          "interrapidisimo"
+        ],
+        "cost": {
+          "type": "variable",
+          "value": 0
+        },
+        "time": {
+          "min": "1 día",
+          "max": "3 días"
+        }
+      },
+      "pickup": {
+        "available": true,
+        "instructions": "Puedes recogerlo en la tienda."
+      },
+      "scheduling": {
+        "required": false
+      }
+    },
+    "inventory": {
+      "items": [
+        {
+          "product_id": "camiseta_basica",
+          "variants": [
+            {
+              "sku": "camiseta_basica_s_blanco",
+              "attributes": {
+                "size": "S",
+                "color": "blanco"
+              },
+              "stock": 5
+            },
+            {
+              "sku": "camiseta_basica_m_blanco",
+              "attributes": {
+                "size": "M",
+                "color": "blanco"
+              },
+              "stock": 0
+            },
+            {
+              "sku": "camiseta_basica_l_negro",
+              "attributes": {
+                "size": "L",
+                "color": "negro"
+              },
+              "stock": 3
+            }
+          ]
+        },
+        {
+          "product_id": "jean_clasico",
+          "variants": [
+            {
+              "sku": "jean_30_azul",
+              "attributes": {
+                "size": 30,
+                "color": "azul"
+              },
+              "stock": 4
+            },
+            {
+              "sku": "jean_32_azul",
+              "attributes": {
+                "size": 32,
+                "color": "azul"
+              },
+              "stock": 2
+            }
+          ]
+        }
+      ],
+      "track_stock": true
+    },
+    "features": {
+      "pricing_enabled": true,
+      "catalog_mode": true,
+      "multi_currency": false,
+      "multi_plan": false,
+      "business_model": "checkout"
+    }
+  }
+}

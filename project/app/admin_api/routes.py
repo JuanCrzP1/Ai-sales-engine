@@ -22,12 +22,15 @@ from app.admin_api.schemas import (
     config_payload,
     review_payload,
     summary_payload,
+    template_payload,
     version_payload,
 )
 from app.business_config_application.access import BusinessAccess
 from app.business_config_application.service import BusinessConfigService
+from app.business_config_application.templates import BusinessTemplateCatalog
 from app.domain.business_config.access import LOCAL_OPERATOR, Principal
 from app.domain.business_config.errors import BusinessNotFoundError
+from app.domain.business_config.templates import TemplateNotFoundError
 from app.domain.business_config.validation import is_valid_slug
 
 router = APIRouter(prefix="/api")
@@ -39,6 +42,10 @@ def _service(request: Request) -> BusinessConfigService:
 
 def _access(request: Request) -> BusinessAccess:
     return request.app.state.access
+
+
+def _templates(request: Request) -> BusinessTemplateCatalog:
+    return request.app.state.templates
 
 
 def _in_the_cloud(request: Request) -> bool:
@@ -96,9 +103,23 @@ def list_businesses(user: CurrentUser, access: Access) -> list[dict[str, Any]]:
     return [summary_payload(summary) for summary in access.list_for(user)]
 
 
+@router.get("/business-templates")
+def business_templates(request: Request) -> list[dict[str, Any]]:
+    """Las plantillas para empezar un negocio. «Empezar de cero» la ofrece el panel: es no elegir ninguna."""
+    return [template_payload(template) for template in _templates(request).list()]
+
+
 @router.post("/businesses", status_code=status.HTTP_201_CREATED)
-def create_business(payload: CreateBusiness, user: CurrentUser, access: Access) -> dict[str, Any]:
-    return summary_payload(access.create_for(user, payload.slug, payload.name))
+def create_business(request: Request, payload: CreateBusiness, user: CurrentUser, access: Access) -> dict[str, Any]:
+    """Crea el negocio vacío o, con una plantilla, con su primer borrador ya escrito (sin publicar)."""
+    document = None
+    if payload.template:
+        try:
+            template = _templates(request).get(payload.template)
+        except TemplateNotFoundError:
+            raise ApiError(UNPROCESSABLE, "Esa plantilla no existe.", code="invalid", issues=[{"path": "template", "message": "Elige otra plantilla."}]) from None
+        document = template.instantiate(payload.slug, payload.name)
+    return summary_payload(access.create_for(user, payload.slug, payload.name, document=document))
 
 
 @router.post("/businesses/import")

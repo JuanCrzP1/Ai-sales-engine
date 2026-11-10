@@ -1,0 +1,337 @@
+{
+  "id": "escuela",
+  "order": 4,
+  "title": "Escuela o academia",
+  "description": "Cursos con requisitos, pasos de inscripción y agenda.",
+  "icon": "graduation",
+  "document": {
+    "schema_version": "1.0",
+    "identity": {
+      "name": "",
+      "industry": "Escuela de conducción",
+      "description": "Escuela que forma conductores y gestiona el proceso completo para obtener licencias A1, A2, B1, B2, C1 y C2.",
+      "value_proposition": "Te acompañamos hasta tu licencia con pasos claros.",
+      "positioning": "La escuela que te acompaña en todo el proceso, del curso al trámite de tu licencia.",
+      "location": {
+        "type": "fisico",
+        "coverage": {
+          "type": "local",
+          "zones": []
+        }
+      },
+      "service_modes": [
+        "presencial"
+      ]
+    },
+    "offer": {
+      "model": "catalog",
+      "catalog": {
+        "categories": [
+          {
+            "id": "motos",
+            "name": "Motos"
+          },
+          {
+            "id": "carros",
+            "name": "Carros"
+          },
+          {
+            "id": "servicio_publico",
+            "name": "Servicio público"
+          }
+        ],
+        "items": [
+          {
+            "id": "licencia_a1",
+            "name": "Licencia A1",
+            "category": "motos",
+            "description": "Formación y trámite para moto de bajo cilindraje.",
+            "prices": [
+              {
+                "currency": "COP",
+                "amount": 800000
+              }
+            ],
+            "available": true
+          },
+          {
+            "id": "licencia_a2",
+            "name": "Licencia A2",
+            "category": "motos",
+            "description": "Formación y trámite para moto de alto cilindraje.",
+            "prices": [
+              {
+                "currency": "COP",
+                "amount": 950000
+              }
+            ],
+            "available": true
+          },
+          {
+            "id": "licencia_b1",
+            "name": "Licencia B1",
+            "category": "carros",
+            "description": "Formación y trámite para carro particular.",
+            "prices": [
+              {
+                "currency": "COP",
+                "amount": 1200000
+              }
+            ],
+            "available": true
+          },
+          {
+            "id": "licencia_b2",
+            "name": "Licencia B2",
+            "category": "carros",
+            "description": "Formación y trámite para camiones livianos.",
+            "prices": [
+              {
+                "currency": "COP",
+                "amount": 1450000
+              }
+            ],
+            "available": true
+          },
+          {
+            "id": "licencia_c1",
+            "name": "Licencia C1",
+            "category": "servicio_publico",
+            "description": "Formación y trámite para servicio público liviano.",
+            "prices": [
+              {
+                "currency": "COP",
+                "amount": 1550000
+              }
+            ],
+            "available": true
+          },
+          {
+            "id": "licencia_c2",
+            "name": "Licencia C2",
+            "category": "servicio_publico",
+            "description": "Formación y trámite para vehículos de carga pesada.",
+            "prices": [
+              {
+                "currency": "COP",
+                "amount": 1850000
+              }
+            ],
+            "available": true
+          }
+        ]
+      }
+    },
+    "terms": {
+      "conditions": [
+        "Los valores dependen de la evaluación y la documentación del alumno."
+      ],
+      "price_framing": "directo",
+      "financing": {
+        "available": true,
+        "providers": [
+          "sistecredito"
+        ],
+        "options": [
+          "separacion_cupo",
+          "cuotas"
+        ]
+      }
+    },
+    "payments": [],
+    "sales": {
+      "customer_problems": [
+        {
+          "id": "proceso_confuso",
+          "impacts": [
+            "Retrasos en la inscripción y la documentación"
+          ],
+          "signals": [
+            "no sé qué licencia necesito",
+            "no entiendo el trámite",
+            "qué requisitos piden"
+          ],
+          "monetization": [
+            "Demorar el trámite retrasa oportunidades de trabajo"
+          ]
+        }
+      ],
+      "pain_points": [
+        "No sé qué licencia necesito",
+        "El proceso es confuso",
+        "Los trámites se demoran"
+      ],
+      "benefits": [
+        "Sacar la licencia rápido",
+        "Entender los requisitos desde el principio"
+      ],
+      "arguments": [
+        "Explicamos el proceso por pasos según el tipo de licencia.",
+        "Validamos los requisitos antes de agendar para evitar rechazos.",
+        "Te guiamos en la inscripción y la documentación."
+      ],
+      "solution": {
+        "process_steps": [
+          "Identificar el tipo de licencia según lo que necesitas",
+          "Revisar requisitos y documentos",
+          "Registrar tus datos y agendar el inicio",
+          "Iniciar el curso y seguir el trámite"
+        ],
+        "requirements": [
+          "Documento de identidad vigente",
+          "Examen médico vigente",
+          "Datos de contacto activos"
+        ]
+      },
+      "offer_mix": {
+        "core": [
+          "licencias"
+        ],
+        "upsell": [],
+        "cross_sell": []
+      },
+      "discovery": {
+        "objectives": [
+          "Qué licencia necesita",
+          "Si tiene urgencia por trabajo, estudio o un trámite"
+        ]
+      },
+      "support": {
+        "explain_first": true,
+        "sell_after": true
+      },
+      "conversation_flow": {
+        "steps": [
+          "detect_pain",
+          "present_solution",
+          "validate_requirements",
+          "guide_next_step"
+        ],
+        "required_flow": [
+          "detect_pain",
+          "amplify_impact",
+          "present_solution",
+          "guide_next_step"
+        ],
+        "no_skip_steps": true,
+        "guided_process": true
+      },
+      "closing": {
+        "strategy": "booking",
+        "required_data": [
+          "name",
+          "phone",
+          "license_type"
+        ],
+        "purchase_signals": [
+          "quiero sacar licencia",
+          "quiero licencia",
+          "me interesa licencia",
+          "quiero licencia b1",
+          "quiero licencia a1",
+          "quiero empezar"
+        ],
+        "next_steps": [
+          "explicar el proceso según la licencia",
+          "confirmar los datos y agendar la asesoría"
+        ],
+        "rules": [
+          "explica el proceso según la licencia antes de pedir datos",
+          "cuando quiera inscribirse, pide los datos para agendar la asesoría",
+          "no ofrezcas planes ni mensualidades: se paga por licencia"
+        ]
+      }
+    },
+    "capabilities": {
+      "service_channels": [
+        "whatsapp"
+      ],
+      "product_channels": [],
+      "actions_primary": [
+        "agendar_asesoria",
+        "cerrar_venta"
+      ],
+      "actions_support": [
+        "responder_dudas",
+        "seguimiento",
+        "enviar_info"
+      ],
+      "closing_methods": {
+        "payment_link": false,
+        "human_handoff": true,
+        "data_collection": true
+      },
+      "data_collection": {
+        "enabled": true,
+        "fields": [
+          "nombre",
+          "telefono",
+          "detalles"
+        ]
+      }
+    },
+    "messages": {
+      "welcome": {
+        "enabled": true,
+        "text": "¡Hola! Te ayudamos a sacar tu licencia. ¿Qué tipo de licencia necesitas?"
+      },
+      "payment_reported": "Perfecto, ya lo reviso y te confirmo en un momento.",
+      "payment_confirmed": "¡Listo! Tu pago quedó confirmado. Seguimos con el siguiente paso."
+    },
+    "response_style": {
+      "tone": "humano, claro y paciente",
+      "voice": "cercana y práctica",
+      "length": "short",
+      "max_words": 60
+    },
+    "knowledge": {
+      "faqs": []
+    },
+    "fulfillment": {
+      "delivery": {
+        "available": false,
+        "type": "tercero",
+        "zones": [],
+        "cost": {
+          "type": "variable",
+          "value": 0
+        },
+        "time": {
+          "min": "",
+          "max": ""
+        }
+      },
+      "shipping": {
+        "available": false,
+        "scope": "local",
+        "providers": [],
+        "cost": {
+          "type": "variable",
+          "value": 0
+        },
+        "time": {
+          "min": "",
+          "max": ""
+        }
+      },
+      "pickup": {
+        "available": false,
+        "instructions": ""
+      },
+      "scheduling": {
+        "required": true
+      }
+    },
+    "inventory": {
+      "items": [],
+      "track_stock": false
+    },
+    "features": {
+      "pricing_enabled": true,
+      "catalog_mode": true,
+      "multi_currency": false,
+      "multi_plan": false,
+      "business_model": "process"
+    }
+  }
+}

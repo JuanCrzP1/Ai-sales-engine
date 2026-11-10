@@ -134,6 +134,45 @@ describe("Administración de negocios", () => {
     expect(backend.stored("panaderia_la_esquina")).toBeNull();
   });
 
+  it("ofrece empezar de cero primero y, con una plantilla, crea un borrador con sus ejemplos y avisa que hay que cambiarlos", async () => {
+    const backend = createMemoryBackend();
+    const user = await renderAt("/negocios", createTestServices(backend));
+    await user.click(screen.getAllByRole("button", { name: "Crear negocio" })[0]!);
+    const form = screen.getByRole("form", { name: "Crear negocio" });
+    const options = await within(form).findAllByRole("radio");
+    expect(options.map((option) => option.closest("label")?.querySelector(".template-option__title")?.textContent)).toEqual([
+      "Empezar de cero",
+      "Restaurante o comida a domicilio",
+      "Software o servicio por suscripción",
+    ]);
+    expect(options[0]).toBeChecked();
+
+    await user.click(within(form).getByRole("radio", { name: /^Restaurante o comida a domicilio/ }));
+    expect(within(form).getByText(/Tu negocio empezará con los ejemplos de/)).toBeInTheDocument();
+    await user.type(within(form).getByLabelText(/^Nombre comercial/), "Sabor Casero");
+    await user.click(within(form).getByRole("button", { name: "Crear negocio" }));
+
+    expect(await screen.findByRole("heading", { level: 1, name: "Tu asistente, sección por sección" })).toBeInTheDocument();
+    expect(window.location.pathname).toBe("/negocios/sabor_casero/asistente");
+    expect(screen.getByText("Empezaste con la plantilla «Restaurante o comida a domicilio»")).toBeInTheDocument();
+    // La plantilla quedó como borrador con el nombre del negocio y sin datos de pago; nada se publicó.
+    expect(backend.stored("sabor_casero")).toMatchObject({ tenant_slug: "sabor_casero", identity: { name: "Sabor Casero" }, payments: [] });
+    expect((await backend.directory.list()).find((business) => business.slug === "sabor_casero")).toMatchObject({ draftVersion: 1, publishedVersion: null });
+  });
+
+  it("si no puede cargar las plantillas, igual deja empezar de cero", async () => {
+    const backend = createMemoryBackend();
+    backend.failNext("templates", new PersistenceError("unavailable"));
+    const user = await renderAt("/negocios", createTestServices(backend));
+    await user.click(screen.getAllByRole("button", { name: "Crear negocio" })[0]!);
+    const form = screen.getByRole("form", { name: "Crear negocio" });
+    expect(await within(form).findByText("No se pudieron cargar las plantillas: puedes empezar de cero.")).toBeInTheDocument();
+    expect(within(form).getByRole("radio", { name: /^Empezar de cero/ })).toBeChecked();
+    await user.type(within(form).getByLabelText(/^Nombre comercial/), "Panadería Sol");
+    await user.click(within(form).getByRole("button", { name: "Crear negocio" }));
+    expect(await screen.findByRole("heading", { level: 1, name: "Configura tu asistente de ventas" })).toBeInTheDocument();
+  });
+
   it("no permite repetir un identificador que ya está en la lista", async () => {
     const user = await renderAt("/negocios", createTestServices(createMemoryBackend([SAMPLE_DOCUMENT])));
     await user.click(screen.getByRole("button", { name: "Crear negocio" }));

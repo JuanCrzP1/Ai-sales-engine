@@ -51,9 +51,19 @@ const PATHS = {
   toggles: "M8 7h8a4 4 0 0 1 0 8H8A4 4 0 0 1 8 7zM8 13a2 2 0 1 0 0-4 2 2 0 0 0 0 4z",
   message: "M4 5h16a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H9l-5 4v-4H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1zM8 10h8M8 13h5",
   palette: "M12 21a9 9 0 1 1 9-9c0 2.5-2 3.5-3.5 3.5H15a2 2 0 0 0-1.4 3.4A1.8 1.8 0 0 1 12 21zM7.5 11h.01M10 7h.01M15 7h.01M17.5 11h.01",
+  utensils: "M7 2v9M4 2v5a3 3 0 0 0 6 0V2M7 11v11M17 22V2c-2.5 1.5-4 4-4 8v3h4",
+  shirt: "M8 3 4 6l2 4 2-1v12h8V9l2 1 2-4-4-3c-.5 1.5-2 2.5-4 2.5S8.5 4.5 8 3z",
+  plane: "M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z",
+  graduation: "M22 9 12 4 2 9l10 5 10-5zM6 11v5c0 1.5 2.7 3 6 3s6-1.5 6-3v-5M22 9v6",
+  blank: "M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8zM14 3v5h5M12 12v6M9 15h6",
 } as const;
 
 export type IconName = keyof typeof PATHS;
+
+/** Un nombre de ícono que llega de fuera (p. ej. del servidor): el mismo si existe; si no, `fallback`. */
+export function iconOr(name: string, fallback: IconName): IconName {
+  return Object.prototype.hasOwnProperty.call(PATHS, name) ? (name as IconName) : fallback;
+}
 
 export function Icon({ name, size = 18 }: { name: IconName; size?: number }) {
   return (

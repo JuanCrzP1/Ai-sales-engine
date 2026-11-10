@@ -4,7 +4,7 @@ import { AuthError, type Session, type UserProfile } from "../domain/auth/types"
 import { normalizeEmail } from "../domain/auth/validation";
 import type { ContractSchema } from "../domain/config/contractSchema";
 import { paymentHolders } from "../domain/config/document";
-import type { BusinessDocument, BusinessSummary, Diagnostic, PaymentFields, PaymentFieldState, PaymentValues, VersionInfo, VersionStatus } from "../domain/config/types";
+import type { BusinessDocument, BusinessSummary, BusinessTemplate, Diagnostic, PaymentFields, PaymentFieldState, PaymentValues, VersionInfo, VersionStatus } from "../domain/config/types";
 import { createLocalOperatorAuthService } from "../infrastructure/local/localOperatorAuthService";
 import type { AIModelOption, AISettings, AIUsage, AssistantLab, ConfigSource, ModelCatalog } from "../repositories/assistantLab";
 import type { AuthService } from "../repositories/authService";
@@ -13,6 +13,7 @@ import type { ConfigRepository, StoredConfig } from "../repositories/configRepos
 import type { ConversationSummary, ConversationThread, InboxFilter, Notification } from "../domain/inbox/types";
 import type { Inbox } from "../repositories/inbox";
 import { PersistenceError } from "../repositories/persistenceError";
+import { SAMPLE_DOCUMENT } from "./fixtures/sampleDocument";
 
 export const TEST_ACCOUNT = { name: "Laura Gómez", email: "laura@empresa.com", password: "clave1234" };
 
@@ -32,7 +33,7 @@ interface MemoryBusiness {
   published: number[];
 }
 
-type FailingOperation = "list" | "create" | "remove" | "importExisting" | "contractSchema" | "load" | "save" | "review" | "history" | "publish" | "rollback" | "restore";
+type FailingOperation = "list" | "create" | "templates" | "remove" | "importExisting" | "contractSchema" | "load" | "save" | "review" | "history" | "publish" | "rollback" | "restore";
 
 export interface MemoryBackend {
   directory: BusinessDirectory;
@@ -51,6 +52,21 @@ export interface MemoryBackend {
 
 /** Las referencias de un documento ya guardado llevan `~versión`, como las que devuelve el servidor. */
 const storedRef = (ref: string) => (ref.includes("~") ? ref : `${ref}~guardado`);
+
+/** Plantillas del servidor falso: las mismas formas que publica la API (`GET /business-templates`). */
+export const TEMPLATES: BusinessTemplate[] = [
+  { id: "restaurante", title: "Restaurante o comida a domicilio", description: "Menú con precios, domicilio y recogida en el local.", icon: "utensils" },
+  { id: "software", title: "Software o servicio por suscripción", description: "Planes mensuales para otros negocios.", icon: "bolt" },
+];
+
+/** El documento que deja una plantilla en el servidor falso: el de ejemplo, sin datos de pago. */
+const templateDocument: BusinessDocument = (() => {
+  const document = structuredClone(SAMPLE_DOCUMENT);
+  document.payments = [];
+  if (document.offer.catalog) document.offer.catalog.payment_profile = null;
+  for (const plan of document.offer.plans ?? []) plan.payment_profile = null;
+  return document;
+})();
 
 function withStoredRefs(document: BusinessDocument): BusinessDocument {
   return JSON.parse(JSON.stringify(document), (key, value: unknown) => (key === "secret_ref" && typeof value === "string" ? storedRef(value) : value)) as BusinessDocument;
@@ -144,12 +160,21 @@ export function createMemoryBackend(seed: BusinessDocument[] = []): MemoryBacken
     },
     canImportExisting: true,
     canRemove: true,
-    create: async ({ slug, name }) => {
+    create: async ({ slug, name, template }) => {
       check("create");
       if (businesses.has(slug)) throw new PersistenceError("duplicate", { message: "Ya existe un negocio con ese identificador.", problems: [{ path: "slug", message: "Ya existe un negocio con ese identificador." }] });
+      if (template && !TEMPLATES.some((item) => item.id === template)) {
+        throw new PersistenceError("invalid", { message: "Esa plantilla no existe.", problems: [{ path: "template", message: "Elige otra plantilla." }] });
+      }
       const business: MemoryBusiness = { slug, name, versions: [], published: [] };
       businesses.set(slug, business);
+      // Como el servidor: la plantilla queda como primer borrador, con el nombre y el identificador del negocio y sin datos de pago.
+      if (template) addVersion(business, { ...structuredClone(templateDocument), tenant_slug: slug, identity: { ...templateDocument.identity, name } });
       return summary(business);
+    },
+    templates: async () => {
+      check("templates");
+      return structuredClone(TEMPLATES);
     },
     remove: async (slug) => {
       check("remove");

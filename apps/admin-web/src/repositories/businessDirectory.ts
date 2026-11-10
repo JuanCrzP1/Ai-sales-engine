@@ -1,5 +1,5 @@
 import type { ContractSchema } from "../domain/config/contractSchema";
-import type { BusinessSummary } from "../domain/config/types";
+import type { BusinessSummary, BusinessTemplate } from "../domain/config/types";
 
 export interface ImportResult {
   created: string[];
@@ -12,7 +12,10 @@ export interface BusinessDirectory {
   readonly canImportExisting: boolean;
   readonly canRemove: boolean;
   list(): Promise<BusinessSummary[]>;
-  create(input: { slug: string; name: string }): Promise<BusinessSummary>;
+  /** Crea el negocio vacío o, con `template`, con su primer borrador ya escrito (sin publicar). */
+  create(input: { slug: string; name: string; template?: string | null }): Promise<BusinessSummary>;
+  /** Las plantillas para empezar un negocio. «Empezar de cero» no es una plantilla: es no elegir ninguna. */
+  templates(): Promise<BusinessTemplate[]>;
   /** Borra el negocio con sus versiones y datos de pago. No se puede deshacer. */
   remove(slug: string): Promise<void>;
   /** Importa los negocios existentes que falten; lo ya guardado no se toca. */

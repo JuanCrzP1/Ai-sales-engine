@@ -15,6 +15,7 @@ from app.domain.business_config.ai_models import ModelCatalog
 from app.domain.business_config.ai_usage import AIUsageSummary
 from app.domain.business_config.conversations import BusinessActivity, ChatMessage, ConversationSummary, Notification
 from app.domain.business_config.records import BusinessSummary, ConfigVersion
+from app.domain.business_config.templates import BusinessTemplate
 
 
 class _Request(BaseModel):
@@ -25,6 +26,8 @@ class _Request(BaseModel):
 class CreateBusiness(_Request):
     slug: str
     name: str
+    # Plantilla con la que empieza (restaurante, tienda...). Sin plantilla, empieza de cero.
+    template: str | None = None
 
 
 class SaveConfig(_Request):
@@ -63,6 +66,11 @@ def _iso(value: datetime | None) -> str | None:
 
 def summary_payload(summary: BusinessSummary) -> dict[str, Any]:
     return asdict(summary)
+
+
+def template_payload(template: BusinessTemplate) -> dict[str, Any]:
+    """Lo que el panel muestra de una plantilla; el documento se usa al crear el negocio y no viaja al panel."""
+    return {"id": template.id, "title": template.title, "description": template.description, "icon": template.icon}
 
 
 def version_payload(version: ConfigVersion) -> dict[str, Any]:

@@ -370,6 +370,9 @@ La IA no lleva variable: cada negocio guarda su clave de OpenRouter en el panel,
   una cuenta: es una plataforma.
 - Cada petición lleva el token de la sesión (JWT EdDSA de 15 minutos). La API lo comprueba con las claves públicas de Neon Auth
   y cada usuario solo llega a sus negocios (`business_members`, migración 0003); un negocio ajeno responde como inexistente.
+- Al crear un negocio se elige cómo empezar: de cero (la primera opción) o con una plantilla de `project/config/business-templates/`
+  (restaurante, tienda, agencia de viajes, escuela, servicios con cita, software). La plantilla trae productos, precios, textos y
+  estrategia de ejemplo, nunca datos de pago, dirección ni testimonios, y queda en borrador hasta que el negocio la revise y publique.
 - Al entrar, el panel abre directo el primer negocio del usuario (o la bienvenida para crearlo). El menú: Inicio, Conversaciones,
   Clientes, Ventas y Reportes; abajo, Asistente IA (un resumen con una tarjeta por sección y su estado; las pestañas de
   entrenamiento, organizadas en tarjetas: lo esencial primero y las opciones avanzadas plegadas; Probar y Publicar), Canales y Ajustes.

@@ -1,0 +1,347 @@
+{
+  "id": "agencia_viajes",
+  "order": 3,
+  "title": "Agencia de viajes",
+  "description": "Paquetes y tours, reservas con fechas y financiación.",
+  "icon": "plane",
+  "document": {
+    "schema_version": "1.0",
+    "identity": {
+      "name": "",
+      "industry": "Agencia de viajes y turismo",
+      "description": "Agencia de viajes que arma paquetes con vuelo y hotel incluidos, y tours de un día.",
+      "value_proposition": "Viajes organizados de principio a fin para que solo te preocupes por disfrutar.\n",
+      "positioning": "Paquetes de viaje listos por Colombia, cotizados y reservados por chat.\n",
+      "differentiators": [
+        "Paquetes con vuelo y hotel incluidos",
+        "Asesoría personalizada por chat",
+        "Financiación con Addi y Sistecrédito",
+        "Tours de un día"
+      ],
+      "location": {
+        "type": "virtual",
+        "coverage": {
+          "type": "internacional",
+          "zones": []
+        }
+      },
+      "service_modes": [
+        "virtual"
+      ],
+      "target_customer": {
+        "segment": "Personas, parejas y familias que quieren viajar",
+        "maturity": "llegan con un destino o unas fechas en mente y quieren saber el precio y qué incluye",
+        "roles": [
+          "el viajero",
+          "quien organiza el viaje del grupo"
+        ]
+      }
+    },
+    "offer": {
+      "model": "catalog",
+      "catalog": {
+        "categories": [
+          {
+            "id": "destinos",
+            "name": "Destinos"
+          },
+          {
+            "id": "excursiones",
+            "name": "Excursiones"
+          }
+        ],
+        "items": [
+          {
+            "id": "cartagena_3_noches",
+            "name": "Cartagena 3 noches",
+            "category": "destinos",
+            "description": "Paquete con vuelo, hotel y traslados compartidos.",
+            "prices": [
+              {
+                "currency": "COP",
+                "amount": 850000
+              }
+            ],
+            "available": true
+          },
+          {
+            "id": "san_andres_4_noches",
+            "name": "San Andrés 4 noches",
+            "category": "destinos",
+            "description": "Paquete con vuelo, hotel y asistencia al viajero.",
+            "prices": [
+              {
+                "currency": "COP",
+                "amount": 1250000
+              }
+            ],
+            "available": true
+          },
+          {
+            "id": "tour_guatape",
+            "name": "Tour a Guatapé",
+            "category": "excursiones",
+            "description": "Excursión de un día con transporte y guía.",
+            "prices": [
+              {
+                "currency": "COP",
+                "amount": 120000
+              }
+            ],
+            "available": true
+          }
+        ]
+      }
+    },
+    "terms": {
+      "conditions": [
+        "Los precios están sujetos a la temporada y la disponibilidad."
+      ],
+      "price_framing": "directo",
+      "roi_break_even_bookings": 1,
+      "price_note": "La reserva se confirma según el destino, las fechas y la disponibilidad.",
+      "financing": {
+        "available": true,
+        "providers": [
+          "addi",
+          "sistecredito"
+        ],
+        "options": [
+          "reserva_con_abono",
+          "pago_en_cuotas"
+        ]
+      }
+    },
+    "payments": [],
+    "sales": {
+      "buying_motivation": {
+        "primary": "dinero",
+        "secondary": "tiempo"
+      },
+      "motivations": [
+        {
+          "motivation": "tiempo",
+          "description": "no tener que organizar vuelo y hotel por su cuenta",
+          "signals": [
+            "no tengo tiempo de organizar",
+            "quiero algo listo"
+          ]
+        },
+        {
+          "motivation": "dinero",
+          "description": "saber exactamente cuánto cuesta el viaje y poder pagarlo a cuotas",
+          "signals": [
+            "cuánto me sale todo",
+            "se puede a cuotas"
+          ]
+        }
+      ],
+      "customer_problems": [
+        {
+          "id": "presupuesto_ajustado",
+          "impacts": [
+            "deja el viaje para después y pierde las fechas que quería"
+          ],
+          "signals": [
+            "está muy caro",
+            "no me alcanza",
+            "qué tienes más económico"
+          ],
+          "monetization": [
+            "los precios cambian según la temporada y la disponibilidad"
+          ]
+        }
+      ],
+      "pain_points": [
+        "no sé qué destino me alcanza con mi presupuesto",
+        "no quiero preocuparme por organizar todo",
+        "necesito saber qué incluye antes de reservar",
+        "quiero viajar en unas fechas específicas"
+      ],
+      "use_cases": [
+        {
+          "name": "escapada corta",
+          "signals": [
+            "un fin de semana",
+            "algo cerca"
+          ],
+          "approach": "ofrecer el tour de un día a Guatapé"
+        },
+        {
+          "name": "vacaciones en familia",
+          "signals": [
+            "vamos con los niños",
+            "somos cuatro"
+          ],
+          "approach": "recomendar Cartagena o San Andrés según sus fechas"
+        }
+      ],
+      "benefits": [
+        "viajar sin preocuparse por la logística",
+        "saber desde el principio qué incluye y cuánto cuesta",
+        "pagar con facilidad, también a cuotas",
+        "aprovechar sus días de descanso"
+      ],
+      "offer_mix": {
+        "core": [
+          "cartagena_3_noches",
+          "san_andres_4_noches"
+        ],
+        "upsell": [
+          "san_andres_4_noches"
+        ],
+        "cross_sell": [
+          "tour_guatape"
+        ]
+      },
+      "discovery": {
+        "objectives": [
+          "saber a qué destino quiere ir, en qué fechas y cuántas personas viajan",
+          "entender su presupuesto"
+        ]
+      },
+      "support": {
+        "explain_first": true,
+        "sell_after": true
+      },
+      "conversation_flow": {
+        "required_flow": [
+          "detect_pain",
+          "present_solution",
+          "guide_next_step"
+        ]
+      },
+      "objections": [
+        {
+          "topic": "price",
+          "acknowledge": [
+            "es normal querer comparar antes de reservar"
+          ],
+          "reframe": [
+            "los paquetes ya incluyen vuelo y hotel, así que no tienes que organizar eso por aparte"
+          ],
+          "redirect": [
+            "avanzamos con tu reserva según el destino y las fechas que elijas"
+          ]
+        }
+      ],
+      "closing": {
+        "strategy": "booking",
+        "required_data": [
+          "name",
+          "phone",
+          "destination",
+          "dates"
+        ],
+        "purchase_signals": [
+          "quiero viajar",
+          "quiero cotizar viaje",
+          "quiero reservar viaje",
+          "me interesa viajar",
+          "quiero ese paquete"
+        ],
+        "next_steps": [
+          "coordinar destino y fechas",
+          "confirmar los datos de contacto para la reserva"
+        ],
+        "rules": [
+          "confirma destino, fechas y número de viajeros antes de pedir datos",
+          "pide solo los datos necesarios para la reserva",
+          "no confirmes disponibilidad: el equipo la confirma"
+        ]
+      }
+    },
+    "capabilities": {
+      "service_channels": [
+        "whatsapp",
+        "instagram"
+      ],
+      "product_channels": [],
+      "actions_primary": [
+        "agendar_reserva",
+        "cerrar_venta"
+      ],
+      "actions_support": [
+        "responder_dudas",
+        "seguimiento",
+        "enviar_info"
+      ],
+      "closing_methods": {
+        "payment_link": false,
+        "human_handoff": true,
+        "data_collection": true
+      },
+      "data_collection": {
+        "enabled": true,
+        "fields": [
+          "nombre",
+          "telefono",
+          "detalles"
+        ]
+      }
+    },
+    "messages": {
+      "welcome": {
+        "enabled": true,
+        "text": "¡Hola! Qué bueno que quieras viajar. ¿A qué destino te gustaría ir y en qué fechas?"
+      },
+      "payment_reported": "Perfecto, ya lo reviso y te confirmo en un momento.",
+      "payment_confirmed": "¡Listo! Tu pago quedó confirmado. Seguimos con el siguiente paso."
+    },
+    "response_style": {
+      "tone": "humano, claro y cercano",
+      "voice": "cercana y entusiasta",
+      "length": "short",
+      "max_words": 60
+    },
+    "knowledge": {
+      "faqs": []
+    },
+    "fulfillment": {
+      "delivery": {
+        "available": false,
+        "type": "tercero",
+        "zones": [],
+        "cost": {
+          "type": "variable",
+          "value": 0
+        },
+        "time": {
+          "min": "",
+          "max": ""
+        }
+      },
+      "shipping": {
+        "available": false,
+        "scope": "internacional",
+        "providers": [],
+        "cost": {
+          "type": "variable",
+          "value": 0
+        },
+        "time": {
+          "min": "",
+          "max": ""
+        }
+      },
+      "pickup": {
+        "available": false,
+        "instructions": ""
+      },
+      "scheduling": {
+        "required": true
+      }
+    },
+    "inventory": {
+      "items": [],
+      "track_stock": false
+    },
+    "features": {
+      "pricing_enabled": true,
+      "catalog_mode": true,
+      "multi_currency": true,
+      "multi_plan": false,
+      "business_model": "catalog"
+    }
+  }
+}

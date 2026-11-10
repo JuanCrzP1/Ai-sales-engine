@@ -5,6 +5,8 @@ revelar que existe. En este equipo, sin cuentas, el operador local administra to
 """
 from __future__ import annotations
 
+from typing import Any
+
 from app.business_config_application.ports import BusinessMembers
 from app.business_config_application.service import BusinessConfigService
 from app.domain.business_config.access import Principal
@@ -35,7 +37,8 @@ class BusinessAccess:
         mine = self._members.slugs_of(principal.user_id) if self._members is not None else set()
         return [business for business in businesses if business.slug in mine]
 
-    def create_for(self, principal: Principal, tenant_slug: str, name: str) -> BusinessSummary:
-        """Crea el negocio con este usuario como dueño, en la misma transacción."""
+    def create_for(self, principal: Principal, tenant_slug: str, name: str, *, document: dict[str, Any] | None = None) -> BusinessSummary:
+        """Crea el negocio con este usuario como dueño, en la misma transacción. Con `document` (una plantilla), guarda su primer
+        borrador: nada se publica hasta que el negocio lo revise."""
         owner = None if self._all_access(principal) else principal.user_id
-        return self._configs.create_business(tenant_slug, name, owner_id=owner)
+        return self._configs.create_business(tenant_slug, name, document=document, owner_id=owner)

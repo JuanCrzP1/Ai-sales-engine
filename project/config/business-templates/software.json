@@ -1,0 +1,236 @@
+{
+  "id": "software",
+  "order": 6,
+  "title": "Software o servicio por suscripción",
+  "description": "Planes mensuales para otros negocios, con argumentos de valor.",
+  "icon": "bolt",
+  "document": {
+    "schema_version": "1.0",
+    "identity": {
+      "name": "",
+      "industry": "Software por suscripción para empresas",
+      "description": "Plataforma que automatiza el seguimiento comercial de equipos que venden por chat.",
+      "value_proposition": "Activa la implementación rápido y convierte más oportunidades en ventas.",
+      "positioning": "No es un bot de soporte: es ejecución comercial para equipos de ventas.",
+      "differentiators": [
+        "Activación guiada",
+        "Implementación rápida",
+        "Seguimiento automático"
+      ],
+      "location": {
+        "type": "virtual",
+        "coverage": {
+          "type": "nacional",
+          "zones": []
+        }
+      },
+      "service_modes": [
+        "virtual"
+      ],
+      "target_customer": {
+        "segment": "Pequeñas y medianas empresas que venden por chat",
+        "company_size": "2 a 30 personas"
+      }
+    },
+    "offer": {
+      "model": "plans",
+      "plans": [
+        {
+          "id": "starter",
+          "name": "Plan inicial",
+          "description": "Activación inicial y operación mensual.",
+          "prices": [
+            {
+              "currency": "COP",
+              "implementation": 180000,
+              "monthly": 220000
+            }
+          ],
+          "includes": [
+            "activacion inicial",
+            "implementacion",
+            "seguimiento comercial"
+          ],
+          "not_included": [
+            "costos de plataformas externas"
+          ],
+          "available": true
+        }
+      ]
+    },
+    "terms": {
+      "conditions": [
+        "Sin permanencia obligatoria."
+      ],
+      "price_framing": "comparativo",
+      "roi_break_even_sales": 3,
+      "financing": {
+        "available": false,
+        "providers": [],
+        "options": []
+      }
+    },
+    "payments": [],
+    "sales": {
+      "pain_points": [
+        "El seguimiento es lento",
+        "Las oportunidades se enfrían"
+      ],
+      "benefits": [
+        "Activar rápido",
+        "Implementar sin complicaciones"
+      ],
+      "offer_mix": {
+        "core": [
+          "plan"
+        ],
+        "upsell": [
+          "plan_superior"
+        ],
+        "cross_sell": [
+          "integraciones",
+          "setup"
+        ]
+      },
+      "discovery": {
+        "objectives": [
+          "Dónde se le traba hoy la venta"
+        ]
+      },
+      "support": {
+        "explain_first": true,
+        "sell_after": true
+      },
+      "conversation_flow": {
+        "required_flow": [
+          "detect_pain",
+          "amplify_impact",
+          "present_solution",
+          "guide_next_step"
+        ]
+      },
+      "objections": [
+        {
+          "topic": "price",
+          "acknowledge": [
+            "Es normal verlo como una inversión inicial."
+          ],
+          "reframe": [
+            "Perder oportunidades por no implementarlo también cuesta dinero."
+          ],
+          "redirect": [
+            "Avancemos con la implementación hoy."
+          ]
+        }
+      ],
+      "closing": {
+        "strategy": "direct_sale",
+        "required_data": [],
+        "purchase_signals": [
+          "quiero empezar",
+          "quiero comprar",
+          "arranquemos"
+        ],
+        "next_steps": [
+          "activar la implementación",
+          "iniciar el arranque"
+        ],
+        "rules": [
+          "Si hay intención de compra alta, cierra sin más preguntas.",
+          "No frenes la compra con respuestas genéricas."
+        ]
+      }
+    },
+    "capabilities": {
+      "service_channels": [
+        "whatsapp"
+      ],
+      "product_channels": [],
+      "actions_primary": [
+        "cerrar_venta",
+        "activar_implementacion"
+      ],
+      "actions_support": [
+        "responder_dudas",
+        "seguimiento",
+        "enviar_info"
+      ],
+      "closing_methods": {
+        "payment_link": false,
+        "human_handoff": true,
+        "data_collection": true
+      },
+      "data_collection": {
+        "enabled": true,
+        "fields": [
+          "nombre",
+          "telefono",
+          "detalles"
+        ]
+      }
+    },
+    "messages": {
+      "welcome": {
+        "enabled": true,
+        "text": "¡Hola! Gracias por escribirnos. ¿Quieres conocer el plan o empezar con la implementación?"
+      },
+      "payment_reported": "Perfecto, ya lo reviso y te confirmo en un momento.",
+      "payment_confirmed": "¡Listo! Tu pago quedó confirmado. Seguimos con el siguiente paso."
+    },
+    "response_style": {
+      "tone": "cercano, directo y profesional",
+      "voice": "cercana y orientada a resultados",
+      "length": "short",
+      "max_words": 60
+    },
+    "knowledge": {
+      "faqs": []
+    },
+    "fulfillment": {
+      "delivery": {
+        "available": false,
+        "type": "tercero",
+        "zones": [],
+        "cost": {
+          "type": "variable",
+          "value": 0
+        },
+        "time": {
+          "min": "",
+          "max": ""
+        }
+      },
+      "shipping": {
+        "available": false,
+        "scope": "nacional",
+        "providers": [],
+        "cost": {
+          "type": "variable",
+          "value": 0
+        },
+        "time": {
+          "min": "",
+          "max": ""
+        }
+      },
+      "pickup": {
+        "available": false,
+        "instructions": ""
+      },
+      "scheduling": {
+        "required": false
+      }
+    },
+    "inventory": {
+      "items": [],
+      "track_stock": false
+    },
+    "features": {
+      "pricing_enabled": true,
+      "catalog_mode": false,
+      "multi_currency": false,
+      "multi_plan": true,
+      "business_model": "saas"
+    }
+  }
+}

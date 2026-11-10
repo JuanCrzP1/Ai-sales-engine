@@ -1,13 +1,14 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { SectionStatusBadge } from "../../components/config/SectionStatusBadge";
 import { LinkButton } from "../../components/ui/Button";
+import { Alert } from "../../components/ui/Feedback";
 import { Icon } from "../../components/ui/Icon";
 import { ProgressRing } from "../../components/ui/ProgressRing";
 import type { CardTone } from "../../components/ui/SettingsCard";
 import { isAvailable, isCatalog, offerEntries, paymentOptionsCount } from "../../domain/config/document";
 import type { BusinessDocument } from "../../domain/config/types";
 import { CONFIG_SECTIONS, sectionTitle, type ConfigSectionId } from "../../domain/sections";
-import { PLAYGROUND_ITEM, REVIEW_ITEM, sectionPath, stepLabel } from "../../navigation/navItems";
+import { AI_ITEM, PLAYGROUND_ITEM, REVIEW_ITEM, sectionPath, stepLabel, type CreatedFromTemplate } from "../../navigation/navItems";
 import { useWorkspacePath } from "../../navigation/useWorkspacePath";
 import { NAV_ICONS } from "../../layout/navIcons";
 import { useConfig } from "../../state/useConfig";
@@ -57,9 +58,18 @@ export function AssistantOverviewPage() {
   const pathTo = useWorkspacePath();
   const nextPending = progress.sections.find((section) => section.status === "pending");
   const name = document.identity.name.trim() || "Tu negocio";
+  const fromTemplate = (useLocation().state as CreatedFromTemplate | null)?.template;
 
   return (
     <>
+      {fromTemplate && (
+        <Alert tone="info" title={`Empezaste con la plantilla «${fromTemplate}»`}>
+          <p>
+            Ya trae productos, precios y textos de ejemplo. Cámbialos por los tuyos sección por sección, agrega tus medios de pago y tu{" "}
+            <Link to={pathTo(AI_ITEM.path)}>clave de IA</Link>, pruébalo y publícalo: nada le llega a tus clientes hasta que publiques.
+          </p>
+        </Alert>
+      )}
       <header className="overview-hero">
         <div className="overview-hero__text">
           <p className="overview-hero__eyebrow">{name}</p>

@@ -125,6 +125,14 @@ para qué sirve; las avanzadas son plegables (elemento `<details>`, accesible po
 `icon` se dibuja igual, así los formularios existentes no cambian de estructura. El resumen (`features/overview`) muestra cada sección
 con su estado, sus datos clave y el acceso a probar y publicar; es la entrada desde el menú.
 
+### D8c — Plantillas para empezar un negocio
+
+Crear un negocio empieza por elegir cómo: «Empezar de cero» (la primera opción, que no es una plantilla) o una plantilla de
+`GET /api/business-templates`. Las plantillas viven en el servidor (`project/config/business-templates/*.json`), validadas contra el
+contrato al arrancar la API (`business_config_application/templates.py`, `domain/business_config/templates.py`); el panel solo recibe
+título, descripción e ícono, y `POST /api/businesses` con `template` guarda el primer borrador. Al abrirse, el resumen avisa que hay
+que cambiar los ejemplos y agregar los medios de pago: nada se publica solo.
+
 ### D9 — API separada del motor y limitada a este equipo
 
 `app.main` publica rutas del motor y en Docker escucha en `0.0.0.0`. La API del panel es otra aplicación, con el host fijo a `127.0.0.1`

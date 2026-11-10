@@ -1,0 +1,272 @@
+{
+  "id": "restaurante",
+  "order": 1,
+  "title": "Restaurante o comida a domicilio",
+  "description": "Menú con precios, domicilio y recogida en el local.",
+  "icon": "utensils",
+  "document": {
+    "schema_version": "1.0",
+    "identity": {
+      "name": "",
+      "industry": "Restaurante con domicilios",
+      "description": "Restaurante de hamburguesas artesanales con domicilio y para recoger en el local.",
+      "value_proposition": "Hamburguesas artesanales recién hechas que llegan calientes a tu casa.",
+      "positioning": "La hamburguesa artesanal del barrio, fácil de pedir por chat.",
+      "differentiators": [
+        "Carne artesanal preparada al momento",
+        "Domicilio propio",
+        "Pedido fácil por chat"
+      ],
+      "location": {
+        "type": "fisico",
+        "coverage": {
+          "type": "local",
+          "zones": []
+        }
+      },
+      "service_modes": [
+        "domicilio",
+        "presencial",
+        "recoger"
+      ],
+      "target_customer": {
+        "segment": "Personas y familias que piden comida a domicilio"
+      }
+    },
+    "offer": {
+      "model": "catalog",
+      "catalog": {
+        "categories": [
+          {
+            "id": "hamburguesas",
+            "name": "Hamburguesas"
+          },
+          {
+            "id": "bebidas",
+            "name": "Bebidas"
+          }
+        ],
+        "items": [
+          {
+            "id": "hamburguesa_sencilla",
+            "name": "Hamburguesa sencilla",
+            "category": "hamburguesas",
+            "description": "Carne artesanal, queso y vegetales frescos.",
+            "prices": [
+              {
+                "currency": "COP",
+                "amount": 18000
+              }
+            ],
+            "available": true
+          },
+          {
+            "id": "hamburguesa_doble",
+            "name": "Hamburguesa doble",
+            "category": "hamburguesas",
+            "description": "Doble carne, doble queso y salsa especial.",
+            "prices": [
+              {
+                "currency": "COP",
+                "amount": 24000
+              }
+            ],
+            "available": true
+          },
+          {
+            "id": "gaseosa",
+            "name": "Gaseosa",
+            "category": "bebidas",
+            "description": "Bebida gaseosa fría para acompañar el pedido.",
+            "prices": [
+              {
+                "currency": "COP",
+                "amount": 5000
+              }
+            ],
+            "available": true
+          },
+          {
+            "id": "jugo_natural",
+            "name": "Jugo natural",
+            "category": "bebidas",
+            "description": "Jugo del día sin azúcar adicionada.",
+            "prices": [
+              {
+                "currency": "COP",
+                "amount": 7000
+              }
+            ],
+            "available": true
+          }
+        ]
+      }
+    },
+    "terms": {
+      "conditions": [
+        "Los precios del menú están sujetos a la disponibilidad del día."
+      ],
+      "price_framing": "directo",
+      "financing": {
+        "available": false,
+        "providers": [],
+        "options": []
+      }
+    },
+    "payments": [],
+    "sales": {
+      "pain_points": [
+        "tengo hambre y no quiero esperar mucho",
+        "no sé qué pedir"
+      ],
+      "benefits": [
+        "comer rico sin salir de casa",
+        "recibir el pedido caliente"
+      ],
+      "offer_mix": {
+        "core": [
+          "hamburguesa_sencilla",
+          "hamburguesa_doble"
+        ],
+        "upsell": [
+          "hamburguesa_doble"
+        ],
+        "cross_sell": [
+          "gaseosa",
+          "jugo_natural"
+        ]
+      },
+      "discovery": {
+        "objectives": [
+          "saber qué se le antoja y para cuántas personas es el pedido"
+        ]
+      },
+      "support": {
+        "explain_first": true,
+        "sell_after": true
+      },
+      "conversation_flow": {
+        "required_flow": [
+          "detect_pain",
+          "present_solution",
+          "guide_next_step"
+        ]
+      },
+      "closing": {
+        "strategy": "direct_sale",
+        "required_data": [
+          "name",
+          "phone",
+          "address"
+        ],
+        "purchase_signals": [
+          "quiero pedir",
+          "quiero ordenar",
+          "lo quiero",
+          "me la mandas"
+        ],
+        "next_steps": [
+          "confirmar el pedido",
+          "enviar la orden a cocina",
+          "validar la dirección de entrega"
+        ],
+        "rules": [
+          "Cuando el cliente quiera pedir, confirma el pedido sin dar más vueltas.",
+          "No frenes el pedido con preguntas innecesarias."
+        ]
+      }
+    },
+    "capabilities": {
+      "service_channels": [
+        "whatsapp"
+      ],
+      "product_channels": [],
+      "actions_primary": [
+        "tomar_pedido",
+        "cerrar_venta"
+      ],
+      "actions_support": [
+        "responder_dudas",
+        "seguimiento",
+        "confirmar_datos"
+      ],
+      "closing_methods": {
+        "payment_link": false,
+        "human_handoff": true,
+        "data_collection": true
+      },
+      "data_collection": {
+        "enabled": true,
+        "fields": [
+          "nombre",
+          "telefono",
+          "direccion",
+          "detalles"
+        ]
+      }
+    },
+    "messages": {
+      "welcome": {
+        "enabled": true,
+        "text": "¡Hola! Bienvenido. ¿Qué se te antoja hoy? Te cuento el menú y te tomamos el pedido."
+      },
+      "payment_reported": "Perfecto, ya lo reviso y te confirmo en un momento.",
+      "payment_confirmed": "¡Listo! Tu pago quedó confirmado. Seguimos con el siguiente paso."
+    },
+    "response_style": {
+      "tone": "cercano, ágil y amable",
+      "voice": "clara y rápida",
+      "length": "short",
+      "max_words": 60
+    },
+    "knowledge": {
+      "faqs": []
+    },
+    "fulfillment": {
+      "delivery": {
+        "available": true,
+        "type": "propio",
+        "zones": [],
+        "cost": {
+          "type": "fijo",
+          "value": 4000
+        },
+        "time": {
+          "min": "30 min",
+          "max": "50 min"
+        }
+      },
+      "shipping": {
+        "available": false,
+        "scope": "local",
+        "providers": [],
+        "cost": {
+          "type": "variable",
+          "value": 0
+        },
+        "time": {
+          "min": "",
+          "max": ""
+        }
+      },
+      "pickup": {
+        "available": true,
+        "instructions": "Puedes pasar a recoger tu pedido en el local."
+      },
+      "scheduling": {
+        "required": false
+      }
+    },
+    "inventory": {
+      "items": [],
+      "track_stock": false
+    },
+    "features": {
+      "pricing_enabled": true,
+      "catalog_mode": true,
+      "multi_currency": false,
+      "multi_plan": false,
+      "business_model": "catalog"
+    }
+  }
+}

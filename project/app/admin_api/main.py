@@ -24,6 +24,7 @@ from app.business_config_application.assistant_lab import AssistantLabService
 from app.business_config_application.conversations import ConversationsService, NotificationsService
 from app.business_config_application.ports import AccessTokenVerifier, ConversationStorage, NotificationStorage, UsageCounter
 from app.business_config_application.service import BusinessConfigService
+from app.business_config_application.templates import BusinessTemplateCatalog
 from app.business_config_application.usage_limits import MemoryUsageCounter, UsageGuard
 from app.domain.business_config.contract import business_config_json_schema
 
@@ -68,6 +69,7 @@ def create_app(
     conversations: ConversationStorage | None = None,
     notifications: NotificationStorage | None = None,
     usage: UsageCounter | None = None,
+    templates: BusinessTemplateCatalog | None = None,
 ) -> FastAPI:
     """La API del panel. Sin `assistant_lab`, la inteligencia artificial y el área de pruebas responden que no están disponibles.
 
@@ -88,6 +90,8 @@ def create_app(
     app.state.conversations = ConversationsService(conversations, app.state.access) if conversations is not None else None
     app.state.notifications = NotificationsService(notifications, app.state.access) if notifications is not None else None
     app.state.contract_schema = business_config_json_schema()
+    # Las plantillas para empezar un negocio: se validan aquí, al arrancar.
+    app.state.templates = templates if templates is not None else BusinessTemplateCatalog.from_directory()
 
     @app.middleware("http")
     async def guard(request: Request, call_next):

@@ -1,5 +1,5 @@
 import type { ContractSchema } from "../../domain/config/contractSchema";
-import type { BusinessSummary } from "../../domain/config/types";
+import type { BusinessSummary, BusinessTemplate } from "../../domain/config/types";
 import type { BusinessDirectory } from "../../repositories/businessDirectory";
 import type { HttpClient } from "./httpClient";
 
@@ -26,7 +26,8 @@ export function createApiBusinessDirectory(http: HttpClient, { local = true }: {
     canImportExisting: local,
     canRemove: local,
     list: async () => (await http.get<ApiSummary[]>("/businesses")).map(toSummary),
-    create: async (input) => toSummary(await http.post<ApiSummary>("/businesses", input)),
+    create: async ({ slug, name, template }) => toSummary(await http.post<ApiSummary>("/businesses", template ? { slug, name, template } : { slug, name })),
+    templates: () => http.get<BusinessTemplate[]>("/business-templates"),
     remove: (slug) => http.delete(`/businesses/${encodeURIComponent(slug)}?confirm=${encodeURIComponent(slug)}`),
     importExisting: () => http.post("/businesses/import"),
     contractSchema: () => http.get<ContractSchema>("/contract"),

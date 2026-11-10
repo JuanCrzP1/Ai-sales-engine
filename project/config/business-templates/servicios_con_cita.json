@@ -1,0 +1,185 @@
+{
+  "id": "servicios_con_cita",
+  "order": 5,
+  "title": "Servicios con cita",
+  "description": "Centro de estética, consultorio o asesorías: servicios con precio y agenda.",
+  "icon": "heart",
+  "document": {
+    "schema_version": "1.0",
+    "identity": {
+      "name": "",
+      "industry": "Centro de estética y bienestar",
+      "description": "Centro de estética con tratamientos faciales, masajes y paquetes de sesiones, con cita previa.",
+      "value_proposition": "Tratamientos profesionales para que te sientas y te veas bien, sin esperas.",
+      "positioning": "Bienestar profesional con cita previa, en un espacio tranquilo.",
+      "differentiators": [
+        "Atención con cita previa, sin esperas",
+        "Profesionales con experiencia",
+        "Productos de calidad"
+      ],
+      "location": {
+        "type": "fisico",
+        "coverage": {
+          "type": "local",
+          "zones": []
+        }
+      },
+      "service_modes": [
+        "presencial"
+      ],
+      "target_customer": {
+        "segment": "Personas que quieren cuidar su piel y relajarse"
+      }
+    },
+    "offer": {
+      "model": "plans",
+      "plans": [
+        {
+          "id": "limpieza_facial",
+          "name": "Limpieza facial profunda",
+          "description": "Limpieza, exfoliación e hidratación de 60 minutos.",
+          "prices": [
+            {
+              "currency": "COP",
+              "price": 90000
+            }
+          ],
+          "includes": [
+            "Valoración de la piel",
+            "Mascarilla hidratante"
+          ],
+          "available": true
+        },
+        {
+          "id": "masaje_relajante",
+          "name": "Masaje relajante",
+          "description": "Masaje de cuerpo completo de 60 minutos.",
+          "prices": [
+            {
+              "currency": "COP",
+              "price": 110000
+            }
+          ],
+          "available": true
+        },
+        {
+          "id": "paquete_limpiezas",
+          "name": "Paquete de 4 limpiezas faciales",
+          "description": "Cuatro sesiones para usar en dos meses.",
+          "prices": [
+            {
+              "currency": "COP",
+              "price": 320000
+            }
+          ],
+          "available": true
+        }
+      ]
+    },
+    "terms": {
+      "conditions": [
+        "Las citas se reservan con anticipación."
+      ]
+    },
+    "payments": [],
+    "sales": {
+      "benefits": [
+        "Relajarte y cuidar tu piel con profesionales",
+        "Elegir el día y la hora que te sirven"
+      ],
+      "discovery": {
+        "questions": [
+          "¿Qué te gustaría tratar o mejorar?",
+          "¿Para qué día te gustaría la cita?"
+        ]
+      },
+      "recommendation_rules": [
+        {
+          "when": "es la primera vez que viene",
+          "recommend": "limpieza_facial"
+        },
+        {
+          "when": "quiere un tratamiento continuo",
+          "recommend": "paquete_limpiezas"
+        }
+      ],
+      "closing": {
+        "strategy": "booking",
+        "required_data": [
+          "name",
+          "phone",
+          "day",
+          "hour"
+        ],
+        "purchase_signals": [
+          "quiero agendar",
+          "quiero una cita",
+          "tienen disponibilidad"
+        ],
+        "next_steps": [
+          "confirmar el servicio",
+          "proponer día y hora",
+          "confirmar los datos para la cita"
+        ],
+        "rules": [
+          "No confirmes horarios: el equipo confirma la disponibilidad."
+        ]
+      }
+    },
+    "capabilities": {
+      "service_channels": [
+        "whatsapp"
+      ],
+      "product_channels": [],
+      "actions_primary": [
+        "agendar_cita"
+      ],
+      "actions_support": [
+        "responder_dudas",
+        "confirmar_datos"
+      ],
+      "closing_methods": {
+        "payment_link": false,
+        "human_handoff": true,
+        "data_collection": true
+      },
+      "data_collection": {
+        "enabled": true,
+        "fields": [
+          "nombre",
+          "telefono",
+          "detalles"
+        ]
+      }
+    },
+    "messages": {
+      "welcome": {
+        "enabled": true,
+        "text": "¡Hola! Te damos la bienvenida. ¿Qué tratamiento te gustaría agendar?"
+      },
+      "payment_reported": "Perfecto, ya lo reviso y te confirmo en un momento.",
+      "payment_confirmed": "¡Listo! Tu pago quedó confirmado. Seguimos con el siguiente paso."
+    },
+    "response_style": {
+      "tone": "cálido, tranquilo y amable",
+      "voice": "cercana y profesional",
+      "length": "short"
+    },
+    "knowledge": {
+      "faqs": []
+    },
+    "fulfillment": {
+      "scheduling": {
+        "required": true
+      }
+    },
+    "inventory": {
+      "items": []
+    },
+    "features": {
+      "pricing_enabled": true,
+      "catalog_mode": false,
+      "business_model": "service_booking"
+    }
+  }
+}

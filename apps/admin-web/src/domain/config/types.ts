@@ -78,3 +78,12 @@ export interface Diagnostic {
   path: string;
   message: string;
 }
+
+/** Una plantilla para empezar un negocio (restaurante, tienda...): trae ejemplos para editar, nunca datos de un negocio real. */
+export interface BusinessTemplate {
+  id: string;
+  title: string;
+  description: string;
+  /** Nombre del ícono; si el panel no lo tiene, usa uno genérico. */
+  icon: string;
+}

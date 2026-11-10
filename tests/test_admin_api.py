@@ -1074,6 +1074,7 @@ def test_the_api_only_has_the_routes_of_the_panel(api):
         ("GET", "/contract"),
         ("GET", "/businesses"),
         ("POST", "/businesses"),
+        ("GET", "/business-templates"),
         ("POST", "/businesses/import"),
         ("DELETE", business),
         ("GET", f"{business}/config"),
