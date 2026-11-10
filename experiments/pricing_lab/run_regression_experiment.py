@@ -1,7 +1,9 @@
 """Experimento de regresión comercial: BASELINE (un commit anterior) frente a CANDIDATE (el árbol de trabajo actual).
 
 Reutiliza lo que ya tiene el laboratorio: la conversación dorada, las métricas del prompt y los evaluadores. Cada lado corre
-en su propia copia del código, sin `.env`, con la memoria en RAM y la red bloqueada. El motor no se toca: solo se sustituye el
+en su propia copia del código, sin `.env`, con la memoria en RAM y la red bloqueada. Como el motor solo lee lo publicado, cada copia
+arma su almacén temporal con los negocios de ejemplo importados de sus YAML, cada uno con una clave de IA ficticia, y el webhook de
+WhatsApp se prueba con la firma de Meta. El motor no se toca: solo se sustituye el
 transporte hacia el proveedor del modelo, así que se compara la petición exacta que saldría hacia él.
 
 Sin `--live-model` no se llama a ningún modelo: cada turno recibe la respuesta real registrada en
@@ -20,6 +22,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import hmac
 import io
 import json
 import logging
@@ -48,6 +51,8 @@ DEFAULT_CHANNEL = "whatsapp"
 LAB_USER_ID = "pricing-lab-user"
 PROVIDER_HOSTS = {"openrouter.ai"}
 PLACEHOLDER_KEY = "clave-ficticia-del-laboratorio"
+# Secreto de la app de Meta solo para el laboratorio: el webhook exige la firma `X-Hub-Signature-256` y la sonda firma con este.
+LAB_META_APP_SECRET = "secreto-de-meta-del-laboratorio"
 SAFE_ENV_NAMES = ("PATH", "SYSTEMROOT", "WINDIR", "TEMP", "TMP", "USERPROFILE", "APPDATA", "LOCALAPPDATA", "COMSPEC", "PATHEXT", "HOME", "LANG")
 
 # La secuencia de la orden del experimento: la conversación dorada con el punto final de los turnos 1, 2, 3 y 10.
@@ -156,6 +161,7 @@ def child_env(api_key: str, *, live: bool) -> dict[str, str]:
             "DATABASE_URL": "sqlite:///:memory:",
             "ENABLE_FILE_LOGS": "0",
             "OPENROUTER_API_KEY": api_key,
+            "META_APP_SECRET": LAB_META_APP_SECRET,
             "PYTHONIOENCODING": "utf-8",
             "PYTHONDONTWRITEBYTECODE": "1",
         }
@@ -429,9 +435,48 @@ def _probe_webhook(client, model, api_prefix: str, tenant_slug: str) -> dict:
         payload = {
             "entry": [{"changes": [{"value": {"metadata": {"phone_number_id": "000000000000000"}, "messages": [{"from": "570000000000", "id": "wamid.laboratorio", "type": "text", "text": {"body": text}}]}}]}]
         }
-        response = client.post(f"{api_prefix}/whatsapp/webhook", json=payload)
+        # Firmado como lo firma Meta: sin firma válida, el webhook rechaza el mensaje antes de llegar al motor.
+        body = json.dumps(payload).encode("utf-8")
+        signature = "sha256=" + hmac.new(LAB_META_APP_SECRET.encode("utf-8"), body, hashlib.sha256).hexdigest()
+        response = client.post(f"{api_prefix}/whatsapp/webhook", content=body, headers={"Content-Type": "application/json", "X-Hub-Signature-256": signature})
         rows.append({"message": text, "status": response.status_code, "body": response.json(), "model_calls": len(model.calls), "prompt_sha256": [digest(str((call["payload"].get("messages") or [{}])[0].get("content") or "")) for call in model.calls]})
     return {"turns": rows, "sent": sent}
+
+
+def _prepare_platform_store() -> str:
+    """El almacén de esta copia, como en producción: los negocios de ejemplo de sus YAML, importados y publicados.
+
+    El motor solo lee lo publicado (desde la Fase 1), así que cada lado necesita su almacén. Se crea dentro de la copia, con su
+    propio código y su propia clave, antes de que nada importe la configuración del motor. Devuelve cómo se armó."""
+    from cryptography.fernet import Fernet
+
+    path = REPO_ROOT / ".almacen-laboratorio" / "negocios.sqlite3"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    url = f"sqlite:///{path.as_posix()}"
+    os.environ["BUSINESS_CONFIG_DATABASE_URL"] = url
+    os.environ["BUSINESS_CONFIG_SECRETS_KEY"] = Fernet.generate_key().decode()
+    try:
+        from app.infrastructure.business_config.database import (
+            build_business_config_service,
+            create_business_config_engine,
+            create_local_schema,
+        )
+        from app.infrastructure.config.config_service import ConfigService
+        from app.infrastructure.config.legacy_store_migration import import_all
+    except ImportError:
+        return "YAML (código anterior al almacén)"
+    engine = create_business_config_engine(url)
+    create_local_schema(engine)
+    report = import_all(build_business_config_service(engine, secrets_key=os.environ["BUSINESS_CONFIG_SECRETS_KEY"]), ConfigService())
+    # Cada negocio responde con su propia clave de IA (la plataforma no tiene ninguna). Aquí todos reciben la del laboratorio: la
+    # ficticia, que nunca sale porque la red está bloqueada, o la real con `--live-model`.
+    from app.infrastructure.business_config.ai_settings_store import AISettingsStore
+
+    keys = AISettingsStore(engine, os.environ["BUSINESS_CONFIG_SECRETS_KEY"])
+    for slug in report.created:
+        keys.save_ai_settings(slug, model=None, api_key=os.environ["OPENROUTER_API_KEY"], clear_key=False)
+    engine.dispose()
+    return f"lo publicado en un almacén temporal ({len(report.created)} negocios importados de sus YAML, cada uno con su clave)"
 
 
 def capture(settings: dict) -> int:
@@ -441,6 +486,7 @@ def capture(settings: dict) -> int:
     logging.disable(logging.CRITICAL)
     for path in (str(LAB_DIR), str(PROJECT_DIR)):
         sys.path.insert(0, path)
+    config_source = _prepare_platform_store()
 
     import requests
 
@@ -530,7 +576,7 @@ def capture(settings: dict) -> int:
         "environment": {
             "python": platform.python_version(),
             "dependencies": {name: package_metadata.version(name) for name in ("cryptography", "pydantic-settings", "requests", "fastapi", "pydantic", "SQLAlchemy", "PyYAML", "httpx")},
-            "contract_tenants": os.environ.get("BUSINESS_CONFIG_CONTRACT_TENANTS", ""),
+            "config_source": config_source,
             "memory_repository": type(GLOBAL_MEMORY_REPOSITORY).__name__,
             "subscription_guard_stubbed": subscription_stubbed,
             "env_file_present": False,
@@ -597,7 +643,7 @@ def report(settings: dict) -> int:
 
     from evaluate_conversations import enrich_metrics_payload
 
-    from app.application.runtime.tenant_runtime_loader import _load_legacy_sections
+    from app.infrastructure.config.legacy_store_migration import read_tenant_sections
     from app.domain.business_config.payment_data import REDACTED_PAYMENT_VALUE, payment_values
     from app.infrastructure.config.config_service import ConfigService
 
@@ -605,7 +651,7 @@ def report(settings: dict) -> int:
     secrets: set[str] = set()
     for directory in service.tenants_root.iterdir():
         if (directory / "pricing.yaml").is_file():
-            secrets.update(payment_values(_load_legacy_sections(service, directory.name)))
+            secrets.update(payment_values(read_tenant_sections(service, directory.name)))
     ordered_secrets = sorted(secrets, key=len, reverse=True)
 
     def redact(value):
@@ -727,7 +773,7 @@ def report(settings: dict) -> int:
     lines += [
         f"| Modelo pedido | {next((item['model'] for row in baseline['conversation'] for item in row['requests']), '-')} | {first_request.get('model', '-')} |",
         f"| Temperatura y límite de tokens | {next((item['temperature'] for row in baseline['conversation'] for item in row['requests']), '-')} y {next((item['max_tokens'] for row in baseline['conversation'] for item in row['requests']), '-')} | {first_request.get('temperature', '-')} y {first_request.get('max_tokens', '-')} |",
-        f"| Fuente de configuración | YAML | YAML (`BUSINESS_CONFIG_CONTRACT_TENANTS` vacía) |",
+        f"| Fuente de configuración | {base_env.get('config_source', 'YAML')} | {candidate_env.get('config_source', 'YAML')} |",
         f"| Memoria | {base_env['memory_repository']}, en RAM sin PostgreSQL | {candidate_env['memory_repository']}, en RAM sin PostgreSQL |",
         f"| Control de suscripción | {'existe; se da por activa para poder conversar' if base_env['subscription_guard_stubbed'] else 'no existe'} | {'existe; se da por activa para poder conversar' if candidate_env['subscription_guard_stubbed'] else 'retirado'} |",
         f"| `.env` | no existe en la copia | no existe en la copia |",

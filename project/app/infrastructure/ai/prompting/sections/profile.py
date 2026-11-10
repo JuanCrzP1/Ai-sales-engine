@@ -1,17 +1,22 @@
 """Bloque «PERFIL COMERCIAL DEL NEGOCIO» del prompt y tono de su línea de estilo.
 
-Salen de `config.profile`, que solo existe cuando la configuración del negocio viene del contrato
-(`app/domain/business_config/commercial_profile.py`): con los YAML no hay bloque y la línea de estilo es la de siempre.
+Sale de `config.profile`, que compila el contrato (`app/domain/business_config/commercial_profile.py`).
 
 - En la presentación van los datos del negocio y sus reglas; en una conversación en curso, solo las reglas (instrucciones y
   promociones vigentes), para que el prompt no crezca en cada turno.
 - Las promociones vencidas no se ofrecen.
 - Las descripciones van completas: el contrato limita su largo (`MAX_*_CHARS`) y el panel no deja escribir más.
+- El detalle de la oferta (planes o productos) va entero si cabe en `OFFER_DETAILS_PROMPT_MAX_CHARS`; si no, lo más relacionado con lo
+  que busca el cliente (`relevance.py`) y un aviso de cuántas opciones más hay.
 """
 from __future__ import annotations
 
 from datetime import date
 from typing import Any
+
+from app.domain.business_config.engine_policy import OFFER_DETAILS_PROMPT_MAX_CHARS
+from app.infrastructure.ai.prompting import instructions, relevance
+from app.infrastructure.ai.prompting.text import sentence as _sentence
 
 
 PROFILE_HEADER = "PERFIL COMERCIAL DEL NEGOCIO:"
@@ -21,7 +26,6 @@ PROMOTIONS_HEADER = "Promociones vigentes (no ofrezcas otras promociones ni desc
 
 _LOCATION_TYPES = {"virtual": "atención virtual", "fisico": "local físico", "mixto": "local físico y atención virtual"}
 _SERVICE_MODES = {"virtual": "virtual", "presencial": "presencial", "domicilio": "a domicilio", "recoger": "para recoger", "envio": "con envío"}
-_SENTENCE_ENDINGS = (".", "!", "?", "…")
 
 
 def _dict(value: Any) -> dict:
@@ -36,11 +40,6 @@ def _texts(value: Any) -> list[str]:
     return [text for item in value if (text := str(item or "").strip())] if isinstance(value, list) else []
 
 
-def _sentence(text: str) -> str:
-    text = text.strip()
-    return text if not text or text.endswith(_SENTENCE_ENDINGS) else f"{text}."
-
-
 def _clean(value: Any) -> str:
     return " ".join(str(value or "").split())
 
@@ -50,12 +49,12 @@ def _section(header: str, items: list[str]) -> list[str]:
 
 
 def business_profile(runtime: dict) -> dict:
-    """El perfil compilado desde el contrato; vacío si la configuración viene de los YAML."""
+    """El perfil compilado desde el contrato; vacío si el negocio no lo tiene."""
     return _dict(_dict(_dict(runtime).get("config")).get("profile"))
 
 
 def response_tone(runtime: dict) -> str:
-    """El tono para la línea ESTILO: el del negocio o, sin perfil, el de siempre."""
+    """El tono para la línea ESTILO: el del negocio o, si no lo definió, uno natural y claro."""
     return str(business_profile(runtime).get("tone") or "").strip() or DEFAULT_TONE
 
 
@@ -74,10 +73,12 @@ def _location_lines(location: dict) -> list[str]:
     return lines
 
 
-def _offer_details(runtime: dict) -> list[str]:
-    """Planes y productos que se ofrecen, con su descripción y características. Salen de `pricing`, como el resto del prompt."""
+def _offer_details(runtime: dict, query: str = "") -> list[str]:
+    """Planes y productos que se ofrecen, con su descripción y características. Salen de `pricing`, como el resto del prompt.
+
+    Si no caben todos, los más relacionados con lo que busca el cliente, y al final cuántos quedan por fuera."""
     pricing = _dict(_dict(runtime).get("pricing"))
-    details = []
+    details: list[str] = []
     for offer in [*_dicts(pricing.get("plans")), *_dicts(_dict(pricing.get("catalog")).get("items"))]:
         name = str(offer.get("name") or "").strip()
         description = _clean(offer.get("description"))
@@ -87,10 +88,13 @@ def _offer_details(runtime: dict) -> list[str]:
             parts.append(_sentence(f"Características: {', '.join(features)}"))
         if name and parts:
             details.append(f"{name}: {' '.join(parts)}")
-    return details
+    shown = relevance.select(details, size=lambda line: len(line) + 3, text=lambda line: line, query=query, max_chars=OFFER_DETAILS_PROMPT_MAX_CHARS)
+    if len(shown) < len(details):
+        shown.append(instructions.MORE_OFFERS.format(count=len(details) - len(shown)))
+    return shown
 
 
-def _fact_lines(profile: dict, runtime: dict) -> list[str]:
+def _fact_lines(profile: dict, runtime: dict, query: str) -> list[str]:
     """Quién es el negocio y qué ofrece: solo en la presentación."""
     lines = []
     name = str(profile.get("name") or "").strip()
@@ -117,7 +121,7 @@ def _fact_lines(profile: dict, runtime: dict) -> list[str]:
         if (when := str(rule.get("when") or "").strip()) and (recommend := str(rule.get("recommend") or "").strip())
     ]
     lines += _section("Recomendaciones:", recommendations)
-    lines += _section("Detalle de la oferta:", _offer_details(runtime))
+    lines += _section("Detalle de la oferta:", _offer_details(runtime, query))
     return lines
 
 
@@ -145,10 +149,12 @@ def _rule_lines(profile: dict, today: date) -> list[str]:
     return _section("Instrucciones del negocio:", _texts(profile.get("instructions"))) + _section(PROMOTIONS_HEADER, promotions)
 
 
-def build_business_profile_context(runtime: dict, *, include_facts: bool = True, today: date | None = None) -> str:
-    """El bloque del perfil, o "" si no hay perfil o, en una conversación en curso, no hay reglas que recordar."""
+def build_business_profile_context(runtime: dict, *, include_facts: bool = True, today: date | None = None, query: str = "") -> str:
+    """El bloque del perfil, o "" si no hay perfil o, en una conversación en curso, no hay reglas que recordar.
+
+    `query` es lo que busca el cliente: elige qué parte de un catálogo grande va al prompt."""
     profile = business_profile(runtime)
     if not profile:
         return ""
-    lines = (_fact_lines(profile, runtime) if include_facts else []) + _rule_lines(profile, today or date.today())
+    lines = (_fact_lines(profile, runtime, query) if include_facts else []) + _rule_lines(profile, today or date.today())
     return "\n".join([PROFILE_HEADER, *lines]) if lines else ""

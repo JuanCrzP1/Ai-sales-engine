@@ -85,36 +85,11 @@ from app.domain.operations.operational_extractor import extract_op_state
 from app.domain.operations.operational_renderer import render_op_anchor, render_op_rule
 from app.domain.operations.operational_state import OperationalState
 from app.utils.logger import logger
+from app.infrastructure.ai.prompting.instructions import CHANNEL_FRAME
 
 
-FRAME_BLOCK = """
-MODO DE RESPUESTA:
-
-Responde como alguien que vende por chat.
-
-NO respondas como inventario.
-
-Habla en términos de oferta o solución,
-no en listas de ítems.
-
-Cuando expliques:
-- sé directo
-- muéstrale para qué le sirve
-- avanza la conversación
-
-Si preguntan por precio, di cuánto es, qué trae, qué no trae, y llevalo a elegir o decidir.
-
-Siempre deja la conversación abierta con una pregunta concreta.
-
-Puedes usar ejemplos concretos.
-Habla como si estuvieras explicándole a un cliente real.
-Evita frases genéricas de cierre.
-
-Si ya existe contexto de pago en memoria, trátalo como continuidad del mismo proceso.
-Si el usuario elige un método de pago, mantén intent=buy e incluye payment_method en la metadata.
-Si el usuario reporta que ya pagó, mantén intent=buy e incluye payment_status=reportado en la metadata.
-No reinicies el flujo ni vuelvas a ofrecer el método de pago si el usuario ya reportó el pago.
-""".strip()
+# El marco del canal (cómo responde quien vende por chat) es una instrucción fija de la plataforma: vive con las demás.
+FRAME_BLOCK = CHANNEL_FRAME
 
 def validate_runtime_yaml(runtime_yaml: dict) -> None:
     required = ["sales", "business", "pricing", "inventory", "config"]

@@ -29,6 +29,7 @@ hallazgo dice dónde está y cómo se comprobó. Ninguna fase se da por terminad
 | T2 | Hecho | El panel usa las cuatro intenciones del motor; una prueba compara ambos lados. |
 | Modelo de IA | Hecho | El panel lista los modelos de OpenRouter que responden en JSON (consulta pública, guardada una hora), con buscador, recomendados y el costo aproximado de 1.000 respuestas. El servidor no guarda un modelo que no esté en la lista. |
 | A1, A2, Q5 | Hecho (Fase 1) | El motor solo lee lo publicado; un negocio creado en el panel responde sin carpeta YAML. Si la base falla, mensaje neutro y alerta, nunca el YAML. El mensaje de respaldo se escribe en el panel. Sin negocio por defecto. |
+| Q1, Q2 | Hecho (Fase 2) | Prompt por bloques (`prompting/`): instrucciones fijas en un archivo, un módulo por bloque, compositor con presupuesto por bloque. La identidad del negocio va en todos los mensajes. Un catálogo grande ya no infla el prompt: con 300 productos mide lo mismo que con 20. Verificado con el laboratorio (`exp_20261110_fase2*`). |
 | T3 | Hecho | Cada respuesta suma a `ai_usage` (migración 0007) por negocio, día y modelo, con el costo si OpenRouter lo informa. El panel lo muestra en «Inteligencia artificial». |
 
 ## 2. Cómo funcionaba antes y cómo funciona hoy
@@ -201,8 +202,19 @@ Cómo quedó:
 
 ### Fase 2: prompt modular y sin doble consumo (L)
 
-- Prompt por bloques (sección 5), reemplazando `prompt_builder.py` (Q2).
-- Bloque de identidad en todos los mensajes (Q1).
+- ~~Prompt por bloques (sección 5), reemplazando `prompt_builder.py` (Q2).~~ Hecho: `infrastructure/ai/prompting/` con
+  `instructions.py`, `sections/` (un módulo por bloque, ninguno de más de 220 líneas), `composer.py`, `budgets.py` y `relevance.py`.
+- ~~Bloque de identidad en todos los mensajes (Q1).~~ Hecho: nombre, sector y promesa en cada mensaje.
+- Hecho además: el catálogo (detalle de la oferta y lista de precios) entra entero si cabe; si no, lo más relacionado con lo que
+  busca el cliente y cuántas opciones más hay. Antes, 300 productos eran unos 205.000 caracteres por mensaje; ahora unos 23.500 en
+  el peor caso (todo el contrato al máximo).
+
+Cómo se verificó (laboratorio de regresión contra la versión en producción, `ea82a36`):
+1. `exp_20261110_fase2_linea_base`: línea base; control negativo (una palabra cambiada) detectado en los 9 negocios.
+2. `exp_20261110_fase2a_prompt_modular`: la reorganización, sin cambiar nada: motor sin diferencias, más 288 prompts idénticos
+   byte a byte (9 negocios × 2 canales × 16 estados de conversación).
+3. `exp_20261110_fase2b_identidad_y_catalogo`: los cambios intencionales. Solo cambian las líneas de identidad; respuestas,
+   intenciones, uso de IA, modelo, webhook y configuración de los 9 negocios, idénticos.
 - ~~Salida estructurada del proveedor: sin repetir la llamada completa (T1).~~ Hecho: `json_object` y aprovechamiento sin repetir.
 - ~~Un solo juego de intenciones en motor y panel (T2).~~ Hecho.
 - ~~Guardar el consumo de tokens por negocio (T3).~~ Hecho: por negocio, día y modelo, visible en el panel.

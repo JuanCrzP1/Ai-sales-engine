@@ -9,7 +9,7 @@ if str(PROJECT_DIR) not in sys.path:
     sys.path.insert(0, str(PROJECT_DIR))
 
 from app.application.runtime import load_tenant_runtime_yaml
-from app.infrastructure.ai.prompting.builder.prompt_builder import detect_business_model, resolve_business_model
+from app.infrastructure.ai.prompting.business_model import detect_business_model, resolve_business_model
 
 
 def _business_model_for_runtime(runtime_yaml: dict) -> str:

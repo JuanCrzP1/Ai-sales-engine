@@ -32,6 +32,22 @@ if str(PROJECT_DIR) not in sys.path:
 from app.services.ai_service import AIService
 
 
+def _capabilities_block(runtime: dict) -> str:
+    """El bloque de capacidades del prompt para ese runtime."""
+    from app.infrastructure.ai.prompting.sections import capabilities
+    from app.infrastructure.ai.prompting.view import PromptView
+
+    return capabilities.render(PromptView(runtime))
+
+
+def _post_payment_block(runtime: dict) -> str:
+    """El bloque de post-pago del prompt para ese runtime."""
+    from app.infrastructure.ai.prompting.sections import post_payment
+    from app.infrastructure.ai.prompting.view import PromptView
+
+    return post_payment.render(PromptView(runtime))
+
+
 def _tenant(slug: str = "asesor_ai_prod") -> SimpleNamespace:
     return SimpleNamespace(name=slug, slug=slug, id=slug)
 
@@ -393,7 +409,7 @@ def test_prompt_builder_injects_capabilities_block() -> None:
 
 
 def test_prompt_builder_supports_split_capability_channels_without_changing_actions() -> None:
-    capabilities_context = PromptBuilderService.build_capabilities_context(
+    capabilities_context = _capabilities_block(
         {
             "config": {
                 "capabilities": {

@@ -464,7 +464,7 @@ Revisar:
 
 Revisar:
 
-- `prompt_builder.py`
+- `prompting/composer.py` y `prompting/sections/` (el bloque que corresponda)
 - `prompt_context.py`
 - `structured_output.py`
 - `response_guard.py`

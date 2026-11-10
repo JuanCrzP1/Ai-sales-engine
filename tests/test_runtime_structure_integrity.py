@@ -28,7 +28,7 @@ if str(PROJECT_DIR) not in sys.path:
 from app.application.pipeline.ai_execution import validate_runtime_yaml as validate_execution_runtime
 from app.application.runtime import load_tenant_runtime_yaml
 from app.infrastructure.ai.prompting.builder.prompt_builder import PromptBuilderService
-from app.infrastructure.ai.prompting.builder.prompt_builder import validate_runtime_yaml as validate_prompt_runtime
+from app.infrastructure.ai.prompting.view import validate_runtime_yaml as validate_prompt_runtime
 from app.infrastructure.config.config_service import ConfigService
 from app.services.ai_service import AIService
 

@@ -83,7 +83,7 @@ Contiene:
 
 ---
 
-### `PromptBuilderService` — `project/app/infrastructure/ai/prompting/builder/prompt_builder.py`
+### `PromptBuilderService` — `project/app/infrastructure/ai/prompting/` (bloques en `sections/`, orden en `composer.py`, textos fijos en `instructions.py`)
 
 Construye el prompt del sistema que recibe el LLM. Ensambla bloques de contexto a partir del `runtime_yaml`. Es la capa más crítica del sistema AI-first: todo cambio aquí afecta directamente el comportamiento del modelo.
 
@@ -133,7 +133,7 @@ Los siguientes archivos **no deben modificarse** sin completar una auditoría t�
 
 | Archivo | Razón del freeze |
 |---|---|
-| `prompt_builder.py` | Núcleo del sistema AI-first. Cambios aquí modifican el comportamiento de toda la IA para todos los tenants. |
+| `prompting/` (`instructions.py`, `composer.py`, `sections/`) | Núcleo del sistema AI-first. Cambios aquí modifican el comportamiento de toda la IA para todos los tenants: se comprueban con el laboratorio de regresión (`experiments/pricing_lab/run_regression_experiment.py`). |
 | `ai_execution.py` | Orquestación de la llamada al LLM y contrato de structured output (FRAME_BLOCK). |
 | `conversation_flow.py` | Estado de la conversación y manejo del mensaje inicial. |
 | `memory_repository.py` | Contrato de persistencia. Su modificación afecta todos los flujos de memoria. |
@@ -166,7 +166,7 @@ Antes de cualquier cambio en archivos congelados:
 
 Los siguientes tipos de cambio son de alto riesgo y requieren una fase numerada con informe previo:
 
-- Modificar cualquier bloque del prompt en `prompt_builder.py` (`GROUNDING_BLOCK`, `COMMERCIAL_BEHAVIOR_BLOCK`, `FRAME_BLOCK`, etc.)
+- Modificar cualquier instrucción del prompt en `prompting/instructions.py` (`GROUNDING`, `COMMERCIAL_BEHAVIOR`, `CHANNEL_FRAME`, etc.) o el orden de los bloques en `prompting/composer.py`
 - Cambiar el formato del `history_summary` (afecta continuidad de conversación)
 - Modificar el contrato de structured output (campos `intent`, `payment_method`, `payment_status`)
 - Tocar `ejecutar_pago()` o `_resolve_post_payment_message()`

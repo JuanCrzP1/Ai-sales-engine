@@ -13,8 +13,8 @@ from pathlib import Path
 from app.domain.business_config.commercial_profile import compile_knowledge, compile_profile
 from app.domain.business_config.contract import BusinessConfig
 from app.domain.business_config.engine_policy import FAQ_PROMPT_MAX_CHARS
-from app.infrastructure.ai.prompting.business_knowledge import KNOWLEDGE_HEADER, build_knowledge_context, select_faqs
-from app.infrastructure.ai.prompting.business_profile import (
+from app.infrastructure.ai.prompting.sections.knowledge import KNOWLEDGE_HEADER, build_knowledge_context, select_faqs
+from app.infrastructure.ai.prompting.sections.profile import (
     DEFAULT_TONE,
     PROFILE_HEADER,
     build_business_profile_context,

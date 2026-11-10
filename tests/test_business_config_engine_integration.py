@@ -33,6 +33,7 @@ from app.domain.business_config.engine_policy import MAX_INDUSTRY_CHARS, MAX_VAL
 from app.domain.business_config.payment_data import iter_payment_blocks
 from app.domain.conversation.memory import MemoryDomainService
 from app.infrastructure.ai.prompting.builder.prompt_builder import PromptBuilderService
+from app.infrastructure.ai.prompting.sections.profile import build_business_profile_context
 from app.infrastructure.business_config.database import create_business_config_engine
 from app.infrastructure.business_config.runtime_access import open_published_reader
 from app.infrastructure.business_config.tables import business_configs
@@ -439,7 +440,7 @@ def test_example_document_compiles_with_every_option():
     assert profile["name"] == "La Masa Madre" and profile["tone"] == "cercano y alegre"
     assert profile["recommendations"] == [{"when": "celebra un cumpleaños", "recommend": "Torta de chocolate"}]
     assert profile["promotions"] == [{"name": "Lunes de pan", "details": "10 % de descuento en panes los lunes", "valid_until": "2030-12-31"}]
-    block = PromptBuilderService.build_business_profile_context(compiled)
+    block = build_business_profile_context(compiled)
     assert "Negocio: La Masa Madre" in block and "- Si celebra un cumpleaños: recomienda Torta de chocolate." in block
 
 
@@ -557,7 +558,7 @@ def test_active_prompt_stays_within_budget(monkeypatch):
     # asesor_ai_prod no tiene instrucciones ni promociones, las reglas que siguen en una conversación en curso: solo cambia el tono.
     assert "PERFIL COMERCIAL DEL NEGOCIO:" not in prompt
     assert "máximo 75 palabras, humano, cercano, directo y comercial de cierre." in prompt
-    assert len(prompt) < 2800
+    assert len(prompt) < 3200  # con la identidad del negocio, que desde la Fase 2 va en todos los mensajes
 
 
 def test_panel_document_is_valid_and_reaches_the_engine():
@@ -566,7 +567,7 @@ def test_panel_document_is_valid_and_reaches_the_engine():
     secrets = {}
     compiled = compile_business_config(config, lambda ref: secrets.setdefault(ref.secret_ref, f"valor-{len(secrets)}"))
     assert set(secrets) == {"secret_store:principal.link", "secret_store:principal.transfer.0.number"}
-    block = PromptBuilderService.build_business_profile_context(compiled)
+    block = build_business_profile_context(compiled)
     assert compiled["config"]["profile"]["tone"] == "cercano y amable"
     assert "- Si pide café: recomienda Croissant de mantequilla." in block
     assert "Desayuno del lunes: 10 % de descuento en desayunos los lunes" in block
@@ -626,7 +627,7 @@ CONNECTED_CASES = {
     "sector": ("saas", lambda d: d["identity"].update(industry="software contable para tiendas"), "Industria del negocio: software contable para tiendas.", 0),
     "promesa": ("saas", lambda d: d["identity"].update(value_proposition="Cuadra tu caja en minutos"), "Promesa comercial: Cuadra tu caja en minutos.", 0),
     "motivos": ("saas", lambda d: d["sales"].update(buying_motivation={"primary": "ahorro", "secondary": "control"}),
-                "Motores de compra del YAML: ahorro y control.", 0),
+                "Motores de compra: ahorro y control.", 0),
     "impactos": ("saas", lambda d: d["sales"].update(customer_problems=[{"id": "caja", "impacts": ["la caja no cuadra al cierre"]}]),
                  "Casos típicos: la caja no cuadra al cierre.", 0),
     "casos_de_uso": ("saas", lambda d: (d["sales"].pop("customer_problems", None), d["sales"].update(

@@ -410,8 +410,9 @@ lo usa solo cuando las encuentra. Un negocio que sigue con sus YAML no cambia.
 
 | Clave | En el prompt |
 |---|---|
-| `config.profile` | Bloque «PERFIL COMERCIAL DEL NEGOCIO» (`business_profile.py`). En la presentación: nombre o marca, descripción, diferenciadores, ubicación, modalidades, beneficios, argumentos, preguntas de diagnóstico, recomendaciones y detalle de la oferta. En cada turno: instrucciones y promociones vigentes. El tono reemplaza a «natural y claro» en la línea ESTILO |
-| `config.knowledge` | Bloque de preguntas frecuentes (`business_knowledge.py`): todas si caben en `FAQ_PROMPT_MAX_CHARS` (1500 caracteres); si no, las que más palabras comparten con el mensaje del cliente, en el orden del negocio |
+| `config.profile` | Bloque «PERFIL COMERCIAL DEL NEGOCIO» (`prompting/sections/profile.py`). En la presentación: nombre o marca, descripción, diferenciadores, ubicación, modalidades, beneficios, argumentos, preguntas de diagnóstico, recomendaciones y detalle de la oferta. En cada turno: instrucciones y promociones vigentes. El tono reemplaza a «natural y claro» en la línea ESTILO |
+| `config.knowledge` | Bloque de preguntas frecuentes (`prompting/sections/knowledge.py`): todas si caben en `FAQ_PROMPT_MAX_CHARS` (1500 caracteres); si no, las que más palabras comparten con el mensaje del cliente, en el orden del negocio |
+| Catálogo grande | El detalle de la oferta (perfil) y la lista de precios van enteros si caben en `OFFER_DETAILS_PROMPT_MAX_CHARS` (3000) y `PRICE_LIST_PROMPT_MAX_CHARS` (1500); si no, lo más relacionado con el mensaje del cliente y el anterior (`prompting/relevance.py`), más cuántas opciones quedan por fuera. Con 300 productos el prompt mide lo mismo que con 20 |
 | `pricing.catalog.items[].features` | Características de cada producto, en el detalle de la oferta |
 
 - Las recomendaciones apuntan por id a un plan, producto o categoría y llegan con su nombre. Las que apuntan a algo que no

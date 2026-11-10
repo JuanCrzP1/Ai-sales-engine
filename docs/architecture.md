@@ -118,15 +118,22 @@ Qué hace cada uno:
 
 Tampoco existe como archivo aislado. La construcción narrativa del turno actual se distribuye así:
 
-- `project/app/infrastructure/ai/prompting/builder/prompt_builder.py`
+- `project/app/infrastructure/ai/prompting/` (el prompt por bloques)
 - `project/app/domain/ai/prompt_context.py`
 - `project/app/services/ai/ai_orchestrator.py`
 
 En la práctica:
 
 - `prompt_context.py` resume memoria y contexto reciente.
-- `prompt_builder.py` construye el prompt final con bloques de identidad, grounding, pricing, comportamiento comercial y reglas de foco.
-- `ai_orchestrator.py` entrega ese prompt al modelo y parsea la salida estructurada.
+- `prompting/` arma el prompt de cada mensaje:
+  - `instructions.py`: las instrucciones fijas de la plataforma (reglas, guías de venta, marco del canal), en un solo lugar.
+  - `sections/`: un bloque por tema (identidad, capacidades, perfil comercial, preguntas frecuentes, ventas, memoria, estilo, precios,
+    post-pago). Cada uno recibe la vista del mensaje (`view.py`) y devuelve su texto.
+  - `composer.py`: decide qué bloques van y en qué orden según la memoria comercial, mide cada bloque contra `budgets.py` y quita los
+    datos de pago antes de que el prompt salga.
+  - `relevance.py`: cuando las preguntas frecuentes o el catálogo no caben, elige lo más relacionado con lo que busca el cliente.
+  - `builder/prompt_builder.py`: la entrada pública (`PromptBuilderService.build`), delgada.
+- `ai_orchestrator.py` entrega ese prompt al modelo, con el formato de respuesta al final, y parsea la salida estructurada.
 
 ### AI
 

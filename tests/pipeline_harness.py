@@ -15,7 +15,7 @@ from app.application.ai_pipeline import AIPipeline
 from app.domain.business_config.contract import BusinessConfig
 from app.domain.business_config.payment_data import iter_secret_refs
 from app.domain.conversation.memory import MemoryDomainService
-from app.infrastructure.ai.prompting.builder.prompt_builder import PromptBuilderService
+from app.infrastructure.ai.prompting.sections.profile import build_business_profile_context
 from app.infrastructure.business_config import runtime_access
 from app.infrastructure.business_config.database import (
     DATABASE_URL_ENV,
@@ -41,7 +41,7 @@ def as_yaml_prompt(prompt: str, runtime: dict) -> str:
     presentación, solo sus reglas en una conversación en curso) y el tono en la línea ESTILO. Lo demás debe ser idéntico a los YAML.
     """
     for include_facts in (True, False):
-        block = PromptBuilderService.build_business_profile_context(runtime, include_facts=include_facts)
+        block = build_business_profile_context(runtime, include_facts=include_facts)
         if block and f"\n\n{block}\n\n" in prompt:
             prompt = prompt.replace(f"\n\n{block}", "", 1)
             break

@@ -303,16 +303,17 @@ def test_each_conversation_has_its_own_memory(store):
     runner = EngineAssistantRunner(pipeline_factory=recorder)
     credentials = AICredentials("openrouter", None, KEY_A)
 
+    # La presentación del negocio (su descripción) solo va al empezar una conversación; su nombre va en todos los mensajes.
     def say(session, slug="restaurant"):
         runner.reply(tenant_slug=slug, sections=_sections(store, slug), credentials=credentials, session_id=session, message="¿Qué venden y a qué precio?")
         return recorder.prompts[-1]
 
-    assert "Negocio: " in say("a" * 32)
-    assert "Negocio: " not in say("a" * 32), "la misma conversación continúa"
-    assert "Negocio: " in say("b" * 32), "otra conversación empieza de cero"
-    assert "Negocio: " in say("a" * 32, slug="clinic"), "la misma sesión en otro negocio es otra conversación"
+    assert "Descripción: " in say("a" * 32)
+    assert "Descripción: " not in say("a" * 32), "la misma conversación continúa"
+    assert "Descripción: " in say("b" * 32), "otra conversación empieza de cero"
+    assert "Descripción: " in say("a" * 32, slug="clinic"), "la misma sesión en otro negocio es otra conversación"
     runner.reset(tenant_slug="restaurant", session_id="a" * 32)
-    assert "Negocio: " in say("a" * 32), "reiniciada, empieza de cero"
+    assert "Descripción: " in say("a" * 32), "reiniciada, empieza de cero"
 
 
 def test_idle_and_excess_conversations_are_forgotten():

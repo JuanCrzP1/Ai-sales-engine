@@ -60,7 +60,7 @@ PAYMENT_TEST = "test_payment_methods_reach_the_customer"
 ISOLATION_TEST = "test_tenants_stay_isolated"
 UNAVAILABLE_TEST = "test_unavailable_offer_is_not_offered"
 NOT_IN_PROMPT = "no: el prompt actual no lo usa"
-# Perfil comercial del prompt (`app/infrastructure/ai/prompting/business_profile.py`): solo con la configuración del contrato.
+# Perfil comercial del prompt (`app/infrastructure/ai/prompting/sections/profile.py`): solo con la configuración del contrato.
 IN_PROFILE = "sí: perfil comercial del prompt, con la configuración del contrato"
 PROFILE_TEST = "test_each_profile_option_reaches_the_prompt"
 CATALOG_PRICES_TEST = "test_catalog_prices_reach_the_prompt"

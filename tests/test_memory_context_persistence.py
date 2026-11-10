@@ -27,6 +27,22 @@ from app.application.runtime import load_tenant_runtime_yaml
 from app.services.ai_service import AIService
 
 
+def _capabilities_block(runtime: dict) -> str:
+    """El bloque de capacidades del prompt para ese runtime."""
+    from app.infrastructure.ai.prompting.sections import capabilities
+    from app.infrastructure.ai.prompting.view import PromptView
+
+    return capabilities.render(PromptView(runtime))
+
+
+def _post_payment_block(runtime: dict) -> str:
+    """El bloque de post-pago del prompt para ese runtime."""
+    from app.infrastructure.ai.prompting.sections import post_payment
+    from app.infrastructure.ai.prompting.view import PromptView
+
+    return post_payment.render(PromptView(runtime))
+
+
 def _tenant(slug: str = "asesor_ai_prod") -> SimpleNamespace:
     return SimpleNamespace(name=slug, slug=slug, id=slug)
 
@@ -558,8 +574,9 @@ def test_active_prompt_shorter_without_payment() -> None:
     })
     prompt, _, _ = b.build(client_config_id="asesor_ai_prod", user_message="siguiente", yaml_config=rt, faq_results=[], progression_rules=None)
     # El prompt activo sin pago debe ser claramente menor que la referencia pre-5D (3253 chars)
-    # Umbral actualizado a 2800: fase 1.1 agrega señales comerciales de pricing (~50 chars extra intencionales)
-    assert len(prompt) < 2800, f"Prompt activo sin pago demasiado largo: {len(prompt)} chars"
+    # Umbral 3200: la Fase 2 agrega la identidad del negocio en todos los mensajes (~250 caracteres intencionales; antes se perdía
+    # desde el segundo mensaje). Los presupuestos por bloque están en `prompting/budgets.py`.
+    assert len(prompt) < 3200, f"Prompt activo sin pago demasiado largo: {len(prompt)} chars"
 
 
 ## ----------------------------------------
@@ -586,7 +603,7 @@ def test_capabilities_compact_in_active_state() -> None:
             }
         },
     }
-    result = PromptBuilderService.build_capabilities_context(rt_active)
+    result = _capabilities_block(rt_active)
     assert "TIPOS DE CANALES:" not in result
     assert "CANALES DE ATENCION" not in result
     assert "Métodos de cierre: link_payment" in result
@@ -617,7 +634,7 @@ def test_capabilities_full_in_new_state() -> None:
             }
         },
     }
-    result = PromptBuilderService.build_capabilities_context(rt_new)
+    result = _capabilities_block(rt_new)
     assert "TIPOS DE CANALES:" in result
     assert "CANALES DE ATENCION (business_channels):" in result
 
@@ -640,7 +657,7 @@ def test_post_payment_absent_without_active_payment() -> None:
         "conversation_state": "active",
         "memory_context": {"last_intent": "pain", "last_ai_response": "ok"},
     })
-    result = PromptBuilderService.build_post_payment_context(rt)
+    result = _post_payment_block(rt)
     assert result == ""
 
 
@@ -662,7 +679,7 @@ def test_post_payment_present_with_active_payment() -> None:
         "conversation_state": "active",
         "memory_context": {"metodo_pago_elegido": "nequi", "estado_pago": "pendiente"},
     })
-    result = PromptBuilderService.build_post_payment_context(rt)
+    result = _post_payment_block(rt)
     assert "POST-PAGO:" in result
     assert "ON_USER_REPORT_MESSAGE:" in result
 

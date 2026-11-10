@@ -1,7 +1,7 @@
 """Políticas internas del motor que el negocio no puede modificar, y límites del contrato.
 
 Valores que el runtime actual aplica (comprobados en el código del motor; este módulo no los cambia):
-- longitud de respuesta: `ai_execution.py` y `prompt_builder.py` usan "short" y 80 palabras cuando la
+- longitud de respuesta: `ai_execution.py` y `prompting/sections/style.py` usan "short" y 80 palabras cuando la
   configuración no trae valores, con un mínimo de 20 palabras.
 - ventanas de conversación: `ConfigService.DEFAULT_CONVERSATION` y `conversation_flow.py` usan
   15 minutos (activa) y 4 horas (reinicio); un 0 se trata como "sin valor".
@@ -75,3 +75,7 @@ MAX_CUSTOMER_PROBLEMS = 10
 # Caracteres de preguntas frecuentes por prompt. Si todas caben, van todas; si no, las más relacionadas con el mensaje del cliente.
 # Con el máximo del contrato (30 de hasta 1000 caracteres) llenarían el prompt.
 FAQ_PROMPT_MAX_CHARS = 1500
+# El catálogo en el prompt (planes o productos), con el mismo criterio: si todo cabe, va todo; si no, lo más relacionado con lo que
+# pregunta el cliente y un aviso de que hay más. El contrato no limita cuántos productos tiene un negocio.
+OFFER_DETAILS_PROMPT_MAX_CHARS = 3000
+PRICE_LIST_PROMPT_MAX_CHARS = 1500

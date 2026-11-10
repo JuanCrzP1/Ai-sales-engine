@@ -1,0 +1,488 @@
+# Experimento exp_20261110_fase2b_identidad_y_catalogo
+
+- fecha: 2026-11-10T19:10:16+00:00
+- estado: PARCIAL: faltan las respuestas nuevas del modelo real, que necesitan autorización
+- baseline: `ea82a36`, Fase 1 en producción (prompt en un solo archivo de 943 líneas)
+- candidate: `ea82a36 + cambios sin commit`, estado actual
+- negocio: asesor_ai_prod | canal: whatsapp
+
+## Resultado global
+
+| Comprobación | Resultado |
+|---|---|
+| Prompt de referencia del laboratorio | **DISTINTO** |
+| Prompts de la conversación de 10 turnos | 0 de 9 idénticos |
+| Peticiones al proveedor (modelo, temperatura, límite, mensajes) | **DISTINTO** |
+| Respuestas finales tras los filtros del motor | 10 de 10 idénticas |
+| Configuración, prompts y respuestas de 9 negocios (135 turnos) | 0 de 9 idénticos |
+| Webhook de WhatsApp con número ficticio, sin envío real | **DISTINTO** |
+| Arranque del motor y `/health` | correcto e idéntico |
+| Rutas del motor | 0 retiradas, 0 nuevas, 0 sin explicar |
+| Intentos de salir a la red | 0 |
+
+## Configuración
+
+| | Baseline | Candidate |
+|---|---|---|
+| Código | `ea82a36` | `ea82a36 + cambios sin commit` |
+| Python | 3.14.5 | 3.14.5 |
+| cryptography | 50.0.0 | 50.0.0 |
+| pydantic-settings | 2.14.2 | 2.14.2 |
+| requests | 2.33.0 | 2.33.0 |
+| fastapi | 0.135.1 | 0.135.1 |
+| pydantic | 2.12.5 | 2.12.5 |
+| SQLAlchemy | 2.0.48 | 2.0.48 |
+| PyYAML | 6.0.3 | 6.0.3 |
+| httpx | 0.28.1 | 0.28.1 |
+| Modelo pedido | meta-llama/llama-3.1-8b-instruct | meta-llama/llama-3.1-8b-instruct |
+| Temperatura y límite de tokens | 0.6 y 400 | 0.6 y 400 |
+| Fuente de configuración | lo publicado en un almacén temporal (9 negocios importados de sus YAML, cada uno con su clave) | lo publicado en un almacén temporal (9 negocios importados de sus YAML, cada uno con su clave) |
+| Memoria | SQLMemoryRepository, en RAM sin PostgreSQL | SQLMemoryRepository, en RAM sin PostgreSQL |
+| Control de suscripción | no existe | retirado |
+| `.env` | no existe en la copia | no existe en la copia |
+
+El modelo pedido sale de la configuración de sistema del repositorio, porque el `.env` no se leyó. Si el `.env` real define otro, se aplica igual a los dos lados.
+
+## Diferencias detectadas
+
+### En el código, según Git
+
+| Zona | Archivos distintos |
+|---|---|
+| Prompts y cliente del modelo | 18 |
+| YAML de los negocios | 0 |
+| YAML de sistema | 0 |
+| Dependencias | 0 |
+| Integraciones: conectores y webhook | 0 |
+| BusinessConfig y API del panel | 1 |
+| Flujo de conversación del motor | 1 |
+| API del motor | 0 |
+| Ajustes del motor | 0 |
+| Documentación y esquemas | 0 |
+
+Archivos que pueden afectar al motor:
+
+- Prompts y cliente del modelo:
+  - `project/app/infrastructure/ai/prompting/budgets.py` (A, sin commit)
+  - `project/app/infrastructure/ai/prompting/builder/prompt_builder.py` (M, sin commit)
+  - `project/app/infrastructure/ai/prompting/business_model.py` (A, sin commit)
+  - `project/app/infrastructure/ai/prompting/composer.py` (A, sin commit)
+  - `project/app/infrastructure/ai/prompting/instructions.py` (A, sin commit)
+  - `project/app/infrastructure/ai/prompting/relevance.py` (A, sin commit)
+  - `project/app/infrastructure/ai/prompting/sections/__init__.py` (A, sin commit)
+  - `project/app/infrastructure/ai/prompting/sections/capabilities.py` (A, sin commit)
+  - `project/app/infrastructure/ai/prompting/sections/identity.py` (A, sin commit)
+  - `project/app/infrastructure/ai/prompting/sections/knowledge.py` (R, sin commit)
+  - `project/app/infrastructure/ai/prompting/sections/memory.py` (A, sin commit)
+  - `project/app/infrastructure/ai/prompting/sections/post_payment.py` (A, sin commit)
+  - `project/app/infrastructure/ai/prompting/sections/pricing.py` (A, sin commit)
+  - `project/app/infrastructure/ai/prompting/sections/profile.py` (R, sin commit)
+  - `project/app/infrastructure/ai/prompting/sections/sales.py` (A, sin commit)
+  - `project/app/infrastructure/ai/prompting/sections/style.py` (A, sin commit)
+  - `project/app/infrastructure/ai/prompting/text.py` (A, sin commit)
+  - `project/app/infrastructure/ai/prompting/view.py` (A, sin commit)
+- Flujo de conversación del motor:
+  - `project/app/application/pipeline/ai_execution.py` (M, sin commit)
+
+(A: nuevo, M: modificado, D: eliminado; entre paréntesis, el último commit que lo tocó.)
+
+### En el comportamiento
+
+- Turno 2: petición.prompt_sha256.
+- Turno 3: petición.prompt_sha256.
+- Turno 4: petición.prompt_sha256.
+- Turno 5: petición.prompt_sha256.
+- Turno 6: petición.prompt_sha256.
+- Turno 7: petición.prompt_sha256.
+- Turno 8: petición.prompt_sha256.
+- Turno 9: petición.prompt_sha256.
+- Turno 10: petición.prompt_sha256.
+- agencia_viajes: snapshot_sha256, turno 2: prompt_sha256, turno 3: prompt_sha256, turno 4: prompt_sha256, turno 5: prompt_sha256, turno 6: prompt_sha256.
+- asesor_ai_prod: snapshot_sha256, turno 2: prompt_sha256, turno 3: prompt_sha256, turno 4: prompt_sha256, turno 5: prompt_sha256, turno 6: prompt_sha256.
+- clinic: snapshot_sha256, turno 2: prompt_sha256, turno 3: prompt_sha256, turno 4: prompt_sha256, turno 5: prompt_sha256, turno 6: prompt_sha256.
+- demo: snapshot_sha256, turno 2: prompt_sha256, turno 3: prompt_sha256, turno 4: prompt_sha256, turno 5: prompt_sha256, turno 6: prompt_sha256.
+- ecommerce: snapshot_sha256, turno 2: prompt_sha256, turno 3: prompt_sha256, turno 4: prompt_sha256, turno 5: prompt_sha256, turno 6: prompt_sha256.
+- escuela_conduccion: snapshot_sha256, turno 2: prompt_sha256, turno 3: prompt_sha256, turno 4: prompt_sha256, turno 5: prompt_sha256, turno 6: prompt_sha256.
+- restaurant: snapshot_sha256, turno 2: prompt_sha256, turno 3: prompt_sha256, turno 4: prompt_sha256, turno 5: prompt_sha256, turno 6: prompt_sha256.
+- saas: snapshot_sha256, turno 2: prompt_sha256, turno 3: prompt_sha256, turno 4: prompt_sha256, turno 5: prompt_sha256, turno 6: prompt_sha256.
+- tienda_ropa: snapshot_sha256, turno 2: prompt_sha256, turno 3: prompt_sha256, turno 4: prompt_sha256, turno 5: prompt_sha256, turno 6: prompt_sha256.
+- El prompt de referencia del laboratorio es distinto.
+- El webhook de WhatsApp se comporta distinto.
+
+## Métricas del prompt
+
+Prompt de referencia, medido como en `generate_prompt_snapshot.py`.
+
+- chars: baseline=3943, candidate=3863, delta=-80
+- lines: baseline=83, candidate=82, delta=-1
+- estimated_tokens: baseline=982, candidate=962, delta=-20
+- pricing_block_chars: baseline=661, candidate=661, delta=0
+
+## Score comercial
+
+**Score de control.** Respuestas reales grabadas por el laboratorio (fase2_final_polished, 2026-05-22T06:02:20+00:00, commit 3ae3996), reproducidas en los dos lados. Sirve para comprobar que el motor las trata igual. No evalúa una respuesta nueva ni sustituye la evaluación humana.
+
+- commercial_score: baseline=100, candidate=100, delta=0
+- price_turns: baseline=5, candidate=5, delta=0
+- includes_turns: baseline=8, candidate=8, delta=0
+- not_includes_turns: baseline=3, candidate=3, delta=0
+- roi_turns: baseline=8, candidate=8, delta=0
+- cta_turns: baseline=9, candidate=9, delta=0
+- objection_turns: baseline=2, candidate=2, delta=0
+- closing_progress_turns: baseline=4, candidate=4, delta=0
+
+# Turno 1 — Hola amigo.
+
+## Baseline
+Hola, ¿qué más? 👋 soy Juan un gusto tenerte por aquí.
+
+## Candidate
+Hola, ¿qué más? 👋 soy Juan un gusto tenerte por aquí.
+
+### Métricas del prompt
+- Sin llamada al modelo: es el saludo configurado del negocio.
+
+### Evaluación automática
+- Precio: baseline=No, candidate=No
+- Incluye: baseline=No, candidate=No
+- No incluye: baseline=No, candidate=No
+- ROI: baseline=No, candidate=No
+- CTA: baseline=No, candidate=No
+- Manejo de objeciones: baseline=No, candidate=No
+- Avance al cierre: baseline=No, candidate=No
+- Intención: baseline=info, candidate=info
+- Origen: baseline=initial_message, candidate=initial_message
+- Diferencias del motor: ninguna
+
+### Veredicto Manual
+- [ ] Mejoró
+- [ ] Igual
+- [ ] Empeoró
+
+# Turno 2 — Dame más información de lo que venden.
+
+## Baseline
+Ofrecemos un servicio para convertir tu WhatsApp en un vendedor automático 24/7. Nuestro asistente comercial inteligente responde al instante, da seguimiento a cada prospecto y transforma conversaciones en ventas sin que tengas que estar presente. Esto te ayuda a aumentar tus ventas y a no perder oportunidades. ¿Te gustaría saber más sobre cómo puede beneficiar a tu negocio?
+
+## Candidate
+Ofrecemos un servicio para convertir tu WhatsApp en un vendedor automático 24/7. Nuestro asistente comercial inteligente responde al instante, da seguimiento a cada prospecto y transforma conversaciones en ventas sin que tengas que estar presente. Esto te ayuda a aumentar tus ventas y a no perder oportunidades. ¿Te gustaría saber más sobre cómo puede beneficiar a tu negocio?
+
+### Métricas del prompt
+- chars: baseline=6382, candidate=6302, delta=-80
+- lines: baseline=128, candidate=127, delta=-1
+- estimated_tokens: baseline=1588, candidate=1568, delta=-20
+- pricing_block_chars: baseline=2384, candidate=2384, delta=0
+- Prompt idéntico: No (sha256 bd1752fdc89c)
+
+### Evaluación automática
+- Precio: baseline=No, candidate=No
+- Incluye: baseline=Sí, candidate=Sí
+- No incluye: baseline=No, candidate=No
+- ROI: baseline=Sí, candidate=Sí
+- CTA: baseline=Sí, candidate=Sí
+- Manejo de objeciones: baseline=No, candidate=No
+- Avance al cierre: baseline=No, candidate=No
+- Intención: baseline=info, candidate=info
+- Origen: baseline=ai_raw, candidate=ai_raw
+- Diferencias del motor: petición.prompt_sha256
+
+### Veredicto Manual
+- [ ] Mejoró
+- [ ] Igual
+- [ ] Empeoró
+
+# Turno 3 — Yo recibo muchos mensajes y no alcanzo a responder.
+
+## Baseline
+Entiendo, eso puede ser abrumador. Con nuestro asistente comercial inteligente, podrás automatizar las respuestas en WhatsApp, asegurando que cada mensaje sea atendido al instante. Esto no solo te ayuda a gestionar mejor tu tiempo, sino que también aumenta tus oportunidades de venta. ¿Te gustaría saber cómo empezar a implementarlo en tu negocio?
+
+## Candidate
+Entiendo, eso puede ser abrumador. Con nuestro asistente comercial inteligente, podrás automatizar las respuestas en WhatsApp, asegurando que cada mensaje sea atendido al instante. Esto no solo te ayuda a gestionar mejor tu tiempo, sino que también aumenta tus oportunidades de venta. ¿Te gustaría saber cómo empezar a implementarlo en tu negocio?
+
+### Métricas del prompt
+- chars: baseline=5504, candidate=5856, delta=+352
+- lines: baseline=109, candidate=111, delta=+2
+- estimated_tokens: baseline=1368, candidate=1456, delta=+88
+- pricing_block_chars: baseline=2384, candidate=2384, delta=0
+- Prompt idéntico: No (sha256 f9a2b08f497f)
+
+### Evaluación automática
+- Precio: baseline=No, candidate=No
+- Incluye: baseline=Sí, candidate=Sí
+- No incluye: baseline=No, candidate=No
+- ROI: baseline=Sí, candidate=Sí
+- CTA: baseline=Sí, candidate=Sí
+- Manejo de objeciones: baseline=Sí, candidate=Sí
+- Avance al cierre: baseline=Sí, candidate=Sí
+- Intención: baseline=pain, candidate=pain
+- Origen: baseline=ai_raw, candidate=ai_raw
+- Diferencias del motor: petición.prompt_sha256
+
+### Veredicto Manual
+- [ ] Mejoró
+- [ ] Igual
+- [ ] Empeoró
+
+# Turno 4 — ¿Cómo funciona eso?
+
+## Baseline
+Nuestro asistente comercial inteligente se integra con tu WhatsApp y comienza a automatizar las respuestas a tus clientes. Responde a preguntas frecuentes, da seguimiento a prospectos y cierra ventas, todo de manera instantánea. Esto te permite enfocarte en otras tareas mientras no pierdes oportunidades. ¿Te gustaría saber más sobre cómo configurarlo para tu negocio?
+
+## Candidate
+Nuestro asistente comercial inteligente se integra con tu WhatsApp y comienza a automatizar las respuestas a tus clientes. Responde a preguntas frecuentes, da seguimiento a prospectos y cierra ventas, todo de manera instantánea. Esto te permite enfocarte en otras tareas mientras no pierdes oportunidades. ¿Te gustaría saber más sobre cómo configurarlo para tu negocio?
+
+### Métricas del prompt
+- chars: baseline=5891, candidate=6243, delta=+352
+- lines: baseline=111, candidate=113, delta=+2
+- estimated_tokens: baseline=1465, candidate=1553, delta=+88
+- pricing_block_chars: baseline=2384, candidate=2384, delta=0
+- Prompt idéntico: No (sha256 b6a484522eac)
+
+### Evaluación automática
+- Precio: baseline=No, candidate=No
+- Incluye: baseline=Sí, candidate=Sí
+- No incluye: baseline=No, candidate=No
+- ROI: baseline=Sí, candidate=Sí
+- CTA: baseline=Sí, candidate=Sí
+- Manejo de objeciones: baseline=No, candidate=No
+- Avance al cierre: baseline=No, candidate=No
+- Intención: baseline=info, candidate=info
+- Origen: baseline=ai_raw, candidate=ai_raw
+- Diferencias del motor: petición.prompt_sha256
+
+### Veredicto Manual
+- [ ] Mejoró
+- [ ] Igual
+- [ ] Empeoró
+
+# Turno 5 — ¿De verdad eso me puede ayudar a vender más?
+
+## Baseline
+Sí, definitivamente. Al automatizar las respuestas en WhatsApp, aseguras que cada cliente reciba atención inmediata, lo que aumenta la probabilidad de cerrar ventas. Además, te permite gestionar más conversaciones a la vez, sin perder oportunidades. Con solo 3 ventas al mes, ya cubres el costo del servicio. ¿Te gustaría saber cómo implementarlo en tu negocio?
+
+## Candidate
+Sí, definitivamente. Al automatizar las respuestas en WhatsApp, aseguras que cada cliente reciba atención inmediata, lo que aumenta la probabilidad de cerrar ventas. Además, te permite gestionar más conversaciones a la vez, sin perder oportunidades. Con solo 3 ventas al mes, ya cubres el costo del servicio. ¿Te gustaría saber cómo implementarlo en tu negocio?
+
+### Métricas del prompt
+- chars: baseline=6320, candidate=6672, delta=+352
+- lines: baseline=113, candidate=115, delta=+2
+- estimated_tokens: baseline=1572, candidate=1660, delta=+88
+- pricing_block_chars: baseline=2384, candidate=2384, delta=0
+- Prompt idéntico: No (sha256 0773c3d3ecf0)
+
+### Evaluación automática
+- Precio: baseline=Sí, candidate=Sí
+- Incluye: baseline=Sí, candidate=Sí
+- No incluye: baseline=No, candidate=No
+- ROI: baseline=Sí, candidate=Sí
+- CTA: baseline=Sí, candidate=Sí
+- Manejo de objeciones: baseline=No, candidate=No
+- Avance al cierre: baseline=Sí, candidate=Sí
+- Intención: baseline=info, candidate=info
+- Origen: baseline=ai_raw, candidate=ai_raw
+- Diferencias del motor: petición.prompt_sha256
+
+### Veredicto Manual
+- [ ] Mejoró
+- [ ] Igual
+- [ ] Empeoró
+
+# Turno 6 — ¿Por dónde funciona?
+
+## Baseline
+Nuestro servicio funciona a través de WhatsApp, donde se integra un asistente comercial inteligente que automatiza las respuestas a tus clientes. Esto significa que cada vez que alguien te envía un mensaje, el asistente puede responder de inmediato, gestionar preguntas y ayudar a cerrar ventas sin que tú estés presente. ¿Te gustaría saber más sobre cómo configurarlo en tu WhatsApp?
+
+## Candidate
+Nuestro servicio funciona a través de WhatsApp, donde se integra un asistente comercial inteligente que automatiza las respuestas a tus clientes. Esto significa que cada vez que alguien te envía un mensaje, el asistente puede responder de inmediato, gestionar preguntas y ayudar a cerrar ventas sin que tú estés presente. ¿Te gustaría saber más sobre cómo configurarlo en tu WhatsApp?
+
+### Métricas del prompt
+- chars: baseline=6736, candidate=7088, delta=+352
+- lines: baseline=115, candidate=117, delta=+2
+- estimated_tokens: baseline=1676, candidate=1764, delta=+88
+- pricing_block_chars: baseline=2384, candidate=2384, delta=0
+- Prompt idéntico: No (sha256 87a1a64e2a99)
+
+### Evaluación automática
+- Precio: baseline=No, candidate=No
+- Incluye: baseline=Sí, candidate=Sí
+- No incluye: baseline=No, candidate=No
+- ROI: baseline=Sí, candidate=Sí
+- CTA: baseline=Sí, candidate=Sí
+- Manejo de objeciones: baseline=No, candidate=No
+- Avance al cierre: baseline=No, candidate=No
+- Intención: baseline=info, candidate=info
+- Origen: baseline=ai_raw, candidate=ai_raw
+- Diferencias del motor: petición.prompt_sha256
+
+### Veredicto Manual
+- [ ] Mejoró
+- [ ] Igual
+- [ ] Empeoró
+
+# Turno 7 — ¿Y qué precio tiene?
+
+## Baseline
+El precio del Plan Básico es de 210,000 COP el primer mes, que incluye la configuración inicial y el primer mes de servicio. Luego, pagas 110,000 COP mensuales. Este plan incluye la guía de integración con WhatsApp y el asistente conversacional inteligente. No incluye costos de Meta ni personalización avanzada. Con solo 3 ventas al mes, ya cubres el costo del servicio. ¿Te gustaría proceder con la contratación?
+
+## Candidate
+El precio del Plan Básico es de 210,000 COP el primer mes, que incluye la configuración inicial y el primer mes de servicio. Luego, pagas 110,000 COP mensuales. Este plan incluye la guía de integración con WhatsApp y el asistente conversacional inteligente. No incluye costos de Meta ni personalización avanzada. Con solo 3 ventas al mes, ya cubres el costo del servicio. ¿Te gustaría proceder con la contratación?
+
+### Métricas del prompt
+- chars: baseline=7164, candidate=7516, delta=+352
+- lines: baseline=116, candidate=118, delta=+2
+- estimated_tokens: baseline=1783, candidate=1871, delta=+88
+- pricing_block_chars: baseline=2384, candidate=2384, delta=0
+- Prompt idéntico: No (sha256 b43368d59187)
+
+### Evaluación automática
+- Precio: baseline=Sí, candidate=Sí
+- Incluye: baseline=Sí, candidate=Sí
+- No incluye: baseline=Sí, candidate=Sí
+- ROI: baseline=No, candidate=No
+- CTA: baseline=Sí, candidate=Sí
+- Manejo de objeciones: baseline=No, candidate=No
+- Avance al cierre: baseline=No, candidate=No
+- Intención: baseline=buy, candidate=buy
+- Origen: baseline=ai_raw, candidate=ai_raw
+- Diferencias del motor: petición.prompt_sha256
+
+### Veredicto Manual
+- [ ] Mejoró
+- [ ] Igual
+- [ ] Empeoró
+
+# Turno 8 — ¿Qué incluye?
+
+## Baseline
+El Plan Básico incluye la configuración inicial, la guía de integración con WhatsApp y el asistente conversacional inteligente. Esto te permitirá automatizar respuestas y gestionar mejor tus conversaciones. Sin embargo, no incluye costos de Meta ni personalización avanzada. Con esto, podrás empezar a vender más desde el primer día. ¿Te gustaría proceder con la contratación?
+
+## Candidate
+El Plan Básico incluye la configuración inicial, la guía de integración con WhatsApp y el asistente conversacional inteligente. Esto te permitirá automatizar respuestas y gestionar mejor tus conversaciones. Sin embargo, no incluye costos de Meta ni personalización avanzada. Con esto, podrás empezar a vender más desde el primer día. ¿Te gustaría proceder con la contratación?
+
+### Métricas del prompt
+- chars: baseline=7334, candidate=7686, delta=+352
+- lines: baseline=117, candidate=119, delta=+2
+- estimated_tokens: baseline=1826, candidate=1914, delta=+88
+- pricing_block_chars: baseline=2384, candidate=2384, delta=0
+- Prompt idéntico: No (sha256 7c31c8d61396)
+
+### Evaluación automática
+- Precio: baseline=Sí, candidate=Sí
+- Incluye: baseline=Sí, candidate=Sí
+- No incluye: baseline=Sí, candidate=Sí
+- ROI: baseline=Sí, candidate=Sí
+- CTA: baseline=Sí, candidate=Sí
+- Manejo de objeciones: baseline=No, candidate=No
+- Avance al cierre: baseline=Sí, candidate=Sí
+- Intención: baseline=info, candidate=info
+- Origen: baseline=ai_raw, candidate=ai_raw
+- Diferencias del motor: petición.prompt_sha256
+
+### Veredicto Manual
+- [ ] Mejoró
+- [ ] Igual
+- [ ] Empeoró
+
+# Turno 9 — ¿Qué no incluye?
+
+## Baseline
+El Plan Básico no incluye los costos de Meta (WhatsApp Business API), los costos de token de IA (OpenAI) ni la personalización avanzada del asistente. Esto significa que tendrás que considerar esos costos por separado si deseas funciones adicionales. Sin embargo, con lo que incluye el plan, ya puedes comenzar a vender más desde el primer día. ¿Te gustaría proceder con la contratación?
+
+## Candidate
+El Plan Básico no incluye los costos de Meta (WhatsApp Business API), los costos de token de IA (OpenAI) ni la personalización avanzada del asistente. Esto significa que tendrás que considerar esos costos por separado si deseas funciones adicionales. Sin embargo, con lo que incluye el plan, ya puedes comenzar a vender más desde el primer día. ¿Te gustaría proceder con la contratación?
+
+### Métricas del prompt
+- chars: baseline=7288, candidate=7640, delta=+352
+- lines: baseline=117, candidate=119, delta=+2
+- estimated_tokens: baseline=1814, candidate=1903, delta=+89
+- pricing_block_chars: baseline=2384, candidate=2384, delta=0
+- Prompt idéntico: No (sha256 2c7cd884f127)
+
+### Evaluación automática
+- Precio: baseline=Sí, candidate=Sí
+- Incluye: baseline=Sí, candidate=Sí
+- No incluye: baseline=Sí, candidate=Sí
+- ROI: baseline=Sí, candidate=Sí
+- CTA: baseline=Sí, candidate=Sí
+- Manejo de objeciones: baseline=No, candidate=No
+- Avance al cierre: baseline=No, candidate=No
+- Intención: baseline=info, candidate=info
+- Origen: baseline=ai_raw, candidate=ai_raw
+- Diferencias del motor: petición.prompt_sha256
+
+### Veredicto Manual
+- [ ] Mejoró
+- [ ] Igual
+- [ ] Empeoró
+
+# Turno 10 — Está caro, pero si me sirve quiero empezar.
+
+## Baseline
+Entiendo que puede parecer un poco alto, pero piensa en cuánto te cuesta no tener un sistema que te ayude a vender más. Con solo 3 ventas al mes, ya cubres el costo del servicio. ¿Prefieres proceder con el pago a través de un link o una transferencia?
+
+## Candidate
+Entiendo que puede parecer un poco alto, pero piensa en cuánto te cuesta no tener un sistema que te ayude a vender más. Con solo 3 ventas al mes, ya cubres el costo del servicio. ¿Prefieres proceder con el pago a través de un link o una transferencia?
+
+### Métricas del prompt
+- chars: baseline=7314, candidate=7666, delta=+352
+- lines: baseline=117, candidate=119, delta=+2
+- estimated_tokens: baseline=1821, candidate=1909, delta=+88
+- pricing_block_chars: baseline=2384, candidate=2384, delta=0
+- Prompt idéntico: No (sha256 5c884ccfa10c)
+
+### Evaluación automática
+- Precio: baseline=Sí, candidate=Sí
+- Incluye: baseline=No, candidate=No
+- No incluye: baseline=No, candidate=No
+- ROI: baseline=Sí, candidate=Sí
+- CTA: baseline=Sí, candidate=Sí
+- Manejo de objeciones: baseline=Sí, candidate=Sí
+- Avance al cierre: baseline=Sí, candidate=Sí
+- Intención: baseline=buy, candidate=buy
+- Origen: baseline=ai_raw, candidate=ai_raw
+- Diferencias del motor: petición.prompt_sha256
+
+### Veredicto Manual
+- [ ] Mejoró
+- [ ] Igual
+- [ ] Empeoró
+
+# Regresión del motor en todos los negocios
+
+Cada negocio recorre la conversación dorada más objeción, medios de pago y pago reportado, con respuestas simuladas. Se comparan huellas: este archivo no guarda sus datos.
+
+| Negocio | Configuración | Prompt de referencia | Turnos | Llamadas al modelo | Resultado |
+|---|---|---|---|---|---|
+| agencia_viajes | idéntico | **DISTINTO** | 15 | 14 | **con diferencias** |
+| asesor_ai_prod | idéntico | **DISTINTO** | 15 | 14 | **con diferencias** |
+| clinic | idéntico | **DISTINTO** | 15 | 14 | **con diferencias** |
+| demo | idéntico | **DISTINTO** | 15 | 14 | **con diferencias** |
+| ecommerce | idéntico | **DISTINTO** | 15 | 14 | **con diferencias** |
+| escuela_conduccion | idéntico | **DISTINTO** | 15 | 14 | **con diferencias** |
+| restaurant | idéntico | **DISTINTO** | 15 | 14 | **con diferencias** |
+| saas | idéntico | **DISTINTO** | 15 | 14 | **con diferencias** |
+| tienda_ropa | idéntico | **DISTINTO** | 15 | 14 | **con diferencias** |
+
+# Observaciones y limitaciones
+
+- **No se llamó a ningún modelo.** Las respuestas de los turnos 2 a 10 son reales pero grabadas: no muestran lo que el modelo contestaría hoy.
+- Lo que se puede afirmar: a igual respuesta del modelo, el motor actual y el anterior construyen los mismos prompts, guardan el mismo estado y entregan el mismo texto.
+- Lo que queda sin medir: el texto nuevo del modelo. Además, varía de una ejecución a otra aunque el prompt sea idéntico, así que por sí solo no probaría una regresión.
+- Para completarlo: `--live-model`, con autorización, hace hasta 18 llamadas por lado. El primer prompt no pide JSON, así que con un modelo real el motor suele repetir cada turno.
+- Los turnos 1, 2, 3 y 10 llevan el punto final de la orden del experimento. La tabla de negocios usa `GOLDEN_TURNS`, sin ese punto.
+- La memoria corre en RAM, sin PostgreSQL: el contexto se conserva entre turnos con el mismo repositorio, sin su almacenamiento real.
+- Los evaluadores automáticos buscan palabras: no sustituyen el veredicto manual de cada turno, que queda sin marcar.
+- El motor se ejecutó con `MODE=test` y SQLite en memoria en los dos lados. Los datos de pago están redactados en todos los archivos del experimento.
+
+# Veredicto
+
+**Hay diferencias que revisar.** Están listadas en «Diferencias detectadas».
+
+# Cómo repetirlo
+
+```
+python experiments/pricing_lab/run_regression_experiment.py --experiment <id nuevo> --baseline ea82a36 \
+    --baseline-python <python con los requisitos de ese commit> --candidate-python <python con los requisitos actuales>
+```
+
+Con respuestas nuevas del modelo, solo con autorización: añade `--live-model` y define `OPENROUTER_API_KEY` y `OPENROUTER_MODEL` en la consola.
