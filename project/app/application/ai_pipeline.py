@@ -53,13 +53,18 @@ import copy
 from collections.abc import Callable
 
 from app.application.pipeline import AIExecution, ConversationFlow, SalesFlow, log_trace, tenant_slug
-from app.application.runtime import business_usage_recorder, load_business_ai, load_tenant_runtime_yaml, message_ai
+from app.application.pipeline.fallback import PLATFORM_FALLBACK_REPLY
+from app.application.runtime import BusinessUnavailableError, business_usage_recorder, load_business_ai, load_tenant_runtime_yaml, message_ai
 from app.application.runtime.business_ai import UsageCallback
 from app.domain.business_config.ai_settings import AICredentials
 from app.domain.conversation.memory import MemoryDomainService
 from app.infrastructure.persistence.memory_repository import MemoryRepository, SQLMemoryRepository
 from app.services.ai_runtime.runtime_core import AIService as AIRuntimeService
 from app.utils.logger import logger
+
+# Lo que recibe el cliente si no se puede leer la configuración publicada de su negocio: el mensaje neutro de la plataforma (no se
+# puede usar el del negocio, que vive en esa configuración). El fallo queda como alerta en el registro (`business_config_unavailable`).
+UNAVAILABLE_REPLY = PLATFORM_FALLBACK_REPLY
 
 
 class AIPipeline:
@@ -119,16 +124,13 @@ class AIPipeline:
                 extra_yaml=yaml_config if isinstance(yaml_config, dict) else None,
             )
         except (RuntimeError, ValueError) as exc:
-            runtime_error_response = "Error de configuración de tenant: runtime_yaml inválido."
-            metadata = {
-                "source": "runtime_yaml_invalid",
-                "intent": "info",
-                "tenant_slug": tenant_slug_value,
-                "error": str(exc),
-            }
+            # `BusinessUnavailableError` ya dejó su alerta; cualquier otro error al armar el runtime también se registra.
+            if not isinstance(exc, BusinessUnavailableError):
+                logger.error("business_runtime_invalid", extra={"tenant": tenant_slug_value, "error": type(exc).__name__})
+            metadata = {"source": "business_unavailable", "intent": "", "tenant_slug": tenant_slug_value}
             if include_metadata:
-                return runtime_error_response, False, metadata
-            return runtime_error_response, False
+                return UNAVAILABLE_REPLY, False, metadata
+            return UNAVAILABLE_REPLY, False
 
         conversation = self.conversation_flow.process(
             tenant=tenant,

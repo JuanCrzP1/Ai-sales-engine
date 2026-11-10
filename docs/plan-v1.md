@@ -28,6 +28,7 @@ hallazgo dice dónde está y cómo se comprobó. Ninguna fase se da por terminad
 | T1 | Hecho | Una sola llamada por mensaje (ver T1). |
 | T2 | Hecho | El panel usa las cuatro intenciones del motor; una prueba compara ambos lados. |
 | Modelo de IA | Hecho | El panel lista los modelos de OpenRouter que responden en JSON (consulta pública, guardada una hora), con buscador, recomendados y el costo aproximado de 1.000 respuestas. El servidor no guarda un modelo que no esté en la lista. |
+| A1, A2, Q5 | Hecho (Fase 1) | El motor solo lee lo publicado; un negocio creado en el panel responde sin carpeta YAML. Si la base falla, mensaje neutro y alerta, nunca el YAML. El mensaje de respaldo se escribe en el panel. Sin negocio por defecto. |
 | T3 | Hecho | Cada respuesta suma a `ai_usage` (migración 0007) por negocio, día y modelo, con el costo si OpenRouter lo informa. El panel lo muestra en «Inteligencia artificial». |
 
 ## 2. Cómo funcionaba antes y cómo funciona hoy
@@ -176,15 +177,27 @@ Tamaño: S (horas), M (1–2 días), L (3–5 días). El orden importa: cada fas
 
 **Terminada cuando:** ninguna prueba ni registro contiene tokens o mensajes de clientes; un webhook sin firma válida se rechaza.
 
-### Fase 1: el motor sin YAML (M)
+### Fase 1: el motor sin YAML (M) — terminada el 10 de noviembre de 2026
 
-- El motor deja de exigir la carpeta del negocio: lo identifica por la base (A1).
-- Si la base falla, error claro y alerta: nunca el YAML viejo (A2).
-- Mensaje de emergencia desde el panel (Q5).
-- Quitar `asesor_ai_prod` como negocio por defecto.
-- Los YAML quedan solo como origen de la importación; después se borran del repositorio.
+- ~~El motor deja de exigir la carpeta del negocio: lo identifica por la base (A1).~~ Hecho.
+- ~~Si la base falla, error claro y alerta: nunca el YAML viejo (A2).~~ Hecho: `business_config_unavailable` y mensaje neutro.
+- ~~Mensaje de emergencia desde el panel (Q5).~~ Hecho: `messages.fallback`, en Mensajes y canales.
+- ~~Quitar `asesor_ai_prod` como negocio por defecto.~~ Hecho.
+- Los YAML quedan solo como origen de la importación; se borran en la Fase 6.
 
-**Terminada cuando:** un negocio creado desde el panel responde en «Probar» y por la ruta de un canal, sin ninguna carpeta.
+**Terminada cuando:** un negocio creado desde el panel responde en «Probar» y por la ruta de un canal, sin ninguna carpeta. Lo
+comprueban `test_a_business_created_in_the_panel_answers_without_any_yaml_folder` (ruta de un canal) y
+`test_a_business_created_in_the_panel_answers_in_the_test_area` («Probar»), que fallaba con el código anterior.
+
+Cómo quedó:
+- Una sola fuente: `load_tenant_runtime_yaml` lee la versión publicada (`published_sections`). Ya no existen
+  `BUSINESS_CONFIG_STORE` ni `BUSINESS_CONFIG_CONTRACT_TENANTS`, ni el almacén en archivos (`business-config.json`) para el motor.
+- Sin respaldos escondidos: el flujo de ventas, el saludo, el prompt, el mensaje de respaldo, el envío por WhatsApp y Telegram ya no
+  leen YAML. Una prueba de arquitectura (`test_the_engine_never_reads_the_business_yaml`) impide volver a conectarlos.
+- Si la IA falla, el cliente recibe el mensaje del negocio o uno neutro; antes recibía un texto fijo de los YAML globales que
+  aparentaba ayudar («Te ayudo encantada…») y, si el negocio no se podía leer, «Error de configuración de tenant».
+- Las pruebas usan la misma ruta que producción: un almacén con los nueve negocios importados y publicados. Tres archivos que
+  calificaban a la IA sin modelo (solo medían el texto de respaldo) pasaron a integración (`pytest -m integration`).
 
 ### Fase 2: prompt modular y sin doble consumo (L)
 

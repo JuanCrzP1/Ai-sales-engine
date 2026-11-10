@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import importlib
-import os
 from pathlib import Path
 
 
@@ -11,8 +10,6 @@ class ConfigService:
         'tienda_de_ropa': 'tienda_ropa',
     }
 
-    ACTIVE_TENANT_ID = (os.getenv('ACTIVE_TENANT_SLUG') or 'asesor_ai_prod').strip() or 'asesor_ai_prod'
-    DEFAULT_TENANT_ID = (os.getenv('TENANT_SLUG') or ACTIVE_TENANT_ID).strip() or ACTIVE_TENANT_ID
 
     SHARED_PATHS = {
         'bot_config.yaml': ('system', 'bot_config.yaml'),
@@ -100,8 +97,10 @@ class ConfigService:
         return default
 
     def _default_client_id(self, client_id: str | None = None) -> str:
-        explicit = str(client_id or "").strip()
-        resolved = explicit or self.DEFAULT_TENANT_ID
+        """La carpeta YAML de un negocio, para importarlo al almacén. El motor ya no lee estas carpetas."""
+        resolved = str(client_id or "").strip()
+        if not resolved:
+            raise ValueError("falta el negocio de los YAML")
         normalized = self.TENANT_ALIASES.get(resolved, resolved)
 
         tenant_root = self.tenants_root / normalized

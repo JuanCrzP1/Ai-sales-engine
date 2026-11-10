@@ -29,7 +29,7 @@ if str(PROJECT_DIR) not in sys.path:
     sys.path.insert(0, str(PROJECT_DIR))
 os.environ.setdefault("MODE", "test")
 
-from app.application.runtime.tenant_runtime_loader import _load_legacy_sections  # noqa: E402
+from app.infrastructure.config.legacy_store_migration import read_tenant_sections  # noqa: E402
 from app.domain.business_config.engine_policy import COMMON_CLOSING_POLICY  # noqa: E402
 from app.infrastructure.config.business_config_store import CONTRACT_FILENAME  # noqa: E402
 from app.infrastructure.config.config_service import ConfigService  # noqa: E402
@@ -96,7 +96,7 @@ def _current_values(values: list) -> str:
 def _controls_table(service: ConfigService, tenants: list[str], fields: dict) -> list[str]:
     values: dict[str, list] = defaultdict(list)
     for slug in tenants:
-        for leaf in legacy_leaves(_load_legacy_sections(service, slug)):
+        for leaf in legacy_leaves(read_tenant_sections(service, slug)):
             values[leaf.pattern].append(leaf.value)
     lines = [
         "",
@@ -173,7 +173,7 @@ def render_matrix() -> str:
     summary: dict[str, Counter] = {}
     for slug in tenants:
         counts: Counter = Counter()
-        for leaf in legacy_leaves(_load_legacy_sections(service, slug)):
+        for leaf in legacy_leaves(read_tenant_sections(service, slug)):
             entry = find_entry(leaf.pattern)
             if entry is None:
                 raise SystemExit(f"{slug}: campo sin catalogar {leaf.pattern}")

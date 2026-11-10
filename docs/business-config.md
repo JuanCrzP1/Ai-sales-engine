@@ -27,9 +27,8 @@ existe en el contrato: el perfil comercial, el tono y las preguntas frecuentes (
 | Persistencia local (SQLite) | **Terminada** y conectada al panel por la API local |
 | API local y panel de administración | **Terminados** (Fase 2): funcionan solo en este equipo; ver [Panel De Administración](#panel-de-administración) |
 | Funcionamiento del almacén sin YAML | **Terminado y comprobado** en un árbol sin YAML ni motor (ver [Independencia De Los YAML](#independencia-de-los-yaml)) |
-| Motor comercial | Lee sus YAML por defecto; con `BUSINESS_CONFIG_STORE=database` y `BUSINESS_CONFIG_CONTRACT_TENANTS` lee lo publicado en el panel (ver [Conexión Con El Motor](#conexión-con-el-motor)) |
-| Activación del contrato | **Hecha en el Mac** (2026-11-10): los nueve negocios responden con lo publicado en el panel. Falta en Windows y en la nube, con las mismas dos variables |
-| Retiro de los YAML | **No realizado** ni autorizado |
+| Motor comercial | Lee **solo** lo publicado en el panel (ver [Conexión Con El Motor](#conexión-con-el-motor)). No necesita carpeta YAML |
+| Retiro de los YAML | El motor ya no los lee (Fase 1 del plan, 2026-11-10). Quedan como origen de la importación hasta la Fase 6, que los borra |
 
 ## Fuente Canónica Y Archivos Generados
 
@@ -383,30 +382,22 @@ Estos archivos son globales: valen igual para todos y no se representan en Busin
 
 ## Conexión Con El Motor
 
-`load_tenant_runtime_yaml` elige la fuente de cada negocio con dos variables:
+`load_tenant_runtime_yaml` (`application/runtime/tenant_runtime_loader.py`) tiene una sola fuente: **la versión publicada de cada
+negocio**, en la misma base que escribe el panel (`BUSINESS_CONFIG_DATABASE_URL` o, si no está, el SQLite local) y con la misma clave
+(`BUSINESS_CONFIG_SECRETS_KEY`, `secrets.local.env` o el archivo de la carpeta del usuario, en ese orden). La lee en cada mensaje,
+solo a través de `runtime_access.py`, que nunca crea la base, las tablas ni la clave. Lo único que escribe es el consumo de IA de cada
+respuesta. Una prueba de arquitectura impide que otra parte del motor entre al almacén por otro camino.
 
-| Variable | Valores |
-|---|---|
-| `BUSINESS_CONFIG_CONTRACT_TENANTS` | Qué negocios usan el contrato. Vacío: todos con YAML (estado actual); lista de slugs separada por comas; `*`: todos |
-| `BUSINESS_CONFIG_STORE` | De dónde sale el contrato. `file` (por defecto): `business-config.json` de la carpeta del negocio. `database`: lo publicado desde el panel |
+Ningún negocio necesita carpeta en `project/config/tenants`: uno creado desde el panel responde igual que los importados.
 
-Con `database`, el motor lee **la misma base que escribe el panel** (`BUSINESS_CONFIG_DATABASE_URL` o, si no está, el SQLite local)
-con la misma clave (`BUSINESS_CONFIG_SECRETS_KEY`, `secrets.local.env` o el archivo de la carpeta del usuario, en ese orden). Lo hace
-solo a través de `runtime_access.py`, que lee lo publicado y nunca crea la base, las tablas ni la clave, ni escribe nada. Una prueba
-de arquitectura impide que otra parte del motor entre al almacén por otro camino.
+Si el negocio no existe, no tiene versión publicada, lo publicado no es válido, falta la clave o la base no responde, el motor **no
+responde con datos viejos**: registra la alerta `business_config_unavailable` (solo el tipo de error) y el cliente recibe un mensaje
+neutro de la plataforma. Cuando lo que falla es la IA (sin clave, sin saldo, el proveedor caído), el cliente recibe el mensaje que el
+negocio escribió en Mensajes → «Si el asistente no puede responder» (`messages.fallback`), o el neutro si no lo escribió.
 
-Si el documento no existe, no es válido, falta la clave o la base no responde, se registra `business_config_contract_invalid` y el
-negocio sigue con sus YAML: un error de configuración nunca deja a un negocio sin servicio.
-
-Para que un negocio responda con lo publicado en el panel:
-
-```bash
-export BUSINESS_CONFIG_STORE=database
-export BUSINESS_CONFIG_CONTRACT_TENANTS=restaurant   # o "*" para todos
-```
-
-`tests/test_business_config_local_persistence.py` lo comprueba sin sustituir ninguna pieza: solo con esas variables, publicar en el
-panel cambia lo que recibe el motor, volver atrás lo devuelve y, sin almacén, el motor sigue con sus YAML sin crear ningún archivo.
+`tests/test_business_config_engine_integration.py` y `tests/test_business_config_local_persistence.py` lo comprueban sin sustituir
+ninguna pieza: publicar en el panel cambia lo que recibe el motor, volver atrás lo devuelve, un negocio sin carpeta responde y, sin
+almacén, el motor no crea ningún archivo.
 
 Comprobado en los nueve negocios: con el contrato como fuente, el runtime es el de los YAML más `config.profile`, y una
 conversación de cuatro turnos produce los mismos prompts y respuestas salvo el perfil comercial (su bloque y el tono).
@@ -505,9 +496,8 @@ pantalla propia se generan del esquema y lo demás se conserva al guardar. Cómo
 ficticio con el que se prueba (`src/test/fixtures/sampleContractDocument.json`) lo valida
 `test_panel_document_is_valid_against_the_contract`.
 
-**Mientras un negocio no esté activado, el motor no usa lo que se guarda aquí** y sigue con sus YAML. Publicar deja una versión
-oficial en el almacén, comprobada con el compilador; llega a los clientes solo en los negocios activados con
-`BUSINESS_CONFIG_STORE=database` (ver [Conexión Con El Motor](#conexión-con-el-motor)). Aun activado, el motor solo usa los campos
+**Lo publicado es lo que responde el asistente.** Publicar deja una versión oficial en el almacén, comprobada con el compilador, y
+llega a los clientes en el siguiente mensaje (ver [Conexión Con El Motor](#conexión-con-el-motor)). El motor solo usa los campos
 marcados `conectado`. El panel lo dice en la pantalla de publicación. Algunos avisos
 suponen la integración del perfil comercial que el motor actual no tiene: ver [Integración Pendiente](#integración-pendiente-con-el-motor).
 
@@ -626,8 +616,8 @@ posventa y seguimiento, precio anual y por variante...). Cada uno necesitará su
 ## Pendientes Fuera Del Contrato
 
 1. Decisiones del negocio sobre el diagnóstico y los hallazgos.
-2. Activar el contrato (`BUSINESS_CONFIG_STORE=database` y `BUSINESS_CONFIG_CONTRACT_TENANTS=*`): hecho en el Mac; falta en Windows y en la nube.
-3. Retirar los YAML y `legacy` solo cuando ningún negocio dependa de ellos.
+2. ~~Activar el contrato~~: el motor ya no tiene otra fuente (Fase 1).
+3. Borrar los YAML y `legacy` (Fase 6): el motor ya no los lee; solo los usa la importación.
 4. Persistencia en PostgreSQL, rotación de la clave de cifrado y limpieza de datos de pago de versiones
    antiguas: fase de nube.
 5. Autenticación definitiva, también para la API del panel: fase de nube. El sistema propio actual no se desarrollará ni se

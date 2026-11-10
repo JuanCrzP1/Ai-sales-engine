@@ -177,6 +177,23 @@ def test_the_engine_reaches_the_store_only_through_its_gateway():
     assert any(target.startswith(ENGINE_GATEWAY) for target in _imports("app.application.runtime.tenant_runtime_loader", engine["app.application.runtime.tenant_runtime_loader"]))
 
 
+# El lector de los YAML de los negocios solo sirve para importarlos al almacén. El motor nunca lo usa: cada negocio sale de su
+# versión publicada (Fase 1 del plan). Solo lo importan la propia importación y el botón «importar» de la API local.
+YAML_READER = "app.infrastructure.config"
+YAML_IMPORTERS = {"app.admin_api.routes"}
+
+
+def test_the_engine_never_reads_the_business_yaml():
+    readers = {
+        f"{name} -> {target}"
+        for name, path in _layer_modules("app").items()
+        if not (name == YAML_READER or name.startswith(f"{YAML_READER}.")) and name not in YAML_IMPORTERS
+        for target in _imports(name, path)
+        if target == YAML_READER or target.startswith(f"{YAML_READER}.")
+    }
+    assert sorted(readers) == []
+
+
 def test_the_routes_only_talk_to_the_service():
     imported = _imports(f"{API}.routes", _module_path(f"{API}.routes"))
     forbidden = ("sqlalchemy", PERSISTENCE, f"{DOMAIN}.compiler", f"{DOMAIN}.diagnostics", f"{DOMAIN}.contract", f"{DOMAIN}.records")

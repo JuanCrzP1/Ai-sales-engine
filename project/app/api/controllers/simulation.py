@@ -13,7 +13,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from app.api.dependencies import get_current_tenant, get_current_user
 from app.api.schemas.simulation import SimulationMetadata, SimulationRequest, SimulationResponse
 from app.application.ai_pipeline import AIPipeline
-from app.application.runtime import load_tenant_runtime_yaml
+from app.application.runtime import BusinessUnavailableError, load_tenant_runtime_yaml
 from app.config import settings
 from app.domain.business_config.payment_data import REDACTED_PAYMENT_VALUE, payment_values, redact_payment_values
 from app.domain.conversation.memory import MemoryDomainService
@@ -100,7 +100,7 @@ def simulate_message(
         raise unknown_business
     try:
         runtime_yaml = load_tenant_runtime_yaml(slug)
-    except ValueError as exc:
+    except BusinessUnavailableError as exc:
         raise unknown_business from exc
 
     service = _SimulationService(_session_memory(current_user.id, payload.user_id))

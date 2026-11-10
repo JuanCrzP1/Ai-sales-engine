@@ -139,7 +139,7 @@ Límite conocido: `reply` es texto del modelo, igual que el que recibe un client
 
 ## Panel De Administración Local
 
-Permite administrar los negocios sin editar YAML. Su API no usa las credenciales del `.env`: el área de pruebas carga el motor, pero responde solo con la clave de IA de cada negocio. Lo que publica es lo que responde el asistente cuando el `.env` del motor tiene `BUSINESS_CONFIG_STORE=database` y `BUSINESS_CONFIG_CONTRACT_TENANTS=*`; sin ellas, el motor sigue con sus YAML.
+Permite administrar los negocios sin editar YAML. Su API no usa las credenciales del `.env`: el área de pruebas carga el motor, pero responde solo con la clave de IA de cada negocio. Lo que publica es lo que responde el asistente: el motor no tiene otra fuente.
 
 1. Desde la raíz del repositorio, ejecuta uno de los únicos lanzadores del sistema: `run_local.bat` en Windows o `./run_local.sh` en Linux y macOS. Encienden el motor con el `.env`, ngrok, Telegram y la API del panel en `127.0.0.1:8010`.
 2. Cuando esa API responde, arrancan la interfaz y se abre <http://127.0.0.1:5180>. Si no responde, la interfaz no se abre y el motor sigue arrancando.
@@ -197,7 +197,7 @@ Las rutas salen de la ubicación del repositorio y de la carpeta del usuario de 
 
 | Secreto | Para qué | Cuándo hace falta |
 |---|---|---|
-| `BUSINESS_CONFIG_SECRETS_KEY` | Cifra los datos de pago. El motor la usa para leerlos cuando un negocio lee lo publicado en el panel (`BUSINESS_CONFIG_STORE=database`, ver `docs/business-config.md`, «Conexión Con El Motor») | Siempre que la base tenga datos. Debe ser la misma en los dos equipos y en el motor |
+| `BUSINESS_CONFIG_SECRETS_KEY` | Cifra los datos de pago. El motor la usa para leerlos de lo publicado en el panel (ver `docs/business-config.md`, «Conexión Con El Motor») | Siempre que la base tenga datos. Debe ser la misma en los dos equipos y en el motor |
 | `OPENROUTER_API_KEY` | Pruebas en vivo (`pytest -m integration`) | Solo para esas pruebas. El motor no la usa: cada negocio guarda su clave en el panel |
 | `DATABASE_URL` | PostgreSQL del motor | Motor. Si apunta al propio equipo, el otro necesita su PostgreSQL |
 | `TELEGRAM_TOKEN`, `TELEGRAM_ADMIN_ID` | Canal de Telegram | Motor, si se usa Telegram |
@@ -349,9 +349,8 @@ python scripts/setup_cloud_database.py --branch production --apply # solo las ta
 En `pruebas` copia las versiones, los datos de pago (ya cifrados: la clave no viaja) y los ajustes técnicos de cada negocio, y
 comprueba que lo publicado compila igual que aquí. Se puede repetir: lo que ya está no se toca.
 
-**2. Variables del proyecto en Vercel** (Settings → Environment Variables). Ya están `MODE=production`,
-`BUSINESS_CONFIG_STORE=database` y `BUSINESS_CONFIG_CONTRACT_TENANTS=*` en Production y Preview. Faltan las secretas, que escribe
-la persona dueña de las cuentas (nunca en el chat ni en el repositorio):
+**2. Variables del proyecto en Vercel** (Settings → Environment Variables). Ya está `MODE=production` en Production y
+Preview. Las secretas las escribe la persona dueña de las cuentas (nunca en el chat ni en el repositorio):
 
 | Variable | Production | Preview |
 |---|---|---|

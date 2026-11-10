@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import pytest
+
 import sys
 from pathlib import Path
 from types import SimpleNamespace
@@ -12,6 +14,10 @@ if str(PROJECT_DIR) not in sys.path:
 
 from app.application.runtime import load_tenant_runtime_yaml
 from app.services.ai_service import AIService
+
+# Suite de integración: califica lo que responde la IA, así que necesita el modelo en vivo (OPENROUTER_API_KEY y
+# `pytest -m integration`). Sin modelo solo calificaba el mensaje de respaldo del motor.
+pytestmark = pytest.mark.integration
 from semantic_guard import has_forward_intent
 
 

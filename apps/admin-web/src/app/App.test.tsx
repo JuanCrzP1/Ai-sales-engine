@@ -6,6 +6,7 @@ import { createMemoryBackend, createTestServices, createVerifyingAuthService, TE
 import { SAMPLE_DOCUMENT, SAMPLE_PLANS_DOCUMENT } from "../test/fixtures/sampleDocument";
 import { App } from "./App";
 import type { ApplicationServices } from "./compositionRoot";
+import { PLATFORM_FALLBACK_REPLY } from "../domain/assistant/fallback";
 
 const LOADING = /Abriendo tu panel…|Cargando tu configuración…|Cargando negocios…/;
 const CAFE = `/negocios/${SAMPLE_DOCUMENT.tenant_slug}`;
@@ -558,6 +559,17 @@ describe("Secciones del negocio", () => {
     await user.type(screen.getByLabelText(/^Después de una compra/), "¡Gracias por tu compra!");
     await saveAndWait(user);
     expect(storedOf(backend).messages).toMatchObject({ welcome: { enabled: true, text: "Hola, soy tu asistente" }, after_sale: "¡Gracias por tu compra!" });
+  });
+
+  it("el mensaje para cuando la IA no puede responder se ve en la vista previa y se guarda", async () => {
+    const { user, backend } = await renderWorkspace("/mensajes");
+    const card = screen.getByRole("heading", { name: "Si el asistente no puede responder" }).closest("section") as HTMLElement;
+    const preview = within(card).getByRole("figure", { name: "Vista previa de la conversación" });
+    expect(within(preview).getByText(PLATFORM_FALLBACK_REPLY)).toBeInTheDocument();
+    await user.type(within(card).getByLabelText(/^Lo que recibe el cliente/), "Ahora no podemos responder. Llámanos al 300 123 4567.");
+    expect(within(preview).getByText("Ahora no podemos responder. Llámanos al 300 123 4567.")).toBeInTheDocument();
+    await saveAndWait(user);
+    expect(storedOf(backend).messages.fallback).toBe("Ahora no podemos responder. Llámanos al 300 123 4567.");
   });
 
   it("marcar un canal no afirma conectarlo", async () => {

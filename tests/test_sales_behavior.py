@@ -16,8 +16,7 @@ PROJECT_DIR = ROOT_DIR / "project"
 if str(PROJECT_DIR) not in sys.path:
     sys.path.insert(0, str(PROJECT_DIR))
 
-from app.application.runtime import load_tenant_runtime_yaml
-from app.application.runtime.tenant_runtime_loader import _load_raw_runtime_yaml
+from app.application.runtime import load_tenant_runtime_yaml, published_sections, runtime_from_sections
 from app.infrastructure.ai.prompting.builder.prompt_builder import PromptBuilderService
 from app.infrastructure.config.config_service import ConfigService
 from app.services.ai_service import AIService
@@ -130,7 +129,7 @@ def runtime_yaml() -> dict:
 
 @pytest.fixture
 def raw_yaml() -> dict:
-    return _load_raw_runtime_yaml(ConfigService(), "asesor_ai_prod", channel="whatsapp")
+    return runtime_from_sections("asesor_ai_prod", published_sections("asesor_ai_prod"), channel="whatsapp")
 
 
 @pytest.fixture
@@ -280,8 +279,8 @@ def test_input_appears_once_in_system(prompt: str) -> None:
 
 def test_runtime_yaml_integrity(runtime_yaml: dict, raw_yaml: dict) -> None:
     """
-    El runtime_yaml debe ser idéntico al YAML original del tenant.
+    El runtime_yaml debe ser idéntico a lo publicado del negocio, compilado.
 
-    Esto evita pérdida de contexto comercial.
+    Esto evita pérdida de contexto comercial entre el panel y el motor.
     """
     assert runtime_yaml == raw_yaml

@@ -20,7 +20,7 @@ from pathlib import Path
 import pytest
 from cryptography.fernet import Fernet
 
-from app.application.runtime.tenant_runtime_loader import _load_legacy_sections
+from app.infrastructure.config.legacy_store_migration import read_tenant_sections
 from app.domain.business_config.payment_data import payment_values
 from app.infrastructure.business_config.database import DATABASE_URL_ENV, DEFAULT_LOCAL_DATABASE
 from app.infrastructure.business_config.payment_secret_store import SECRETS_KEY_ENV
@@ -206,7 +206,7 @@ def test_documented_import_is_repeatable_and_prints_no_payment_data(imported_nin
     assert f"importados={len(TENANTS)} ya_existian=0" in output
     assert f"importados=0 ya_existian={len(TENANTS)}" in output
     service = ConfigService()
-    values = {value for slug in TENANTS for value in payment_values(_load_legacy_sections(service, slug))}
+    values = {value for slug in TENANTS for value in payment_values(read_tenant_sections(service, slug))}
     assert values and [value for value in values if value in output] == []
 
 
@@ -225,7 +225,7 @@ def test_imported_businesses_work_without_yaml_and_compile_to_their_reference(is
     """Los nueve negocios, ya en la base, compilan a su referencia original en un árbol donde no existen los YAML."""
     _database, url, key, _output = imported_nine
     service = ConfigService()
-    expected = {slug: _digest(_load_legacy_sections(service, slug)) for slug in TENANTS}
+    expected = {slug: _digest(read_tenant_sections(service, slug)) for slug in TENANTS}
 
     facts = _run_isolated(isolated_tree, {"scenario": "nine", "slugs": TENANTS}, url, key)
     assert facts["businesses"] == sorted(TENANTS)

@@ -1,6 +1,6 @@
 """
 Almacén de configuración en base de datos: versiones, publicación, reversión, datos de pago cifrados
-y su uso por el runtime (`BUSINESS_CONFIG_STORE=database`).
+y su uso por el runtime, que solo lee lo publicado.
 
 Se ejecuta sobre SQLite en memoria con las mismas tablas que la migración
 `project/db/migrations/0001_business_config_store.sql`; no se conecta a Neon ni a PostgreSQL, por lo
@@ -20,7 +20,7 @@ from sqlalchemy.exc import OperationalError
 from sqlalchemy.pool import StaticPool
 
 from app.application.pipeline.ai_execution import ejecutar_pago
-from app.application.runtime import load_tenant_runtime_yaml
+from app.application.runtime import BusinessUnavailableError, load_tenant_runtime_yaml
 from app.application.runtime import tenant_runtime_loader as loader
 from app.domain.business_config.compiler import compile_business_config
 from app.infrastructure.business_config.runtime_access import reader_for
@@ -30,6 +30,7 @@ from app.infrastructure.business_config.tables import business_ai_settings, busi
 from app.infrastructure.config.config_service import ConfigService
 from app.infrastructure.business_config.payment_secret_store import SECRETS_KEY_ENV, PaymentSecretStore
 from app.infrastructure.config.payment_secrets import SecretResolutionError
+from pipeline_harness import prepared_tenant, stored_document
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
 MIGRATION = ROOT_DIR / "project" / "db" / "migrations" / "0001_business_config_store.sql"
@@ -175,28 +176,24 @@ def test_payment_secrets_require_the_right_key(engine, monkeypatch):
 
 
 # ---------------------------------------------------------------------------
-# El runtime usa la versión publicada (BUSINESS_CONFIG_STORE=database)
+# El runtime usa la versión publicada, y nada más
 # ---------------------------------------------------------------------------
 
 @pytest.fixture
 def database_source(engine, monkeypatch):
-    monkeypatch.setenv(loader.CONTRACT_TENANTS_ENV, "restaurant")
-    monkeypatch.setenv(loader.CONTRACT_STORE_ENV, "database")
     monkeypatch.setattr(loader, "open_published_reader", lambda: reader_for(engine))
     repository = BusinessConfigRepository(engine)
     repository.save_engine_settings("restaurant", _engine_settings("restaurant"))
+    # Como lo deja el panel: los datos de pago, cifrados en el almacén (el motor no lee los YAML).
+    PaymentSecretStore(engine).put_many("restaurant", prepared_tenant("restaurant").payment_values)
     return repository
 
 
 def test_runtime_reads_the_published_version_and_follows_rollback(database_source, monkeypatch):
-    database_source.save_draft("restaurant", _document("restaurant"))
-    database_source.save_draft("restaurant", _with_length(_document("restaurant"), "long"))
+    database_source.save_draft("restaurant", stored_document("restaurant"))
+    database_source.save_draft("restaurant", _with_length(stored_document("restaurant"), "long"))
     database_source.publish("restaurant", 1)
-    from_database = load_tenant_runtime_yaml("restaurant")
-
-    monkeypatch.setenv(loader.CONTRACT_STORE_ENV, "file")
-    assert from_database == load_tenant_runtime_yaml("restaurant")  # mismo resultado que el archivo
-    monkeypatch.setenv(loader.CONTRACT_STORE_ENV, "database")
+    assert load_tenant_runtime_yaml("restaurant")["config"]["response"] == {"length": "short", "max_words": 60}
 
     database_source.publish("restaurant", 2)
     assert load_tenant_runtime_yaml("restaurant")["config"]["response"] == {"length": "long", "max_words": 100}
@@ -204,25 +201,27 @@ def test_runtime_reads_the_published_version_and_follows_rollback(database_sourc
     assert load_tenant_runtime_yaml("restaurant")["config"]["response"] == {"length": "short", "max_words": 60}
 
 
-def test_runtime_falls_back_to_yaml_without_a_valid_published_version(database_source, engine, monkeypatch):
+def test_without_a_valid_published_version_the_business_is_unavailable(database_source, engine, monkeypatch):
+    """Sin versión publicada, con una corrupta o con la base caída, el motor no inventa ni usa otra fuente: lo informa."""
     errors: list[dict] = []
     monkeypatch.setattr(loader.logger, "error", lambda event, extra=None, **_: errors.append({"event": event, **(extra or {})}))
-    monkeypatch.delenv(loader.CONTRACT_TENANTS_ENV)
-    from_yaml = load_tenant_runtime_yaml("restaurant")
-    monkeypatch.setenv(loader.CONTRACT_TENANTS_ENV, "restaurant")
 
-    assert load_tenant_runtime_yaml("restaurant") == from_yaml  # sin versión publicada
+    with pytest.raises(BusinessUnavailableError):
+        load_tenant_runtime_yaml("restaurant")  # sin versión publicada
     database_source.save_draft("restaurant", _document("restaurant"))
     database_source.publish("restaurant", 1)
     with engine.begin() as conn:
         conn.execute(update(business_configs).values(document={"tenant_slug": "restaurant"}))
-    assert load_tenant_runtime_yaml("restaurant") == from_yaml  # versión publicada corrupta
+    with pytest.raises(BusinessUnavailableError):
+        load_tenant_runtime_yaml("restaurant")  # versión publicada corrupta
+
     def _database_down():
         raise OperationalError("SELECT 1", {}, Exception("postgresql://usuario:clave@host/db"))
 
     monkeypatch.setattr(loader, "open_published_reader", _database_down)
-    assert load_tenant_runtime_yaml("restaurant") == from_yaml  # base de datos caída
-    assert [error["event"] for error in errors] == ["business_config_contract_invalid"] * 3
+    with pytest.raises(BusinessUnavailableError):
+        load_tenant_runtime_yaml("restaurant")  # base de datos caída
+    assert [error["event"] for error in errors] == ["business_config_unavailable"] * 3
     assert errors[-1]["error"] == "OperationalError" and "clave" not in json.dumps(errors)
 
 

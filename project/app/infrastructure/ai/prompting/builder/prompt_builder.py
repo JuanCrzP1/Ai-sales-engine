@@ -10,7 +10,6 @@ from app.domain.business_config.engine_policy import (
 )
 from app.domain.business_config.payment_data import redact_payment_values
 from app.infrastructure.ai.prompting import business_knowledge, business_profile
-from app.infrastructure.config.config_service import ConfigService
 from app.utils.logger import logger
 
 
@@ -109,7 +108,6 @@ def detect_business_model(runtime_yaml: dict) -> str:
 class PromptBuilderService:
     def __init__(self, *, prompt_path: str | None = None) -> None:
         del prompt_path
-        self.config = ConfigService()
 
     @staticmethod
     def _as_dict(value: object) -> dict:
@@ -763,39 +761,11 @@ Estado de la conversación: {conversation_state}
         validate_runtime_yaml(runtime_yaml)
         return runtime_yaml
 
-    def _hydrate_runtime_yaml(self, *, client_config_id: str | None, runtime_yaml: dict) -> dict:
+    @staticmethod
+    def _hydrate_runtime_yaml(*, client_config_id: str | None, runtime_yaml: dict) -> dict:
+        """El runtime del negocio tal como llega (lo publicado desde el panel), validado. Nada se completa desde otra fuente."""
+        del client_config_id
         hydrated = dict(runtime_yaml if isinstance(runtime_yaml, dict) else {})
-        tenant_slug = str(client_config_id or "").strip()
-        if not tenant_slug:
-            return hydrated
-
-        sales_cfg = hydrated.get("sales") if isinstance(hydrated.get("sales"), dict) else {}
-        if not sales_cfg:
-            sales_payload = self.config.load_sales(client_id=tenant_slug)
-            loaded_sales = sales_payload.get("sales") if isinstance(sales_payload.get("sales"), dict) else sales_payload
-            hydrated["sales"] = loaded_sales if isinstance(loaded_sales, dict) else {}
-
-        business_cfg = hydrated.get("business") if isinstance(hydrated.get("business"), dict) else {}
-        if not business_cfg:
-            business_payload = self.config.load_business(client_id=tenant_slug)
-            loaded_business = business_payload.get("business") if isinstance(business_payload.get("business"), dict) else business_payload
-            hydrated["business"] = loaded_business if isinstance(loaded_business, dict) else {}
-
-        pricing_cfg = hydrated.get("pricing") if isinstance(hydrated.get("pricing"), dict) else {}
-        if not pricing_cfg:
-            pricing_payload = self.config.load_pricing(client_id=tenant_slug)
-            hydrated["pricing"] = pricing_payload if isinstance(pricing_payload, dict) else {}
-
-        inventory_cfg = hydrated.get("inventory") if isinstance(hydrated.get("inventory"), dict) else {}
-        if not inventory_cfg:
-            inventory_payload = self.config.load_inventory(client_id=tenant_slug)
-            hydrated["inventory"] = inventory_payload if isinstance(inventory_payload, dict) else {}
-
-        features_cfg = hydrated.get("features") if isinstance(hydrated.get("features"), dict) else {}
-        if not features_cfg:
-            features_payload = self.config.load_features(client_id=tenant_slug)
-            hydrated["features"] = features_payload if isinstance(features_payload, dict) else {}
-
         validate_runtime_yaml(hydrated)
         return hydrated
 

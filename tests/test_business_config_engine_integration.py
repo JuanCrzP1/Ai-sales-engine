@@ -1,16 +1,14 @@
 """
 Integración del contrato con el motor.
 
-- Con el contrato como fuente, el motor produce los mismos prompts y respuestas que con los YAML, en los nueve negocios, más
-  lo que solo existe en el contrato: el perfil comercial (bloque del prompt y tono), las preguntas frecuentes y las
-  características de cada producto. Un negocio que sigue con sus YAML no cambia.
-- El contrato es opcional por negocio (`BUSINESS_CONFIG_CONTRACT_TENANTS`) y, si es inválido, el
-  motor vuelve a los YAML.
+- El motor lee cada negocio solo de su versión publicada en el almacén (la que se publica desde el panel). No necesita carpeta
+  YAML y, si el almacén falla o el negocio no tiene versión publicada, no responde con datos viejos: el cliente recibe un
+  mensaje neutro y queda la alerta `business_config_unavailable`.
 - Cada campo marcado `x-engine: conectado` en el contrato tiene aquí una prueba de que cambiarlo
   cambia lo que hace el motor (`CONNECTED_EVIDENCE`). Lo que el motor no usa todavía está marcado `pendiente`.
 
-Sin base de datos ni llamadas reales a la IA: memoria en RAM y LLM simulado. Los datos de pago se
-comparan sin imprimirse (ver `test_payment_data_protection.py`).
+Sin llamadas reales a la IA: memoria en RAM y LLM simulado. Cada prueba que cambia un negocio lo publica en un almacén propio
+(`publish_document`). Los datos de pago se comparan sin imprimirse (ver `test_payment_data_protection.py`).
 """
 from __future__ import annotations
 
@@ -21,20 +19,27 @@ from pathlib import Path
 
 import pytest
 
-import app.application.ai_pipeline as ai_pipeline_module
+from sqlalchemy import update
+from sqlalchemy.exc import OperationalError
+
+from app.application.ai_pipeline import UNAVAILABLE_REPLY, AIPipeline
 from app.application.pipeline.conversation_flow import get_conversation_state
 from app.application.pipeline.response_postprocessor import enforce_max_words
-from app.application.runtime import load_tenant_runtime_yaml
+from app.application.runtime import BusinessUnavailableError, load_tenant_runtime_yaml, published_sections, runtime_from_sections
 from app.application.runtime import tenant_runtime_loader as loader
-from app.domain.business_config.compiler import comparable_with_yaml, compile_business_config
+from app.domain.business_config.compiler import compile_business_config
 from app.domain.business_config.contract import BusinessConfig
 from app.domain.business_config.engine_policy import MAX_INDUSTRY_CHARS, MAX_VALUE_PROPOSITION_CHARS, RESPONSE_LENGTH_MAX_WORDS
 from app.domain.business_config.payment_data import iter_payment_blocks
+from app.domain.conversation.memory import MemoryDomainService
 from app.infrastructure.ai.prompting.builder.prompt_builder import PromptBuilderService
-from app.infrastructure.config.business_config_store import CONTRACT_FILENAME, BusinessConfigStore
+from app.infrastructure.business_config.database import create_business_config_engine
+from app.infrastructure.business_config.runtime_access import open_published_reader
+from app.infrastructure.business_config.tables import business_configs
 from app.infrastructure.config.config_service import ConfigService
 from app.infrastructure.config.legacy_field_catalog import contract_fields
-from pipeline_harness import TENANTS, as_yaml_prompt, copy_tenant, reply, run_conversation, run_with_document
+from app.infrastructure.persistence.memory_repository import MemoryRepository
+from pipeline_harness import TENANTS, TENANTS_DIR, publish_document, reply, run_conversation, run_with_document, stored_document
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
 SCHEMA_PATH = ROOT_DIR / "project" / "config" / "contracts" / "v1" / "business-config.schema.json"
@@ -49,109 +54,133 @@ TWO_TURNS = [("Necesito información", reply("Claro.")), ("¿Cuál es el precio?
 
 
 def _document(slug: str) -> dict:
-    return json.loads(BusinessConfigStore(ConfigService().tenants_root).path_for(slug).read_text(encoding="utf-8"))
+    return stored_document(slug)
 
 
 # ---------------------------------------------------------------------------
-# Fuente de configuración: YAML por defecto, contrato opcional por negocio
+# Fuente de configuración: solo lo publicado en el almacén
 # ---------------------------------------------------------------------------
 
-def test_yaml_remains_the_default_source(monkeypatch):
-    monkeypatch.delenv(loader.CONTRACT_TENANTS_ENV, raising=False)
+def _no_yaml(monkeypatch) -> None:
+    """Cualquier lectura de los YAML de un negocio hace fallar la prueba: el motor ya no los usa."""
 
     def _fail(*_args, **_kwargs):
-        raise AssertionError("el contrato no debía cargarse")
+        raise AssertionError("el motor leyó un YAML")
 
-    monkeypatch.setattr(BusinessConfigStore, "load", _fail)
-    assert load_tenant_runtime_yaml("asesor_ai_prod")["config"]["response"]["max_words"] == 75
-
-
-@pytest.mark.parametrize("enabled", ["asesor_ai_prod", "restaurant,asesor_ai_prod", "*"])
-def test_contract_source_is_used_only_for_enabled_tenants(monkeypatch, enabled):
-    monkeypatch.setenv(loader.CONTRACT_TENANTS_ENV, enabled)
-    calls: list[str] = []
-    original = BusinessConfigStore.load
-
-    def _spy(self, slug):
-        calls.append(slug)
-        return original(self, slug)
-
-    monkeypatch.setattr(BusinessConfigStore, "load", _spy)
-    load_tenant_runtime_yaml("asesor_ai_prod")
-    load_tenant_runtime_yaml("clinic")
-    assert calls == (["asesor_ai_prod", "clinic"] if enabled == "*" else ["asesor_ai_prod"])
+    for name in ("_load_yaml", "_load_raw_section", "_default_client_id"):
+        monkeypatch.setattr(ConfigService, name, _fail)
 
 
-def test_tenant_aliases_resolve_to_the_same_contract(monkeypatch):
-    monkeypatch.setenv(loader.CONTRACT_TENANTS_ENV, "agencia_viajes")
-    assert load_tenant_runtime_yaml("viajes") == load_tenant_runtime_yaml("agencia_viajes")
-    with pytest.raises(ValueError):
-        load_tenant_runtime_yaml("tenant_inexistente")
-
-
-@pytest.mark.parametrize("broken", ["{ no es json", json.dumps({"tenant_slug": "asesor_ai_prod"}), json.dumps({**_document("asesor_ai_prod"), "schema_version": "2.0"}), None])
-def test_invalid_contract_falls_back_to_yaml(monkeypatch, tmp_path, broken):
-    service = copy_tenant(tmp_path, "asesor_ai_prod")
-    path = service.tenants_root / "asesor_ai_prod" / CONTRACT_FILENAME
-    if broken is None:
-        path.unlink()
-    else:
-        path.write_text(broken, encoding="utf-8")
-    errors: list[str] = []
-    monkeypatch.setattr(loader.logger, "error", lambda event, **kwargs: errors.append(event))
-
-    monkeypatch.setenv(loader.CONTRACT_TENANTS_ENV, "asesor_ai_prod")
-    runtime = load_tenant_runtime_yaml("asesor_ai_prod", config_service=service)
-    monkeypatch.delenv(loader.CONTRACT_TENANTS_ENV)
-    assert runtime == load_tenant_runtime_yaml("asesor_ai_prod", config_service=service)
-    assert errors == ["business_config_contract_invalid"]
-
-
-def test_store_rejects_documents_of_another_tenant(monkeypatch, tmp_path):
-    service = copy_tenant(tmp_path, "asesor_ai_prod")
-    path = BusinessConfigStore(service.tenants_root).path_for("asesor_ai_prod")
-    path.write_text(json.dumps({**_document("asesor_ai_prod"), "tenant_slug": "restaurant"}, ensure_ascii=False), encoding="utf-8")
-    errors: list[str] = []
-    monkeypatch.setattr(loader.logger, "error", lambda event, **kwargs: errors.append(event))
-    monkeypatch.setenv(loader.CONTRACT_TENANTS_ENV, "asesor_ai_prod")
-    runtime = load_tenant_runtime_yaml("asesor_ai_prod", config_service=service)
-    assert errors == ["business_config_contract_invalid"]
-    assert runtime["business"]["name"] == load_tenant_runtime_yaml("asesor_ai_prod")["business"]["name"]
-
-
-# ---------------------------------------------------------------------------
-# Equivalencia: con el contrato, el motor hace lo mismo que con los YAML, más el perfil comercial
-# ---------------------------------------------------------------------------
-
-@pytest.mark.parametrize("slug", TENANTS)
-def test_runtime_from_contract_equals_runtime_from_yaml(monkeypatch, slug):
-    monkeypatch.delenv(loader.CONTRACT_TENANTS_ENV, raising=False)
-    from_yaml = load_tenant_runtime_yaml(slug, channel="whatsapp")
-    monkeypatch.setenv(loader.CONTRACT_TENANTS_ENV, slug)
-    from_contract = load_tenant_runtime_yaml(slug, channel="whatsapp")
-    # Lo único que añade el contrato es el perfil comercial: ninguno de los nueve tiene preguntas frecuentes.
-    assert set(from_contract["config"]) - set(from_yaml["config"]) == {"profile"}
-    assert comparable_with_yaml(from_contract) == from_yaml
+def _say(slug: str, message: str = "¿Qué venden?") -> tuple[str, bool, dict]:
+    pipeline = AIPipeline(memory_service=MemoryDomainService(MemoryRepository()))
+    pipeline.runtime.generate = lambda prompt, **_kwargs: reply("Hola.")
+    return pipeline.run(
+        tenant=type("T", (), {"slug": slug, "name": slug, "id": slug})(), user_message=message, user_id="fuente",
+        bot_config=None, conversation_history=[], faq_results=[], yaml_config=None, include_metadata=True,
+    )
 
 
 @pytest.mark.parametrize("slug", TENANTS)
-def test_engine_prompts_and_replies_are_identical_with_contract_source(monkeypatch, slug):
-    monkeypatch.delenv(loader.CONTRACT_TENANTS_ENV, raising=False)
-    from_yaml = run_conversation(slug, CONVERSATION, user_id="equivalencia")
-    monkeypatch.setenv(loader.CONTRACT_TENANTS_ENV, slug)
-    from_contract = run_conversation(slug, CONVERSATION, user_id="equivalencia")
-    runtime = load_tenant_runtime_yaml(slug)
-
-    # Única diferencia intencional: el perfil comercial (bloque y tono). Sin él, prompts y respuestas coinciden.
-    assert "PERFIL COMERCIAL DEL NEGOCIO:" in from_contract[0][0][0]
-    assert all("PERFIL COMERCIAL DEL NEGOCIO:" not in prompt for prompts, _ in from_yaml for prompt in prompts)
-    assert all(prompts for prompts, _response in from_contract[:3])
-    assert [([as_yaml_prompt(prompt, runtime) for prompt in prompts], response) for prompts, response in from_contract] == from_yaml
-    assert from_contract[-1][1].startswith("Avanzamos con el siguiente paso.")
+def test_the_engine_reads_only_the_published_version(monkeypatch, slug):
+    _no_yaml(monkeypatch)
+    runtime = load_tenant_runtime_yaml(slug, channel="whatsapp")
+    assert runtime == runtime_from_sections(slug, published_sections(slug), channel="whatsapp")
+    assert runtime["features"]["pricing_enabled"] is True
+    answer, ai_used, _metadata = _say(slug)
+    assert ai_used is True and answer
 
 
-def test_tenants_stay_isolated_with_contract_source(monkeypatch):
-    monkeypatch.setenv(loader.CONTRACT_TENANTS_ENV, "*")
+def test_a_business_created_in_the_panel_answers_without_any_yaml_folder(monkeypatch, tmp_path):
+    """El caso que bloqueaba los canales: un negocio que nunca tuvo carpeta en `project/config/tenants`."""
+
+    def _new_business(document):
+        document["identity"].update(name="Panadería La Espiga", brand_name="La Espiga")
+
+    publish_document(monkeypatch, tmp_path, "restaurant", _new_business, as_slug="panaderia_la_espiga")
+    _no_yaml(monkeypatch)  # desde aquí, solo el motor: publicar el ejemplo sí lee sus YAML
+    assert not (TENANTS_DIR / "panaderia_la_espiga").exists()
+    (prompts, response), = run_conversation("panaderia_la_espiga", [("¿Qué venden?", reply("Pan recién horneado."))], user_id="nuevo")
+    assert response == "Pan recién horneado."
+    assert "Negocio: La Espiga" in prompts[0]
+
+
+def test_an_unknown_business_gets_the_neutral_reply_and_an_alert(monkeypatch):
+    _no_yaml(monkeypatch)
+    errors: list[str] = []
+    monkeypatch.setattr(loader.logger, "error", lambda event, **_kwargs: errors.append(event))
+    with pytest.raises(BusinessUnavailableError):
+        load_tenant_runtime_yaml("negocio_inexistente")
+    answer, ai_used, metadata = _say("negocio_inexistente")
+    assert (answer, ai_used, metadata["source"]) == (UNAVAILABLE_REPLY, False, "business_unavailable")
+    assert errors == ["business_config_unavailable", "business_config_unavailable"]
+
+
+def test_a_store_failure_never_falls_back_to_yaml(monkeypatch):
+    _no_yaml(monkeypatch)
+
+    def _down():
+        raise OperationalError("SELECT", {}, Exception("la base no responde"))
+
+    monkeypatch.setattr(loader, "open_published_reader", _down)
+    with pytest.raises(BusinessUnavailableError):
+        load_tenant_runtime_yaml("restaurant")
+    assert _say("restaurant")[:2] == (UNAVAILABLE_REPLY, False)
+
+
+def _corrupt_published(url: str, change) -> None:
+    """Altera lo publicado directamente en la base: el almacén nunca se da por confiable."""
+    engine = create_business_config_engine(url)
+    with engine.begin() as conn:
+        row = conn.execute(business_configs.select().where(business_configs.c.status == "published")).one()
+        document = dict(row.document)
+        change(document)
+        conn.execute(update(business_configs).where(business_configs.c.id == row.id).values(document=document))
+    engine.dispose()
+
+
+@pytest.mark.parametrize(
+    "change",
+    [lambda d: d.update(schema_version="2.0"), lambda d: d.pop("identity"), lambda d: d.update(tenant_slug="restaurant")],
+    ids=["otra_version_del_contrato", "incompleto", "de_otro_negocio"],
+)
+def test_a_corrupt_published_document_is_never_served(monkeypatch, tmp_path, change):
+    url = publish_document(monkeypatch, tmp_path, "saas")
+    _corrupt_published(url, change)
+    with pytest.raises(BusinessUnavailableError):
+        load_tenant_runtime_yaml("saas")
+    assert _say("saas")[:2] == (UNAVAILABLE_REPLY, False)
+
+
+def test_the_fallback_message_is_the_one_written_in_the_panel(monkeypatch, tmp_path):
+    """Si la IA no puede responder (aquí, el negocio no tiene clave), el cliente recibe el mensaje del panel; sin él, el neutro."""
+    from app.application.pipeline.fallback import PLATFORM_FALLBACK_REPLY
+
+    def _answer_without_ai() -> tuple[str, bool]:
+        pipeline = AIPipeline(memory_service=MemoryDomainService(MemoryRepository()), ai_loader=lambda _slug: None)
+        return pipeline.run(
+            tenant=type("T", (), {"slug": "saas", "name": "saas", "id": "saas"})(), user_message="¿Cuánto cuesta?", user_id="respaldo",
+            bot_config=None, conversation_history=[], faq_results=[], yaml_config=None,
+        )
+
+    message = "Ahora no podemos responderte por aquí. Escríbenos en un rato, por favor."
+    publish_document(monkeypatch, tmp_path / "con", "saas", lambda d: d["messages"].update(fallback=message))
+    assert _answer_without_ai() == (message, False)
+    publish_document(monkeypatch, tmp_path / "sin", "saas")
+    assert _answer_without_ai() == (PLATFORM_FALLBACK_REPLY, False)
+
+
+def test_the_panel_previews_the_same_neutral_message_the_engine_sends():
+    from app.application.pipeline.fallback import PLATFORM_FALLBACK_REPLY
+
+    source = (ROOT_DIR / "apps" / "admin-web" / "src" / "domain" / "assistant" / "fallback.ts").read_text(encoding="utf-8")
+    assert f'PLATFORM_FALLBACK_REPLY = "{PLATFORM_FALLBACK_REPLY}";' in source
+
+
+# ---------------------------------------------------------------------------
+# Aislamiento entre negocios
+# ---------------------------------------------------------------------------
+
+def test_tenants_stay_isolated(monkeypatch):
     (saas_prompts, _), = run_conversation("asesor_ai_prod", [("¿Qué venden?", reply("Hola."))], user_id="mismo")
     (food_prompts, _), = run_conversation("restaurant", [("¿Qué venden?", reply("Hola."))], user_id="mismo")
     assert "Plan Basico" in saas_prompts[0] and "Hamburguesas" not in saas_prompts[0]
@@ -163,7 +192,6 @@ def test_tenants_stay_isolated_with_contract_source(monkeypatch):
 # ---------------------------------------------------------------------------
 
 def test_contract_response_length_controls_prompt_and_truncation(monkeypatch):
-    monkeypatch.setenv(loader.CONTRACT_TENANTS_ENV, "asesor_ai_prod")
     long_text = " ".join(["palabra"] * 150) + "."
     (prompts, response), = run_conversation("asesor_ai_prod", [("Explícame todo", reply(long_text))], user_id="longitud")
     assert "ESTILO: medium, máximo 75 palabras" in prompts[0]
@@ -196,7 +224,6 @@ def test_each_response_length_option_controls_prompt_and_truncation(monkeypatch,
 
 @pytest.mark.parametrize("channel", ["whatsapp", "telegram", "web"])
 def test_response_length_is_the_same_on_every_channel(monkeypatch, channel):
-    monkeypatch.setenv(loader.CONTRACT_TENANTS_ENV, "*")
     runtime = load_tenant_runtime_yaml("asesor_ai_prod", channel=channel)
     assert runtime["channel"] == channel
     assert runtime["config"]["response"] == {"length": "medium", "max_words": 75}
@@ -207,7 +234,6 @@ def test_response_length_is_the_same_on_every_channel(monkeypatch, channel):
 # ---------------------------------------------------------------------------
 
 def test_plan_prices_format_is_unchanged(monkeypatch):
-    monkeypatch.setenv(loader.CONTRACT_TENANTS_ENV, "asesor_ai_prod")
     turns = [("Hola, necesito información", reply("Claro.")), ("¿Precio?", reply("Te cuento."))]
     (_, _), (prompts, _) = run_conversation("asesor_ai_prod", turns, user_id="planes")
     assert "Precios: Plan Basico -> COP: implementation=100000, monthly=110000 | USD: implementation=40, monthly=45." in prompts[0]
@@ -268,7 +294,6 @@ def _payment_choices(runtime: dict) -> list[tuple[str, list[str]]]:
 
 @pytest.mark.parametrize("slug", TENANTS)
 def test_payment_methods_reach_the_customer(monkeypatch, slug):
-    monkeypatch.setenv(loader.CONTRACT_TENANTS_ENV, slug)
     choices = _payment_choices(load_tenant_runtime_yaml(slug))
     assert choices, "cada negocio tiene al menos un método de pago"
     for method, values in choices:
@@ -358,14 +383,9 @@ def test_payment_confirmed_message_reaches_the_post_payment_prompt(monkeypatch, 
 
 
 def test_conversation_windows_drive_the_conversation_state(monkeypatch, tmp_path):
-    service = copy_tenant(tmp_path, "saas")
-    path = BusinessConfigStore(service.tenants_root).engine_settings_path_for("saas")
-    settings = json.loads(path.read_text(encoding="utf-8"))
-    settings["conversation"] = {"active_window_minutes": 60, "reset_hours": 1}
-    path.write_text(json.dumps(settings, ensure_ascii=False), encoding="utf-8")
-    monkeypatch.setenv(loader.CONTRACT_TENANTS_ENV, "saas")
-    custom = load_tenant_runtime_yaml("saas", config_service=service)["config"]
     default = load_tenant_runtime_yaml("saas")["config"]
+    publish_document(monkeypatch, tmp_path, "saas", engine_settings={"conversation": {"active_window_minutes": 60, "reset_hours": 1}})
+    custom = load_tenant_runtime_yaml("saas")["config"]
 
     now = datetime.now(timezone.utc)
     # Por defecto (15 min / 4 h): hace 30 min la conversación está "tibia" y hace 2 h también.
@@ -405,7 +425,7 @@ def _profile_block(prompt: str) -> str:
 
 
 def _stored(slug: str) -> BusinessConfig:
-    return BusinessConfigStore(ConfigService().tenants_root).load(slug)
+    return open_published_reader().published(slug)
 
 
 def test_example_document_compiles_with_every_option():
@@ -424,19 +444,12 @@ def test_example_document_compiles_with_every_option():
 
 
 @pytest.mark.parametrize("slug", TENANTS)
-def test_profile_block_exists_only_with_contract_source(monkeypatch, slug):
-    turns = [("Hola, info", reply("Claro."))]
-    monkeypatch.delenv(loader.CONTRACT_TENANTS_ENV, raising=False)
-    (yaml_prompts, _), = run_conversation(slug, turns, user_id="perfil")
-    monkeypatch.setenv(loader.CONTRACT_TENANTS_ENV, slug)
-    (contract_prompts, _), = run_conversation(slug, turns, user_id="perfil")
-
+def test_the_profile_block_reaches_the_prompt(monkeypatch, slug):
+    (contract_prompts, _), = run_conversation(slug, [("Hola, info", reply("Claro."))], user_id="perfil")
     config = _stored(slug)
-    assert "PERFIL COMERCIAL DEL NEGOCIO:" not in yaml_prompts[0]
     block = _profile_block(contract_prompts[0])
     assert f"Negocio: {config.identity.name}" in block
     assert f"palabras, {config.response_style.tone.strip()}." in contract_prompts[0]
-    assert "palabras, natural y claro." in yaml_prompts[0]
     for question in (config.sales.discovery.questions if config.sales.discovery else None) or []:
         assert f"- {question}" in block
 
@@ -532,9 +545,8 @@ def test_ongoing_conversation_keeps_only_the_profile_rules(monkeypatch, tmp_path
     assert "máximo 60 palabras, cercano, agil y orientado a orden." in second[0]
 
 
-def test_active_prompt_stays_within_budget_with_contract_source(monkeypatch):
-    """Mismo límite que tests/test_memory_context_persistence.py, ahora con la fuente del contrato."""
-    monkeypatch.setenv(loader.CONTRACT_TENANTS_ENV, "asesor_ai_prod")
+def test_active_prompt_stays_within_budget(monkeypatch):
+    """Mismo límite que tests/test_memory_context_persistence.py, con lo publicado."""
     runtime = load_tenant_runtime_yaml("asesor_ai_prod", extra_yaml={
         "conversation_state": "active",
         "memory_context": {"last_intent": "price", "last_pain": "mensajes", "last_ai_response": "ok"},
@@ -586,8 +598,7 @@ def test_faqs_reach_the_prompt_only_when_configured(monkeypatch, tmp_path):
     )
     assert "CONOCIMIENTO DEL NEGOCIO (preguntas frecuentes):\n- P: ¿Atienden los domingos?\n  R: Sí, de 9 a. m. a 1 p. m." in prompts[0]
 
-    monkeypatch.setattr(ai_pipeline_module, "load_tenant_runtime_yaml", load_tenant_runtime_yaml)
-    monkeypatch.setenv(loader.CONTRACT_TENANTS_ENV, "*")
+    monkeypatch.undo()  # de vuelta al almacén de la suite, con los nueve negocios
     for slug in TENANTS:
         (plain_prompts, _), = run_conversation(slug, [("Hola, info", reply("Claro."))], user_id="sin-faq")
         assert "CONOCIMIENTO DEL NEGOCIO" not in plain_prompts[0]
@@ -595,7 +606,6 @@ def test_faqs_reach_the_prompt_only_when_configured(monkeypatch, tmp_path):
 
 @pytest.mark.parametrize("slug", CATALOG_TENANTS)
 def test_catalog_prices_reach_the_prompt(monkeypatch, slug):
-    monkeypatch.setenv(loader.CONTRACT_TENANTS_ENV, slug)
     config = _stored(slug)
     (prompts, _), = run_conversation(slug, [("¿Cuánto cuesta?", reply("Te cuento."))], user_id="catalogo")
     prices_line = next(line for line in prompts[0].splitlines() if line.startswith("Precios:"))
@@ -657,11 +667,12 @@ def test_connected_fields_change_the_prompt(monkeypatch, tmp_path, case):
 
 # Campo del contrato marcado `conectado` → prueba de este archivo que demuestra que el motor actual lo usa.
 CONNECTED_EVIDENCE: dict[str, str] = {
-    "schema_version": "test_invalid_contract_falls_back_to_yaml",
-    "tenant_slug": "test_store_rejects_documents_of_another_tenant",
+    "schema_version": "test_a_corrupt_published_document_is_never_served",
+    "tenant_slug": "test_a_corrupt_published_document_is_never_served",
+    "messages.fallback": "test_the_fallback_message_is_the_one_written_in_the_panel",
     "identity.industry": "test_the_assistant_uses_the_whole_text_up_to_the_contract_limit",
     "identity.value_proposition": "test_the_assistant_uses_the_whole_text_up_to_the_contract_limit",
-    "offer.model": "test_tenants_stay_isolated_with_contract_source",
+    "offer.model": "test_tenants_stay_isolated",
     "offer.plans[].id": "test_payment_methods_reach_the_customer",
     "offer.plans[].name": "test_plan_prices_format_is_unchanged",
     "offer.plans[].prices[].currency": "test_plan_prices_format_is_unchanged",
@@ -716,7 +727,7 @@ CONNECTED_EVIDENCE: dict[str, str] = {
     "features.catalog_mode": "test_connected_fields_change_the_prompt",
     "features.business_model": "test_connected_fields_change_the_prompt",
     # Perfil comercial, tono, preguntas frecuentes y precios del catálogo: solo con el contrato.
-    "identity.name": "test_profile_block_exists_only_with_contract_source",
+    "identity.name": "test_the_profile_block_reaches_the_prompt",
     "identity.brand_name": "test_each_profile_option_reaches_the_prompt",
     "identity.description": "test_removing_profile_options_removes_them_from_the_prompt",
     "identity.differentiators": "test_each_profile_option_reaches_the_prompt",

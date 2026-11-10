@@ -53,11 +53,6 @@ class _MemoryStub:
         self.last_user_message_at = sent_at
 
 
-class _ConfigMustNotLoadInitialMessage:
-    def load_initial_message(self, client_id: str | None = None) -> dict:
-        raise AssertionError(f"No debía cargar initial_message desde ConfigService para {client_id}")
-
-
 def _tenant(slug: str) -> SimpleNamespace:
     return SimpleNamespace(name=slug, slug=slug, id=slug)
 
@@ -335,12 +330,10 @@ def test_initial_message_flow_uses_yaml_defined_content() -> None:
     assert _normalize_text(response) == _normalize_text(expected_text)
 
 
-def test_runtime_config_initial_message_has_priority_over_config_service() -> None:
+def test_the_initial_message_comes_from_the_published_config() -> None:
+    """El saludo es el que el negocio configuró en el panel (compilado en `config.initial_message`): no hay otra fuente."""
     memory = _MemoryStub()
-    flow = ConversationFlow(
-        memory_service=memory,
-        config_service=_ConfigMustNotLoadInitialMessage(),
-    )
+    flow = ConversationFlow(memory_service=memory)
     runtime_yaml = {
         "config": {
             "initial_message": {

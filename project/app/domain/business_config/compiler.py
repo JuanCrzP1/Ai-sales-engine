@@ -281,6 +281,8 @@ def _config(config: BusinessConfig) -> dict:
     if settings is not None and settings.flags is not None:
         section["flags"] = settings.flags.model_dump()
     section["initial_message"] = {"enabled": config.messages.welcome.enabled, "text": config.messages.welcome.text}
+    if config.messages.fallback is not None:
+        section["fallback_message"] = config.messages.fallback
     section["features"] = _features(config)
     section["response"] = {"length": config.response_style.length, "max_words": config.response_style.effective_max_words()}
     section["profile"] = compile_profile(config)

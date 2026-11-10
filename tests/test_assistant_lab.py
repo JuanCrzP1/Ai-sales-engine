@@ -280,6 +280,24 @@ def test_the_engine_answers_with_the_tested_configuration_and_the_business_key(s
     assert recorder.keys == [KEY_A] and recorder.models == ["openai/gpt-4o-mini"]
 
 
+def test_a_business_created_in_the_panel_answers_in_the_test_area(store, monkeypatch):
+    """Antes fallaba con «Tenant no encontrado»: el motor buscaba su carpeta YAML. Un negocio de la nube no tiene ninguna."""
+    from app.infrastructure.config.config_service import ConfigService
+
+    def _no_yaml(*_args, **_kwargs):
+        raise AssertionError("el motor leyó un YAML")
+
+    for name in ("_load_yaml", "_load_raw_section", "_default_client_id"):
+        monkeypatch.setattr(ConfigService, name, _no_yaml)
+    recorder = _Recorder()
+    runner = EngineAssistantRunner(pipeline_factory=recorder)
+    turn = runner.reply(
+        tenant_slug="panaderia_nueva", sections=_sections(store), credentials=AICredentials("openrouter", None, KEY_A),
+        session_id="c" * 32, message="Hola, ¿qué venden?",
+    )
+    assert (turn.reply, turn.ai_answered) == ("Respuesta 1.", True)
+
+
 def test_each_conversation_has_its_own_memory(store):
     recorder = _Recorder()
     runner = EngineAssistantRunner(pipeline_factory=recorder)

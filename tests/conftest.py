@@ -31,15 +31,15 @@ REDACTED_IN_REPORTS = "[dato de pago]"
 def _payment_values() -> tuple[str, ...]:
     """Datos de pago de los YAML de los negocios (links, números, cuentas, referencias), del más largo al más corto."""
     try:
-        from app.application.runtime.tenant_runtime_loader import _load_legacy_sections
         from app.domain.business_config.payment_data import payment_values
         from app.infrastructure.config.config_service import ConfigService
+        from app.infrastructure.config.legacy_store_migration import read_tenant_sections
 
         service = ConfigService()
         values: set[str] = set()
         for tenant_dir in service.tenants_root.iterdir():
             if (tenant_dir / "pricing.yaml").is_file():
-                values.update(payment_values(_load_legacy_sections(service, tenant_dir.name)))
+                values.update(payment_values(read_tenant_sections(service, tenant_dir.name)))
         return tuple(sorted(values, key=len, reverse=True))
     except Exception:
         return ()
@@ -111,6 +111,45 @@ def _llm_key_available() -> bool:
     """True si hay una OPENROUTER_API_KEY usable (no vacía ni placeholder)."""
     key = str(os.getenv("OPENROUTER_API_KEY") or "").strip()
     return bool(key) and key not in {"<<TOKEN>>", "<TOKEN>"}
+
+
+@pytest.fixture(scope="session", autouse=True)
+def platform_store(tmp_path_factory):
+    """El almacén de la plataforma para toda la suite, como en la nube: los negocios de ejemplo importados de sus YAML y publicados.
+
+    Es la única fuente del motor: cada mensaje lee de aquí la versión publicada de su negocio. Se crea una vez, en un archivo
+    temporal con su propia clave de cifrado; nunca toca el almacén local de quien corre las pruebas ni una base real.
+    """
+    from cryptography.fernet import Fernet
+
+    from app.infrastructure.business_config import runtime_access
+    from app.infrastructure.business_config.database import (
+        DATABASE_URL_ENV,
+        build_business_config_service,
+        create_business_config_engine,
+        create_local_schema,
+    )
+    from app.infrastructure.business_config.payment_secret_store import SECRETS_KEY_ENV
+    from app.infrastructure.config.config_service import ConfigService
+    from app.infrastructure.config.legacy_store_migration import import_all
+
+    url = f"sqlite:///{(tmp_path_factory.mktemp('plataforma') / 'negocios.sqlite3').as_posix()}"
+    key = Fernet.generate_key().decode()
+    engine = create_business_config_engine(url)
+    create_local_schema(engine)
+    import_all(build_business_config_service(engine, secrets_key=key), ConfigService())
+    engine.dispose()
+    previous = {name: os.environ.get(name) for name in (DATABASE_URL_ENV, SECRETS_KEY_ENV)}
+    os.environ[DATABASE_URL_ENV] = url
+    os.environ[SECRETS_KEY_ENV] = key
+    runtime_access.dispose_shared_engines()
+    yield url
+    runtime_access.dispose_shared_engines()
+    for name, value in previous.items():
+        if value is None:
+            os.environ.pop(name, None)
+        else:
+            os.environ[name] = value
 
 
 @pytest.fixture(autouse=True)

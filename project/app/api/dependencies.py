@@ -2,7 +2,6 @@ from fastapi import Depends, Header, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 
-from app.config import ACTIVE_TENANT_SLUG
 from app.database.connection import get_db
 from app.models import AdminUser, Tenant
 from app.services.auth_service import AuthService
@@ -11,14 +10,8 @@ from app.utils.logger import logger
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 
 def resolve_tenant_slug(x_tenant_slug: str | None) -> str:
-    tenant_id = str(x_tenant_slug or '').strip()
-    if tenant_id == 'asesor_ia_comercial':
-        tenant_id = ACTIVE_TENANT_SLUG
-    if not tenant_id:
-        tenant_id = ACTIVE_TENANT_SLUG
-    logger.info('TENANT RECIBIDO: %s', tenant_id)
-    logger.info('tenant_resolved', extra={'event': 'tenant_resolved', 'tenant_id': tenant_id})
-    return tenant_id
+    """El negocio que dice la cabecera. Sin negocio por defecto: una cabecera vacía no es ningún negocio."""
+    return str(x_tenant_slug or '').strip()
 
 
 def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> AdminUser:

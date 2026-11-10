@@ -1,21 +1,31 @@
 """Ejecución del pipeline real con memoria en RAM y LLM simulado, compartida por las pruebas del contrato."""
 from __future__ import annotations
 
+import copy
+import dataclasses
 import functools
 import json
 import shutil
 from collections.abc import Callable
 from pathlib import Path
 
-import app.application.ai_pipeline as ai_pipeline_module
+from cryptography.fernet import Fernet
+
 from app.application.ai_pipeline import AIPipeline
-from app.application.runtime import load_tenant_runtime_yaml
-from app.application.runtime import tenant_runtime_loader as loader
 from app.domain.business_config.contract import BusinessConfig
+from app.domain.business_config.payment_data import iter_secret_refs
 from app.domain.conversation.memory import MemoryDomainService
-from app.infrastructure.config.business_config_store import BusinessConfigStore
 from app.infrastructure.ai.prompting.builder.prompt_builder import PromptBuilderService
+from app.infrastructure.business_config import runtime_access
+from app.infrastructure.business_config.database import (
+    DATABASE_URL_ENV,
+    build_business_config_service,
+    create_business_config_engine,
+    create_local_schema,
+)
+from app.infrastructure.business_config.payment_secret_store import SECRETS_KEY_ENV
 from app.infrastructure.config.config_service import ConfigService
+from app.infrastructure.config.legacy_store_migration import PreparedTenant, import_prepared, prepare_tenant
 from app.infrastructure.persistence.memory_repository import MemoryRepository
 
 TENANTS_DIR = Path(__file__).resolve().parents[1] / "project" / "config" / "tenants"
@@ -71,20 +81,61 @@ def run_conversation(slug: str, turns: list[tuple[str, str]], *, user_id: str) -
 
 
 def copy_tenant(tmp_path: Path, slug: str) -> ConfigService:
-    """Copia los archivos de un negocio a un directorio temporal: las pruebas nunca tocan los originales."""
+    """Copia los YAML de un negocio a un directorio temporal, para probar su importación sin tocar los originales."""
     config_root = tmp_path / "config"
     shutil.copytree(TENANTS_DIR / slug, config_root / "tenants" / slug)
     return ConfigService(base_path=str(config_root))
 
 
-def run_with_document(monkeypatch, tmp_path: Path, slug: str, mutate: Callable[[dict], object], turns, *, user_id: str = "opciones"):
-    """Copia el negocio, modifica su contrato, lo activa como fuente y ejecuta el pipeline real."""
-    service = copy_tenant(tmp_path, slug)
-    path = BusinessConfigStore(service.tenants_root).path_for(slug)
-    document = json.loads(path.read_text(encoding="utf-8"))
-    mutate(document)
+@functools.lru_cache(maxsize=None)
+def prepared_tenant(slug: str) -> PreparedTenant:
+    """Un negocio de ejemplo listo para el almacén, como lo importa la migración desde sus YAML."""
+    return prepare_tenant(ConfigService(), slug)
+
+
+def stored_document(slug: str) -> dict:
+    """El documento que tiene publicado ese negocio en el almacén de la suite (una copia: modificarla no lo cambia)."""
+    return copy.deepcopy(prepared_tenant(slug).document)
+
+
+def publish_store(monkeypatch, tmp_path: Path, tenants: list[PreparedTenant]) -> str:
+    """Un almacén solo para esta prueba con esos negocios publicados, y el motor apuntando a él. Devuelve su URL."""
+    tmp_path.mkdir(parents=True, exist_ok=True)
+    url = f"sqlite:///{(tmp_path / 'almacen.sqlite3').as_posix()}"
+    key = Fernet.generate_key().decode()
+    engine = create_business_config_engine(url)
+    create_local_schema(engine)
+    service = build_business_config_service(engine, secrets_key=key)
+    for tenant in tenants:
+        import_prepared(service, tenant)
+    engine.dispose()
+    monkeypatch.setenv(DATABASE_URL_ENV, url)
+    monkeypatch.setenv(SECRETS_KEY_ENV, key)
+    runtime_access.dispose_shared_engines()
+    return url
+
+
+def publish_document(monkeypatch, tmp_path: Path, slug: str, mutate: Callable[[dict], object] | None = None, *, engine_settings: dict | None = None, as_slug: str | None = None) -> str:
+    """Publica el negocio con su documento modificado en un almacén propio de la prueba, como lo haría el panel.
+
+    `as_slug` lo publica con otro identificador (un negocio nuevo, sin carpeta YAML)."""
+    tenant = prepared_tenant(slug)
+    document = copy.deepcopy(tenant.document)
+    if as_slug:
+        document["tenant_slug"] = as_slug
+    if mutate is not None:
+        mutate(document)
     BusinessConfig.model_validate(document)
-    path.write_text(json.dumps(document, ensure_ascii=False), encoding="utf-8")
-    monkeypatch.setenv(loader.CONTRACT_TENANTS_ENV, slug)
-    monkeypatch.setattr(ai_pipeline_module, "load_tenant_runtime_yaml", functools.partial(load_tenant_runtime_yaml, config_service=service))
+    refs = {holder["secret_ref"] for holder in iter_secret_refs(document)}
+    values = {ref: value for ref, value in tenant.payment_values.items() if ref in refs}
+    settings = {**copy.deepcopy(tenant.engine_settings), **(engine_settings or {})}
+    if as_slug:
+        settings["tenant_slug"] = as_slug
+    changed = dataclasses.replace(tenant, slug=as_slug or slug, document=document, payment_values=values, engine_settings=settings)
+    return publish_store(monkeypatch, tmp_path, [changed])
+
+
+def run_with_document(monkeypatch, tmp_path: Path, slug: str, mutate: Callable[[dict], object], turns, *, user_id: str = "opciones"):
+    """Publica el negocio con su documento modificado y ejecuta el pipeline real, que lo lee del almacén."""
+    publish_document(monkeypatch, tmp_path, slug, mutate)
     return run_conversation(slug, turns, user_id=user_id)

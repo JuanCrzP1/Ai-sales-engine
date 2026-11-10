@@ -2,13 +2,12 @@
 Definición común del cierre: cinco valores iguales para todos los negocios.
 
 Están fuera del contrato comercial y de los ajustes técnicos, en `COMMON_CLOSING_POLICY`. El compilador los añade a
-`sales.closing`, de modo que el motor recibe lo mismo que con los YAML, y el importador rechaza un YAML con otros
-valores. Estas pruebas no modifican los YAML: los que cambian son copias temporales.
+`sales.closing`, de modo que el motor recibe lo mismo que tenían los YAML de origen, y el importador rechaza un YAML con
+otros valores. Estas pruebas no modifican los YAML: los que cambian son copias temporales.
 """
 from __future__ import annotations
 
 import copy
-import functools
 import importlib.util
 import json
 from pathlib import Path
@@ -18,10 +17,8 @@ import yaml
 from cryptography.fernet import Fernet
 from pydantic import ValidationError
 
-import app.application.ai_pipeline as ai_pipeline_module
 from app.application.ai_pipeline import AIPipeline
 from app.application.runtime import load_tenant_runtime_yaml
-from app.application.runtime import tenant_runtime_loader as loader
 from app.domain.business_config.compiler import comparable_with_yaml, compile_business_config
 from app.domain.business_config.contract import BusinessConfig, Closing
 from app.domain.business_config.engine_policy import COMMON_CLOSING_POLICY
@@ -32,11 +29,11 @@ from app.infrastructure.config import legacy_store_migration
 from app.infrastructure.config.business_config_store import BusinessConfigStore
 from app.infrastructure.config.config_service import ConfigService
 from app.infrastructure.config.legacy_field_catalog import contract_fields
-from app.infrastructure.config.legacy_store_migration import import_all, import_prepared, prepare_tenant
+from app.infrastructure.config.legacy_store_migration import import_all, import_prepared, prepare_tenant, read_tenant_sections
 from app.infrastructure.config.legacy_yaml_importer import import_legacy_sections
 from app.infrastructure.config.payment_secrets import LegacyYamlSecretResolver
 from app.infrastructure.persistence.memory_repository import MemoryRepository
-from pipeline_harness import TENANTS, TENANTS_DIR, as_yaml_prompt, copy_tenant, reply, run_conversation
+from pipeline_harness import TENANTS, TENANTS_DIR, reply
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
 SCHEMA_PATH = ROOT_DIR / "project" / "config" / "contracts" / "v1" / "business-config.schema.json"
@@ -58,7 +55,7 @@ CONVERSATION = [
 
 
 def _sections(slug: str) -> dict:
-    return loader._load_legacy_sections(ConfigService(), slug)
+    return read_tenant_sections(ConfigService(), slug)
 
 
 def _raw_closing(slug: str) -> dict:
@@ -204,7 +201,7 @@ def test_the_documents_script_reports_a_divergent_business(monkeypatch):
     spec = importlib.util.spec_from_file_location("migrate_tenants_to_contract", ROOT_DIR / "scripts" / "migrate_tenants_to_contract.py")
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
-    original = module._load_legacy_sections
+    original = module.read_tenant_sections
 
     def _read(config_service, slug):
         if slug != "saas":
@@ -213,7 +210,7 @@ def test_the_documents_script_reports_a_divergent_business(monkeypatch):
         sections["sales"]["closing"]["next_step"]["action"] = "fixed"
         return sections
 
-    monkeypatch.setattr(module, "_load_legacy_sections", _read)
+    monkeypatch.setattr(module, "read_tenant_sections", _read)
     documents, _report, errors = module.build()
     assert [slug for slug, _message in errors] == ["saas"]
     assert not [path for path in documents if path.parent.name == "saas"]
@@ -230,8 +227,8 @@ def test_legacy_settings_cannot_override_the_policy():
 # El comportamiento del motor no cambia
 # ---------------------------------------------------------------------------
 
-def _run_with_metadata(slug: str, *, user_id: str) -> list[tuple[list[str], str, dict]]:
-    pipeline = AIPipeline(memory_service=MemoryDomainService(MemoryRepository()))
+def _run_with_metadata(slug: str, *, user_id: str, runtime_loader=None) -> list[tuple[list[str], str, dict]]:
+    pipeline = AIPipeline(memory_service=MemoryDomainService(MemoryRepository()), runtime_loader=runtime_loader)
     results = []
     for message, llm_reply in CONVERSATION:
         prompts: list[str] = []
@@ -256,20 +253,20 @@ def _run_with_metadata(slug: str, *, user_id: str) -> list[tuple[list[str], str,
 
 
 @pytest.mark.parametrize("slug", TENANTS)
-def test_contract_source_gives_the_same_prompts_replies_and_metadata(monkeypatch, slug):
-    monkeypatch.delenv(loader.CONTRACT_TENANTS_ENV, raising=False)
-    from_yaml = _run_with_metadata(slug, user_id="politica_yaml")
-    monkeypatch.setenv(loader.CONTRACT_TENANTS_ENV, slug)
-    from_contract = _run_with_metadata(slug, user_id="politica_contrato")
+def test_the_engine_receives_the_common_policy_from_what_was_published(slug):
+    """Lo publicado llega al motor con los cinco valores de la definición común, iguales a los de sus YAML de origen."""
     runtime = load_tenant_runtime_yaml(slug)
+    closing = runtime["sales"].get("closing")
+    if "closing" not in _raw_closing_section(slug):
+        assert closing is None
+        return
+    assert {key: closing[key] for key in EXPECTED} == EXPECTED
+    for _prompts, _response, metadata in _run_with_metadata(slug, user_id="politica"):
+        assert {key: metadata["sales"]["closing"][key] for key in EXPECTED} == EXPECTED
 
-    assert all(prompts for prompts, _response, _metadata in from_contract)
-    for (yaml_prompts, yaml_response, yaml_metadata), (contract_prompts, contract_response, contract_metadata) in zip(from_yaml, from_contract):
-        # Única diferencia intencional del contrato: el perfil comercial (bloque y tono).
-        assert [as_yaml_prompt(prompt, runtime) for prompt in contract_prompts] == yaml_prompts and contract_response == yaml_response
-        for section in ("sales", "business", "pricing", "features", "inventory"):
-            assert contract_metadata[section] == yaml_metadata[section], section
-        assert json.dumps(contract_metadata["sales"]["closing"], ensure_ascii=False) == json.dumps(yaml_metadata["sales"]["closing"], ensure_ascii=False)
+
+def _raw_closing_section(slug: str) -> dict:
+    return yaml.safe_load((TENANTS_DIR / slug / "sales.yaml").read_text(encoding="utf-8"))["sales"]
 
 
 def _set_markers(closing: dict) -> None:
@@ -285,23 +282,17 @@ def _remove(closing: dict) -> None:
 
 @pytest.mark.parametrize("change", [_set_markers, _remove], ids=["valores_cambiados", "valores_quitados"])
 @pytest.mark.parametrize("slug", TENANTS)
-def test_the_values_do_not_influence_prompts_or_replies(monkeypatch, tmp_path, slug, change):
-    """Sustituirlos o quitarlos de una copia de los YAML no cambia nada: el motor no decide con ellos."""
-    monkeypatch.delenv(loader.CONTRACT_TENANTS_ENV, raising=False)
-    original = run_conversation(slug, CONVERSATION, user_id="politica")
-
-    service = copy_tenant(tmp_path, slug)
-    path = service.tenants_root / slug / "sales.yaml"
-    data = yaml.safe_load(path.read_text(encoding="utf-8"))
-    change(data["sales"]["closing"])
-    path.write_text(yaml.safe_dump(data, allow_unicode=True, sort_keys=False), encoding="utf-8")  # el orden influye en el prompt
-    changed_source = functools.partial(load_tenant_runtime_yaml, config_service=service)
-    assert changed_source(slug)["sales"]["closing"] != _raw_closing(slug), "la prueba usa la copia modificada"
-
-    monkeypatch.setattr(ai_pipeline_module, "load_tenant_runtime_yaml", changed_source)
-    changed = run_conversation(slug, CONVERSATION, user_id="politica")
-    assert changed == original
-    assert "marca_" not in json.dumps(changed, ensure_ascii=False)
+def test_the_values_do_not_influence_prompts_or_replies(slug, change):
+    """Sustituirlos o quitarlos del runtime no cambia nada: el motor no decide con ellos."""
+    runtime = load_tenant_runtime_yaml(slug)
+    if not isinstance(runtime["sales"].get("closing"), dict):
+        pytest.skip("este negocio no tiene sección de cierre")
+    changed_runtime = copy.deepcopy(runtime)
+    change(changed_runtime["sales"]["closing"])
+    original = _run_with_metadata(slug, user_id="politica")
+    changed = _run_with_metadata(slug, user_id="politica", runtime_loader=lambda _slug, **_options: copy.deepcopy(changed_runtime))
+    assert [(prompts, response) for prompts, response, _metadata in changed] == [(prompts, response) for prompts, response, _metadata in original]
+    assert "marca_" not in json.dumps([(prompts, response) for prompts, response, _metadata in changed], ensure_ascii=False)
 
 
 # ---------------------------------------------------------------------------

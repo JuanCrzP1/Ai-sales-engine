@@ -24,8 +24,7 @@ TENANTS_CONFIG_DIR = CONFIG_DIR / "tenants"
 CHANNELS_CONFIG_DIR = CONFIG_DIR / "channels"
 ASSETS_CONFIG_DIR = CONFIG_DIR / "assets"
 SYSTEM_CONFIG_DIR = CONFIG_DIR / "system"
-ACTIVE_TENANT_SLUG = (os.getenv("ACTIVE_TENANT_SLUG") or "asesor_ai_prod").strip() or "asesor_ai_prod"
-DEFAULT_TENANT_SLUG = (os.getenv("TENANT_SLUG") or ACTIVE_TENANT_SLUG).strip() or ACTIVE_TENANT_SLUG
+# La plataforma no tiene negocio por defecto: cada mensaje dice de qué negocio es.
 AI_FIRST_STRICT = True
 AI_FIRST_HARD_MODE = True
 
@@ -92,13 +91,14 @@ def _read_env_file_values(path: Path) -> Dict[str, str]:
 
 
 def _tenant_slug(tenant_id: str | None = None) -> str:
-    return str(tenant_id or DEFAULT_TENANT_SLUG).strip() or DEFAULT_TENANT_SLUG
+    """Solo el negocio que se pide. Los ajustes globales del motor no leen la carpeta de ningún negocio."""
+    return str(tenant_id or "").strip()
 
 
 def _resolve_config_path(name: str, tenant_id: str | None = None) -> Path:
     tenant_slug = _tenant_slug(tenant_id)
     tenant_bot_config = TENANTS_CONFIG_DIR / tenant_slug / "bot_config.yaml"
-    if name == "bot_config.yaml" and tenant_bot_config.exists():
+    if name == "bot_config.yaml" and tenant_slug and tenant_bot_config.exists():
         return tenant_bot_config
     mapped_paths = {
         "media.yaml": ASSETS_CONFIG_DIR / "media.yaml",
@@ -119,6 +119,8 @@ def _resolve_config_path(name: str, tenant_id: str | None = None) -> Path:
 
 def _load_unified_tenant_section(name: str, tenant_id: str | None = None) -> Dict[str, Any]:
     tenant_slug = _tenant_slug(tenant_id)
+    if not tenant_slug:
+        return {}
     tenant_root = TENANTS_CONFIG_DIR / tenant_slug
 
     if name in {"settings.yaml", "personality.yaml"}:

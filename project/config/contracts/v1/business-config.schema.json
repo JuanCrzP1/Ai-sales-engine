@@ -1392,6 +1392,21 @@
           "default": null,
           "description": "Mensaje al pasar la conversación a una persona.",
           "title": "Human Handoff"
+        },
+        "fallback": {
+          "anyOf": [
+            {
+              "maxLength": 800,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Mensaje exacto cuando la IA no puede responder (sin clave, sin saldo o con el proveedor caído). Si falta, uno neutro de la plataforma.",
+          "title": "Fallback",
+          "x-engine": "conectado"
         }
       },
       "required": [

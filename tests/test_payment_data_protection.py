@@ -3,7 +3,7 @@ Datos de pago sensibles según el contrato (links, números, cuentas y referenci
 
 - Unitaria de `app/domain/business_config/payment_data.py`. Que ningún documento del contrato contenga estos valores lo prueban
   `test_business_config_contract.py` y la migración.
-- Motor, con YAML o con el contrato: los datos nunca llegan a la IA (ni desde la configuración ni desde el historial) ni al registro
+- Motor, con lo publicado de cada negocio: los datos nunca llegan a la IA (ni desde la configuración ni desde el historial) ni al registro
   `conversation_trace`, pero el cliente los recibe al elegir el método. Si la IA repitiera el marcador, el cliente no lo vería.
 
 Las aserciones cuentan coincidencias: si una falla, el informe no muestra los datos de pago (ver `conftest.py`).
@@ -15,7 +15,6 @@ import pytest
 import app.application.pipeline.common as pipeline_common
 from app.application.pipeline.ai_execution import ejecutar_pago, without_payment_placeholder
 from app.application.runtime import load_tenant_runtime_yaml
-from app.application.runtime import tenant_runtime_loader as loader
 from app.domain.business_config.payment_data import (
     REDACTED_PAYMENT_VALUE,
     iter_payment_blocks,
@@ -56,17 +55,8 @@ def _first_transfer_method(runtime: dict) -> tuple[str, str]:
     raise AssertionError("el negocio no tiene transferencias activas")
 
 
-def _use_source(monkeypatch, source: str, slug: str) -> None:
-    if source == "contract":
-        monkeypatch.setenv(loader.CONTRACT_TENANTS_ENV, slug)
-    else:
-        monkeypatch.delenv(loader.CONTRACT_TENANTS_ENV, raising=False)
-
-
-@pytest.mark.parametrize("source", ["yaml", "contract"])
 @pytest.mark.parametrize("slug", TENANTS)
-def test_payment_values_never_reach_the_ai_but_reach_the_customer(monkeypatch, slug, source):
-    _use_source(monkeypatch, source, slug)
+def test_payment_values_never_reach_the_ai_but_reach_the_customer(monkeypatch, slug):
     runtime = load_tenant_runtime_yaml(slug)
     secrets = payment_values(runtime)
     method, value = _first_transfer_method(runtime)
@@ -83,7 +73,7 @@ def test_payment_values_never_reach_the_ai_but_reach_the_customer(monkeypatch, s
     assert prompts
     for prompt in prompts:
         leaked = [secret for secret in secrets if secret in prompt]
-        assert not leaked, f"{slug}/{source}: {len(leaked)} datos de pago en el prompt"
+        assert not leaked, f"{slug}: {len(leaked)} datos de pago en el prompt"
     # El método sigue siendo visible para que la IA guíe la elección, sin su dato.
     assert "TRANSFER_METHODS:" in prompts[0] and f"- {method}:" in prompts[0]
     assert value in results[1][1], "el cliente debe recibir el dato de pago al elegir el método"
@@ -102,9 +92,7 @@ def test_payment_value_in_conversation_history_is_redacted_from_the_prompt():
     assert f"Puedes transferir usando {REDACTED_PAYMENT_VALUE}." in prompt
 
 
-@pytest.mark.parametrize("source", ["yaml", "contract"])
-def test_conversation_trace_log_never_stores_payment_values(monkeypatch, source):
-    _use_source(monkeypatch, source, "saas")
+def test_conversation_trace_log_never_stores_payment_values(monkeypatch):
     method, value = _first_transfer_method(load_tenant_runtime_yaml("saas"))
     traces: list[dict] = []
 

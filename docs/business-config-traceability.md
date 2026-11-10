@@ -104,6 +104,7 @@ Finalidad comercial, sin origen en los YAML. No se compilan salvo los marcados `
 | knowledge | `knowledge.faqs[].question` | Pregunta tal como la haría el cliente. | texto | cliente | conectado | pantalla |
 | messages | `messages.after_sale` | Mensaje después de una compra. | texto | cliente | pendiente | no |
 | messages | `messages.data_request` | Mensaje para pedir los datos del cliente. | texto | cliente | pendiente | no |
+| messages | `messages.fallback` | Mensaje exacto cuando la IA no puede responder (sin clave, sin saldo o con el proveedor caído). Si falta, uno neutro de la plataforma. | texto | cliente | conectado | pantalla |
 | messages | `messages.follow_up` | Mensaje de seguimiento a un cliente que no respondió. | texto | cliente | pendiente | no |
 | messages | `messages.human_handoff` | Mensaje al pasar la conversación a una persona. | texto | cliente | pendiente | no |
 | offer | `offer.catalog.items[].available` | Si es false, el producto se conserva pero no se ofrece (ni su categoría, si se queda sin productos). | interruptor true/false | cliente | conectado | pantalla |
@@ -179,7 +180,7 @@ recibe lo mismo que con los YAML. Si los YAML de un negocio no coinciden, la imp
 | `business.logistics.shipping.scope` | todos | Domicilio, envío, recogida y agenda | A | `fulfillment.shipping.scope` | sección propia `fulfillment` | no | no | — | — |
 | `business.logistics.shipping.time.max` | todos | Domicilio, envío, recogida y agenda | A | `fulfillment.shipping.time.max` | sección propia `fulfillment` | no | no | — | — |
 | `business.logistics.shipping.time.min` | todos | Domicilio, envío, recogida y agenda | A | `fulfillment.shipping.time.min` | sección propia `fulfillment` | no | no | — | — |
-| `business.name` | todos | Nombre comercial | A | `identity.name` | — | pantalla | sí: perfil comercial del prompt, con la configuración del contrato | — | `test_profile_block_exists_only_with_contract_source` |
+| `business.name` | todos | Nombre comercial | A | `identity.name` | — | pantalla | sí: perfil comercial del prompt, con la configuración del contrato | — | `test_the_profile_block_reaches_the_prompt` |
 | `business.pain_points` | todos | Problemas del cliente en sus palabras | A | `sales.pain_points` | cambia de sección | no | no | — | — |
 | `business.positioning` | todos | A quién se dirige y qué problema resuelve | A | `identity.positioning` | — | no | no | — | — |
 | `business.promise` | todos | Propuesta de valor | A | `identity.value_proposition` | renombrado | pantalla | sí: prompt (promesa comercial) | — | `test_connected_fields_change_the_prompt` |
@@ -265,7 +266,7 @@ recibe lo mismo que con los YAML. Si los YAML de un negocio no coinciden, la imp
 | `pricing.catalog.payment.transfer.methods[].reference` | agencia_viajes, escuela_conduccion, restaurant, tienda_ropa | Llave o referencia Bre-B | D | referencia en `payments[id=catalog].transfer_methods[].reference` | valor → referencia `legacy_yaml:` | pantalla | sí: el motor lo entrega al elegir el método | — | `test_payment_methods_reach_the_customer` |
 | `pricing.catalog.payment.transfer.methods[].type` | agencia_viajes, escuela_conduccion, restaurant, tienda_ropa | Método de transferencia | A | `payments[id=catalog].transfer_methods[].type` | — | pantalla | sí: métodos disponibles | — | `test_payment_methods_reach_the_customer` |
 | `pricing.conditions` | todos | Condiciones comerciales | A | `terms.conditions` | cambia de sección | pantalla | sí: prompt | — | `test_connected_fields_change_the_prompt` |
-| `pricing.model` | agencia_viajes, escuela_conduccion, restaurant, tienda_ropa | Venta por catálogo | A | `offer.model` | — | pantalla | sí: prompt (planes o categorías del catálogo) | — | `test_tenants_stay_isolated_with_contract_source` |
+| `pricing.model` | agencia_viajes, escuela_conduccion, restaurant, tienda_ropa | Venta por catálogo | A | `offer.model` | — | pantalla | sí: prompt (planes o categorías del catálogo) | — | `test_tenants_stay_isolated` |
 | `pricing.note` | agencia_viajes | Aclaración sobre cómo se confirma el precio | A | `terms.price_note` | renombrado | no | no | — | — |
 | `pricing.plans[].description` | asesor_ai_prod, clinic, demo, ecommerce, saas | Descripción del plan | A | `offer.plans[].description` | — | pantalla | sí: perfil comercial del prompt, con la configuración del contrato (detalle de la oferta) | — | `test_connected_fields_change_the_prompt` |
 | `pricing.plans[].id` | asesor_ai_prod, clinic, demo, ecommerce, saas | Identificador estable del plan | A | `offer.plans[].id` | — | pantalla | sí: enlaza el plan con su pago | — | `test_payment_methods_reach_the_customer` |
@@ -348,10 +349,10 @@ si el motor actual lo usa y de dónde viene.
 
 | Audiencia | Conectados | Pendientes |
 |---|---|---|
-| cliente | 78 | 56 |
+| cliente | 79 | 56 |
 | avanzado | 7 | 44 |
 | sistema | 2 | 0 |
-| **Total** | 87 | 100 |
+| **Total** | 88 | 100 |
 
 | Campo | Audiencia | Motor | Origen | Interfaz | Descripción |
 |---|---|---|---|---|---|
@@ -420,6 +421,7 @@ si el motor actual lo usa y de dónde viene.
 | `knowledge.faqs[].question` | cliente | conectado | nuevo | pantalla | Pregunta tal como la haría el cliente. |
 | `messages.after_sale` | cliente | pendiente | nuevo | no | Mensaje después de una compra. |
 | `messages.data_request` | cliente | pendiente | nuevo | no | Mensaje para pedir los datos del cliente. |
+| `messages.fallback` | cliente | conectado | nuevo | pantalla | Mensaje exacto cuando la IA no puede responder (sin clave, sin saldo o con el proveedor caído). Si falta, uno neutro de la plataforma. |
 | `messages.follow_up` | cliente | pendiente | nuevo | no | Mensaje de seguimiento a un cliente que no respondió. |
 | `messages.human_handoff` | cliente | pendiente | nuevo | no | Mensaje al pasar la conversación a una persona. |
 | `messages.payment_confirmed` | cliente | conectado | `config.post_payment.on_payment_confirmed.message` | pantalla | Mensaje cuando el pago queda confirmado. |

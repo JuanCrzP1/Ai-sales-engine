@@ -98,6 +98,11 @@ class Messages(ContractModel):
     data_request: MessageText | None = Field(default=None, description="Mensaje para pedir los datos del cliente.")
     follow_up: MessageText | None = Field(default=None, description="Mensaje de seguimiento a un cliente que no respondió.")
     human_handoff: MessageText | None = Field(default=None, description="Mensaje al pasar la conversación a una persona.")
+    fallback: MessageText | None = Field(
+        default=None,
+        description="Mensaje exacto cuando la IA no puede responder (sin clave, sin saldo o con el proveedor caído). Si falta, uno neutro de la plataforma.",
+        json_schema_extra=CONNECTED,
+    )
 
 
 class ResponseStyle(ContractModel):

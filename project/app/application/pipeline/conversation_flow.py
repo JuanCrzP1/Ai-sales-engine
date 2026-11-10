@@ -5,7 +5,6 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 
 from app.domain.conversation.memory import ConversationState
-from app.infrastructure.config.config_service import ConfigService
 from app.utils.logger import logger
 
 
@@ -230,9 +229,8 @@ class ConversationResult:
 
 
 class ConversationFlow:
-    def __init__(self, *, memory_service, config_service: ConfigService | None = None) -> None:
+    def __init__(self, *, memory_service) -> None:
         self.memory = memory_service
-        self.config = config_service or ConfigService()
 
     @staticmethod
     def _normalize_user_id(user_id: str | None) -> str:
@@ -243,15 +241,13 @@ class ConversationFlow:
     def is_greeting_only(message: str) -> bool:
         return is_greeting_only(message)
 
-    def _load_initial_config(self, tenant_slug: str, runtime_yaml: dict) -> dict:
+    @staticmethod
+    def _load_initial_config(tenant_slug: str, runtime_yaml: dict) -> dict:
+        """El saludo que configuró el negocio en el panel (Mensajes → Bienvenida). Sin él, la IA saluda."""
+        del tenant_slug
         runtime_config = runtime_yaml.get("config") if isinstance(runtime_yaml.get("config"), dict) else {}
-        initial_cfg = runtime_config.get("initial_message") if isinstance(runtime_config.get("initial_message"), dict) else {}
-        if initial_cfg:
-            return initial_cfg
-
-        initial_payload = self.config.load_initial_message(client_id=tenant_slug)
-        loaded_cfg = initial_payload.get("initial_message") if isinstance(initial_payload.get("initial_message"), dict) else {}
-        return loaded_cfg if isinstance(loaded_cfg, dict) else {}
+        initial_cfg = runtime_config.get("initial_message")
+        return dict(initial_cfg) if isinstance(initial_cfg, dict) else {}
 
     @staticmethod
     def _set_stage(runtime_yaml: dict, stage: str) -> None:

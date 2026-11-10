@@ -17,7 +17,7 @@ from pathlib import Path
 
 import pytest
 
-from app.application.runtime.tenant_runtime_loader import _load_legacy_sections
+from app.infrastructure.config.legacy_store_migration import read_tenant_sections
 from app.infrastructure.config.business_config_store import BusinessConfigStore
 from app.infrastructure.config.config_service import ConfigService
 from app.infrastructure.config.legacy_field_catalog import (
@@ -42,7 +42,7 @@ SCHEMA_PATH = ROOT_DIR / "project" / "config" / "contracts" / "v1" / "business-c
 
 
 def _sections(slug: str) -> dict:
-    return _load_legacy_sections(ConfigService(), slug)
+    return read_tenant_sections(ConfigService(), slug)
 
 
 def _document(slug: str) -> dict:

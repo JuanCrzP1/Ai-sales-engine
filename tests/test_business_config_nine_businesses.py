@@ -19,9 +19,8 @@ import pytest
 from cryptography.fernet import Fernet
 from sqlalchemy import func, select
 
-from app.application.runtime import load_tenant_runtime_yaml
 from app.application.runtime import tenant_runtime_loader as loader
-from app.application.runtime.tenant_runtime_loader import _load_legacy_sections
+from app.infrastructure.config.legacy_store_migration import read_tenant_sections
 from app.domain.business_config.compiler import comparable_with_yaml
 from app.domain.business_config.contract import SecretRef
 from app.domain.business_config.errors import BusinessConfigError, SecretResolutionError
@@ -33,7 +32,7 @@ from app.infrastructure.business_config.tables import business_config_secrets, b
 from app.infrastructure.config.config_service import ConfigService
 from app.infrastructure.config.legacy_field_catalog import COMMERCIAL_CONTROLS, check_leaf, destination_path, find_entry, legacy_leaves, resolve_path
 from app.infrastructure.config.legacy_store_migration import MIGRATION_AUTHOR, import_all
-from pipeline_harness import TENANTS, as_yaml_prompt, reply, run_conversation
+from pipeline_harness import TENANTS, reply, run_conversation
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
 CONVERSATION = [
@@ -46,7 +45,7 @@ CONVERSATION = [
 
 @functools.lru_cache(maxsize=None)
 def _cached_sections(slug: str) -> str:
-    return json.dumps(_load_legacy_sections(ConfigService(), slug), ensure_ascii=False)
+    return json.dumps(read_tenant_sections(ConfigService(), slug), ensure_ascii=False)
 
 
 def _sections(slug: str) -> dict:
@@ -241,25 +240,21 @@ def test_compilation_has_no_differences_with_the_yaml(store, slug):
 
 
 @pytest.mark.parametrize("slug", TENANTS)
-def test_stored_configuration_gives_the_same_prompts_and_replies_as_the_yaml(store, key, monkeypatch, request, slug):
-    """Solo dentro de esta prueba: el cargador actual, apuntado a la base temporal. El motor sigue con su fuente."""
-    monkeypatch.delenv(loader.CONTRACT_TENANTS_ENV, raising=False)
-    from_yaml = run_conversation(slug, CONVERSATION, user_id="nueve_negocios")
+def test_each_imported_business_answers_from_its_own_store(store, key, monkeypatch, request, slug):
+    """Como en producción: el motor encuentra el almacén solo por su URL y responde con lo publicado allí, sin sustituir ninguna
+    pieza. La misma importación da el mismo asistente que el almacén de la suite."""
+    from_suite = run_conversation(slug, CONVERSATION, user_id="nueve_negocios")
 
     monkeypatch.setenv(SECRETS_KEY_ENV, key)
-    monkeypatch.setenv(loader.CONTRACT_TENANTS_ENV, slug)
-    monkeypatch.setenv(loader.CONTRACT_STORE_ENV, "database")
-    # Como en producción: el motor encuentra el almacén solo por su URL, sin sustituir ninguna pieza.
     monkeypatch.setenv(DATABASE_URL_ENV, f"sqlite:///{store.path.as_posix()}")
     request.addfinalizer(dispose_shared_engines)
+    dispose_shared_engines()
     errors: list[dict] = []
     monkeypatch.setattr(loader.logger, "error", lambda event, extra=None: errors.append({"event": event, **(extra or {})}))
     from_store = run_conversation(slug, CONVERSATION, user_id="nueve_negocios")
-    runtime = load_tenant_runtime_yaml(slug)
-    assert errors == [], "no debe usar el respaldo de los YAML"
-    # Única diferencia intencional de lo publicado: el perfil comercial (bloque y tono).
+    assert errors == [], "lo publicado debe poder leerse"
     assert "PERFIL COMERCIAL DEL NEGOCIO:" in from_store[0][0][0]
-    assert [([as_yaml_prompt(prompt, runtime) for prompt in prompts], response) for prompts, response in from_store] == from_yaml
+    assert from_store == from_suite
 
 
 # ---------------------------------------------------------------------------

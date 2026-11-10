@@ -19,7 +19,7 @@ import pytest
 import yaml
 from pydantic import ValidationError
 
-from app.application.runtime.tenant_runtime_loader import _load_legacy_sections
+from app.infrastructure.config.legacy_store_migration import read_tenant_sections
 from app.domain.business_config.compiler import comparable_with_yaml, compile_business_config
 from app.domain.business_config.contract import BusinessConfig, business_config_json_schema
 from app.domain.business_config.diagnostics import review
@@ -62,7 +62,7 @@ def _load_script(name: str):
 
 
 def _sections(slug: str) -> dict:
-    return _load_legacy_sections(ConfigService(), slug)
+    return read_tenant_sections(ConfigService(), slug)
 
 
 def _document(slug: str) -> dict:

@@ -22,8 +22,7 @@ from cryptography.fernet import Fernet
 from sqlalchemy import event, select, text
 from sqlalchemy.exc import IntegrityError
 
-from app.application.runtime import load_tenant_runtime_yaml
-from app.application.runtime import tenant_runtime_loader as loader
+from app.application.runtime import BusinessUnavailableError, load_tenant_runtime_yaml, published_sections
 from app.business_config_application import service as business_config_service
 from app.business_config_application.ports import BusinessConfigStorage, PaymentSecretStorage
 from app.domain.business_config.compiler import comparable_with_yaml, compile_business_config
@@ -52,7 +51,7 @@ from app.infrastructure.business_config.repository import BusinessConfigReposito
 from app.infrastructure.business_config.tables import business_config_secrets, business_configs, business_engine_settings, metadata, tenants
 from app.infrastructure.config import legacy_store_migration
 from app.infrastructure.config.config_service import ConfigService
-from app.infrastructure.config.legacy_store_migration import import_all, import_prepared, prepare_tenant
+from app.infrastructure.config.legacy_store_migration import import_all, import_prepared, prepare_tenant, read_tenant_sections
 from app.infrastructure.config.legacy_yaml_importer import import_legacy_sections
 from pipeline_harness import TENANTS
 
@@ -137,7 +136,7 @@ def test_each_business_is_stored_and_compiles_to_its_yaml(service, engine, slug)
     published = service.get_published(slug)
     refs = [holder["secret_ref"] for holder in iter_secret_refs(published.model_dump(mode="json"))]
     assert refs and all(ref.startswith("secret_store:") for ref in refs), "la base no debe depender de los YAML"
-    sections = loader._load_legacy_sections(config_service, slug)
+    sections = read_tenant_sections(config_service, slug)
     assert comparable_with_yaml(compile_business_config(published, PaymentSecretStore(engine).resolver(slug))) == sections
 
 
@@ -154,7 +153,7 @@ def test_all_nine_businesses_coexist_without_payment_values_in_the_file(service,
 
     engine.dispose()
     raw = path.read_bytes()
-    values = {value for slug in TENANTS for value in payment_values(loader._load_legacy_sections(config_service, slug))}
+    values = {value for slug in TENANTS for value in payment_values(read_tenant_sections(config_service, slug))}
     assert values, "los YAML de origen tienen datos de pago"
     assert [value for value in values if value.encode("utf-8") in raw] == []
 
@@ -163,22 +162,17 @@ def test_all_nine_businesses_coexist_without_payment_values_in_the_file(service,
 def engine_reads_this_store(database, monkeypatch):
     """El motor configurado como en producción: solo variables de entorno, sin sustituir ninguna pieza."""
     monkeypatch.setenv(business_config_database.DATABASE_URL_ENV, f"sqlite:///{database[1].as_posix()}")
-    monkeypatch.setenv(loader.CONTRACT_TENANTS_ENV, "restaurant")
-    monkeypatch.setenv(loader.CONTRACT_STORE_ENV, "database")
+    runtime_access.dispose_shared_engines()
     yield
     runtime_access.dispose_shared_engines()
 
 
-def test_runtime_reads_the_stored_business_without_changing_the_engine(service, engine_reads_this_store, monkeypatch):
-    """El cargador del motor, con `BUSINESS_CONFIG_STORE=database`, lee el mismo archivo que escribe el panel: lo de los YAML,
-    más el perfil comercial."""
+def test_runtime_reads_the_stored_business_without_changing_the_engine(service, engine_reads_this_store):
+    """El cargador del motor lee el mismo archivo que escribe el panel: lo que tenían los YAML de origen, más el perfil comercial."""
     import_prepared(service, prepare_tenant(ConfigService(), "restaurant"))
-    monkeypatch.delenv(loader.CONTRACT_TENANTS_ENV)
-    from_yaml = load_tenant_runtime_yaml("restaurant")
-    monkeypatch.setenv(loader.CONTRACT_TENANTS_ENV, "restaurant")
     from_store = load_tenant_runtime_yaml("restaurant")
     assert from_store["config"]["profile"]["name"] == "Mesa Activa"
-    assert comparable_with_yaml(from_store) == from_yaml
+    assert comparable_with_yaml(published_sections("restaurant")) == read_tenant_sections(ConfigService(), "restaurant")
 
 
 def test_what_the_panel_publishes_reaches_the_engine(service, engine_reads_this_store):
@@ -199,13 +193,11 @@ def test_what_the_panel_publishes_reaches_the_engine(service, engine_reads_this_
 
 
 def test_the_engine_never_creates_the_store(tmp_path, monkeypatch):
-    """Sin almacén, el motor sigue con sus YAML y no crea ningún archivo."""
+    """Sin almacén, el motor no responde con otra fuente ni crea ningún archivo: el negocio queda no disponible."""
     missing = tmp_path / "no-existe" / "business_config.sqlite3"
     monkeypatch.setenv(business_config_database.DATABASE_URL_ENV, f"sqlite:///{missing.as_posix()}")
-    monkeypatch.setenv(loader.CONTRACT_STORE_ENV, "database")
-    from_yaml = load_tenant_runtime_yaml("restaurant")
-    monkeypatch.setenv(loader.CONTRACT_TENANTS_ENV, "restaurant")
-    assert load_tenant_runtime_yaml("restaurant") == from_yaml
+    with pytest.raises(BusinessUnavailableError):
+        load_tenant_runtime_yaml("restaurant")
     assert not missing.parent.exists()
 
 
@@ -849,7 +841,7 @@ def test_import_script_requires_the_key_and_never_prints_payment_data(tmp_path, 
     output = capsys.readouterr().out
     assert f"importados={len(TENANTS)}" in output
     config_service = ConfigService()
-    values = {value for slug in TENANTS for value in payment_values(loader._load_legacy_sections(config_service, slug))}
+    values = {value for slug in TENANTS for value in payment_values(read_tenant_sections(config_service, slug))}
     assert [value for value in values if value in output] == []
 
 
@@ -1013,7 +1005,7 @@ def test_import_completes_a_business_left_without_versions_and_reports_one_left_
 
 def test_a_city_that_differs_from_the_location_is_not_lost_silently():
     """`business.city` solo se unifica si es el mismo dato; si no, la migración se detiene."""
-    sections = copy.deepcopy(loader._load_legacy_sections(ConfigService(), "demo"))
+    sections = copy.deepcopy(read_tenant_sections(ConfigService(), "demo"))
     sections["business"]["city"] = "Otra ciudad"
     result = import_legacy_sections("demo", sections)
     assert result.engine_settings.legacy["business"]["city"] == "Otra ciudad"
@@ -1024,7 +1016,7 @@ def test_a_city_that_differs_from_the_location_is_not_lost_silently():
 @pytest.mark.parametrize("slug", TENANTS)
 def test_migration_reads_the_same_sections_as_the_engine(slug):
     service = ConfigService()
-    assert legacy_store_migration.read_tenant_sections(service, slug) == loader._load_legacy_sections(service, slug)
+    assert legacy_store_migration.read_tenant_sections(service, slug) == read_tenant_sections(service, slug)
 
 
 def test_import_detects_a_preparation_that_does_not_reproduce_the_yaml(monkeypatch):

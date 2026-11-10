@@ -57,7 +57,7 @@ DYNAMIC_KEYS = {
 CONSERVED = "test_business_config_traceability.py::test_every_legacy_field_reaches_its_declared_destination"
 ENGINE_TEST = "test_connected_fields_change_the_prompt"
 PAYMENT_TEST = "test_payment_methods_reach_the_customer"
-ISOLATION_TEST = "test_tenants_stay_isolated_with_contract_source"
+ISOLATION_TEST = "test_tenants_stay_isolated"
 UNAVAILABLE_TEST = "test_unavailable_offer_is_not_offered"
 NOT_IN_PROMPT = "no: el prompt actual no lo usa"
 # Perfil comercial del prompt (`app/infrastructure/ai/prompting/business_profile.py`): solo con la configuración del contrato.
@@ -97,7 +97,7 @@ def _f(pattern: str, meaning: str, category: Category, destination: str, **extra
 CATALOG: tuple[LegacyField, ...] = (
     # ------------------------------------------------------------------ business.yaml
     _f("business.name", "Nombre comercial", "A", "identity.name", engine=IN_PROFILE, panel="pantalla",
-       evidence=["test_profile_block_exists_only_with_contract_source"]),
+       evidence=["test_the_profile_block_reaches_the_prompt"]),
     _f("business.brand_name", "Marca", "A", "identity.brand_name", engine=IN_PROFILE, evidence=[PROFILE_TEST],
        note="Igual a `name` en los 9 negocios; se conserva su valor."),
     _f("business.industry", "Sector o tipo de negocio", "A", "identity.industry", engine="sí: prompt (sector)", panel="pantalla", evidence=[ENGINE_TEST]),
@@ -367,6 +367,7 @@ NEW_CONTRACT_FIELDS: dict[str, tuple[str, str]] = {
     "messages.data_request": ("Mensaje para pedir datos", "no"),
     "messages.follow_up": ("Mensaje de seguimiento", "no"),
     "messages.human_handoff": ("Mensaje al pasar a una persona", "no"),
+    "messages.fallback": ("Mensaje si el asistente no puede responder", "pantalla"),
     "response_style.formality": ("Nivel de formalidad", "no"),
     "response_style.emojis": ("Uso de emojis", "no"),
     "response_style.instructions": ("Indicaciones de comunicación", "no"),

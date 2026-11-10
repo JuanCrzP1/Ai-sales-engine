@@ -276,6 +276,8 @@ export interface Messages {
   follow_up?: string | null;
   /** Mensaje al pasar la conversación a una persona. */
   human_handoff?: string | null;
+  /** Mensaje exacto cuando la IA no puede responder (sin clave, sin saldo o con el proveedor caído). Si falta, uno neutro de la plataforma. [motor: conectado] */
+  fallback?: string | null;
 }
 
 /** Un motivo de compra: qué significa, cómo reconocerlo y cómo venderle a quien lo tiene. */
