@@ -108,6 +108,16 @@ def test_validate_accepts_postgres_url_in_production():
     assert validate_database_url(url, is_test=False) == url
 
 
+@pytest.mark.parametrize("scheme", ["postgresql", "postgres", "POSTGRESQL"])
+def test_the_url_that_neon_and_vercel_give_is_used_as_it_comes(scheme):
+    """Neon y Vercel la entregan con `postgresql://` o `postgres://`; el motor usa psycopg 3 sin editarla a mano."""
+    neon = f"{scheme}://usuario:clave@ep-ejemplo-pooler.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
+    expected = "postgresql+psycopg://usuario:clave@ep-ejemplo-pooler.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
+    assert config.normalize_database_url(neon) == expected
+    assert validate_database_url(neon, is_test=False) == expected
+    assert config.normalize_database_url("sqlite:///:memory:") == "sqlite:///:memory:"
+
+
 # ---------------------------------------------------------------------------
 # 8. La validación con argumentos explícitos NO muta settings.database_url.
 # ---------------------------------------------------------------------------

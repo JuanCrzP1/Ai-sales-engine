@@ -1091,3 +1091,15 @@ def test_postgres_schema_comes_from_the_reviewed_migration():
     with pytest.raises(ValueError):
         create_local_schema(FakeEngine())
     assert {"tenants", "business_configs", "business_config_secrets", "business_engine_settings"} == set(metadata.tables)
+
+
+@pytest.mark.parametrize("scheme", ["postgresql", "postgres"])
+def test_the_store_uses_the_url_neon_gives_as_it_comes(monkeypatch, scheme):
+    """En la nube, panel y motor leen el almacén con la URL de Neon tal como viene: con psycopg 3, el controlador del proyecto."""
+    monkeypatch.setenv(business_config_database.DATABASE_URL_ENV, f"{scheme}://usuario:clave@ep-ejemplo.neon.tech/neondb?sslmode=require")
+    url = business_config_database.database_url()
+    assert url == "postgresql+psycopg://usuario:clave@ep-ejemplo.neon.tech/neondb?sslmode=require"
+    assert business_config_database.sqlite_file(url) is None
+    engine = business_config_database.create_business_config_engine(url)  # sin conectarse: solo carga el controlador
+    assert engine.dialect.driver == "psycopg"
+    engine.dispose()

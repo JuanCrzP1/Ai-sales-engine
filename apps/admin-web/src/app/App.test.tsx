@@ -1040,10 +1040,10 @@ describe("Formularios generados desde el contrato", () => {
 });
 
 describe("Revisión y publicación", () => {
-  it("resume lo configurado y dice con honestidad que aún no llega a los clientes", async () => {
+  it("resume lo configurado y avisa que lo publicado es lo que responde el asistente", async () => {
     await renderWorkspace("/revision");
     expect(screen.getByText("Todos los datos obligatorios están completos")).toBeInTheDocument();
-    expect(screen.getByText("Todavía no llega a los clientes")).toBeInTheDocument();
+    expect(screen.getByText("Esto es lo que responde el asistente")).toBeInTheDocument();
     expect(screen.getByText("Café Aroma", { selector: "dd" })).toBeInTheDocument();
     await publishButton(1);
   });

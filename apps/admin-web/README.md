@@ -9,8 +9,9 @@ El panel edita **BusinessConfig v1** a través de una **API local** (`project/ap
 > **Solo funciona en este equipo.** La API no tiene inicio de sesión y por eso escucha únicamente en `127.0.0.1`. La
 > autenticación y la autorización multiusuario deben incorporarse antes de desplegarla en la nube.
 >
-> **Todavía no llega a los clientes.** El motor comercial sigue leyendo sus YAML. Publicar aquí deja una versión oficial
-> del negocio, pero el asistente en funcionamiento no la usa hasta que se integre (Fase 4).
+> **Lo publicado es lo que responde el asistente** cuando el motor lee el panel: `BUSINESS_CONFIG_STORE=database` y
+> `BUSINESS_CONFIG_CONTRACT_TENANTS=*` en el `.env` (ver `docs/business-config.md`, «Conexión Con El Motor»). Sin esas dos
+> variables, el motor sigue con sus YAML.
 
 ## Ejecutar
 

@@ -685,7 +685,7 @@ describe("17 y 18. persistencia real y contrato", () => {
     expect(storedDocument(await apiConfig("contrato_real")).schema_version).toBe(SCHEMA_VERSION);
 
     // El panel publica con el compilador del contrato y lo dice con honestidad.
-    expect(screen.getByText("Todavía no llega a los clientes")).toBeInTheDocument();
+    expect(screen.getByText("Esto es lo que responde el asistente")).toBeInTheDocument();
     await publishInPanel(user, 1);
     const published = await apiConfig("contrato_real");
     expect(published.published_version).toBe(1);

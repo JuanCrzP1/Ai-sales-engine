@@ -47,8 +47,8 @@ export function PublishCard() {
 
   return (
     <Card title="Publicación" description="Publicar deja esta versión como la oficial del negocio.">
-      <Alert tone="info" title="Todavía no llega a los clientes">
-        <p>El asistente en funcionamiento sigue usando su configuración actual. Lo publicado aquí se aplicará cuando se integre con este panel, en una fase posterior.</p>
+      <Alert tone="info" title="Esto es lo que responde el asistente">
+        <p>Lo que publiques es lo que el asistente usa con tus clientes desde su siguiente mensaje. Si algo no queda bien, puedes volver a la versión anterior.</p>
       </Alert>
 
       {message && <Alert tone={message.tone}>{message.text}</Alert>}

@@ -28,9 +28,18 @@ def _enable_foreign_keys(connection, _record) -> None:
     cursor.close()
 
 
+def _with_psycopg(url: str) -> str:
+    """Neon y Vercel entregan `postgres://` o `postgresql://`, que SQLAlchemy asocia con psycopg2; el proyecto usa psycopg 3.
+    Es la misma regla de `normalize_database_url` del motor, repetida aquí porque este almacén no depende del motor."""
+    for scheme in ("postgresql://", "postgres://"):
+        if url.lower().startswith(scheme):
+            return f"postgresql+psycopg://{url[len(scheme):]}"
+    return url
+
+
 def database_url() -> str:
     """La URL del almacén: la de `BUSINESS_CONFIG_DATABASE_URL` o, si no hay, el archivo SQLite local. Panel y motor usan esta."""
-    return os.getenv(DATABASE_URL_ENV) or f"sqlite:///{DEFAULT_LOCAL_DATABASE.as_posix()}"
+    return _with_psycopg(str(os.getenv(DATABASE_URL_ENV) or "").strip()) or f"sqlite:///{DEFAULT_LOCAL_DATABASE.as_posix()}"
 
 
 def sqlite_file(url: str) -> Path | None:

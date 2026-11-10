@@ -138,7 +138,7 @@ Límite conocido: `reply` es texto del modelo, igual que el que recibe un client
 
 ## Panel De Administración Local
 
-Permite administrar los negocios sin editar YAML. Su API no lee `.env`, y lo que publica todavía no llega a los clientes: el motor sigue leyendo sus YAML hasta la Fase 4.
+Permite administrar los negocios sin editar YAML. Su API no lee `.env`. Lo que publica es lo que responde el asistente cuando el `.env` del motor tiene `BUSINESS_CONFIG_STORE=database` y `BUSINESS_CONFIG_CONTRACT_TENANTS=*`; sin ellas, el motor sigue con sus YAML.
 
 1. Desde la raíz del repositorio, ejecuta uno de los únicos lanzadores del sistema: `run_local.bat` en Windows o `./run_local.sh` en Linux y macOS. Encienden el motor con el `.env`, ngrok, Telegram y la API del panel en `127.0.0.1:8010`.
 2. Cuando esa API responde, arrancan la interfaz y se abre <http://127.0.0.1:5180>. Si no responde, la interfaz no se abre y el motor sigue arrancando.
@@ -288,7 +288,7 @@ Qué depende de él y cómo responde hoy:
 
 | Componente | Estado medido |
 |---|---|
-| `POST /api/v1/auth/register` | Siempre registrado, sin bandera. Responde 500 y no emite token. Con las tablas del ORM guarda el negocio y el administrador antes de fallar; con las de `postgresql_schema.sql` no guarda nada |
+| `POST /api/v1/auth/register` | Registrado fuera de producción; en producción y en Vercel no se publica (ver «Nube: Vercel Y Neon»). Responde 500 y no emite token. Con las tablas del ORM guarda el negocio y el administrador antes de fallar; con las de `postgresql_schema.sql` no guarda nada |
 | `POST /api/v1/auth/login` | Con las tablas del ORM: clave incorrecta 401, clave correcta 500. Con `postgresql_schema.sql`: siempre 500 |
 | `/bot-config`, `/clients`, `/connectors`, `/conversations` y `/dashboard` (10 rutas) | Sin token 401; con cualquier token 500 |
 | `/simulate` | Ver «Endpoint De Simulación» |
@@ -309,12 +309,55 @@ Quien alcance el servidor puede llamarlo. `uvicorn` escucha solo en `127.0.0.1` 
 Pendiente de la fase de nube. Nada de esto está implementado:
 
 1. Integrar la autenticación definitiva y conectar a ella las rutas de administración y `/simulate`.
-2. Retirar o cerrar `/auth/register` y `/auth/login`.
+2. Retirar `/auth/register` y `/auth/login`. Hecho a medias: en producción y en Vercel ya no se publican, junto con el resto de rutas
+   de administración del sistema anterior (`ENABLE_LEGACY_ADMIN_API=1` las publica igual).
 3. Retirar el secreto por defecto de `app/config/settings/base.py` y de `project/config/system/secrets.yaml`.
 4. Resolver la incompatibilidad entre los modelos del ORM y `postgresql_schema.sql`, según lo que exija la solución elegida.
 5. Si `/simulate` se va a habilitar: decidir si `reply` puede contener precios, añadir un límite de peticiones y volver a comprobar sus protecciones con la autenticación real.
-6. Sacar los datos de pago del prompt y de `conversation_trace` en los canales reales (ver `docs/business-config.md`).
+6. ~~Sacar los datos de pago del prompt y de `conversation_trace`~~: hecho (ver `docs/business-config.md`, «Lo Que El Motor Usa Del Contrato»).
 7. Incorporar la autenticación y la autorización multiusuario a la API del panel. Hoy no tiene ninguna y solo es segura porque atiende únicamente en este equipo: no se puede desplegar en la nube así.
+
+## Nube: Vercel Y Neon
+
+Vercel publica **el motor** (FastAPI, carpeta raíz `project`) como funciones de Python; Neon es su PostgreSQL. El panel todavía
+no se publica: necesita la autenticación de la fase de nube.
+
+Lo que el motor ya resuelve para correr ahí:
+
+- No escribe en disco al arrancar (Vercel solo permite leer).
+- Acepta la cadena de conexión de Neon tal como viene (`postgres://` o `postgresql://`): la pasa a psycopg 3, tanto para su base
+  (`DATABASE_URL`) como para el almacén del panel (`BUSINESS_CONFIG_DATABASE_URL`).
+- En producción (`MODE=production`) y en Vercel solo publica `/health` y el webhook de WhatsApp.
+
+Una sola base de Neon guarda las tablas del motor y el almacén del panel: sus tablas apuntan a `tenants`.
+
+**1. Preparar la base desde este equipo.** Pega la cadena de conexión de Neon en el `.env` de la raíz como `CLOUD_DATABASE_URL`
+y ejecuta:
+
+```bash
+python scripts/setup_cloud_database.py           # informa qué falta, sin escribir
+python scripts/setup_cloud_database.py --apply   # crea las tablas, registra los negocios y copia lo publicado
+```
+
+Copia las versiones, los datos de pago (ya cifrados: la clave no viaja) y los ajustes técnicos de cada negocio, y comprueba que
+lo publicado en la nube compila igual que aquí. Se puede repetir: lo que ya está no se toca.
+
+**2. Variables del proyecto en Vercel** (Settings → Environment Variables, para Production):
+
+| Variable | Valor |
+|---|---|
+| `DATABASE_URL` y `BUSINESS_CONFIG_DATABASE_URL` | La cadena de conexión de Neon con *pooling* (servidor `-pooler`), la misma en las dos |
+| `BUSINESS_CONFIG_SECRETS_KEY` | La misma clave de este equipo (`secrets.local.env`): sin ella no se leen los datos de pago |
+| `OPENROUTER_API_KEY` | La clave de la IA |
+| `BUSINESS_CONFIG_STORE` y `BUSINESS_CONFIG_CONTRACT_TENANTS` | `database` y `*` |
+| `MODE` | `production` |
+
+Los valores secretos los escribe la persona dueña de las cuentas; nunca se pegan en el chat ni en el repositorio.
+
+**3. Volver a desplegar** y comprobar `/health`.
+
+Pendiente: Telegram necesita webhook (Vercel no mantiene procesos de *polling*), el canal de WhatsApp necesita su configuración
+por negocio, y el panel necesita la autenticación. Mientras tanto, el bot sigue atendiendo desde `run_local`.
 
 ## Secuencia De Prueba Recomendada
 

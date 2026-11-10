@@ -2,8 +2,8 @@
 
 `BusinessConfig v1` es la estructura común con la que se describe un negocio: qué vende, a qué precio, cómo
 cobra, cómo debe hablar y vender el asistente y qué puede hacer. Todos los negocios usan el mismo contrato
-versionado; cada uno tiene su propio documento con sus datos. Será la única fuente de configuración comercial
-cuando el motor se conecte a ella en la Fase 4; hasta entonces, el motor sigue leyendo sus YAML.
+versionado; cada uno tiene su propio documento con sus datos. Es la fuente de configuración comercial de
+los negocios activados (ver [Conexión Con El Motor](#conexión-con-el-motor)); sin activarlos, el motor sigue con sus YAML.
 
 El contrato consolida las funcionalidades que ya existían en los YAML: las representa con tipos y
 validaciones y conserva sus opciones y valores. Cuando es la fuente de un negocio, el motor usa además lo que solo
@@ -27,8 +27,8 @@ existe en el contrato: el perfil comercial, el tono y las preguntas frecuentes (
 | Persistencia local (SQLite) | **Terminada** y conectada al panel por la API local |
 | API local y panel de administración | **Terminados** (Fase 2): funcionan solo en este equipo; ver [Panel De Administración](#panel-de-administración) |
 | Funcionamiento del almacén sin YAML | **Terminado y comprobado** en un árbol sin YAML ni motor (ver [Independencia De Los YAML](#independencia-de-los-yaml)) |
-| Motor comercial | Lee sus YAML por defecto. Puede leer lo publicado en el panel, negocio por negocio, con `BUSINESS_CONFIG_STORE=database` (ver [Conexión Con El Motor](#conexión-con-el-motor)); ningún negocio está activado |
-| Activación del contrato en algún negocio | **No realizada**: todos siguen con sus YAML |
+| Motor comercial | Lee sus YAML por defecto; con `BUSINESS_CONFIG_STORE=database` y `BUSINESS_CONFIG_CONTRACT_TENANTS` lee lo publicado en el panel (ver [Conexión Con El Motor](#conexión-con-el-motor)) |
+| Activación del contrato | **Hecha en el Mac** (2026-11-10): los nueve negocios responden con lo publicado en el panel. Falta en Windows y en la nube, con las mismas dos variables |
 | Retiro de los YAML | **No realizado** ni autorizado |
 
 ## Fuente Canónica Y Archivos Generados
@@ -603,7 +603,7 @@ posventa y seguimiento, precio anual y por variante...). Cada uno necesitará su
 ## Pendientes Fuera Del Contrato
 
 1. Decisiones del negocio sobre el diagnóstico y los hallazgos.
-2. Activar el contrato por negocio (`BUSINESS_CONFIG_CONTRACT_TENANTS`): le añade el perfil comercial; el resto queda igual.
+2. Activar el contrato (`BUSINESS_CONFIG_STORE=database` y `BUSINESS_CONFIG_CONTRACT_TENANTS=*`): hecho en el Mac; falta en Windows y en la nube.
 3. Retirar los YAML y `legacy` solo cuando ningún negocio dependa de ellos.
 4. Persistencia en PostgreSQL, rotación de la clave de cifrado y limpieza de datos de pago de versiones
    antiguas: fase de nube.

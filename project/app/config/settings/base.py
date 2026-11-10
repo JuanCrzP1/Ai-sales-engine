@@ -17,8 +17,6 @@ from .limits import apply_limits_sections
 
 BASE_DIR = Path(__file__).resolve().parents[3]
 WORKSPACE_ROOT = BASE_DIR.parent
-DATA_DIR = BASE_DIR / "data"
-DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 CONFIG_DIR = BASE_DIR / "config"
 CONFIG_DIR.mkdir(parents=True, exist_ok=True)
@@ -391,7 +389,19 @@ for name in Settings.model_fields.keys():
     elif env_key in _env_file_cfg:
         _yaml_cfg[name] = _env_file_cfg[env_key]
 
+def normalize_database_url(url: str | None) -> str:
+    """El motor usa psycopg 3. Neon, Vercel y la mayoría de proveedores entregan `postgres://` o `postgresql://`, que SQLAlchemy
+    asocia con psycopg2: se usan tal cual vienen, sin editarlas a mano."""
+    text = str(url or "").strip()
+    for scheme in ("postgresql://", "postgres://"):
+        if text.lower().startswith(scheme):
+            return f"postgresql+psycopg://{text[len(scheme):]}"
+    return text
+
+
 settings = Settings(**_yaml_cfg)
+# Antes de que nadie cree la conexión: `app.database.connection` la crea al importarse.
+settings.database_url = normalize_database_url(settings.database_url)
 
 def is_test_context() -> bool:
     """Detecta ejecución bajo pytest sin depender de PYTEST_CURRENT_TEST.
@@ -424,7 +434,7 @@ def validate_database_url(url: str | None = None, *, is_test: bool | None = None
     - is_test: fuerza el contexto; si es None se detecta con is_test_context().
     """
     apply_to_settings = url is None
-    resolved = str((settings.database_url if apply_to_settings else url) or "").strip()
+    resolved = normalize_database_url(settings.database_url if apply_to_settings else url)
     test_ctx = is_test_context() if is_test is None else bool(is_test)
 
     if not resolved:
