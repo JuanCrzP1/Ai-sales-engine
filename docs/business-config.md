@@ -425,8 +425,9 @@ lo usa solo cuando las encuentra. Un negocio que sigue con sus YAML no cambia.
 
 - Las recomendaciones apuntan por id a un plan, producto o categoría y llegan con su nombre. Las que apuntan a algo que no
   se ofrece se descartan: la IA nunca recomienda algo inexistente, y el diagnóstico se lo señala al negocio.
-- Las descripciones del negocio (20 palabras) y de cada plan o producto (25) se recortan con `PROMPT_WORD_LIMITS`, los mismos
-  límites que el panel le muestra al negocio.
+- Los textos del negocio llegan completos, sin recortes: el contrato limita su largo en caracteres (`MAX_INDUSTRY_CHARS` 80,
+  `MAX_DESCRIPTION_CHARS` 500, `MAX_VALUE_PROPOSITION_CHARS` 300, `MAX_OFFER_DESCRIPTION_CHARS` 300) y el panel no deja escribir
+  más, con un contador. Las categorías (hasta 20) y los problemas del cliente (hasta 10) también se usan todos.
 - Las promociones vencidas se descartan al armar cada prompt, sin volver a publicar.
 - Con cualquiera de las dos fuentes, la línea «Precios» de un catálogo lista el precio de cada producto.
 - Los datos de pago nunca llegan a la IA, ni desde la configuración ni desde el historial, ni al registro

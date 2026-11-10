@@ -1,6 +1,6 @@
 import type { TransferMethod } from "../../contracts/businessConfig.v1";
 import { SAMPLE_DOCUMENT } from "../../test/fixtures/sampleDocument";
-import { MAX_PROFILE_ITEM_CHARS, MAX_PROFILE_ITEMS } from "../config/engineLimits";
+import { MAX_CATEGORIES, MAX_PROFILE_ITEM_CHARS, MAX_PROFILE_ITEMS, TEXT_LIMITS } from "../config/engineLimits";
 import { createCatalogItem, createEmptyDocument, createPlan } from "../config/factories";
 import type { BusinessDocument, PaymentValues } from "../config/types";
 import { computeProgress } from "./progress";
@@ -24,11 +24,14 @@ describe("validateDocument", () => {
     expect(computeProgress(check(empty)).ready).toBe(false);
   });
 
-  it("avisa cuando los textos superan el límite de palabras que usa el motor", () => {
+  it("los textos largos no generan avisos de recorte: el asistente los usa completos hasta su máximo", () => {
     const document = clone(SAMPLE_DOCUMENT);
-    document.identity.industry = "uno dos tres cuatro cinco seis siete ocho nueve";
+    document.identity.industry = "uno dos tres cuatro cinco seis siete ocho nueve diez once";
     document.identity.value_proposition = Array.from({ length: 31 }, (_, i) => `p${i}`).join(" ");
-    expect(warningFields(document)).toEqual(expect.arrayContaining(["identity.industry", "identity.value_proposition"]));
+    expect(warningFields(document)).not.toEqual(expect.arrayContaining(["identity.industry"]));
+    expect(errorFields(document)).not.toEqual(expect.arrayContaining(["identity.industry", "identity.value_proposition"]));
+    document.identity.value_proposition = "x".repeat(TEXT_LIMITS.valueProposition + 1);
+    expect(errorFields(document)).toContain("identity.value_proposition");
   });
 
   it("exige precio y categoría válidos en cada elemento del catálogo", () => {
@@ -37,13 +40,13 @@ describe("validateDocument", () => {
     expect(errorFields(document)).toEqual(expect.arrayContaining(["offer.catalog.items.0.prices", "offer.catalog.items.0.category"]));
   });
 
-  it("avisa cuando hay más categorías de las que menciona el motor", () => {
+  it("admite hasta el máximo de categorías, todas las usa el asistente", () => {
     const document = clone(SAMPLE_DOCUMENT);
-    const named = (ids: string[]) => ids.map((id) => ({ id, name: id }));
-    document.offer.catalog!.categories = named(["a", "b", "c", "d"]);
-    expect(warningFields(document)).not.toContain("offer.catalog.categories");
-    document.offer.catalog!.categories = named(["a", "b", "c", "d", "e"]);
-    expect(warningFields(document)).toContain("offer.catalog.categories");
+    const named = (count: number) => Array.from({ length: count }, (_, index) => ({ id: `c${index}`, name: `Categoría ${index}` }));
+    document.offer.catalog!.categories = named(MAX_CATEGORIES);
+    expect([...warningFields(document), ...errorFields(document)]).not.toContain("offer.catalog.categories");
+    document.offer.catalog!.categories = named(MAX_CATEGORIES + 1);
+    expect(errorFields(document)).toContain("offer.catalog.categories");
   });
 
   it("exige al menos un elemento disponible", () => {

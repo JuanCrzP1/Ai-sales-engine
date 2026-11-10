@@ -17,9 +17,12 @@ export const MAX_TONE_CHARS = 160;
 export const MAX_PROMOTIONS = 10;
 export const MAX_POLICY_CHARS = 800;
 export const MAX_MESSAGE_CHARS = 800;
-export const PROMPT_WORD_LIMITS = {"industry": 8, "value_proposition": 30, "description": 20, "offer_description": 25} as const;
-export const PROMPT_MAX_PROBLEMS = 2;
-export const PROMPT_MAX_CATEGORIES = 4;
+export const MAX_INDUSTRY_CHARS = 80;
+export const MAX_DESCRIPTION_CHARS = 500;
+export const MAX_VALUE_PROPOSITION_CHARS = 300;
+export const MAX_OFFER_DESCRIPTION_CHARS = 300;
+export const MAX_CATEGORIES = 20;
+export const MAX_CUSTOMER_PROBLEMS = 10;
 
 export interface BuyingMotivation {
   primary: string;

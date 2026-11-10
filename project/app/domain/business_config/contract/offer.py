@@ -5,6 +5,8 @@ from typing import Literal
 
 from pydantic import Field, model_validator
 
+from app.domain.business_config.engine_policy import MAX_CATEGORIES, MAX_OFFER_DESCRIPTION_CHARS
+
 from app.domain.business_config.primitives import (
     CONNECTED,
     PENDING,
@@ -43,7 +45,7 @@ class Plan(ContractModel):
 
     id: Identifier = Field(json_schema_extra=CONNECTED)
     name: Text = Field(json_schema_extra=CONNECTED)
-    description: str | None = Field(default=None, description="Detalle del plan.", json_schema_extra=CONNECTED)
+    description: str | None = Field(default=None, max_length=MAX_OFFER_DESCRIPTION_CHARS, description="Detalle del plan.", json_schema_extra=CONNECTED)
     prices: list[PlanPrice] = Field(min_length=1, json_schema_extra=CONNECTED)
     includes: list[Text] | None = Field(default=None, json_schema_extra=CONNECTED)
     not_included: list[Text] | None = Field(default=None, json_schema_extra=CONNECTED)
@@ -75,7 +77,7 @@ class CatalogItem(ContractModel):
     category: Identifier = Field(
         description="Id de su categoría; una categoría sin productos disponibles no se ofrece.", json_schema_extra=CONNECTED
     )
-    description: str | None = Field(default=None, description="Detalle del producto.", json_schema_extra=CONNECTED)
+    description: str | None = Field(default=None, max_length=MAX_OFFER_DESCRIPTION_CHARS, description="Detalle del producto.", json_schema_extra=CONNECTED)
     prices: list[ItemPrice] = Field(min_length=1, json_schema_extra=CONNECTED)
     features: Phrases | None = Field(default=None, description="Características del producto.", json_schema_extra=CONNECTED)
     available: bool = Field(
@@ -91,7 +93,7 @@ class CatalogItem(ContractModel):
 
 
 class Catalog(ContractModel):
-    categories: list[CatalogCategory] = Field(min_length=1, json_schema_extra=CONNECTED)
+    categories: list[CatalogCategory] = Field(min_length=1, max_length=MAX_CATEGORIES, json_schema_extra=CONNECTED)
     items: list[CatalogItem] = Field(min_length=1)
     payment_profile: Identifier | None = Field(default=None, description="Perfil de pago con el que se cobra.", json_schema_extra=CONNECTED)
 

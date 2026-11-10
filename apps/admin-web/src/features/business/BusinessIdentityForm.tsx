@@ -1,7 +1,7 @@
 import { TextAreaField, TextField } from "../../components/ui/FormFields";
 import { Card } from "../../components/ui/Layout";
 import { optionalText } from "../../domain/config/document";
-import { WORD_LIMITS } from "../../domain/config/engineLimits";
+import { TEXT_LIMITS } from "../../domain/config/engineLimits";
 import { useFieldIssue, useSection } from "../../state/useConfig";
 
 export function BusinessIdentityForm() {
@@ -30,7 +30,7 @@ export function BusinessIdentityForm() {
         value={identity.industry}
         onChange={(industry) => update({ industry })}
         placeholder="Ej.: panadería artesanal con domicilios"
-        wordLimit={WORD_LIMITS.businessType}
+        maxLength={TEXT_LIMITS.businessType}
         issue={industryIssue}
         hint="Resúmelo en pocas palabras. Es lo primero que el asistente sabe de ti."
       />
@@ -40,7 +40,7 @@ export function BusinessIdentityForm() {
         value={identity.description}
         onChange={(description) => update({ description })}
         placeholder="Qué haces, para quién y desde cuándo."
-        wordLimit={WORD_LIMITS.description}
+        maxLength={TEXT_LIMITS.description}
         issue={descriptionIssue}
       />
       <TextAreaField
@@ -49,7 +49,7 @@ export function BusinessIdentityForm() {
         value={identity.value_proposition}
         onChange={(value_proposition) => update({ value_proposition })}
         placeholder="Ej.: Pan recién horneado en tu puerta en menos de 30 minutos."
-        wordLimit={WORD_LIMITS.valueProposition}
+        maxLength={TEXT_LIMITS.valueProposition}
         issue={valueIssue}
         hint="Qué gana el cliente al comprarte. El asistente la usará como promesa comercial."
       />

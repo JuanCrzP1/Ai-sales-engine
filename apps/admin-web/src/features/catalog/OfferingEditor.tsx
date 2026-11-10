@@ -6,7 +6,7 @@ import { ListEditor } from "../../components/ui/ListEditor";
 import { Toggle } from "../../components/ui/Toggle";
 import type { CatalogItem, ItemPrice, Plan, PlanPrice } from "../../domain/config/types";
 import { optionalList, optionalText, type OfferEntry } from "../../domain/config/document";
-import { WORD_LIMITS } from "../../domain/config/engineLimits";
+import { TEXT_LIMITS } from "../../domain/config/engineLimits";
 import { DEFAULT_CURRENCY } from "../../domain/config/factories";
 import { currencyOptions } from "../../domain/config/options";
 import { issuesFor } from "../../domain/validation/issues";
@@ -82,7 +82,7 @@ export function OfferingEditor({ draft, categoryName, isNew, issues, catalog, ca
         value={draft.description ?? ""}
         onChange={(description) => onChange({ description: optionalText(description) })}
         rows={2}
-        wordLimit={WORD_LIMITS.offeringDescription}
+        maxLength={TEXT_LIMITS.offeringDescription}
         hint="El asistente la usa para explicar este elemento."
         issue={issue("description")}
       />

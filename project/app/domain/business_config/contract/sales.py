@@ -5,7 +5,7 @@ from typing import Annotated, Literal
 
 from pydantic import Field, model_validator
 
-from app.domain.business_config.engine_policy import MAX_PROFILE_ITEMS
+from app.domain.business_config.engine_policy import MAX_CUSTOMER_PROBLEMS, MAX_PROFILE_ITEMS
 from app.domain.business_config.primitives import ADVANCED, CONNECTED, ContractModel, Identifier, Phrase, Phrases, Text, ensure_unique
 
 
@@ -139,7 +139,9 @@ class Sales(ContractModel):
     motivations: list[Motivation] | None = Field(
         default=None, description="Cada motivo de compra: qué significa, cómo reconocerlo y con qué ángulo venderle.", json_schema_extra=ADVANCED
     )
-    customer_problems: list[CustomerProblem] | None = Field(default=None, description="Problemas del cliente que el negocio resuelve.")
+    customer_problems: list[CustomerProblem] | None = Field(
+        default=None, max_length=MAX_CUSTOMER_PROBLEMS, description="Problemas del cliente que el negocio resuelve."
+    )
     pain_points: Phrases | None = Field(default=None, description="Problemas del cliente en sus palabras.")
     use_cases: list[UseCase] | None = Field(default=None, description="Casos de uso típicos.", json_schema_extra=ADVANCED)
     benefits: Phrases | None = Field(default=None, description="Resultados que obtiene el cliente.", json_schema_extra=CONNECTED)

@@ -5,7 +5,7 @@ import { Card } from "../../components/ui/Layout";
 import { ListEditor } from "../../components/ui/ListEditor";
 import type { CustomerProblem } from "../../domain/config/types";
 import { optionalList, optionalText } from "../../domain/config/document";
-import { MAX_PROBLEMS_USED } from "../../domain/config/engineLimits";
+import { MAX_CUSTOMER_PROBLEMS } from "../../domain/config/engineLimits";
 import { createId } from "../../lib/ids";
 import { useFieldIssue, useSection } from "../../state/useConfig";
 
@@ -75,7 +75,7 @@ function ProblemsEditor({ problems, onChange }: { problems: CustomerProblem[]; o
   return (
     <fieldset className="contract-group">
       <legend className="field__label">Problemas de tus clientes que resuelves</legend>
-      <p className="field__hint">Escribe primero los más importantes: el asistente usa los {MAX_PROBLEMS_USED} primeros.</p>
+      <p className="field__hint">Hasta {MAX_CUSTOMER_PROBLEMS}. El asistente los usa todos para entender a tus clientes.</p>
       {problems.map((problem, index) => (
         <div className="list-editor__row" key={problem.id}>
           <input
@@ -91,7 +91,12 @@ function ProblemsEditor({ problems, onChange }: { problems: CustomerProblem[]; o
         </div>
       ))}
       <div>
-        <Button variant="secondary" size="small" onClick={() => onChange([...problems, { id: createId("problema"), impacts: [""] }])}>
+        <Button
+          variant="secondary"
+          size="small"
+          disabled={problems.length >= MAX_CUSTOMER_PROBLEMS}
+          onClick={() => onChange([...problems, { id: createId("problema"), impacts: [""] }])}
+        >
           Agregar problema
         </Button>
       </div>

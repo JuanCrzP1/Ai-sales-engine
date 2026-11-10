@@ -21,7 +21,7 @@ from pydantic import ValidationError
 
 from app.application.runtime.tenant_runtime_loader import _load_legacy_sections
 from app.domain.business_config.compiler import comparable_with_yaml, compile_business_config
-from app.domain.business_config.contract import BusinessConfig
+from app.domain.business_config.contract import BusinessConfig, business_config_json_schema
 from app.domain.business_config.diagnostics import review
 from app.domain.business_config.engine_settings import EngineSettings
 from app.domain.business_config.engine_policy import (
@@ -882,3 +882,27 @@ def test_panel_document_is_valid_against_the_contract():
     # El producto no disponible viaja en el contrato, pero no se compila para el motor.
     assert [item.available for item in config.offer.catalog.items] == [True, True, False]
     assert [item["name"] for item in compiled["pricing"]["catalog"]["items"]] == ["Café americano", "Croissant de mantequilla"]
+
+
+# ---------------------------------------------------------------------------
+# Largo de los textos que usa el asistente: completos, hasta el máximo del contrato
+# ---------------------------------------------------------------------------
+
+def test_the_texts_the_assistant_uses_have_a_maximum_length():
+    from app.domain.business_config.engine_policy import (
+        MAX_CATEGORIES,
+        MAX_DESCRIPTION_CHARS,
+        MAX_INDUSTRY_CHARS,
+        MAX_OFFER_DESCRIPTION_CHARS,
+        MAX_VALUE_PROPOSITION_CHARS,
+    )
+
+    schema = business_config_json_schema()
+    identity = schema["$defs"]["Identity"]["properties"]
+    assert (identity["industry"]["maxLength"], identity["description"]["maxLength"], identity["value_proposition"]["maxLength"]) == (
+        MAX_INDUSTRY_CHARS,
+        MAX_DESCRIPTION_CHARS,
+        MAX_VALUE_PROPOSITION_CHARS,
+    )
+    assert schema["$defs"]["Catalog"]["properties"]["categories"]["maxItems"] == MAX_CATEGORIES
+    assert MAX_OFFER_DESCRIPTION_CHARS >= 200

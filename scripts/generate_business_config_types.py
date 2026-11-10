@@ -102,9 +102,12 @@ def render_types() -> str:
         f"export const MAX_PROMOTIONS = {engine_policy.MAX_PROMOTIONS};",
         f"export const MAX_POLICY_CHARS = {engine_policy.MAX_POLICY_CHARS};",
         f"export const MAX_MESSAGE_CHARS = {engine_policy.MAX_MESSAGE_CHARS};",
-        f"export const PROMPT_WORD_LIMITS = {json.dumps(engine_policy.PROMPT_WORD_LIMITS)} as const;",
-        f"export const PROMPT_MAX_PROBLEMS = {engine_policy.PROMPT_MAX_PROBLEMS};",
-        f"export const PROMPT_MAX_CATEGORIES = {engine_policy.PROMPT_MAX_CATEGORIES};",
+        f"export const MAX_INDUSTRY_CHARS = {engine_policy.MAX_INDUSTRY_CHARS};",
+        f"export const MAX_DESCRIPTION_CHARS = {engine_policy.MAX_DESCRIPTION_CHARS};",
+        f"export const MAX_VALUE_PROPOSITION_CHARS = {engine_policy.MAX_VALUE_PROPOSITION_CHARS};",
+        f"export const MAX_OFFER_DESCRIPTION_CHARS = {engine_policy.MAX_OFFER_DESCRIPTION_CHARS};",
+        f"export const MAX_CATEGORIES = {engine_policy.MAX_CATEGORIES};",
+        f"export const MAX_CUSTOMER_PROBLEMS = {engine_policy.MAX_CUSTOMER_PROBLEMS};",
     ]
     header = (
         "// ARCHIVO GENERADO por scripts/generate_business_config_types.py. No editar a mano.\n"

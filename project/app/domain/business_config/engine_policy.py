@@ -5,7 +5,7 @@ Valores que el runtime actual aplica (comprobados en el código del motor; este 
   configuración no trae valores, con un mínimo de 20 palabras.
 - ventanas de conversación: `ConfigService.DEFAULT_CONVERSATION` y `conversation_flow.py` usan
   15 minutos (activa) y 4 horas (reinicio); un 0 se trata como "sin valor".
-- recortes del prompt (`PROMPT_WORD_LIMITS`, `PROMPT_MAX_*`): ver cada constante.
+- largo de los textos del negocio (`MAX_*_CHARS`) y de sus listas: el asistente los usa completos.
 - definición común del cierre (`COMMON_CLOSING_POLICY`): ver la constante.
 
 Opciones de longitud para el negocio: cada una fija el límite de palabras que el motor escribe en el
@@ -63,21 +63,15 @@ MAX_PROMOTIONS = 10
 MAX_POLICY_CHARS = 800
 MAX_MESSAGE_CHARS = 800
 
-# Recortes que el prompt actual aplica a los textos del negocio (en palabras). El panel los muestra
-# al cliente para que sepa qué parte de cada texto usa el asistente.
-# - industry y value_proposition: siempre (`PromptBuilderService`, sector y promesa comercial).
-# - description: en el perfil comercial, cuando la configuración viene del contrato (y en el contexto del negocio cuando
-#   falta `industry`, que el contrato exige).
-# - offer_description: la descripción de cada plan y producto en el detalle de la oferta del perfil comercial.
-PROMPT_WORD_LIMITS: dict[str, int] = {
-    "industry": 8,
-    "value_proposition": 30,
-    "description": 20,
-    "offer_description": 25,
-}
-# El prompt actual menciona como máximo estos problemas del cliente y categorías del catálogo.
-PROMPT_MAX_PROBLEMS = 2
-PROMPT_MAX_CATEGORIES = 4
+# Largo máximo de los textos del negocio que usa el asistente, en caracteres. El contrato no acepta más y el panel no deja
+# escribir más (con un contador): el asistente usa cada texto completo, nunca un recorte.
+MAX_INDUSTRY_CHARS = 80
+MAX_DESCRIPTION_CHARS = 500
+MAX_VALUE_PROPOSITION_CHARS = 300
+MAX_OFFER_DESCRIPTION_CHARS = 300
+# Listas que el asistente usa completas.
+MAX_CATEGORIES = 20
+MAX_CUSTOMER_PROBLEMS = 10
 # Caracteres de preguntas frecuentes por prompt. Si todas caben, van todas; si no, las más relacionadas con el mensaje del cliente.
 # Con el máximo del contrato (30 de hasta 1000 caracteres) llenarían el prompt.
 FAQ_PROMPT_MAX_CHARS = 1500

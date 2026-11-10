@@ -12,7 +12,7 @@ from pathlib import Path
 
 from app.domain.business_config.commercial_profile import compile_knowledge, compile_profile
 from app.domain.business_config.contract import BusinessConfig
-from app.domain.business_config.engine_policy import FAQ_PROMPT_MAX_CHARS, PROMPT_WORD_LIMITS
+from app.domain.business_config.engine_policy import FAQ_PROMPT_MAX_CHARS
 from app.infrastructure.ai.prompting.business_knowledge import KNOWLEDGE_HEADER, build_knowledge_context, select_faqs
 from app.infrastructure.ai.prompting.business_profile import (
     DEFAULT_TONE,
@@ -86,7 +86,8 @@ def test_without_profile_there_is_no_block_and_the_tone_is_the_usual_one():
     assert response_tone({"config": {}}) == DEFAULT_TONE
 
 
-def test_descriptions_use_the_same_word_limits_the_panel_shows():
+def test_descriptions_reach_the_assistant_complete():
+    """El negocio y cada producto llegan con su descripción entera: el panel limita el largo, el asistente no recorta."""
     description = " ".join(f"palabra{index}" for index in range(40))
     runtime = _runtime(
         {"name": "Negocio", "description": description},
@@ -95,8 +96,8 @@ def test_descriptions_use_the_same_word_limits_the_panel_shows():
     block = build_business_profile_context(runtime)
     business_line = next(line for line in block.splitlines() if line.startswith("Descripción:"))
     product_line = next(line for line in block.splitlines() if line.startswith("- Producto:"))
-    assert len(business_line.removeprefix("Descripción: ").split()) == PROMPT_WORD_LIMITS["description"]
-    assert len(product_line.removeprefix("- Producto: ").split()) == PROMPT_WORD_LIMITS["offer_description"]
+    assert business_line.removeprefix("Descripción: ").rstrip(".") == description
+    assert product_line.removeprefix("- Producto: ").rstrip(".") == description
 
 
 def test_an_ongoing_conversation_without_rules_has_no_block():

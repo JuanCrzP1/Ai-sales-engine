@@ -28,7 +28,7 @@ from app.application.runtime import load_tenant_runtime_yaml
 from app.application.runtime import tenant_runtime_loader as loader
 from app.domain.business_config.compiler import comparable_with_yaml, compile_business_config
 from app.domain.business_config.contract import BusinessConfig
-from app.domain.business_config.engine_policy import PROMPT_WORD_LIMITS, RESPONSE_LENGTH_MAX_WORDS
+from app.domain.business_config.engine_policy import MAX_INDUSTRY_CHARS, MAX_VALUE_PROPOSITION_CHARS, RESPONSE_LENGTH_MAX_WORDS
 from app.domain.business_config.payment_data import iter_payment_blocks
 from app.infrastructure.ai.prompting.builder.prompt_builder import PromptBuilderService
 from app.infrastructure.config.business_config_store import CONTRACT_FILENAME, BusinessConfigStore
@@ -376,17 +376,18 @@ def test_conversation_windows_drive_the_conversation_state(monkeypatch, tmp_path
     assert get_conversation_state(now - timedelta(hours=2), custom) == "cold"
 
 
-def test_prompt_word_limits_match_the_current_engine(monkeypatch, tmp_path):
-    industry = [f"sector{index}" for index in range(PROMPT_WORD_LIMITS["industry"] + 4)]
-    promise = [f"promesa{index}" for index in range(PROMPT_WORD_LIMITS["value_proposition"] + 4)]
+def test_the_assistant_uses_the_whole_text_up_to_the_contract_limit(monkeypatch, tmp_path):
+    """Sin recortes por palabras: el sector y la promesa llegan completos, con el largo máximo que acepta el contrato."""
+    industry = ("sector " * 40)[: MAX_INDUSTRY_CHARS - 4] + " fin"
+    promise = ("promesa " * 60)[: MAX_VALUE_PROPOSITION_CHARS - 6] + " final"
+    assert (len(industry), len(promise)) == (MAX_INDUSTRY_CHARS, MAX_VALUE_PROPOSITION_CHARS)
     (prompts, _), = run_with_document(
         monkeypatch, tmp_path, "saas",
-        lambda d: d["identity"].update(industry=" ".join(industry), value_proposition=" ".join(promise)),
+        lambda d: d["identity"].update(industry=industry, value_proposition=promise),
         [("Necesito información", reply("Claro."))],
     )
-    for words, limit in ((industry, PROMPT_WORD_LIMITS["industry"]), (promise, PROMPT_WORD_LIMITS["value_proposition"])):
-        assert " ".join(words[:limit]) in prompts[0]
-        assert words[limit] not in prompts[0]
+    assert " ".join(industry.split()) in prompts[0]
+    assert " ".join(promise.split()) in prompts[0]
 
 
 # ---------------------------------------------------------------------------
@@ -658,8 +659,8 @@ def test_connected_fields_change_the_prompt(monkeypatch, tmp_path, case):
 CONNECTED_EVIDENCE: dict[str, str] = {
     "schema_version": "test_invalid_contract_falls_back_to_yaml",
     "tenant_slug": "test_store_rejects_documents_of_another_tenant",
-    "identity.industry": "test_prompt_word_limits_match_the_current_engine",
-    "identity.value_proposition": "test_prompt_word_limits_match_the_current_engine",
+    "identity.industry": "test_the_assistant_uses_the_whole_text_up_to_the_contract_limit",
+    "identity.value_proposition": "test_the_assistant_uses_the_whole_text_up_to_the_contract_limit",
     "offer.model": "test_tenants_stay_isolated_with_contract_source",
     "offer.plans[].id": "test_payment_methods_reach_the_customer",
     "offer.plans[].name": "test_plan_prices_format_is_unchanged",

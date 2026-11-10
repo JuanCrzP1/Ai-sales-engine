@@ -6,7 +6,7 @@ YAML no cambia, y el motor solo añade el perfil al prompt cuando lo encuentra.
 - Las recomendaciones apuntan por id a un plan, un producto o una categoría: aquí se cambia el id por su nombre. Las que apuntan a
   algo que no se ofrece se descartan, para que la IA nunca recomiende algo inexistente; el diagnóstico ya se las señala al negocio.
 - Las promociones se compilan todas, con su fecha: el motor descarta las vencidas cada vez que arma el prompt, sin volver a publicar.
-- Los textos se compilan completos: los recortes que aplica el prompt (`PROMPT_WORD_LIMITS`) los decide el motor al usarlos.
+- Los textos se compilan completos y el motor los usa completos: su largo lo limita el contrato (`MAX_*_CHARS`).
 """
 from __future__ import annotations
 

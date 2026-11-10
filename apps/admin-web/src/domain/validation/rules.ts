@@ -1,7 +1,7 @@
 import type { CatalogItem, Plan } from "../../contracts/businessConfig.v1";
 import { paymentHolders, isAvailable, isCatalog, isLinkActive, isMethodActive, isStoredRef, offerEntries } from "../config/document";
 import {
-  MAX_CATEGORIES_USED,
+  MAX_CATEGORIES,
   MAX_FAQ_ANSWER_CHARS,
   MAX_FAQ_QUESTION_CHARS,
   MAX_FAQS,
@@ -10,13 +10,13 @@ import {
   MAX_PROMOTIONS,
   MAX_TONE_CHARS,
   RESPONSE_LENGTH_WORD_RANGES,
-  WORD_LIMITS,
+  TEXT_LIMITS,
 } from "../config/engineLimits";
 import { labelFor, RESPONSE_LENGTHS } from "../config/options";
 import type { BusinessDocument, PaymentValues, WorkingCopy } from "../config/types";
 import type { ConfigSectionId } from "../sections";
 import { localIsoDate } from "../../lib/format";
-import { cleanList, countWords } from "../../lib/text";
+import { cleanList } from "../../lib/text";
 import { isAccountNumber, isBlank, isColombianMobile, isHttpsUrl, isHttpUrl, isPositiveAmount } from "./fieldChecks";
 import type { ValidationIssue } from "./types";
 
@@ -55,18 +55,18 @@ function validateBusiness({ identity }: BusinessDocument): ValidationIssue[] {
   if (isBlank(identity.name)) add("name", "error", "Escribe el nombre comercial de tu negocio.");
   if (isBlank(identity.description)) {
     add("description", "error", "Describe brevemente tu negocio.");
-  } else if (countWords(identity.description) > WORD_LIMITS.description) {
-    add("description", "warning", `El asistente usa las primeras ${WORD_LIMITS.description} palabras de la descripción.`);
+  } else if (identity.description.length > TEXT_LIMITS.description) {
+    add("description", "error", `La descripción puede tener máximo ${TEXT_LIMITS.description} caracteres.`);
   }
   if (isBlank(identity.industry)) {
     add("industry", "error", "Indica a qué se dedica tu negocio.");
-  } else if (countWords(identity.industry) > WORD_LIMITS.businessType) {
-    add("industry", "warning", `El asistente solo usa las primeras ${WORD_LIMITS.businessType} palabras. Intenta resumirlo.`);
+  } else if (identity.industry.length > TEXT_LIMITS.businessType) {
+    add("industry", "error", `Resúmelo en máximo ${TEXT_LIMITS.businessType} caracteres.`);
   }
   if (isBlank(identity.value_proposition)) {
     add("value_proposition", "error", "Escribe tu propuesta de valor: qué gana el cliente contigo.");
-  } else if (countWords(identity.value_proposition) > WORD_LIMITS.valueProposition) {
-    add("value_proposition", "warning", `El asistente solo usa las primeras ${WORD_LIMITS.valueProposition} palabras; el resto se corta.`);
+  } else if (identity.value_proposition.length > TEXT_LIMITS.valueProposition) {
+    add("value_proposition", "error", `La propuesta de valor puede tener máximo ${TEXT_LIMITS.valueProposition} caracteres.`);
   }
   issues.push(
     ...validateList("business", "identity.differentiators", "Diferenciadores", identity.differentiators),
@@ -89,8 +89,8 @@ function validateOffer(document: BusinessDocument): ValidationIssue[] {
     issues.push({ section: "catalog", field: "offer", severity: "error", message: "Agrega al menos un producto o servicio disponible." });
   }
   const categories = document.offer.catalog?.categories.length ?? 0;
-  if (categories > MAX_CATEGORIES_USED) {
-    issues.push({ section: "catalog", field: "offer.catalog.categories", severity: "warning", message: `Tienes ${categories} categorías: el asistente solo menciona las primeras ${MAX_CATEGORIES_USED}.` });
+  if (categories > MAX_CATEGORIES) {
+    issues.push({ section: "catalog", field: "offer.catalog.categories", severity: "error", message: `Puedes tener máximo ${MAX_CATEGORIES} categorías.` });
   }
   entries.forEach((entry, index) => {
     issues.push(...validateEntry(entry, catalog).map((issue) => ({ ...issue, field: `${prefix}.${index}.${issue.field}` })));
@@ -118,8 +118,8 @@ export function validateEntry(entry: Plan | CatalogItem, catalog: boolean, categ
   }
   const currencies = entry.prices.map((price) => price.currency);
   if (new Set(currencies).size !== currencies.length) add("prices", "error", `${label}: hay dos precios en la misma moneda.`);
-  if (countWords(entry.description ?? "") > WORD_LIMITS.offeringDescription) {
-    add("description", "warning", `${label}: el asistente usa las primeras ${WORD_LIMITS.offeringDescription} palabras de la descripción.`);
+  if ((entry.description ?? "").length > TEXT_LIMITS.offeringDescription) {
+    add("description", "error", `${label}: la descripción puede tener máximo ${TEXT_LIMITS.offeringDescription} caracteres.`);
   }
   return issues;
 }

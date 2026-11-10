@@ -58,15 +58,17 @@ interface TextFieldProps extends Omit<FieldProps, "children" | "footer"> {
   placeholder?: string;
   type?: "text" | "url" | "tel" | "email" | "date" | "time";
   wordLimit?: number;
+  /** Largo máximo en caracteres: no deja escribir más y muestra un contador. */
+  maxLength?: number;
   inputMode?: "text" | "numeric" | "tel" | "url" | "email";
   autoComplete?: string;
   /** Id de un <datalist> con sugerencias. */
   list?: string;
 }
 
-export function TextField({ value, onChange, placeholder, type = "text", wordLimit, inputMode, autoComplete, list, ...field }: TextFieldProps) {
+export function TextField({ value, onChange, placeholder, type = "text", wordLimit, maxLength, inputMode, autoComplete, list, ...field }: TextFieldProps) {
   return (
-    <Field {...field} footer={wordLimit ? <WordCounter text={value} limit={wordLimit} /> : undefined}>
+    <Field {...field} footer={counterFor(value, wordLimit, maxLength)}>
       {({ id, describedBy, invalid }) => (
         <input
           id={id}
@@ -76,6 +78,7 @@ export function TextField({ value, onChange, placeholder, type = "text", wordLim
           placeholder={placeholder}
           inputMode={inputMode}
           list={list}
+          maxLength={maxLength}
           autoComplete={autoComplete ?? "off"}
           required={field.required}
           aria-invalid={invalid || undefined}
@@ -93,16 +96,19 @@ interface TextAreaFieldProps extends Omit<FieldProps, "children" | "footer"> {
   placeholder?: string;
   rows?: number;
   wordLimit?: number;
+  /** Largo máximo en caracteres: no deja escribir más y muestra un contador. */
+  maxLength?: number;
 }
 
-export function TextAreaField({ value, onChange, placeholder, rows = 3, wordLimit, ...field }: TextAreaFieldProps) {
+export function TextAreaField({ value, onChange, placeholder, rows = 3, wordLimit, maxLength, ...field }: TextAreaFieldProps) {
   return (
-    <Field {...field} footer={wordLimit ? <WordCounter text={value} limit={wordLimit} /> : undefined}>
+    <Field {...field} footer={counterFor(value, wordLimit, maxLength)}>
       {({ id, describedBy, invalid }) => (
         <textarea
           id={id}
           className="textarea"
           rows={rows}
+          maxLength={maxLength}
           value={value}
           placeholder={placeholder}
           required={field.required}
@@ -170,6 +176,21 @@ export function NumberField({ value, onChange, placeholder, ...field }: NumberFi
         />
       )}
     </Field>
+  );
+}
+
+function counterFor(text: string, wordLimit?: number, maxLength?: number) {
+  if (wordLimit) return <WordCounter text={text} limit={wordLimit} />;
+  if (maxLength) return <CharCounter text={text} limit={maxLength} />;
+  return undefined;
+}
+
+function CharCounter({ text, limit }: { text: string; limit: number }) {
+  const near = text.length >= limit * 0.9;
+  return (
+    <p className={`field__counter${near ? " field__counter--over" : ""}`} aria-live="polite">
+      {text.length} / {limit} caracteres
+    </p>
   );
 }
 

@@ -1,6 +1,13 @@
 from __future__ import annotations
 
 from app.domain.ai.prompt_context import build_prompt_context
+from app.domain.business_config.engine_policy import (
+    MAX_CATEGORIES,
+    MAX_CUSTOMER_PROBLEMS,
+    MAX_DESCRIPTION_CHARS,
+    MAX_INDUSTRY_CHARS,
+    MAX_VALUE_PROPOSITION_CHARS,
+)
 from app.domain.business_config.payment_data import redact_payment_values
 from app.infrastructure.ai.prompting import business_knowledge, business_profile
 from app.infrastructure.config.config_service import ConfigService
@@ -129,22 +136,20 @@ class PromptBuilderService:
         return ""
 
     @staticmethod
-    def _shorten_text(value: object, *, max_words: int) -> str:
-        text = PromptBuilderService._as_text(value)
-        if not text:
-            return ""
-        words = text.split()
-        if len(words) <= max_words:
+    def _bounded_text(value: object, *, max_chars: int) -> str:
+        """El texto completo. Lo que viene del contrato ya respeta `max_chars`; un YAML antiguo más largo se corta en una palabra."""
+        text = " ".join(PromptBuilderService._as_text(value).split())
+        if len(text) <= max_chars:
             return text
-        return " ".join(words[:max_words])
+        return text[:max_chars].rsplit(" ", 1)[0]
 
     @staticmethod
     def build_business_context(yaml_config: dict) -> str:
         business = yaml_config.get("business", {}) if isinstance(yaml_config.get("business"), dict) else {}
 
-        industry = PromptBuilderService._shorten_text(business.get("industry", ""), max_words=8)
-        description = PromptBuilderService._shorten_text(business.get("description", ""), max_words=20)
-        promise = PromptBuilderService._shorten_text(business.get("promise", ""), max_words=30)
+        industry = PromptBuilderService._bounded_text(business.get("industry", ""), max_chars=MAX_INDUSTRY_CHARS)
+        description = PromptBuilderService._bounded_text(business.get("description", ""), max_chars=MAX_DESCRIPTION_CHARS)
+        promise = PromptBuilderService._bounded_text(business.get("promise", ""), max_chars=MAX_VALUE_PROPOSITION_CHARS)
         what_it_does = industry or description or "servicio definido en YAML"
 
         return "\n".join(
@@ -454,7 +459,7 @@ class PromptBuilderService:
             if PromptBuilderService._as_text(condition)
         ) or "sin condiciones explícitas"
         plan_names_text = ", ".join(plan_names)
-        category_names_text = ", ".join(category_names[:4])
+        category_names_text = ", ".join(category_names[:MAX_CATEGORIES])
 
         if plan_names_text:
             offer_reference_text = plan_names_text
@@ -573,12 +578,12 @@ class PromptBuilderService:
                 if impact_text:
                     impact_samples.append(impact_text)
                     break
-            if len(impact_samples) >= 2:
+            if len(impact_samples) >= MAX_CUSTOMER_PROBLEMS:
                 break
         impact_text = ", ".join(impact_samples)
         use_cases_text = ", ".join(
             PromptBuilderService._as_text(item.get("nombre", "") or item.get("name", ""))
-            for item in use_cases[:2]
+            for item in use_cases[:MAX_CUSTOMER_PROBLEMS]
             if isinstance(item, dict) and PromptBuilderService._as_text(item.get("nombre", "") or item.get("name", ""))
         )
 

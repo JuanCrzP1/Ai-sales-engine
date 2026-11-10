@@ -5,7 +5,7 @@ from typing import Annotated, Literal
 
 from pydantic import Field, model_validator
 
-from app.domain.business_config.engine_policy import MAX_PROFILE_ITEMS
+from app.domain.business_config.engine_policy import MAX_DESCRIPTION_CHARS, MAX_INDUSTRY_CHARS, MAX_PROFILE_ITEMS, MAX_VALUE_PROPOSITION_CHARS
 from app.domain.business_config.primitives import CONNECTED, ContractModel, Phrases, Scope, Text, ensure_unique
 
 
@@ -49,9 +49,9 @@ class TargetCustomer(ContractModel):
 class Identity(ContractModel):
     name: Text = Field(description="Nombre del negocio.", json_schema_extra=CONNECTED)
     brand_name: Text | None = Field(default=None, description="Marca con la que el asistente presenta al negocio, si es distinta del nombre.", json_schema_extra=CONNECTED)
-    industry: Text = Field(description="Sector o tipo de negocio, en pocas palabras.", json_schema_extra=CONNECTED)
-    description: Text = Field(description="Qué hace el negocio.", json_schema_extra=CONNECTED)
-    value_proposition: Text = Field(description="Promesa comercial: qué gana el cliente.", json_schema_extra=CONNECTED)
+    industry: Text = Field(max_length=MAX_INDUSTRY_CHARS, description="Sector o tipo de negocio, en pocas palabras.", json_schema_extra=CONNECTED)
+    description: Text = Field(max_length=MAX_DESCRIPTION_CHARS, description="Qué hace el negocio.", json_schema_extra=CONNECTED)
+    value_proposition: Text = Field(max_length=MAX_VALUE_PROPOSITION_CHARS, description="Promesa comercial: qué gana el cliente.", json_schema_extra=CONNECTED)
     positioning: Text | None = Field(default=None, description="A quién se dirige y qué problema resuelve.")
     differentiators: Phrases | None = Field(default=None, description="Por qué elegir este negocio y no otro.", json_schema_extra=CONNECTED)
     location: Location | None = Field(default=None, description="Dónde está y a qué zonas atiende.", json_schema_extra=CONNECTED)

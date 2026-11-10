@@ -6,14 +6,13 @@ Salen de `config.profile`, que solo existe cuando la configuración del negocio 
 - En la presentación van los datos del negocio y sus reglas; en una conversación en curso, solo las reglas (instrucciones y
   promociones vigentes), para que el prompt no crezca en cada turno.
 - Las promociones vencidas no se ofrecen.
-- Las descripciones se recortan con `PROMPT_WORD_LIMITS`, los mismos límites que el panel le muestra al negocio.
+- Las descripciones van completas: el contrato limita su largo (`MAX_*_CHARS`) y el panel no deja escribir más.
 """
 from __future__ import annotations
 
 from datetime import date
 from typing import Any
 
-from app.domain.business_config.engine_policy import PROMPT_WORD_LIMITS
 
 PROFILE_HEADER = "PERFIL COMERCIAL DEL NEGOCIO:"
 DEFAULT_TONE = "natural y claro"
@@ -42,8 +41,8 @@ def _sentence(text: str) -> str:
     return text if not text or text.endswith(_SENTENCE_ENDINGS) else f"{text}."
 
 
-def _shorten(value: Any, max_words: int) -> str:
-    return " ".join(str(value or "").split()[:max_words])
+def _clean(value: Any) -> str:
+    return " ".join(str(value or "").split())
 
 
 def _section(header: str, items: list[str]) -> list[str]:
@@ -81,7 +80,7 @@ def _offer_details(runtime: dict) -> list[str]:
     details = []
     for offer in [*_dicts(pricing.get("plans")), *_dicts(_dict(pricing.get("catalog")).get("items"))]:
         name = str(offer.get("name") or "").strip()
-        description = _shorten(offer.get("description"), PROMPT_WORD_LIMITS["offer_description"])
+        description = _clean(offer.get("description"))
         features = _texts(offer.get("features"))
         parts = [_sentence(description)] if description else []
         if features:
@@ -97,7 +96,7 @@ def _fact_lines(profile: dict, runtime: dict) -> list[str]:
     name = str(profile.get("name") or "").strip()
     if name:
         lines.append(f"Negocio: {name}")
-    description = _shorten(profile.get("description"), PROMPT_WORD_LIMITS["description"])
+    description = _clean(profile.get("description"))
     if description:
         lines.append(f"Descripción: {description}")
     differentiators = _texts(profile.get("differentiators"))
