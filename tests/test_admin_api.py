@@ -1077,9 +1077,8 @@ def test_the_api_only_has_the_routes_of_the_panel(api):
         ("GET", "/business-templates"),
         # WhatsApp por código QR (`channel_routes.py`).
         ("GET", f"{business}/channels/whatsapp"),
-        ("PUT", f"{business}/channels/whatsapp"),
-        ("DELETE", f"{business}/channels/whatsapp"),
         ("POST", f"{business}/channels/whatsapp/connect"),
+        ("POST", f"{business}/channels/whatsapp/new-code"),
         ("GET", f"{business}/channels/whatsapp/status"),
         ("POST", f"{business}/channels/whatsapp/disconnect"),
         ("POST", "/businesses/import"),

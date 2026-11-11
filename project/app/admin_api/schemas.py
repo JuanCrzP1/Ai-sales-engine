@@ -31,13 +31,6 @@ class CreateBusiness(_Request):
     template: str | None = None
 
 
-class SaveWhatsAppChannel(_Request):
-    """La dirección del servidor de uazapi y un token (de la instancia o de administrador). El token nunca se devuelve."""
-
-    server_url: str
-    token: str
-
-
 class SaveConfig(_Request):
     document: dict[str, Any]
     # Valores nuevos de datos de pago, por su referencia en el documento. Nunca se devuelven.
@@ -77,18 +70,13 @@ def summary_payload(summary: BusinessSummary) -> dict[str, Any]:
 
 
 def whatsapp_payload(view: WhatsAppView) -> dict[str, Any]:
-    """La conexión de WhatsApp para el panel: sin tokens, solo sus últimos caracteres."""
+    """La conexión de WhatsApp para el panel: nunca el servidor ni los tokens, que son de la plataforma."""
     connection = view.connection
     return {
-        "configured": connection is not None,
-        "provider": connection.provider if connection else None,
-        "server_url": connection.server_url if connection else None,
+        "available": view.available,
         "status": connection.status if connection else "disconnected",
-        "token_hint": connection.token_hint if connection else None,
-        "has_admin_token": connection.has_admin_token if connection else False,
         "phone": connection.phone if connection else None,
         "profile_name": connection.profile_name if connection else None,
-        "webhook_ready": view.webhook_ready,
         "qrcode": view.qrcode,
         "paircode": view.paircode,
     }

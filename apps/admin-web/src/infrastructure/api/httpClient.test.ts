@@ -39,7 +39,7 @@ describe("cliente de la API local", () => {
     stubFetch(new TypeError("Failed to fetch"));
     const error = await failure(createHttpClient().get("/businesses"));
     expect(error.code).toBe("unavailable");
-    expect(persistenceErrorMessage(error)).toMatch(/No se pudo conectar con el servidor local/);
+    expect(persistenceErrorMessage(error)).toMatch(/No se pudo conectar con el servidor/);
   });
 
   it("trata como caída un proxy sin servidor detrás", async () => {

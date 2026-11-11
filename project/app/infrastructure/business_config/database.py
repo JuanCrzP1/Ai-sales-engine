@@ -14,6 +14,7 @@ from sqlalchemy.engine import Engine, make_url
 
 from app.business_config_application.assistant_lab import AssistantLabService
 from app.business_config_application.channels import ProviderFactory, WhatsAppChannelService
+from app.domain.business_config.channels import UazapiPlatform
 from app.business_config_application.ports import AIKeyVerifier, AIModelCatalog, AssistantRunner
 from app.business_config_application.service import BusinessConfigService
 from app.business_config_application.conversations import PlaygroundRecorder
@@ -125,7 +126,13 @@ def build_assistant_lab_service(
 
 
 def build_whatsapp_channel_service(
-    engine: Engine, providers: ProviderFactory, *, secrets_key: str | None = None, webhook_base: str | None = None
+    engine: Engine,
+    providers: ProviderFactory,
+    *,
+    platform: UazapiPlatform | None,
+    webhook_base: str | None,
+    secrets_key: str | None = None,
 ) -> WhatsAppChannelService:
-    """WhatsApp por código QR con la persistencia real. El cliente del servidor (uazapi) lo pone la raíz de composición."""
-    return WhatsAppChannelService(ChannelStore(engine, secrets_key), providers, webhook_base=webhook_base)
+    """WhatsApp por código QR con la persistencia real. El cliente de uazapi, el servidor de la plataforma y la dirección del
+    webhook los pone la raíz de composición."""
+    return WhatsAppChannelService(ChannelStore(engine, secrets_key), providers, platform=platform, webhook_base=webhook_base)

@@ -1,8 +1,8 @@
-"""Cliente de uazapi (WhatsApp por código QR): estado, conexión, webhook, envío de texto y lectura de los mensajes que llegan.
+"""Cliente de uazapi (WhatsApp por código QR): instancias, conexión, webhook, envío de texto y lectura de los mensajes que llegan.
 
-Usa la API de uazapiGO v2: el token de la instancia va en la cabecera `token` y el de administrador en `admintoken`. Antes de cada
-llamada resuelve el servidor y se niega a llamar a una IP que no sea pública: el panel nunca sirve de puente hacia la red interna.
-Los tokens nunca van a los registros.
+Usa la API de uazapiGO v2: el token de la instancia va en la cabecera `token` y el de administrador en `admintoken`. El servidor es el
+de la plataforma (`UAZAPI_BASE_URL`); aun así, antes de cada llamada se resuelve y nunca se llama a una IP que no sea pública. Los
+tokens nunca van a los registros, y los errores llegan al negocio sin detalles técnicos.
 """
 from __future__ import annotations
 
@@ -18,6 +18,7 @@ from app.domain.business_config.channels import (
     ChannelError,
     IncomingMessage,
     ProviderStatus,
+    WhatsAppUnavailableError,
     is_public_address,
     normalize_server_url,
     phone_digits,
@@ -30,6 +31,13 @@ TIMEOUT = httpx.Timeout(20.0, connect=8.0)
 WEBHOOK_EVENTS = ["messages", "connection"]
 WEBHOOK_EXCLUDE = ["wasSentByApi", "fromMeYes", "isGroupYes"]
 PERSONAL_CHAT = "@s.whatsapp.net"
+# El nombre con el que aparece la conexión en «Dispositivos vinculados» del teléfono del negocio.
+DEVICE_NAME = "Asistente de ventas"
+
+UNAVAILABLE = "La conexión de WhatsApp no está disponible en este momento. Intenta de nuevo más tarde."
+NO_ANSWER = "WhatsApp no respondió. Intenta de nuevo en un momento."
+BUSY = "WhatsApp está ocupado. Intenta de nuevo en un minuto."
+GONE = "La conexión de este número ya no existe. Vuelve a conectarlo."
 
 Resolver = Callable[[str], list[str]]
 
@@ -51,9 +59,11 @@ class UazapiClient:
         try:
             addresses = self._resolver(host)
         except OSError as exc:
-            raise ChannelError("No encontramos ese servidor. Revisa la dirección.", field="server_url") from exc
+            logger.error("uazapi_servidor_no_resuelve", extra={"host": host})
+            raise WhatsAppUnavailableError(UNAVAILABLE) from exc
         if not addresses or not all(is_public_address(address) for address in addresses):
-            raise ChannelError("La dirección debe ser la de un servidor público.", field="server_url")
+            logger.error("uazapi_servidor_no_publico", extra={"host": host})
+            raise WhatsAppUnavailableError(UNAVAILABLE)
 
     def _call(self, method: str, path: str, *, token: str | None = None, admin_token: str | None = None, body: dict | None = None) -> dict[str, Any]:
         self._check_public()
@@ -67,20 +77,23 @@ class UazapiClient:
                 response = client.request(method, path, headers=headers, json=body)
         except httpx.HTTPError as exc:
             logger.warning("uazapi_sin_respuesta", extra={"path": path, "error": type(exc).__name__})
-            raise ChannelError("El servidor de uazapi no respondió. Intenta de nuevo en un momento.") from exc
-        if response.status_code == 401:
-            raise ChannelError("El servidor rechazó el token. Revisa que lo hayas copiado completo.", field="token")
-        if response.status_code == 404:
-            raise ChannelError("Ese servidor no tiene esa función de uazapi.", field="server_url")
+            raise ChannelError(NO_ANSWER) from exc
+        if response.status_code in (401, 404) and admin_token:
+            # El token de administrador de la plataforma no sirve (o el servidor no es de uazapi): lo arregla quien opera la plataforma.
+            logger.error("uazapi_administrador_rechazado", extra={"path": path, "status": response.status_code})
+            raise WhatsAppUnavailableError(UNAVAILABLE)
+        if response.status_code in (401, 404):
+            raise ChannelError(GONE, gone=True)
         if response.status_code == 429:
-            raise ChannelError("El servidor de uazapi está ocupado. Intenta de nuevo en un minuto.")
+            raise ChannelError(BUSY)
         if response.status_code >= 400:
             logger.warning("uazapi_error", extra={"path": path, "status": response.status_code})
-            raise ChannelError("El servidor de uazapi no pudo hacerlo. Intenta de nuevo.")
+            raise ChannelError(NO_ANSWER)
         try:
             payload = response.json()
         except ValueError as exc:
-            raise ChannelError("El servidor no respondió como uno de uazapi. Revisa la dirección.", field="server_url") from exc
+            logger.error("uazapi_respuesta_invalida", extra={"path": path})
+            raise WhatsAppUnavailableError(UNAVAILABLE) from exc
         return payload if isinstance(payload, dict) else {"items": payload}
 
     # ------------------------------------------------------------------ instancia
@@ -90,23 +103,33 @@ class UazapiClient:
 
     def create_instance(self, admin_token: str, name: str) -> str:
         """Crea una instancia con el token de administrador y devuelve su token."""
-        payload = self._call("POST", "/instance/create", admin_token=admin_token, body={"name": name})
+        payload = self._call("POST", "/instance/create", admin_token=admin_token, body={"name": name, "systemName": DEVICE_NAME})
         token = str((payload.get("instance") or {}).get("token") or payload.get("token") or "").strip()
         if not token:
-            raise ChannelError("El servidor no entregó el token de la instancia.")
+            logger.error("uazapi_instancia_sin_token")
+            raise ChannelError(NO_ANSWER)
         return token
 
     def connect(self, token: str) -> ProviderStatus:
         """Pide el código QR. Si la conexión ya está en curso, devuelve el QR que ya existe."""
         try:
             self._call("POST", "/instance/connect", token=token, body={})
-        except ChannelError:
+        except ChannelError as error:
+            if error.gone:
+                raise
             # 409 (ya está conectando) y otros: el estado dice si hay un QR para mostrar.
-            pass
         return self.status(token)
 
     def disconnect(self, token: str) -> None:
         self._call("POST", "/instance/disconnect", token=token)
+
+    def delete_instance(self, token: str) -> None:
+        """Cierra la sesión y borra la instancia del servidor. Si ya no existía, no pasa nada."""
+        try:
+            self._call("DELETE", "/instance", token=token)
+        except ChannelError as error:
+            if not error.gone:
+                raise
 
     def set_webhook(self, token: str, url: str) -> None:
         self._call(

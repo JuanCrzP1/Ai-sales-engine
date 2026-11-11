@@ -111,12 +111,15 @@ ENABLE_WEBHOOK_PROCESSING=true
   en uazapi el webhook `{ENGINE_PUBLIC_URL}/api/v1/channels/whatsapp/{identificador secreto del negocio}`. En este equipo
   `./run_local.sh` la toma sola de ngrok; en Vercel no hace falta, porque se usa `VERCEL_PROJECT_PRODUCTION_URL`. Sin ella la
   conexión funciona, pero los mensajes no llegan al motor, y el panel lo avisa.
-- El servidor y el token de uazapi no van en variables: cada negocio los guarda en Canales (tabla `business_channels`, migración
-  0008), con el token cifrado con `BUSINESS_CONFIG_SECRETS_KEY`.
+- `UAZAPI_BASE_URL` y `UAZAPI_ADMIN_TOKEN`: el servidor de uazapi **de la plataforma** y su token de administrador (en Vercel,
+  *Sensitive*). El negocio nunca los ve: en Canales solo toca «Conectar WhatsApp» y escanea el QR. Con el token de administrador
+  se crea una instancia por negocio, cuyo token queda cifrado con `BUSINESS_CONFIG_SECRETS_KEY` (tabla `business_channels`,
+  migración 0008). Desconectar borra la instancia del servidor. Sin estas variables (o sin dirección pública del motor), Canales
+  dice que la conexión todavía no está activa.
 - El webhook solo acepta mensajes cuyo token sea el de la instancia guardada, ignora grupos y los mensajes que envía el propio
   número o la API, y responde con la configuración publicada y la clave de IA del negocio. La conversación queda en la bandeja.
-- El servidor gratuito (`https://free.uazapi.com`) sirve para probar: borra las instancias a la hora. Para clientes reales se usa un
-  servidor de pago de uazapi.
+- El servidor gratuito (`https://free.uazapi.com`) sirve para probar: borra las instancias a la hora (conectar de nuevo crea
+  otra). Para clientes reales se usa un servidor de pago de uazapi.
 
 ### Flags De Operación
 
@@ -373,6 +376,7 @@ Preview. Las secretas las escribe la persona dueña de las cuentas (nunca en el 
 |---|---|---|
 | `DATABASE_URL` y `BUSINESS_CONFIG_DATABASE_URL` | Cadena de `production` con *pooling* | Cadena de `pruebas` con *pooling* |
 | `BUSINESS_CONFIG_SECRETS_KEY` | Una clave propia de producción | La de este equipo (`secrets.local.env`) |
+| `UAZAPI_BASE_URL` y `UAZAPI_ADMIN_TOKEN` | El servidor de uazapi de la plataforma y su token de administrador (*Sensitive*) | Los mismos, u otro servidor de pruebas |
 
 La IA no lleva variable: cada negocio guarda su clave de OpenRouter en el panel, y la plataforma no tiene clave propia.
 
@@ -396,8 +400,8 @@ La IA no lleva variable: cada negocio guarda su clave de OpenRouter en el panel,
 - Conversaciones: cada hilo es un contacto en un canal y pertenece a un negocio (`conversations` y `conversation_entries`,
   migración 0004). Hoy llegan las de «Probar asistente», con el canal `prueba`; los canales reales escribirán en las mismas
   tablas. Los datos de pago se guardan ocultos.
-- Canales: WhatsApp por código QR con uazapi. El negocio pega su servidor y su token, escanea el QR desde el panel y el webhook
-  se registra solo. La API oficial de Meta, Telegram y el chat web aparecen como «Próximamente».
+- Canales: WhatsApp por código QR con uazapi. El negocio toca «Conectar WhatsApp» y escanea el QR; el servidor, los tokens y el
+  webhook los pone la plataforma. La API oficial de Meta, Telegram y el chat web aparecen como «Próximamente».
 - En la nube no se importan YAML ni se eliminan negocios. El dominio del panel debe estar en Neon Auth → Configure Auth →
   *Domains*.
 

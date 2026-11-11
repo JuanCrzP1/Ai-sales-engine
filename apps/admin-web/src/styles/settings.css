@@ -721,16 +721,53 @@
 }
 
 .whatsapp-card__description,
-.whatsapp-card__meta {
-  color: var(--color-text-muted);
-  font-size: var(--text-sm);
-}
-
-.whatsapp-card__ready,
-.whatsapp-setup {
+.whatsapp-card__start {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
+}
+
+.whatsapp-card__how {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: paso;
+}
+
+.whatsapp-card__how li {
+  counter-increment: paso;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-muted, var(--color-surface));
+  border: 1px solid var(--color-border);
+  font-size: var(--text-sm);
+  line-height: 1.45;
+}
+
+.whatsapp-card__how li::before {
+  content: counter(paso);
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #25d366;
+  color: #fff;
+  font-weight: 600;
+  font-size: 12px;
+}
+
+@media (max-width: 720px) {
+  .whatsapp-card__how {
+    grid-template-columns: 1fr;
+  }
 }
 
 .whatsapp-card__connected {
@@ -763,12 +800,6 @@
   font-weight: 700;
 }
 
-.whatsapp-card__footer {
-  display: flex;
-  justify-content: flex-end;
-  padding-top: var(--space-2);
-  border-top: 1px solid var(--color-border);
-}
 
 /* Cómo conectar: código QR o API oficial. */
 .method-picker {

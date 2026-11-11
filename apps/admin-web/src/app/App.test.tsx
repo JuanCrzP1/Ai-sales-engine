@@ -2,7 +2,7 @@ import { cleanup, render, screen, waitFor, within } from "@testing-library/react
 import userEvent from "@testing-library/user-event";
 import type { BusinessDocument } from "../domain/config/types";
 import { PersistenceError } from "../repositories/persistenceError";
-import { createMemoryBackend, createMemoryWhatsApp, createTestServices, createVerifyingAuthService, TEST_ACCOUNT, TEST_WHATSAPP_TOKEN, type MemoryBackend } from "../test/fakes";
+import { createMemoryBackend, createMemoryWhatsApp, createTestServices, createVerifyingAuthService, TEST_ACCOUNT, type MemoryBackend } from "../test/fakes";
 import { SAMPLE_DOCUMENT, SAMPLE_PLANS_DOCUMENT } from "../test/fixtures/sampleDocument";
 import { App } from "./App";
 import type { ApplicationServices } from "./compositionRoot";
@@ -222,7 +222,7 @@ describe("Administración de negocios", () => {
     backend.failNext("list", new PersistenceError("unavailable"));
     const user = await renderAt("/negocios", createTestServices(backend));
     expect(screen.getByText("No se pudieron cargar los negocios")).toBeInTheDocument();
-    expect(screen.getByText(/No se pudo conectar con el servidor local/)).toBeInTheDocument();
+    expect(screen.getByText(/No se pudo conectar con el servidor/)).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Reintentar" }));
     expect(await screen.findByText("Café Aroma")).toBeInTheDocument();
@@ -920,7 +920,7 @@ describe("Guardado", () => {
 
     expect(await screen.findByText("No se pudo guardar")).toBeInTheDocument();
     expect(screen.queryByText(/^Guardado ·/)).not.toBeInTheDocument();
-    expect(screen.getAllByText(/No se pudo conectar con el servidor local/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/No se pudo conectar con el servidor/).length).toBeGreaterThan(0);
     expect(screen.getByLabelText(/Nombre comercial/)).toHaveValue("Café Aroma Plus");
     expect(storedOf(backend).identity.name).toBe("Café Aroma");
 
@@ -1205,31 +1205,30 @@ describe("Revisión y publicación", () => {
 });
 
 describe("Canales: WhatsApp por código QR", () => {
-  async function renderChannels(options: { webhookReady?: boolean } = {}) {
+  async function renderChannels(options: { available?: boolean } = {}) {
     const whatsapp = createMemoryWhatsApp(options);
     const user = await renderAt(`${CAFE}/canales`, createTestServices(createMemoryBackend([SAMPLE_DOCUMENT]), { createChannels: () => whatsapp.channels }));
-    await screen.findByRole("form", { name: "Conectar WhatsApp por código QR" });
+    await screen.findByRole("heading", { name: /^WhatsApp/ });
     return { user, whatsapp };
   }
 
   it("ofrece el código QR, deja la API oficial para después y ya no muestra Instagram", async () => {
     await renderChannels();
-    expect(screen.getByRole("heading", { name: /^WhatsApp/ })).toBeInTheDocument();
     expect(screen.getByRole("radio", { name: /^Código QR/ })).toBeChecked();
     expect(screen.getByRole("radio", { name: /^API oficial de Meta/ })).toBeDisabled();
     expect(screen.queryByText("Instagram")).not.toBeInTheDocument();
     expect(screen.getByText("Telegram")).toBeInTheDocument();
   });
 
-  it("guarda el servidor y el token, muestra el QR y pasa a conectado cuando se escanea", async () => {
+  it("el negocio no ve servidores ni tokens: solo conecta, escanea y queda conectado", async () => {
     const { user, whatsapp } = await renderChannels();
-    const form = screen.getByRole("form", { name: "Conectar WhatsApp por código QR" });
-    expect(within(form).getByLabelText(/^Servidor de uazapi/)).toHaveValue("https://free.uazapi.com");
-    await user.type(within(form).getByLabelText(/^Token/), TEST_WHATSAPP_TOKEN);
-    await user.click(within(form).getByRole("button", { name: "Guardar y mostrar el código QR" }));
+    expect(await screen.findByRole("button", { name: /Conectar WhatsApp/ })).toBeEnabled();
+    expect(screen.queryByLabelText(/Token/)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/Servidor/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/uazapi/)).not.toBeInTheDocument();
 
+    await user.click(screen.getByRole("button", { name: /Conectar WhatsApp/ }));
     expect(await screen.findByRole("img", { name: "Código QR para vincular WhatsApp" })).toBeInTheDocument();
-    expect(whatsapp.saved).toEqual([{ serverUrl: "https://free.uazapi.com", token: TEST_WHATSAPP_TOKEN }]);
     expect(screen.getByText("Esperando el escaneo")).toBeInTheDocument();
 
     whatsapp.scan();
@@ -1237,18 +1236,9 @@ describe("Canales: WhatsApp por código QR", () => {
     expect(screen.queryByRole("img", { name: "Código QR para vincular WhatsApp" })).not.toBeInTheDocument();
   }, 10000);
 
-  it("muestra en su campo el token que el servidor rechaza", async () => {
-    const { user } = await renderChannels();
-    const form = screen.getByRole("form", { name: "Conectar WhatsApp por código QR" });
-    await user.type(within(form).getByLabelText(/^Token/), "otro-token");
-    await user.click(within(form).getByRole("button", { name: "Guardar y mostrar el código QR" }));
-    expect(await within(form).findByText("El servidor rechazó el token. Revisa que lo hayas copiado completo.")).toBeInTheDocument();
-  });
-
-  it("avisa cuando los mensajes todavía no pueden llegar al asistente", async () => {
-    const { user } = await renderChannels({ webhookReady: false });
-    await user.type(screen.getByLabelText(/^Token/), TEST_WHATSAPP_TOKEN);
-    await user.click(screen.getByRole("button", { name: "Guardar y mostrar el código QR" }));
-    expect(await screen.findByText("Los mensajes todavía no llegan al asistente")).toBeInTheDocument();
+  it("si la plataforma todavía no activó la conexión, lo dice sin detalles técnicos", async () => {
+    await renderChannels({ available: false });
+    expect(await screen.findByText(/todavía no está activa/)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Conectar WhatsApp/ })).not.toBeInTheDocument();
   });
 });

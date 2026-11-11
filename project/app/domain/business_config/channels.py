@@ -1,9 +1,9 @@
-"""Canales del negocio: por ahora, WhatsApp conectado por código QR con un servidor de uazapi.
+"""Canales del negocio: por ahora, WhatsApp conectado por código QR con uazapi.
 
 Hay dos formas de conectar WhatsApp: por código QR (uazapi, no oficial: WhatsApp puede bloquear números que envían mensajes masivos)
-y por la API oficial de Meta (próximamente). Cada negocio usa su propio servidor y su propio token, que se guarda cifrado. Si pega el
-token de administrador del servidor, se crea una instancia solo para él y se guarda su token; el de administrador también queda
-cifrado, para volver a crearla si el servidor la borra (los servidores de prueba la borran a la hora).
+y por la API oficial de Meta (próximamente). El servidor de uazapi y su token de administrador son de la plataforma, no del negocio:
+el negocio solo toca «Conectar» y escanea el QR. Con el token de administrador se crea una instancia para cada negocio, y el token
+de esa instancia se guarda cifrado. El negocio nunca ve ni el servidor ni los tokens.
 
 El webhook de cada negocio tiene un identificador secreto en su ruta: así el motor sabe de qué negocio es cada mensaje sin buscarlo
 por número.
@@ -26,16 +26,22 @@ _LOCAL_HOSTS = {"localhost", "localhost.localdomain", "ip6-localhost", "ip6-loop
 _LOCAL_SUFFIXES = (".localhost", ".local", ".internal", ".lan", ".home.arpa")
 
 
-class ChannelError(ValueError):
-    """Un dato del canal no es válido o el proveedor lo rechazó. El mensaje es para el negocio."""
+class ChannelError(RuntimeError):
+    """El servidor de WhatsApp no pudo hacer algo. El mensaje es para el negocio, sin detalles técnicos.
 
-    def __init__(self, message: str, *, field: str | None = None) -> None:
+    `gone`: la instancia del negocio ya no existe en el servidor (la borró, venció o su token dejó de valer); conectar crea otra."""
+
+    def __init__(self, message: str, *, gone: bool = False) -> None:
         super().__init__(message)
-        self.field = field
+        self.gone = gone
+
+
+class WhatsAppUnavailableError(ChannelError):
+    """La plataforma no tiene configurado el servidor de WhatsApp por código QR, o le falta su dirección pública."""
 
 
 def is_public_address(address: str) -> bool:
-    """Si una IP es pública: ni privada, ni local, ni reservada (el panel nunca llama a la red interna)."""
+    """Si una IP es pública: ni privada, ni local, ni reservada (el servidor nunca llama a la red interna)."""
     try:
         ip = ipaddress.ip_address(address)
     except ValueError:
@@ -45,32 +51,27 @@ def is_public_address(address: str) -> bool:
 
 def normalize_server_url(raw: str) -> str:
     """La dirección del servidor, normalizada a `https://servidor[:puerto]`. Solo https, sin usuario, ruta ni consulta, y nunca una
-    máquina local o una IP privada: el servidor del panel la llama y no puede servir para entrar a la red interna."""
+    máquina local o una IP privada. Lanza `ValueError` si no sirve."""
     text = str(raw or "").strip().rstrip("/")
     if not text:
-        raise ChannelError("Escribe la dirección de tu servidor de uazapi.", field="server_url")
+        raise ValueError("falta la dirección del servidor de uazapi")
     parts = urlsplit(text if "://" in text else f"https://{text}")
     host = (parts.hostname or "").lower()
     if parts.scheme != "https":
-        raise ChannelError("La dirección del servidor debe empezar por https://.", field="server_url")
+        raise ValueError("la dirección del servidor de uazapi debe empezar por https://")
     if not host or parts.username or parts.password or parts.query or parts.fragment or parts.path not in ("", "/"):
-        raise ChannelError("Escribe solo la dirección del servidor, por ejemplo https://free.uazapi.com.", field="server_url")
+        raise ValueError("la dirección del servidor de uazapi debe ser solo https://servidor")
     if host in _LOCAL_HOSTS or host.endswith(_LOCAL_SUFFIXES) or "." not in host:
-        raise ChannelError("La dirección debe ser la de un servidor público.", field="server_url")
+        raise ValueError("el servidor de uazapi debe ser público")
     try:
         ipaddress.ip_address(host.strip("[]"))
     except ValueError:
         pass
     else:
         if not is_public_address(host.strip("[]")):
-            raise ChannelError("La dirección debe ser la de un servidor público.", field="server_url")
+            raise ValueError("el servidor de uazapi debe ser público")
     port = f":{parts.port}" if parts.port and parts.port != 443 else ""
     return f"https://{host}{port}"
-
-
-def token_hint(token: str) -> str:
-    """Los últimos caracteres del token, para reconocerlo sin mostrarlo."""
-    return f"…{token.strip()[-4:]}" if len(token.strip()) >= 8 else "…"
 
 
 def phone_digits(value: str | None) -> str:
@@ -79,27 +80,36 @@ def phone_digits(value: str | None) -> str:
 
 
 @dataclass(frozen=True)
-class WhatsAppConnection:
-    """Lo que el panel muestra de la conexión: nunca los tokens."""
+class UazapiPlatform:
+    """El servidor de uazapi de la plataforma y su token de administrador (variables `UAZAPI_BASE_URL` y `UAZAPI_ADMIN_TOKEN`)."""
 
-    provider: str
     server_url: str
+    admin_token: str
+
+    def __repr__(self) -> str:  # el token nunca llega a un registro
+        return f"UazapiPlatform(server_url={self.server_url!r})"
+
+
+@dataclass(frozen=True)
+class WhatsAppConnection:
+    """Lo que el panel muestra de la conexión: nunca el servidor ni los tokens."""
+
     status: ConnectionStatus
-    token_hint: str
-    has_admin_token: bool
     phone: str | None = None
     profile_name: str | None = None
 
 
 @dataclass(frozen=True)
 class WhatsAppSecrets:
-    """Lo necesario para hablar con el servidor de este negocio. Solo lo usan el servicio del canal y el motor."""
+    """Lo necesario para hablar con la instancia de este negocio. Solo lo usan el servicio del canal y el motor."""
 
     tenant_slug: str
     server_url: str
     instance_token: str
-    admin_token: str | None
     webhook_id: str
+
+    def __repr__(self) -> str:  # el token nunca llega a un registro
+        return f"WhatsAppSecrets(tenant_slug={self.tenant_slug!r})"
 
 
 @dataclass(frozen=True)

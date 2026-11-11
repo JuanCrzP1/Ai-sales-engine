@@ -114,18 +114,22 @@ def main() -> int:
     from app.infrastructure.business_config.usage_store import UsageCounterStore
     from app.config import settings
     from app.infrastructure.business_config.database import build_whatsapp_channel_service
+    from app.infrastructure.channels.platform import uazapi_platform
     from app.infrastructure.channels.public_url import engine_public_url, webhook_base
     from app.infrastructure.channels.uazapi import UazapiClient
 
-    if engine_public_url() is None:
-        print("[aviso] Sin ENGINE_PUBLIC_URL: WhatsApp se puede conectar, pero los mensajes no llegarán al motor (usa ./run_local.sh, que la toma de ngrok).")
+    platform = uazapi_platform()
+    if platform is None:
+        print("[aviso] Sin UAZAPI_BASE_URL y UAZAPI_ADMIN_TOKEN en el .env: Canales dirá que WhatsApp por código QR no está disponible.")
+    elif engine_public_url() is None:
+        print("[aviso] Sin ENGINE_PUBLIC_URL: WhatsApp por código QR no está disponible (usa ./run_local.sh, que la toma de ngrok).")
     app = create_app(
         service,
         _assistant_lab(engine, service),
         conversations=ConversationStore(engine),
         notifications=NotificationStore(engine),
         usage=UsageCounterStore(engine),
-        whatsapp=build_whatsapp_channel_service(engine, UazapiClient, webhook_base=webhook_base(settings.api_prefix)),
+        whatsapp=build_whatsapp_channel_service(engine, UazapiClient, platform=platform, webhook_base=webhook_base(settings.api_prefix)),
     )
     uvicorn.run(app, host=HOST, port=port, log_level="warning")
     return 0

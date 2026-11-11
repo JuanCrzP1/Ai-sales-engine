@@ -176,4 +176,4 @@ def register_error_handlers(app: FastAPI) -> None:
     async def _unexpected(_request: Request, exc: Exception) -> JSONResponse:
         # Sin el mensaje de la excepción: las respuestas no deben llevar detalles internos.
         logger.error("error_inesperado", extra={"error_type": type(exc).__name__})
-        return JSONResponse({"code": "unexpected", "message": "Ocurrió un error inesperado en el servidor local.", "issues": []}, status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return JSONResponse({"code": "unexpected", "message": "Ocurrió un error inesperado en el servidor. Intenta de nuevo en un momento.", "issues": []}, status.HTTP_500_INTERNAL_SERVER_ERROR)

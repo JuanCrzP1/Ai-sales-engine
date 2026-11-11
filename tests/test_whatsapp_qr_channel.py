@@ -1,11 +1,12 @@
 """WhatsApp por código QR (uazapi): conectar desde el panel y responder desde el motor.
 
-- La dirección del servidor solo puede ser https pública: el panel nunca llama a la red interna.
-- Un token de instancia se usa tal cual; uno de administrador crea la instancia del negocio. Los tokens se guardan cifrados y nunca
-  vuelven al panel.
-- Al pedir el QR se registra el webhook del negocio, con su identificador secreto.
-- El motor responde solo mensajes de texto de clientes, una vez cada uno, envía la respuesta por el servidor del negocio y la guarda
-  en la bandeja con los datos de pago ocultos. Un aviso con otro token se rechaza.
+- El servidor de uazapi y su token de administrador son de la plataforma (variables de entorno): el negocio solo toca «Conectar» y
+  escanea. Nunca envía ni recibe servidores ni tokens.
+- Al conectar se crea la instancia del negocio (o se reutiliza), se registra su webhook con su identificador secreto y se muestra
+  el QR. Si el servidor borró la instancia, se crea otra. Desconectar la borra del servidor.
+- Sin servidor de la plataforma o sin dirección pública del motor, la conexión no está disponible.
+- El motor responde solo mensajes de texto de clientes, una vez cada uno, envía la respuesta por la instancia del negocio y la
+  guarda en la bandeja con los datos de pago ocultos. Un aviso sin el token de la instancia se rechaza.
 
 Sin llamadas reales: uazapi es un servidor simulado (httpx) y la IA, una respuesta fija.
 """
@@ -22,12 +23,13 @@ from sqlalchemy import select
 from app.admin_api.main import create_app
 from app.api.controllers import whatsapp_qr_webhook
 from app.business_config_application.channels import WhatsAppChannelService
-from app.domain.business_config.channels import ChannelError, ProviderStatus, normalize_server_url
+from app.domain.business_config.channels import ChannelError, ProviderStatus, UazapiPlatform, WhatsAppUnavailableError, normalize_server_url
 from app.infrastructure.business_config import runtime_access
 from app.infrastructure.business_config.channel_store import ChannelStore
 from app.infrastructure.business_config.conversation_store import ConversationStore
 from app.infrastructure.business_config.database import build_business_config_service, create_business_config_engine
 from app.infrastructure.business_config.tables import business_channels
+from app.infrastructure.channels.platform import uazapi_platform
 from app.infrastructure.channels.uazapi import UazapiClient, parse_incoming
 from pipeline_harness import publish_document
 from test_admin_api import BASE_URL, LOCAL_CLIENT, Local
@@ -36,6 +38,7 @@ PUBLIC = lambda _host: ["104.21.0.10"]  # noqa: E731 - el servidor simulado resu
 INSTANCE_TOKEN = "token-de-instancia-de-prueba-1234"
 ADMIN_TOKEN = "token-de-administrador-de-prueba-9876"
 WEBHOOK_BASE = "https://motor.example/api/v1/channels/whatsapp"
+PLATFORM = UazapiPlatform("https://free.uazapi.com", ADMIN_TOKEN)
 
 
 # ---------------------------------------------------------------------------
@@ -53,16 +56,28 @@ def test_a_public_https_server_is_accepted_and_normalized(raw):
      "https://usuario:clave@free.uazapi.com", "https://free.uazapi.com/instance", "https://free.uazapi.com?x=1", "https://intranet", ""],
 )
 def test_a_server_that_is_not_public_https_is_rejected(raw):
-    with pytest.raises(ChannelError):
+    with pytest.raises(ValueError):
         normalize_server_url(raw)
 
 
 def test_a_name_that_resolves_to_a_private_address_is_never_called():
     calls = []
     client = UazapiClient("https://trampa.example", transport=httpx.MockTransport(lambda request: calls.append(request)), resolver=lambda _h: ["10.0.0.7"])
-    with pytest.raises(ChannelError, match="servidor público"):
+    with pytest.raises(WhatsAppUnavailableError):
         client.status(INSTANCE_TOKEN)
     assert calls == []
+
+
+def test_the_platform_server_comes_from_the_environment_and_never_shows_its_token(monkeypatch):
+    monkeypatch.delenv("UAZAPI_BASE_URL", raising=False)
+    monkeypatch.delenv("UAZAPI_ADMIN_TOKEN", raising=False)
+    assert uazapi_platform() is None
+    monkeypatch.setenv("UAZAPI_BASE_URL", "free.uazapi.com/")
+    monkeypatch.setenv("UAZAPI_ADMIN_TOKEN", ADMIN_TOKEN)
+    platform = uazapi_platform()
+    assert platform == PLATFORM and ADMIN_TOKEN not in repr(platform)
+    monkeypatch.setenv("UAZAPI_BASE_URL", "http://10.0.0.5")
+    assert uazapi_platform() is None
 
 
 # ---------------------------------------------------------------------------
@@ -74,6 +89,7 @@ class FakeUazapi:
 
     def __init__(self) -> None:
         self.instances: dict[str, dict] = {INSTANCE_TOKEN: {"status": "disconnected"}}
+        self.created_names: list[tuple[str, str]] = []
         self.webhooks: dict[str, dict] = {}
         self.sent: list[tuple[str, dict]] = []
         self.requests: list[httpx.Request] = []
@@ -87,6 +103,7 @@ class FakeUazapi:
             if admin != ADMIN_TOKEN:
                 return httpx.Response(401, json={"error": "Invalid AdminToken Header"})
             self.created += 1
+            self.created_names.append((body["name"], body["systemName"]))
             new = f"instancia-creada-{self.created}-abcdef"
             self.instances[new] = {"status": "disconnected"}
             return httpx.Response(200, json={"instance": {"token": new, "status": "disconnected"}})
@@ -105,6 +122,9 @@ class FakeUazapi:
         if path == "/instance/disconnect":
             instance["status"] = "disconnected"
             return httpx.Response(200, json={"response": "Disconnected"})
+        if path == "/instance" and request.method == "DELETE":
+            self.instances.pop(token)
+            return httpx.Response(200, json={"response": "Instance Deleted"})
         if path == "/webhook":
             self.webhooks[token] = body
             return httpx.Response(200, json=[body])
@@ -138,10 +158,15 @@ def test_the_client_sends_text_and_registers_a_webhook_that_ignores_its_own_mess
     }
 
 
-def test_a_rejected_token_is_reported_on_its_field():
+def test_an_instance_the_server_no_longer_has_is_reported_as_gone_and_a_rejected_admin_token_as_unavailable():
+    client = FakeUazapi().client("https://free.uazapi.com")
     with pytest.raises(ChannelError) as error:
-        FakeUazapi().client("https://free.uazapi.com").status("otro-token")
-    assert error.value.field == "token"
+        client.status("otro-token")
+    assert error.value.gone is True and "token" not in str(error.value)
+    with pytest.raises(WhatsAppUnavailableError) as unavailable:
+        client.create_instance("otro-administrador", "ventas-x")
+    assert "token" not in str(unavailable.value) and "uazapi" not in str(unavailable.value)
+    client.delete_instance("ya-no-existe")  # borrar lo que ya no existe no falla
 
 
 INCOMING = {
@@ -164,88 +189,99 @@ def test_only_text_messages_from_a_customer_are_answered():
 # Panel: guardar, pedir el QR, seguir la conexión y desconectar
 # ---------------------------------------------------------------------------
 
-@pytest.fixture
-def panel(tmp_path):
+def _panel(tmp_path, *, platform=PLATFORM, webhook_base=WEBHOOK_BASE):
     local = Local(tmp_path / "panel.sqlite3")
     server = FakeUazapi()
-    whatsapp = WhatsAppChannelService(ChannelStore(local.engine, local.key), server.client, webhook_base=WEBHOOK_BASE)
+    whatsapp = WhatsAppChannelService(ChannelStore(local.engine, local.key), server.client, platform=platform, webhook_base=webhook_base)
     local.app = create_app(build_business_config_service(local.engine, secrets_key=local.key), whatsapp=whatsapp)
     local.client = TestClient(local.app, base_url=BASE_URL, client=LOCAL_CLIENT, raise_server_exceptions=False)
     assert local.client.post("/api/businesses", json={"slug": "sabor_casero", "name": "Sabor Casero"}).status_code == 201
+    return local, server
+
+
+@pytest.fixture
+def panel(tmp_path):
+    local, server = _panel(tmp_path)
     yield local, server
     local.engine.dispose()
 
 
 URL = "/api/businesses/sabor_casero/channels/whatsapp"
+NOTHING = {"available": True, "status": "disconnected", "phone": None, "profile_name": None, "qrcode": None, "paircode": None}
 
 
-def test_an_instance_token_is_saved_encrypted_and_never_returned(panel):
-    local, _server = panel
-    assert local.client.get(URL).json()["configured"] is False
-    response = local.client.put(URL, json={"server_url": "free.uazapi.com", "token": INSTANCE_TOKEN})
+def test_the_business_only_sees_the_connection_never_the_server_or_the_tokens(panel):
+    local, server = panel
+    assert local.client.get(URL).json() == NOTHING
+    assert local.client.put(URL, json={"server_url": "https://otro.example", "token": "x"}).status_code == 405
+    response = local.client.post(f"{URL}/connect")
     assert response.status_code == 200
-    body = response.json()
-    assert body | {"token_hint": "…1234"} == {
-        "configured": True, "provider": "uazapi", "server_url": "https://free.uazapi.com", "status": "disconnected", "token_hint": "…1234",
-        "has_admin_token": False, "phone": None, "profile_name": None, "webhook_ready": True, "qrcode": None, "paircode": None,
-    }
-    assert INSTANCE_TOKEN not in response.text
+    assert set(response.json()) == set(NOTHING)
+    created = ChannelStore(local.engine, local.key).whatsapp_secrets("sabor_casero").instance_token
+    for secret in (ADMIN_TOKEN, created, "free.uazapi.com"):
+        assert secret not in response.text and secret not in local.client.get(URL).text
     with local.engine.connect() as conn:
         stored = conn.execute(select(business_channels)).first()
-    assert INSTANCE_TOKEN not in json.dumps({key: str(value) for key, value in stored._mapping.items()})
+    assert created not in json.dumps({key: str(value) for key, value in stored._mapping.items()})
+    assert ADMIN_TOKEN not in json.dumps({key: str(value) for key, value in stored._mapping.items()})
 
 
-def test_an_admin_token_creates_the_business_instance(panel):
+def test_connecting_creates_the_business_instance_registers_its_webhook_and_shows_the_qr(panel):
     local, server = panel
-    body = local.client.put(URL, json={"server_url": "https://free.uazapi.com", "token": ADMIN_TOKEN}).json()
-    assert body["has_admin_token"] is True and len(server.instances) == 2
-    assert ChannelStore(local.engine, local.key).whatsapp_secrets("sabor_casero").instance_token.startswith("instancia-creada-")
-
-
-def test_a_token_the_server_rejects_is_reported_and_nothing_is_saved(panel):
-    local, _server = panel
-    response = local.client.put(URL, json={"server_url": "https://free.uazapi.com", "token": "no-sirve"})
-    assert response.status_code == 422 and response.json()["issues"][0]["path"] == "token"
-    assert local.client.get(URL).json()["configured"] is False
-    assert local.client.put(URL, json={"server_url": "http://free.uazapi.com", "token": INSTANCE_TOKEN}).json()["issues"][0]["path"] == "server_url"
-
-
-def test_connecting_shows_the_qr_registers_the_webhook_and_follows_the_connection(panel):
-    local, server = panel
-    local.client.put(URL, json={"server_url": "https://free.uazapi.com", "token": INSTANCE_TOKEN})
     connecting = local.client.post(f"{URL}/connect").json()
     assert connecting["status"] == "connecting" and connecting["qrcode"].startswith("data:image/png;base64,")
-    webhook_id = ChannelStore(local.engine, local.key).whatsapp_secrets("sabor_casero").webhook_id
-    assert len(webhook_id) >= 32 and server.webhooks[INSTANCE_TOKEN]["url"] == f"{WEBHOOK_BASE}/{webhook_id}"
+    secrets = ChannelStore(local.engine, local.key).whatsapp_secrets("sabor_casero")
+    assert secrets.instance_token.startswith("instancia-creada-") and secrets.server_url == "https://free.uazapi.com"
+    assert len(secrets.webhook_id) >= 32 and server.webhooks[secrets.instance_token]["url"] == f"{WEBHOOK_BASE}/{secrets.webhook_id}"
+    (name, device), = server.created_names
+    assert name.startswith("ventas-sabor_casero-") and device == "Asistente de ventas"
 
-    server.instances[INSTANCE_TOKEN]["status"] = "connected"
+    # Conectar otra vez reutiliza la instancia; un código nuevo reinicia la conexión.
+    assert local.client.post(f"{URL}/connect").json()["status"] == "connecting"
+    assert local.client.post(f"{URL}/new-code").json()["qrcode"].startswith("data:image/png;base64,")
+    assert server.created == 1
+
+    server.instances[secrets.instance_token]["status"] = "connected"
     connected = local.client.get(f"{URL}/status").json()
     assert (connected["status"], connected["phone"], connected["profile_name"], connected["qrcode"]) == ("connected", "573001112233", "Sabor Casero", None)
     assert local.client.get(URL).json()["status"] == "connected"
 
-    assert local.client.post(f"{URL}/disconnect").json()["status"] == "disconnected"
-    assert local.client.delete(URL).status_code == 204
-    assert local.client.get(URL).json()["configured"] is False
 
-
-def test_if_the_server_deleted_the_instance_the_admin_token_creates_it_again(panel):
+def test_disconnecting_deletes_the_instance_from_the_server(panel):
     local, server = panel
-    local.client.put(URL, json={"server_url": "https://free.uazapi.com", "token": ADMIN_TOKEN})
+    local.client.post(f"{URL}/connect")
+    token = ChannelStore(local.engine, local.key).whatsapp_secrets("sabor_casero").instance_token
+    assert local.client.post(f"{URL}/disconnect").json() == NOTHING
+    assert token not in server.instances and ChannelStore(local.engine, local.key).whatsapp_secrets("sabor_casero") is None
+    assert local.client.get(f"{URL}/status").json() == NOTHING
+    assert local.client.post(f"{URL}/connect").json()["status"] == "connecting" and server.created == 2
+
+
+def test_if_the_server_deleted_the_instance_connecting_creates_another(panel):
+    local, server = panel
+    local.client.post(f"{URL}/connect")
     first = ChannelStore(local.engine, local.key).whatsapp_secrets("sabor_casero").instance_token
     server.instances.pop(first)  # los servidores de prueba borran la instancia a la hora
+    assert local.client.get(f"{URL}/status").json()["status"] == "disconnected"
     assert local.client.post(f"{URL}/connect").json()["status"] == "connecting"
     assert ChannelStore(local.engine, local.key).whatsapp_secrets("sabor_casero").instance_token not in (first, ADMIN_TOKEN)
 
 
-def test_without_a_public_engine_address_the_panel_warns_that_messages_will_not_arrive(tmp_path):
-    local = Local(tmp_path / "panel.sqlite3")
-    server = FakeUazapi()
-    local.app = create_app(build_business_config_service(local.engine, secrets_key=local.key), whatsapp=WhatsAppChannelService(ChannelStore(local.engine, local.key), server.client))
-    client = TestClient(local.app, base_url=BASE_URL, client=LOCAL_CLIENT)
-    client.post("/api/businesses", json={"slug": "sabor_casero", "name": "Sabor Casero"})
-    client.put(URL, json={"server_url": "https://free.uazapi.com", "token": INSTANCE_TOKEN})
-    assert client.post(f"{URL}/connect").json()["webhook_ready"] is False
-    assert server.webhooks == {}
+@pytest.mark.parametrize("missing", ["platform", "webhook_base"])
+def test_without_the_platform_server_or_a_public_engine_address_the_connection_is_not_available(tmp_path, missing):
+    local, server = _panel(tmp_path, **{missing: None})
+    assert local.client.get(URL).json()["available"] is False
+    response = local.client.post(f"{URL}/connect")
+    assert response.status_code == 503 and "no está activa" in response.json()["message"]
+    assert server.requests == []
+    local.engine.dispose()
+
+
+def test_a_rejected_platform_token_is_not_explained_to_the_business(tmp_path):
+    local, _server = _panel(tmp_path, platform=UazapiPlatform("https://free.uazapi.com", "administrador-vencido"))
+    response = local.client.post(f"{URL}/connect")
+    assert response.status_code == 503
+    assert "token" not in response.text and "uazapi" not in response.text
     local.engine.dispose()
 
 
@@ -266,7 +302,7 @@ def engine_webhook(monkeypatch, tmp_path):
     import os
 
     channels = ChannelStore(store, os.environ["BUSINESS_CONFIG_SECRETS_KEY"])
-    channels.save_whatsapp("restaurant", server_url="https://free.uazapi.com", instance_token=INSTANCE_TOKEN, admin_token=None)
+    channels.save_whatsapp("restaurant", server_url="https://free.uazapi.com", instance_token=INSTANCE_TOKEN)
     webhook_id = channels.whatsapp_secrets("restaurant").webhook_id
     server = FakeUazapi()
     monkeypatch.setattr(whatsapp_qr_webhook, "AIService", FakeAI)
@@ -298,6 +334,7 @@ def test_the_same_message_is_answered_once(engine_webhook):
 def test_a_notice_with_another_token_or_an_unknown_route_is_rejected(engine_webhook):
     client, path, server, _store = engine_webhook
     assert client.post(path, json={**INCOMING, "token": "otro"}).status_code == 403
+    assert client.post(path, json={key: value for key, value in INCOMING.items() if key != "token"}).status_code == 403
     assert client.post("/channels/whatsapp/" + "x" * 40, json=INCOMING).status_code == 404
     assert client.post("/channels/whatsapp/corto", json=INCOMING).status_code == 404
     assert server.sent == []

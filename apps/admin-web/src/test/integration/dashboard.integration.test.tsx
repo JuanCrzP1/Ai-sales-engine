@@ -577,7 +577,7 @@ describe("13 y 14. validaciones y errores", () => {
     try {
       await user.click(screen.getByRole("button", { name: "Guardar cambios" }));
       await screen.findByText("No se pudo guardar");
-      expect(screen.getAllByText(/No se pudo conectar con el servidor local/).length).toBeGreaterThan(0);
+      expect(screen.getAllByText(/No se pudo conectar con el servidor/).length).toBeGreaterThan(0);
       expect(screen.queryByText(/^Guardado ·/)).not.toBeInTheDocument();
       expect(screen.getByLabelText(/^Nombre comercial/)).toHaveValue("Escrito durante la caída");
     } finally {

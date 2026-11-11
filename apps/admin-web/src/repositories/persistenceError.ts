@@ -1,4 +1,4 @@
-/** Fallo al leer o guardar datos en el servidor local. */
+/** Fallo al leer o guardar datos en el servidor. */
 
 export type PersistenceErrorCode = "unavailable" | "invalid" | "conflict" | "duplicate" | "not_found" | "payment_key" | "ai_key_missing" | "unauthenticated" | "rate_limited" | "unknown";
 
@@ -22,12 +22,12 @@ export class PersistenceError extends Error {
 }
 
 const MESSAGES: Record<PersistenceErrorCode, string> = {
-  unavailable: "No se pudo conectar con el servidor local. Comprueba que la API del panel esté en marcha y vuelve a intentarlo.",
+  unavailable: "No se pudo conectar con el servidor. Revisa tu conexión y vuelve a intentarlo.",
   invalid: "Hay datos por corregir.",
   conflict: "Estos datos cambiaron desde que los abriste. Recarga para ver lo último.",
   duplicate: "Ya existe un negocio con ese identificador.",
   not_found: "Ese negocio no existe.",
-  payment_key: "Falta la clave de cifrado de los datos de pago en el servidor local.",
+  payment_key: "Falta la clave de cifrado de los datos de pago en el servidor.",
   ai_key_missing: "Este negocio todavía no tiene su clave de IA. Agrégala en Inteligencia artificial.",
   unauthenticated: "Tu sesión terminó. Vuelve a entrar.",
   rate_limited: "Hiciste muchas solicitudes seguidas. Espera un momento y vuelve a intentarlo.",

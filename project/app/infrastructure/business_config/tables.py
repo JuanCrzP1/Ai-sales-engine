@@ -216,8 +216,6 @@ business_channels = Table(
     Column("provider", Text, nullable=False),
     Column("server_url", Text, nullable=False),
     Column("token_ciphertext", Text, nullable=False),
-    Column("admin_token_ciphertext", Text),
-    Column("token_hint", Text, nullable=False),
     Column("webhook_id", Text, nullable=False, unique=True),
     Column("status", Text, nullable=False, default="disconnected"),
     Column("phone", Text),

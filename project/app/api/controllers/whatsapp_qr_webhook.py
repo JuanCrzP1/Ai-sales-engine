@@ -79,8 +79,9 @@ async def receive_whatsapp_qr(webhook_id: str, request: Request, background: Bac
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Cuerpo no válido") from exc
     if not isinstance(payload, dict):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Cuerpo no válido")
+    # Solo cuenta lo que trae el token de la instancia de este negocio (uazapi lo incluye en cada aviso).
     token = payload.get("token")
-    if token is not None and not hmac.compare_digest(str(token), secrets.instance_token):
+    if not isinstance(token, str) or not hmac.compare_digest(token, secrets.instance_token):
         logger.warning("whatsapp_qr_rechazado", extra={"tenant": secrets.tenant_slug, "reason": "token_distinto"})
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No autorizado")
 
