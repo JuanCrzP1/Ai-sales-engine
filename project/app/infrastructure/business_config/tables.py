@@ -151,7 +151,10 @@ conversations = Table(
     Column("unread_count", Integer, nullable=False, default=0),
     Column("assistant_typing_until", DateTime(timezone=True)),
     Column("updated_at", DateTime(timezone=True), nullable=False, default=_now),
+    # Migración 0010: la etapa a la que llegó el cliente (solo avanza).
+    Column("stage", Text, nullable=False, default="new"),
     CheckConstraint("channel IN ('whatsapp', 'instagram', 'telegram', 'web', 'prueba')", name="conversations_channel_check"),
+    CheckConstraint("stage IN ('new', 'interested', 'ready', 'payment', 'customer')", name="conversations_stage_check"),
     CheckConstraint("status IN ('open', 'closed')", name="conversations_status_check"),
     UniqueConstraint("tenant_id", "channel", "contact_ref", name="conversations_contact_key"),
     Index("conversations_tenant_recent_idx", "tenant_id", "last_message_at"),
@@ -203,6 +206,25 @@ conversation_entries = Table(
         "conversation_entries_provider_idx", "provider_message_id",
         postgresql_where=text("provider_message_id IS NOT NULL"), sqlite_where=text("provider_message_id IS NOT NULL"),
     ),
+)
+
+# Migración 0010: las ventas que registra el equipo. Anular una venta la deja marcada, no la borra.
+sales = Table(
+    "sales",
+    metadata,
+    Column("id", Uuid, primary_key=True, default=uuid.uuid4),
+    Column("tenant_id", Uuid, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False),
+    Column("conversation_id", Uuid, ForeignKey("conversations.id", ondelete="SET NULL")),
+    Column("customer_name", Text, nullable=False),
+    Column("description", Text, nullable=False),
+    Column("amount", Numeric(14, 2), nullable=False),
+    Column("currency", Text, nullable=False),
+    Column("status", Text, nullable=False, default="confirmed"),
+    Column("created_by", Text),
+    Column("created_at", DateTime(timezone=True), nullable=False, default=_now),
+    Column("cancelled_at", DateTime(timezone=True)),
+    CheckConstraint("status IN ('confirmed', 'cancelled')", name="sales_status_check"),
+    Index("sales_tenant_recent_idx", "tenant_id", "created_at"),
 )
 
 # Avisos para el equipo de cada negocio (migración 0005). Cada persona marca como leídos los suyos en `notification_reads`.

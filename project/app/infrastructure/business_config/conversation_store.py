@@ -37,6 +37,7 @@ from app.domain.business_config.conversations import (
     message_preview,
     preview,
 )
+from app.domain.business_config.commerce import advanced, stage_for_intent
 from app.domain.business_config.errors import ConversationNotFoundError
 from app.infrastructure.business_config.tables import conversation_entries, conversation_media, conversations, notifications, tenants
 from app.infrastructure.business_config.tenancy import tenant_of
@@ -62,6 +63,7 @@ _SUMMARY = (
     conversations.c.unread_count,
     conversations.c.assistant_typing_until,
     conversations.c.updated_at,
+    conversations.c.stage,
 )
 
 # El hilo sin el contenido de los archivos: solo sus datos.
@@ -113,6 +115,7 @@ def _summary(row: Any, now: datetime | None = None) -> ConversationSummary:
         unread_count=int(row.unread_count or 0),
         assistant_typing=bool(typing_until and typing_until > (now or _now())),
         updated_at=_utc(row.updated_at),
+        stage=row.stage or "new",
     )
 
 
@@ -276,6 +279,13 @@ class ConversationStore:
         from_customer = sum(1 for message in added if message.author == "customer")
         if from_customer:
             changes["unread_count"] = conversations.c.unread_count + from_customer
+        # Lo que reconoció el asistente hace avanzar la etapa del cliente (nunca retrocede).
+        reached = [stage for message in added if message.author == "assistant" for stage in [stage_for_intent(message.intent)] if stage]
+        if reached:
+            current = conn.execute(select(conversations.c.stage).where(conversations.c.id == conversation_id)).scalar_one()
+            for stage in reached:
+                current = advanced(current, stage) or current
+            changes["stage"] = current
         conn.execute(update(conversations).where(conversations.c.id == conversation_id).values(**changes))
 
     def update_entry(
@@ -345,13 +355,15 @@ class ConversationStore:
     def _handoff(self, conn: Connection, conversation_id: uuid.UUID, reason: str, detail: str | None, now: datetime) -> None:
         reason = reason if reason in HANDOFF_REASONS else "assistant"
         row = conn.execute(
-            select(conversations.c.tenant_id, conversations.c.channel, conversations.c.contact_name, conversations.c.needs_human)
+            select(conversations.c.tenant_id, conversations.c.channel, conversations.c.contact_name, conversations.c.needs_human, conversations.c.stage)
             .where(conversations.c.id == conversation_id)
         ).first()
         if row is None:
             raise ConversationNotFoundError("la conversación no existe")
         # El área de pruebas no tiene a nadie del otro lado: se marca, pero la IA sigue respondiendo.
         changes: dict[str, Any] = {"handoff_reason": reason, "updated_at": now, "ai_paused": row.channel != "prueba"}
+        if reason == "payment_review" and advanced(row.stage, "payment"):
+            changes["stage"] = "payment"
         if not row.needs_human:
             changes.update(needs_human=True, handoff_requested_at=now)
             conn.execute(

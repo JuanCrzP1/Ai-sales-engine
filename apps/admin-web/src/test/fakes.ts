@@ -10,6 +10,8 @@ import type { AIModelOption, AISettings, AIUsage, AssistantLab, ConfigSource, Mo
 import type { AuthService } from "../repositories/authService";
 import type { BusinessDirectory } from "../repositories/businessDirectory";
 import type { Channels, WhatsAppChannel } from "../repositories/channels";
+import type { Commerce } from "../repositories/commerce";
+import type { Customer, Report, Sale } from "../domain/commerce/types";
 import type { ConfigRepository, StoredConfig } from "../repositories/configRepository";
 import type { ChatMessage, ConversationSummary, ConversationThread, InboxFilter, Notification } from "../domain/inbox/types";
 import type { Inbox } from "../repositories/inbox";
@@ -383,9 +385,79 @@ export function createMemoryWhatsApp({ available = true }: { available?: boolean
   return { channels, scan: () => (scanned = true), newCodes: () => codes };
 }
 
+/** Un reporte vacío de `days` días que terminan hoy, para sembrar lo que la prueba necesite. */
+export function emptyReport(days = 30): Report {
+  const today = new Date();
+  const list = Array.from({ length: days }, (_, index) => {
+    const day = new Date(today.getTime() - (days - 1 - index) * 86_400_000).toISOString().slice(0, 10);
+    return { day, newConversations: 0, customerMessages: 0, assistantMessages: 0, agentMessages: 0, sales: 0 };
+  });
+  const totals = { conversations: 0, customerMessages: 0, assistantMessages: 0, agentMessages: 0, handoffs: 0, sales: 0, revenue: {} };
+  return {
+    since: list[0]?.day ?? "",
+    until: list.at(-1)?.day ?? "",
+    days: list,
+    totals,
+    previous: { ...totals },
+    funnel: { new: 0, interested: 0, ready: 0, payment: 0, customer: 0 },
+    handoffsByReason: {},
+    aiCostUsd: null,
+    aiReplies: 0,
+  };
+}
+
+/** Clientes, ventas y reportes en memoria: registrar una venta convierte al cliente, como el servidor. */
+export function createMemoryCommerce(seed: { customers?: Customer[]; sales?: Sale[]; report?: Report } = {}): Commerce & { customerList: Customer[]; saleList: Sale[]; reportDays: number[] } {
+  const customerList = (seed.customers ?? []).map((item) => ({ ...item }));
+  const saleList = (seed.sales ?? []).map((item) => ({ ...item }));
+  const reportDays: number[] = [];
+  return {
+    customerList,
+    saleList,
+    reportDays,
+    customers: async (filter = {}) => {
+      const text = (filter.query ?? "").trim().toLowerCase();
+      return customerList
+        .filter((item) => (!filter.stage || item.stage === filter.stage) && (!text || `${item.name ?? ""} ${item.contact}`.toLowerCase().includes(text)))
+        .map((item) => ({ ...item }));
+    },
+    sales: async () => saleList.map((item) => ({ ...item })),
+    recordSale: async (sale) => {
+      if (!sale.customerName.trim()) throw new PersistenceError("invalid", { message: "Escribe el nombre del cliente.", problems: [{ path: "customer_name", message: "Escribe el nombre del cliente." }] });
+      if (!(Number(sale.amount) > 0)) throw new PersistenceError("invalid", { message: "El valor debe ser mayor que cero.", problems: [{ path: "amount", message: "El valor debe ser mayor que cero." }] });
+      const created: Sale = {
+        id: `venta-${saleList.length + 1}`,
+        customerName: sale.customerName.trim(),
+        description: sale.description.trim(),
+        amount: Number(sale.amount).toFixed(2),
+        currency: sale.currency,
+        status: "confirmed",
+        createdAt: new Date().toISOString(),
+        createdBy: "operador@ejemplo.com",
+        conversationId: sale.conversationId ?? null,
+      };
+      saleList.unshift(created);
+      const customer = customerList.find((item) => item.conversationId === sale.conversationId);
+      if (customer) Object.assign(customer, { stage: "customer", needsHuman: false, purchases: customer.purchases + 1 });
+      return { ...created };
+    },
+    cancelSale: async (saleId) => {
+      const sale = saleList.find((item) => item.id === saleId);
+      if (!sale) throw new PersistenceError("not_found", { message: "Esa venta no existe." });
+      sale.status = "cancelled";
+      return { ...sale };
+    },
+    report: async (days) => {
+      reportDays.push(days);
+      return seed.report ?? emptyReport(days);
+    },
+  };
+}
+
 /** Servicios como los de la aplicación, sobre el backend en memoria. */
 export function createTestServices(backend: MemoryBackend = createMemoryBackend(), overrides: Partial<ApplicationServices> = {}): ApplicationServices {
   const whatsapp = createMemoryWhatsApp();
+  const commerce = createMemoryCommerce();
   return {
     auth: createLocalOperatorAuthService(),
     directory: backend.directory,
@@ -393,6 +465,7 @@ export function createTestServices(backend: MemoryBackend = createMemoryBackend(
     createAssistantLab: createMemoryAssistantLabs().create,
     inbox: createMemoryInbox(),
     createChannels: () => whatsapp.channels,
+    createCommerce: () => commerce,
     ...overrides,
   };
 }

@@ -31,6 +31,8 @@ def build_cloud_panel_api(auth_url: str) -> FastAPI:
     from app.infrastructure.ai.openrouter_key_verifier import OpenRouterKeyVerifier
     from app.infrastructure.ai.openrouter_models import OpenRouterModelCatalog
     from app.infrastructure.business_config.database import build_channel_messenger, build_whatsapp_channel_service
+    from app.infrastructure.business_config.ai_usage_store import AIUsageStore
+    from app.infrastructure.business_config.commerce_store import CommerceStore
     from app.infrastructure.channels.platform import uazapi_platform
     from app.infrastructure.channels.public_url import webhook_base
     from app.infrastructure.channels.uazapi import UazapiClient
@@ -62,4 +64,6 @@ def build_cloud_panel_api(auth_url: str) -> FastAPI:
             engine, UazapiClient, platform=uazapi_platform(), webhook_base=webhook_base(settings.api_prefix), secrets_key=key
         ),
         messenger=build_channel_messenger(engine, UazapiClient, secrets_key=key),
+        commerce=CommerceStore(engine),
+        ai_usage=AIUsageStore(engine),
     )

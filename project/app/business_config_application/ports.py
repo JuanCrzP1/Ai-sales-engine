@@ -15,6 +15,7 @@ from app.domain.business_config.access import Principal
 from app.domain.business_config.ai_settings import AICredentials, AISettings, AssistantTurn, KeyCheck
 from app.domain.business_config.ai_models import AIModel
 from app.domain.business_config.ai_usage import AIUsageSummary
+from app.domain.business_config.commerce import Customer, NewSale, ReportDay, ReportTotals, Sale
 from app.domain.business_config.channels import ConnectionStatus, ProviderStatus, WhatsAppConnection, WhatsAppSecrets
 from app.domain.business_config.contract import BusinessConfig, SecretRef
 from app.domain.business_config.conversations import (
@@ -196,6 +197,20 @@ class ConversationStorage(Protocol):
     def mark_read(self, conversation_id: str) -> None: ...
 
     def activity(self, tenant_slug: str, *, since: datetime) -> BusinessActivity: ...
+
+
+class CommerceStorage(Protocol):
+    """Clientes (las conversaciones de canales reales con su etapa), ventas y los datos de los reportes de cada negocio."""
+
+    def customers(self, tenant_slug: str, *, stage: str | None = None, query: str | None = None) -> list[Customer]: ...
+
+    def record_sale(self, tenant_slug: str, sale: NewSale, *, created_by: str | None) -> Sale: ...
+
+    def cancel_sale(self, tenant_slug: str, sale_id: str) -> Sale: ...
+
+    def sales(self, tenant_slug: str, *, since: date) -> list[Sale]: ...
+
+    def report_data(self, tenant_slug: str, *, since: date, until: date) -> tuple[list[ReportDay], ReportTotals, dict[str, int], dict[str, int]]: ...
 
 
 class OutboundMessenger(Protocol):

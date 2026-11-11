@@ -17,14 +17,24 @@ from fastapi.responses import JSONResponse
 
 from app.admin_api.assistant_routes import router as assistant_router
 from app.admin_api.channel_routes import router as channel_router
+from app.admin_api.commerce_routes import router as commerce_router
 from app.admin_api.conversation_routes import router as conversation_router
 from app.admin_api.errors import register_error_handlers
 from app.admin_api.routes import router
 from app.business_config_application.access import BusinessAccess
 from app.business_config_application.assistant_lab import AssistantLabService
 from app.business_config_application.channels import WhatsAppChannelService
+from app.business_config_application.commerce import CommerceService
 from app.business_config_application.conversations import ConversationsService, NotificationsService
-from app.business_config_application.ports import AccessTokenVerifier, ConversationStorage, NotificationStorage, OutboundMessenger, UsageCounter
+from app.business_config_application.ports import (
+    AccessTokenVerifier,
+    AIUsageStorage,
+    CommerceStorage,
+    ConversationStorage,
+    NotificationStorage,
+    OutboundMessenger,
+    UsageCounter,
+)
 from app.business_config_application.service import BusinessConfigService
 from app.business_config_application.templates import BusinessTemplateCatalog
 from app.business_config_application.usage_limits import MemoryUsageCounter, UsageGuard
@@ -74,6 +84,8 @@ def create_app(
     templates: BusinessTemplateCatalog | None = None,
     whatsapp: WhatsAppChannelService | None = None,
     messenger: OutboundMessenger | None = None,
+    commerce: CommerceStorage | None = None,
+    ai_usage: AIUsageStorage | None = None,
 ) -> FastAPI:
     """La API del panel. Sin `assistant_lab`, la inteligencia artificial y el área de pruebas responden que no están disponibles.
 
@@ -94,6 +106,8 @@ def create_app(
     # Con `messenger`, el equipo responde desde el panel y el mensaje sale por el canal del cliente.
     app.state.conversations = ConversationsService(conversations, app.state.access, messenger) if conversations is not None else None
     app.state.notifications = NotificationsService(notifications, app.state.access) if notifications is not None else None
+    # Clientes, ventas y reportes; con `ai_usage`, los reportes suman el costo de la IA.
+    app.state.commerce = CommerceService(commerce, app.state.access, ai_usage) if commerce is not None else None
     app.state.contract_schema = business_config_json_schema()
     # Las plantillas para empezar un negocio: se validan aquí, al arrancar.
     app.state.templates = templates if templates is not None else BusinessTemplateCatalog.from_directory()
@@ -115,4 +129,5 @@ def create_app(
     app.include_router(assistant_router)
     app.include_router(conversation_router)
     app.include_router(channel_router)
+    app.include_router(commerce_router)
     return app

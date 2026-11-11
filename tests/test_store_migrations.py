@@ -22,7 +22,7 @@ from app.infrastructure.business_config import migrations
 
 def test_migrations_are_ordered_and_every_statement_can_run_again():
     names = [path.name for path in migrations.MIGRATIONS]
-    assert names == sorted(names) and names[-1] == "0009_conversations_live.sql"
+    assert names == sorted(names) and names[-1] == "0010_sales_and_stages.sql"
     assert all(migrations.MIGRATION_NAME.fullmatch(name) for name in names)
     for path in migrations.MIGRATIONS:
         sql = re.sub(r"--[^\n]*", "", path.read_text(encoding="utf-8"))
@@ -52,7 +52,7 @@ def test_the_tracking_table_is_written_in_the_same_transaction(monkeypatch):
         def connect(self):
             return Connection()
 
-    migrations.run_sql_file(Engine(), migrations.MIGRATIONS[-1], record=True)
+    migrations.run_sql_file(Engine(), migrations.MIGRATIONS_DIR / "0009_conversations_live.sql", record=True)
     (sql,) = executed
     assert sql.startswith("BEGIN;") and sql.rstrip().endswith("COMMIT;")
     assert sql.index("pg_advisory_xact_lock") < sql.index("conversation_media") < sql.index("INSERT INTO schema_migrations")

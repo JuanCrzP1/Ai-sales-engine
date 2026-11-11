@@ -19,6 +19,8 @@ from app.domain.business_config.access import Principal
 from app.domain.business_config.ai_settings import AICredentials, AssistantTurn, KeyCheck
 from app.domain.business_config.conversations import NewMessage
 from app.domain.business_config.payment_data import REDACTED_PAYMENT_VALUE, payment_values
+from app.infrastructure.business_config.ai_usage_store import AIUsageStore
+from app.infrastructure.business_config.commerce_store import CommerceStore
 from app.infrastructure.business_config.conversation_store import ConversationStore
 from app.infrastructure.business_config.database import (
     build_assistant_lab_service,
@@ -108,6 +110,8 @@ def platform(tmp_path):
         notifications=NotificationStore(engine),
         usage=UsageCounterStore(engine),
         messenger=MESSENGER,
+        commerce=CommerceStore(engine),
+        ai_usage=AIUsageStore(engine),
     )
     MESSENGER.sent.clear()
     MESSENGER.fail = False
@@ -149,7 +153,7 @@ def test_the_migration_matches_the_tables():
         columns = {match.group(1) for match in re.finditer(r"^\s+([a-z_]+)\s+[A-Z]+", body, re.M)} - {"constraint"}
         # La 0005 agregó a `conversations` las columnas del traspaso a una persona; la 0009, las de la bandeja en vivo.
         added_later = (
-            {"needs_human", "handoff_requested_at", "ai_paused", "handoff_reason", "unread_count", "assistant_typing_until", "updated_at"}
+            {"needs_human", "handoff_requested_at", "ai_paused", "handoff_reason", "unread_count", "assistant_typing_until", "updated_at", "stage"}
             if table is conversations
             else {"kind", "status", "provider_message_id", "media_id", "media_note", "updated_at"}
         )
@@ -479,3 +483,78 @@ def test_receipts_only_move_forward_and_a_handoff_notifies_once_per_wait(platfor
     store.request_handoff(chat.conversation_id, "complaint", "¿Hola?")
     items, _unread = NotificationStore(_engine).recent(["restaurant"], ANA.user_id, limit=10)
     assert [item.title for item in items] == ["Ana tiene un reclamo"]
+
+
+# ---------------------------------------------------------------------------
+# Clientes, ventas y reportes
+# ---------------------------------------------------------------------------
+
+def _chat(store: ConversationStore, contact: str, name: str, *messages: NewMessage, channel: str = "whatsapp"):
+    result = None
+    for index, message in enumerate(messages):
+        result = store.append("restaurant", channel=channel, contact_ref=contact, contact_name=name, message=message)
+    return result
+
+
+def test_each_customer_reaches_a_stage_that_only_moves_forward(platform):
+    _engine, store, _lab, client = platform
+    ana = _chat(store, "573001", "Ana", NewMessage("customer", "Hola"), NewMessage("assistant", "¡Hola! ¿Qué buscas?", "info"))
+    _chat(store, "573002", "Beto", NewMessage("customer", "Quiero pedir"), NewMessage("assistant", "¡Listo! ¿Cómo pagas?", "buy"),
+          NewMessage("customer", "¿y cuánto vale?"), NewMessage("assistant", "Vale $20.000", "info"))
+    _chat(store, "s1", "Prueba", NewMessage("customer", "Hola"), channel="prueba")
+    store.request_handoff(ana.conversation_id, "payment_review", "Ya pagué")
+    found = {item["name"]: item for item in client.get("/api/businesses/restaurant/customers", headers=_as("ana")).json()}
+    assert {name: item["stage"] for name, item in found.items()} == {"Ana": "payment", "Beto": "ready"}  # la prueba no es un cliente
+    assert [c["name"] for c in client.get("/api/businesses/restaurant/customers", params={"stage": "ready"}, headers=_as("ana")).json()] == ["Beto"]
+    assert [c["name"] for c in client.get("/api/businesses/restaurant/customers", params={"q": "an"}, headers=_as("ana")).json()] == ["Ana"]
+    assert client.get("/api/businesses/restaurant/customers", headers=_as("beto")).status_code == 404
+
+
+def test_recording_a_sale_makes_the_customer_a_client_and_cancelling_it_keeps_the_record(platform):
+    _engine, store, _lab, client = platform
+    ana = _chat(store, "573001", "Ana", NewMessage("customer", "Te pagué"), NewMessage("assistant", "Lo verifico", "buy"))
+    store.request_handoff(ana.conversation_id, "payment_review", "Te pagué")
+    body = {"customer_name": "Ana", "description": "2 hamburguesas", "amount": "40000", "currency": "cop", "conversation_id": ana.conversation_id}
+    created = client.post("/api/businesses/restaurant/sales", json=body, headers=_as("ana"))
+    assert created.status_code == 201 and (created.json()["amount"], created.json()["currency"], created.json()["created_by"]) == ("40000.00", "COP", "ana@example.com")
+    (customer,) = client.get("/api/businesses/restaurant/customers", headers=_as("ana")).json()
+    assert (customer["stage"], customer["purchases"], customer["spent"], customer["needs_human"]) == ("customer", 1, {"COP": "40000.00"}, False)
+    cancelled = client.post(f"/api/businesses/restaurant/sales/{created.json()['id']}/cancel", headers=_as("ana")).json()
+    assert cancelled["status"] == "cancelled"
+    assert [s["status"] for s in client.get("/api/businesses/restaurant/sales", headers=_as("ana")).json()] == ["cancelled"]
+    assert client.get("/api/businesses/restaurant/customers", headers=_as("ana")).json()[0]["spent"] == {}
+
+
+@pytest.mark.parametrize(
+    ("change", "field"),
+    [({"customer_name": " "}, "customer_name"), ({"description": ""}, "description"), ({"amount": "-5"}, "amount"), ({"amount": "abc"}, "amount"), ({"currency": "pesos"}, "currency")],
+)
+def test_a_sale_with_bad_data_is_rejected_on_its_field(platform, change, field):
+    _engine, _store, _lab, client = platform
+    body = {"customer_name": "Ana", "description": "Pedido", "amount": "1000", "currency": "COP", **change}
+    response = client.post("/api/businesses/restaurant/sales", json=body, headers=_as("ana"))
+    assert response.status_code == 422 and response.json()["issues"][0]["path"].split(".")[-1] == field
+
+
+def test_a_sale_cannot_point_to_another_business_conversation(platform):
+    _engine, store, _lab, client = platform
+    other = store.append("saas", channel="whatsapp", contact_ref="1", contact_name="X", message=NewMessage("customer", "Hola"))
+    body = {"customer_name": "X", "description": "Plan", "amount": "1", "currency": "USD", "conversation_id": other.conversation_id}
+    assert client.post("/api/businesses/restaurant/sales", json=body, headers=_as("ana")).status_code == 404
+
+
+def test_the_report_counts_the_period_by_day_and_compares_it_with_the_previous_one(platform):
+    _engine, store, _lab, client = platform
+    _chat(store, "573001", "Ana", NewMessage("customer", "Hola"), NewMessage("assistant", "¡Hola!", "info"), NewMessage("agent", "Soy Juan"))
+    store.request_handoff(_chat(store, "573002", "Beto", NewMessage("customer", "Quiero un asesor")).conversation_id, "human_request")
+    client.post("/api/businesses/restaurant/sales", json={"customer_name": "Ana", "description": "Pedido", "amount": "25000", "currency": "COP"}, headers=_as("ana"))
+    report = client.get("/api/businesses/restaurant/reports", params={"days": 7}, headers=_as("ana")).json()
+    assert len(report["days"]) == 7 and report["days"][-1]["day"] == report["until"]
+    assert report["totals"] | {"revenue": None} == {
+        "conversations": 2, "customer_messages": 2, "assistant_messages": 1, "agent_messages": 1, "handoffs": 1, "sales": 1, "revenue": None,
+    }
+    assert report["totals"]["revenue"] == {"COP": "25000.00"} and report["previous"]["sales"] == 0
+    assert report["funnel"] == {"new": 2, "interested": 1, "ready": 0, "payment": 0, "customer": 0}
+    assert report["handoffs_by_reason"] == {"human_request": 1}
+    assert sum(day["new_conversations"] for day in report["days"]) == 2
+    assert client.get("/api/businesses/restaurant/reports", headers=_as("beto")).status_code == 404

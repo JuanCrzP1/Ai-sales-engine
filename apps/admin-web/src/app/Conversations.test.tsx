@@ -103,14 +103,6 @@ describe("Canales y secciones que se llenan con ellos", () => {
     expect(screen.queryByText("Conectado")).not.toBeInTheDocument();
   });
 
-  it("clientes, ventas y reportes explican qué mostrarán y llevan a conectar un canal", async () => {
-    for (const [path, title] of [["clientes", "Clientes"], ["ventas", "Ventas"], ["reportes", "Reportes"]] as const) {
-      await openAt(`/negocios/${CAFE}/${path}`);
-      expect(screen.getByRole("heading", { level: 1, name: title })).toBeInTheDocument();
-      expect(screen.getByRole("link", { name: "Conectar un canal" })).toHaveAttribute("href", `/negocios/${CAFE}/canales`);
-      cleanup();
-    }
-  });
 });
 
 

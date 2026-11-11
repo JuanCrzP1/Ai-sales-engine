@@ -167,6 +167,29 @@ El equipo responde desde la caja de abajo. El mensaje aparece enseguida («envia
 en ese chat. Si no sale, se avisa y el texto vuelve a la caja. «Pausar IA / Reanudar IA» decide quién atiende. Las conversaciones de
 prueba no tienen caja de respuesta.
 
+### D8f — Clientes, ventas y reportes
+
+`features/commerce` reúne las tres pantallas y el formulario «Registrar venta» que comparten. Se apoyan en
+`state/commerceContext` y en `repositories/commerce.ts`, con su implementación en `infrastructure/api/apiCommerce.ts`
+(`/api/businesses/{slug}/customers`, `/sales` y `/reports`).
+
+- **Clientes:** cada contacto de un canal real con su etapa: nuevo → interesado → listo para comprar → pagó (por verificar) →
+  cliente. Se filtra por etapa con las tarjetas de arriba y se busca por nombre o teléfono. Cada fila lleva a su chat y permite
+  registrar una venta.
+- **Ventas:**
+  - las métricas de 30 días;
+  - los pagos por verificar, con «Confirmar y registrar venta»;
+  - el historial, donde anular deja la venta marcada.
+- **Reportes:**
+  - el periodo (7, 30 o 90 días) y sus métricas comparadas con el periodo anterior;
+  - las conversaciones y las ventas por día;
+  - el embudo;
+  - quién respondió (la IA o el equipo) y el costo de la IA;
+  - por qué los chats pasaron a una persona.
+
+Los gráficos (`components/ui/Charts.tsx`) usan un color por serie, globo al pasar el mouse y una tabla oculta para lectores de
+pantalla. Los dos colores de «Quién respondió» están validados para daltonismo.
+
 ### D9 — API separada del motor y limitada a este equipo
 
 `app.main` publica rutas del motor y en Docker escucha en `0.0.0.0`. La API del panel es otra aplicación, con el host fijo a `127.0.0.1`

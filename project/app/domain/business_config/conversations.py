@@ -80,6 +80,8 @@ class ConversationSummary:
     # El asistente está preparando una respuesta.
     assistant_typing: bool = False
     updated_at: datetime | None = None
+    # La etapa a la que llegó el cliente (`commerce.STAGES`).
+    stage: str = "new"
 
 
 @dataclass(frozen=True)

@@ -266,6 +266,12 @@ IA no responde mientras alguien atiende.
   - El mismo mensaje no se procesa dos veces aunque WhatsApp avise de nuevo, y los contactos `@lid` ya no se pierden.
   - Laboratorio: sin diferencias en el motor antes del cambio de prompt; después, solo las líneas nuevas (v4). Con el modelo real,
     las frases de la prueba pasan a una persona con el motivo correcto.
+
+  **Clientes, ventas y reportes (11 de noviembre de 2026):** dejaron de ser pantallas de «próximamente».
+  - Migración 0010: la tabla `sales` y la etapa de cada conversación, que avanza sola con lo que reconoce el asistente.
+  - Desde Clientes, Ventas o un pago por verificar se registra la venta, y el cliente pasa a «Cliente».
+  - Los reportes muestran el embudo, la actividad por día, quién respondió, el costo de la IA y los pasos a una persona, comparados
+    con el periodo anterior.
 - Telegram por negocio: el negocio pega el token de su bot en Canales, el webhook se registra solo y el token se guarda cifrado.
 - Todos los canales detrás de una sola interfaz (`ChannelConnector`: recibir, enviar, verificar firma): agregar un canal es
   agregar un conector, no tocar el motor.

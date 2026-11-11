@@ -83,6 +83,7 @@ _ADDED_COLUMNS = {
         "unread_count": "INTEGER NOT NULL DEFAULT 0",
         "assistant_typing_until": "DATETIME",
         "updated_at": "DATETIME NOT NULL DEFAULT '1970-01-01 00:00:00'",
+        "stage": "TEXT NOT NULL DEFAULT 'new'",
     },
     "conversation_entries": {
         "kind": "TEXT NOT NULL DEFAULT 'text'",

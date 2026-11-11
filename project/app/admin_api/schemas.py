@@ -191,6 +191,7 @@ def conversation_payload(summary: ConversationSummary) -> dict[str, Any]:
         "unread_count": summary.unread_count,
         "assistant_typing": summary.assistant_typing,
         "can_reply": summary.channel in REPLYABLE_CHANNELS,
+        "stage": summary.stage,
     }
 
 
