@@ -3,47 +3,60 @@
    etiquetas elegibles y el resumen del asistente.
    ================================================================ */
 
-/* ---------------------------------------------------------------- grupos y cuadrícula */
+/* ---------------------------------------------------------------- secciones: título a la izquierda, tarjetas apiladas a la derecha */
 .settings-group {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-}
-
-.settings-group + .settings-group {
-  margin-top: var(--space-3);
-}
-
-.settings-group__header {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 0 2px;
-}
-
-.settings-group__title {
-  font-size: var(--text-sm);
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--color-text-subtle);
-}
-
-.settings-group__description {
-  color: var(--color-text-muted);
-  font-size: var(--text-sm);
-}
-
-.settings-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--space-4);
+  grid-template-columns: 248px minmax(0, 1fr);
+  gap: var(--space-6, 32px);
   align-items: start;
 }
 
+.settings-group + .settings-group {
+  margin-top: var(--space-6, 32px);
+  padding-top: var(--space-6, 32px);
+  border-top: 1px solid var(--color-border);
+}
+
+.settings-group__header {
+  position: sticky;
+  top: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: var(--space-2);
+}
+
+.settings-group__title {
+  margin: 0;
+  font-size: var(--text-md);
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.settings-group__description {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+}
+
+/* Una sola columna: todas las tarjetas del mismo ancho, sin huecos. */
+.settings-stack {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
 @media (max-width: 1100px) {
-  .settings-grid {
+  .settings-group {
     grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-4);
+  }
+
+  .settings-group__header {
+    position: static;
+    padding-top: 0;
   }
 }
 
@@ -63,9 +76,6 @@
     transform 0.3s var(--ease-out);
 }
 
-.settings-card--wide {
-  grid-column: 1 / -1;
-}
 
 .settings-card:hover {
   border-color: #d7dcf0;
@@ -509,10 +519,6 @@
   }
 }
 
-/* Filas de botones sueltas dentro de una cuadrícula (p. ej. «Agregar otro perfil de pago»): ocupan todo el ancho. */
-.settings-grid > .button-row {
-  grid-column: 1 / -1;
-}
 
 /* Días de un horario y opciones cerradas de los formularios generados: casillas compactas. */
 .settings-card .contract-choices .choice-grid {
@@ -533,10 +539,6 @@
   white-space: nowrap;
 }
 
-/* Una tarjeta avanzada abierta ocupa todo el ancho: más espacio para editar y sin huecos al lado. */
-.settings-grid > .settings-card--collapsible[open] {
-  grid-column: 1 / -1;
-}
 
 .grid-3 {
   display: grid;
@@ -955,4 +957,20 @@
 .channel-color--web {
   color: #ffffff;
   background: var(--gradient-accent);
+}
+
+/* Las opcionales cerradas son filas compactas: se ven como una lista ordenada y se abren con un clic. */
+.settings-card--collapsible:not([open]) .settings-card__header {
+  padding-top: var(--space-3);
+  padding-bottom: var(--space-3);
+}
+
+.settings-card--collapsible:not([open]) .settings-card__icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+}
+
+.settings-card--collapsible:hover {
+  transform: none;
 }

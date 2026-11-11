@@ -60,9 +60,9 @@ export function SettingsCard({ icon, tone = "indigo", title, description, badge,
   );
 }
 
-/** Cuadrícula de tarjetas: dos columnas en pantallas anchas, una en el celular. */
+/** Tarjetas una debajo de otra, todas del mismo ancho: se lee de arriba abajo, como un formulario, y nunca quedan huecos. */
 export function SettingsGrid({ children }: { children: ReactNode }) {
-  return <div className="settings-grid">{children}</div>;
+  return <div className="settings-stack">{children}</div>;
 }
 
 interface SettingsGroupProps {
@@ -71,15 +71,18 @@ interface SettingsGroupProps {
   children: ReactNode;
 }
 
-/** Un bloque de la página («Lo esencial», «Para afinar») con su cuadrícula de tarjetas. */
+/**
+ * Una sección de la página («Lo esencial», «Para afinar»), como en los paneles de Stripe o Shopify: a la izquierda su título y para
+ * qué sirve (queda a la vista al bajar), a la derecha sus tarjetas en una sola columna. En el celular, el título va arriba.
+ */
 export function SettingsGroup({ title, description, children }: SettingsGroupProps) {
   return (
     <section className="settings-group">
-      <div className="settings-group__header">
+      <header className="settings-group__header">
         <h2 className="settings-group__title">{title}</h2>
         {description && <p className="settings-group__description">{description}</p>}
-      </div>
-      <div className="settings-grid">{children}</div>
+      </header>
+      <div className="settings-stack">{children}</div>
     </section>
   );
 }

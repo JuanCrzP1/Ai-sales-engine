@@ -119,11 +119,16 @@ usan el reloj del navegador, el tema de una objeción se elige de una lista y ca
 
 ### D8b — Configuración por tarjetas
 
-Cada sección del Asistente IA se arma con `SettingsGroup` y `SettingsCard` (`components/ui/SettingsCard.tsx`): un bloque «Lo esencial» y
-otro de opciones para afinar, en una cuadrícula de dos columnas que pasa a una en el celular. Cada tarjeta tiene ícono, color, título y
-para qué sirve; las avanzadas son plegables (elemento `<details>`, accesible por teclado) y al abrirlas ocupan todo el ancho. `Card` con
-`icon` se dibuja igual, así los formularios existentes no cambian de estructura. El resumen (`features/overview`) muestra cada sección
-con su estado, sus datos clave y el acceso a probar y publicar; es la entrada desde el menú.
+Cada sección del Asistente IA se arma con `SettingsGroup` y `SettingsCard` (`components/ui/SettingsCard.tsx`), con la distribución
+de los paneles de configuración profesionales (Stripe, Shopify):
+- Cada bloque («Lo esencial», «Entrega y existencias», «Para afinar»…) es una fila con su título y para qué sirve a la izquierda
+  (queda a la vista al bajar) y sus tarjetas a la derecha, una debajo de otra y todas del mismo ancho.
+- Nunca hay tarjetas de distinta altura lado a lado, así que no quedan huecos: se lee de arriba abajo, como un formulario.
+- Una línea separa los bloques. En pantallas angostas el título va arriba.
+- Cada tarjeta tiene ícono, color, título y para qué sirve. Las opcionales son filas compactas plegables (elemento `<details>`,
+  accesible por teclado).
+- El resumen (`features/overview`) muestra cada sección con su estado, sus datos clave y el acceso a probar y publicar; es la
+  entrada desde el menú.
 
 ### D8c — Plantillas para empezar un negocio
 
