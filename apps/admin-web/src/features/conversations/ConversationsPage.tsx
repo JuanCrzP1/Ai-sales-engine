@@ -23,15 +23,15 @@ export function ConversationsPage() {
   // Como WhatsApp Web: una barra de título compacta y la bandeja ocupando todo el alto y el ancho disponibles.
   return (
     <div className="inbox-page">
-      <header className="inbox-page__bar">
-        <h1 className="inbox-page__title">Conversaciones</h1>
-        <span className="live-indicator" role="status">
-          <span className="live-indicator__dot" aria-hidden="true" /> En vivo
-        </span>
-      </header>
-
       <div className={`inbox${selectedId ? " inbox--reading" : ""}`}>
         <section className="inbox__list" aria-label="Lista de conversaciones">
+          {/* Como «Chats» en WhatsApp Web: el título va en la cabecera de la lista, sin una barra que le quite alto al chat. */}
+          <header className="inbox__list-head">
+            <h1 className="inbox-page__title">Conversaciones</h1>
+            <span className="live-indicator" role="status">
+              <span className="live-indicator__dot" aria-hidden="true" /> En vivo
+            </span>
+          </header>
           <div className="inbox__filters">
             <div className="segmented" role="group" aria-label="Negocios">
               <button type="button" className="segmented__option" aria-pressed={!allBusinesses} onClick={() => setFilter({ ...filter, business: slug })}>
@@ -91,7 +91,7 @@ export function ConversationsPage() {
             <ul className="inbox__items">
               {list.data.map((conversation) => (
                 <li key={conversation.id}>
-                  <ConversationItem conversation={conversation} selected={conversation.id === selectedId} onSelect={() => select(conversation.id)} />
+                  <ConversationItem conversation={conversation} showBusiness={allBusinesses} selected={conversation.id === selectedId} onSelect={() => select(conversation.id)} />
                 </li>
               ))}
             </ul>
@@ -129,7 +129,7 @@ export function ConversationsPage() {
   );
 }
 
-function ConversationItem({ conversation, selected, onSelect }: { conversation: ConversationSummary; selected: boolean; onSelect: () => void }) {
+function ConversationItem({ conversation, selected, showBusiness, onSelect }: { conversation: ConversationSummary; selected: boolean; showBusiness: boolean; onSelect: () => void }) {
   const name = contactLabel(conversation);
   const unread = conversation.unreadCount ?? 0;
   return (
@@ -165,9 +165,12 @@ function ConversationItem({ conversation, selected, onSelect }: { conversation: 
           {conversation.needsHuman && <span className="handoff-badge">{conversation.handoffReason ? HANDOFF_LABELS[conversation.handoffReason] : "Pide una persona"}</span>}
           {conversation.aiPaused && !conversation.needsHuman && <span className="paused-badge">Atiende tu equipo</span>}
           <span className={`channel-badge channel-color--${conversation.channel}`}>{CHANNEL_LABELS[conversation.channel]}</span>
-          <span className="business-badge" title="Negocio">
-            {conversation.business.name}
-          </span>
+          {/* El negocio solo hace falta al ver los chats de todos tus negocios. */}
+          {showBusiness && (
+            <span className="business-badge" title="Negocio">
+              {conversation.business.name}
+            </span>
+          )}
         </span>
       </span>
     </button>

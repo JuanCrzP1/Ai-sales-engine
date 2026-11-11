@@ -151,6 +151,14 @@ vive en `domain/channels/types.ts` y el contrato en `repositories/channels.ts`, 
 `infrastructure/api/apiChannels.ts` (`/api/businesses/{slug}/channels/whatsapp`). En las pruebas, `createMemoryWhatsApp` de
 `test/fakes.ts` simula el servidor. Telegram y el chat web aparecen como «Próximamente»; Instagram se retiró.
 
+### D8d2 — Sin barra superior
+
+Como en Slack o Linear, la cuenta (foto, nombre, correo; «Mi perfil» y «Cerrar sesión») va abajo en la barra lateral y la campana
+de avisos junto a la marca; sus menús se abren al lado de la barra (`position: fixed`, porque la barra recorta lo que se sale). El
+estado de guardado solo aparece en las páginas del Asistente IA, que es donde se guarda. Conversaciones ocupa exactamente la
+pantalla (`100dvh`, sin desplazamiento de la página). El título va en la cabecera de la lista de chats y solo se desplazan la
+lista y los mensajes.
+
 ### D8e — Conversaciones en vivo
 
 La bandeja se actualiza sola, como Auream: la lista se refresca cada 5 segundos y el chat abierto pide solo lo que cambió

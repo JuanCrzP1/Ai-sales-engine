@@ -63,7 +63,8 @@ describe("Conversaciones", () => {
     const list = await screen.findByRole("region", { name: "Lista de conversaciones" });
     const item = await within(list).findByRole("button", { name: /Laura Gómez/ });
     expect(within(item).getByText("WhatsApp")).toBeInTheDocument();
-    expect(within(item).getByText("Café Aroma")).toBeInTheDocument();
+    // Viendo un solo negocio, cada chat no repite de qué negocio es.
+    expect(within(item).queryByText("Café Aroma")).not.toBeInTheDocument();
     expect(within(list).queryByText("Software Norte")).not.toBeInTheDocument();
 
     await user.click(item);

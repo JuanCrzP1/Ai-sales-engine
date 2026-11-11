@@ -4,18 +4,25 @@ import { BrandMark } from "../components/brand/BrandMark";
 import { Icon } from "../components/ui/Icon";
 import { ASSISTANT_HUB_ITEM, CHANNELS_ITEM, isAssistantPath, MAIN_ITEMS, SETTINGS_ITEM, type NavItem } from "../navigation/navItems";
 import { useWorkspacePath } from "../navigation/useWorkspacePath";
+import { useAuth } from "../state/auth/useAuth";
 import { useConfig } from "../state/useConfig";
 import { BusinessSwitcher } from "./BusinessSwitcher";
 import { NAV_ICONS } from "./navIcons";
+import { NotificationBell } from "./NotificationBell";
+import { UserMenu } from "./UserMenu";
 
 interface SidebarProps {
   id: string;
   open: boolean;
 }
 
-/** Menú del negocio: primero atender y vender; después, su configuración. */
+/**
+ * Menú del negocio: primero atender y vender; después, su configuración. Como en Slack o Linear, los avisos van junto a la marca y
+ * la cuenta abajo: el contenido no pierde alto con una barra superior.
+ */
 export function Sidebar({ id, open }: SidebarProps) {
   const { progress } = useConfig();
+  const { verifiesCredentials } = useAuth();
   const { pathname } = useLocation();
   const pending = progress.total - progress.completed;
 
@@ -27,6 +34,7 @@ export function Sidebar({ id, open }: SidebarProps) {
           <span className="sidebar__brand-name">AI Sales Engine</span>
           <span className="sidebar__brand-sub">Tu asistente de ventas</span>
         </div>
+        <NotificationBell />
       </div>
 
       <BusinessSwitcher />
@@ -48,6 +56,12 @@ export function Sidebar({ id, open }: SidebarProps) {
         <NavEntry item={CHANNELS_ITEM} />
         <NavEntry item={SETTINGS_ITEM} />
       </nav>
+
+      {verifiesCredentials && (
+        <div className="sidebar__footer">
+          <UserMenu />
+        </div>
+      )}
     </aside>
   );
 }

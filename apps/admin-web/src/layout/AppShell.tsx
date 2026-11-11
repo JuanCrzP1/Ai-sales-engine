@@ -9,7 +9,7 @@ import { AssistantTabs } from "./AssistantTabs";
 import { ErrorBoundary } from "./ErrorBoundary";
 import { SaveProblems } from "./SaveProblems";
 import { Sidebar } from "./Sidebar";
-import { Topbar } from "./Topbar";
+import { SaveStatus } from "./SaveStatus";
 import { UnsavedChangesGuard } from "./UnsavedChangesGuard";
 
 const SIDEBAR_ID = "menu-principal";
@@ -45,9 +45,12 @@ export function AppShell() {
       <Sidebar id={SIDEBAR_ID} open={menuOpen} />
 
       <main className="main" id="contenido" tabIndex={-1}>
-        <div className="main__top">
-          <Topbar />
-        </div>
+        {/* Sin barra superior: la cuenta y los avisos viven en la barra lateral. El estado de guardado solo importa al configurar. */}
+        {isAssistantPath(location.pathname) && (
+          <div className="main__top">
+            <SaveStatus />
+          </div>
+        )}
         <UnsavedChangesGuard />
         <SaveProblems />
         {/* Mientras se guarda no se puede editar: lo escrito se perdería al recibir la versión del servidor. */}

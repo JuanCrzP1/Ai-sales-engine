@@ -5,7 +5,7 @@ import { Icon } from "../components/ui/Icon";
 import { ACCOUNT_PATHS } from "../navigation/accountPaths";
 import { useAuth, useCurrentUser } from "../state/auth/useAuth";
 
-/** Botón de cuenta con foto y nombre; despliega accesos a perfil y cierre de sesión. */
+/** La cuenta, abajo en la barra lateral: foto, nombre y correo; despliega hacia arriba el perfil y el cierre de sesión. */
 export function UserMenu() {
   const user = useCurrentUser();
   const { signOut } = useAuth();
@@ -47,7 +47,10 @@ export function UserMenu() {
         onClick={() => setOpen((current) => !current)}
       >
         <Avatar name={user.name} src={user.avatarUrl} size="sm" />
-        <span className="user-menu__name">{user.name}</span>
+        <span className="user-menu__who">
+          <span className="user-menu__name">{user.name}</span>
+          <span className="user-menu__email">{user.email}</span>
+        </span>
         <Icon name="chevronDown" size={16} />
       </button>
 
