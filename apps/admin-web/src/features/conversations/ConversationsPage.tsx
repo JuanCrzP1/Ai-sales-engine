@@ -3,7 +3,6 @@ import { useParams, useSearchParams } from "react-router-dom";
 import { Button } from "../../components/ui/Button";
 import { Alert, EmptyState } from "../../components/ui/Feedback";
 import { Icon, type IconName } from "../../components/ui/Icon";
-import { PageHeader } from "../../components/ui/Layout";
 import { contactLabel, fullDate, initials, messageTime, relativeTime } from "../../domain/inbox/format";
 import { DELIVERY_LABELS, fileSize } from "../../domain/inbox/live";
 import { CHANNEL_LABELS, CHANNELS, HANDOFF_LABELS, type Channel, type ChatMessage, type ConversationSummary, type ConversationThread } from "../../domain/inbox/types";
@@ -21,18 +20,15 @@ export function ConversationsPage() {
   const { filter, setFilter, list, selectedId, select, thread, reload, resolveHandoff, setAssistant, reply } = useConversations({ business: slug }, params.get("c"));
   const allBusinesses = filter.business === undefined;
 
+  // Como WhatsApp Web: una barra de título compacta y la bandeja ocupando todo el alto y el ancho disponibles.
   return (
-    <>
-      <PageHeader
-        eyebrow="Atención"
-        title="Conversaciones"
-        description="Los chats de tus clientes, de todos tus canales, en vivo. Cuando el asistente pasa un chat a tu equipo, lo atiendes desde aquí."
-        actions={
-          <span className="live-indicator" role="status">
-            <span className="live-indicator__dot" aria-hidden="true" /> En vivo
-          </span>
-        }
-      />
+    <div className="inbox-page">
+      <header className="inbox-page__bar">
+        <h1 className="inbox-page__title">Conversaciones</h1>
+        <span className="live-indicator" role="status">
+          <span className="live-indicator__dot" aria-hidden="true" /> En vivo
+        </span>
+      </header>
 
       <div className={`inbox${selectedId ? " inbox--reading" : ""}`}>
         <section className="inbox__list" aria-label="Lista de conversaciones">
@@ -45,6 +41,7 @@ export function ConversationsPage() {
                 Todos mis negocios
               </button>
             </div>
+            <div className="inbox__filter-row">
             <button
               type="button"
               className="filter-chip"
@@ -68,6 +65,7 @@ export function ConversationsPage() {
                 ))}
               </select>
             </label>
+            </div>
           </div>
 
           {list.status === "loading" && (
@@ -127,7 +125,7 @@ export function ConversationsPage() {
           )}
         </section>
       </div>
-    </>
+    </div>
   );
 }
 

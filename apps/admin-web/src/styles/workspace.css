@@ -1467,3 +1467,98 @@
     display: none;
   }
 }
+
+/* ---------------------------------------------------------------- Conversaciones a pantalla completa (como WhatsApp Web) */
+/* Esta página usa todo el ancho: el límite de lectura es para los formularios, no para un chat. */
+.main__inner:has(> .inbox-page) {
+  max-width: none;
+}
+
+.inbox-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.inbox-page__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.inbox-page__title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 750;
+  letter-spacing: -0.01em;
+}
+
+.inbox-page .live-indicator {
+  padding: 4px 10px;
+  font-size: var(--text-xs);
+}
+
+/* La bandeja llena el alto de la pantalla: solo quedan arriba la barra del panel y el título. */
+.inbox-page .inbox {
+  grid-template-columns: 360px minmax(0, 1fr);
+  height: calc(100dvh - 156px);
+  min-height: 460px;
+}
+
+.inbox-page .inbox__filters {
+  gap: 6px;
+  padding: var(--space-2) var(--space-3);
+}
+
+.inbox__filter-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.inbox__filter-row .filter-chip {
+  flex: none;
+  white-space: nowrap;
+  padding: 6px 10px;
+  font-size: 12px;
+}
+
+.inbox__filter-row .inbox__channel {
+  flex: 1;
+  min-width: 0;
+}
+
+.inbox__filter-row .input {
+  height: 34px;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  font-size: var(--text-sm);
+}
+
+.inbox-page .thread__header {
+  padding: var(--space-2) var(--space-4);
+}
+
+.inbox-page .thread__messages {
+  padding: var(--space-4) var(--space-5);
+}
+
+.inbox-page .chat-bubble {
+  max-width: min(68%, 680px);
+}
+
+.inbox-page .composer {
+  padding: var(--space-2) var(--space-4) var(--space-3);
+}
+
+@media (max-width: 900px) {
+  .inbox-page .inbox {
+    grid-template-columns: 1fr;
+    height: calc(100dvh - 150px);
+  }
+
+  .inbox-page .thread__messages {
+    max-height: none;
+  }
+}
