@@ -32,6 +32,7 @@ from app.business_config_application.ports import (
     AccessTokenVerifier,
     AIUsageStorage,
     CommerceStorage,
+    ContactMemory,
     ConversationStorage,
     NotificationStorage,
     OutboundMessenger,
@@ -89,6 +90,7 @@ def create_app(
     commerce: CommerceStorage | None = None,
     ai_usage: AIUsageStorage | None = None,
     examples: Callable[[BusinessConfigService], Any] | None = None,
+    contact_memory: ContactMemory | None = None,
 ) -> FastAPI:
     """La API del panel. Sin `assistant_lab`, la inteligencia artificial y el área de pruebas responden que no están disponibles.
 
@@ -107,7 +109,8 @@ def create_app(
     app.state.verifier = verifier
     app.state.usage = UsageGuard(usage or MemoryUsageCounter())
     # Con `messenger`, el equipo responde desde el panel y el mensaje sale por el canal del cliente.
-    app.state.conversations = ConversationsService(conversations, app.state.access, messenger) if conversations is not None else None
+    # Con `contact_memory`, eliminar un chat también borra lo que el asistente recuerda de ese cliente (lo guarda el motor).
+    app.state.conversations = ConversationsService(conversations, app.state.access, messenger, contact_memory) if conversations is not None else None
     app.state.notifications = NotificationsService(notifications, app.state.access) if notifications is not None else None
     # Clientes, ventas y reportes; con `ai_usage`, los reportes suman el costo de la IA.
     app.state.commerce = CommerceService(commerce, app.state.access, ai_usage) if commerce is not None else None

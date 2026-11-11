@@ -12,7 +12,7 @@ import re
 from datetime import datetime, timezone
 
 from app.business_config_application.access import BusinessAccess
-from app.business_config_application.ports import ConversationStorage, NotificationStorage, OutboundMessenger
+from app.business_config_application.ports import ContactMemory, ConversationStorage, NotificationStorage, OutboundMessenger
 from app.domain.business_config.access import Principal
 from app.domain.business_config.channels import ChannelError
 from app.domain.business_config.conversations import (
@@ -42,10 +42,17 @@ class ReplyNotSentError(RuntimeError):
 
 
 class ConversationsService:
-    def __init__(self, storage: ConversationStorage, access: BusinessAccess, messenger: OutboundMessenger | None = None) -> None:
+    def __init__(
+        self,
+        storage: ConversationStorage,
+        access: BusinessAccess,
+        messenger: OutboundMessenger | None = None,
+        memory: ContactMemory | None = None,
+    ) -> None:
         self._storage = storage
         self._access = access
         self._messenger = messenger
+        self._memory = memory
 
     def _require(self, principal: Principal, conversation_id: str) -> str:
         """El negocio de la conversación, si es de quien pregunta; si no, como si no existiera."""
@@ -136,6 +143,26 @@ class ConversationsService:
             raise ReplyNotSentError(str(exc)) from exc
         self._storage.update_entry(saved.entry_id, status="sent", provider_message_id=provider_id)
         return next(message for message in self._storage.thread(conversation_id)[1] if message.id == saved.entry_id)
+
+    def delete(self, principal: Principal, conversation_id: str) -> None:
+        """Elimina el chat y todo lo que hay de ese cliente: la conversación, sus mensajes, fotos y audios, sus avisos y lo que el
+        asistente recuerda de él (si vuelve a escribir, empieza de cero). Las ventas registradas se conservan sin el enlace.
+
+        Primero se olvida la memoria del asistente: si eso falla, no se borra nada y se puede intentar de nuevo, en vez de dejar
+        un chat borrado con un asistente que todavía recuerda al cliente."""
+        self._require(principal, conversation_id)
+        target = self._storage.target(conversation_id)
+        if target.channel != PLAYGROUND_CHANNEL and self._memory is not None:
+            self._memory.forget(target.business_slug, target.contact_ref)
+        self._storage.delete(conversation_id)
+        logger.info("conversacion_eliminada", extra={"tenant": target.business_slug, "channel": target.channel})
+
+    def delete_test_chats(self, principal: Principal, business: str) -> int:
+        """Borra de una vez los chats de «Probar asistente» del negocio. Las pruebas no tienen memoria en el motor."""
+        self._access.require(principal, business)
+        deleted = self._storage.delete_channel(business, PLAYGROUND_CHANNEL)
+        logger.info("chats_de_prueba_eliminados", extra={"tenant": business, "count": deleted})
+        return deleted
 
     def activity(self, principal: Principal, business: str, *, now: datetime | None = None) -> BusinessActivity:
         self._access.require(principal, business)

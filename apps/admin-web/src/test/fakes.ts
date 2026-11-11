@@ -513,6 +513,8 @@ export function createVerifyingAuthService(): AuthService {
 export interface MemoryInboxControls {
   requests: InboxFilter[];
   resolved: string[];
+  /** Los chats eliminados, en orden. */
+  removed: string[];
   notificationList: Notification[];
   replies: { conversationId: string; text: string }[];
   readMarks: string[];
@@ -532,6 +534,7 @@ export function createMemoryInbox(seededThreads: ConversationThread[] = [], seed
   const threads = seededThreads.map((thread) => ({ conversation: { ...thread.conversation }, messages: [...thread.messages] }));
   const requests: InboxFilter[] = [];
   const resolved: string[] = [];
+  const removed: string[] = [];
   const replies: { conversationId: string; text: string }[] = [];
   const readMarks: string[] = [];
   const files = new Map<string, Blob>();
@@ -554,6 +557,7 @@ export function createMemoryInbox(seededThreads: ConversationThread[] = [], seed
   return {
     requests,
     resolved,
+    removed,
     notificationList,
     replies,
     readMarks,
@@ -638,6 +642,20 @@ export function createMemoryInbox(seededThreads: ConversationThread[] = [], seed
       resolved.push(id);
       thread.conversation = { ...thread.conversation, needsHuman: false };
       return thread.conversation;
+    },
+    remove: async (id) => {
+      find(id);
+      removed.push(id);
+      threads.splice(threads.findIndex((thread) => thread.conversation.id === id), 1);
+    },
+    removeTestChats: async (slug) => {
+      for (let index = threads.length - 1; index >= 0; index -= 1) {
+        const conversation = threads[index]!.conversation;
+        if (conversation.business.slug === slug && conversation.channel === "prueba") {
+          removed.push(conversation.id);
+          threads.splice(index, 1);
+        }
+      }
     },
     notifications: async () => ({ items: notificationList.map((item) => ({ ...item })), unread: notificationList.filter((item) => !item.read).length }),
     markNotificationsRead: async (ids) => {

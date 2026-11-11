@@ -17,6 +17,13 @@ export interface Inbox {
   activity(slug: string): Promise<BusinessActivity>;
   /** Alguien del equipo ya atendió a quien pidió una persona. */
   resolveHandoff(conversationId: string): Promise<ConversationSummary>;
+  /**
+   * Elimina el chat: sus mensajes, fotos y audios, sus avisos y lo que el asistente recuerda de ese cliente (si vuelve a escribir,
+   * empieza de cero). Las ventas registradas se conservan.
+   */
+  remove(conversationId: string): Promise<void>;
+  /** Borra de una vez los chats de «Probar asistente» del negocio. */
+  removeTestChats(slug: string): Promise<void>;
   /** Los avisos de los negocios del usuario, con cuántos le faltan por leer. */
   notifications(): Promise<NotificationFeed>;
   /** Sin `ids`, marca como leídos todos los avisos de quien los ve. */

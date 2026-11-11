@@ -117,6 +117,18 @@ def set_assistant(conversation_id: str, body: SetAssistant, user: CurrentUser, c
     return conversation_payload(conversations.set_assistant(user, conversation_id, active=body.active))
 
 
+@router.delete("/conversations/{conversation_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_conversation(conversation_id: str, user: CurrentUser, conversations: Conversations) -> None:
+    """Elimina el chat: sus mensajes, archivos y avisos, y lo que el asistente recuerda de ese cliente. Las ventas se conservan."""
+    conversations.delete(user, conversation_id)
+
+
+@router.delete("/businesses/{slug}/conversations/tests")
+def delete_test_conversations(slug: BusinessSlug, user: CurrentUser, conversations: Conversations) -> dict[str, int]:
+    """Borra de una vez los chats de «Probar asistente» del negocio."""
+    return {"deleted": conversations.delete_test_chats(user, slug)}
+
+
 @router.post("/conversations/{conversation_id}/read", status_code=status.HTTP_204_NO_CONTENT)
 def mark_read(conversation_id: str, user: CurrentUser, conversations: Conversations) -> None:
     conversations.mark_read(user, conversation_id)

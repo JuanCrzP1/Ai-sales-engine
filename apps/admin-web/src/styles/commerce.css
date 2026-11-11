@@ -693,7 +693,8 @@
 .dialog-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 50;
+  /* Por encima de todo: el menú lateral (45), los avisos (60) y el menú del celular (70). */
+  z-index: 80;
   display: grid;
   place-items: center;
   padding: var(--space-4);

@@ -27,6 +27,7 @@ from app.infrastructure.business_config.usage_store import UsageCounterStore
 
 def build_cloud_panel_api(auth_url: str) -> FastAPI:
     from app.application.assistant_lab.engine_runner import EngineAssistantRunner
+    from app.application.channels.contact_memory import EngineContactMemory
     from app.config import settings
     from app.infrastructure.ai.openrouter_key_verifier import OpenRouterKeyVerifier
     from app.infrastructure.ai.openrouter_models import OpenRouterModelCatalog
@@ -66,4 +67,5 @@ def build_cloud_panel_api(auth_url: str) -> FastAPI:
         messenger=build_channel_messenger(engine, UazapiClient, secrets_key=key),
         commerce=CommerceStore(engine),
         ai_usage=AIUsageStore(engine),
+        contact_memory=EngineContactMemory(),
     )

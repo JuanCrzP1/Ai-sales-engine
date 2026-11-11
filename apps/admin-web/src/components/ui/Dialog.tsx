@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { Icon } from "./Icon";
 
 interface DialogProps {
@@ -30,7 +31,8 @@ export function Dialog({ title, description, onClose, children, footer }: Dialog
     };
   }, [onClose]);
 
-  return (
+  // Se dibuja al final de la página (un portal): así cubre todo, también el menú lateral, sin importar dónde se abra.
+  return createPortal(
     <div className="dialog-backdrop" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
       <div ref={panel} className="dialog" role="dialog" aria-modal="true" aria-labelledby={titleId}>
         <header className="dialog__header">
@@ -47,6 +49,7 @@ export function Dialog({ title, description, onClose, children, footer }: Dialog
         <div className="dialog__body">{children}</div>
         {footer && <footer className="dialog__footer">{footer}</footer>}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

@@ -11,10 +11,15 @@
 
 from __future__ import annotations
 
+import time
 from datetime import datetime, timezone
 
 from app.domain.conversation.memory import ConversationState
 from app.utils.logger import logger
+
+
+# Cuánto recuerda cada instancia el registro de un cliente sin volver a buscarlo: lo justo para un turno de conversación.
+IDS_CACHE_SECONDS = 60.0
 
 
 class MemoryRepository:
@@ -65,6 +70,10 @@ class MemoryRepository:
         self._initial_message_last_sent_by_user.pop(key, None)
         self._last_user_message_at_by_user.pop(key, None)
         self._op_state_by_user.pop(key, None)
+
+    def forget_contact(self, *, tenant_slug: str, user_id: str) -> None:
+        """Olvida todo lo de ese cliente (al eliminar su chat en el panel): si vuelve a escribir, empieza de cero."""
+        self.reset_conversation(tenant_slug=tenant_slug, user_id=user_id)
 
     def save_message(self, *, tenant_slug: str, user_id: str, message_text: str, role: str = "user") -> None:
         # Hoy: in-memory. Manana: persistencia en DB por tenant/user.
@@ -369,10 +378,11 @@ class SQLMemoryRepository(MemoryRepository):
 
     def __init__(self) -> None:
         super().__init__()
-        # Per-instance cache: (normalized_slug, normalized_user) → (tenant_db_id, client_db_id).
+        # Per-instance cache: (normalized_slug, normalized_user) → (tenant_db_id, client_db_id, cached_at).
         # Eliminates redundant SQL lookups across the multiple set_*/get_* calls that
         # a single conversation turn triggers on the same identity pair.
-        self._ids_cache: dict[tuple[str, str], tuple[str, str]] = {}
+        # Vence en IDS_CACHE_SECONDS: si el panel elimina a ese cliente, otra instancia no sigue usando su registro borrado.
+        self._ids_cache: dict[tuple[str, str], tuple[str, str, float]] = {}
 
     # ------------------------------------------------------------------ #
     # Internal helpers                                                     #
@@ -411,8 +421,8 @@ class SQLMemoryRepository(MemoryRepository):
 
         cache_key = (normalized_slug, normalized_user)
         cached = self._ids_cache.get(cache_key)
-        if cached is not None:
-            return cached
+        if cached is not None and time.monotonic() - cached[2] < IDS_CACHE_SECONDS:
+            return cached[0], cached[1]
 
         tenant = DBRepository().get_tenant_by_key(normalized_slug)
         if not tenant:
@@ -427,7 +437,7 @@ class SQLMemoryRepository(MemoryRepository):
             return None
 
         result = (tenant_db_id, client_id)
-        self._ids_cache[cache_key] = result
+        self._ids_cache[cache_key] = (tenant_db_id, client_id, time.monotonic())
         return result
 
     @staticmethod
@@ -789,6 +799,29 @@ class SQLMemoryRepository(MemoryRepository):
         except Exception as exc:
             self._log_db_fallback("get_initial_message_last_sent_at", tenant_slug, user_id, exc)
         return None
+
+    def forget_contact(self, *, tenant_slug: str, user_id: str) -> None:
+        """Borra todo lo que el motor guarda de ese cliente: su historial, su memoria comercial y su registro (`clients`), y su copia
+        en RAM. A diferencia de `reset_conversation`, no se traga los errores: el panel debe saber si no pudo borrarlo."""
+        super().reset_conversation(tenant_slug=tenant_slug, user_id=user_id)
+        normalized_slug = str(tenant_slug or "").strip().lower()
+        normalized_user = str(user_id or "").strip().lower()
+        self._ids_cache.pop((normalized_slug, normalized_user), None)
+        if not normalized_slug or not normalized_user:
+            return
+        from sqlalchemy import text as sa_text
+
+        from app.infrastructure.db.repository import DBRepository
+
+        tenant = DBRepository().get_tenant_by_key(normalized_slug)
+        if not tenant:
+            return
+        params = {"tid": str(tenant.get("id") or ""), "ext": normalized_user}
+        client = "SELECT id FROM clients WHERE tenant_id = :tid AND external_id = :ext"
+        with self._engine().begin() as conn:
+            conn.execute(sa_text(f"DELETE FROM conversation_messages WHERE tenant_id = :tid AND client_id IN ({client})"), params)
+            conn.execute(sa_text(f"DELETE FROM conversation_memory WHERE tenant_id = :tid AND client_id IN ({client})"), params)
+            conn.execute(sa_text("DELETE FROM clients WHERE tenant_id = :tid AND external_id = :ext"), params)
 
     # reset_conversation — clears both DB tables and RAM
     def reset_conversation(self, *, tenant_slug: str, user_id: str) -> None:

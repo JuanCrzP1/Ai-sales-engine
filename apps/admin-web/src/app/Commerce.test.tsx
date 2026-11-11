@@ -2,7 +2,7 @@ import { cleanup, render, screen, waitFor, within } from "@testing-library/react
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it } from "vitest";
 import type { Customer, Report, Sale } from "../domain/commerce/types";
-import { createMemoryBackend, createMemoryCommerce, createTestServices, emptyReport } from "../test/fakes";
+import { createMemoryBackend, createMemoryCommerce, createMemoryInbox, createTestServices, emptyReport } from "../test/fakes";
 import { SAMPLE_DOCUMENT } from "../test/fixtures/sampleDocument";
 import { App } from "./App";
 
@@ -37,6 +37,23 @@ async function openAt(path: string, seed: Parameters<typeof createMemoryCommerce
 }
 
 describe("Clientes", () => {
+  it("elimina un cliente con su chat después de confirmar", async () => {
+    window.history.pushState({}, "", `/negocios/${CAFE}/clientes`);
+    const user = userEvent.setup();
+    const commerce = createMemoryCommerce({ customers: CUSTOMERS });
+    const laura = { conversation: { id: "c1", business: { slug: CAFE, name: "Café Aroma" }, channel: "whatsapp" as const, contactName: "Laura Gómez", status: "open" as const, startedAt: ago(90), lastMessageAt: ago(5), lastMessagePreview: "Hola", messageCount: 1, needsHuman: false, handoffRequestedAt: null }, messages: [] };
+    const inbox = createMemoryInbox([laura]);
+    render(<App services={createTestServices(createMemoryBackend([SAMPLE_DOCUMENT]), { createCommerce: () => commerce, inbox })} />);
+    const row = (await screen.findByText("Laura Gómez")).closest("tr") as HTMLElement;
+
+    await user.click(within(row).getByRole("button", { name: "Eliminar a Laura Gómez" }));
+    const dialog = screen.getByRole("dialog", { name: "Eliminar el chat con Laura Gómez" });
+    await user.click(within(dialog).getByRole("button", { name: "Eliminar chat" }));
+
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    expect(inbox.removed).toEqual(["c1"]);
+  });
+
   it("muestra cada cliente con su etapa, filtra por etapa y busca", async () => {
     const { user } = await openAt("clientes", { customers: CUSTOMERS });
     const table = await screen.findByRole("table");

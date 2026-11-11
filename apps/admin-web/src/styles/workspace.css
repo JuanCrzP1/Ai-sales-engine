@@ -1827,3 +1827,67 @@
     max-width: 85%;
   }
 }
+
+/* ---------------------------------------------------------------- eliminar chats */
+.thread__delete,
+.row-delete {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--color-text-subtle);
+  cursor: pointer;
+  vertical-align: middle;
+}
+
+.thread__delete:hover,
+.row-delete:hover {
+  border-color: #f5c2c4;
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
+}
+
+.thread__delete:focus-visible,
+.row-delete:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+/* Los chats de «Probar asistente» se acumulan: se borran de una vez, con confirmación en dos pasos. */
+.inbox__cleanup {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: 6px 8px 6px 12px;
+  border-radius: 10px;
+  background: var(--color-surface-muted);
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+.inbox__cleanup .button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.delete-chat {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.delete-chat__list {
+  margin: 0;
+  padding-left: 1.2em;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}

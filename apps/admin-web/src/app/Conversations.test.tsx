@@ -280,3 +280,62 @@ describe("Conversaciones en vivo", () => {
     expect(screen.getByText(/No llegó a ningún cliente/)).toBeInTheDocument();
   });
 });
+
+describe("Eliminar chats", () => {
+  const LAURA = THREADS[0]!;
+  const testChat = (id: string, slug = CAFE): ConversationThread => ({
+    conversation: { ...LAURA.conversation, id, business: { slug, name: slug }, channel: "prueba", contactName: "Prueba en el panel", canReply: false },
+    messages: [{ id: `${id}-m`, author: "customer", body: "Hola", intent: null, createdAt: minutesAgo(3) }],
+  });
+
+  it("elimina un chat después de confirmar, diciendo qué se borra y que las ventas se conservan", async () => {
+    const { user, inbox } = await openAt(`/negocios/${CAFE}/conversaciones`);
+    const list = await screen.findByRole("region", { name: "Lista de conversaciones" });
+    await user.click(await within(list).findByRole("button", { name: /Laura Gómez/ }));
+    const thread = screen.getByRole("region", { name: "Conversación abierta" });
+
+    await user.click(await within(thread).findByRole("button", { name: "Eliminar chat" }));
+    const dialog = screen.getByRole("dialog", { name: "Eliminar el chat con Laura Gómez" });
+    expect(within(dialog).getByText(/el asistente olvida lo que sabía de este cliente/i)).toBeInTheDocument();
+    expect(within(dialog).getByText(/las ventas que registraste se conservan/i)).toBeInTheDocument();
+    expect(within(dialog).getByText("Esto no se puede deshacer.")).toBeInTheDocument();
+
+    // Cancelar no borra nada.
+    await user.click(within(dialog).getByRole("button", { name: "Cancelar" }));
+    expect(inbox.removed).toEqual([]);
+
+    await user.click(within(thread).getByRole("button", { name: "Eliminar chat" }));
+    await user.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Eliminar chat" }));
+    await waitFor(() => expect(within(list).queryByRole("button", { name: /Laura Gómez/ })).not.toBeInTheDocument());
+    expect(inbox.removed).toEqual(["c1"]);
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(screen.getByText("Elige una conversación para leerla.")).toBeInTheDocument();
+  });
+
+  it("si el servidor no puede eliminarlo, lo dice y el chat sigue ahí", async () => {
+    const { user, inbox } = await openAt(`/negocios/${CAFE}/conversaciones`);
+    inbox.remove = async () => {
+      throw new Error("sin conexión");
+    };
+    const list = await screen.findByRole("region", { name: "Lista de conversaciones" });
+    await user.click(await within(list).findByRole("button", { name: /Laura Gómez/ }));
+    await user.click(await screen.findByRole("button", { name: "Eliminar chat" }));
+    const dialog = screen.getByRole("dialog");
+    await user.click(within(dialog).getByRole("button", { name: "Eliminar chat" }));
+    expect(await within(dialog).findByRole("alert")).toBeInTheDocument();
+    expect(within(list).getByRole("button", { name: /Laura Gómez/ })).toBeInTheDocument();
+  });
+
+  it("borra de una vez los chats de «Probar asistente» del negocio, sin tocar los de clientes", async () => {
+    const { user, inbox } = await openAt(`/negocios/${CAFE}/conversaciones`, [LAURA, testChat("p1"), testChat("p2"), testChat("p3", NORTE)]);
+    const list = await screen.findByRole("region", { name: "Lista de conversaciones" });
+    expect(await within(list).findByText(/2 chats de prueba/)).toBeInTheDocument();
+
+    await user.click(within(list).getByRole("button", { name: /Borrar pruebas/ }));
+    await user.click(within(list).getByRole("button", { name: "Sí, borrarlos" }));
+
+    await waitFor(() => expect(within(list).queryByText(/chats de prueba/)).not.toBeInTheDocument());
+    expect(inbox.removed).toEqual(["p2", "p1"]);
+    expect(within(list).getByRole("button", { name: /Laura Gómez/ })).toBeInTheDocument();
+  });
+});

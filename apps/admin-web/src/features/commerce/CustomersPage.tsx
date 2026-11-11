@@ -7,6 +7,7 @@ import { STAGE_HINTS, STAGE_LABELS, STAGES, formatMoney, type Customer, type Sta
 import { relativeTime } from "../../domain/inbox/format";
 import { CHANNEL_LABELS, type Channel } from "../../domain/inbox/types";
 import { ContactAvatar } from "../../layout/ContactAvatar";
+import { DeleteChatDialog } from "../../layout/DeleteChatDialog";
 import { CONVERSATIONS_ITEM } from "../../navigation/navItems";
 import { useWorkspacePath } from "../../navigation/useWorkspacePath";
 import { useCommerceData } from "../../state/useCommerceData";
@@ -19,6 +20,7 @@ export function CustomersPage() {
   const [stage, setStage] = useState<Stage | null>(null);
   const [query, setQuery] = useState("");
   const [selling, setSelling] = useState<Customer | null>(null);
+  const [deleting, setDeleting] = useState<Customer | null>(null);
 
   const all = state.status === "ready" ? state.data : [];
   const counts = useMemo(() => Object.fromEntries(STAGES.map((item) => [item, all.filter((customer) => customer.stage === item).length])) as Record<Stage, number>, [all]);
@@ -120,6 +122,9 @@ export function CustomersPage() {
                         <Button size="small" variant="secondary" onClick={() => setSelling(customer)}>
                           Registrar venta
                         </Button>
+                        <button type="button" className="row-delete" aria-label={`Eliminar a ${name}`} title="Eliminar" onClick={() => setDeleting(customer)}>
+                          <Icon name="trash" size={16} />
+                        </button>
                       </td>
                     </tr>
                   );
@@ -129,6 +134,18 @@ export function CustomersPage() {
           </div>
         )}
       </section>
+
+      {deleting && (
+        <DeleteChatDialog
+          conversationId={deleting.conversationId}
+          contactName={deleting.name || `+${deleting.contact}`}
+          onClose={() => setDeleting(null)}
+          onDeleted={() => {
+            setDeleting(null);
+            reload();
+          }}
+        />
+      )}
 
       {selling && (
         <RecordSaleDialog

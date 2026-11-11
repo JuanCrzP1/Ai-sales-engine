@@ -144,6 +144,8 @@ export function createApiInbox(http: HttpClient): Inbox {
       };
     },
     resolveHandoff: async (conversationId) => toConversation(await http.post<ApiConversation>(`${path(conversationId)}/handoff/resolve`)),
+    remove: (conversationId) => http.delete(path(conversationId)),
+    removeTestChats: (slug) => http.delete(`/businesses/${encodeURIComponent(slug)}/conversations/tests`),
     notifications: async () => {
       const payload = await http.get<{ items: ApiNotification[]; unread: number }>("/notifications");
       return { items: payload.items.map(toNotification), unread: payload.unread };

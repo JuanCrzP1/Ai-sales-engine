@@ -13,7 +13,7 @@ from collections.abc import Collection
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
-from sqlalchemy import and_, func, insert, select, update
+from sqlalchemy import and_, delete, func, insert, select, update
 from sqlalchemy.engine import Connection, Engine
 from sqlalchemy.exc import IntegrityError
 
@@ -395,6 +395,23 @@ class ConversationStore:
     def mark_read(self, conversation_id: str) -> None:
         """Alguien del equipo abrió la conversación: no quedan mensajes sin leer."""
         self._update(conversation_id, unread_count=0)
+
+    # ------------------------------------------------------------------ borrar
+
+    def delete(self, conversation_id: str) -> ConversationTarget:
+        """Borra la conversación con todo lo suyo: mensajes, fotos, audios y documentos, y sus avisos. Las ventas registradas se
+        conservan sin el enlace al chat (la base las deja en `NULL`): son la contabilidad del negocio. Devuelve de quién era."""
+        target = self.target(conversation_id)
+        with self._engine.begin() as conn:
+            conn.execute(delete(conversations).where(conversations.c.id == self._key(conversation_id)))
+        return target
+
+    def delete_channel(self, tenant_slug: str, channel: str) -> int:
+        """Borra todas las conversaciones de un canal de ese negocio (por ejemplo, las de «Probar asistente») y dice cuántas eran."""
+        with self._engine.begin() as conn:
+            tenant = tenant_of(conn, tenant_slug)
+            result = conn.execute(delete(conversations).where(conversations.c.tenant_id == tenant.id, conversations.c.channel == channel))
+        return int(result.rowcount or 0)
 
     def _update(self, conversation_id: str, **values: Any) -> None:
         with self._engine.begin() as conn:

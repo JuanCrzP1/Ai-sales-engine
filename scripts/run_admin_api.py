@@ -91,6 +91,13 @@ def _assistant_lab(engine, service):
     )
 
 
+def _contact_memory():
+    """Lo que el asistente recuerda de cada cliente (la memoria del motor): eliminar un chat también lo borra."""
+    from app.application.channels.contact_memory import EngineContactMemory
+
+    return EngineContactMemory()
+
+
 def main() -> int:
     if "--wait" in sys.argv[1:]:
         return _wait_until_ready(_port())
@@ -137,6 +144,7 @@ def main() -> int:
         commerce=CommerceStore(engine),
         ai_usage=AIUsageStore(engine),
         examples=import_examples,
+        contact_memory=_contact_memory(),
     )
     uvicorn.run(app, host=HOST, port=port, log_level="warning")
     return 0

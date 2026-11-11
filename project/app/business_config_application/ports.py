@@ -192,11 +192,27 @@ class ConversationStorage(Protocol):
 
     def resolve_handoff(self, conversation_id: str) -> None: ...
 
+    def delete(self, conversation_id: str) -> ConversationTarget:
+        """Borra la conversación con sus mensajes, archivos y avisos (las ventas se conservan sin el enlace) y dice de quién era."""
+        ...
+
+    def delete_channel(self, tenant_slug: str, channel: str) -> int:
+        """Borra todas las conversaciones de un canal de ese negocio y dice cuántas eran."""
+        ...
+
     def set_ai_paused(self, conversation_id: str, paused: bool) -> None: ...
 
     def mark_read(self, conversation_id: str) -> None: ...
 
     def activity(self, tenant_slug: str, *, since: datetime) -> BusinessActivity: ...
+
+
+class ContactMemory(Protocol):
+    """Lo que el asistente recuerda de cada cliente (su historial y su memoria comercial, que guarda el motor)."""
+
+    def forget(self, business_slug: str, contact_ref: str) -> None:
+        """Lo olvida todo: si el cliente vuelve a escribir, el asistente empieza de cero. Si no puede, lanza la excepción."""
+        ...
 
 
 class CommerceStorage(Protocol):

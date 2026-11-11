@@ -31,7 +31,7 @@
   position: sticky;
   top: 0;
   /* Su propia capa, por encima del contenido: el menú de la cuenta y los avisos se abren hacia el contenido y deben quedar
-     encima de sus tarjetas. Por debajo de los diálogos (50) y los avisos flotantes. */
+     encima de sus tarjetas. Por debajo de los diálogos (80), que se dibujan al final de la página. */
   z-index: 45;
   height: 100vh;
   display: flex;

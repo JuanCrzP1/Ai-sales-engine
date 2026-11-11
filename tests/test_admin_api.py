@@ -1113,6 +1113,8 @@ def test_the_api_only_has_the_routes_of_the_panel(api):
         ("POST", "/conversations/{conversation_id}/messages"),
         ("POST", "/conversations/{conversation_id}/assistant"),
         ("POST", "/conversations/{conversation_id}/read"),
+        ("DELETE", "/conversations/{conversation_id}"),
+        ("DELETE", f"{business}/conversations/tests"),
         ("GET", "/conversations/{conversation_id}/media/{media_id}"),
         ("GET", f"{business}/activity"),
         ("POST", "/conversations/{conversation_id}/handoff/resolve"),

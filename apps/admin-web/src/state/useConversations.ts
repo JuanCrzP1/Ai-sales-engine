@@ -171,7 +171,28 @@ export function useConversations(initialFilter: InboxFilter, initialSelected: st
     [inbox, patchMessages],
   );
 
-  return { filter, setFilter, list, selectedId, select: setSelectedId, thread, reload, resolveHandoff, setAssistant, reply };
+  /** Un chat ya eliminado en el servidor: sale de la lista y, si estaba abierto, se cierra. */
+  const forget = useCallback((conversationId: string) => {
+    setList((previous) => (previous.status === "ready" ? { status: "ready", data: previous.data.filter((item) => item.id !== conversationId) } : previous));
+    setSelectedId((current) => (current === conversationId ? null : current));
+  }, []);
+
+  /** Borra de una vez los chats de «Probar asistente» del negocio. */
+  const removeTestChats = useCallback(
+    async (business: string) => {
+      await inbox.removeTestChats(business);
+      const isGone = (item: ConversationSummary) => item.channel === "prueba" && item.business.slug === business;
+      setList((previous) => {
+        if (previous.status !== "ready") return previous;
+        const open = previous.data.find((item) => item.id === selectedId);
+        if (open && isGone(open)) setSelectedId(null);
+        return { status: "ready", data: previous.data.filter((item) => !isGone(item)) };
+      });
+    },
+    [inbox, selectedId],
+  );
+
+  return { filter, setFilter, list, selectedId, select: setSelectedId, thread, reload, resolveHandoff, setAssistant, reply, forget, removeTestChats };
 }
 
 /** Una URL local para mostrar un archivo de la conversación (se descarga con la sesión del usuario y se libera al salir). */

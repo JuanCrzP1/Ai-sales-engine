@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { Button } from "../../components/ui/Button";
+import { ConfirmButton } from "../../components/ui/ConfirmButton";
 import { Alert, EmptyState } from "../../components/ui/Feedback";
 import { Icon, type IconName } from "../../components/ui/Icon";
 import { contactLabel, fullDate, messageTime, relativeTime } from "../../domain/inbox/format";
 import { DELIVERY_LABELS, fileSize } from "../../domain/inbox/live";
 import { CHANNEL_LABELS, CHANNELS, HANDOFF_LABELS, type Channel, type ChatMessage, type ConversationSummary, type ConversationThread } from "../../domain/inbox/types";
 import { ContactAvatar } from "../../layout/ContactAvatar";
+import { DeleteChatDialog } from "../../layout/DeleteChatDialog";
 import { persistenceErrorMessage } from "../../state/directoryContext";
 import { useConversations, useMediaUrl } from "../../state/useConversations";
 
@@ -18,8 +20,14 @@ export function ConversationsPage() {
   const { slug = "" } = useParams();
   // Desde un aviso se llega con `?c=` y la conversación se abre directo.
   const [params] = useSearchParams();
-  const { filter, setFilter, list, selectedId, select, thread, reload, resolveHandoff, setAssistant, reply } = useConversations({ business: slug }, params.get("c"));
+  const { filter, setFilter, list, selectedId, select, thread, reload, resolveHandoff, setAssistant, reply, forget, removeTestChats } = useConversations(
+    { business: slug },
+    params.get("c"),
+  );
   const allBusinesses = filter.business === undefined;
+  // Las pruebas de «Probar asistente» de este negocio se acumulan: se pueden borrar de una vez.
+  const testChats = list.status === "ready" ? list.data.filter((item) => item.channel === "prueba" && item.business.slug === slug).length : 0;
+  const [cleaning, setCleaning] = useState<string | null>(null);
 
   // Como WhatsApp Web: una barra de título compacta y la bandeja ocupando todo el alto y el ancho disponibles.
   return (
@@ -67,6 +75,26 @@ export function ConversationsPage() {
               </select>
             </label>
             </div>
+            {testChats > 0 && (
+              <div className="inbox__cleanup">
+                <span>
+                  {testChats === 1 ? "1 chat de prueba" : `${testChats} chats de prueba`} de «Probar asistente»
+                </span>
+                <ConfirmButton
+                  variant="ghost"
+                  confirmLabel={testChats === 1 ? "Sí, borrarlo" : "Sí, borrarlos"}
+                  onConfirm={() =>
+                    void removeTestChats(slug).then(
+                      () => setCleaning(null),
+                      () => setCleaning("No se pudieron borrar las pruebas. Vuelve a intentarlo."),
+                    )
+                  }
+                >
+                  <Icon name="trash" size={14} /> Borrar pruebas
+                </ConfirmButton>
+              </div>
+            )}
+            {cleaning && <p className="field__error" role="alert">{cleaning}</p>}
           </div>
 
           {list.status === "loading" && (
@@ -119,6 +147,7 @@ export function ConversationsPage() {
               key={thread.data.conversation.id}
               thread={thread.data}
               onBack={() => select(null)}
+              onDeleted={forget}
               onResolve={resolveHandoff}
               onAssistant={setAssistant}
               onReply={reply}
@@ -178,12 +207,14 @@ function ConversationItem({ conversation, selected, showBusiness, onSelect }: { 
 function ThreadView({
   thread,
   onBack,
+  onDeleted,
   onResolve,
   onAssistant,
   onReply,
 }: {
   thread: ConversationThread;
   onBack: () => void;
+  onDeleted: (id: string) => void;
   onResolve: (id: string) => Promise<void>;
   onAssistant: (id: string, active: boolean) => Promise<void>;
   onReply: (id: string, text: string) => Promise<void>;
@@ -195,6 +226,7 @@ function ThreadView({
   const [problem, setProblem] = useState<string | null>(null);
   const isTest = conversation.channel === "prueba";
   const canReply = Boolean(conversation.canReply);
+  const [deleting, setDeleting] = useState(false);
 
   // Baja al último mensaje al abrir y cuando llega uno nuevo, salvo que la persona esté leyendo más arriba.
   const lastId = messages.at(-1)?.id;
@@ -218,6 +250,15 @@ function ThreadView({
 
   return (
     <div className="thread">
+      {deleting && (
+        <DeleteChatDialog
+          conversationId={conversation.id}
+          contactName={name}
+          isTest={isTest}
+          onClose={() => setDeleting(false)}
+          onDeleted={() => onDeleted(conversation.id)}
+        />
+      )}
       <header className="thread__header">
         <button type="button" className="thread__back" aria-label="Volver a las conversaciones" onClick={onBack}>
           <Icon name="arrowLeft" size={20} />
@@ -229,6 +270,9 @@ function ThreadView({
             {CHANNEL_LABELS[conversation.channel]} · {conversation.business.name} · desde el {fullDate(conversation.startedAt)}
           </p>
         </div>
+        <button type="button" className="thread__delete" aria-label="Eliminar chat" title="Eliminar chat" onClick={() => setDeleting(true)}>
+          <Icon name="trash" size={18} />
+        </button>
         {canReply && (
           <div className="thread__actions">
             <span className={`attendant attendant--${conversation.aiPaused ? "team" : "ai"}`}>
