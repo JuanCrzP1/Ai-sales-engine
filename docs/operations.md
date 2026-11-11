@@ -363,8 +363,10 @@ python scripts/setup_cloud_database.py --branch pruebas --apply    # tablas, neg
 python scripts/setup_cloud_database.py --branch production --apply # solo las tablas
 ```
 
-Cada migración nueva (por ejemplo, la 0008 de los canales) se aplica volviendo a ejecutar el mismo comando con `--apply` en cada
-rama: el script recorre todas las de `project/db/migrations`, en orden, y las que ya están no cambian nada.
+Las migraciones nuevas se aplican solas, como en Auream: después de cada despliegue, la API del panel en la nube aplica al
+arrancar las de `project/db/migrations` que le falten a su base, en orden, cada una en su transacción y con un candado para que dos
+arranques a la vez no choquen (`app/infrastructure/business_config/migrations.py`). Si una falla, queda en los registros de Vercel
+(`migraciones_fallaron`) y la API sigue con lo que ya había. El comando de arriba hace lo mismo desde este equipo.
 
 En `pruebas` copia las versiones, los datos de pago (ya cifrados: la clave no viaja) y los ajustes técnicos de cada negocio, y
 comprueba que lo publicado compila igual que aquí. Se puede repetir: lo que ya está no se toca.

@@ -12,7 +12,9 @@ Cada rama lee su cadena de conexión del entorno o del `.env` de la raíz, tal c
 
 Todos los pasos se pueden repetir; lo que ya está no se toca:
 1. Esquema del motor (`project/docs/postgresql_schema.sql`), si falta la tabla `tenants`.
-2. Almacén de BusinessConfig: las migraciones de `project/db/migrations`, en orden (todas se pueden repetir).
+2. Almacén de BusinessConfig: las migraciones de `project/db/migrations`, en orden (todas se pueden repetir). En la nube también
+   se aplican solas: la API del panel lo hace al arrancar después de cada despliegue
+   (`app/infrastructure/business_config/migrations.py`).
 Solo en `pruebas`:
 3. Filas operativas de cada negocio (`scripts/bootstrap_saas_data.py`, apuntado a la nube).
 4. Copia de lo que guarda el panel en este equipo: versiones, datos de pago, ajustes técnicos y clave de IA de cada negocio. Los
@@ -23,7 +25,6 @@ from __future__ import annotations
 
 import argparse
 import os
-import re
 import subprocess
 import sys
 from pathlib import Path
@@ -40,6 +41,7 @@ sys.path.insert(0, str(PROJECT_DIR))
 from app.config import normalize_database_url  # noqa: E402
 from app.domain.business_config.compiler import compile_business_config  # noqa: E402
 from app.infrastructure.business_config.database import database_url, sqlite_file  # noqa: E402
+from app.infrastructure.business_config.migrations import MIGRATIONS, pending_migrations, run_sql_file  # noqa: E402
 from app.infrastructure.business_config.runtime_access import reader_for  # noqa: E402
 from app.infrastructure.business_config.secrets_key import find_secrets_key  # noqa: E402
 from app.infrastructure.business_config.tables import (  # noqa: E402
@@ -56,8 +58,6 @@ BRANCHES = {
     "pruebas": ("CLOUD_DATABASE_URL_PRUEBAS", True),
 }
 ENGINE_SCHEMA = PROJECT_DIR / "docs" / "postgresql_schema.sql"
-# Las migraciones del almacén, en orden. Todas se pueden aplicar más de una vez.
-MIGRATIONS = sorted((PROJECT_DIR / "db" / "migrations").glob("[0-9][0-9][0-9][0-9]_*.sql"))
 BOOTSTRAP = ROOT_DIR / "scripts" / "bootstrap_saas_data.py"
 STORE_TABLES = (business_configs, business_config_secrets, business_engine_settings, business_ai_settings)
 
@@ -83,18 +83,6 @@ def local_store() -> Engine:
     return create_engine(url)
 
 
-def _run_sql_file(cloud: Engine, path: Path) -> None:
-    """El archivo completo en una transacción: si algo falla, no queda nada a medias."""
-    sql = path.read_text(encoding="utf-8").replace("BEGIN;", "").replace("COMMIT;", "")
-    with cloud.connect().execution_options(isolation_level="AUTOCOMMIT") as connection:
-        connection.exec_driver_sql(f"BEGIN;\n{sql}\nCOMMIT;")
-
-
-def _migration_tables(path: Path) -> set[str]:
-    """Las tablas que crea una migración."""
-    return set(re.findall(r"CREATE TABLE IF NOT EXISTS ([a-z_]+)", path.read_text(encoding="utf-8")))
-
-
 def _cloud_tenant_ids(connection: Connection) -> dict[str, object]:
     return {row.slug: row.id for row in connection.execute(text("SELECT id, slug FROM tenants"))}
 
@@ -109,7 +97,7 @@ def plan(cloud: Engine, local: Engine | None) -> list[str]:
     steps = []
     if "tenants" not in tables:
         steps.append("crear el esquema del motor")
-    missing = [path.name for path in MIGRATIONS if _migration_tables(path) - tables]
+    missing = [path.name for path in pending_migrations(cloud)] if "tenants" in tables else [path.name for path in MIGRATIONS]
     steps += [f"aplicar {name}" for name in missing]
     if local is None:
         return steps
@@ -197,10 +185,10 @@ def main() -> int:
 
     tables = set(inspect(cloud).get_table_names())
     if "tenants" not in tables:
-        _run_sql_file(cloud, ENGINE_SCHEMA)
+        run_sql_file(cloud, ENGINE_SCHEMA)
         print("[ok] Esquema del motor creado")
     for migration in MIGRATIONS:
-        _run_sql_file(cloud, migration)
+        run_sql_file(cloud, migration)
     print(f"[ok] Almacén de BusinessConfig al día ({', '.join(path.name for path in MIGRATIONS)})")
     if local is None:
         print("[ok] Esquema listo. Sin negocios de ejemplo: los crean las cuentas reales.")

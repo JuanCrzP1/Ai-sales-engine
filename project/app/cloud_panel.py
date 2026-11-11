@@ -17,6 +17,7 @@ from app.infrastructure.business_config.database import (
     build_business_config_service,
     create_business_config_engine,
 )
+from app.infrastructure.business_config.migrations import ensure_migrations
 from app.infrastructure.business_config.conversation_store import ConversationStore
 from app.infrastructure.business_config.members_store import BusinessMembersStore
 from app.infrastructure.business_config.notification_store import NotificationStore
@@ -35,6 +36,8 @@ def build_cloud_panel_api(auth_url: str) -> FastAPI:
     from app.infrastructure.channels.uazapi import UazapiClient
 
     engine = create_business_config_engine()
+    # Como en Auream: cada despliegue deja la base al día solo, sin correr nada a mano.
+    ensure_migrations(engine)
     key = find_secrets_key()
     service = build_business_config_service(engine, secrets_key=key)
     lab = build_assistant_lab_service(

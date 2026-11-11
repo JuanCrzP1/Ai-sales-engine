@@ -254,7 +254,7 @@ IA no responde mientras alguien atiende.
   token de administrador (`UAZAPI_BASE_URL`, `UAZAPI_ADMIN_TOKEN`); el negocio nunca los ve. Se crea una instancia por negocio
   (su token, cifrado: migración 0008, `business_channels`), el webhook lleva un identificador secreto y exige el token de la
   instancia, y desconectar borra la instancia del servidor. El motor responde con lo publicado y la conversación llega a la
-  bandeja. Falta, en la nube: aplicar la migración 0008 en Neon y poner las dos variables en Vercel; después, escanear con un
+  bandeja. Las variables ya están en Vercel, y las migraciones se aplican solas al desplegar (como en Auream). Falta escanear con un
   teléfono y ver la primera respuesta. Responder desde el panel sigue pendiente.
 - Telegram por negocio: el negocio pega el token de su bot en Canales, el webhook se registra solo y el token se guarda cifrado.
 - Todos los canales detrás de una sola interfaz (`ChannelConnector`: recibir, enviar, verificar firma): agregar un canal es
