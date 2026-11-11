@@ -5,6 +5,9 @@ está en el historial de git y en `docs/plan-v1.md`.
 
 ## 11 de noviembre de 2026
 
+**Una sola puerta de entrada**
+- La dirección del motor y el enlace del repositorio en GitHub llevan al panel, que es donde se trabaja.
+
 **Eliminar chats y clientes** (Fase 1)
 - Botón de papelera en cada chat y en cada cliente, con confirmación que explica qué se borra.
 - Se borra todo: mensajes, fotos, audios, avisos y lo que el asistente recordaba de ese cliente (si vuelve a escribir, empieza de

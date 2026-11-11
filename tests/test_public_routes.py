@@ -55,3 +55,15 @@ def test_health_does_not_name_any_business():
 
     response = TestClient(app).get("/health")
     assert (response.status_code, response.json()) == (200, {"status": "ok"})
+
+
+def test_opening_the_engine_address_leads_to_the_panel(monkeypatch):
+    from fastapi.testclient import TestClient
+
+    from app.main import PUBLIC_PANEL_URL, app
+
+    client = TestClient(app, follow_redirects=False)
+    monkeypatch.delenv("PANEL_URL", raising=False)
+    assert (client.get("/").status_code, client.get("/").headers["location"]) == (307, PUBLIC_PANEL_URL)
+    monkeypatch.setenv("PANEL_URL", "http://localhost:5180")
+    assert client.get("/").headers["location"] == "http://localhost:5180"

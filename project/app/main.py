@@ -2,6 +2,7 @@ import os
 
 from fastapi import FastAPI
 from fastapi import Request
+from fastapi.responses import RedirectResponse
 
 from app.api.routes import router
 from app.config import get_environment_status, settings, validate_database_url
@@ -22,6 +23,14 @@ def prepare_application() -> None:
 prepare_application()
 
 app = FastAPI(title=settings.app_name, version=settings.app_version)
+
+# El motor no tiene pantallas: quien abre su dirección (por ejemplo, desde Vercel o GitHub) llega al panel.
+PUBLIC_PANEL_URL = "https://ai-sales-engine-panel.vercel.app"
+
+
+@app.get("/", include_in_schema=False)
+def open_the_panel() -> RedirectResponse:
+	return RedirectResponse(str(os.getenv("PANEL_URL") or PUBLIC_PANEL_URL).strip(), status_code=307)
 
 
 @app.get("/health")

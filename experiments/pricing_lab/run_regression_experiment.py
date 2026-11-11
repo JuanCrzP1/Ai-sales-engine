@@ -95,6 +95,8 @@ EXPECTED_ROUTE_CHANGES |= {
     "GET /api/v1/conversations/clients/{client_id}", "POST /api/v1/conversations/messages",
     "GET /api/v1/dashboard/metrics",
 }
+# La raíz del motor lleva al panel (11 de noviembre de 2026): no responde mensajes ni toca a los negocios.
+EXPECTED_ROUTE_CHANGES |= {"GET /"}
 
 # Zonas del repositorio, de la más específica a la más general, para clasificar las diferencias de Git.
 CHANGE_ZONES = [

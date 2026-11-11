@@ -385,6 +385,10 @@ La IA no lleva variable: cada negocio guarda su clave de OpenRouter en el panel,
 *Auth URL*; es pública, no un secreto). Llama a la API por `/api`, que `apps/admin-web/vercel.json` reescribe hacia el motor
 (`/panel/api`). El motor publica esa API solo si tiene `NEON_AUTH_URL` (la misma dirección) en sus variables.
 
+Quien abre la dirección del motor (`ai-sales-engine-mocha.vercel.app`, por ejemplo desde Vercel) llega al panel: el motor no
+tiene pantallas y su raíz redirige a `PANEL_URL`, o al panel publicado si no está. En este equipo los lanzadores ponen
+`PANEL_URL` en el panel local. El enlace de GitHub («About») también apunta al panel.
+
 - Cuentas: Neon Auth (Better Auth), con correo y contraseña; viven en `neon_auth.user` de la misma base. Cualquiera puede crear
   una cuenta: es una plataforma.
 - Cada petición lleva el token de la sesión (JWT EdDSA de 15 minutos). La API lo comprueba con las claves públicas de Neon Auth
