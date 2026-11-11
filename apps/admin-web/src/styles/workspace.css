@@ -176,6 +176,38 @@
   border: 1px solid var(--color-border);
 }
 
+/* En el celular, las pestañas van en una sola fila que se desliza de lado, como en las aplicaciones; la abierta queda a la vista. */
+@media (max-width: 640px) {
+  .assistant-tabs__title {
+    display: none;
+  }
+
+  .tabs {
+    /* Contiene los textos ocultos para lectores de pantalla: sin esto, se salen de la fila y la página se desplaza de lado. */
+    position: relative;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    scroll-snap-type: x proximity;
+    -webkit-overflow-scrolling: touch;
+    mask-image: linear-gradient(90deg, #000 85%, transparent);
+    -webkit-mask-image: linear-gradient(90deg, #000 85%, transparent);
+  }
+
+  .tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .tabs__link {
+    scroll-snap-align: start;
+    padding: 9px 12px;
+  }
+
+  .tabs__spacer {
+    display: none;
+  }
+}
+
 /* Probar y Publicar son acciones, no secciones: van a la derecha. */
 .tabs__spacer {
   flex: 1 1 0;
@@ -897,8 +929,44 @@
     display: none;
   }
 
+  /* El chat abierto, como en WhatsApp: ← foto nombre en una fila y, debajo, quién atiende y pausar o reanudar la IA. */
   .thread__back {
-    display: inline-flex;
+    display: inline-grid;
+    place-items: center;
+    flex: none;
+    width: 40px;
+    height: 40px;
+    margin-left: -8px;
+    border-radius: 50%;
+    color: var(--color-text);
+  }
+
+  .thread__back:hover,
+  .thread__back:active {
+    background: var(--color-surface-muted);
+  }
+
+  .thread__header {
+    flex-wrap: wrap;
+    row-gap: var(--space-2);
+    padding: var(--space-2) var(--space-3);
+  }
+
+  .thread__who {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  .thread__name,
+  .thread__meta {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .thread__actions {
+    flex-basis: 100%;
+    justify-content: space-between;
   }
 
   .thread__messages {
@@ -1729,14 +1797,33 @@
 }
 
 @media (max-width: 900px) {
-  .sidebar .bell__panel,
+  /* En el menú del celular, la cuenta se despliega hacia arriba dentro del mismo panel. */
   .sidebar .user-menu__panel {
-    left: var(--space-3);
-    right: var(--space-3);
+    position: absolute;
+    top: auto;
+    bottom: calc(100% + 8px);
+    left: 0;
+    right: 0;
     width: auto;
   }
+}
 
-  .sidebar .bell__panel {
-    top: 72px;
+/* El chat abierto en el celular (después de los estilos de escritorio de la bandeja, para ganarles). */
+@media (max-width: 900px) {
+  /* Una sola columna: la lista o el chat, de todo el ancho (en escritorio la lista mide 360 px). */
+  .inbox-page .inbox {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .inbox-page .thread__header {
+    padding: var(--space-2) var(--space-3);
+  }
+
+  .inbox-page .thread__messages {
+    padding: var(--space-3);
+  }
+
+  .inbox-page .chat-bubble {
+    max-width: 85%;
   }
 }

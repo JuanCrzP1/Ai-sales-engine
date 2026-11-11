@@ -113,3 +113,11 @@ export function isAssistantPath(pathname: string): boolean {
   const last = pathname.replace(/\/+$/, "").split("/").pop() ?? "";
   return ASSISTANT_TABS.some(({ item }) => item.path === last);
 }
+
+/** El nombre de la sección abierta, para la barra superior en el celular. */
+export function titleForPath(pathname: string): string {
+  if (isAssistantPath(pathname)) return ASSISTANT_HUB_ITEM.title;
+  const last = pathname.replace(/\/+$/, "").split("/").pop() ?? "";
+  const item = [CONVERSATIONS_ITEM, CUSTOMERS_ITEM, SALES_ITEM, REPORTS_ITEM, CHANNELS_ITEM, SETTINGS_ITEM].find((entry) => entry.path === last);
+  return item?.title ?? HOME_ITEM.title;
+}

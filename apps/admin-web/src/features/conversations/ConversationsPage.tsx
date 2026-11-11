@@ -219,8 +219,8 @@ function ThreadView({
   return (
     <div className="thread">
       <header className="thread__header">
-        <button type="button" className="thread__back" onClick={onBack}>
-          ← Conversaciones
+        <button type="button" className="thread__back" aria-label="Volver a las conversaciones" onClick={onBack}>
+          <Icon name="arrowLeft" size={20} />
         </button>
         <ContactAvatar name={name} channel={conversation.channel} />
         <div className="thread__who">

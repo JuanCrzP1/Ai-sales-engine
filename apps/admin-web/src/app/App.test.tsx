@@ -1252,3 +1252,60 @@ describe("Canales: WhatsApp por código QR", () => {
     expect(screen.queryByRole("button", { name: /Conectar WhatsApp/ })).not.toBeInTheDocument();
   });
 });
+
+describe("Celular", () => {
+  /** Simula una pantalla de celular: el panel usa `matchMedia` para saber si muestra la barra superior con ☰. */
+  function onAPhone() {
+    const original = window.matchMedia;
+    window.matchMedia = ((query: string) => ({
+      matches: true,
+      media: query,
+      onchange: null,
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
+      addListener: () => undefined,
+      removeListener: () => undefined,
+      dispatchEvent: () => false,
+    })) as typeof window.matchMedia;
+    return () => {
+      window.matchMedia = original;
+    };
+  }
+
+  it("el menú ☰ se abre como un panel, bloquea la página de atrás y se cierra con la X, con Escape o al elegir una opción", async () => {
+    const restore = onAPhone();
+    try {
+      const { user } = await renderWorkspace("");
+      const menu = screen.getByRole("dialog", { name: "Menú principal" });
+      const hamburger = screen.getByRole("button", { name: "Abrir menú" });
+      expect(menu).not.toHaveClass("sidebar--open");
+      // La barra superior dice dónde estás y de qué negocio, y tiene los avisos a mano.
+      const bar = hamburger.closest("header") as HTMLElement;
+      expect(within(bar).getByText("Inicio")).toBeInTheDocument();
+      expect(within(bar).getByText(SAMPLE_DOCUMENT.identity.name)).toBeInTheDocument();
+      expect(within(bar).getByRole("button", { name: /Avisos|Notificaciones/ })).toBeInTheDocument();
+
+      await user.click(hamburger);
+      expect(menu).toHaveClass("sidebar--open");
+      expect(hamburger).toHaveAttribute("aria-expanded", "true");
+      expect(document.documentElement.style.overflow).toBe("hidden");
+      expect(menu).toContainElement(document.activeElement as HTMLElement);
+
+      await user.click(within(menu).getByRole("button", { name: "Cerrar menú" }));
+      expect(menu).not.toHaveClass("sidebar--open");
+      expect(document.documentElement.style.overflow).toBe("");
+      expect(screen.getByRole("button", { name: "Abrir menú" })).toHaveFocus();
+
+      await user.click(screen.getByRole("button", { name: "Abrir menú" }));
+      await user.keyboard("{Escape}");
+      expect(menu).not.toHaveClass("sidebar--open");
+
+      await user.click(screen.getByRole("button", { name: "Abrir menú" }));
+      await user.click(within(sidebarNav()).getByRole("link", { name: "Clientes" }));
+      expect(menu).not.toHaveClass("sidebar--open");
+      expect(within(bar).getByText("Clientes")).toBeInTheDocument();
+    } finally {
+      restore();
+    }
+  });
+});

@@ -786,4 +786,22 @@
     flex-direction: column;
     align-items: stretch;
   }
+
+  /* Las etiquetas de una celda, una debajo de otra y sin partirse. */
+  .data-table td .stage-pill,
+  .data-table td .handoff-badge {
+    white-space: nowrap;
+  }
+
+  .data-table td .handoff-badge {
+    display: table;
+    margin: 4px 0 0;
+  }
+
+  /* Las cifras grandes caben en su tarjeta sin partirse («$ 210.000»). */
+  .kpi__value {
+    font-size: 22px;
+    overflow-wrap: normal;
+    white-space: nowrap;
+  }
 }

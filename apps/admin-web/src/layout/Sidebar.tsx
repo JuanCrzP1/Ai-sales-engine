@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useRef, type ReactNode, type TouchEvent } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { BrandMark } from "../components/brand/BrandMark";
 import { Icon } from "../components/ui/Icon";
@@ -14,27 +14,58 @@ import { UserMenu } from "./UserMenu";
 interface SidebarProps {
   id: string;
   open: boolean;
+  /** Celular: el menú es un panel que se desliza, con su botón de cerrar; los avisos están en la barra superior. */
+  compact?: boolean;
+  onClose?: () => void;
 }
+
+/** Cuánto hay que deslizar el panel hacia la izquierda para cerrarlo. */
+const SWIPE_TO_CLOSE = 60;
 
 /**
  * Menú del negocio: primero atender y vender; después, su configuración. Como en Slack o Linear, los avisos van junto a la marca y
  * la cuenta abajo: el contenido no pierde alto con una barra superior.
  */
-export function Sidebar({ id, open }: SidebarProps) {
+export function Sidebar({ id, open, compact = false, onClose }: SidebarProps) {
   const { progress } = useConfig();
   const { verifiesCredentials } = useAuth();
   const { pathname } = useLocation();
   const pending = progress.total - progress.completed;
+  const touchStart = useRef<number | null>(null);
+
+  const onTouchStart = (event: TouchEvent) => {
+    touchStart.current = event.touches[0]?.clientX ?? null;
+  };
+  const onTouchEnd = (event: TouchEvent) => {
+    const start = touchStart.current;
+    touchStart.current = null;
+    const end = event.changedTouches[0]?.clientX;
+    if (compact && start !== null && end !== undefined && start - end > SWIPE_TO_CLOSE) onClose?.();
+  };
 
   return (
-    <aside id={id} className={`sidebar${open ? " sidebar--open" : ""}`} aria-label="Menú principal">
+    <aside
+      id={id}
+      className={`sidebar${open ? " sidebar--open" : ""}`}
+      aria-label="Menú principal"
+      role={compact ? "dialog" : undefined}
+      aria-modal={compact && open ? true : undefined}
+      onTouchStart={compact ? onTouchStart : undefined}
+      onTouchEnd={compact ? onTouchEnd : undefined}
+    >
       <div className="sidebar__brand">
         <BrandMark />
         <div className="sidebar__brand-text">
           <span className="sidebar__brand-name">AI Sales Engine</span>
           <span className="sidebar__brand-sub">Tu asistente de ventas</span>
         </div>
-        <NotificationBell />
+        {compact ? (
+          <button type="button" className="sidebar__close" aria-label="Cerrar menú" onClick={onClose}>
+            <Icon name="close" size={18} />
+          </button>
+        ) : (
+          <NotificationBell />
+        )}
       </div>
 
       <BusinessSwitcher />

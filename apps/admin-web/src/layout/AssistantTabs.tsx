@@ -1,5 +1,5 @@
-import { Fragment } from "react";
-import { NavLink } from "react-router-dom";
+import { Fragment, useEffect, useRef } from "react";
+import { NavLink, useLocation } from "react-router-dom";
 import { SectionStatusDot } from "../components/config/SectionStatusBadge";
 import { Icon } from "../components/ui/Icon";
 import { ASSISTANT_TABS, PLAYGROUND_ITEM } from "../navigation/navItems";
@@ -11,10 +11,21 @@ import { NAV_ICONS } from "./navIcons";
 export function AssistantTabs() {
   const pathTo = useWorkspacePath();
   const { progress } = useConfig();
+  const { pathname } = useLocation();
+  const nav = useRef<HTMLElement>(null);
+
+  // En el celular las pestañas se deslizan de lado: la abierta se centra para que siempre se vea dónde estás.
+  useEffect(() => {
+    const strip = nav.current;
+    const active = strip?.querySelector<HTMLElement>('[aria-current="page"]');
+    if (!strip || !active || strip.scrollWidth <= strip.clientWidth) return;
+    strip.scrollLeft = active.offsetLeft - (strip.clientWidth - active.offsetWidth) / 2;
+  }, [pathname]);
+
   return (
     <div className="assistant-tabs">
       <p className="assistant-tabs__title">Asistente IA</p>
-      <nav className="tabs" aria-label="Asistente IA">
+      <nav ref={nav} className="tabs" aria-label="Asistente IA">
         {ASSISTANT_TABS.map(({ item, label, short }) => {
           const section = progress.sections.find((entry) => entry.id === item.section);
           // Con nombre corto («Productos»), el resto del nombre («y servicios») queda para los lectores de pantalla.
