@@ -124,17 +124,14 @@ def create_business(request: Request, payload: CreateBusiness, user: CurrentUser
 
 @router.post("/businesses/import")
 def import_existing_businesses(request: Request, service: Service) -> dict[str, list[str]]:
-    """Importa los negocios de `project/config/tenants/` que falten. Lee los YAML, no los modifica; lo ya guardado no se toca.
+    """Importa los negocios de ejemplo que falten (`project/config/tenants/`); lo ya guardado no se toca.
 
-    Solo en este equipo: en la nube los negocios los crea cada cuenta."""
-    if _in_the_cloud(request):
+    Solo en este equipo: en la nube los negocios los crea cada cuenta y la API no recibe el importador."""
+    importer = getattr(request.app.state, "examples", None)
+    if importer is None or _in_the_cloud(request):
         raise ApiError(status.HTTP_404_NOT_FOUND, "No disponible.", code="not_found")
-    # Solo aquí se leen los YAML: ni siquiera esta migración carga el motor. Se retira con ellos en la Fase 4.
-    from app.infrastructure.config.config_service import ConfigService
-    from app.infrastructure.config.legacy_store_migration import import_all
-
     try:
-        report = import_all(service, ConfigService())
+        report = importer(service)
     except ValueError as exc:
         raise ApiError(UNPROCESSABLE, f"No se pudo importar: {exc}", code="invalid") from exc
     return {"created": report.created, "skipped": report.skipped, "unpublished": report.unpublished}

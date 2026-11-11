@@ -76,7 +76,6 @@ stop_windows_services() {
         $services = @(
             @{ Label = "lanzador";          Names = "cmd.exe";                                   Pattern = "*run_local.bat*" },
             @{ Label = "ngrok";             Names = "cmd.exe", "ngrok.exe";                      Pattern = "*ngrok*http*'"$APP_PORT"'*" },
-            @{ Label = "telegram-polling";  Names = "cmd.exe", "python.exe";                     Pattern = "*app.connectors.telegram.polling*" },
             @{ Label = "backend";           Names = "uvicorn.exe", "python.exe";                 Pattern = "*uvicorn*app.main:app*--port*'"$APP_PORT"'*" },
             @{ Label = "API del panel";     Names = "cmd.exe", "python.exe";                     Pattern = "*run_admin_api.py*" },
             @{ Label = "panel web";         Names = "cmd.exe", "node.exe";                       Pattern = "*run*dev*--port*'"$ADMIN_WEB_PORT"'*" },
@@ -106,17 +105,15 @@ case "$(uname -s)" in
         ;;
     *)
         kill_if_exists "ngrok"
-        kill_if_exists "telegram-polling"
         kill_if_exists "admin-web"
         kill_if_exists "admin-api"
         kill_port_listener "$ADMIN_WEB_PORT"
         kill_port_listener "$ADMIN_API_PORT"
         kill_matching_processes "ngrok" "ngrok http $APP_PORT"
-        kill_matching_processes "telegram-polling" "app.connectors.telegram.polling"
         kill_matching_processes "API del panel" "scripts/run_admin_api.py"
         kill_matching_processes "uvicorn" "uvicorn app.main:app --reload --port $APP_PORT"
         kill_port_listener "$APP_PORT"
         ;;
 esac
 
-echo "[INFO] Procesos ngrok, telegram-polling, panel web, API del panel y backend detenidos (si estaban activos)."
+echo "[INFO] Procesos ngrok, panel web, API del panel y backend detenidos (si estaban activos)."

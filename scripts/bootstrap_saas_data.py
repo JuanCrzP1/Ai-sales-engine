@@ -9,7 +9,7 @@ For each tenant the script guarantees exactly one row in:
   - admin_users     (name=slug, all other fields NULL)
   - tenant_settings (settings='{}')
 
-Subscriptions, plans and usage limits belong to the external platform: this script
+The platform has no subscriptions, plans or usage limits per account: this script
 does not create them.
 
 Behavior:
@@ -50,7 +50,7 @@ if ENV_FILE.exists():
     load_dotenv(ENV_FILE, override=False)
 
 # ---------------------------------------------------------------------------
-# DB infrastructure (same pattern as sync_tenants_to_db.py)
+# DB infrastructure
 # ---------------------------------------------------------------------------
 from sqlalchemy import text  # noqa: E402
 

@@ -264,7 +264,7 @@ def test_a_business_without_configuration_does_not_fall_back_to_another(api, llm
     ],
 )
 def test_a_stored_identifier_cannot_open_the_folder_of_another_business(api, llm, slug):
-    # `/auth/register` guarda cualquier texto: el negocio ajeno ya tiene dueño y aun así no debe alcanzarse.
+    # El identificador guardado puede ser cualquier texto: el negocio ajeno ya tiene dueño y aun así no debe alcanzarse.
     _admin(api, "restaurant")
     assert api.client.post(URL, headers=_admin(api, slug), json=MESSAGE).status_code == 404
     assert llm.prompts == []
@@ -283,8 +283,7 @@ def test_the_route_reuses_the_existing_authentication():
 
 def test_only_the_neon_auth_verifier_uses_a_jwt_library():
     # Las cuentas de la plataforma son de Neon Auth: el panel en la nube comprueba sus tokens con PyJWT, solo en su verificador.
-    # La librería del sistema de cuentas anterior (`python-jose`, que carga `/auth/register`) sigue sin declararse: con ella esa
-    # ruta volvería a emitir tokens a cualquiera.
+    # La librería del sistema de cuentas anterior (`python-jose`) sigue sin declararse.
     declared = "".join((PROJECT_DIR / name).read_text(encoding="utf-8").lower() for name in ("requirements.txt", "requirements-dev.txt"))
     assert not re.search(r"^(python-jose|jose|authlib)\b", declared, re.MULTILINE)
     assert re.search(r"^pyjwt==", declared, re.MULTILINE)
@@ -372,10 +371,10 @@ def test_the_route_does_not_exist_unless_explicitly_enabled(tmp_path, values):
     assert result["authenticated"] == 404
 
 
-def test_the_register_route_cannot_issue_tokens_while_authentication_is_postponed(tmp_path):
-    # La ruta sigue registrada, pero sin librería JWT responde 500 al crear el token. Ver `docs/operations.md`.
+def test_the_old_register_route_no_longer_exists(tmp_path):
+    # La API de administración vieja se retiró: `/auth/register` ya no existe y nadie puede pedir un token por ahí.
     result = _run_real_app(tmp_path)
-    assert result["register"] == 500
+    assert result["register"] == 404
     assert result["register_issued_token"] is False
 
 

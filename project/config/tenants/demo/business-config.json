@@ -106,20 +106,20 @@
     {
       "id": "basico",
       "link": {
-        "secret_ref": "legacy_yaml:pricing.plans.0.payment.link"
+        "secret_ref": "secret_store:pricing.plans.0.payment.link"
       },
       "transfer_enabled": true,
       "transfer_methods": [
         {
           "type": "nequi",
           "number": {
-            "secret_ref": "legacy_yaml:pricing.plans.0.payment.transfer.methods.0.number"
+            "secret_ref": "secret_store:pricing.plans.0.payment.transfer.methods.0.number"
           }
         },
         {
           "type": "daviplata",
           "number": {
-            "secret_ref": "legacy_yaml:pricing.plans.0.payment.transfer.methods.1.number"
+            "secret_ref": "secret_store:pricing.plans.0.payment.transfer.methods.1.number"
           }
         },
         {
@@ -127,13 +127,13 @@
           "bank": "Bancolombia",
           "account_type": "ahorros",
           "account_number": {
-            "secret_ref": "legacy_yaml:pricing.plans.0.payment.transfer.methods.2.account_number"
+            "secret_ref": "secret_store:pricing.plans.0.payment.transfer.methods.2.account_number"
           }
         },
         {
           "type": "breb",
           "reference": {
-            "secret_ref": "legacy_yaml:pricing.plans.0.payment.transfer.methods.3.reference"
+            "secret_ref": "secret_store:pricing.plans.0.payment.transfer.methods.3.reference"
           }
         }
       ]
@@ -141,20 +141,20 @@
     {
       "id": "pro",
       "link": {
-        "secret_ref": "legacy_yaml:pricing.plans.1.payment.link"
+        "secret_ref": "secret_store:pricing.plans.1.payment.link"
       },
       "transfer_enabled": true,
       "transfer_methods": [
         {
           "type": "nequi",
           "number": {
-            "secret_ref": "legacy_yaml:pricing.plans.1.payment.transfer.methods.0.number"
+            "secret_ref": "secret_store:pricing.plans.1.payment.transfer.methods.0.number"
           }
         },
         {
           "type": "daviplata",
           "number": {
-            "secret_ref": "legacy_yaml:pricing.plans.1.payment.transfer.methods.1.number"
+            "secret_ref": "secret_store:pricing.plans.1.payment.transfer.methods.1.number"
           }
         },
         {
@@ -162,13 +162,13 @@
           "bank": "Bancolombia",
           "account_type": "ahorros",
           "account_number": {
-            "secret_ref": "legacy_yaml:pricing.plans.1.payment.transfer.methods.2.account_number"
+            "secret_ref": "secret_store:pricing.plans.1.payment.transfer.methods.2.account_number"
           }
         },
         {
           "type": "breb",
           "reference": {
-            "secret_ref": "legacy_yaml:pricing.plans.1.payment.transfer.methods.3.reference"
+            "secret_ref": "secret_store:pricing.plans.1.payment.transfer.methods.3.reference"
           }
         }
       ]

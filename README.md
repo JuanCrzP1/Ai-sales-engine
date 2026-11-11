@@ -5,213 +5,88 @@
 <h1 align="center">AI Sales Engine</h1>
 
 <p align="center">
-  Motor conversacional AI-first de ventas multi-tenant
+  Asistente de ventas con IA para WhatsApp, como servicio: cada negocio crea su cuenta, configura su asistente y lo conecta.
 </p>
 
-## AI Sales Engine — Vendedor Conversacional por WhatsApp
-
-Convierte conversaciones en ventas reales sin depender de disponibilidad humana.
-
-Responde como un humano, entiende el contexto y guía cada cliente hacia una acción concreta: avanzar, agendar o comprar.
-
-No es una automatización genérica.
-
-Es un sistema de ventas.
-
 ---
 
-## Ejecución
+## Qué es
 
-Levantar el sistema:
+Una plataforma SaaS en la que cada negocio:
+
+1. crea su cuenta y su negocio en el panel;
+2. describe lo que vende (oferta, precios, pagos, políticas, cómo vende) y lo publica;
+3. pega su propia clave de IA (OpenRouter);
+4. conecta WhatsApp escaneando un código QR;
+5. atiende desde el panel: conversaciones en vivo, clientes, ventas y reportes.
+
+El asistente responde con lo que el negocio publicó, guía al cliente hacia la compra y pasa la conversación a una persona cuando
+el cliente la pide, reclama o reporta un pago.
+
+## Cómo vamos (11 de noviembre de 2026)
+
+**Funciona en la nube (Vercel + Neon):**
+
+- Cuentas con Neon Auth; cada usuario solo ve sus negocios.
+- Configuración del negocio con contrato versionado: borrador, publicar, volver a una versión anterior.
+- Clave de IA por negocio, cifrada (la plataforma no tiene clave propia), con el modelo y el consumo de cada negocio.
+- «Probar asistente» con la IA real.
+- WhatsApp por código QR (uazapi): el negocio solo toca «Conectar WhatsApp».
+- Conversaciones en vivo: escribiendo, chulos de enviado y leído, no leídos, responder desde el panel, pausar la IA, fotos y notas
+  de voz que la IA entiende, y paso a una persona con aviso al equipo.
+- Clientes con su etapa, ventas (registrar y anular, pagos por verificar) y reportes (embudo, actividad por día, costo de la IA).
+- Las migraciones de la base se aplican solas en cada despliegue.
+
+**Lo que sigue:** el plan completo y su avance están en [docs/plan-v1.md](docs/plan-v1.md). Falta, entre otras cosas, el
+horario del equipo y el aviso por correo al pasar a una persona, Telegram por negocio, la API oficial de Meta, retirar lo que
+queda del sistema anterior (modelos con ids enteros y sus tablas) y la operación para lanzar (monitoreo, copias, correo, términos).
+
+## Estructura del repositorio
+
+| Carpeta | Qué hay |
+|---|---|
+| `project/app/` | El motor (FastAPI): webhooks de los canales, el pipeline de la IA y la API del panel |
+| `project/app/domain/business_config/`, `business_config_application/`, `infrastructure/business_config/`, `admin_api/` | El contrato del negocio, sus casos de uso, el almacén (PostgreSQL o SQLite) y la API del panel |
+| `project/db/migrations/` | Migraciones del almacén (se aplican solas en la nube) |
+| `project/config/system/` | Ajustes de la plataforma (no de un negocio) |
+| `project/config/tenants/<negocio>/` | Los 9 negocios de ejemplo, en JSON: siembran este equipo, la rama de pruebas y las pruebas |
+| `project/config/contracts/v1/` | El esquema del contrato y un documento de ejemplo |
+| `apps/admin-web/` | El panel (React + Vite) |
+| `tests/` | Suite del motor y del almacén; `tests/golden/` guarda lo que el motor recibía de los YAML, congelado |
+| `experiments/` | Laboratorio de regresión (sin costo) y de calidad (con la IA real) |
+| `scripts/` | API local del panel, preparación de la base en la nube, generadores del contrato |
+
+## Ejecutar en este equipo
 
 ```bash
-cd project
-uvicorn app.main:app --reload
+./run_local.sh        # macOS y Linux
+run_local.bat         # Windows
 ```
 
-`POST /api/v1/simulate` está apagado por defecto y responde 404. No se puede usar hasta que exista la autenticación definitiva, pendiente de la fase de nube: ver [docs/operations.md](docs/operations.md).
+Arranca el motor (puerto 8082, con el `.env`), el túnel de ngrok, la API del panel (`127.0.0.1:8010`) y el panel en
+<http://localhost:5180>. `./run_local_stop.sh` lo detiene todo. En el panel local, «Importar negocios de ejemplo» trae los 9
+negocios de ejemplo. Guía completa: [docs/quickstart.md](docs/quickstart.md).
 
-Panel de administración local, para gestionar los negocios sin editar YAML: `run_local.bat` o `./run_local.sh` lo arrancan junto con el resto del sistema y abren <http://127.0.0.1:5180>. Solo atiende en este equipo, y su clave de cifrado se crea sola fuera del repositorio: ver [apps/admin-web/README.md](apps/admin-web/README.md). Lo que publica es lo que responde el asistente cuando el motor lee el panel: dos variables del `.env`, ver [docs/business-config.md](docs/business-config.md).
+## Pruebas
 
-Para trabajar con los mismos datos desde Windows y macOS: [docs/operations.md](docs/operations.md), «Trabajar Desde Windows Y macOS». `secrets.local.env` lleva los secretos de un equipo a otro; nunca se sube a GitHub.
+```bash
+pytest                                             # motor y almacén (sin IA real ni base del .env)
+npm --prefix apps/admin-web run typecheck
+npm --prefix apps/admin-web test                   # panel
+npm --prefix apps/admin-web run test:integration   # panel contra la API real y un SQLite temporal
+```
 
----
+Antes de tocar el motor: laboratorio de regresión contra el commit anterior (no gasta nada) y, si cambia el prompt, el
+laboratorio de calidad. Ver [CONTRIBUTING.md](CONTRIBUTING.md).
 
-## Escenarios de prueba
+## Documentación
 
-El sistema no está limitado a un tipo de negocio.
-
-Su comportamiento se adapta según la configuración del tenant (YAML).
-
-Ejemplos:
-
-**Servicios (ej: marketing / automatización):**
-
-- "tengo muchos clientes escribiéndome y no alcanzo a responder"
-- "eso cuánto cuesta realmente"
-- "cómo empiezo con ustedes"
-
-**Salud / estética:**
-
-- "quiero más pacientes pero no me escriben"
-- "eso sí funciona o es lo mismo de siempre"
-- "cómo agendo una prueba"
-
-**Ecommerce / ventas:**
-
-- "me llegan mensajes pero no compran"
-- "está muy caro comparado con otros"
-- "qué tengo que hacer para empezar"
-
----
-
-## Resultado esperado
-
-- entiende el contexto del negocio
-- identifica el momento del cliente
-- responde con dirección comercial
-- guía la conversación hacia acción
-
----
-
-## Configuración por tenant
-
-El comportamiento no cambia por código.
-
-Se controla completamente mediante configuración por tenant:
-
-- business.yaml -> contexto del negocio
-- config.yaml -> parámetros generales del sistema
-- inventory.yaml -> oferta / servicios disponibles
-- pricing.yaml -> estructura de precios
-- sales.yaml -> lógica comercial y enfoque de ventas
-
-Esto permite adaptar el sistema a cualquier negocio sin modificar lógica interna.
-
-El mismo motor puede operar en:
-
-- servicios
-- salud
-- ecommerce
-- educación
-- cualquier modelo comercial
-
-## 📚 Documentación
-
-- [Quickstart](docs/quickstart.md)
-- [Arquitectura](docs/architecture.md)
-- [Tenants](docs/tenants.md)
-- [Contrato de configuración](docs/business-config.md)
+- [Inicio rápido](docs/quickstart.md)
+- [Plan de la versión 1 y avance](docs/plan-v1.md)
+- [Arquitectura del motor](docs/architecture.md)
+- [Negocios: aislamiento y ejemplos](docs/tenants.md)
+- [Contrato de configuración (BusinessConfig)](docs/business-config.md)
+- [Operación: variables, nube, canales y depuración](docs/operations.md)
 - [Panel de administración](apps/admin-web/README.md)
-- [Operación](docs/operations.md)
-- [Auditoría final de la Fase 2](docs/FASE_2_AUDITORIA_FINAL.md)
 - [Producto](docs/product.md)
-
----
-
-AI Sales Engine es el motor de atención comercial conversacional para WhatsApp y canales relacionados. La plataforma externa administra las cuentas, las suscripciones, la facturación y los límites de uso; el motor recibe solicitudes autorizadas y ejecuta la venta con la configuración de cada negocio. Su propósito no es responder mensajes aislados, sino operar conversaciones de venta con contexto, continuidad y criterio comercial para mover al cliente hacia una acción concreta.
-
-El sistema está diseñado para equipos que necesitan:
-
-- responder leads entrantes sin perder velocidad de atención
-- mantener continuidad entre turnos sin depender de un operador humano en cada mensaje
-- operar varios clientes o negocios sobre la misma plataforma
-- controlar grounding comercial por tenant, pricing, capacidades y contexto real del negocio
-- convertir conversaciones en avance comercial, no solo en respuestas correctas
-
-La aplicación activa vive en la carpeta `project/`. La carpeta `tests/` contiene la suite canónica que protege el comportamiento comercial y técnico del sistema.
-
-## Qué Resuelve
-
-En la práctica, el problema no es solo “responder por WhatsApp”. El problema es que, cuando una empresa no responde rápido, responde sin contexto o responde sin dirección comercial, pierde oportunidades ya captadas.
-
-AI Sales Engine ataca ese problema en cuatro niveles:
-
-- atención inmediata: reduce el tiempo entre mensaje entrante y respuesta útil
-- continuidad comercial: recuerda el contexto reciente y evita reiniciar la conversación en cada turno
-- grounding por negocio: responde usando el contexto real del tenant, no texto genérico inventado
-- empuje a siguiente paso: orienta la conversación hacia prueba, activación, pago o continuación del proceso comercial
-
-No es una plantilla rígida de respuestas. Es un runtime AI-first con contexto controlado, memoria conversacional y restricciones de negocio por tenant.
-
-## Arquitectura Del Sistema
-
-El flujo real hoy parte de FastAPI y entra por webhook de WhatsApp o por el endpoint de simulación. La ruta productiva activa usa Meta WhatsApp como conector de salida.
-
-### Diagrama De Arquitectura
-
-```text
-Entrada A: WhatsApp Cloud API (webhook Meta)
-	-> project/app/main.py
-	-> project/app/api/routes.py
-	-> project/app/api/controllers/whatsapp_webhook.py
-	-> project/app/services/tenant_channel_resolver.py
-	-> project/app/connectors/router.py
-	-> project/app/connectors/whatsapp/meta/parser.py
-	-> project/app/application/runtime/tenant_runtime_loader.py
-	-> project/app/application/runtime/runtime_yaml_builder.py
-	-> project/app/infrastructure/config/config_service.py
-	-> project/app/services/ai_service.py
-	-> project/app/application/ai_pipeline.py
-	-> project/app/application/pipeline/conversation_flow.py
-	-> project/app/application/pipeline/sales_flow.py
-	-> project/app/application/pipeline/ai_execution.py
-	-> project/app/application/pipeline/response_router.py
-	-> project/app/services/ai/ai_orchestrator.py
-	-> project/app/infrastructure/ai/prompting/builder/prompt_builder.py
-	-> project/app/domain/ai/prompt_context.py
-	-> project/app/services/ai_runtime/runtime_llm/client.py
-	-> project/app/services/ai/structured_output.py
-	-> project/app/application/pipeline/response_postprocessor.py
-	-> project/app/application/response_guard.py
-	-> project/app/connectors/whatsapp/transport_runtime.py
-	-> project/app/connectors/whatsapp/transport/sender.py
-	-> project/app/connectors/whatsapp/meta/sender.py
-	-> respuesta enviada al cliente
-
-Entrada B: API de simulación
-	-> project/app/main.py
-	-> project/app/api/routes.py
-	-> project/app/api/controllers/simulation.py
-	-> project/app/services/ai_service.py
-	-> mismo pipeline AI-first
-	-> respuesta JSON para validación local, demo y QA
-```
-
-### Lectura Del Flujo
-
-1. FastAPI expone el sistema desde `project/app/main.py`.
-2. `project/app/api/routes.py` monta controladores HTTP.
-3. `project/app/api/controllers/whatsapp_webhook.py` recibe el evento de Meta y resuelve el tenant usando `phone_number_id`.
-4. `project/app/connectors/router.py` normaliza el payload entrante a un formato interno unificado.
-5. `project/app/application/runtime/tenant_runtime_loader.py` arma el `runtime_yaml` efectivo del tenant.
-6. `project/app/services/ai_service.py` delega la ejecución a `project/app/application/ai_pipeline.py`.
-7. El pipeline resuelve continuidad conversacional, contexto comercial y ejecución AI-first.
-8. `project/app/services/ai/ai_orchestrator.py` construye el prompt y llama al cliente LLM real en `project/app/services/ai_runtime/runtime_llm/client.py`.
-9. La salida estructurada se parsea en `project/app/services/ai/structured_output.py`.
-10. La respuesta pasa por postproceso y guardas mínimas.
-11. `project/app/connectors/whatsapp/meta/sender.py` la envía al canal real.
-
-### Nota Importante Sobre El Runtime
-
-La arquitectura activa no está separada en módulos llamados `decision_engine` o `narrative_builder`. Esas responsabilidades viven hoy distribuidas entre:
-
-- `project/app/application/pipeline/sales_flow.py`
-- `project/app/application/pipeline/response_router.py`
-- `project/app/services/ai/ai_orchestrator.py`
-- `project/app/services/ai/structured_output.py`
-- `project/app/infrastructure/ai/prompting/builder/prompt_builder.py`
-
-Eso es importante para documentar correctamente el sistema actual y no una arquitectura deseada o histórica.
-
-## Comportamiento De Ventas
-
-El diferencial del sistema no es “responder bonito”. El diferencial es el comportamiento comercial que busca mover la conversación desde interés o dolor hacia acción.
-
-### Secuencia Comercial Base
-
-```text
-dolor -> impacto -> dinero -> solución -> acción
-```
-
-### Cómo Detecta Dolor
+- Históricos: [Auditoría de la Fase 2](docs/FASE_2_AUDITORIA_FINAL.md), [Congelamiento del núcleo](docs/core-freeze.md)

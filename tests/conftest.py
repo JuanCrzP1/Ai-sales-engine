@@ -29,17 +29,11 @@ REDACTED_IN_REPORTS = "[dato de pago]"
 
 @functools.lru_cache(maxsize=1)
 def _payment_values() -> tuple[str, ...]:
-    """Datos de pago de los YAML de los negocios (links, números, cuentas, referencias), del más largo al más corto."""
+    """Datos de pago de los negocios de ejemplo (links, números, cuentas, referencias), del más largo al más corto."""
     try:
-        from app.domain.business_config.payment_data import payment_values
-        from app.infrastructure.config.config_service import ConfigService
-        from app.infrastructure.config.legacy_store_migration import read_tenant_sections
+        from app.infrastructure.business_config.example_businesses import example_slugs, load_example
 
-        service = ConfigService()
-        values: set[str] = set()
-        for tenant_dir in service.tenants_root.iterdir():
-            if (tenant_dir / "pricing.yaml").is_file():
-                values.update(payment_values(read_tenant_sections(service, tenant_dir.name)))
+        values = {value for slug in example_slugs() for value in load_example(slug).payment_values.values()}
         return tuple(sorted(values, key=len, reverse=True))
     except Exception:
         return ()
@@ -130,14 +124,13 @@ def platform_store(tmp_path_factory):
         create_local_schema,
     )
     from app.infrastructure.business_config.payment_secret_store import SECRETS_KEY_ENV
-    from app.infrastructure.config.config_service import ConfigService
-    from app.infrastructure.config.legacy_store_migration import import_all
+    from app.infrastructure.business_config.example_businesses import import_examples
 
     url = f"sqlite:///{(tmp_path_factory.mktemp('plataforma') / 'negocios.sqlite3').as_posix()}"
     key = Fernet.generate_key().decode()
     engine = create_business_config_engine(url)
     create_local_schema(engine)
-    import_all(build_business_config_service(engine, secrets_key=key), ConfigService())
+    import_examples(build_business_config_service(engine, secrets_key=key))
     engine.dispose()
     previous = {name: os.environ.get(name) for name in (DATABASE_URL_ENV, SECRETS_KEY_ENV)}
     os.environ[DATABASE_URL_ENV] = url

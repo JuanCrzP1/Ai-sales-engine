@@ -1,5 +1,10 @@
 # Fase 2: Auditoría Final
 
+> **Documento histórico (6 de noviembre de 2026).** Audita el panel cuando solo funcionaba en este equipo y los negocios todavía
+> se importaban de sus YAML. Desde entonces el panel corre en la nube con cuentas, los YAML se retiraron (11 de noviembre de 2026)
+> junto con `migrate_tenants_to_contract.py` y su `migration-report.md`, y los negocios de ejemplo son JSON. Estado actual:
+> `docs/plan-v1.md`.
+
 Fecha: 2026-11-06. Estado auditado: rama `main`, commit base `4b64485`, con todo el trabajo de la fase sin confirmar. Este documento no contiene datos de pago, claves ni secretos.
 
 ## Resumen Ejecutivo

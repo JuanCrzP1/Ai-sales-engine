@@ -1,11 +1,12 @@
 """Ejecución del pipeline real con memoria en RAM y LLM simulado, compartida por las pruebas del contrato."""
 from __future__ import annotations
 
+import builtins
 import copy
 import dataclasses
 import functools
+import io
 import json
-import shutil
 from collections.abc import Callable
 from pathlib import Path
 
@@ -22,10 +23,12 @@ from app.infrastructure.business_config.database import (
     create_business_config_engine,
     create_local_schema,
 )
+from app.infrastructure.business_config.example_businesses import ExampleBusiness, import_example, load_example
 from app.infrastructure.business_config.payment_secret_store import SECRETS_KEY_ENV
-from app.infrastructure.config.config_service import ConfigService
-from app.infrastructure.config.legacy_store_migration import PreparedTenant, import_prepared, prepare_tenant
 from app.infrastructure.persistence.memory_repository import MemoryRepository
+
+# Antes se llamaba así: un negocio de ejemplo listo para el almacén.
+PreparedTenant = ExampleBusiness
 
 TENANTS_DIR = Path(__file__).resolve().parents[1] / "project" / "config" / "tenants"
 
@@ -33,6 +36,20 @@ TENANTS = [
     "agencia_viajes", "asesor_ai_prod", "clinic", "demo", "ecommerce",
     "escuela_conduccion", "restaurant", "saas", "tienda_ropa",
 ]
+
+
+def forbid_examples_folder(monkeypatch) -> None:
+    """Abrir cualquier archivo de la carpeta de ejemplos hace fallar la prueba: el motor solo lee lo publicado en el almacén."""
+    examples = TENANTS_DIR.resolve()
+    real_open = io.open
+
+    def _guarded(file, *args, **kwargs):
+        if isinstance(file, (str, Path)) and Path(file).resolve().is_relative_to(examples):
+            raise AssertionError(f"el motor abrió {file}")
+        return real_open(file, *args, **kwargs)
+
+    monkeypatch.setattr(io, "open", _guarded)
+    monkeypatch.setattr(builtins, "open", _guarded)
 
 
 def reply(text: str, intent: str = "info", **metadata) -> str:
@@ -66,17 +83,23 @@ def run_conversation(slug: str, turns: list[tuple[str, str]], *, user_id: str) -
     return results
 
 
-def copy_tenant(tmp_path: Path, slug: str) -> ConfigService:
-    """Copia los YAML de un negocio a un directorio temporal, para probar su importación sin tocar los originales."""
-    config_root = tmp_path / "config"
-    shutil.copytree(TENANTS_DIR / slug, config_root / "tenants" / slug)
-    return ConfigService(base_path=str(config_root))
+@functools.lru_cache(maxsize=None)
+def prepared_tenant(slug: str) -> PreparedTenant:
+    """Un negocio de ejemplo listo para el almacén (`project/config/tenants/<slug>/business-config.json`)."""
+    return load_example(slug)
+
+
+GOLDEN_DIR = Path(__file__).resolve().parent / "golden"
 
 
 @functools.lru_cache(maxsize=None)
-def prepared_tenant(slug: str) -> PreparedTenant:
-    """Un negocio de ejemplo listo para el almacén, como lo importa la migración desde sus YAML."""
-    return prepare_tenant(ConfigService(), slug)
+def _golden(slug: str) -> str:
+    return (GOLDEN_DIR / f"{slug}.json").read_text(encoding="utf-8")
+
+
+def engine_sections(slug: str) -> dict:
+    """La referencia congelada de lo que recibe el motor de ese negocio (lo que tenían sus YAML; ver `tests/golden/README.md`)."""
+    return json.loads(_golden(slug))
 
 
 def stored_document(slug: str) -> dict:
@@ -93,7 +116,7 @@ def publish_store(monkeypatch, tmp_path: Path, tenants: list[PreparedTenant]) ->
     create_local_schema(engine)
     service = build_business_config_service(engine, secrets_key=key)
     for tenant in tenants:
-        import_prepared(service, tenant)
+        import_example(service, tenant)
     engine.dispose()
     monkeypatch.setenv(DATABASE_URL_ENV, url)
     monkeypatch.setenv(SECRETS_KEY_ENV, key)
@@ -104,7 +127,7 @@ def publish_store(monkeypatch, tmp_path: Path, tenants: list[PreparedTenant]) ->
 def publish_document(monkeypatch, tmp_path: Path, slug: str, mutate: Callable[[dict], object] | None = None, *, engine_settings: dict | None = None, as_slug: str | None = None) -> str:
     """Publica el negocio con su documento modificado en un almacén propio de la prueba, como lo haría el panel.
 
-    `as_slug` lo publica con otro identificador (un negocio nuevo, sin carpeta YAML)."""
+    `as_slug` lo publica con otro identificador (un negocio nuevo, sin carpeta de ejemplo)."""
     tenant = prepared_tenant(slug)
     document = copy.deepcopy(tenant.document)
     if as_slug:

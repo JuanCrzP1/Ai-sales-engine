@@ -2,33 +2,34 @@
 
 `BusinessConfig v1` es la estructura común con la que se describe un negocio: qué vende, a qué precio, cómo
 cobra, cómo debe hablar y vender el asistente y qué puede hacer. Todos los negocios usan el mismo contrato
-versionado; cada uno tiene su propio documento con sus datos. Es la fuente de configuración comercial de
-los negocios activados (ver [Conexión Con El Motor](#conexión-con-el-motor)); sin activarlos, el motor sigue con sus YAML.
+versionado; cada uno tiene su propio documento con sus datos. Es la **única** fuente de configuración comercial: el motor
+responde con la versión publicada de cada negocio (ver [Conexión Con El Motor](#conexión-con-el-motor)).
 
-El contrato consolida las funcionalidades que ya existían en los YAML: las representa con tipos y
-validaciones y conserva sus opciones y valores. Cuando es la fuente de un negocio, el motor usa además lo que solo
-existe en el contrato: el perfil comercial, el tono y las preguntas frecuentes (ver
-[Lo Que El Motor Usa Del Contrato](#lo-que-el-motor-usa-del-contrato)).
+El contrato consolidó las funcionalidades que existían en los YAML de antes: las representa con tipos y validaciones y conserva
+sus opciones y valores. Además tiene lo que los YAML no tenían: el perfil comercial, el tono, las preguntas frecuentes y el resto
+de campos del panel (ver [Lo Que El Motor Usa Del Contrato](#lo-que-el-motor-usa-del-contrato)). Los YAML de los negocios se
+retiraron el 11 de noviembre de 2026.
 
 - Correspondencia de cada funcionalidad comercial con su campo original, referencia campo por campo y
   matriz de la configuración antigua: [business-config-traceability.md](business-config-traceability.md)
   (generada).
-- Diagnóstico de los nueve negocios: `project/config/contracts/v1/migration-report.md` (generado).
+- Diagnóstico de los nueve negocios de ejemplo: lo comprueba `test_diagnostics_of_the_nine_businesses`
+  (`tests/test_business_config_contract.py`).
 
 ## Estado De Esta Fase
 
 | | Estado |
 |---|---|
-| Contrato (modelos, validaciones, diagnóstico, compilador, importador, catálogo) | **Terminado** |
+| Contrato (modelos, validaciones, diagnóstico, compilador, catálogo de campos antiguos) | **Terminado** |
 | Esquema JSON, tipos TypeScript, matriz y referencia de campos | **Terminados**, generados desde el modelo canónico |
-| Nueve documentos comerciales y sus ajustes técnicos | **Terminados**: válidos, sin pérdida, sin datos de pago |
+| Nueve negocios de ejemplo (documento, ajustes técnicos y datos de pago ficticios) | **Terminados**: válidos, sin pérdida; compilan exactamente a su referencia congelada (`tests/golden/`) |
 | Pruebas del contrato y de su integración con el motor actual | **Pasan** |
 | Integración con el motor | **Terminada** (Fase 3): los 184 campos que el panel deja configurar llegan al motor, cada uno con su prueba. Fuera, a propósito: lo que es solo del equipo (`solo panel`) y lo que enviará la plataforma ante un evento (`programado`) |
-| Persistencia local (SQLite) | **Terminada** y conectada al panel por la API local |
-| API local y panel de administración | **Terminados** (Fase 2): funcionan solo en este equipo; ver [Panel De Administración](#panel-de-administración) |
-| Funcionamiento del almacén sin YAML | **Terminado y comprobado** en un árbol sin YAML ni motor (ver [Independencia De Los YAML](#independencia-de-los-yaml)) |
+| Persistencia (Neon en la nube, SQLite en este equipo) | **Terminada**; las migraciones se aplican solas al desplegar |
+| API y panel de administración | **Terminados**: en la nube con cuentas de Neon Auth y en este equipo sin cuentas; ver [Panel De Administración](#panel-de-administración) |
+| Funcionamiento del almacén sin YAML | **Terminado y comprobado** en un árbol sin YAML ni motor (ver [Independencia Del Almacén](#independencia-del-almacén)) |
 | Motor comercial | Lee **solo** lo publicado en el panel (ver [Conexión Con El Motor](#conexión-con-el-motor)). No necesita carpeta YAML |
-| Retiro de los YAML | El motor ya no los lee (Fase 1 del plan, 2026-11-10). Quedan como origen de la importación hasta la Fase 6, que los borra |
+| Retiro de los YAML | **Hecho** (2026-11-11): el motor dejó de leerlos en la Fase 1 y la importación de ejemplos usa sus JSON. Se borraron con su importador después de comprobar que nada cambia (laboratorio de regresión `exp_20261111_retiro_yaml_y_sistema_anterior`: motor sin diferencias) |
 
 ## Fuente Canónica Y Archivos Generados
 
@@ -39,29 +40,31 @@ existe en el contrato: el perfil comercial, el tono y las preguntas frecuentes (
 | Casos de uso y puertos de almacenamiento | `project/app/business_config_application/{service,ports}.py` | a mano |
 | Repositorio, tablas, datos de pago, clave y conexión | `project/app/infrastructure/business_config/{repository,tables,tenancy,payment_secret_store,secrets_key,database}.py` | a mano |
 | API local del panel | `project/app/admin_api/{main,routes,schemas,errors}.py` | a mano |
-| Migración inicial desde los YAML | `project/app/infrastructure/config/legacy_store_migration.py` | a mano |
+| Negocios de ejemplo: lectura e importación | `project/app/infrastructure/business_config/example_businesses.py` | a mano |
 | Lectura del motor (solo lo publicado, sin escribir ni crear nada) | `project/app/infrastructure/business_config/runtime_access.py` | a mano |
 | Ajustes técnicos (fuera del contrato comercial) | `project/app/domain/business_config/engine_settings.py` | a mano |
 | Políticas del motor y límites del contrato | `project/app/domain/business_config/engine_policy.py` | a mano |
 | Diagnóstico (incoherencias que no bloquean) | `project/app/domain/business_config/diagnostics.py` | a mano |
 | Compilador al formato que lee el motor | `project/app/domain/business_config/compiler.py` | a mano |
-| Importador de los YAML | `project/app/infrastructure/config/legacy_yaml_importer.py` | a mano |
-| Catálogo de campos antiguos | `project/app/infrastructure/config/legacy_field_catalog.py` | a mano |
+| Catálogo de campos antiguos (adónde fue cada campo de los YAML; lo usan las pruebas y la matriz) | `project/app/infrastructure/config/legacy_field_catalog.py` | a mano |
 | JSON Schema publicado | `project/config/contracts/v1/business-config.schema.json` | generado |
 | Tipos TypeScript del panel | `apps/admin-web/src/contracts/businessConfig.v1.ts` | generado |
 | Matriz y referencia de campos | `docs/business-config-traceability.md` | generada |
-| Documento comercial y ajustes técnicos de cada negocio + informe | `project/config/tenants/<slug>/business-config.json`, `engine-settings.json`, `migration-report.md` | generados desde sus YAML |
+| Negocios de ejemplo | `project/config/tenants/<slug>/business-config.json`, `engine-settings.json`, `payment-values.json` | a mano (se generaron una vez desde sus YAML) |
+| Lo que el motor recibía de los YAML, congelado | `tests/golden/<slug>.json` | `tests/golden/regenerate.py` |
 | Ejemplo sin datos reales | `project/config/contracts/v1/business-config.example.json` | a mano |
 
 Después de cambiar el contrato, en este orden (cada script acepta `--check`, que no escribe y falla si
-algo está desactualizado; las pruebas comprueban los cuatro):
+algo está desactualizado; las pruebas comprueban los tres):
 
 ```
 python scripts/export_business_config_schema.py      # JSON Schema
 python scripts/generate_business_config_types.py     # tipos TypeScript del panel
-python scripts/migrate_tenants_to_contract.py        # documentos y ajustes de los nueve negocios + informe
 python scripts/generate_traceability_matrix.py       # matriz y referencia de campos
 ```
+
+Si un cambio del contrato obliga a cambiar los negocios de ejemplo, se editan sus JSON y se regenera su referencia congelada
+(`python tests/golden/regenerate.py <slug>`), revisando que la diferencia sea la buscada.
 
 ## Arquitectura
 
@@ -79,8 +82,8 @@ su propia comprobación en `apps/admin-web/src/test/architecture.test.ts`.
 `scripts/run_admin_api.py` arma las piezas: crea la conexión, construye el servicio y se lo entrega a la API, que no conoce la
 base de datos. La capa de aplicación no vive en `app.application` porque importar ese paquete carga el motor comercial.
 
-Hay una sola excepción a las capas, explícita en esa prueba y temporal: la ruta `POST /api/businesses/import` usa la migración
-desde los YAML, que se retira con ellos en la Fase 4.
+Sin excepciones a las capas: la ruta `POST /api/businesses/import` recibe el importador de los negocios de ejemplo por
+`create_app(examples=...)` (solo `scripts/run_admin_api.py` se lo da; la API de la nube no lo recibe).
 
 **Multi-tenant.** Un único contrato para todos los negocios: las diferencias se expresan con datos y capacidades, nunca con
 código por tipo de negocio. Toda operación recibe el identificador del negocio y la persistencia filtra por su id
@@ -143,7 +146,7 @@ negocio, está en [business-config-traceability.md](business-config-traceability
 - **Dos modalidades de saludo** (`messages.welcome.enabled`, de `config.initial_message.enabled`):
   `true` envía el texto fijo ante un saludo sin más en una conversación nueva, sin IA; `false` no lo
   envía y responde la IA. El texto se conserva aunque esté desactivado. Un saludo con una intención siempre
-  lo responde la IA. El motor también admite `initial_message.mode`, que ningún YAML usa: no se representa.
+  lo responde la IA. El motor también admite `initial_message.mode`, que ningún negocio usaba: no se representa.
 - **Extensión de los mensajes** (`response_style.length` y `max_words`): ver
   [Largo De Las Respuestas](#largo-de-las-respuestas).
 - **Interruptores:** `features.*`, `capabilities.closing_methods.*`, `capabilities.data_collection.enabled`,
@@ -232,8 +235,7 @@ plan.
    los mismos cinco valores en los nueve negocios, y cambiarlos no altera prompts ni respuestas: no son decisiones
    de cada negocio. Por eso no están en el contrato ni en los ajustes técnicos, sino una sola vez en
    `COMMON_CLOSING_POLICY` (`engine_policy.py`). El compilador los añade a `sales.closing` en la posición que
-   tienen en los YAML, así que el motor recibe lo mismo. Un YAML con otros valores detiene la importación: esa
-   diferencia sería una configuración propia del negocio.
+   tenían en los YAML, así que el motor recibe lo mismo. Ningún documento ni ajuste técnico puede traerlos ni cambiarlos.
 
 ### Campos duplicados, derivados, obsoletos o técnicos
 
@@ -277,7 +279,6 @@ plan.
   cerrar y sin días repetidos; promociones y preguntas frecuentes sin repetir.
 - Ajustes técnicos: ventanas de conversación ≥ 1, banderas conocidas, `legacy` solo con las cinco secciones
   antiguas y del mismo negocio. Un conflicto entre `legacy` y el contrato invalida la compilación.
-- Importación: los YAML de un negocio deben coincidir con la definición común del cierre; si no, se detiene.
 
 **Diagnóstico** (el documento es válido; el negocio decide): cierre por link sin link, perfil de pago
 sin uso, modo de catálogo, varias monedas o varios planes que contradicen la oferta, modalidad sin entrega
@@ -300,10 +301,9 @@ configuración usa su respaldo de 80 palabras (ningún negocio está en ese caso
 ## Datos De Pago
 
 El contrato no guarda links, números de cuenta ni referencias: usa `{"secret_ref": "<origen>:<clave>"}`
-(`secret_store:` para el almacén cifrado, el único origen que admite la persistencia local; `legacy_yaml:`
-solo en los `business-config.json` de las carpetas de negocio, para la fuente opcional del motor). Ningún
-documento del contrato contiene esos valores (comprobado en los nueve negocios y en la migración). Los
-errores de validación tampoco repiten el valor recibido.
+(`secret_store:` para el almacén cifrado, el único origen que se admite). Ningún documento del contrato contiene esos valores
+(comprobado en los nueve negocios de ejemplo: sus valores ficticios van aparte, en `payment-values.json`, y se cifran al
+importarlos). Los errores de validación tampoco repiten el valor recibido.
 
 Son datos del negocio y no se mezclan con las credenciales de canales (`tenant_secrets`), que pertenecen a
 las integraciones.
@@ -357,9 +357,9 @@ la memoria de los clientes:
 
 `reply` es texto del modelo, igual que el que recibe un cliente: puede mencionar precios. Ningún otro campo los lleva.
 
-**Limitación del motor actual (pendiente):** en los canales reales, el prompt de la IA y el registro
-`conversation_trace` contienen hoy los datos de pago, con YAML y con contrato. Sacarlos de ahí exige cambiar el motor;
-`payment_data.redact_payment_values` es la redacción preparada para esa integración.
+En los canales reales, ni el prompt de la IA ni el registro `conversation_trace` llevan los datos de pago (ver
+[Lo Que El Motor Usa Del Contrato](#lo-que-el-motor-usa-del-contrato)); la bandeja los guarda ocultos con
+`payment_data.redact_payment_values`.
 
 ## Ajustes Técnicos
 
@@ -375,19 +375,18 @@ opcional: sin él, el motor usa sus valores por defecto.
 
 Nada comercial queda aquí (lo comprueba una prueba). Los ajustes técnicos no se versionan con el documento
 comercial: en base de datos hay uno vigente por negocio, y se adjunta a la versión publicada al leerla.
-`legacy` se retira cuando se retiren los YAML.
+`legacy` conserva tres estructuras antiguas que el motor todavía lee en esa forma; se retira cuando el motor las lea del contrato.
 
-### YAML que no son de un negocio
+### Ajustes de la plataforma
 
-Estos archivos son globales: valen igual para todos y no se representan en BusinessConfig.
+Estos archivos (`project/config/system/`) son globales: valen igual para todos y no se representan en BusinessConfig. El motor
+los lee al arrancar, en este orden.
 
 | Archivo | Contenido | Por qué queda fuera |
 |---|---|---|
 | `system/settings.yaml`, `system/bot_config.yaml` | Aplicación, proveedor y modelos de IA, interruptores globales, límites técnicos (`max_message_length`, `history_limit`) y política de preguntas frecuentes | Parámetros técnicos del motor |
 | `system/secrets.yaml` | Credenciales de plataforma y canales | Credenciales |
 | `system/conversation_stage.yaml` | Objetivos y estilo del asistente por etapa de la conversación | Política global del motor; ningún negocio la cambia |
-| `channels/channels.yaml` | Canales activos | Conectores |
-| `assets/media.yaml` | Imágenes reutilizables | Global y sin lector (`load_media` no tiene quien la llame) |
 
 ## Conexión Con El Motor
 
@@ -408,14 +407,13 @@ negocio escribió en Mensajes → «Si el asistente no puede responder» (`messa
 ninguna pieza: publicar en el panel cambia lo que recibe el motor, volver atrás lo devuelve, un negocio sin carpeta responde y, sin
 almacén, el motor no crea ningún archivo.
 
-Comprobado en los nueve negocios: con el contrato como fuente, el runtime es el de los YAML más `config.profile`, y una
-conversación de cuatro turnos produce los mismos prompts y respuestas salvo el perfil comercial (su bloque y el tono).
-Activar el contrato en un negocio solo le añade eso.
+Comprobado en los nueve negocios de ejemplo: el runtime es el que recibían de sus YAML (congelado en `tests/golden/`) más lo
+que solo existe en el contrato.
 
 ### Lo Que El Motor Usa Del Contrato
 
-El compilador deja lo que solo existe en el contrato en claves que los YAML no tienen (`commercial_profile.py`), y el motor
-lo usa solo cuando las encuentra. Un negocio que sigue con sus YAML no cambia.
+El compilador deja lo que solo existe en el contrato en claves propias (`commercial_profile.py`), que el motor usa cuando las
+encuentra.
 
 | Clave | En el prompt |
 |---|---|
@@ -430,14 +428,14 @@ lo usa solo cuando las encuentra. Un negocio que sigue con sus YAML no cambia.
   `MAX_DESCRIPTION_CHARS` 500, `MAX_VALUE_PROPOSITION_CHARS` 300, `MAX_OFFER_DESCRIPTION_CHARS` 300) y el panel no deja escribir
   más, con un contador. Las categorías (hasta 20) y los problemas del cliente (hasta 10) también se usan todos.
 - Las promociones vencidas se descartan al armar cada prompt, sin volver a publicar.
-- Con cualquiera de las dos fuentes, la línea «Precios» de un catálogo lista el precio de cada producto.
+- La línea «Precios» de un catálogo lista el precio de cada producto.
 - Los datos de pago nunca llegan a la IA, ni desde la configuración ni desde el historial, ni al registro
   `conversation_trace`: el motor se los entrega al cliente cuando elige el método (`ejecutar_pago`). Si la IA repitiera el
   marcador `[dato de pago]`, el cliente recibe el dato real si eligió un método o, si no, la respuesta sin esa frase.
-- Para comprobar una migración, `comparable_with_yaml` quita las claves exclusivas del contrato antes de comparar con los
-  YAML (lo usan el panel al importar, `scripts/migrate_tenants_to_contract.py` y las pruebas).
+- Para comparar con la referencia congelada de los YAML, `comparable_with_yaml` quita las claves exclusivas del contrato (lo
+  usan las pruebas y `tests/golden/regenerate.py`).
 
-## Persistencia Local
+## Persistencia
 
 `BusinessConfigService` ofrece crear y listar negocios, consultar lo publicado, recuperar el borrador en
 curso, guardar cambios, publicar, revertir, consultar el historial, recuperar versiones anteriores y
@@ -447,7 +445,7 @@ implementan con SQLAlchemy.
 | Tema | Comportamiento |
 |---|---|
 | Base | `BUSINESS_CONFIG_DATABASE_URL`; vacío: `project/data/business_config.sqlite3` (ignorado por git y por Docker). Es independiente de la base del motor (`DATABASE_URL`) |
-| PostgreSQL | Cambiar la URL y aplicar `project/db/migrations/0001_business_config_store.sql`. **Sin probar** contra un PostgreSQL real |
+| PostgreSQL (Neon) | En la nube. Las migraciones de `project/db/migrations/` se aplican solas cuando arranca la API del panel después de cada despliegue (`migrations.py`, anotadas en `schema_migrations`); desde este equipo, `scripts/setup_cloud_database.py` |
 | Versiones | Cada guardado crea una versión inmutable y validada; los números son por negocio |
 | Guardar | La versión y sus datos de pago se escriben en una sola transacción. Si se indica la versión de partida y ya hay otra más reciente, no se guarda |
 | Borrador en curso | El más reciente posterior a lo último publicado |
@@ -461,55 +459,49 @@ solo guarda referencias. Cada valor nuevo recibe una referencia propia, de modo 
 altera lo publicado y revertir devuelve también los datos de pago de esa versión. Antes de cifrar un valor nuevo se
 comprueba su formato según su tipo (enlace, celular, cuenta o llave); el panel avisa con las mismas reglas mientras se
 escribe, pero la autoridad es el servidor (`payment_data.py`). Se rechazan documentos que
-contengan el valor de un dato de pago, ya sea uno nuevo o uno guardado antes, o que dependan de otro origen
-(`legacy_yaml:`). Los negocios importados pasan sus datos de los YAML al almacén cifrado.
+contengan el valor de un dato de pago, ya sea uno nuevo o uno guardado antes, o que dependan de un origen que no sea el almacén
+cifrado. Los negocios de ejemplo traen sus datos ficticios en `payment-values.json` y se cifran al importarlos.
 
 El panel usa este almacén a través de la API local: ver [Panel De Administración](#panel-de-administración).
 
-### Procedimiento
+### Procedimiento (este equipo)
 
-1. **Comprobar la migración sin tocar ninguna base:** `pytest tests/test_business_config_nine_businesses.py
-   tests/test_business_config_yaml_independence.py` importa los nueve negocios en bases temporales.
-2. **Generar la clave** y guardarla fuera del repositorio. Sin ella los datos de pago no se pueden leer, y
-   perderla obliga a volver a introducirlos:
-   `python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"`
-3. **Definir `BUSINESS_CONFIG_SECRETS_KEY`** en el entorno de la sesión o del usuario (el script no lee `.env`).
-4. **Crear la base:** `python scripts/init_local_business_config.py`. No necesita clave ni lee YAML, y no toca
-   lo que la base ya contenga.
-5. **Migración inicial, una sola vez:** `python scripts/init_local_business_config.py --import-tenants`.
-   Comprueba la clave y que cada negocio reproduzca sus YAML antes de escribir nada. Repetirla no duplica ni
+`run_local` lo hace todo solo: crea la base y la clave la primera vez (ver `docs/operations.md`, «Panel De Administración
+Local»). A mano:
+
+1. **Crear la base:** `python scripts/init_local_business_config.py`. No necesita clave y no toca lo que la base ya contenga.
+2. **Importar los negocios de ejemplo:** `python scripts/init_local_business_config.py --import-tenants` (necesita
+   `BUSINESS_CONFIG_SECRETS_KEY`) o «Importar negocios de ejemplo» en el panel local. Comprueba la clave y que cada ejemplo cumpla
+   el contrato, tenga el valor de cada referencia de pago y compile, antes de escribir nada. Repetirla no duplica ni
    sobrescribe: un negocio con versiones no se toca, y uno registrado sin versiones se completa.
 
-### Independencia De Los YAML
+### Independencia Del Almacén
 
-Una vez importados, los negocios no vuelven a leer YAML. Lo comprueba
-`tests/test_business_config_yaml_independence.py` en un proceso aparte, sobre una copia del código sin YAML,
-sin motor, sin `.env` y sin carpetas de negocio, con un registro de los archivos abiertos: crear un negocio,
-guardar, recuperar borradores, publicar, consultar el historial, revertir, recuperar versiones y compilar,
-también al reabrir la base en otro proceso. Los nueve negocios compilan allí a la misma huella que sus YAML.
+El almacén funciona solo. Lo comprueba `tests/test_business_config_yaml_independence.py` en un proceso aparte, sobre una copia
+del código sin YAML, sin motor, sin `.env` y sin carpetas de negocio, con un registro de los archivos abiertos: crear un negocio,
+guardar, recuperar borradores, publicar, consultar el historial, revertir, recuperar versiones y compilar, también al reabrir la
+base en otro proceso. Los nueve negocios compilan allí a la misma huella que su referencia congelada. La importación de ejemplos
+abre solo sus tres JSON y nunca carga el motor ni sus ajustes.
 
-Lo único que sigue relacionado con los YAML:
+De la configuración antigua solo queda:
 
-| Elemento | Para qué | Hasta |
-|---|---|---|
-| `legacy_store_migration.py` y `init_local_business_config.py --import-tenants` | Migración inicial; solo con esa opción se carga, y lee únicamente los cinco YAML de cada negocio, sin motor ni `.env` | Fase 4 |
-| `legacy_yaml_importer.py`, `payment_secrets.py`, `migrate_tenants_to_contract.py` y los `business-config.json` con `legacy_yaml:` | Fuente opcional del motor por contrato y documentos de referencia | Fase 4 |
-| `tenant_runtime_loader.py` y `config_service.py` | El motor sigue leyendo sus YAML salvo en los negocios activados (ver [Conexión Con El Motor](#conexión-con-el-motor)) | Fase 4 |
-| `legacy_field_catalog.py`, `generate_traceability_matrix.py` y las pruebas | Trazabilidad y comparación con la referencia original | Fase 4 |
-| `legacy` en los ajustes técnicos | Copia en la base de tres estructuras antiguas; no lee los YAML | Fase 4 |
+| Elemento | Para qué |
+|---|---|
+| `legacy_field_catalog.py`, `generate_traceability_matrix.py` y `docs/business-config-traceability.md` | Adónde fue cada campo de los YAML. Lo usan las pruebas y la matriz, nunca la aplicación |
+| `tests/golden/` | Lo que el motor recibía de los YAML, congelado: la referencia de los negocios de ejemplo |
+| `legacy` en los ajustes técnicos | Tres estructuras antiguas que el motor todavía lee en esa forma |
 
 ## Panel De Administración
 
 El panel (`apps/admin-web`) edita directamente este contrato a través de la API local (`project/app/admin_api`), sobre el almacén
-descrito en [Persistencia Local](#persistencia-local). No tiene un modelo propio: sus tipos se generan del contrato, los campos sin
+descrito en [Persistencia](#persistencia). No tiene un modelo propio: sus tipos se generan del contrato, los campos sin
 pantalla propia se generan del esquema y lo demás se conserva al guardar. Cómo ejecutarlo: `apps/admin-web/README.md`. El documento
 ficticio con el que se prueba (`src/test/fixtures/sampleContractDocument.json`) lo valida
 `test_panel_document_is_valid_against_the_contract`.
 
 **Lo publicado es lo que responde el asistente.** Publicar deja una versión oficial en el almacén, comprobada con el compilador, y
 llega a los clientes en el siguiente mensaje (ver [Conexión Con El Motor](#conexión-con-el-motor)). El motor solo usa los campos
-marcados `conectado`. El panel lo dice en la pantalla de publicación. Algunos avisos
-suponen la integración del perfil comercial que el motor actual no tiene: ver [Integración Pendiente](#integración-pendiente-con-el-motor).
+marcados `conectado` (todos los que tienen pantalla, desde la Fase 3). El panel lo dice en la pantalla de publicación.
 
 | Pantalla | Contrato |
 |---|---|
@@ -524,8 +516,9 @@ suponen la integración del perfil comercial que el motor actual no tiene: ver [
 
 La arrancan `run_local.bat` y `run_local.sh`. Sin `BUSINESS_CONFIG_SECRETS_KEY`, usa la clave de `.ai-sales-engine/business_config_secrets.key`
 en la carpeta del usuario, que crea la primera vez. Escucha solo en `127.0.0.1:8010` (`scripts/run_admin_api.py`, host fijo). Rechaza clientes, `Host` y `Origin` ajenos, no publica su
-documentación y responde `Cache-Control: no-store`. **No tiene autenticación:** la autenticación y la autorización multiusuario deben
-incorporarse antes de desplegarla en la nube.
+documentación y responde `Cache-Control: no-store`. **No tiene cuentas:** por eso solo atiende en este equipo. En la nube, la misma
+API se publica bajo `/panel` con las cuentas de Neon Auth (`app/cloud_panel.py`), sin importar ejemplos ni borrar negocios, y
+con más rutas (conversaciones, clientes, ventas, reportes, canales, avisos): ver `docs/operations.md`, «Nube: Vercel Y Neon».
 
 | Método y ruta | Qué hace |
 |---|---|
@@ -533,7 +526,7 @@ incorporarse antes de desplegarla en la nube.
 | `GET /api/contract` | El esquema publicado del contrato |
 | `GET /api/businesses` | Lista los negocios |
 | `POST /api/businesses` | Registra un negocio (`slug`, `name`). 409 si ya existe |
-| `POST /api/businesses/import` | Importa los YAML que falten; no los modifica y no toca lo ya guardado |
+| `POST /api/businesses/import` | Importa los negocios de ejemplo que falten (`project/config/tenants/`); no toca lo ya guardado. Solo en este equipo |
 | `DELETE /api/businesses/{slug}?confirm={slug}` | Borra el negocio con sus versiones y datos de pago. Exige repetir el identificador. Solo en SQLite |
 | `GET /api/businesses/{slug}/config` | El documento que se edita y `payment_fields`: los datos de pago solo enmascarados ([Consultarlos sin exponerlos](#consultarlos-sin-exponerlos)) |
 | `PUT /api/businesses/{slug}/config` | Guarda una versión (`document`, `payment_values`, `base_version`). 409 si cambió desde `base_version`; 422 con los campos por corregir, incluido el formato de los datos de pago |
@@ -551,8 +544,8 @@ Los errores son `{code, message, issues: [{path, message}]}` en español y nunca
 
 Cada negocio responde con **su propia clave de OpenRouter** y, si quiere, con su propio modelo. No es parte del contrato
 comercial: vive en `business_ai_settings` (migración `0002`), con la clave cifrada como los datos de pago. La API solo devuelve si
-está configurada y sus últimos caracteres. En todo el motor, la clave del negocio tiene prioridad sobre la general del `.env`, que
-queda de respaldo mientras cada negocio no tenga la suya.
+está configurada y sus últimos caracteres. No hay clave general de respaldo: un negocio sin clave no responde con IA (el cliente
+recibe su mensaje de «Si el asistente no puede responder» o el neutro).
 
 | Ruta | Para qué |
 |---|---|
@@ -591,20 +584,20 @@ cual (cambiarlos es decisión del negocio):
 |---|---|---|
 | `tests/test_business_config_contract.py` | Modelo, esquema y tipos generados, marcas, conservación de los nueve negocios, compilación, validaciones, diagnóstico, panel | pasan |
 | `tests/test_business_config_traceability.py` | Cada campo antiguo en su destino; funcionalidades comerciales con sus valores y opciones; nada técnico en el documento comercial; catálogo coherente con las marcas; evidencias existentes; matriz al día | pasan |
-| `tests/test_payment_data_protection.py` | Detección y redacción de datos de pago; fuera del prompt y del registro con YAML y con el contrato; el cliente los recibe y nunca ve el marcador | pasan |
+| `tests/test_payment_data_protection.py` | Detección y redacción de datos de pago; fuera del prompt y del registro; el cliente los recibe y nunca ve el marcador | pasan |
 | `tests/test_business_config_repository.py` | Versiones, publicación, reversión, cifrado y runtime desde base de datos | pasan |
-| `tests/test_business_config_closing_policy.py` | Definición común del cierre: los cinco valores en los nueve negocios, misma estructura que los YAML, fuera del contrato, divergencias rechazadas y motor sin cambios | pasan |
-| `tests/test_business_config_local_persistence.py` | Persistencia local en archivo SQLite: creación, aislamiento, borradores, historial, reversión, protección de pagos y migración segura ante fallos | pasan |
-| `tests/test_business_config_nine_businesses.py` | Los nueve negocios en una base temporal: cada campo de los YAML, compilación frente a la referencia, prompts iguales, aislamiento y repetición de la importación | pasan |
-| `tests/test_business_config_yaml_independence.py` | El almacén funciona en un árbol sin YAML ni motor; procedimiento documentado; base fuera del control de versiones | pasan |
-| `tests/test_business_config_engine_integration.py` | Contrato con el motor: equivalencia con los YAML más el perfil comercial; perfil, preguntas frecuentes y precios del catálogo; fuente opcional y respaldo; evidencia de cada campo conectado | pasan |
+| `tests/test_business_config_closing_policy.py` | Definición común del cierre: los cinco valores en los nueve negocios, el mismo orden que tenían en los YAML, fuera del contrato y de los ajustes técnicos, y motor sin cambios | pasan |
+| `tests/test_business_config_local_persistence.py` | Persistencia en archivo SQLite: creación, aislamiento, borradores, historial, reversión, protección de pagos e importación de ejemplos segura ante fallos | pasan |
+| `tests/test_business_config_nine_businesses.py` | Los nueve negocios de ejemplo en una base temporal: cada campo antiguo en su lugar, compilación frente a la referencia congelada, prompts, aislamiento y repetición de la importación | pasan |
+| `tests/test_business_config_yaml_independence.py` | El almacén funciona en un árbol sin YAML ni motor; la importación de ejemplos solo abre sus JSON; base fuera del control de versiones | pasan |
+| `tests/test_business_config_engine_integration.py` | Contrato con el motor: solo lo publicado, nunca un archivo de la carpeta de ejemplos; perfil, preguntas frecuentes y precios del catálogo; sin respaldo con datos viejos; evidencia de cada campo conectado | pasan |
 | `tests/test_commercial_profile_prompt.py` | Compilación del perfil y de las preguntas frecuentes; recortes, vigencia de las promociones, recomendaciones sin destino y selección de preguntas por espacio | pasan |
-| `tests/test_admin_api.py` | API local: negocios, secciones comerciales, validaciones, conflictos, reinicio, aislamiento, datos de pago, acceso solo local, versiones e importación de los nueve negocios sin pérdida | pasan |
-| `tests/test_business_config_architecture.py` | Capas, ausencia de ciclos y de dependencias del motor; el motor entra al almacén solo por `runtime_access.py`; rutas sin lógica; nada técnico en el contrato | pasan |
+| `tests/test_admin_api.py` | API local: negocios, secciones comerciales, validaciones, conflictos, reinicio, aislamiento, datos de pago, acceso solo local, versiones e importación de los nueve ejemplos sin pérdida | pasan |
+| `tests/test_business_config_architecture.py` | Capas sin excepciones, ausencia de ciclos y de dependencias del motor; el motor entra al almacén solo por `runtime_access.py`; los lectores de YAML ya no existen; rutas sin lógica; nada técnico en el contrato | pasan |
 | `apps/admin-web`: `npm test` | Interfaz con un backend en memoria, reglas, operaciones y arquitectura (sin `localStorage`, sin recursos externos) | pasan |
 | `apps/admin-web`: `npm run test:integration` | Interfaz real, API real, contrato y SQLite temporal, con reinicios reales de la API: el recorrido completo y los nueve negocios guardados desde el panel | pasan |
 
-Los informes de fallo de cualquier prueba ocultan los datos de pago de los YAML (`tests/conftest.py`), para que no
+Los informes de fallo de cualquier prueba ocultan los datos de pago de los negocios de ejemplo (`tests/conftest.py`), para que no
 lleguen a la consola ni a los logs de CI. `pytest.ini` usa una lista cerrada de archivos (`python_files`): una
 prueba nueva que no se añada allí no entra en la suite ni en el CI.
 
@@ -628,8 +621,9 @@ comprueba que lo que es solo del equipo o lo enviará la plataforma nunca llega 
 
 1. Decisiones del negocio sobre el diagnóstico y los hallazgos.
 2. ~~Activar el contrato~~: el motor ya no tiene otra fuente (Fase 1).
-3. Borrar los YAML y `legacy` (Fase 6): el motor ya no los lee; solo los usa la importación.
-4. Persistencia en PostgreSQL, rotación de la clave de cifrado y limpieza de datos de pago de versiones
-   antiguas: fase de nube.
-5. Autenticación definitiva, también para la API del panel: fase de nube. El sistema propio actual no se desarrollará ni se
-   mantendrá, y `/auth/register` no está listo para producción (ver `docs/operations.md`).
+3. ~~Borrar los YAML~~: hecho el 11 de noviembre de 2026. Queda `legacy` en los ajustes técnicos, hasta que el motor lea esas
+   tres estructuras del contrato.
+4. ~~Persistencia en PostgreSQL~~: hecho (Neon). Quedan la rotación de la clave de cifrado y la limpieza de datos de pago de
+   versiones antiguas.
+5. ~~Autenticación de la API del panel~~: hecho en la nube con Neon Auth. Queda retirar el resto del sistema de cuentas anterior
+   (ver `docs/operations.md`, «Autenticación»).

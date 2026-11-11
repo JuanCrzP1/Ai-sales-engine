@@ -85,6 +85,16 @@ EXTRA_TURNS = [
 
 # Ruta apagada por defecto por la orden de seguridad del endpoint de simulación.
 EXPECTED_ROUTE_CHANGES = {"POST /api/v1/simulate"}
+# La API de administración del sistema anterior, retirada el 11 de noviembre de 2026 (el panel usa `app.admin_api`). Fuera de
+# producción los commits anteriores la publicaban: compararse con uno de ellos la muestra como retirada.
+EXPECTED_ROUTE_CHANGES |= {
+    "POST /api/v1/auth/register", "POST /api/v1/auth/login",
+    "GET /api/v1/bot-config/", "PUT /api/v1/bot-config/",
+    "GET /api/v1/clients/", "POST /api/v1/clients/",
+    "GET /api/v1/connectors/", "GET /api/v1/connectors/{channel}/{provider}", "PUT /api/v1/connectors/{channel}/{provider}",
+    "GET /api/v1/conversations/clients/{client_id}", "POST /api/v1/conversations/messages",
+    "GET /api/v1/dashboard/metrics",
+}
 
 # Zonas del repositorio, de la más específica a la más general, para clasificar las diferencias de Git.
 CHANGE_ZONES = [
@@ -97,7 +107,7 @@ CHANGE_ZONES = [
         "BusinessConfig y API del panel",
         r"project/(app/(admin_api|business_config_application|domain/business_config|infrastructure/business_config)/"
         r"|app/infrastructure/config/(business_config|legacy_|payment_)"
-        r"|config/contracts/|config/tenants/[^/]+/(business-config|engine-settings)\.json$|db/migrations/)",
+        r"|config/contracts/|config/tenants/[^/]+/(business-config|engine-settings|payment-values)\.json$|db/migrations/)",
     ),
     ("Flujo de conversación del motor", r"project/app/(application|services|domain|infrastructure)/"),
     ("API del motor", r"project/app/api/"),
@@ -444,7 +454,8 @@ def _probe_webhook(client, model, api_prefix: str, tenant_slug: str) -> dict:
 
 
 def _prepare_platform_store() -> str:
-    """El almacén de esta copia, como en producción: los negocios de ejemplo de sus YAML, importados y publicados.
+    """El almacén de esta copia, como en producción: los negocios de ejemplo importados y publicados (desde sus JSON; una copia
+    anterior al 11 de noviembre de 2026, desde sus YAML).
 
     El motor solo lee lo publicado (desde la Fase 1), así que cada lado necesita su almacén. Se crea dentro de la copia, con su
     propio código y su propia clave, antes de que nada importe la configuración del motor. Devuelve cómo se armó."""
@@ -461,13 +472,24 @@ def _prepare_platform_store() -> str:
             create_business_config_engine,
             create_local_schema,
         )
-        from app.infrastructure.config.config_service import ConfigService
-        from app.infrastructure.config.legacy_store_migration import import_all
     except ImportError:
         return "YAML (código anterior al almacén)"
+    source = "sus JSON"
+    try:
+        from app.infrastructure.business_config.example_businesses import import_examples as importer
+    except ImportError:
+        # Código anterior al retiro de los YAML: los ejemplos se importan de sus YAML.
+        from app.infrastructure.config.config_service import ConfigService
+        from app.infrastructure.config.legacy_store_migration import import_all
+
+        source = "sus YAML"
+
+        def importer(service):
+            return import_all(service, ConfigService())
+
     engine = create_business_config_engine(url)
     create_local_schema(engine)
-    report = import_all(build_business_config_service(engine, secrets_key=os.environ["BUSINESS_CONFIG_SECRETS_KEY"]), ConfigService())
+    report = importer(build_business_config_service(engine, secrets_key=os.environ["BUSINESS_CONFIG_SECRETS_KEY"]))
     # Cada negocio responde con su propia clave de IA (la plataforma no tiene ninguna). Aquí todos reciben la del laboratorio: la
     # ficticia, que nunca sale porque la red está bloqueada, o la real con `--live-model`.
     from app.infrastructure.business_config.ai_settings_store import AISettingsStore
@@ -476,7 +498,7 @@ def _prepare_platform_store() -> str:
     for slug in report.created:
         keys.save_ai_settings(slug, model=None, api_key=os.environ["OPENROUTER_API_KEY"], clear_key=False)
     engine.dispose()
-    return f"lo publicado en un almacén temporal ({len(report.created)} negocios importados de sus YAML, cada uno con su clave)"
+    return f"lo publicado en un almacén temporal ({len(report.created)} negocios importados de {source}, cada uno con su clave)"
 
 
 def capture(settings: dict) -> int:
@@ -532,7 +554,9 @@ def capture(settings: dict) -> int:
     tenants: dict[str, dict] = {}
     if not live:
         scenario = [(message, _scripted("Respuesta simulada.")) for message in GOLDEN_TURNS] + EXTRA_TURNS
-        for directory in sorted(path for path in (PROJECT_DIR / "config" / "tenants").iterdir() if (path / "pricing.yaml").is_file()):
+        # Cada negocio de ejemplo: su `business-config.json` o, en commits anteriores al retiro de los YAML, su `pricing.yaml`.
+        examples = (PROJECT_DIR / "config" / "tenants").iterdir()
+        for directory in sorted(path for path in examples if (path / "business-config.json").is_file() or (path / "pricing.yaml").is_file()):
             slug = directory.name
             runtime = load_tenant_runtime_yaml(slug, channel=channel)
             rows = run_conversation(service=service, model=model, load_runtime=load_tenant_runtime_yaml, tenant=tenant_handle(slug), channel=channel, user_id=f"regresion-{slug}", turns=scenario, build_prompt_metrics=build_prompt_metrics)
@@ -643,15 +667,11 @@ def report(settings: dict) -> int:
 
     from evaluate_conversations import enrich_metrics_payload
 
-    from app.infrastructure.config.legacy_store_migration import read_tenant_sections
-    from app.domain.business_config.payment_data import REDACTED_PAYMENT_VALUE, payment_values
-    from app.infrastructure.config.config_service import ConfigService
+    from app.domain.business_config.payment_data import REDACTED_PAYMENT_VALUE
+    from app.infrastructure.business_config.example_businesses import example_slugs, load_example
 
-    service = ConfigService()
-    secrets: set[str] = set()
-    for directory in service.tenants_root.iterdir():
-        if (directory / "pricing.yaml").is_file():
-            secrets.update(payment_values(read_tenant_sections(service, directory.name)))
+    # Los datos de pago de los negocios de ejemplo (los mismos que tenían sus YAML) no se escriben en el informe.
+    secrets: set[str] = {value for slug in example_slugs() for value in load_example(slug).payment_values.values() if value}
     ordered_secrets = sorted(secrets, key=len, reverse=True)
 
     def redact(value):

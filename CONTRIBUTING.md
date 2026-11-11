@@ -14,7 +14,6 @@ python -m venv .venv
 pip install --upgrade pip
 pip install -r project/requirements-dev.txt
 Copy-Item project/.env.example project/.env
-cd project
 ```
 
 **macOS / Linux:**
@@ -25,7 +24,6 @@ source .venv/bin/activate
 pip install --upgrade pip
 pip install -r project/requirements-dev.txt
 cp project/.env.example project/.env
-cd project
 ```
 
 ## Como Probar Tus Cambios
@@ -46,16 +44,28 @@ Si cambias el contrato de BusinessConfig, regenera lo derivado en este orden (ca
 ```bash
 python scripts/export_business_config_schema.py
 python scripts/generate_business_config_types.py
-python scripts/migrate_tenants_to_contract.py
 python scripts/generate_traceability_matrix.py
 ```
+
+Si cambias a propósito un negocio de ejemplo (`project/config/tenants/<negocio>/business-config.json`), regenera su referencia
+congelada: `python tests/golden/regenerate.py <negocio>`.
+
+Si tocas el motor (pipeline, prompt, compilador o carga de lo publicado), corre antes y después el laboratorio de regresión contra
+el último commit; no gasta nada:
+
+```bash
+python experiments/pricing_lab/run_regression_experiment.py --experiment exp_<fecha>_<tema> --baseline <commit>
+```
+
+El objetivo es «motor sin diferencias», o que las únicas diferencias sean las que buscabas.
 
 ## Reglas De Contribucion
 
 1. Haz cambios pequeños y enfocados: un commit por cambio lógico, nunca "todo lo de la fase" en uno.
 2. Si tocas comportamiento conversacional, actualiza o agrega pruebas.
-3. Si tocas configuración global, modifica primero la base en `project/config/`.
-4. Usa overrides en `project/config/tenants/` solo cuando el cambio sea exclusivo de un cliente.
+3. La configuración de un negocio se cambia en el panel, nunca en el código ni en archivos. Los ajustes de la plataforma están en
+   `project/config/system/`.
+4. `project/config/tenants/` son solo los negocios de ejemplo: nunca datos de un cliente real.
 5. No subas secretos reales, archivos `.env` ni `secrets.local.env`.
 6. Evita asserts frágiles sobre texto exacto si el comportamiento puede validarse semánticamente (`tests/semantic_guard.py`).
 7. Reutiliza fixtures y helpers compartidos: `tests/conftest.py`, `tests/pipeline_harness.py`.

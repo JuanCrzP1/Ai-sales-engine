@@ -20,10 +20,9 @@ WORKSPACE_ROOT = BASE_DIR.parent
 
 CONFIG_DIR = BASE_DIR / "config"
 CONFIG_DIR.mkdir(parents=True, exist_ok=True)
-TENANTS_CONFIG_DIR = CONFIG_DIR / "tenants"
-CHANNELS_CONFIG_DIR = CONFIG_DIR / "channels"
-ASSETS_CONFIG_DIR = CONFIG_DIR / "assets"
+# Ajustes de la plataforma (no de un negocio): cada negocio sale de su versión publicada en el almacén.
 SYSTEM_CONFIG_DIR = CONFIG_DIR / "system"
+SYSTEM_CONFIG_FILES = ("settings.yaml", "bot_config.yaml", "conversation_stage.yaml", "secrets.yaml")
 # La plataforma no tiene negocio por defecto: cada mensaje dice de qué negocio es.
 AI_FIRST_STRICT = True
 AI_FIRST_HARD_MODE = True
@@ -88,81 +87,6 @@ def _read_env_file_values(path: Path) -> Dict[str, str]:
     except Exception:
         return {}
     return values
-
-
-def _tenant_slug(tenant_id: str | None = None) -> str:
-    """Solo el negocio que se pide. Los ajustes globales del motor no leen la carpeta de ningún negocio."""
-    return str(tenant_id or "").strip()
-
-
-def _resolve_config_path(name: str, tenant_id: str | None = None) -> Path:
-    tenant_slug = _tenant_slug(tenant_id)
-    tenant_bot_config = TENANTS_CONFIG_DIR / tenant_slug / "bot_config.yaml"
-    if name == "bot_config.yaml" and tenant_slug and tenant_bot_config.exists():
-        return tenant_bot_config
-    mapped_paths = {
-        "media.yaml": ASSETS_CONFIG_DIR / "media.yaml",
-        "channels.yaml": CHANNELS_CONFIG_DIR / "channels.yaml",
-        "bot_config.yaml": SYSTEM_CONFIG_DIR / "bot_config.yaml",
-        "settings.yaml": SYSTEM_CONFIG_DIR / "settings.yaml",
-        "secrets.yaml": SYSTEM_CONFIG_DIR / "secrets.yaml",
-        "conversation_stage.yaml": SYSTEM_CONFIG_DIR / "conversation_stage.yaml",
-        "business.yaml": TENANTS_CONFIG_DIR / tenant_slug / "business.yaml",
-        "offer.yaml": TENANTS_CONFIG_DIR / tenant_slug / "offer.yaml",
-        "pricing.yaml": TENANTS_CONFIG_DIR / tenant_slug / "pricing.yaml",
-        "responses.yaml": TENANTS_CONFIG_DIR / tenant_slug / "responses.yaml",
-        "objections.yaml": TENANTS_CONFIG_DIR / tenant_slug / "objections.yaml",
-        "personality.yaml": TENANTS_CONFIG_DIR / tenant_slug / "personality.yaml",
-    }
-    return mapped_paths.get(name, CONFIG_DIR / name)
-
-
-def _load_unified_tenant_section(name: str, tenant_id: str | None = None) -> Dict[str, Any]:
-    tenant_slug = _tenant_slug(tenant_id)
-    if not tenant_slug:
-        return {}
-    tenant_root = TENANTS_CONFIG_DIR / tenant_slug
-
-    if name in {"settings.yaml", "personality.yaml"}:
-        config_yaml_path = tenant_root / "config.yaml"
-        if config_yaml_path.exists():
-            payload = _read_yaml_file(config_yaml_path)
-            section_name = "settings" if name == "settings.yaml" else "personality"
-            section_value = payload.get(section_name)
-            if isinstance(section_value, dict):
-                if name == "personality.yaml":
-                    return section_value
-                return {section_name: section_value}
-
-    sales_sections = {
-        "responses.yaml": "responses",
-        "objections.yaml": "objections",
-        "offer.yaml": "offer",
-        "closing.yaml": "closing",
-    }
-    section_name = sales_sections.get(name)
-    if section_name:
-        sales_yaml_path = tenant_root / "sales.yaml"
-        if sales_yaml_path.exists():
-            payload = _read_yaml_file(sales_yaml_path)
-            section_value = payload.get(section_name)
-            if isinstance(section_value, dict) and section_name in section_value:
-                return section_value
-            if section_value is not None:
-                return {section_name: section_value}
-
-    return {}
-
-
-def _load_layer_file(name: str, tenant_id: str | None = None) -> Dict[str, Any]:
-    if name in {"settings.yaml", "personality.yaml"}:
-        unified_payload = _load_unified_tenant_section(name, tenant_id=tenant_id)
-        if unified_payload:
-            return unified_payload
-    path = _resolve_config_path(name, tenant_id=tenant_id)
-    if path.exists():
-        return _read_yaml_file(path)
-    return _load_unified_tenant_section(name, tenant_id=tenant_id)
 
 
 _SETTINGS_RAW: Dict[str, Any] = {}
@@ -259,14 +183,9 @@ def _enforce_mode_defaults(cfg: Dict[str, Any]) -> None:
 
 def _load_yaml_config() -> Dict:
     cfg: Dict = {}
-    settings_path = _resolve_config_path("settings.yaml")
-    bot_config_path = _resolve_config_path("bot_config.yaml")
-
-    raw_cfg = _read_yaml_file(settings_path)
-    raw_cfg = _deep_merge_dicts(raw_cfg, _read_yaml_file(bot_config_path))
-    raw_cfg = _deep_merge_dicts(raw_cfg, _load_layer_file("personality.yaml"))
-    raw_cfg = _deep_merge_dicts(raw_cfg, _load_layer_file("conversation_stage.yaml"))
-    raw_cfg = _deep_merge_dicts(raw_cfg, _read_yaml_file(_resolve_config_path("secrets.yaml")))
+    raw_cfg: Dict = {}
+    for name in SYSTEM_CONFIG_FILES:  # en este orden: cada archivo completa o reemplaza al anterior
+        raw_cfg = _deep_merge_dicts(raw_cfg, _read_yaml_file(SYSTEM_CONFIG_DIR / name))
 
     _apply_app_section(cfg, raw_cfg.get("app", {}))
     _apply_public_section(cfg, raw_cfg.get("public", {}))
@@ -280,32 +199,6 @@ def _load_yaml_config() -> Dict:
     global _SETTINGS_RAW
     _SETTINGS_RAW = raw_cfg
     return cfg
-
-
-def load_config_file(name: str, tenant_id: str | None = None) -> Dict:
-    if name in {"settings.yaml", "personality.yaml"}:
-        unified_payload = _load_unified_tenant_section(name, tenant_id=tenant_id)
-        if unified_payload:
-            return unified_payload
-
-    p = _resolve_config_path(name, tenant_id=tenant_id)
-    if p.exists():
-        return _read_yaml_file(p)
-
-    unified_payload = _load_unified_tenant_section(name, tenant_id=tenant_id)
-    if unified_payload:
-        return unified_payload
-
-    raw = _SETTINGS_RAW or {}
-    if name == "bot_prompts.yaml":
-        return raw.get("prompts", {})
-    if name == "bot_configs.yaml":
-        return {"defaults": raw.get("bot_defaults", {})}
-    if name == "intent_keywords.yaml":
-        return raw.get("intents", {})
-    if name == "defaults.yaml":
-        return raw
-    return {}
 
 
 class Settings(BaseSettings):

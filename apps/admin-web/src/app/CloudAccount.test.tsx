@@ -7,7 +7,7 @@ import { App } from "./App";
 
 afterEach(cleanup);
 
-/** El panel en la nube: con cuentas, sin importar YAML ni eliminar negocios. */
+/** El panel en la nube: con cuentas, sin importar los negocios de ejemplo ni eliminar negocios. */
 function cloudServices() {
   const backend = createMemoryBackend([SAMPLE_DOCUMENT]);
   return createTestServices(backend, { auth: createVerifyingAuthService(), directory: { ...backend.directory, canImportExisting: false, canRemove: false } });

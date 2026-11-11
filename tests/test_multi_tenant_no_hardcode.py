@@ -24,8 +24,8 @@ if str(PROJECT_DIR) not in sys.path:
     sys.path.insert(0, str(PROJECT_DIR))
 
 from app.application.runtime import load_tenant_runtime_yaml
-from app.infrastructure.config.config_service import ConfigService
 from app.services.ai_service import AIService
+from pipeline_harness import engine_sections
 
 
 def _tenant(slug: str) -> SimpleNamespace:
@@ -52,8 +52,7 @@ def ask(message: str, *, tenant: str) -> str:
 
 def test_multi_tenant_no_hardcoded_plan_basico_for_non_plan_tenant() -> None:
     tenant = "restaurant"
-    cfg = ConfigService()
-    pricing = cfg.load_pricing(client_id=tenant)
+    pricing = engine_sections(tenant)["pricing"]
     plans = pricing.get("plans") if isinstance(pricing.get("plans"), list) else []
 
     ## Precondición: este tenant no declara "plan basico" en pricing.plans

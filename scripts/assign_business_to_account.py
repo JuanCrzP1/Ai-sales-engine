@@ -2,8 +2,8 @@
 """Crea en una rama de Neon un negocio de este equipo, a nombre de una cuenta que ya existe en el panel de la nube.
 
 La cuenta la crea su dueño en el panel («Crear cuenta»): este script nunca crea cuentas ni toca contraseñas. Busca la cuenta
-por su correo en `neon_auth.user` de esa rama, crea el negocio con la configuración de este equipo (sus YAML convertidos al
-contrato, como la importación del panel) y deja a esa cuenta como dueña, en la misma transacción. Los datos de pago se cifran
+por su correo en `neon_auth.user` de esa rama, crea el negocio con su configuración de ejemplo (su `business-config.json`,
+como la importación del panel) y deja a esa cuenta como dueña, en la misma transacción. Los datos de pago se cifran
 con la clave de esa rama: producción tiene la suya (`secrets.production.env`) y pruebas usa la de este equipo. La clave de IA
 no se copia: la pone el dueño en el panel.
 
@@ -33,8 +33,7 @@ from app.infrastructure.business_config.database import build_business_config_se
 from app.infrastructure.business_config.members_store import BusinessMembersStore  # noqa: E402
 from app.infrastructure.business_config.payment_secret_store import SECRETS_KEY_ENV, PaymentSecretStore  # noqa: E402
 from app.infrastructure.business_config.tables import business_members, tenants  # noqa: E402
-from app.infrastructure.config.config_service import ConfigService  # noqa: E402
-from app.infrastructure.config.legacy_store_migration import import_prepared, prepare_tenant  # noqa: E402
+from app.infrastructure.business_config.example_businesses import import_example, load_example  # noqa: E402
 
 # Rama → (variable del .env con su cadena de conexión, archivo con su clave de cifrado).
 BRANCHES = {
@@ -82,7 +81,7 @@ def main() -> int:
         print("[ok] Esa cuenta ya es dueña de ese negocio. No falta nada.")
         return 0
 
-    prepared = None if exists else prepare_tenant(ConfigService(), args.slug)
+    prepared = None if exists else load_example(args.slug)
     if not args.apply:
         step = "agregar la cuenta como dueña" if exists else "crear el negocio con la configuración de este equipo y la cuenta como dueña"
         print(f"[info] Pendiente: {step}. Nada se escribió; para hacerlo, repite con --apply.")
@@ -94,7 +93,7 @@ def main() -> int:
             conn.execute(business_members.insert().values(tenant_id=tenant_id, user_id=user_id, role=OWNER, created_at=datetime.now(timezone.utc)))
     else:
         service.create_business(prepared.slug, prepared.name, owner_id=user_id)
-        import_prepared(service, prepared, already_registered=True)
+        import_example(service, prepared, already_registered=True)
 
     # Comprobación: lo publicado compila con la clave de esta rama y la cuenta es la dueña.
     published = service.get_published(args.slug)

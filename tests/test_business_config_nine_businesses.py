@@ -1,14 +1,13 @@
 """
 Validación integral de los nueve negocios en el almacén de BusinessConfig, sobre una base SQLite temporal.
 
-Se importan una vez y cada prueba trabaja con su propia copia de la base. La referencia es lo que leen hoy
-de sus YAML, que estas pruebas solo leen. El motor no se conecta a este almacén: la comparación de prompts se
-hace dentro de la prueba, apuntando el cargador actual a la base temporal.
+Se importan una vez (desde sus `business-config.json`) y cada prueba trabaja con su propia copia de la base. La referencia es
+lo que el motor recibía de sus YAML, congelado en `tests/golden/` el día que se retiraron. El motor no se conecta a este almacén: la
+comparación de prompts se hace dentro de la prueba, apuntando el cargador actual a la base temporal.
 """
 from __future__ import annotations
 
 import copy
-import functools
 import hashlib
 import json
 import shutil
@@ -20,21 +19,18 @@ from cryptography.fernet import Fernet
 from sqlalchemy import func, select
 
 from app.application.runtime import tenant_runtime_loader as loader
-from app.infrastructure.config.legacy_store_migration import read_tenant_sections
 from app.domain.business_config.compiler import comparable_with_yaml
 from app.domain.business_config.contract import SecretRef
 from app.domain.business_config.errors import BusinessConfigError, SecretResolutionError
 from app.domain.business_config.payment_data import SECRET_STORE_SOURCE, iter_payment_blocks, iter_secret_refs, payment_values
+from app.infrastructure.business_config.example_businesses import AUTHOR, EXAMPLES_DIR, import_examples
 from app.infrastructure.business_config.database import DATABASE_URL_ENV, build_business_config_service, create_business_config_engine, create_local_schema
 from app.infrastructure.business_config.payment_secret_store import SECRETS_KEY_ENV, PaymentSecretStore
 from app.infrastructure.business_config.runtime_access import dispose_shared_engines
 from app.infrastructure.business_config.tables import business_config_secrets, business_configs, tenants
-from app.infrastructure.config.config_service import ConfigService
 from app.infrastructure.config.legacy_field_catalog import COMMERCIAL_CONTROLS, check_leaf, destination_path, find_entry, legacy_leaves, resolve_path
-from app.infrastructure.config.legacy_store_migration import MIGRATION_AUTHOR, import_all
-from pipeline_harness import TENANTS, reply, run_conversation
+from pipeline_harness import TENANTS, engine_sections, reply, run_conversation
 
-ROOT_DIR = Path(__file__).resolve().parents[1]
 CONVERSATION = [
     ("Hola, necesito información", reply("Claro.")),
     ("¿Cuánto cuesta?", reply("Te cuento los precios.")),
@@ -43,18 +39,13 @@ CONVERSATION = [
 ]
 
 
-@functools.lru_cache(maxsize=None)
-def _cached_sections(slug: str) -> str:
-    return json.dumps(read_tenant_sections(ConfigService(), slug), ensure_ascii=False)
-
-
 def _sections(slug: str) -> dict:
-    return json.loads(_cached_sections(slug))
+    return engine_sections(slug)
 
 
-def _yaml_fingerprint() -> str:
+def _examples_fingerprint() -> str:
     digest = hashlib.sha256()
-    for path in sorted((ROOT_DIR / "project" / "config" / "tenants").glob("*/*.yaml")):
+    for path in sorted(EXAMPLES_DIR.glob("*/*.json")):
         digest.update(path.read_bytes())
     return digest.hexdigest()
 
@@ -69,11 +60,11 @@ def base_database(tmp_path_factory, key) -> Path:
     path = tmp_path_factory.mktemp("nueve_negocios") / "base.sqlite3"
     engine = create_business_config_engine(f"sqlite:///{path.as_posix()}")
     create_local_schema(engine)
-    before = _yaml_fingerprint()
-    report = import_all(build_business_config_service(engine, secrets_key=key), ConfigService())
+    before = _examples_fingerprint()
+    report = import_examples(build_business_config_service(engine, secrets_key=key))
     engine.dispose()
     assert report.created == sorted(TENANTS) and report.skipped == [] and report.unpublished == []
-    assert _yaml_fingerprint() == before, "importar no modifica los YAML"
+    assert _examples_fingerprint() == before, "importar no modifica los ejemplos"
     return path
 
 
@@ -110,7 +101,7 @@ def test_the_nine_businesses_are_imported_and_published_once(store):
         assert (item.latest_version, item.published_version, item.draft_version) == (1, 1, None), item.slug
         assert item.name == _sections(item.slug)["business"]["name"]
         version = store.service.history(item.slug)[0]
-        assert version.status == "published" and version.created_by == MIGRATION_AUTHOR and version.published_at.tzinfo is not None
+        assert version.status == "published" and version.created_by == AUTHOR and version.published_at.tzinfo is not None
 
 
 def test_repeating_the_import_neither_duplicates_nor_overwrites(store):
@@ -130,7 +121,7 @@ def test_repeating_the_import_neither_duplicates_nor_overwrites(store):
         return counts, [(s.slug, s.latest_version, s.published_version, s.draft_version) for s in store.service.list_businesses()]
 
     before = _snapshot()
-    report = import_all(store.service, ConfigService())
+    report = import_examples(store.service)
     assert report.created == [] and report.skipped == sorted(TENANTS) and report.unpublished == []
     assert _snapshot() == before
     assert before[0][0] == len(TENANTS)

@@ -1,0 +1,422 @@
+{
+  "sales": {
+    "discovery": {
+      "objectives": [
+        "saber a qué destino quiere ir, en qué fechas y cuántas personas viajan",
+        "entender su presupuesto"
+      ]
+    },
+    "support": {
+      "info_handling": {
+        "explain_first": true,
+        "sell_after": true
+      }
+    },
+    "pain": {
+      "clusters": {
+        "presupuesto_ajustado": {
+          "signals": [
+            "está muy caro",
+            "no me alcanza",
+            "qué tienes más económico"
+          ],
+          "impacts": [
+            "deja el viaje para después y pierde las fechas que quería"
+          ],
+          "monetization": [
+            "los precios cambian según la temporada y la disponibilidad"
+          ]
+        }
+      }
+    },
+    "objection": {
+      "price": {
+        "layers": {
+          "acknowledge": [
+            "es normal querer comparar antes de reservar"
+          ],
+          "reframe": [
+            "los paquetes ya incluyen vuelo y hotel, así que no tienes que organizar eso por aparte"
+          ],
+          "redirect": [
+            "avanzamos con tu reserva según el destino y las fechas que elijas"
+          ]
+        }
+      }
+    },
+    "closing": {
+      "strategy": "booking",
+      "next_step": {
+        "action": "dynamic"
+      },
+      "required_data": [
+        "name",
+        "phone",
+        "destination",
+        "dates"
+      ],
+      "behavior": {
+        "direct_sale": {
+          "goal": "confirmar_compra"
+        },
+        "lead_capture": {
+          "goal": "capturar_datos"
+        },
+        "booking": {
+          "goal": "agendar"
+        },
+        "checkout": {
+          "goal": "enviar_pago"
+        }
+      },
+      "triggers": [
+        "quiero viajar",
+        "quiero cotizar viaje",
+        "quiero reservar viaje",
+        "me interesa viajar",
+        "quiero ese paquete"
+      ],
+      "next_steps": [
+        "coordinar destino y fechas",
+        "confirmar datos de contacto para reserva"
+      ],
+      "hard_rules": [
+        "confirma destino, fechas y número de viajeros antes de pedir datos",
+        "pide solo los datos necesarios para la reserva",
+        "no confirmes disponibilidad: el equipo la confirma"
+      ]
+    },
+    "progression_rules": {
+      "required_flow": [
+        "detect_pain",
+        "present_solution",
+        "guide_next_step"
+      ]
+    }
+  },
+  "business": {
+    "name": "Viajes Demo",
+    "brand_name": "Viajes Demo",
+    "description": "Agencia de viajes en Medellín que arma paquetes por Colombia con vuelo y hotel incluidos, y tours de un día desde la ciudad.\n",
+    "industry": "agencia de viajes y turismo",
+    "tone": "humano, claro y consultivo",
+    "voice": "cercano, directo y orientado a cierres",
+    "city": "Medellin",
+    "promise": "Viajes organizados de principio a fin para que solo te preocupes por disfrutar.\n",
+    "positioning": "Paquetes de viaje listos por Colombia, cotizados y reservados por chat.\n",
+    "differentiators": [
+      "paquetes con vuelo y hotel incluidos",
+      "asesoría personalizada por chat",
+      "financiación con Addi y Sistecrédito",
+      "tours de un día desde Medellín"
+    ],
+    "customer_profile": {
+      "segment": "personas, parejas y familias que quieren viajar por Colombia",
+      "maturity": "llegan con un destino o unas fechas en mente y quieren saber el precio y qué incluye",
+      "roles": [
+        "el viajero",
+        "quien organiza el viaje del grupo"
+      ]
+    },
+    "pain_points": [
+      "no sé qué destino me alcanza con mi presupuesto",
+      "no quiero preocuparme por organizar todo",
+      "necesito saber qué incluye antes de reservar",
+      "quiero viajar en unas fechas específicas"
+    ],
+    "desired_outcomes": [
+      "viajar sin preocuparse por la logística",
+      "saber desde el principio qué incluye y cuánto cuesta",
+      "pagar con facilidad, también a cuotas",
+      "aprovechar sus días de descanso"
+    ],
+    "credibility": [
+      "viajeros que vuelven a reservar con nosotros",
+      "acompañamiento antes y durante el viaje"
+    ],
+    "value_drivers": {
+      "tiempo": {
+        "description": "no tener que organizar vuelo y hotel por su cuenta",
+        "triggers": [
+          "no tengo tiempo de organizar",
+          "quiero algo listo"
+        ]
+      },
+      "dinero": {
+        "description": "saber exactamente cuánto cuesta el viaje y poder pagarlo a cuotas",
+        "triggers": [
+          "cuánto me sale todo",
+          "se puede a cuotas"
+        ]
+      }
+    },
+    "buying_motivation": {
+      "primary": "dinero",
+      "secondary": "tiempo"
+    },
+    "use_cases": [
+      {
+        "nombre": "escapada corta",
+        "senales": [
+          "un fin de semana",
+          "algo cerca"
+        ],
+        "enfoque": "ofrecer el tour de un día a Guatapé"
+      },
+      {
+        "nombre": "vacaciones en familia",
+        "senales": [
+          "vamos con los niños",
+          "somos cuatro"
+        ],
+        "enfoque": "recomendar Cartagena o San Andrés según sus fechas"
+      }
+    ],
+    "location": {
+      "type": "virtual",
+      "address": "",
+      "city": "Medellin",
+      "coverage": {
+        "type": "internacional",
+        "zones": [
+          "colombia",
+          "internacional"
+        ]
+      }
+    },
+    "service_modes": [
+      "virtual"
+    ],
+    "logistics": {
+      "delivery": {
+        "available": false,
+        "type": "tercero",
+        "zones": [],
+        "cost": {
+          "type": "variable",
+          "value": 0
+        },
+        "time": {
+          "min": "",
+          "max": ""
+        }
+      },
+      "shipping": {
+        "available": false,
+        "scope": "internacional",
+        "providers": [],
+        "cost": {
+          "type": "variable",
+          "value": 0
+        },
+        "time": {
+          "min": "",
+          "max": ""
+        }
+      },
+      "pickup": {
+        "available": false,
+        "instructions": ""
+      },
+      "scheduling": {
+        "required": true
+      }
+    }
+  },
+  "pricing": {
+    "model": "catalog",
+    "catalog": {
+      "categories": [
+        {
+          "id": "destinos",
+          "name": "Destinos"
+        },
+        {
+          "id": "excursiones",
+          "name": "Excursiones"
+        }
+      ],
+      "items": [
+        {
+          "id": "cartagena_3_noches",
+          "name": "Cartagena 3 noches",
+          "category": "destinos",
+          "description": "Paquete con vuelo, hotel y traslados compartidos.",
+          "price": {
+            "COP": 850000
+          }
+        },
+        {
+          "id": "san_andres_4_noches",
+          "name": "San Andres 4 noches",
+          "category": "destinos",
+          "description": "Paquete con vuelo, hotel y asistencia al viajero.",
+          "price": {
+            "COP": 1250000
+          }
+        },
+        {
+          "id": "tour_guatape",
+          "name": "Tour Guatape",
+          "category": "excursiones",
+          "description": "Excursion de un dia con transporte y guia.",
+          "price": {
+            "COP": 120000
+          }
+        }
+      ],
+      "payment": {
+        "link": "",
+        "transfer": {
+          "enabled": true,
+          "methods": [
+            {
+              "type": "nequi",
+              "number": "3001234567"
+            },
+            {
+              "type": "daviplata",
+              "number": "3009876543"
+            },
+            {
+              "type": "bank",
+              "bank": "Bancolombia",
+              "account_type": "ahorros",
+              "account_number": "1234567890"
+            },
+            {
+              "type": "breb",
+              "reference": "usuario@correo.com"
+            }
+          ]
+        }
+      }
+    },
+    "conditions": [
+      "precios sujetos a temporada y disponibilidad"
+    ],
+    "price_framing": {
+      "type": "directo"
+    },
+    "roi": {
+      "break_even_reservas": 1
+    },
+    "note": "La reserva se confirma segun destino, fechas y disponibilidad.\n",
+    "business_offers": {
+      "core": [
+        "cartagena_3_noches",
+        "san_andres_4_noches"
+      ],
+      "upsell": [
+        "san_andres_4_noches"
+      ],
+      "cross_sell": [
+        "tour_guatape"
+      ],
+      "financing": {
+        "available": true,
+        "providers": [
+          "addi",
+          "sistecredito"
+        ],
+        "options": [
+          "reserva_con_abono",
+          "pago_en_cuotas"
+        ]
+      }
+    }
+  },
+  "inventory": {
+    "track_stock": false,
+    "items": []
+  },
+  "config": {
+    "conversation": {
+      "active_window_minutes": 15,
+      "reset_hours": 4
+    },
+    "initial_message": {
+      "enabled": true,
+      "text": "Hola, tu asesor ya esta listo. Cuentame, que quieres mejorar hoy en tus ventas o seguimiento de viajes?\n"
+    },
+    "features": {
+      "pricing_enabled": true,
+      "multi_currency": true,
+      "multi_plan": false,
+      "catalog_mode": true,
+      "business_model": "catalog"
+    },
+    "flags": {
+      "ai_first": true,
+      "allow_fallback": false,
+      "log_level": "info"
+    },
+    "response": {
+      "length": "short",
+      "max_words": 60
+    },
+    "post_payment": {
+      "on_user_report": {
+        "message": "Perfecto, ya lo reviso y te confirmo en un momento para continuar.\n"
+      },
+      "on_payment_confirmed": {
+        "message": "Listo, ya quedó confirmado. Ahora seguimos con el siguiente paso.\n"
+      }
+    },
+    "capabilities": {
+      "channels": [
+        "whatsapp",
+        "instagram"
+      ],
+      "business_channels": {
+        "allowed": [
+          "whatsapp",
+          "instagram"
+        ]
+      },
+      "system_channels": {
+        "allowed": []
+      },
+      "actions": {
+        "primary": [
+          "agendar_reserva",
+          "cerrar_venta"
+        ],
+        "support": [
+          "responder_dudas",
+          "seguimiento",
+          "enviar_info"
+        ]
+      },
+      "closing_methods": {
+        "link_payment": {
+          "enabled": true
+        },
+        "human_handoff": {
+          "enabled": true
+        },
+        "data_collection": {
+          "enabled": true
+        }
+      },
+      "data_collection": {
+        "enabled": true,
+        "fields": [
+          "nombre",
+          "telefono",
+          "detalles"
+        ]
+      },
+      "constraints": {
+        "disallowed_channels": [
+          "messenger",
+          "telegram",
+          "web"
+        ],
+        "disallowed_actions": [
+          "llamadas"
+        ]
+      }
+    }
+  }
+}

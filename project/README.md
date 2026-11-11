@@ -1,128 +1,69 @@
-# AI Sales Engine Backend
+# Motor y API del panel (`project/`)
 
-Backend multi-tenant para ventas conversacionales por WhatsApp. Esta carpeta contiene la API operativa, el runtime AI-first y la carga de configuración por tenant que usa el sistema principal.
+El backend de AI Sales Engine (FastAPI). En la nube corre en Vercel con Neon; en este equipo, con `run_local`.
 
-## Rol De Este Backend
+## Qué hace
 
-Este backend no documenta una automatización genérica.
-Documenta el motor conversacional y comercial que:
+- Recibe los mensajes de los canales (WhatsApp por QR con uazapi y la API de Meta), identifica el negocio y responde con su
+  versión publicada y su propia clave de IA.
+- Guarda cada conversación para la bandeja del panel, entiende fotos y notas de voz, y pasa la conversación a una persona cuando
+  corresponde.
+- Publica la API del panel: en la nube bajo `/panel` (cuentas de Neon Auth); en este equipo, `scripts/run_admin_api.py` en
+  `127.0.0.1:8010`, sin cuentas.
 
-- recibe mensajes reales o simulados
-- resuelve el tenant activo
-- carga configuración de negocio por YAML
-- ejecuta el flujo AI-first
-- devuelve o envía una respuesta comercial contextual
+## Rutas del motor
 
-## Ejecución Local
+| Ruta | Para qué |
+|---|---|
+| `GET /health` | Estado del motor (no nombra ningún negocio) |
+| `POST /api/v1/channels/whatsapp/{webhook_id}` | Avisos de la instancia de WhatsApp por QR de cada negocio |
+| `GET`/`POST /api/v1/whatsapp/webhook` | Webhook de la API de Meta (exige su firma) |
+| `POST /api/v1/simulate` | Apagado por defecto (404) |
+| `/panel/api/...` | API del panel en la nube (solo con `NEON_AUTH_URL`) |
 
-Desde la raíz del repositorio:
+## Dónde está cada cosa
 
-```powershell
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-pip install --upgrade pip
-pip install -r project/requirements.txt
-Copy-Item project/.env.example project/.env
-Set-Location project
-uvicorn app.main:app --reload
-```
+| Carpeta | Qué hay |
+|---|---|
+| `app/api/` | Rutas del motor: webhooks y simulación |
+| `app/application/` | Pipeline de la IA (`ai_pipeline.py`, `pipeline/`), carga de lo publicado (`runtime/`), entrada de WhatsApp (`channels/`) |
+| `app/infrastructure/ai/prompting/` | El prompt por bloques |
+| `app/domain/business_config/` | El contrato del negocio, su compilador y sus reglas |
+| `app/business_config_application/` | Casos de uso del panel: configuración, conversaciones, ventas, canales, IA, «Probar» |
+| `app/infrastructure/business_config/` | El almacén (tablas, migraciones, cifrado, conversaciones, ventas) y los negocios de ejemplo |
+| `app/admin_api/` | La API del panel |
+| `app/cloud_panel.py` | Arma la API del panel de la nube y aplica las migraciones al arrancar |
+| `config/system/` | Ajustes de la plataforma: `settings.yaml`, `bot_config.yaml`, `conversation_stage.yaml`, `secrets.yaml` |
+| `config/tenants/<negocio>/` | Los negocios de ejemplo (JSON); ver `../docs/tenants.md` |
+| `config/contracts/v1/` | Esquema del contrato y un documento de ejemplo |
+| `config/business-templates/` | Plantillas para empezar un negocio desde el panel |
+| `docs/postgresql_schema.sql` | Esquema de las tablas del motor (lo aplica `setup_cloud_database.py` si faltan) |
+| `db/migrations/` | Migraciones del almacén, en orden |
 
-Superficie operativa principal:
+## Ejecutar
 
-- `GET /health`
-- `GET /docs`
-- `GET /api/v1/whatsapp/webhook`
-- `POST /api/v1/whatsapp/webhook`
+Desde la raíz: `./run_local.sh` (o `run_local.bat`). Ver `../docs/quickstart.md`.
 
-## Simulación Operativa
+## Variables
 
-`POST /api/v1/simulate` está apagado por defecto y responde 404. No se puede usar hasta que exista la autenticación definitiva, pendiente de la fase de nube: ver `docs/operations.md`.
+Ver `../docs/operations.md`, «Variables De Entorno». Lo esencial: `DATABASE_URL` (memoria del motor),
+`BUSINESS_CONFIG_DATABASE_URL` y `BUSINESS_CONFIG_SECRETS_KEY` (almacén y cifrado), `NEON_AUTH_URL` (panel en la nube),
+`UAZAPI_BASE_URL` y `UAZAPI_ADMIN_TOKEN` (WhatsApp por QR, de la plataforma). La clave de IA no es una variable: cada negocio pone
+la suya en el panel.
 
-## Configuración Multi-Tenant
-
-El comportamiento del sistema no se define en el código.
-Se controla por tenant desde:
-
-- `config/tenants/<tenant_slug>/business.yaml`
-- `config/tenants/<tenant_slug>/config.yaml`
-- `config/tenants/<tenant_slug>/inventory.yaml`
-- `config/tenants/<tenant_slug>/pricing.yaml`
-- `config/tenants/<tenant_slug>/sales.yaml`
-
-Adicionalmente, el runtime usa configuración compartida desde:
-
-- `config/system/`
-- `config/core/`
-- `config/channels/channels.yaml`
-- `config/assets/media.yaml`
-
-## Flujo Operativo
-
-1. Entra un mensaje por webhook o simulación.
-2. El backend resuelve el tenant con `X-Tenant-Slug` o datos del canal.
-3. Se carga el runtime YAML efectivo del tenant.
-4. Se combina memoria, contexto comercial y reglas activas.
-5. El motor AI-first genera la respuesta.
-6. La salida se valida y se devuelve al endpoint o al canal.
-
-## Variables Clave
-
-Las variables más relevantes del entorno son:
-
-```env
-DATABASE_URL=
-JWT_SECRET=
-JWT_ALGORITHM=HS256
-LLM_PROVIDER=openrouter
-OPENROUTER_API_KEY=
-OPENROUTER_BASE_URL=https://openrouter.ai/api/v1
-OPENROUTER_MODEL=meta-llama/llama-3.1-8b-instruct
-OPENROUTER_ADVANCED_MODEL=openai/gpt-4.1-mini
-LLM_TIMEOUT_SECONDS=15
-PUBLIC_BASE_URL=http://localhost:8000
-ENABLE_MULTI_TENANT=true
-SEMANTIC_THRESHOLD=0.22
-CONVERSATION_CONTEXT_LIMIT=8
-```
-
-Reglas operativas:
-
-- en desarrollo se puede usar fallback global desde `.env`
-- en entornos reales, los secretos por tenant deben salir de almacenamiento seguro
-- `config/secrets.yaml` no debe contener valores productivos versionados
-
-## Testing
-
-Ejecutar desde la raíz del repositorio:
-
-```powershell
-pytest -q
-```
-
-La suite protege:
-
-- contratos del runtime
-- aislamiento multi-tenant
-- comportamiento comercial
-- estructura de respuesta
-
-## Scripts Útiles
-
-Desde la raíz del repositorio (`scripts/`):
+## Scripts (`../scripts/`)
 
 | Script | Para qué |
 |---|---|
 | `run_admin_api.py` | API local del panel, solo en `127.0.0.1:8010` |
-| `init_local_business_config.py` | Crea el almacén de BusinessConfig; con `--import-tenants`, migración inicial desde los YAML |
-| `local_secrets.py` | Instala y comprueba los secretos locales (`secrets.local.env`) sin mostrarlos |
-| `export_business_config_schema.py`, `generate_business_config_types.py`, `migrate_tenants_to_contract.py`, `generate_traceability_matrix.py` | Regeneran lo derivado del contrato (ver `docs/business-config.md`) |
-| `sync_tenants_to_db.py`, `bootstrap_saas_data.py` | Registran los negocios en la base del motor |
+| `init_local_business_config.py` | Crea el almacén local; con `--import-tenants`, importa los negocios de ejemplo |
+| `setup_cloud_database.py` | Deja lista una rama de Neon (`production`: solo el esquema; `pruebas`: también los ejemplos) |
+| `bootstrap_saas_data.py` | Filas del sistema anterior por cada negocio de ejemplo (lo usa `setup_cloud_database.py`) |
+| `assign_business_to_account.py` | Crea en una rama de Neon un negocio de ejemplo a nombre de una cuenta que ya existe, o la agrega como dueña |
+| `local_secrets.py` | Mueve y comprueba los secretos locales (`secrets.local.env`) sin mostrarlos |
+| `export_business_config_schema.py`, `generate_business_config_types.py`, `generate_traceability_matrix.py` | Regeneran lo derivado del contrato (`--check` para comprobar) |
 | `reset_conversation_state.py` | Borra la memoria conversacional en PostgreSQL |
 
-## Documentación Complementaria
+## Pruebas
 
-- `../README.md`
-- `../docs/architecture.md`
-- `../docs/operations.md`
-- `../docs/tenants.md`
-- `../config/README.md`
+Desde la raíz: `pytest`. Ver `../CONTRIBUTING.md`.

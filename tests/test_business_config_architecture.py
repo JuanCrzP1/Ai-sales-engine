@@ -25,11 +25,7 @@ PERSISTENCE = "app.infrastructure.business_config"
 API = "app.admin_api"
 BRIDGE = (
     "app.application.runtime.tenant_runtime_loader",
-    "app.infrastructure.config.business_config_store",
     "app.infrastructure.config.legacy_field_catalog",
-    "app.infrastructure.config.legacy_store_migration",
-    "app.infrastructure.config.legacy_yaml_importer",
-    "app.infrastructure.config.payment_secrets",
 )
 # La única puerta del motor hacia el almacén: solo lee lo publicado y nunca crea ni escribe.
 ENGINE_GATEWAY = f"{PERSISTENCE}.runtime_access"
@@ -49,8 +45,6 @@ THIRD_PARTY = {
     PERSISTENCE: {"cryptography", "sqlalchemy"},
     API: {"fastapi", "pydantic"},
 }
-# Única excepción, temporal: la ruta de importación inicial lee los YAML y se retira con ellos en la Fase 4.
-API_EXCEPTIONS = {"app.infrastructure.config.config_service", "app.infrastructure.config.legacy_store_migration"}
 
 TECHNICAL_NAME = re.compile(r"api[_-]?key|token|passw|credential|secret(?!_ref)|openrouter|openai|model_name|database|dsn|webhook|jwt|ngrok|\bhost\b|\bport\b", re.I)
 
@@ -92,7 +86,7 @@ def _violations(layer: str) -> Iterator[str]:
             top = target.partition(".")[0]
             if top == "app":
                 inside = any(target == prefix or target.startswith(f"{prefix}.") for prefix in allowed)
-                if not inside and not (layer == API and any(target.startswith(item) for item in API_EXCEPTIONS)):
+                if not inside:
                     yield f"{name} -> {target}"
             elif top not in sys.stdlib_module_names and top not in THIRD_PARTY[layer]:
                 yield f"{name} -> {target}"
@@ -177,21 +171,30 @@ def test_the_engine_reaches_the_store_only_through_its_gateway():
     assert any(target.startswith(ENGINE_GATEWAY) for target in _imports("app.application.runtime.tenant_runtime_loader", engine["app.application.runtime.tenant_runtime_loader"]))
 
 
-# El lector de los YAML de los negocios solo sirve para importarlos al almacén. El motor nunca lo usa: cada negocio sale de su
-# versión publicada (Fase 1 del plan). Solo lo importan la propia importación y el botón «importar» de la API local.
-YAML_READER = "app.infrastructure.config"
-YAML_IMPORTERS = {"app.admin_api.routes"}
+# Los YAML de los negocios se retiraron el 11 de noviembre de 2026: cada negocio sale de su versión publicada en el almacén y los
+# de ejemplo se siembran desde sus `business-config.json`. De la migración solo queda el catálogo que documenta adónde fue cada
+# campo antiguo (`legacy_field_catalog`), que usan las pruebas y la matriz de trazabilidad, nunca la aplicación.
+MIGRATION_CATALOG = "app.infrastructure.config"
+RETIRED_MODULES = (
+    "app.infrastructure.config.config_service",
+    "app.infrastructure.config.legacy_yaml_importer",
+    "app.infrastructure.config.legacy_store_migration",
+    "app.infrastructure.config.payment_secrets",
+    "app.infrastructure.config.business_config_store",
+)
 
 
-def test_the_engine_never_reads_the_business_yaml():
-    readers = {
+def test_the_yaml_readers_are_gone_and_nothing_in_the_app_uses_the_migration_catalog():
+    assert [name for name in RETIRED_MODULES if _module_path(name).exists()] == []
+    assert [path.relative_to(PROJECT_DIR).as_posix() for path in (PROJECT_DIR / "config" / "tenants").rglob("*.y*ml")] == []
+    users = {
         f"{name} -> {target}"
         for name, path in _layer_modules("app").items()
-        if not (name == YAML_READER or name.startswith(f"{YAML_READER}.")) and name not in YAML_IMPORTERS
+        if not (name == MIGRATION_CATALOG or name.startswith(f"{MIGRATION_CATALOG}."))
         for target in _imports(name, path)
-        if target == YAML_READER or target.startswith(f"{YAML_READER}.")
+        if target == MIGRATION_CATALOG or target.startswith(f"{MIGRATION_CATALOG}.")
     }
-    assert sorted(readers) == []
+    assert sorted(users) == []
 
 
 def test_the_routes_only_talk_to_the_service():

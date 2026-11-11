@@ -2,18 +2,16 @@
 Definición común del cierre: cinco valores iguales para todos los negocios.
 
 Están fuera del contrato comercial y de los ajustes técnicos, en `COMMON_CLOSING_POLICY`. El compilador los añade a
-`sales.closing`, de modo que el motor recibe lo mismo que tenían los YAML de origen, y el importador rechaza un YAML con
-otros valores. Estas pruebas no modifican los YAML: los que cambian son copias temporales.
+`sales.closing`, de modo que el motor recibe lo mismo que tenían los YAML de origen (la referencia congelada en `tests/golden/`,
+en su orden original). Ningún documento ni ajuste técnico puede traerlos ni cambiarlos.
 """
 from __future__ import annotations
 
 import copy
-import importlib.util
 import json
 from pathlib import Path
 
 import pytest
-import yaml
 from cryptography.fernet import Fernet
 from pydantic import ValidationError
 
@@ -25,15 +23,10 @@ from app.domain.business_config.engine_policy import COMMON_CLOSING_POLICY
 from app.domain.business_config.engine_settings import EngineSettings
 from app.domain.conversation.memory import MemoryDomainService
 from app.infrastructure.business_config.database import build_business_config_service, create_business_config_engine, create_local_schema
-from app.infrastructure.config import legacy_store_migration
-from app.infrastructure.config.business_config_store import BusinessConfigStore
-from app.infrastructure.config.config_service import ConfigService
+from app.infrastructure.business_config.example_businesses import import_example, load_example
 from app.infrastructure.config.legacy_field_catalog import contract_fields
-from app.infrastructure.config.legacy_store_migration import import_all, import_prepared, prepare_tenant, read_tenant_sections
-from app.infrastructure.config.legacy_yaml_importer import import_legacy_sections
-from app.infrastructure.config.payment_secrets import LegacyYamlSecretResolver
 from app.infrastructure.persistence.memory_repository import MemoryRepository
-from pipeline_harness import TENANTS, TENANTS_DIR, reply
+from pipeline_harness import TENANTS, engine_sections, reply
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
 SCHEMA_PATH = ROOT_DIR / "project" / "config" / "contracts" / "v1" / "business-config.schema.json"
@@ -55,22 +48,21 @@ CONVERSATION = [
 
 
 def _sections(slug: str) -> dict:
-    return read_tenant_sections(ConfigService(), slug)
+    return engine_sections(slug)
 
 
 def _raw_closing(slug: str) -> dict:
-    """Leído directamente del YAML, sin pasar por ningún código del proyecto."""
-    return yaml.safe_load((TENANTS_DIR / slug / "sales.yaml").read_text(encoding="utf-8"))["sales"]["closing"]
+    """Lo que el motor recibía de su YAML, con las claves en su orden original."""
+    return engine_sections(slug)["sales"]["closing"]
 
 
 def _compile_from_files(slug: str, config: BusinessConfig | None = None) -> dict:
-    sections = _sections(slug)
-    config = config if config is not None else BusinessConfigStore(ConfigService().tenants_root).load(slug)
-    return compile_business_config(config, LegacyYamlSecretResolver(lambda: sections))
+    example = load_example(slug)
+    return compile_business_config(config if config is not None else example.config(), example.payment_resolver())
 
 
 def _document(slug: str) -> dict:
-    return json.loads(BusinessConfigStore(ConfigService().tenants_root).path_for(slug).read_text(encoding="utf-8"))
+    return copy.deepcopy(load_example(slug).document)
 
 
 @pytest.fixture
@@ -98,12 +90,12 @@ def test_the_five_values_are_defined_in_a_single_module():
 @pytest.mark.parametrize("slug", TENANTS)
 def test_each_business_keeps_the_five_values(service, slug):
     closing = _raw_closing(slug)
-    assert {key: closing[key] for key in EXPECTED} == EXPECTED, "los YAML ya tienen estos valores"
+    assert {key: closing[key] for key in EXPECTED} == EXPECTED, "los YAML ya tenían estos valores"
 
     from_files = _compile_from_files(slug)["sales"]["closing"]
     assert {key: from_files[key] for key in EXPECTED} == EXPECTED
 
-    import_prepared(service, prepare_tenant(ConfigService(), slug))
+    import_example(service, load_example(slug))
     from_store = service.compile_sections(slug)["sales"]["closing"]
     assert {key: from_store[key] for key in EXPECTED} == EXPECTED
 
@@ -148,8 +140,7 @@ def test_a_document_cannot_carry_the_values(key):
 
 @pytest.mark.parametrize("slug", TENANTS)
 def test_the_values_are_outside_both_documents(slug):
-    store = BusinessConfigStore(ConfigService().tenants_root)
-    document, settings = _document(slug), json.loads(store.engine_settings_path_for(slug).read_text(encoding="utf-8"))
+    document, settings = _document(slug), load_example(slug).engine_settings
     assert not set(EXPECTED) & set(document["sales"]["closing"])
     assert "closing" not in settings.get("legacy", {}).get("sales", {})
 
@@ -157,64 +148,6 @@ def test_the_values_are_outside_both_documents(slug):
 # ---------------------------------------------------------------------------
 # Los valores divergentes se rechazan
 # ---------------------------------------------------------------------------
-
-DIVERGENCES = {
-    "objetivo_de_venta_directa": lambda c: c["behavior"]["direct_sale"].update(goal="otro"),
-    "objetivo_de_captacion": lambda c: c["behavior"]["lead_capture"].update(goal="otro"),
-    "objetivo_de_reserva": lambda c: c["behavior"]["booking"].update(goal="otro"),
-    "objetivo_de_pago": lambda c: c["behavior"]["checkout"].update(goal="otro"),
-    "accion_del_siguiente_paso": lambda c: c["next_step"].update(action="fixed"),
-    "sin_objetivos": lambda c: c.pop("behavior"),
-    "sin_siguiente_paso": lambda c: c.pop("next_step"),
-    "objetivo_sin_valor": lambda c: c["behavior"]["booking"].pop("goal"),
-    "tipo_de_cierre_adicional": lambda c: c["behavior"].update(otro={"goal": "otro"}),
-    "campo_adicional_en_el_siguiente_paso": lambda c: c["next_step"].update(modo="otro"),
-}
-
-
-def _diverged_sections(case: str, slug: str = "demo") -> dict:
-    sections = copy.deepcopy(_sections(slug))
-    DIVERGENCES[case](sections["sales"]["closing"])
-    return sections
-
-
-@pytest.mark.parametrize("case", DIVERGENCES)
-def test_divergent_values_are_rejected_on_import(case):
-    with pytest.raises(ValueError, match="política global"):
-        import_legacy_sections("demo", _diverged_sections(case))
-
-
-@pytest.mark.parametrize("case", ["objetivo_de_reserva", "accion_del_siguiente_paso", "sin_objetivos"])
-def test_a_divergent_business_stops_the_migration_without_writing_anything(service, monkeypatch, case):
-    original = legacy_store_migration.read_tenant_sections
-
-    def _read(config_service, slug):
-        return _diverged_sections(case, slug) if slug == "saas" else original(config_service, slug)
-
-    monkeypatch.setattr(legacy_store_migration, "read_tenant_sections", _read)
-    with pytest.raises(ValueError, match="política global"):
-        import_all(service, ConfigService())
-    assert service.list_businesses() == []
-
-
-def test_the_documents_script_reports_a_divergent_business(monkeypatch):
-    spec = importlib.util.spec_from_file_location("migrate_tenants_to_contract", ROOT_DIR / "scripts" / "migrate_tenants_to_contract.py")
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    original = module.read_tenant_sections
-
-    def _read(config_service, slug):
-        if slug != "saas":
-            return original(config_service, slug)
-        sections = copy.deepcopy(original(config_service, slug))
-        sections["sales"]["closing"]["next_step"]["action"] = "fixed"
-        return sections
-
-    monkeypatch.setattr(module, "read_tenant_sections", _read)
-    documents, _report, errors = module.build()
-    assert [slug for slug, _message in errors] == ["saas"]
-    assert not [path for path in documents if path.parent.name == "saas"]
-
 
 def test_legacy_settings_cannot_override_the_policy():
     settings = {"tenant_slug": "saas", "legacy": {"sales": {"closing": {"next_step": {"action": "fixed"}}}}}
@@ -266,7 +199,7 @@ def test_the_engine_receives_the_common_policy_from_what_was_published(slug):
 
 
 def _raw_closing_section(slug: str) -> dict:
-    return yaml.safe_load((TENANTS_DIR / slug / "sales.yaml").read_text(encoding="utf-8"))["sales"]
+    return engine_sections(slug)["sales"]
 
 
 def _set_markers(closing: dict) -> None:
@@ -308,7 +241,7 @@ def test_variable_closing_fields_stay_under_the_control_of_each_business(slug, s
     expected = copy.deepcopy(_sections(slug))
     expected["sales"]["closing"].update(strategy=strategy, required_data=["dato_propio"], triggers=["señal propia"], next_steps=["paso propio"], hard_rules=["regla propia"])
 
-    settings = BusinessConfigStore(ConfigService().tenants_root).load_engine_settings(slug)
+    settings = load_example(slug).config().engine_settings
     compiled = _compile_from_files(slug, BusinessConfig.model_validate(document).with_engine_settings(settings))
     assert comparable_with_yaml(compiled) == expected
     assert {key: compiled["sales"]["closing"][key] for key in EXPECTED} == EXPECTED, "la definición común no depende del tipo de cierre elegido"

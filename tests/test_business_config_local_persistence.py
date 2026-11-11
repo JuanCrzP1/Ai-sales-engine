@@ -8,6 +8,7 @@ pago. Nada de esto modifica los YAML ni el motor.
 from __future__ import annotations
 
 import copy
+import dataclasses
 import importlib.util
 import inspect
 import json
@@ -40,20 +41,18 @@ from app.domain.business_config.errors import (
 from app.domain.business_config.diagnostics import review as diagnose
 from app.domain.business_config.payment_data import iter_payment_fields, iter_secret_refs, mask_payment_value, payment_value_problem, payment_values
 from app.infrastructure.business_config import database as business_config_database
+from app.infrastructure.business_config import example_businesses
 from app.infrastructure.business_config import runtime_access
 from app.infrastructure.business_config.database import (
     build_business_config_service,
     create_business_config_engine,
     create_local_schema,
 )
+from app.infrastructure.business_config.example_businesses import import_example, import_examples, load_example
 from app.infrastructure.business_config.payment_secret_store import SECRETS_KEY_ENV, PaymentSecretStore
 from app.infrastructure.business_config.repository import BusinessConfigRepository
 from app.infrastructure.business_config.tables import business_config_secrets, business_configs, business_engine_settings, metadata, tenants
-from app.infrastructure.config import legacy_store_migration
-from app.infrastructure.config.config_service import ConfigService
-from app.infrastructure.config.legacy_store_migration import import_all, import_prepared, prepare_tenant, read_tenant_sections
-from app.infrastructure.config.legacy_yaml_importer import import_legacy_sections
-from pipeline_harness import TENANTS
+from pipeline_harness import TENANTS, engine_sections
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
 EXAMPLE_PATH = ROOT_DIR / "project" / "config" / "contracts" / "v1" / "business-config.example.json"
@@ -127,34 +126,32 @@ def engine(database):
 # ---------------------------------------------------------------------------
 
 @pytest.mark.parametrize("slug", TENANTS)
-def test_each_business_is_stored_and_compiles_to_its_yaml(service, engine, slug):
-    config_service = ConfigService()
-    import_prepared(service, prepare_tenant(config_service, slug))
+def test_each_business_is_stored_and_compiles_to_its_reference(service, engine, slug):
+    import_example(service, load_example(slug))
 
     summary = next(item for item in service.list_businesses() if item.slug == slug)
     assert (summary.latest_version, summary.published_version, summary.draft_version) == (1, 1, None)
     published = service.get_published(slug)
     refs = [holder["secret_ref"] for holder in iter_secret_refs(published.model_dump(mode="json"))]
-    assert refs and all(ref.startswith("secret_store:") for ref in refs), "la base no debe depender de los YAML"
-    sections = read_tenant_sections(config_service, slug)
+    assert refs and all(ref.startswith("secret_store:") for ref in refs), "los datos de pago quedan en el almacén cifrado"
+    sections = engine_sections(slug)
     assert comparable_with_yaml(compile_business_config(published, PaymentSecretStore(engine).resolver(slug))) == sections
 
 
 def test_all_nine_businesses_coexist_without_payment_values_in_the_file(service, database):
     engine, path = database
-    config_service = ConfigService()
-    report = import_all(service, config_service)
+    report = import_examples(service)
     assert report.created == sorted(TENANTS) and report.skipped == []
     assert [item.slug for item in service.list_businesses()] == sorted(TENANTS)
     # Repetir no toca lo existente: no se crean versiones nuevas.
-    again = import_all(service, config_service)
+    again = import_examples(service)
     assert again.created == [] and again.skipped == sorted(TENANTS)
     assert all(item.latest_version == 1 for item in service.list_businesses())
 
     engine.dispose()
     raw = path.read_bytes()
-    values = {value for slug in TENANTS for value in payment_values(read_tenant_sections(config_service, slug))}
-    assert values, "los YAML de origen tienen datos de pago"
+    values = {value for slug in TENANTS for value in payment_values(engine_sections(slug))}
+    assert values, "los ejemplos tienen datos de pago"
     assert [value for value in values if value.encode("utf-8") in raw] == []
 
 
@@ -169,15 +166,15 @@ def engine_reads_this_store(database, monkeypatch):
 
 def test_runtime_reads_the_stored_business_without_changing_the_engine(service, engine_reads_this_store):
     """El cargador del motor lee el mismo archivo que escribe el panel: lo que tenían los YAML de origen, más el perfil comercial."""
-    import_prepared(service, prepare_tenant(ConfigService(), "restaurant"))
+    import_example(service, load_example("restaurant"))
     from_store = load_tenant_runtime_yaml("restaurant")
     assert from_store["config"]["profile"]["name"] == "Mesa Activa"
-    assert comparable_with_yaml(published_sections("restaurant")) == read_tenant_sections(ConfigService(), "restaurant")
+    assert comparable_with_yaml(published_sections("restaurant")) == engine_sections("restaurant")
 
 
 def test_what_the_panel_publishes_reaches_the_engine(service, engine_reads_this_store):
     """Publicar desde el panel cambia lo que recibe el motor; volver atrás lo devuelve."""
-    import_prepared(service, prepare_tenant(ConfigService(), "restaurant"))
+    import_example(service, load_example("restaurant"))
     before = load_tenant_runtime_yaml("restaurant")
     editable = service.get_editable("restaurant")
     document = editable.stored.config.model_dump(mode="json", exclude_none=True)
@@ -417,7 +414,7 @@ def test_publishing_rolling_back_and_restoring_do_not_touch_another_business(ser
 
 
 def test_each_imported_business_keeps_its_own_documents_and_payment_data(service, engine):
-    import_all(service, ConfigService())
+    import_examples(service)
     with engine.connect() as conn:
         owners = {row.id: row.slug for row in conn.execute(select(tenants)).all()}
         documents = conn.execute(select(business_configs.c.tenant_id, business_configs.c.document)).all()
@@ -840,8 +837,7 @@ def test_import_script_requires_the_key_and_never_prints_payment_data(tmp_path, 
     assert module.main() == 0
     output = capsys.readouterr().out
     assert f"importados={len(TENANTS)}" in output
-    config_service = ConfigService()
-    values = {value for slug in TENANTS for value in payment_values(read_tenant_sections(config_service, slug))}
+    values = {value for slug in TENANTS for value in payment_values(engine_sections(slug))}
     assert [value for value in values if value in output] == []
 
 
@@ -965,27 +961,27 @@ def test_dates_are_returned_in_utc(service):
 
 
 # ---------------------------------------------------------------------------
-# Migración inicial: segura ante fallos
+# Sembrar los negocios de ejemplo: seguro ante fallos
 # ---------------------------------------------------------------------------
 
 def test_import_writes_nothing_if_any_business_cannot_be_prepared(service, monkeypatch):
-    original = legacy_store_migration.prepare_tenant
+    original = example_businesses.load_example
 
-    def _fail_on_saas(config_service, slug):
+    def _fail_on_saas(slug, root=example_businesses.EXAMPLES_DIR):
         if slug == "saas":
             raise BusinessConfigError("saas: no se puede preparar")
-        return original(config_service, slug)
+        return original(slug, root)
 
-    monkeypatch.setattr(legacy_store_migration, "prepare_tenant", _fail_on_saas)
+    monkeypatch.setattr(example_businesses, "load_example", _fail_on_saas)
     with pytest.raises(BusinessConfigError):
-        import_all(service, ConfigService())
+        import_examples(service)
     assert service.list_businesses() == []
 
 
 def test_import_writes_nothing_without_the_key(service, monkeypatch):
     monkeypatch.delenv(SECRETS_KEY_ENV)
     with pytest.raises(SecretResolutionError):
-        import_all(service, ConfigService())
+        import_examples(service)
     assert service.list_businesses() == []
 
 
@@ -995,7 +991,7 @@ def test_import_completes_a_business_left_without_versions_and_reports_one_left_
     document = _document("saas", name="Borrador propio de saas")
     service.create_business("saas", "Saas", document=document, payment_values=VALUES)
 
-    report = import_all(service, ConfigService())
+    report = import_examples(service)
     assert "clinic" in report.created and "saas" not in report.created
     assert report.skipped == ["saas"] and report.unpublished == ["saas"]
     assert service.get_published("clinic").identity.name == "Agenda Clinica Pro"
@@ -1003,26 +999,23 @@ def test_import_completes_a_business_left_without_versions_and_reports_one_left_
     assert len(service.history("saas")) == 1
 
 
-def test_a_city_that_differs_from_the_location_is_not_lost_silently():
-    """`business.city` solo se unifica si es el mismo dato; si no, la migración se detiene."""
-    sections = copy.deepcopy(read_tenant_sections(ConfigService(), "demo"))
-    sections["business"]["city"] = "Otra ciudad"
-    result = import_legacy_sections("demo", sections)
-    assert result.engine_settings.legacy["business"]["city"] == "Otra ciudad"
+def test_a_legacy_field_never_overwrites_the_contract_silently():
+    """Un campo heredado de los ajustes técnicos que choca con un dato del contrato (otra ciudad) detiene la compilación: no se
+    pierde ninguno de los dos en silencio."""
+    example = load_example("demo")
+    settings = copy.deepcopy(example.engine_settings)
+    settings["legacy"]["business"] = {"city": "Otra ciudad"}
     with pytest.raises(ValueError, match="conflicto"):
-        compile_business_config(result.config, lambda ref: "valor")
+        compile_business_config(dataclasses.replace(example, engine_settings=settings).config(), example.payment_resolver())
 
 
-@pytest.mark.parametrize("slug", TENANTS)
-def test_migration_reads_the_same_sections_as_the_engine(slug):
-    service = ConfigService()
-    assert legacy_store_migration.read_tenant_sections(service, slug) == read_tenant_sections(service, slug)
-
-
-def test_import_detects_a_preparation_that_does_not_reproduce_the_yaml(monkeypatch):
-    monkeypatch.setattr(legacy_store_migration, "compile_business_config", lambda config, resolve: {})
-    with pytest.raises(BusinessConfigError, match="no reproduce"):
-        prepare_tenant(ConfigService(), "demo")
+def test_every_example_has_exactly_the_payment_values_it_references():
+    """Cada negocio de ejemplo trae el valor de cada referencia de pago, y ninguno de más (`payment-values.json`)."""
+    for slug in TENANTS:
+        example = load_example(slug)
+        refs = {holder["secret_ref"] for holder in iter_secret_refs(example.document)}
+        stored = json.loads((example_businesses.EXAMPLES_DIR / slug / example_businesses.PAYMENT_VALUES_FILENAME).read_text(encoding="utf-8"))
+        assert refs and set(stored) == refs, slug
 
 
 # ---------------------------------------------------------------------------

@@ -116,6 +116,7 @@ def main() -> int:
     from app.infrastructure.business_config.database import build_channel_messenger, build_whatsapp_channel_service
     from app.infrastructure.business_config.ai_usage_store import AIUsageStore
     from app.infrastructure.business_config.commerce_store import CommerceStore
+    from app.infrastructure.business_config.example_businesses import import_examples
     from app.infrastructure.channels.platform import uazapi_platform
     from app.infrastructure.channels.public_url import engine_public_url, webhook_base
     from app.infrastructure.channels.uazapi import UazapiClient
@@ -135,6 +136,7 @@ def main() -> int:
         messenger=build_channel_messenger(engine, UazapiClient),
         commerce=CommerceStore(engine),
         ai_usage=AIUsageStore(engine),
+        examples=import_examples,
     )
     uvicorn.run(app, host=HOST, port=port, log_level="warning")
     return 0

@@ -125,7 +125,7 @@ describe("cliente de la API en la nube", () => {
     expect(persistenceErrorMessage(error)).toBe("Hiciste muchas solicitudes seguidas. Espera 40 segundos y vuelve a intentarlo.");
   });
 
-  it("los negocios de la nube no se importan de YAML ni se eliminan desde el panel", () => {
+  it("los negocios de la nube no se importan de los ejemplos ni se eliminan desde el panel", () => {
     const directory = createApiBusinessDirectory(createHttpClient(), { local: false });
     expect([directory.canImportExisting, directory.canRemove]).toEqual([false, false]);
     expect(createApiBusinessDirectory(createHttpClient()).canImportExisting).toBe(true);

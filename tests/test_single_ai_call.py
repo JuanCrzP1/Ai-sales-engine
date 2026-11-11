@@ -228,14 +228,13 @@ def usage_store(tmp_path):
     from cryptography.fernet import Fernet
 
     from app.infrastructure.business_config.database import build_business_config_service
-    from app.infrastructure.config.config_service import ConfigService
-    from app.infrastructure.config.legacy_store_migration import import_prepared, prepare_tenant
+    from app.infrastructure.business_config.example_businesses import import_example, load_example
 
     engine = create_business_config_engine(f"sqlite:///{(tmp_path / 'consumo.sqlite3').as_posix()}")
     create_local_schema(engine)
     service = build_business_config_service(engine, secrets_key=Fernet.generate_key().decode())
     for slug in ("restaurant", "clinic"):
-        import_prepared(service, prepare_tenant(ConfigService(), slug))
+        import_example(service, load_example(slug))
     yield AIUsageStore(engine)
     engine.dispose()
 

@@ -4,12 +4,11 @@ init_local_business_config.py
 Prepara la base local de BusinessConfig: un archivo SQLite ignorado por git e independiente de la base del
 motor (`BUSINESS_CONFIG_DATABASE_URL` indica otra ubicación). No toca lo que la base ya contenga.
 
-Con `--import-tenants` hace además la migración inicial: registra y publica los negocios de
-`project/config/tenants/`, con sus datos de pago en el almacén cifrado. Es una operación puntual; después la
-base funciona sin los YAML. Los negocios que ya tienen versiones no se tocan. Exige
-`BUSINESS_CONFIG_SECRETS_KEY`, que se comprueba antes de escribir nada.
+Con `--import-tenants` registra y publica además los negocios de ejemplo de `project/config/tenants/` (sus
+`business-config.json`), con sus datos de pago de ejemplo en el almacén cifrado. Los negocios que ya tienen versiones
+no se tocan. Exige `BUSINESS_CONFIG_SECRETS_KEY`, que se comprueba antes de escribir nada.
 
-No modifica los YAML ni los documentos del repositorio, y nunca imprime datos de pago.
+No modifica los ejemplos del repositorio y nunca imprime datos de pago.
 
 Usage:
   python scripts/init_local_business_config.py                   # crea la base y las tablas
@@ -39,11 +38,9 @@ from app.infrastructure.business_config.payment_secret_store import check_secret
 
 
 def _import_tenants(engine) -> int:
-    # Solo aquí se leen los YAML, una vez. Ni siquiera la migración carga el motor ni lee `.env`.
-    from app.infrastructure.config.config_service import ConfigService
-    from app.infrastructure.config.legacy_store_migration import import_all
+    from app.infrastructure.business_config.example_businesses import import_examples
 
-    report = import_all(build_business_config_service(engine), ConfigService())
+    report = import_examples(build_business_config_service(engine))
     print(f"[ok] importados={len(report.created)} ya_existian={len(report.skipped)}")
     if report.unpublished:
         print(f"[aviso] ya existían sin ninguna versión publicada, no se tocaron: {', '.join(report.unpublished)}")

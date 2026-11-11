@@ -1,11 +1,12 @@
 """
 generate_traceability_matrix.py
 
-Genera la matriz de trazabilidad de la configuración antigua (los cinco YAML de cada negocio) al
-contrato BusinessConfig v1 (`docs/business-config-traceability.md`) desde el catálogo
-`project/app/infrastructure/config/legacy_field_catalog.py`, los YAML reales de los negocios y el
-JSON Schema publicado, que aporta la referencia de cada campo del contrato (audiencia y estado en el
-motor). No incluye ningún valor de configuración: solo rutas, significado y estado.
+Genera la matriz de trazabilidad entre lo que lee el motor (las secciones que antes venían de los cinco YAML de cada negocio)
+y el contrato BusinessConfig v1 (`docs/business-config-traceability.md`), desde el catálogo
+`project/app/infrastructure/config/legacy_field_catalog.py`, los negocios de ejemplo (`business-config.json`, compilados como
+los recibe el motor) y el JSON Schema publicado, que aporta la referencia de cada campo del contrato (audiencia y estado en el
+motor). No incluye ningún valor de configuración: solo rutas, significado y estado. Los YAML se retiraron el 11 de noviembre de
+2026: lo que compila cada ejemplo es idéntico a lo que tenían (`tests/golden/`).
 
 Usage:
   python scripts/generate_traceability_matrix.py          # escribe el archivo
@@ -29,10 +30,9 @@ if str(PROJECT_DIR) not in sys.path:
     sys.path.insert(0, str(PROJECT_DIR))
 os.environ.setdefault("MODE", "test")
 
-from app.infrastructure.config.legacy_store_migration import read_tenant_sections  # noqa: E402
+from app.domain.business_config.compiler import comparable_with_yaml, compile_business_config  # noqa: E402
 from app.domain.business_config.engine_policy import COMMON_CLOSING_POLICY  # noqa: E402
-from app.infrastructure.config.business_config_store import CONTRACT_FILENAME  # noqa: E402
-from app.infrastructure.config.config_service import ConfigService  # noqa: E402
+from app.infrastructure.business_config.example_businesses import example_slugs, load_example  # noqa: E402
 from app.infrastructure.config.legacy_field_catalog import (  # noqa: E402
     CATALOG,
     COMMERCIAL_CONTROLS,
@@ -61,8 +61,14 @@ CLASSES = {
 # Estados del motor de un campo del contrato (`x-engine`), en el orden de la tabla de la referencia.
 ENGINE_STATUSES = ("conectado", "programado", "solo panel", "pendiente")
 
-def _tenants(service: ConfigService) -> list[str]:
-    return sorted(path.name for path in service.tenants_root.iterdir() if (path / CONTRACT_FILENAME).is_file())
+def _tenants() -> list[str]:
+    return example_slugs()
+
+
+def _sections(slug: str) -> dict:
+    """Lo que recibe el motor de un negocio de ejemplo, en la forma de las secciones (sin lo que solo produce el contrato)."""
+    example = load_example(slug)
+    return comparable_with_yaml(compile_business_config(example.config(), example.payment_resolver()))
 
 
 def _destination(entry: LegacyField, pattern: str) -> str:
@@ -96,10 +102,10 @@ def _current_values(values: list) -> str:
     return ", ".join(f"{value.strip(chr(34))} ({count})" for value, count in counts.most_common())
 
 
-def _controls_table(service: ConfigService, tenants: list[str], fields: dict) -> list[str]:
+def _controls_table(tenants: list[str], fields: dict) -> list[str]:
     values: dict[str, list] = defaultdict(list)
     for slug in tenants:
-        for leaf in legacy_leaves(read_tenant_sections(service, slug)):
+        for leaf in legacy_leaves(_sections(slug)):
             values[leaf.pattern].append(leaf.value)
     lines = [
         "",
@@ -167,8 +173,7 @@ def _controls_table(service: ConfigService, tenants: list[str], fields: dict) ->
 
 
 def render_matrix() -> str:
-    service = ConfigService()
-    tenants = _tenants(service)
+    tenants = _tenants()
     schema = json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))
     fields = contract_fields(schema)
     origins: dict[str, set[str]] = defaultdict(set)
@@ -176,7 +181,7 @@ def render_matrix() -> str:
     summary: dict[str, Counter] = {}
     for slug in tenants:
         counts: Counter = Counter()
-        for leaf in legacy_leaves(read_tenant_sections(service, slug)):
+        for leaf in legacy_leaves(_sections(slug)):
             entry = find_entry(leaf.pattern)
             if entry is None:
                 raise SystemExit(f"{slug}: campo sin catalogar {leaf.pattern}")
@@ -196,8 +201,9 @@ def render_matrix() -> str:
         "> está desactualizado y `tests/test_business_config_traceability.py` lo comprueba.",
         "",
         "Cada fila es un campo de los YAML de origen (`business.yaml`, `sales.yaml`, `pricing.yaml`,",
-        "`inventory.yaml`, `config.yaml`). Solo se muestran rutas; los únicos valores son los de interruptores y",
-        "opciones, en la tabla de funcionalidades comerciales.",
+        "`inventory.yaml`, `config.yaml`), que se retiraron el 11 de noviembre de 2026: lo que el motor recibía de ellos",
+        "quedó congelado en `tests/golden/`, y los negocios de ejemplo son sus `business-config.json`. Solo se muestran",
+        "rutas; los únicos valores son los de interruptores y opciones, en la tabla de funcionalidades comerciales.",
         "",
         "- **Conservado en los datos:** todos los campos, en todos los negocios. Lo comprueba",
         f"  `{CONSERVED}`: el valor original está en el destino declarado.",
@@ -228,7 +234,7 @@ def render_matrix() -> str:
         + " | ".join(str(totals[key]) for key in "ABCDE")
         + " |"
     )
-    lines += _controls_table(service, tenants, fields)
+    lines += _controls_table(tenants, fields)
 
     for section, filename in SOURCE_FILES.items():
         patterns = sorted(pattern for pattern in rows if pattern.split(".", 1)[0].split("[", 1)[0] == section)

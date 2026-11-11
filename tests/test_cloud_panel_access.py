@@ -24,8 +24,7 @@ from app.infrastructure.business_config.database import (
 from app.infrastructure.business_config.members_store import BusinessMembersStore
 from app.infrastructure.business_config.tables import business_members
 from app.infrastructure.business_config.usage_store import UsageCounterStore
-from app.infrastructure.config.config_service import ConfigService
-from app.infrastructure.config.legacy_store_migration import import_prepared, prepare_tenant
+from app.infrastructure.business_config.example_businesses import import_example, load_example
 
 ANA = Principal(user_id="usuario-ana", email="ana@example.com")
 BETO = Principal(user_id="usuario-beto", email="beto@example.com")
@@ -145,7 +144,7 @@ def test_a_business_of_someone_else_answers_like_one_that_does_not_exist(cloud):
 
 def test_the_owner_works_on_their_business_and_the_history_says_who(cloud):
     engine, service, client = cloud
-    import_prepared(service, prepare_tenant(ConfigService(), "restaurant"))
+    import_example(service, load_example("restaurant"))
     _give(engine, "restaurant", ANA)
     editable = client.get("/api/businesses/restaurant/config", headers=_as("ana"))
     assert editable.status_code == 200
@@ -170,8 +169,10 @@ def test_a_taken_identifier_does_not_say_whose_it_is(cloud):
     assert client.get("/api/businesses", headers=_as("beto")).json() == []
 
 
-def test_the_yaml_import_does_not_exist_in_the_cloud(cloud):
+def test_the_examples_import_does_not_exist_in_the_cloud(cloud):
+    """La API de la nube nunca recibe el importador de los negocios de ejemplo: cada cuenta crea los suyos."""
     _engine, _service, client = cloud
+    assert getattr(client.app.state, "examples", None) is None
     response = client.post("/api/businesses/import", headers=_as("ana"))
     assert (response.status_code, response.json()["code"]) == (404, "not_found")
     assert client.get("/api/businesses", headers=_as("ana")).json() == []
@@ -214,7 +215,7 @@ def test_the_playground_has_a_limit_per_person_that_answers_429_in_spanish(cloud
     from app.domain.business_config.usage_limits import PLAYGROUND_PER_USER
 
     engine, service, client = cloud
-    import_prepared(service, prepare_tenant(ConfigService(), "restaurant"))
+    import_example(service, load_example("restaurant"))
     _give(engine, "restaurant", ANA)
     _give(engine, "restaurant", BETO)
     client.put("/api/businesses/restaurant/ai", headers=_as("ana"), json={"model": None, "api_key": KEY})
@@ -233,7 +234,7 @@ def test_checking_the_ai_key_has_its_own_limit(cloud):
     from app.domain.business_config.usage_limits import AI_KEY_CHECKS_PER_USER
 
     engine, service, client = cloud
-    import_prepared(service, prepare_tenant(ConfigService(), "restaurant"))
+    import_example(service, load_example("restaurant"))
     _give(engine, "restaurant", ANA)
     client.put("/api/businesses/restaurant/ai", headers=_as("ana"), json={"model": None, "api_key": KEY})
     for _ in range(AI_KEY_CHECKS_PER_USER.limit):
@@ -248,7 +249,7 @@ def test_each_owner_sees_the_ai_usage_of_their_business_only(cloud):
     from app.infrastructure.business_config.ai_usage_store import AIUsageStore
 
     engine, service, client = cloud
-    import_prepared(service, prepare_tenant(ConfigService(), "restaurant"))
+    import_example(service, load_example("restaurant"))
     _give(engine, "restaurant", ANA)
     today = datetime.now(timezone.utc).date()
     AIUsageStore(engine).add("restaurant", today, AIUsage("openai/gpt-4o-mini", 1200, 80, 0.0004))

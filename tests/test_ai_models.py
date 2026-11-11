@@ -20,8 +20,7 @@ from app.infrastructure.business_config.database import (
     create_business_config_engine,
     create_local_schema,
 )
-from app.infrastructure.config.config_service import ConfigService
-from app.infrastructure.config.legacy_store_migration import import_prepared, prepare_tenant
+from app.infrastructure.business_config.example_businesses import import_example, load_example
 
 KEY = "sk-or-v1-clave-ficticia-del-restaurante-0001"
 
@@ -112,7 +111,7 @@ def platform(tmp_path):
     create_local_schema(engine)
     key = Fernet.generate_key().decode()
     service = build_business_config_service(engine, secrets_key=key)
-    import_prepared(service, prepare_tenant(ConfigService(), "restaurant"))
+    import_example(service, load_example("restaurant"))
     catalog = _Catalog()
     lab = build_assistant_lab_service(engine, service, secrets_key=key, catalog=catalog, default_model="openai/gpt-4o-mini")
     client = TestClient(create_app(service, lab), base_url="http://127.0.0.1:8010", client=("127.0.0.1", 50000))

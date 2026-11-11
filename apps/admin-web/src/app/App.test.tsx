@@ -213,7 +213,7 @@ describe("Administración de negocios", () => {
 
   it("informa si no hay nada nuevo que importar", async () => {
     const user = await renderAt("/negocios", createTestServices(createMemoryBackend([SAMPLE_DOCUMENT])));
-    await user.click(screen.getByRole("button", { name: "Importar negocios existentes" }));
+    await user.click(screen.getByRole("button", { name: "Importar negocios de ejemplo" }));
     expect(await screen.findByText("No había nada nuevo: todos los negocios ya estaban importados.")).toBeInTheDocument();
   });
 

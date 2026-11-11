@@ -398,7 +398,9 @@ def test_git_ignores_the_real_file_and_not_the_example():
 def test_the_example_has_no_values_and_names_what_the_project_needs():
     values = dict(_script()._assignments(EXAMPLE))
     assert set(values.values()) == {""}
-    assert {SECRETS_KEY_ENV, "OPENROUTER_API_KEY", "DATABASE_URL", "TELEGRAM_TOKEN", "META_VERIFY_TOKEN"} <= set(values)
+    assert {SECRETS_KEY_ENV, "OPENROUTER_API_KEY", "DATABASE_URL", "META_VERIFY_TOKEN"} <= set(values)
+    # Nada del sistema anterior: el polling de Telegram y su negocio fijo se retiraron.
+    assert not {"TELEGRAM_TOKEN", "TELEGRAM_ADMIN_ID", "TENANT_SLUG"} & set(values)
 
 
 def test_the_guide_explains_both_systems_and_how_to_move_the_file():

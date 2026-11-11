@@ -12,6 +12,7 @@ from __future__ import annotations
 import copy
 import importlib.util
 import json
+import shutil
 from datetime import date
 from pathlib import Path
 
@@ -19,7 +20,6 @@ import pytest
 import yaml
 from pydantic import ValidationError
 
-from app.infrastructure.config.legacy_store_migration import read_tenant_sections
 from app.domain.business_config.compiler import comparable_with_yaml, compile_business_config
 from app.domain.business_config.contract import BusinessConfig, business_config_json_schema
 from app.domain.business_config.diagnostics import review
@@ -41,11 +41,15 @@ from app.domain.business_config.engine_policy import (
     RESPONSE_LENGTH_WORD_RANGES,
 )
 from app.domain.business_config.payment_data import payment_values
-from app.infrastructure.config.business_config_store import BusinessConfigError, BusinessConfigStore
-from app.infrastructure.config.config_service import ConfigService
+from app.domain.business_config.errors import BusinessConfigError
+from app.infrastructure.business_config.example_businesses import (
+    CONTRACT_FILENAME,
+    ENGINE_SETTINGS_FILENAME,
+    EXAMPLES_DIR,
+    load_example,
+)
 from app.infrastructure.config.legacy_field_catalog import contract_fields
-from app.infrastructure.config.payment_secrets import LegacyYamlSecretResolver
-from pipeline_harness import TENANTS, copy_tenant
+from pipeline_harness import TENANTS, engine_sections
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
 CONTRACTS_DIR = ROOT_DIR / "project" / "config" / "contracts" / "v1"
@@ -62,11 +66,11 @@ def _load_script(name: str):
 
 
 def _sections(slug: str) -> dict:
-    return read_tenant_sections(ConfigService(), slug)
+    return engine_sections(slug)
 
 
 def _document(slug: str) -> dict:
-    return json.loads(BusinessConfigStore(ConfigService().tenants_root).path_for(slug).read_text(encoding="utf-8"))
+    return copy.deepcopy(load_example(slug).document)
 
 
 def _example() -> dict:
@@ -78,7 +82,7 @@ def _schema() -> dict:
 
 
 def _engine_settings(slug: str) -> dict:
-    return json.loads(BusinessConfigStore(ConfigService().tenants_root).engine_settings_path_for(slug).read_text(encoding="utf-8"))
+    return copy.deepcopy(load_example(slug).engine_settings)
 
 
 def _compile(document: dict, slug: str | None = None, *, settings: dict | None = None) -> dict:
@@ -87,7 +91,7 @@ def _compile(document: dict, slug: str | None = None, *, settings: dict | None =
         config.with_engine_settings(EngineSettings.model_validate(settings))
     if slug is None:
         return compile_business_config(config, lambda ref: f"valor:{ref.secret_ref}")
-    return compile_business_config(config, LegacyYamlSecretResolver(lambda: _sections(slug)))
+    return compile_business_config(config, load_example(slug).payment_resolver())
 
 
 # ---------------------------------------------------------------------------
@@ -146,30 +150,20 @@ def test_example_document_is_valid_coherent_and_has_no_payment_values():
 
 @pytest.mark.parametrize("slug", TENANTS)
 def test_tenant_document_is_valid_and_belongs_to_its_folder(slug):
-    assert BusinessConfigStore(ConfigService().tenants_root).load(slug).tenant_slug == slug
+    assert load_example(slug).config().tenant_slug == slug
 
 
 @pytest.mark.parametrize("slug", TENANTS)
 def test_compiled_document_reproduces_the_original_yaml_exactly(slug):
-    """Sin pérdida: lo que el motor recibe desde el contrato es idéntico a sus YAML, más el perfil comercial."""
+    """Sin pérdida: lo que el motor recibe desde el contrato es idéntico a lo que recibía de sus YAML, más el perfil comercial."""
     assert comparable_with_yaml(_compile(_document(slug), slug, settings=_engine_settings(slug))) == _sections(slug)
-
-
-def test_committed_documents_and_migration_report_are_up_to_date():
-    documents, report, errors = _load_script("migrate_tenants_to_contract").build()
-    assert errors == []
-    assert len(documents) == 2 * len(TENANTS)  # documento comercial + ajustes técnicos
-    for path, text in documents.items():
-        assert path.read_text(encoding="utf-8") == text, f"{path.parent.name}: documento desactualizado"
-    assert (CONTRACTS_DIR / "migration-report.md").read_text(encoding="utf-8") == report
 
 
 def test_documents_contain_no_payment_secrets_of_any_tenant():
     secrets = set().union(*(payment_values(_sections(slug)) for slug in TENANTS))
-    assert secrets, "los YAML de origen deberían tener datos de pago"
-    store = BusinessConfigStore(ConfigService().tenants_root)
+    assert secrets, "los ejemplos tienen datos de pago (en su payment-values.json)"
     for slug in TENANTS:
-        for path in (store.path_for(slug), store.engine_settings_path_for(slug)):
+        for path in (EXAMPLES_DIR / slug / CONTRACT_FILENAME, EXAMPLES_DIR / slug / ENGINE_SETTINGS_FILENAME):
             document = path.read_text(encoding="utf-8")
             leaked = [value for value in secrets if value in document]
             assert not leaked, f"{path.name} de {slug}: {len(leaked)} datos de pago"
@@ -178,7 +172,7 @@ def test_documents_contain_no_payment_secrets_of_any_tenant():
 @pytest.mark.parametrize("slug", TENANTS)
 def test_offer_prices_and_payment_methods_are_preserved(slug):
     pricing = _sections(slug)["pricing"]
-    config = BusinessConfigStore(ConfigService().tenants_root).load(slug)
+    config = load_example(slug).config()
     if config.offer.model == "plans":
         assert [plan.id for plan in config.offer.plans] == [plan["id"] for plan in pricing["plans"]]
         for plan, original in zip(config.offer.plans, pricing["plans"]):
@@ -508,7 +502,7 @@ def test_faq_limits_are_enforced():
 
 
 def test_profile_validation_rejects_incoherent_values():
-    config = BusinessConfigStore(ConfigService().tenants_root).load("restaurant").model_dump(mode="json", exclude_none=True)
+    config = load_example("restaurant").config().model_dump(mode="json", exclude_none=True)
     invalid_documents = [
         {**config, "sales": {**config["sales"], "instructions": ["regla"] * (MAX_PROFILE_ITEMS + 1)}},
         {**config, "sales": {**config["sales"], "discovery": {"questions": ["x" * (MAX_PROFILE_ITEM_CHARS + 1)]}}},
@@ -778,10 +772,9 @@ def test_engine_settings_only_hold_technical_parameters():
 
 @pytest.mark.parametrize("slug", TENANTS)
 def test_documents_contain_no_credentials(slug):
-    store = BusinessConfigStore(ConfigService().tenants_root)
     secrets_file = yaml.safe_load((ROOT_DIR / "project" / "config" / "system" / "secrets.yaml").read_text(encoding="utf-8"))
     credentials = [str(value) for value in secrets_file.values() if value and len(str(value)) >= 8 and "${" not in str(value)]
-    for path in (store.path_for(slug), store.engine_settings_path_for(slug)):
+    for path in (EXAMPLES_DIR / slug / CONTRACT_FILENAME, EXAMPLES_DIR / slug / ENGINE_SETTINGS_FILENAME):
         text = path.read_text(encoding="utf-8")
         assert not any(marker in text for marker in ("sk-or-", "Bearer ", "postgresql://", "sqlite://")), path.name
         assert [value for value in credentials if value in text] == [], path.name
@@ -797,26 +790,28 @@ def test_payment_data_are_kept_apart_from_channel_credentials():
     assert "connector_secrets_key" not in source.lower()
 
 
-def test_store_rejects_engine_settings_of_another_tenant(tmp_path):
-    service = copy_tenant(tmp_path, "saas")
-    store = BusinessConfigStore(service.tenants_root)
-    path = store.engine_settings_path_for("saas")
+def _copy_example(tmp_path: Path, slug: str) -> Path:
+    shutil.copytree(EXAMPLES_DIR / slug, tmp_path / slug)
+    return tmp_path / slug
+
+
+def test_an_example_rejects_engine_settings_of_another_tenant(tmp_path):
+    path = _copy_example(tmp_path, "saas") / ENGINE_SETTINGS_FILENAME
     path.write_text(json.dumps({**_engine_settings("saas"), "tenant_slug": "restaurant"}), encoding="utf-8")
     with pytest.raises(BusinessConfigError):
-        store.load("saas")
+        load_example("saas", tmp_path).config()
     path.write_text("{ no es json", encoding="utf-8")
     with pytest.raises(BusinessConfigError):
-        store.load("saas")
+        load_example("saas", tmp_path)
     path.unlink()
-    assert store.load("saas").engine_settings is None  # opcional: el motor usa sus valores por defecto
+    assert load_example("saas", tmp_path).config().engine_settings is None  # opcional: el motor usa sus valores por defecto
 
 
-def test_store_rejects_documents_of_another_tenant(tmp_path):
-    service = copy_tenant(tmp_path, "asesor_ai_prod")
-    path = BusinessConfigStore(service.tenants_root).path_for("asesor_ai_prod")
+def test_an_example_rejects_documents_of_another_tenant(tmp_path):
+    path = _copy_example(tmp_path, "asesor_ai_prod") / CONTRACT_FILENAME
     path.write_text(json.dumps({**_document("asesor_ai_prod"), "tenant_slug": "restaurant"}, ensure_ascii=False), encoding="utf-8")
     with pytest.raises(BusinessConfigError):
-        BusinessConfigStore(service.tenants_root).load("asesor_ai_prod")
+        load_example("asesor_ai_prod", tmp_path)
 
 
 # ---------------------------------------------------------------------------
@@ -838,12 +833,12 @@ EXPECTED_DIAGNOSTICS = {
 
 @pytest.mark.parametrize("slug", TENANTS)
 def test_diagnostics_of_the_nine_businesses(slug):
-    config = BusinessConfigStore(ConfigService().tenants_root).load(slug)
+    config = load_example(slug).config()
     assert [item.code for item in review(config, today=TODAY)] == EXPECTED_DIAGNOSTICS[slug]
 
 
 def test_the_nine_businesses_cover_both_offer_models_and_their_differences():
-    configs = {slug: BusinessConfigStore(ConfigService().tenants_root).load(slug) for slug in TENANTS}
+    configs = {slug: load_example(slug).config() for slug in TENANTS}
     assert {slug for slug, config in configs.items() if config.offer.model == "catalog"} == {"agencia_viajes", "escuela_conduccion", "restaurant", "tienda_ropa"}
     assert any(len(plan.prices) > 1 for config in configs.values() for plan in config.offer.plans or [])  # varias monedas
     assert any(price.implementation is not None for config in configs.values() for plan in config.offer.plans or [] for price in plan.prices)

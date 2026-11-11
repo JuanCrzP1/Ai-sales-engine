@@ -1,0 +1,379 @@
+{
+  "sales": {
+    "discovery": {
+      "objectives": [
+        "saber qué prenda busca, su talla y si prefiere envío o recogida"
+      ]
+    },
+    "support": {
+      "info_handling": {
+        "explain_first": true,
+        "sell_after": true
+      }
+    },
+    "closing": {
+      "strategy": "checkout",
+      "next_step": {
+        "action": "dynamic"
+      },
+      "required_data": [
+        "name",
+        "phone",
+        "address"
+      ],
+      "behavior": {
+        "direct_sale": {
+          "goal": "confirmar_compra"
+        },
+        "lead_capture": {
+          "goal": "capturar_datos"
+        },
+        "booking": {
+          "goal": "agendar"
+        },
+        "checkout": {
+          "goal": "enviar_pago"
+        }
+      },
+      "triggers": [
+        "lo quiero",
+        "quiero comprar",
+        "me lo llevo",
+        "la separo"
+      ],
+      "next_steps": [
+        "confirmar talla y color",
+        "confirmar envio o recogida",
+        "confirmar pago"
+      ],
+      "hard_rules": [
+        "ejecutar cierre orientado a checkout",
+        "si hay trigger de compra, avanzar sin frenar"
+      ]
+    },
+    "progression_rules": {
+      "required_flow": [
+        "detect_pain",
+        "present_solution",
+        "guide_next_step"
+      ]
+    }
+  },
+  "business": {
+    "name": "Tienda Ropa",
+    "brand_name": "Tienda Ropa",
+    "description": "Tienda de ropa básica en Medellín (camisetas y jeans), con envíos a todo Colombia y recogida en la tienda.",
+    "industry": "moda y retail",
+    "tone": "cercano, directo y comercial",
+    "voice": "claro y orientado a cierre",
+    "city": "Medellin",
+    "promise": "ropa básica y cómoda que te llega a casa o recoges en la tienda.",
+    "positioning": "básicos de algodón para el día a día, fáciles de pedir por chat.",
+    "differentiators": [
+      "prendas básicas de algodón",
+      "envíos a todo Colombia y recogida en la tienda",
+      "te ayudamos a elegir tu talla"
+    ],
+    "customer_profile": {
+      "segment": "personas que buscan ropa básica y cómoda para el día a día"
+    },
+    "pain_points": [
+      "no sé qué talla pedir",
+      "quiero saber cuándo me llega"
+    ],
+    "desired_outcomes": [
+      "vestir cómodo todos los días",
+      "recibir la ropa sin salir de casa"
+    ],
+    "location": {
+      "type": "mixto",
+      "address": "Centro Comercial Ejemplo",
+      "city": "Medellin",
+      "coverage": {
+        "type": "nacional",
+        "zones": [
+          "colombia"
+        ]
+      }
+    },
+    "service_modes": [
+      "presencial",
+      "envio"
+    ],
+    "logistics": {
+      "delivery": {
+        "available": true,
+        "type": "propio",
+        "zones": [
+          "medellin"
+        ],
+        "cost": {
+          "type": "fijo",
+          "value": 6000
+        },
+        "time": {
+          "min": "1 hora",
+          "max": "3 horas"
+        }
+      },
+      "shipping": {
+        "available": true,
+        "scope": "nacional",
+        "providers": [
+          "servientrega",
+          "interrapidisimo"
+        ],
+        "cost": {
+          "type": "variable",
+          "value": 0
+        },
+        "time": {
+          "min": "1 dia",
+          "max": "3 dias"
+        }
+      },
+      "pickup": {
+        "available": true,
+        "instructions": "recoge en tienda"
+      },
+      "scheduling": {
+        "required": false
+      }
+    }
+  },
+  "pricing": {
+    "model": "catalog",
+    "catalog": {
+      "categories": [
+        {
+          "id": "camisetas",
+          "name": "Camisetas"
+        },
+        {
+          "id": "jeans",
+          "name": "Jeans"
+        }
+      ],
+      "items": [
+        {
+          "id": "camiseta_basica",
+          "name": "Camiseta Basica",
+          "category": "camisetas",
+          "description": "Camiseta de algodon de uso diario.",
+          "price": {
+            "COP": 45000
+          }
+        },
+        {
+          "id": "jean_clasico",
+          "name": "Jean Clasico",
+          "category": "jeans",
+          "description": "Jean azul de corte regular.",
+          "price": {
+            "COP": 95000
+          }
+        }
+      ],
+      "payment": {
+        "link": "",
+        "transfer": {
+          "enabled": true,
+          "methods": [
+            {
+              "type": "nequi",
+              "number": "3001234567"
+            },
+            {
+              "type": "daviplata",
+              "number": "3009876543"
+            },
+            {
+              "type": "bank",
+              "bank": "Bancolombia",
+              "account_type": "ahorros",
+              "account_number": "1234567890"
+            },
+            {
+              "type": "breb",
+              "reference": "usuario@correo.com"
+            }
+          ]
+        }
+      }
+    },
+    "conditions": [
+      "cambios segun politica de la tienda"
+    ],
+    "price_framing": {
+      "type": "directo"
+    },
+    "business_offers": {
+      "core": [
+        "camiseta_basica",
+        "jean_clasico"
+      ],
+      "upsell": [
+        "llevar camiseta y jean juntos"
+      ],
+      "cross_sell": [
+        "jean_clasico",
+        "camiseta_basica"
+      ],
+      "financing": {
+        "available": true,
+        "providers": [
+          "addi",
+          "sistecredito"
+        ],
+        "options": [
+          "cuotas",
+          "pago_inicial"
+        ]
+      }
+    }
+  },
+  "inventory": {
+    "track_stock": true,
+    "items": [
+      {
+        "product_id": "camiseta_basica",
+        "variants": [
+          {
+            "sku": "camiseta_basica_s_blanco",
+            "attributes": {
+              "size": "S",
+              "color": "blanco"
+            },
+            "stock": 5
+          },
+          {
+            "sku": "camiseta_basica_m_blanco",
+            "attributes": {
+              "size": "M",
+              "color": "blanco"
+            },
+            "stock": 0
+          },
+          {
+            "sku": "camiseta_basica_l_negro",
+            "attributes": {
+              "size": "L",
+              "color": "negro"
+            },
+            "stock": 3
+          }
+        ]
+      },
+      {
+        "product_id": "jean_clasico",
+        "variants": [
+          {
+            "sku": "jean_30_azul",
+            "attributes": {
+              "size": 30,
+              "color": "azul"
+            },
+            "stock": 4
+          },
+          {
+            "sku": "jean_32_azul",
+            "attributes": {
+              "size": 32,
+              "color": "azul"
+            },
+            "stock": 2
+          }
+        ]
+      }
+    ]
+  },
+  "config": {
+    "conversation": {
+      "active_window_minutes": 15,
+      "reset_hours": 4
+    },
+    "initial_message": {
+      "enabled": true,
+      "text": "Hola, te ayudo a cerrar tu compra de ropa por chat. Si quieres, avanzamos con envio o recogida en tienda.\n"
+    },
+    "features": {
+      "pricing_enabled": true,
+      "multi_currency": false,
+      "multi_plan": false,
+      "catalog_mode": true,
+      "business_model": "checkout"
+    },
+    "flags": {
+      "ai_first": true,
+      "allow_fallback": false,
+      "log_level": "info"
+    },
+    "response": {
+      "length": "short",
+      "max_words": 60
+    },
+    "post_payment": {
+      "on_user_report": {
+        "message": "Perfecto, ya lo reviso y te confirmo en un momento para continuar.\n"
+      },
+      "on_payment_confirmed": {
+        "message": "Listo, ya quedó confirmado. Ahora seguimos con el siguiente paso.\n"
+      }
+    },
+    "capabilities": {
+      "channels": [
+        "whatsapp"
+      ],
+      "business_channels": {
+        "allowed": [
+          "whatsapp"
+        ]
+      },
+      "system_channels": {
+        "allowed": []
+      },
+      "actions": {
+        "primary": [
+          "cerrar_venta",
+          "enviar_pago"
+        ],
+        "support": [
+          "responder_dudas",
+          "seguimiento",
+          "confirmar_datos"
+        ]
+      },
+      "closing_methods": {
+        "link_payment": {
+          "enabled": true
+        },
+        "human_handoff": {
+          "enabled": true
+        },
+        "data_collection": {
+          "enabled": true
+        }
+      },
+      "data_collection": {
+        "enabled": true,
+        "fields": [
+          "nombre",
+          "telefono",
+          "direccion",
+          "detalles"
+        ]
+      },
+      "constraints": {
+        "disallowed_channels": [
+          "instagram",
+          "messenger",
+          "telegram",
+          "web"
+        ],
+        "disallowed_actions": [
+          "llamadas"
+        ]
+      }
+    }
+  }
+}

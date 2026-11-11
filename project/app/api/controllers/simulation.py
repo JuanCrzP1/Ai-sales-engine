@@ -95,7 +95,7 @@ def simulate_message(
 ) -> SimulationResponse:
     unknown_business = HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tenant no encontrado")
     slug = str(getattr(tenant, "slug", "") or "")
-    # `/auth/register` no valida el identificador: "../tenants/otro" abriría la carpeta de otro negocio.
+    # El identificador guardado del negocio no se da por válido: "../tenants/otro" abriría la carpeta de otro negocio.
     if not _BUSINESS_SLUG.fullmatch(slug):
         raise unknown_business
     try:

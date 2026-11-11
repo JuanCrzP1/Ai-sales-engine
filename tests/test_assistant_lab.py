@@ -36,8 +36,7 @@ from app.infrastructure.business_config.database import (
     create_local_schema,
 )
 from app.infrastructure.business_config.tables import business_ai_settings
-from app.infrastructure.config.config_service import ConfigService
-from app.infrastructure.config.legacy_store_migration import import_prepared, prepare_tenant
+from app.infrastructure.business_config.example_businesses import import_example, load_example
 from pipeline_harness import reply
 
 KEY_A = "sk-or-v1-clave-ficticia-del-restaurante-0001"
@@ -75,7 +74,7 @@ def store(tmp_path):
     key = Fernet.generate_key().decode()
     configs = build_business_config_service(engine, secrets_key=key)
     for slug in ("restaurant", "clinic"):
-        import_prepared(configs, prepare_tenant(ConfigService(), slug))
+        import_example(configs, load_example(slug))
     runner, verifier = FakeRunner(), FakeVerifier()
     lab = build_assistant_lab_service(engine, configs, secrets_key=key, verifier=verifier, runner=runner)
     yield SimpleNamespace(engine=engine, key=key, configs=configs, lab=lab, runner=runner, verifier=verifier, path=tmp_path / "panel.sqlite3")
@@ -283,13 +282,9 @@ def test_the_engine_answers_with_the_tested_configuration_and_the_business_key(s
 
 def test_a_business_created_in_the_panel_answers_in_the_test_area(store, monkeypatch):
     """Antes fallaba con «Tenant no encontrado»: el motor buscaba su carpeta YAML. Un negocio de la nube no tiene ninguna."""
-    from app.infrastructure.config.config_service import ConfigService
+    from pipeline_harness import forbid_examples_folder
 
-    def _no_yaml(*_args, **_kwargs):
-        raise AssertionError("el motor leyó un YAML")
-
-    for name in ("_load_yaml", "_load_raw_section", "_default_client_id"):
-        monkeypatch.setattr(ConfigService, name, _no_yaml)
+    forbid_examples_folder(monkeypatch)
     recorder = _Recorder()
     runner = EngineAssistantRunner(pipeline_factory=recorder)
     turn = runner.reply(

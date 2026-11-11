@@ -3,4 +3,4 @@
 Contains transport adapters for WhatsApp, Instagram and web chat.
 """
 
-__all__ = ["base", "whatsapp", "instagram", "web", "telegram", "router"]
+__all__ = ["base", "whatsapp", "instagram", "web", "router"]

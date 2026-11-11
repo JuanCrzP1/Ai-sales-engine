@@ -11,7 +11,7 @@ import { CreateBusinessForm } from "./CreateBusinessForm";
 
 type ListState = { status: "loading" } | { status: "error"; message: string } | { status: "ready"; businesses: BusinessSummary[] };
 
-/** Entrada del panel: los negocios que administra, para abrir uno, crear otro o importar los existentes. */
+/** Entrada del panel: los negocios que administra, para abrir uno, crear otro o importar los de ejemplo. */
 export function BusinessesPage() {
   const directory = useBusinessDirectory();
   // Con cuentas (en la nube) no aplica el aviso de "solo en este equipo".
@@ -110,10 +110,10 @@ export function BusinessesPage() {
       )}
 
       {list.status === "ready" && directory.canImportExisting && (
-        <Card title="Importar negocios existentes" description="Copia al panel los negocios configurados en archivos YAML. Los archivos no se modifican y lo que ya está aquí no se toca.">
+        <Card title="Negocios de ejemplo" description="Agrega al panel los negocios de ejemplo del proyecto, publicados y listos para probar. Lo que ya está aquí no se toca.">
           <div className="button-row">
             <Button variant="secondary" disabled={importing} onClick={() => void importExisting()}>
-              {importing ? "Importando…" : "Importar negocios existentes"}
+              {importing ? "Importando…" : "Importar negocios de ejemplo"}
             </Button>
           </div>
         </Card>

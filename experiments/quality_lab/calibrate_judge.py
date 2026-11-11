@@ -39,11 +39,10 @@ def _facts(slug: str) -> dict:
     from app.domain.business_config.contract import BusinessConfig
     from app.domain.business_config.engine_settings import EngineSettings
     from app.infrastructure.ai.prompting.business_model import detect_business_model
-    from app.infrastructure.config.config_service import ConfigService
-    from app.infrastructure.config.legacy_store_migration import prepare_tenant
+    from app.infrastructure.business_config.example_businesses import load_example
     from facts import business_facts
 
-    tenant = prepare_tenant(ConfigService(), slug)
+    tenant = load_example(slug)
     config = BusinessConfig.model_validate(tenant.document).with_engine_settings(EngineSettings.model_validate(tenant.engine_settings))
     runtime = runtime_from_sections(slug, compile_business_config(config, lambda ref: tenant.payment_values[ref.secret_ref]))
     return business_facts(runtime, detect_business_model(runtime))

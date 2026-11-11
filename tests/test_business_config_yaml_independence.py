@@ -1,11 +1,12 @@
 """
-BusinessConfig v1 funciona sin los YAML: la importación es una migración inicial, no una dependencia.
+El almacén de BusinessConfig funciona solo: sin YAML, sin el motor, sin `.env` y sin las carpetas de los negocios.
 
-Las comprobaciones corren en procesos aparte sobre una copia mínima del código, con solo los paquetes del nuevo
-sistema: en ese árbol no existen los YAML, ni el motor, ni `.env`, ni las carpetas de los negocios. Además, un
-gancho de auditoría registra cualquier intento de abrir esos archivos y se comprueba qué módulos se cargaron.
+Las comprobaciones corren en procesos aparte sobre una copia mínima del código, con solo los paquetes del almacén: en ese
+árbol no existen los YAML, ni el motor, ni `.env`, ni las carpetas de los negocios. Además, un gancho de auditoría registra
+cualquier intento de abrir esos archivos y se comprueba qué módulos se cargaron.
 
-No dice nada del motor, que sigue con su fuente actual hasta la Fase 4.
+Sembrar los negocios de ejemplo (`init_local_business_config.py --import-tenants`) lee solo sus tres JSON y nada más.
+Los YAML se retiraron el 11 de noviembre de 2026; la referencia de lo que compilaban está en `tests/golden/`.
 """
 from __future__ import annotations
 
@@ -20,12 +21,10 @@ from pathlib import Path
 import pytest
 from cryptography.fernet import Fernet
 
-from app.infrastructure.config.legacy_store_migration import read_tenant_sections
 from app.domain.business_config.payment_data import payment_values
 from app.infrastructure.business_config.database import DATABASE_URL_ENV, DEFAULT_LOCAL_DATABASE
 from app.infrastructure.business_config.payment_secret_store import SECRETS_KEY_ENV
-from app.infrastructure.config.config_service import ConfigService
-from pipeline_harness import TENANTS
+from pipeline_harness import TENANTS, engine_sections
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
 PROJECT_DIR = ROOT_DIR / "project"
@@ -139,8 +138,9 @@ import json, os, runpy, sys
 opened = []
 def audit(event, args):
     if event == "open" and isinstance(args[0], (str, bytes, os.PathLike)):
-        name = os.path.basename(os.fsdecode(args[0])).lower()
-        if name.endswith((".yaml", ".yml")) or name.startswith(".env"):
+        path = os.fsdecode(args[0]).replace(os.sep, "/")
+        name = os.path.basename(path).lower()
+        if name.endswith((".yaml", ".yml")) or name.startswith(".env") or "/config/tenants/" in path:
             opened.append(name)
 sys.addaudithook(audit)
 sys.argv = sys.argv[1:]
@@ -205,27 +205,26 @@ def test_documented_import_is_repeatable_and_prints_no_payment_data(imported_nin
     _database, _url, _key, output = imported_nine
     assert f"importados={len(TENANTS)} ya_existian=0" in output
     assert f"importados=0 ya_existian={len(TENANTS)}" in output
-    service = ConfigService()
-    values = {value for slug in TENANTS for value in payment_values(read_tenant_sections(service, slug))}
+    values = {value for slug in TENANTS for value in payment_values(engine_sections(slug))}
     assert values and [value for value in values if value in output] == []
 
 
-def test_even_the_migration_does_not_load_the_engine_or_read_the_env_file(imported_nine):
+def test_seeding_the_examples_reads_only_their_json_and_never_loads_the_engine(imported_nine):
     _database, _url, _key, output = imported_nine
     audits = [json.loads(line.removeprefix("AUDITORIA ")) for line in output.splitlines() if line.startswith("AUDITORIA ")]
     assert len(audits) == 2
-    tenant_files = {"business.yaml", "sales.yaml", "pricing.yaml", "inventory.yaml", "config.yaml"}
-    assert set(audits[0]["opened"]) == tenant_files, "solo lee los cinco YAML de cada negocio"
-    assert audits[1]["opened"] == [], "repetirla no vuelve a leer los YAML"
+    example_files = {"business-config.json", "engine-settings.json", "payment-values.json"}
+    assert set(audits[0]["opened"]) == example_files, "solo lee los tres JSON de cada negocio de ejemplo"
+    assert len(audits[0]["opened"]) == 3 * len(TENANTS)
+    assert audits[1]["opened"] == [], "repetirla no vuelve a leer los ejemplos"
     for audit in audits:
-        assert "app.application" not in audit["loaded"] and "app.config" not in audit["loaded"]
+        assert audit["loaded"] == [], "ni YAML, ni el motor, ni sus ajustes"
 
 
 def test_imported_businesses_work_without_yaml_and_compile_to_their_reference(isolated_tree, imported_nine):
     """Los nueve negocios, ya en la base, compilan a su referencia original en un árbol donde no existen los YAML."""
     _database, url, key, _output = imported_nine
-    service = ConfigService()
-    expected = {slug: _digest(read_tenant_sections(service, slug)) for slug in TENANTS}
+    expected = {slug: _digest(engine_sections(slug)) for slug in TENANTS}
 
     facts = _run_isolated(isolated_tree, {"scenario": "nine", "slugs": TENANTS}, url, key)
     assert facts["businesses"] == sorted(TENANTS)

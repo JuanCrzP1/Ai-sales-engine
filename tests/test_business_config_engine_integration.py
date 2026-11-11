@@ -39,10 +39,9 @@ from app.infrastructure.ai.prompting.view import PromptView
 from app.infrastructure.business_config.database import create_business_config_engine
 from app.infrastructure.business_config.runtime_access import open_published_reader
 from app.infrastructure.business_config.tables import business_configs
-from app.infrastructure.config.config_service import ConfigService
 from app.infrastructure.config.legacy_field_catalog import contract_fields
 from app.infrastructure.persistence.memory_repository import MemoryRepository
-from pipeline_harness import TENANTS, TENANTS_DIR, publish_document, reply, run_conversation, run_with_document, stored_document
+from pipeline_harness import TENANTS, TENANTS_DIR, forbid_examples_folder, publish_document, reply, run_conversation, run_with_document, stored_document
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
 SCHEMA_PATH = ROOT_DIR / "project" / "config" / "contracts" / "v1" / "business-config.schema.json"
@@ -64,14 +63,7 @@ def _document(slug: str) -> dict:
 # Fuente de configuración: solo lo publicado en el almacén
 # ---------------------------------------------------------------------------
 
-def _no_yaml(monkeypatch) -> None:
-    """Cualquier lectura de los YAML de un negocio hace fallar la prueba: el motor ya no los usa."""
-
-    def _fail(*_args, **_kwargs):
-        raise AssertionError("el motor leyó un YAML")
-
-    for name in ("_load_yaml", "_load_raw_section", "_default_client_id"):
-        monkeypatch.setattr(ConfigService, name, _fail)
+_no_yaml = forbid_examples_folder
 
 
 def _say(slug: str, message: str = "¿Qué venden?") -> tuple[str, bool, dict]:
@@ -100,7 +92,7 @@ def test_a_business_created_in_the_panel_answers_without_any_yaml_folder(monkeyp
         document["identity"].update(name="Panadería La Espiga", brand_name="La Espiga")
 
     publish_document(monkeypatch, tmp_path, "restaurant", _new_business, as_slug="panaderia_la_espiga")
-    _no_yaml(monkeypatch)  # desde aquí, solo el motor: publicar el ejemplo sí lee sus YAML
+    _no_yaml(monkeypatch)  # desde aquí, solo el motor: publicar el ejemplo sí lee su carpeta
     assert not (TENANTS_DIR / "panaderia_la_espiga").exists()
     (prompts, response), = run_conversation("panaderia_la_espiga", [("¿Qué venden?", reply("Pan recién horneado."))], user_id="nuevo")
     assert response == "Pan recién horneado."

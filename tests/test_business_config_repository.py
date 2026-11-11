@@ -8,6 +8,7 @@ que no prueba particularidades de PostgreSQL (JSONB, índices parciales en el se
 """
 from __future__ import annotations
 
+import copy
 import json
 import re
 import uuid
@@ -23,13 +24,12 @@ from app.application.pipeline.ai_execution import ejecutar_pago
 from app.application.runtime import BusinessUnavailableError, load_tenant_runtime_yaml
 from app.application.runtime import tenant_runtime_loader as loader
 from app.domain.business_config.compiler import compile_business_config
+from app.domain.business_config.errors import BusinessConfigError, SecretResolutionError
+from app.infrastructure.business_config.example_businesses import load_example
 from app.infrastructure.business_config.runtime_access import reader_for
 from app.infrastructure.business_config.repository import BusinessConfigRepository
-from app.infrastructure.config.business_config_store import BusinessConfigError, BusinessConfigStore
 from app.infrastructure.business_config.tables import business_ai_settings, business_config_secrets, business_configs, business_engine_settings, metadata, tenants
-from app.infrastructure.config.config_service import ConfigService
 from app.infrastructure.business_config.payment_secret_store import SECRETS_KEY_ENV, PaymentSecretStore
-from app.infrastructure.config.payment_secrets import SecretResolutionError
 from pipeline_harness import prepared_tenant, stored_document
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
@@ -49,11 +49,11 @@ def engine():
 
 
 def _document(slug: str) -> dict:
-    return json.loads(BusinessConfigStore(ConfigService().tenants_root).path_for(slug).read_text(encoding="utf-8"))
+    return copy.deepcopy(load_example(slug).document)
 
 
 def _engine_settings(slug: str) -> dict:
-    return json.loads(BusinessConfigStore(ConfigService().tenants_root).engine_settings_path_for(slug).read_text(encoding="utf-8"))
+    return copy.deepcopy(load_example(slug).engine_settings)
 
 
 def _with_length(document: dict, length: str) -> dict:

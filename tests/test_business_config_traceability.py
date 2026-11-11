@@ -1,6 +1,9 @@
 """
 Trazabilidad de la configuración antigua (cinco YAML por negocio) al contrato BusinessConfig v1.
 
+Los YAML se retiraron el 11 de noviembre de 2026: lo que el motor recibía de ellos quedó congelado en `tests/golden/`, y los
+negocios de ejemplo viven en `project/config/tenants/<negocio>/business-config.json`.
+
 - Cada campo de los YAML de los nueve negocios está catalogado (significado, clase A-E, destino) y su
   valor está de verdad en el destino declarado del documento del negocio.
 - Cada campo del contrato tiene origen en los YAML o figura como campo nuevo o derivado documentado.
@@ -10,6 +13,7 @@ Trazabilidad de la configuración antigua (cinco YAML por negocio) al contrato B
 """
 from __future__ import annotations
 
+import copy
 import importlib.util
 import json
 import re
@@ -17,9 +21,7 @@ from pathlib import Path
 
 import pytest
 
-from app.infrastructure.config.legacy_store_migration import read_tenant_sections
-from app.infrastructure.config.business_config_store import BusinessConfigStore
-from app.infrastructure.config.config_service import ConfigService
+from app.infrastructure.business_config.example_businesses import load_example
 from app.infrastructure.config.legacy_field_catalog import (
     CATALOG,
     COMMERCIAL_CONTROLS,
@@ -35,22 +37,22 @@ from app.infrastructure.config.legacy_field_catalog import (
     legacy_leaves,
     resolve_path,
 )
-from pipeline_harness import TENANTS
+from pipeline_harness import TENANTS, engine_sections
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
 SCHEMA_PATH = ROOT_DIR / "project" / "config" / "contracts" / "v1" / "business-config.schema.json"
 
 
 def _sections(slug: str) -> dict:
-    return read_tenant_sections(ConfigService(), slug)
+    return engine_sections(slug)
 
 
 def _document(slug: str) -> dict:
-    return json.loads(BusinessConfigStore(ConfigService().tenants_root).path_for(slug).read_text(encoding="utf-8"))
+    return copy.deepcopy(load_example(slug).document)
 
 
 def _engine_settings(slug: str) -> dict:
-    return json.loads(BusinessConfigStore(ConfigService().tenants_root).engine_settings_path_for(slug).read_text(encoding="utf-8"))
+    return copy.deepcopy(load_example(slug).engine_settings)
 
 
 @pytest.mark.parametrize("slug", TENANTS)
@@ -216,39 +218,6 @@ def test_every_yaml_switch_is_typed_in_the_commercial_contract():
             assert entry.kind == "technical", pattern
         else:
             assert entry.kind == "typed" and entry.category in "AB", pattern
-
-
-# Opciones que documentan los comentarios de los YAML (`# ...: a | b | c`) → dónde quedan en el contrato.
-DOCUMENTED_OPTIONS = {
-    ("config.yaml", "business_model"): "features.business_model",
-    ("config.yaml", "length"): "response_style.length",
-    ("config.yaml", "log_level"): None,  # técnico: ver EngineFlags
-    ("pricing.yaml", "type"): "terms.price_framing",
-    ("sales.yaml", "strategy"): "sales.closing.strategy",
-}
-
-
-def test_options_documented_in_the_yaml_comments_are_accepted_by_the_contract():
-    fields = contract_fields(json.loads(SCHEMA_PATH.read_text(encoding="utf-8")))
-    found: set[tuple[str, str]] = set()
-    for path in sorted((ROOT_DIR / "project" / "config" / "tenants").glob("*/*.yaml")):
-        for line in path.read_text(encoding="utf-8").splitlines():
-            match = re.match(r"\s*(?:-\s*)?([A-Za-z_]+)\s*:.*#[^:|]*:?\s*([^#]*\|[^#]*)$", line)
-            if not match:
-                continue
-            key = (path.name, match.group(1))
-            assert key in DOCUMENTED_OPTIONS, f"opción sin correspondencia: {key}"
-            found.add(key)
-            destination = DOCUMENTED_OPTIONS[key]
-            options = {option.strip() for option in match.group(2).split("|")}
-            if destination is None:
-                from app.domain.business_config.engine_settings import EngineFlags
-
-                allowed = set(EngineFlags.model_json_schema()["properties"]["log_level"]["enum"])
-            else:
-                allowed = set(fields[destination].value_type.split(" \\| "))
-            assert options <= allowed, f"{key}: {sorted(options - allowed)}"
-    assert found == set(DOCUMENTED_OPTIONS)
 
 
 def test_values_used_by_the_businesses_are_preserved_for_every_kind_of_option():

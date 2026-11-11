@@ -19,9 +19,9 @@ Navegador                    Este equipo (127.0.0.1)
 | Parte | Responsabilidad |
 |---|---|
 | Panel | Interfaz, formularios, validación anticipada, navegación y comunicación con la API. No guarda nada |
-| API local | Recibe las solicitudes, llama al servicio, traduce sus errores y confirma el resultado. Solo usa `BusinessConfigService`, que es quien valida con el contrato: ni base de datos, ni YAML, ni motor (salvo la importación, que lee los YAML) |
+| API del panel | Recibe las solicitudes, llama a los servicios, traduce sus errores y confirma el resultado. Solo usa la capa de aplicación (`BusinessConfigService` y los demás servicios), que es quien valida con el contrato: ni base de datos ni motor. La importación de ejemplos se le entrega desde fuera (`create_app(examples=...)`), solo en este equipo |
 | BusinessConfig v1 | Contrato central: modelos, esquema, validaciones, compilador. El panel recibe de aquí los tipos generados y el esquema |
-| Persistencia | Versiones inmutables y datos de pago cifrados en SQLite |
+| Persistencia | Versiones inmutables y datos de pago cifrados: Neon en la nube, SQLite en este equipo |
 
 ## Capas
 
@@ -218,13 +218,14 @@ hasta que se aplique o se cancele. No se guarda en el navegador: un cierre de la
 
 ## Pendiente
 
-- Autenticación y autorización multiusuario (Fase 3), antes de cualquier despliegue en la nube.
-- API y persistencia en la nube (Fase 3): otra implementación de los mismos contratos.
-- Integrar el motor con lo publicado y retirar los YAML (Fase 4). Hasta entonces, algunos avisos describen lo que el motor hará al
-  conectarse.
-- Ejecutar las pruebas del panel en el CI, que hoy no las incluye.
+- ~~Autenticación y autorización multiusuario~~: hecho (Neon Auth y `business_members`).
+- ~~API y persistencia en la nube~~: hecho (la API del panel bajo `/panel` del motor, en Neon).
+- ~~Integrar el motor con lo publicado y retirar los YAML~~: hecho (el motor solo lee lo publicado; los YAML se borraron el 11 de
+  noviembre de 2026).
+- ~~Ejecutar las pruebas del panel en el CI~~: el trabajo `panel` de `.github/workflows/ci.yml` corre tipos, pruebas e integración.
+- Telegram, la API oficial de Meta y el chat web en Canales (Fase 5 de `docs/plan-v1.md`).
 
 ## Limitaciones conocidas
 
 - Abrir el mismo negocio en dos pestañas es seguro, pero la segunda en guardar debe recargar: no se combinan los cambios.
-- La foto de perfil solo existe en el camino de autenticación real, que hoy no se usa.
+- La foto de perfil y el menú de la cuenta solo existen con cuentas (en la nube); el panel local no tiene cuentas.

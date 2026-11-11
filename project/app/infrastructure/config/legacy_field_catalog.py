@@ -10,7 +10,7 @@ en el destino.
 Destinos: ruta del contrato, donde `[{i}]` y `[{j}]` son los índices del origen y
 `[campo=<nombre>]` busca en una lista por clave; `engine_settings.<ruta>` (ajustes técnicos, fuera
 del documento comercial; `engine_settings.legacy` conserva la ruta original); `secret:<ruta>`
-(referencia `legacy_yaml:` al valor, nunca el valor) o `engine_policy` (definición común a todos los
+(referencia `secret_store:<ruta original>` al valor cifrado, nunca el valor) o `engine_policy` (definición común a todos los
 negocios: no está en ningún documento y la aporta el compilador).
 
 Clases (misión de auditoría del contrato):
@@ -28,6 +28,7 @@ from dataclasses import dataclass, field
 from typing import Any, Literal
 
 from app.domain.business_config.engine_policy import COMMON_CLOSING_POLICY
+from app.domain.business_config.payment_data import SECRET_STORE_SOURCE
 
 Category = Literal["A", "B", "C", "D", "E"]
 
@@ -251,7 +252,7 @@ CATALOG: tuple[LegacyField, ...] = (
        evidence=[ENGINE_TEST]),
     _f("pricing.plans[].target", "Para quién es el plan", "A", "offer.plans[{i}].target", engine="sí: prompt (para quién es el plan)",
        panel="pantalla", evidence=[ENGINE_TEST]),
-    _f("pricing.plans[].payment.link", "Link de pago", "D", "secret:payments[{i}].link", transform="valor → referencia `legacy_yaml:`",
+    _f("pricing.plans[].payment.link", "Link de pago", "D", "secret:payments[{i}].link", transform="valor → referencia `secret_store:` (cifrado)",
        engine="sí: el motor lo entrega al elegir el método", panel="pantalla", evidence=[PAYMENT_TEST]),
     _f("pricing.plans[].payment.transfer.enabled", "Transferencias activas", "A", "payments[{i}].transfer_enabled",
        transform="perfil de pago con el id del plan", engine="sí: métodos disponibles", panel="pantalla", evidence=[PAYMENT_TEST]),
@@ -262,12 +263,12 @@ CATALOG: tuple[LegacyField, ...] = (
     _f("pricing.plans[].payment.transfer.methods[].account_type", "Tipo de cuenta", "A", "payments[{i}].transfer_methods[{j}].account_type",
        engine="sí: mensaje de pago", panel="pantalla", evidence=[PAYMENT_TEST]),
     _f("pricing.plans[].payment.transfer.methods[].number", "Celular Nequi o Daviplata", "D", "secret:payments[{i}].transfer_methods[{j}].number",
-       transform="valor → referencia `legacy_yaml:`", engine="sí: el motor lo entrega al elegir el método", panel="pantalla", evidence=[PAYMENT_TEST]),
+       transform="valor → referencia `secret_store:` (cifrado)", engine="sí: el motor lo entrega al elegir el método", panel="pantalla", evidence=[PAYMENT_TEST]),
     _f("pricing.plans[].payment.transfer.methods[].account_number", "Número de cuenta", "D",
-       "secret:payments[{i}].transfer_methods[{j}].account_number", transform="valor → referencia `legacy_yaml:`",
+       "secret:payments[{i}].transfer_methods[{j}].account_number", transform="valor → referencia `secret_store:` (cifrado)",
        engine="sí: el motor lo entrega al elegir el método", panel="pantalla", evidence=[PAYMENT_TEST]),
     _f("pricing.plans[].payment.transfer.methods[].reference", "Llave o referencia Bre-B", "D", "secret:payments[{i}].transfer_methods[{j}].reference",
-       transform="valor → referencia `legacy_yaml:`", engine="sí: el motor lo entrega al elegir el método", panel="pantalla", evidence=[PAYMENT_TEST]),
+       transform="valor → referencia `secret_store:` (cifrado)", engine="sí: el motor lo entrega al elegir el método", panel="pantalla", evidence=[PAYMENT_TEST]),
     _f("pricing.catalog.categories[].id", "Identificador de la categoría", "A", "offer.catalog.categories[{i}].id",
        engine="sí: categorías con productos disponibles", panel="pantalla", evidence=[UNAVAILABLE_TEST]),
     _f("pricing.catalog.categories[].name", "Nombre de la categoría", "A", "offer.catalog.categories[{i}].name",
@@ -283,7 +284,7 @@ CATALOG: tuple[LegacyField, ...] = (
     _f("pricing.catalog.items[].price.<moneda>", "Precio del producto por moneda", "A", "offer.catalog.items[{i}].prices[currency=<moneda>].amount",
        transform="mapa por moneda → lista con `currency` y `amount`", panel="pantalla",
        engine="sí: prompt (precio de cada producto)", evidence=[CATALOG_PRICES_TEST]),
-    _f("pricing.catalog.payment.link", "Link de pago del catálogo", "D", "secret:payments[id=catalog].link", transform="valor → referencia `legacy_yaml:`",
+    _f("pricing.catalog.payment.link", "Link de pago del catálogo", "D", "secret:payments[id=catalog].link", transform="valor → referencia `secret_store:` (cifrado)",
        engine="sí: el motor lo entrega al elegir el método", panel="pantalla", evidence=[PAYMENT_TEST]),
     _f("pricing.catalog.payment.transfer.enabled", "Transferencias activas", "A", "payments[id=catalog].transfer_enabled",
        transform="perfil de pago `catalog`", engine="sí: métodos disponibles", panel="pantalla", evidence=[PAYMENT_TEST]),
@@ -294,12 +295,12 @@ CATALOG: tuple[LegacyField, ...] = (
     _f("pricing.catalog.payment.transfer.methods[].account_type", "Tipo de cuenta", "A", "payments[id=catalog].transfer_methods[{i}].account_type",
        engine="sí: mensaje de pago", panel="pantalla", evidence=[PAYMENT_TEST]),
     _f("pricing.catalog.payment.transfer.methods[].number", "Celular Nequi o Daviplata", "D", "secret:payments[id=catalog].transfer_methods[{i}].number",
-       transform="valor → referencia `legacy_yaml:`", engine="sí: el motor lo entrega al elegir el método", panel="pantalla", evidence=[PAYMENT_TEST]),
+       transform="valor → referencia `secret_store:` (cifrado)", engine="sí: el motor lo entrega al elegir el método", panel="pantalla", evidence=[PAYMENT_TEST]),
     _f("pricing.catalog.payment.transfer.methods[].account_number", "Número de cuenta", "D",
-       "secret:payments[id=catalog].transfer_methods[{i}].account_number", transform="valor → referencia `legacy_yaml:`",
+       "secret:payments[id=catalog].transfer_methods[{i}].account_number", transform="valor → referencia `secret_store:` (cifrado)",
        engine="sí: el motor lo entrega al elegir el método", panel="pantalla", evidence=[PAYMENT_TEST]),
     _f("pricing.catalog.payment.transfer.methods[].reference", "Llave o referencia Bre-B", "D",
-       "secret:payments[id=catalog].transfer_methods[{i}].reference", transform="valor → referencia `legacy_yaml:`",
+       "secret:payments[id=catalog].transfer_methods[{i}].reference", transform="valor → referencia `secret_store:` (cifrado)",
        engine="sí: el motor lo entrega al elegir el método", panel="pantalla", evidence=[PAYMENT_TEST]),
     _f("pricing.conditions", "Condiciones comerciales", "A", "terms.conditions", transform="cambia de sección", engine="sí: prompt", panel="pantalla",
        evidence=[ENGINE_TEST]),
@@ -590,7 +591,7 @@ def check_leaf(document: dict, leaf: LegacyLeaf) -> str | None:
             return f"{leaf.path}: no coincide con la política global del cierre"
         return None
     if entry.kind == "secret":
-        expected = None if str(leaf.value or "").strip() == "" else {"secret_ref": f"legacy_yaml:{leaf.path}"}
+        expected = None if str(leaf.value or "").strip() == "" else {"secret_ref": f"{SECRET_STORE_SOURCE}:{leaf.path}"}
     else:
         expected = leaf.value
     if found != expected:

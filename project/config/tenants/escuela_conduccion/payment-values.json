@@ -1,0 +1,6 @@
+{
+  "secret_store:pricing.catalog.payment.transfer.methods.0.number": "3001234567",
+  "secret_store:pricing.catalog.payment.transfer.methods.1.number": "3009876543",
+  "secret_store:pricing.catalog.payment.transfer.methods.2.account_number": "1234567890",
+  "secret_store:pricing.catalog.payment.transfer.methods.3.reference": "usuario@correo.com"
+}

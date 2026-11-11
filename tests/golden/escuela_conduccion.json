@@ -1,0 +1,398 @@
+{
+  "sales": {
+    "discovery": {
+      "objectives": [
+        "identificar que licencia necesita el prospecto",
+        "detectar urgencia por trabajo, estudio o tramite"
+      ]
+    },
+    "pain": {
+      "clusters": {
+        "proceso_confuso": {
+          "signals": [
+            "no se que licencia necesito",
+            "no entiendo el tramite",
+            "que requisitos piden"
+          ],
+          "impacts": [
+            "retrasos en inscripcion y documentacion"
+          ],
+          "monetization": [
+            "demorar el tramite retrasa oportunidades laborales"
+          ]
+        }
+      }
+    },
+    "support": {
+      "info_handling": {
+        "explain_first": true,
+        "sell_after": true
+      }
+    },
+    "solution": {
+      "framing": [
+        "explicamos el proceso por pasos segun tipo de licencia",
+        "validamos requisitos antes de agendar para evitar rechazos",
+        "guiamos inscripcion y documentacion de forma progresiva"
+      ],
+      "process_steps": [
+        "identificar tipo de licencia segun necesidad",
+        "revisar requisitos y documentos",
+        "registrar datos y agendar inicio",
+        "iniciar curso y seguimiento de tramite"
+      ],
+      "requirements": [
+        "documento de identidad vigente",
+        "examen medico vigente",
+        "datos de contacto activos"
+      ]
+    },
+    "closing": {
+      "strategy": "booking",
+      "next_step": {
+        "action": "dynamic"
+      },
+      "required_data": [
+        "name",
+        "phone",
+        "license_type"
+      ],
+      "behavior": {
+        "direct_sale": {
+          "goal": "confirmar_compra"
+        },
+        "lead_capture": {
+          "goal": "capturar_datos"
+        },
+        "booking": {
+          "goal": "agendar"
+        },
+        "checkout": {
+          "goal": "enviar_pago"
+        }
+      },
+      "triggers": [
+        "quiero sacar licencia",
+        "quiero licencia",
+        "me interesa licencia",
+        "quiero licencia b1",
+        "quiero licencia a1",
+        "quiero empezar"
+      ],
+      "next_steps": [
+        "explicar proceso segun licencia",
+        "confirmar datos y agendar asesoria"
+      ],
+      "hard_rules": [
+        "explica el proceso según la licencia antes de pedir datos",
+        "cuando quiera inscribirse, pide los datos para agendar la asesoría",
+        "no ofrezcas planes ni mensualidades: se paga por licencia"
+      ]
+    },
+    "conversation_flow": {
+      "steps": [
+        "detect_pain",
+        "present_solution",
+        "validate_requirements",
+        "guide_next_step"
+      ],
+      "rules": {
+        "no_skip_steps": true,
+        "guided_process": true
+      }
+    },
+    "progression_rules": {
+      "required_flow": [
+        "detect_pain",
+        "amplify_impact",
+        "present_solution",
+        "guide_next_step"
+      ]
+    }
+  },
+  "business": {
+    "name": "Escuela de Conduccion",
+    "brand_name": "Escuela de Conduccion",
+    "industry": "educacion vial colombia",
+    "description": "Escuela que forma conductores y gestiona el proceso completo para obtener licencias A1, A2, B1, B2, C1, C2.\n",
+    "tone": "humano, claro y orientado a proceso",
+    "voice": "cercano y practico",
+    "city": "Medellin",
+    "promise": "guiar al alumno hasta su licencia con pasos claros.",
+    "positioning": "la escuela que te acompaña en todo el proceso, del curso al trámite de tu licencia.",
+    "pain_points": [
+      "no saben que licencia necesitan",
+      "proceso confuso",
+      "demoras en tramites"
+    ],
+    "desired_outcomes": [
+      "sacar licencia rapido",
+      "entender requisitos"
+    ],
+    "location": {
+      "type": "fisico",
+      "address": "Cra 52 #49-20",
+      "city": "Medellin",
+      "coverage": {
+        "type": "local",
+        "zones": [
+          "medellin"
+        ]
+      }
+    },
+    "service_modes": [
+      "presencial"
+    ],
+    "logistics": {
+      "delivery": {
+        "available": false,
+        "type": "tercero",
+        "zones": [],
+        "cost": {
+          "type": "variable",
+          "value": 0
+        },
+        "time": {
+          "min": "",
+          "max": ""
+        }
+      },
+      "shipping": {
+        "available": false,
+        "scope": "local",
+        "providers": [],
+        "cost": {
+          "type": "variable",
+          "value": 0
+        },
+        "time": {
+          "min": "",
+          "max": ""
+        }
+      },
+      "pickup": {
+        "available": false,
+        "instructions": ""
+      },
+      "scheduling": {
+        "required": true
+      }
+    }
+  },
+  "pricing": {
+    "model": "catalog",
+    "catalog": {
+      "categories": [
+        {
+          "id": "motos",
+          "name": "Motos"
+        },
+        {
+          "id": "carros",
+          "name": "Carros"
+        },
+        {
+          "id": "servicio_publico",
+          "name": "Servicio Publico"
+        }
+      ],
+      "items": [
+        {
+          "id": "licencia_a1",
+          "name": "Licencia A1",
+          "category": "motos",
+          "description": "Formacion y tramite para moto de bajo cilindraje.",
+          "price": {
+            "COP": 800000
+          }
+        },
+        {
+          "id": "licencia_a2",
+          "name": "Licencia A2",
+          "category": "motos",
+          "description": "Formacion y tramite para moto de alto cilindraje.",
+          "price": {
+            "COP": 950000
+          }
+        },
+        {
+          "id": "licencia_b1",
+          "name": "Licencia B1",
+          "category": "carros",
+          "description": "Formacion y tramite para carro particular.",
+          "price": {
+            "COP": 1200000
+          }
+        },
+        {
+          "id": "licencia_b2",
+          "name": "Licencia B2",
+          "category": "carros",
+          "description": "Formacion y tramite para camiones livianos.",
+          "price": {
+            "COP": 1450000
+          }
+        },
+        {
+          "id": "licencia_c1",
+          "name": "Licencia C1",
+          "category": "servicio_publico",
+          "description": "Formacion y tramite para servicio publico liviano.",
+          "price": {
+            "COP": 1550000
+          }
+        },
+        {
+          "id": "licencia_c2",
+          "name": "Licencia C2",
+          "category": "servicio_publico",
+          "description": "Formacion y tramite para vehiculos de carga pesada.",
+          "price": {
+            "COP": 1850000
+          }
+        }
+      ],
+      "payment": {
+        "link": "",
+        "transfer": {
+          "enabled": true,
+          "methods": [
+            {
+              "type": "nequi",
+              "number": "3001234567"
+            },
+            {
+              "type": "daviplata",
+              "number": "3009876543"
+            },
+            {
+              "type": "bank",
+              "bank": "Bancolombia",
+              "account_type": "ahorros",
+              "account_number": "1234567890"
+            },
+            {
+              "type": "breb",
+              "reference": "usuario@correo.com"
+            }
+          ]
+        }
+      }
+    },
+    "conditions": [
+      "valores sujetos a evaluacion y documentacion del alumno"
+    ],
+    "price_framing": {
+      "type": "directo"
+    },
+    "business_offers": {
+      "core": [
+        "licencias"
+      ],
+      "upsell": [],
+      "cross_sell": [],
+      "financing": {
+        "available": true,
+        "providers": [
+          "sistecredito"
+        ],
+        "options": [
+          "separacion_cupo",
+          "cuotas"
+        ]
+      }
+    }
+  },
+  "inventory": {
+    "track_stock": false,
+    "items": []
+  },
+  "config": {
+    "conversation": {
+      "active_window_minutes": 15,
+      "reset_hours": 4
+    },
+    "initial_message": {
+      "enabled": true,
+      "text": "Hola, ya estamos listos para ayudarte con tu licencia. Cuentame, que tipo de licencia quieres sacar?\n"
+    },
+    "features": {
+      "pricing_enabled": true,
+      "multi_currency": false,
+      "multi_plan": false,
+      "catalog_mode": true,
+      "business_model": "process"
+    },
+    "flags": {
+      "ai_first": true,
+      "allow_fallback": false,
+      "log_level": "info"
+    },
+    "response": {
+      "length": "short",
+      "max_words": 60
+    },
+    "post_payment": {
+      "on_user_report": {
+        "message": "Perfecto, ya lo reviso y te confirmo en un momento para continuar.\n"
+      },
+      "on_payment_confirmed": {
+        "message": "Listo, ya quedó confirmado. Ahora seguimos con el siguiente paso.\n"
+      }
+    },
+    "capabilities": {
+      "channels": [
+        "whatsapp"
+      ],
+      "business_channels": {
+        "allowed": [
+          "whatsapp"
+        ]
+      },
+      "system_channels": {
+        "allowed": []
+      },
+      "actions": {
+        "primary": [
+          "agendar_asesoria",
+          "cerrar_venta"
+        ],
+        "support": [
+          "responder_dudas",
+          "seguimiento",
+          "enviar_info"
+        ]
+      },
+      "closing_methods": {
+        "link_payment": {
+          "enabled": true
+        },
+        "human_handoff": {
+          "enabled": true
+        },
+        "data_collection": {
+          "enabled": true
+        }
+      },
+      "data_collection": {
+        "enabled": true,
+        "fields": [
+          "nombre",
+          "telefono",
+          "detalles"
+        ]
+      },
+      "constraints": {
+        "disallowed_channels": [
+          "instagram",
+          "messenger",
+          "telegram",
+          "web"
+        ],
+        "disallowed_actions": [
+          "llamadas"
+        ]
+      }
+    }
+  }
+}

@@ -56,12 +56,19 @@ def _prepare_store(api_key: str) -> list[str]:
     os.environ["BUSINESS_CONFIG_SECRETS_KEY"] = Fernet.generate_key().decode()
     from app.infrastructure.business_config.ai_settings_store import AISettingsStore
     from app.infrastructure.business_config.database import build_business_config_service, create_business_config_engine, create_local_schema
-    from app.infrastructure.config.config_service import ConfigService
-    from app.infrastructure.config.legacy_store_migration import import_all
+    try:
+        from app.infrastructure.business_config.example_businesses import import_examples as importer
+    except ImportError:
+        # Una copia anterior al 11 de noviembre de 2026 importa los ejemplos de sus YAML.
+        from app.infrastructure.config.config_service import ConfigService
+        from app.infrastructure.config.legacy_store_migration import import_all
+
+        def importer(service):
+            return import_all(service, ConfigService())
 
     engine = create_business_config_engine(os.environ["BUSINESS_CONFIG_DATABASE_URL"])
     create_local_schema(engine)
-    report = import_all(build_business_config_service(engine, secrets_key=os.environ["BUSINESS_CONFIG_SECRETS_KEY"]), ConfigService())
+    report = importer(build_business_config_service(engine, secrets_key=os.environ["BUSINESS_CONFIG_SECRETS_KEY"]))
     keys = AISettingsStore(engine, os.environ["BUSINESS_CONFIG_SECRETS_KEY"])
     for slug in report.created:
         keys.save_ai_settings(slug, model=None, api_key=api_key, clear_key=False)

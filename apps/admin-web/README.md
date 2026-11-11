@@ -1,13 +1,19 @@
 # Panel de administración (`apps/admin-web`)
 
-Interfaz web para administrar varios negocios sin editar YAML ni código: identidad, productos y servicios, precios y
-promociones, personalidad e instrucciones del asistente, preguntas frecuentes, políticas y medios de pago.
+El panel de la plataforma: cada negocio configura su asistente (identidad, productos y servicios, precios y promociones,
+personalidad e instrucciones, preguntas frecuentes, políticas y medios de pago) y atiende desde aquí: conversaciones en vivo,
+clientes, ventas, reportes y canales.
 
-El panel edita **BusinessConfig v1** a través de una **API local** (`project/app/admin_api`) y todo se guarda en una base
-**SQLite** en este equipo. No guarda nada en el navegador.
+El panel edita **BusinessConfig v1** a través de la API del panel (`project/app/admin_api`). No guarda nada en el navegador.
 
-> **Solo funciona en este equipo.** La API no tiene inicio de sesión y por eso escucha únicamente en `127.0.0.1`. La
-> autenticación y la autorización multiusuario deben incorporarse antes de desplegarla en la nube.
+| | Nube (Vercel) | Este equipo |
+|---|---|---|
+| Cuentas | Neon Auth: cada usuario solo ve sus negocios | Sin cuentas: el operador local ve todos (por eso no hay perfil abajo en el menú) |
+| API | El motor, bajo `/panel/api` | `scripts/run_admin_api.py`, solo en `127.0.0.1:8010` |
+| Base | Neon | SQLite en `project/data/business_config.sqlite3` |
+| Negocios de ejemplo | No se importan | «Importar negocios de ejemplo» |
+| Eliminar negocios | No | Sí, escribiendo su identificador |
+
 >
 > **Lo publicado es lo que responde el asistente:** el motor no tiene otra fuente (ver `docs/business-config.md`, «Conexión Con
 > El Motor»).
@@ -19,7 +25,7 @@ y **Probar asistente** (conversar con la IA real usando lo que se está editando
 ## Ejecutar
 
 Los únicos lanzadores del sistema son `run_local.bat` (Windows) y `run_local.sh` (Linux y macOS). Encienden el motor con el
-`.env`, ngrok, Telegram y la API de este panel; cuando esa API responde, arrancan la interfaz y se abre
+`.env`, ngrok y la API de este panel; cuando esa API responde, arrancan la interfaz y se abre
 <http://127.0.0.1:5180>. Si la API no responde, la interfaz no se abre y el motor sigue arrancando.
 La interfaz usa el 5180, y no el 5173 que Vite toma por defecto, para convivir con otros proyectos de Vite en el mismo equipo.
 
@@ -28,7 +34,7 @@ Requisitos: el entorno de Python del proyecto en `.venv`, Node 24 LTS (`.nvmrc`;
 
 Para detener todo: `bash run_local_stop.sh`, desde Git Bash en Windows.
 
-Esos lanzadores abren también el túnel de `ngrok` y Telegram. Para administrar los negocios sin encender el motor ni exponer nada,
+Esos lanzadores abren también el túnel de `ngrok`. Para administrar los negocios sin encender el motor ni exponer nada,
 basta con la API y la interfaz, cada una en su consola, desde la raíz del repositorio y con `.venv` activo:
 
 ```bash
@@ -54,7 +60,7 @@ La base se crea sola en `project/data/business_config.sqlite3` (ignorada por git
 
 | Sección | Qué administra | Sección del contrato |
 |---|---|---|
-| Tus negocios | Crear, abrir, eliminar (hay que escribir el identificador) e importar los YAML existentes | negocios del almacén |
+| Tus negocios | Crear (de cero o con una plantilla), abrir y, en este equipo, eliminar (hay que escribir el identificador) e importar los negocios de ejemplo | negocios del almacén |
 | Mi negocio | Nombre comercial, marca, a qué se dedica, descripción, propuesta de valor, ubicación, cobertura, modalidades, horarios, cliente ideal, forma de venta | `identity`, `offer.model` |
 | Productos y servicios | Planes o catálogo, categorías, descripciones, características, precios por moneda, disponibilidad, variantes y existencias, entrega y agenda | `offer`, `inventory`, `fulfillment` |
 | Pagos y cierre | Enlace y cuentas, promociones, condiciones, políticas, financiación, formas de cierre, datos que se piden y acciones | `payments`, `terms`, `capabilities` |
@@ -83,10 +89,8 @@ Los campos del contrato sin pantalla propia se generan desde el esquema que publ
 
 ## Qué no hace todavía
 
-- Inicio de sesión y usuarios: fase de nube. Las pantallas de cuenta siguen conectadas al contrato `AuthService`, pero con el
-  acceso local no se muestran.
-- Hacer llegar lo publicado a los clientes: Fase 4.
-- Conectar canales: marcar WhatsApp o Telegram solo indica por dónde atiende el negocio.
+- Telegram, la API oficial de Meta y el chat web: aparecen en Canales como «Próximamente». Hoy se conecta WhatsApp por código QR.
+- Horario del equipo y aviso por correo al pasar una conversación a una persona (Fase 4 de `docs/plan-v1.md`).
 - Teléfono y correo de contacto del negocio: BusinessConfig v1 no tiene esos campos; la información de contacto que contempla
   es ubicación, horarios y canales.
 

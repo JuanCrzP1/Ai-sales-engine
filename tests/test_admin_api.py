@@ -33,6 +33,7 @@ from app.infrastructure.business_config.database import (
     create_business_config_engine,
     create_local_schema,
 )
+from app.infrastructure.business_config.example_businesses import import_examples
 from app.infrastructure.business_config.secrets_key import KEY_FILE, ensure_secrets_key
 from app.infrastructure.business_config.tables import business_config_secrets, business_configs
 
@@ -123,7 +124,8 @@ class Local:
     def start(self) -> None:
         self.engine = create_business_config_engine(self.url)
         create_local_schema(self.engine)
-        self.app = create_app(build_business_config_service(self.engine, secrets_key=self.key))
+        # Como `scripts/run_admin_api.py` en este equipo: con el importador de los negocios de ejemplo.
+        self.app = create_app(build_business_config_service(self.engine, secrets_key=self.key), examples=import_examples)
         self.client = TestClient(self.app, base_url=BASE_URL, client=LOCAL_CLIENT, raise_server_exceptions=False)
 
     def restart(self) -> None:

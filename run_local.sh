@@ -60,7 +60,7 @@ PY
 }
 
 if ! check_database_connection; then
-    echo "[INFO] Telegram y el backend necesitan PostgreSQL disponible antes de iniciar."
+    echo "[INFO] El backend necesita PostgreSQL disponible antes de iniciar."
     echo "[INFO] Si usas Docker Desktop, abre Docker y luego ejecuta: docker compose up -d db"
     echo "[INFO] Si usas Postgres local, confirma que este escuchando en el puerto configurado por DATABASE_URL."
     exit 1
@@ -128,26 +128,6 @@ if [ -z "${ENGINE_PUBLIC_URL:-}" ]; then
         unset ENGINE_PUBLIC_URL
         echo "[AVISO] No se pudo leer la dirección de ngrok. WhatsApp por código QR no recibirá mensajes en este equipo."
     fi
-fi
-
-# -------------------------
-# TELEGRAM
-# -------------------------
-TELEGRAM_POLLING_ENABLED=""
-
-if [ -n "${TELEGRAM_TOKEN:-}" ]; then
-    TELEGRAM_POLLING_ENABLED=1
-elif [ -f "../.env" ] && grep -q "^TELEGRAM_TOKEN=" "../.env"; then
-    TELEGRAM_POLLING_ENABLED=1
-elif [ -f ".env" ] && grep -q "^TELEGRAM_TOKEN=" ".env"; then
-    TELEGRAM_POLLING_ENABLED=1
-fi
-
-if [ -n "$TELEGRAM_POLLING_ENABLED" ]; then
-    echo "[INFO] Iniciando Telegram polling..."
-    start_background_process "telegram-polling" "\"$PYTHON_BIN\" -m app.connectors.telegram.polling"
-else
-    echo "[INFO] TELEGRAM_TOKEN no definido. Telegram polling no se inicia."
 fi
 
 # -------------------------

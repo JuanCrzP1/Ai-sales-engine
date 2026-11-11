@@ -1,66 +1,28 @@
-﻿# Guía De Configuración YAML
+﻿# Configuración (`project/config/`)
 
-Este directorio concentra la configuración funcional del sistema de ventas AI-first. La lógica por negocio vive en cada tenant; la base global solo define estructura compartida, sistema y recursos comunes.
+La configuración de cada negocio **no vive aquí**: se edita en el panel y se guarda, en versiones, en la base (Neon en la nube).
+El motor solo usa la versión publicada. Esta carpeta guarda lo que es de la plataforma y los negocios de ejemplo.
 
-## Principio De Operación
+| Carpeta | Qué hay | Quién lo lee |
+|---|---|---|
+| `system/` | Ajustes de la plataforma: `settings.yaml`, `bot_config.yaml`, `conversation_stage.yaml` y `secrets.yaml` (sin valores reales: los secretos van en variables de entorno). Se leen en ese orden y cada uno completa al anterior | El motor al arrancar (`app/config/settings/base.py`) |
+| `tenants/<negocio>/` | Los 9 negocios de ejemplo: `business-config.json`, `engine-settings.json` y `payment-values.json` (datos de pago ficticios) | La importación de ejemplos (panel local, `scripts/`), las pruebas y los laboratorios. Nunca el motor ni producción |
+| `contracts/v1/` | El esquema publicado del contrato (`business-config.schema.json`, generado) y un documento de ejemplo | El panel (tipos generados) y las pruebas |
+| `business-templates/` | Plantillas para empezar un negocio (restaurante, tienda, software, agencia de viajes, escuela, servicios con cita) | El panel, al crear un negocio |
 
-Mismo motor.
-Misma arquitectura.
-Distinto comportamiento según el tenant activo.
+## Cambiar algo
 
-La adaptación no se resuelve con ramas de código. Se resuelve con configuración.
+- **Un negocio real:** en el panel. Se guarda como borrador y llega a los clientes al publicarlo.
+- **Un negocio de ejemplo:** su JSON en `tenants/<negocio>/`. Si el cambio es a propósito, regenera su referencia congelada
+  (`python tests/golden/regenerate.py <negocio>`); las pruebas comparan cada ejemplo con ella. Los datos de pago van solo en
+  `payment-values.json` y deben ser ficticios.
+- **El contrato:** el modelo está en `app/domain/business_config/contract/`; después se regenera lo derivado (ver
+  `../../CONTRIBUTING.md`).
+- **Un ajuste de la plataforma:** `system/settings.yaml` o `system/bot_config.yaml`. Afecta a todos los negocios.
 
-## Estructura Canónica
+## Historia
 
-- `core/`: `intents.yaml`, `nlu.yaml`, `flows.yaml`, `intent_levels.yaml`
-- `tenants/<tenant_slug>/`: `business.yaml`, `config.yaml`, `inventory.yaml`, `pricing.yaml`, `sales.yaml`
-- `channels/channels.yaml`: configuración por canal
-- `assets/media.yaml`: media reutilizable
-- `system/`: `bot_config.yaml`, `settings.yaml`, `conversation_stage.yaml`, `secrets.yaml`
-
-## Configuración Por Tenant
-
-Cada tenant controla su comportamiento desde cinco archivos:
-
-- `business.yaml`: contexto del negocio
-- `config.yaml`: parámetros generales del sistema
-- `inventory.yaml`: oferta o servicios disponibles
-- `pricing.yaml`: estructura de precios
-- `sales.yaml`: lógica comercial y enfoque de ventas
-
-## Regla Operativa
-
-- la lógica comercial específica vive en `tenants/<tenant_slug>/`
-- la base global no debe contener datos reales de un negocio concreto
-- la segmentación comercial y de pricing sale de `pricing.yaml`
-- el motor conversacional debe operar con continuidad aunque cambie el sector del tenant
-
-## Qué Editar Según El Cambio
-
-- identidad comercial: `tenants/<tenant_slug>/business.yaml`
-- parámetros operativos del tenant: `tenants/<tenant_slug>/config.yaml`
-- catálogo, servicios u oferta: `tenants/<tenant_slug>/inventory.yaml`
-- precios y condiciones: `tenants/<tenant_slug>/pricing.yaml`
-- enfoque comercial, objeciones y cierre: `tenants/<tenant_slug>/sales.yaml`
-- configuración global de runtime: `system/bot_config.yaml` y `system/settings.yaml`
-- intenciones y flujos compartidos: `core/intents.yaml` y `core/flows.yaml`
-
-## Reglas De Mantenimiento
-
-- no duplicar datos comerciales entre global y tenant
-- no escribir copy final de negocio en archivos globales
-- si cambian precios, actualizar `pricing.yaml`
-- si cambian canales o assets, editar `channels/channels.yaml` o `assets/media.yaml`
-
-## Estado Del Runtime
-
-Actualmente el runtime consume:
-
-- configuración global desde `system/`
-- intenciones, NLU y flujos desde `core/`
-- contexto de negocio, configuración, inventario, pricing y ventas desde `tenants/<tenant_slug>/`
-- media desde `assets/`
-- configuración por canal desde `channels/channels.yaml`
-
-La prioridad es mantener una sola fuente de verdad por tenant.
-
+Hasta el 11 de noviembre de 2026 cada negocio de ejemplo eran cinco YAML (`business`, `config`, `inventory`, `pricing`, `sales`),
+y también había `channels/channels.yaml` y `assets/media.yaml`, que nadie leía. Se retiraron después de comprobar que los JSON
+compilan exactamente a lo mismo; lo que el motor recibía de ellos quedó congelado en `tests/golden/`, y adónde fue cada campo
+antiguo, en `docs/business-config-traceability.md`.

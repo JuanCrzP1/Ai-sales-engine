@@ -29,8 +29,8 @@ from app.application.pipeline.ai_execution import validate_runtime_yaml as valid
 from app.application.runtime import load_tenant_runtime_yaml
 from app.infrastructure.ai.prompting.builder.prompt_builder import PromptBuilderService
 from app.infrastructure.ai.prompting.view import validate_runtime_yaml as validate_prompt_runtime
-from app.infrastructure.config.config_service import ConfigService
 from app.services.ai_service import AIService
+from pipeline_harness import forbid_examples_folder
 
 
 def _tenant(slug: str) -> SimpleNamespace:
@@ -118,7 +118,7 @@ def test_commercial_turn_returns_non_empty_intent_metadata() -> None:
 
 ## ----------------------------------------
 ## QUÉ HACE ESTE TEST:
-## Garantiza que PromptBuilder use el yaml ya inyectado y no recargue por ConfigService.
+## Garantiza que PromptBuilder use el runtime ya inyectado y no vuelva a leer archivos del negocio.
 ##
 ## POR QUÉ ES IMPORTANTE:
 ## Evita sobrescrituras silenciosas que mezclen datos de tenant o canal equivocado.
@@ -126,7 +126,7 @@ def test_commercial_turn_returns_non_empty_intent_metadata() -> None:
 ## QUÉ PROTEGE:
 ## Fuente única de verdad del runtime dentro del armado de prompt.
 ## ----------------------------------------
-def test_prompt_builder_runtime_yaml_is_not_reloaded_from_config_service(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_prompt_builder_runtime_yaml_is_not_reloaded_from_files(monkeypatch: pytest.MonkeyPatch) -> None:
     runtime_yaml = load_tenant_runtime_yaml(
         "asesor_ai_prod",
         extra_yaml={
@@ -153,13 +153,8 @@ def test_prompt_builder_runtime_yaml_is_not_reloaded_from_config_service(monkeyp
         },
     )
 
-    def _raise_load(*_args, **_kwargs):
-        raise AssertionError("PromptBuilder no debe cargar YAML desde ConfigService")
-
-    monkeypatch.setattr(ConfigService, "load_sales", _raise_load)
-    monkeypatch.setattr(ConfigService, "load_business", _raise_load)
-    monkeypatch.setattr(ConfigService, "load_pricing", _raise_load)
-    monkeypatch.setattr(ConfigService, "load_inventory", _raise_load)
+    # Desde aquí, abrir cualquier archivo de un negocio hace fallar la prueba: el armado usa solo el runtime inyectado.
+    forbid_examples_folder(monkeypatch)
 
     builder = PromptBuilderService()
 

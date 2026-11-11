@@ -1,5 +1,11 @@
 # Núcleo Conversacional — Estado Estable (Freeze)
 
+> **Documento histórico (mayo de 2026).** Describe el núcleo cuando los negocios se configuraban con YAML y una plataforma externa
+> iba a manejar las cuentas. Hoy el motor solo lee la versión publicada de cada negocio, las cuentas son de Neon Auth, el prompt
+> se arma por bloques (`infrastructure/ai/prompting/`) y los YAML de los negocios se retiraron el 11 de noviembre de 2026. Sus
+> reglas para tocar el núcleo siguen vigentes: cambios pequeños, con el laboratorio de regresión antes y después. Estado actual:
+> `docs/architecture.md` y `docs/plan-v1.md`.
+
 **Versión:** 6C  
 **Fecha:** 9 de mayo de 2026  
 **Tests al momento del freeze:** 114 passed, 0 failed  

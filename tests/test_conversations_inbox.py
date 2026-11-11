@@ -32,8 +32,7 @@ from app.infrastructure.business_config.members_store import BusinessMembersStor
 from app.infrastructure.business_config.notification_store import NotificationStore
 from app.infrastructure.business_config.tables import business_members, conversation_entries, conversations, tenants
 from app.infrastructure.business_config.usage_store import UsageCounterStore
-from app.infrastructure.config.config_service import ConfigService
-from app.infrastructure.config.legacy_store_migration import import_prepared, prepare_tenant
+from app.infrastructure.business_config.example_businesses import import_example, load_example
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
 MIGRATION = ROOT_DIR / "project" / "db" / "migrations" / "0004_conversations.sql"
@@ -94,7 +93,7 @@ def platform(tmp_path):
     key = Fernet.generate_key().decode()
     service = build_business_config_service(engine, secrets_key=key)
     for slug in ("restaurant", "clinic", "saas"):
-        import_prepared(service, prepare_tenant(ConfigService(), slug))
+        import_example(service, load_example(slug))
     with engine.begin() as conn:
         ids = {row.slug: row.id for row in conn.execute(select(tenants.c.slug, tenants.c.id))}
         for slug, user in (("restaurant", ANA), ("clinic", ANA), ("saas", BETO)):

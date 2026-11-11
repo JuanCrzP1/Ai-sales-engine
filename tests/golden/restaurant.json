@@ -1,0 +1,341 @@
+{
+  "sales": {
+    "discovery": {
+      "objectives": [
+        "saber qué se le antoja y para cuántas personas es el pedido"
+      ]
+    },
+    "support": {
+      "info_handling": {
+        "explain_first": true,
+        "sell_after": true
+      }
+    },
+    "closing": {
+      "strategy": "direct_sale",
+      "next_step": {
+        "action": "dynamic"
+      },
+      "required_data": [
+        "name",
+        "phone",
+        "address"
+      ],
+      "behavior": {
+        "direct_sale": {
+          "goal": "confirmar_compra"
+        },
+        "lead_capture": {
+          "goal": "capturar_datos"
+        },
+        "booking": {
+          "goal": "agendar"
+        },
+        "checkout": {
+          "goal": "enviar_pago"
+        }
+      },
+      "triggers": [
+        "quiero pedir",
+        "quiero ordenar",
+        "lo quiero",
+        "me la mandas"
+      ],
+      "next_steps": [
+        "confirmar pedido",
+        "enviar orden a cocina",
+        "validar direccion de entrega"
+      ],
+      "hard_rules": [
+        "ejecutar cierre orientado a pedido",
+        "no frenar orden con preguntas innecesarias"
+      ]
+    },
+    "progression_rules": {
+      "required_flow": [
+        "detect_pain",
+        "present_solution",
+        "guide_next_step"
+      ]
+    }
+  },
+  "business": {
+    "type": "restaurant",
+    "name": "Mesa Activa",
+    "brand_name": "Mesa Activa",
+    "description": "Restaurante de hamburguesas artesanales en Medellín, con domicilio en El Poblado y Laureles y para recoger en el local.",
+    "industry": "restaurante y domicilios",
+    "tone": "cercano, agil y orientado a orden",
+    "voice": "claro y rapido",
+    "city": "Medellin",
+    "promise": "hamburguesas artesanales recién hechas que llegan calientes a tu casa.",
+    "positioning": "la hamburguesa artesanal del barrio, fácil de pedir por chat.",
+    "differentiators": [
+      "carne artesanal preparada al momento",
+      "domicilio propio en El Poblado y Laureles",
+      "pedido fácil por chat"
+    ],
+    "customer_profile": {
+      "segment": "personas y familias de El Poblado y Laureles que piden comida a domicilio"
+    },
+    "pain_points": [
+      "tengo hambre y no quiero esperar mucho",
+      "no sé qué pedir"
+    ],
+    "desired_outcomes": [
+      "comer rico sin salir de casa",
+      "recibir el pedido caliente"
+    ],
+    "location": {
+      "type": "fisico",
+      "address": "Cra 45 #10-20",
+      "city": "Medellin",
+      "coverage": {
+        "type": "local",
+        "zones": [
+          "poblado",
+          "laureles"
+        ]
+      }
+    },
+    "service_modes": [
+      "domicilio",
+      "presencial",
+      "recoger"
+    ],
+    "logistics": {
+      "delivery": {
+        "available": true,
+        "type": "propio",
+        "zones": [
+          "poblado",
+          "laureles"
+        ],
+        "cost": {
+          "type": "fijo",
+          "value": 4000
+        },
+        "time": {
+          "min": "30 min",
+          "max": "50 min"
+        }
+      },
+      "shipping": {
+        "available": false,
+        "scope": "local",
+        "providers": [],
+        "cost": {
+          "type": "variable",
+          "value": 0
+        },
+        "time": {
+          "min": "",
+          "max": ""
+        }
+      },
+      "pickup": {
+        "available": true,
+        "instructions": "puedes recoger en el local"
+      },
+      "scheduling": {
+        "required": false
+      }
+    }
+  },
+  "pricing": {
+    "model": "catalog",
+    "catalog": {
+      "categories": [
+        {
+          "id": "hamburguesas",
+          "name": "Hamburguesas"
+        },
+        {
+          "id": "bebidas",
+          "name": "Bebidas"
+        }
+      ],
+      "items": [
+        {
+          "id": "hamburguesa_sencilla",
+          "name": "Hamburguesa Sencilla",
+          "category": "hamburguesas",
+          "description": "Carne artesanal, queso y vegetales frescos.",
+          "price": {
+            "COP": 18000
+          }
+        },
+        {
+          "id": "hamburguesa_doble",
+          "name": "Hamburguesa Doble",
+          "category": "hamburguesas",
+          "description": "Doble carne, doble queso y salsa especial.",
+          "price": {
+            "COP": 24000
+          }
+        },
+        {
+          "id": "gaseosa",
+          "name": "Gaseosa",
+          "category": "bebidas",
+          "description": "Bebida gaseosa fria para acompanar el pedido.",
+          "price": {
+            "COP": 5000
+          }
+        },
+        {
+          "id": "jugo_natural",
+          "name": "Jugo Natural",
+          "category": "bebidas",
+          "description": "Jugo del dia sin azucar adicionada.",
+          "price": {
+            "COP": 7000
+          }
+        }
+      ],
+      "payment": {
+        "link": "",
+        "transfer": {
+          "enabled": true,
+          "methods": [
+            {
+              "type": "nequi",
+              "number": "3001234567"
+            },
+            {
+              "type": "daviplata",
+              "number": "3009876543"
+            },
+            {
+              "type": "bank",
+              "bank": "Bancolombia",
+              "account_type": "ahorros",
+              "account_number": "1234567890"
+            },
+            {
+              "type": "breb",
+              "reference": "usuario@correo.com"
+            }
+          ]
+        }
+      }
+    },
+    "conditions": [
+      "precios de menu sujetos a disponibilidad diaria"
+    ],
+    "price_framing": {
+      "type": "directo"
+    },
+    "business_offers": {
+      "core": [
+        "hamburguesa_sencilla",
+        "hamburguesa_doble"
+      ],
+      "upsell": [
+        "hamburguesa_doble"
+      ],
+      "cross_sell": [
+        "gaseosa",
+        "jugo_natural"
+      ],
+      "financing": {
+        "available": false,
+        "providers": [],
+        "options": []
+      }
+    }
+  },
+  "inventory": {
+    "track_stock": false,
+    "items": []
+  },
+  "config": {
+    "conversation": {
+      "active_window_minutes": 15,
+      "reset_hours": 4
+    },
+    "initial_message": {
+      "enabled": true,
+      "text": "Hola, ya estamos listos para ayudarte con tus pedidos. Cuentame, quieres tomar una orden ahora?\n"
+    },
+    "features": {
+      "pricing_enabled": true,
+      "multi_currency": false,
+      "multi_plan": false,
+      "catalog_mode": true,
+      "business_model": "catalog"
+    },
+    "flags": {
+      "ai_first": true,
+      "allow_fallback": false,
+      "log_level": "info"
+    },
+    "response": {
+      "length": "short",
+      "max_words": 60
+    },
+    "post_payment": {
+      "on_user_report": {
+        "message": "Perfecto, ya lo reviso y te confirmo en un momento para continuar.\n"
+      },
+      "on_payment_confirmed": {
+        "message": "Listo, ya quedó confirmado. Ahora seguimos con el siguiente paso.\n"
+      }
+    },
+    "capabilities": {
+      "channels": [
+        "whatsapp"
+      ],
+      "business_channels": {
+        "allowed": [
+          "whatsapp"
+        ]
+      },
+      "system_channels": {
+        "allowed": []
+      },
+      "actions": {
+        "primary": [
+          "tomar_pedido",
+          "cerrar_venta"
+        ],
+        "support": [
+          "responder_dudas",
+          "seguimiento",
+          "confirmar_datos"
+        ]
+      },
+      "closing_methods": {
+        "link_payment": {
+          "enabled": true
+        },
+        "human_handoff": {
+          "enabled": true
+        },
+        "data_collection": {
+          "enabled": true
+        }
+      },
+      "data_collection": {
+        "enabled": true,
+        "fields": [
+          "nombre",
+          "telefono",
+          "direccion",
+          "detalles"
+        ]
+      },
+      "constraints": {
+        "disallowed_channels": [
+          "instagram",
+          "messenger",
+          "telegram",
+          "web"
+        ],
+        "disallowed_actions": [
+          "llamadas"
+        ]
+      }
+    }
+  }
+}

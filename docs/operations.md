@@ -167,13 +167,13 @@ Límite conocido: `reply` es texto del modelo, igual que el que recibe un client
 
 ## Panel De Administración Local
 
-Permite administrar los negocios sin editar YAML. Su API no usa las credenciales del `.env`: el área de pruebas carga el motor, pero responde solo con la clave de IA de cada negocio. Lo que publica es lo que responde el asistente: el motor no tiene otra fuente.
+Permite administrar los negocios en este equipo, sin cuentas. Su API no usa las credenciales del `.env`: el área de pruebas carga el motor, pero responde solo con la clave de IA de cada negocio. Lo que publica es lo que responde el asistente: el motor no tiene otra fuente.
 
-1. Desde la raíz del repositorio, ejecuta uno de los únicos lanzadores del sistema: `run_local.bat` en Windows o `./run_local.sh` en Linux y macOS. Encienden el motor con el `.env`, ngrok, Telegram y la API del panel en `127.0.0.1:8010`.
+1. Desde la raíz del repositorio, ejecuta uno de los únicos lanzadores del sistema: `run_local.bat` en Windows o `./run_local.sh` en Linux y macOS. Encienden el motor con el `.env`, ngrok y la API del panel en `127.0.0.1:8010`.
 2. Cuando esa API responde, arrancan la interfaz y se abre <http://127.0.0.1:5180>. Si no responde, la interfaz no se abre y el motor sigue arrancando.
 3. Para detener todo: `bash run_local_stop.sh`, desde Git Bash en Windows.
 
-Los lanzadores abren también el túnel de `ngrok` y Telegram. Para administrar los negocios sin encender el motor ni exponer nada, basta con la API y la interfaz: ver `apps/admin-web/README.md`.
+Los lanzadores abren también el túnel de `ngrok`. Para administrar los negocios sin encender el motor ni exponer nada, basta con la API y la interfaz: ver `apps/admin-web/README.md`.
 
 La primera vez se crean la base `project/data/business_config.sqlite3` y la clave que cifra los datos de pago, `.ai-sales-engine/business_config_secrets.key` en la carpeta del usuario, fuera del repositorio. La clave se reutiliza siempre: guarda una copia, porque sin ella esos datos no se pueden leer. Tienen prioridad `BUSINESS_CONFIG_SECRETS_KEY`, si está definida, y después `secrets.local.env`, el archivo para trabajar desde varios equipos. Si la clave falta y la base ya tiene datos cifrados, o si hay dos claves distintas, la API no arranca, en vez de crear otra o elegir una que dejaría esos datos ilegibles.
 
@@ -199,14 +199,14 @@ Después retira la memoria y guárdala lejos del equipo. Con un gestor de contra
 
 1. Detén el sistema: `bash run_local_stop.sh`.
 2. Devuelve la copia, sin editarla, a la ruta de arriba. También puedes definir su contenido en `BUSINESS_CONFIG_SECRETS_KEY`, solo para esa sesión; esa variable tiene prioridad y no crea ningún archivo.
-3. Arranca con `run_local.bat` o `./run_local.sh`. Sin abrir el túnel ni Telegram, basta con la API y la interfaz: ver `apps/admin-web/README.md`.
+3. Arranca con `run_local.bat` o `./run_local.sh`. Sin abrir el túnel, basta con la API y la interfaz: ver `apps/admin-web/README.md`.
 4. Comprueba que `GET /api/businesses/{slug}/review` responda `"compiles": true` en cada negocio. La respuesta no muestra la clave ni los datos.
 
 | Situación | Qué ocurre |
 |---|---|
 | Falta la clave y la base tiene datos cifrados | La API no arranca, lo explica y no crea otra. La interfaz no se abre |
 | La clave no es la que cifró esos datos | La API arranca, la revisión avisa que falta un dato de pago y guardar responde 503 con `payment_key` |
-| No queda ninguna copia | Los valores cifrados no se pueden recuperar. Mientras existan los YAML (hasta la Fase 4), aparta el archivo de la base sin borrarlo y arranca: se crea una base nueva con otra clave, y "Importar negocios existentes" los trae de los YAML. Se pierde lo que se haya editado en el panel |
+| No queda ninguna copia | Los valores cifrados no se pueden recuperar. Aparta el archivo de la base sin borrarlo y arranca: se crea una base nueva con otra clave, y «Importar negocios de ejemplo» trae de nuevo los ejemplos. Se pierde lo que se haya editado en el panel de este equipo |
 
 ### Trabajar Desde Windows Y macOS
 
@@ -228,11 +228,10 @@ Las rutas salen de la ubicación del repositorio y de la carpeta del usuario de 
 | `BUSINESS_CONFIG_SECRETS_KEY` | Cifra los datos de pago. El motor la usa para leerlos de lo publicado en el panel (ver `docs/business-config.md`, «Conexión Con El Motor») | Siempre que la base tenga datos. Debe ser la misma en los dos equipos y en el motor |
 | `OPENROUTER_API_KEY` | Pruebas en vivo (`pytest -m integration`) | Solo para esas pruebas. El motor no la usa: cada negocio guarda su clave en el panel |
 | `DATABASE_URL` | PostgreSQL del motor | Motor. Si apunta al propio equipo, el otro necesita su PostgreSQL |
-| `TELEGRAM_TOKEN`, `TELEGRAM_ADMIN_ID` | Canal de Telegram | Motor, si se usa Telegram |
 | `META_VERIFY_TOKEN` | Webhook de WhatsApp | Motor, si se usa WhatsApp |
 | Token de ngrok | Túnel público del motor | `run_local.*`. Lo guarda ngrok en cada equipo, no este archivo: `ngrok config add-authtoken <token>` |
 
-`.env` trae además ajustes que no son secretos (`LLM_PROVIDER`, `OPENROUTER_BASE_URL`, `OPENROUTER_MODEL`, `OPENROUTER_ADVANCED_MODEL`, `TENANT_SLUG`), y viajan igual. El archivo de ejemplo, sin valores reales, es `secrets.local.env.example`.
+`.env` trae además ajustes que no son secretos (`LLM_PROVIDER`, `OPENROUTER_BASE_URL`, `OPENROUTER_MODEL`, `OPENROUTER_ADVANCED_MODEL`), y viajan igual. El archivo de ejemplo, sin valores reales, es `secrets.local.env.example`.
 
 **Crear el archivo, en el equipo que ya tiene los datos.** Reúne la clave actual, sin cambiarla, y las variables del `.env`; nunca imprime valores ni genera una clave. Si cambias el `.env`, repítelo.
 
@@ -309,47 +308,30 @@ scp usuario@nombre-del-mac.local:~/dev/ai-sales-engine/project/data/business_con
 
 ## Autenticación
 
-**La autenticación definitiva está pendiente de la fase de infraestructura e integración en la nube.** El sistema propio actual (`AuthService`, `/auth/login`, `/auth/register` y las tablas `admin_users` y `tenants` del ORM) no se desarrollará ni se mantendrá como solución definitiva, y no debe considerarse listo para producción.
+Las cuentas son de **Neon Auth** (correo y contraseña) y solo las usa el panel en la nube: cada petición lleva el JWT de la sesión y
+cada usuario llega solo a sus negocios (`business_members`). Ver «Nube: Vercel Y Neon».
 
-Hoy no funciona, y se deja así a propósito: usa `python-jose`, que no está en los requisitos, y sus modelos no coinciden con `project/docs/postgresql_schema.sql`. No se añaden dependencias ni se cambia el esquema para mantenerlo.
+La API del panel en este equipo no tiene cuentas: solo atiende en `127.0.0.1` (ver «Panel De Administración Local»).
 
-Qué depende de él y cómo responde hoy:
+Lo que queda del sistema de cuentas anterior (`AuthService`, la tabla `admin_users` y los modelos de `app/models`) solo lo usa
+`/simulate`, que está apagado. Sus rutas (`/auth/register`, `/auth/login`, `/bot-config`, `/clients`, `/connectors`,
+`/conversations` y `/dashboard`) se retiraron el 11 de noviembre de 2026: ya no existen en ningún entorno. `python-jose` sigue sin
+declararse en los requisitos, a propósito (una prueba lo vigila).
 
-| Componente | Estado medido |
-|---|---|
-| `POST /api/v1/auth/register` | Registrado fuera de producción; en producción y en Vercel no se publica (ver «Nube: Vercel Y Neon»). Responde 500 y no emite token. Con las tablas del ORM guarda el negocio y el administrador antes de fallar; con las de `postgresql_schema.sql` no guarda nada |
-| `POST /api/v1/auth/login` | Con las tablas del ORM: clave incorrecta 401, clave correcta 500. Con `postgresql_schema.sql`: siempre 500 |
-| `/bot-config`, `/clients`, `/connectors`, `/conversations` y `/dashboard` (10 rutas) | Sin token 401; con cualquier token 500 |
-| `/simulate` | Ver «Endpoint De Simulación» |
+### Pendiente
 
-El panel `apps/admin-web` y su API local, `/health` y el webhook de WhatsApp no dependen de este sistema.
-
-### `/auth/register` no está listo para producción
-
-Quien alcance el servidor puede llamarlo. `uvicorn` escucha solo en `127.0.0.1` por defecto, pero `docker-compose.yml` publica el puerto 8000. Hoy no entrega acceso a nadie, porque no puede emitir tokens. Sus riesgos conocidos son:
-
-- Con las tablas del ORM, cualquiera puede crear negocios y administradores en la base.
-- No valida el identificador del negocio: admite textos como `../tenants/otro`.
-- Responde 409 si el identificador o el correo ya existen, lo que permite comprobar si existen.
-- **Si se instalara `python-jose`, empezaría a emitir tokens a cualquiera**, y con el secreto por defecto también se podrían falsificar. No la instales antes de integrar la autenticación definitiva.
-
-### Antes De Desplegar
-
-Pendiente de la fase de nube. Nada de esto está implementado:
-
-1. Integrar la autenticación definitiva y conectar a ella las rutas de administración y `/simulate`.
-2. Retirar `/auth/register` y `/auth/login`. Hecho a medias: en producción y en Vercel ya no se publican, junto con el resto de rutas
-   de administración del sistema anterior (`ENABLE_LEGACY_ADMIN_API=1` las publica igual).
-3. Retirar el secreto por defecto de `app/config/settings/base.py` y de `project/config/system/secrets.yaml`.
-4. Resolver la incompatibilidad entre los modelos del ORM y `postgresql_schema.sql`, según lo que exija la solución elegida.
-5. Si `/simulate` se va a habilitar: decidir si `reply` puede contener precios, añadir un límite de peticiones y volver a comprobar sus protecciones con la autenticación real.
-6. ~~Sacar los datos de pago del prompt y de `conversation_trace`~~: hecho (ver `docs/business-config.md`, «Lo Que El Motor Usa Del Contrato»).
-7. Incorporar la autenticación y la autorización multiusuario a la API del panel. Hoy no tiene ninguna y solo es segura porque atiende únicamente en este equipo: no se puede desplegar en la nube así.
+1. Retirar el resto del sistema anterior: `AuthService`, `app/models` con ids enteros y las tablas `admin_users`,
+   `tenant_secrets`, `tenant_settings` y `tenant_channels` (Fase 6 de `docs/plan-v1.md`; borrar tablas de Neon necesita la
+   aprobación de la persona dueña).
+2. Retirar el secreto por defecto (`jwt_secret`) de `app/config/settings/base.py` y de `project/config/system/secrets.yaml` junto con
+   ese sistema.
+3. Si `/simulate` se va a habilitar: pasarlo a las cuentas de Neon Auth, decidir si `reply` puede contener precios y añadir un
+   límite de peticiones. Mientras tanto, «Probar asistente» del panel cubre ese uso.
 
 ## Nube: Vercel Y Neon
 
-Vercel publica **el motor** (FastAPI, carpeta raíz `project`) como funciones de Python; Neon es su PostgreSQL. El panel todavía
-no se publica: necesita la autenticación de la fase de nube.
+Vercel publica **el motor** (FastAPI, carpeta raíz `project`) como funciones de Python, y **el panel** como otro proyecto (ver el
+paso 4); Neon es su PostgreSQL y sus cuentas (Neon Auth).
 
 Lo que el motor ya resuelve para correr ahí:
 
@@ -414,15 +396,17 @@ La IA no lleva variable: cada negocio guarda su clave de OpenRouter en el panel,
   Clientes, Ventas y Reportes; abajo, Asistente IA (un resumen con una tarjeta por sección y su estado; las pestañas de
   entrenamiento, organizadas en tarjetas: lo esencial primero y las opciones avanzadas plegadas; Probar y Publicar), Canales y Ajustes.
 - Conversaciones: cada hilo es un contacto en un canal y pertenece a un negocio (`conversations` y `conversation_entries`,
-  migración 0004). Hoy llegan las de «Probar asistente», con el canal `prueba`; los canales reales escribirán en las mismas
-  tablas. Los datos de pago se guardan ocultos.
+  migraciones 0004 y 0009). Llegan las de WhatsApp por QR, en vivo, y las de «Probar asistente» (canal `prueba`, que no cuenta en
+  Clientes ni en Reportes). Los datos de pago se guardan ocultos.
+- Clientes, Ventas y Reportes (migración 0010): la etapa de cada cliente avanza sola con lo que reconoce el asistente; las ventas
+  se registran desde el panel y los reportes cuentan por día en la hora de Colombia.
 - Canales: WhatsApp por código QR con uazapi. El negocio toca «Conectar WhatsApp» y escanea el QR; el servidor, los tokens y el
   webhook los pone la plataforma. La API oficial de Meta, Telegram y el chat web aparecen como «Próximamente».
-- En la nube no se importan YAML ni se eliminan negocios. El dominio del panel debe estar en Neon Auth → Configure Auth →
-  *Domains*.
+- En la nube no se importan los negocios de ejemplo ni se eliminan negocios. El dominio del panel debe estar en Neon Auth →
+  Configure Auth → *Domains*.
 
-Pendiente: Telegram necesita webhook (Vercel no mantiene procesos de *polling*) y la API oficial de Meta por negocio. Mientras
-tanto, el bot de Telegram sigue atendiendo desde `run_local`.
+Pendiente: Telegram por negocio (con webhook: Vercel no mantiene procesos de *polling*) y la API oficial de Meta por negocio. El
+*polling* de Telegram que corría `run_local`, para un solo negocio fijo, se retiró el 11 de noviembre de 2026.
 
 ## Secuencia De Prueba Recomendada
 
@@ -478,7 +462,7 @@ Durante operación y debugging, conviene observar eventos como:
 Esos eventos ayudan a detectar:
 
 - tenant incorrecto
-- datos YAML faltantes o inconsistentes
+- configuración publicada faltante o inconsistente
 - salida del modelo mal parseada
 - request al LLM sin credenciales
 - fallback por excepción
@@ -499,7 +483,7 @@ Revisar:
 Revisar:
 
 - `runtime_yaml_valid`
-- contenido real del tenant en YAML
+- lo publicado del negocio (panel → Revisión y publicación)
 - `memory_context`
 - `orchestrator_parser_audit`
 
@@ -541,7 +525,7 @@ La suite cubre:
 
 - comportamiento comercial
 - estructura de respuesta
-- runtime YAML
+- el runtime del negocio (su versión publicada, compilada)
 - continuidad conversacional
 - aislamiento multi-tenant
 - API del panel de administración
@@ -563,35 +547,16 @@ Antes de cerrar un cambio relevante en runtime:
 
 ## Scripts De Base De Datos
 
-Ambos scripts leen la lista de tenants de las carpetas de `project/config/tenants/` y escriben en
-la base que indique `DATABASE_URL` (variable de entorno o `.env` de la raíz). Se ejecutan desde la
-raíz del repositorio:
-
-```bash
-python scripts/sync_tenants_to_db.py
-python scripts/bootstrap_saas_data.py
-```
-
-### `sync_tenants_to_db.py`
-
-Crea en la tabla `tenants` una fila (`name=slug`, `status='active'`) por cada carpeta de tenant
-que todavía no exista. No modifica filas existentes y es idempotente. Informa `[created]`,
-`[existing]` o `[error]` por tenant.
-
-### `bootstrap_saas_data.py`
-
-Garantiza por cada tenant una fila en `tenants`, `admin_users` (`name=slug`) y `tenant_settings`
-(`settings='{}'`). No sobrescribe filas existentes, procesa cada tenant en su propia transacción y
-termina con código 1 si algún tenant falla. No crea suscripciones, planes ni límites de uso: eso
-lo administra la plataforma externa.
+`scripts/setup_cloud_database.py` deja lista una rama de Neon (ver «Nube: Vercel Y Neon»). En la rama `pruebas` usa
+`scripts/bootstrap_saas_data.py`, que garantiza por cada negocio de ejemplo (`project/config/tenants/`) una fila en `tenants`,
+`admin_users` y `tenant_settings` (tablas del sistema anterior, que se retiran en la Fase 6). No sobrescribe filas existentes y
+procesa cada negocio en su propia transacción.
 
 ### Precauciones
 
-- **Escriben en la base de datos.** Comprueba antes a qué base apunta `DATABASE_URL`; el `.env`
-  local puede apuntar a una base compartida. No los ejecutes contra producción sin copia de seguridad.
-- Requieren el esquema UUID de `project/docs/postgresql_schema.sql` (tablas `tenants`,
-  `admin_users`, `tenant_settings`).
-- Cada carpeta de `project/config/tenants/` se trata como un tenant, incluidos los de ejemplo.
+- **Escriben en la base de datos.** Comprueba antes a qué base apunta cada variable; nunca contra `production` sin copia de
+  seguridad.
+- Requieren el esquema UUID de `project/docs/postgresql_schema.sql`.
 
 ## Resumen Operativo
 

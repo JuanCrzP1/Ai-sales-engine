@@ -12,12 +12,29 @@ El foco está en responder tres preguntas:
 
 ## Flujo Completo Del Sistema
 
-Hay dos entradas activas:
+Hay tres entradas activas:
 
-- webhook real de WhatsApp Meta
-- endpoint de simulación para pruebas, validación y revisión del flujo comercial
+- WhatsApp por código QR (uazapi): el canal en uso en la nube
+- webhook de WhatsApp Cloud API de Meta
+- «Probar asistente» en el panel (y el endpoint de simulación, apagado por defecto)
 
-### Flujo Productivo Real
+Las tres usan el mismo pipeline y la misma fuente: la versión publicada del negocio en el almacén (Neon en la nube).
+
+### WhatsApp Por Código QR (uazapi)
+
+```text
+uazapi (aviso de la instancia del negocio)
+-> project/app/api/controllers/whatsapp_qr_webhook.py      POST /api/v1/channels/whatsapp/{webhook_id}: identifica el negocio
+                                                            por el id secreto y el token de su instancia, y contesta enseguida
+-> project/app/application/channels/whatsapp_inbound.py    guarda el mensaje en la bandeja (sin duplicados), y después:
+                                                            «escribiendo…», entiende fotos y audios, responde o pasa a una persona
+-> project/app/infrastructure/ai/media_interpreter.py      describe la foto o transcribe la nota de voz, con la clave del negocio
+-> project/app/services/ai_service.py -> mismo pipeline (abajo)
+-> project/app/infrastructure/channels/uazapi.py           envía la respuesta; los recibos de entregado y leído llegan por el webhook
+-> project/app/infrastructure/business_config/conversation_store.py   la conversación queda en la bandeja del panel
+```
+
+### WhatsApp Cloud API De Meta
 
 ```text
 WhatsApp Cloud API
@@ -29,7 +46,7 @@ WhatsApp Cloud API
 -> project/app/connectors/whatsapp/meta/parser.py
 -> project/app/application/runtime/tenant_runtime_loader.py
 -> project/app/application/runtime/runtime_yaml_builder.py
--> project/app/infrastructure/config/config_service.py
+-> project/app/infrastructure/business_config/runtime_access.py
 -> project/app/services/ai_service.py
 -> project/app/application/ai_pipeline.py
 -> project/app/application/pipeline/conversation_flow.py
@@ -73,7 +90,8 @@ La diferencia es operativa:
 
 - `project/app/main.py`: inicia FastAPI, prepara logger, valida entorno y monta las rutas.
 - `project/app/api/routes.py`: registra controladores HTTP.
-- `project/app/api/controllers/whatsapp_webhook.py`: entrada real de WhatsApp Meta.
+- `project/app/api/controllers/whatsapp_qr_webhook.py`: entrada de WhatsApp por código QR (uazapi), una ruta secreta por negocio.
+- `project/app/api/controllers/whatsapp_webhook.py`: entrada de WhatsApp Cloud API de Meta (exige su firma).
 - `project/app/api/controllers/simulation.py`: entrada controlada para simulación y validación.
 - `project/app/api/dependencies.py`: resuelve el tenant para endpoints públicos y autenticados.
 
@@ -167,8 +185,8 @@ La salida se consolida en varias capas:
 
 - `project/app/services/ai/structured_output.py`: parsea contenido y metadata
 - `project/app/application/pipeline/response_postprocessor.py`: aplica reglas de postproceso del texto
-- `project/app/application/response_guard.py`: valida salida contra el YAML activo
-- `project/app/connectors/whatsapp/meta/sender.py`: envía al canal real
+- `project/app/application/response_guard.py`: valida la salida contra la configuración del negocio
+- `project/app/infrastructure/channels/uazapi.py` (WhatsApp por QR) o `project/app/connectors/whatsapp/meta/sender.py` (Meta): envían al canal
 
 ## ai_orchestrator.py
 
@@ -186,7 +204,7 @@ El método principal `generate_business_reply()` recibe:
 - `user_message`: mensaje actual del usuario
 - `conversation_history`: historial inmediato del turno
 - `faq_results`: resultados FAQ ya resueltos
-- `yaml_config`: runtime YAML efectivo del tenant
+- `yaml_config`: el runtime del negocio, compilado de su versión publicada
 
 ### Qué Hace
 
@@ -219,7 +237,7 @@ Donde:
 
 La construcción activa del prompt toma insumos de:
 
-- `yaml_config` del tenant
+- `yaml_config` del negocio (su versión publicada, compilada)
 - memoria conversacional resumida
 - `conversation_history`
 - `faq_results`
@@ -255,33 +273,25 @@ El prompt final controla, como mínimo:
 
 ## Resolución Del Tenant
 
-Hay dos mecanismos principales activos:
+| Entrada | Cómo sabe de qué negocio es |
+|---|---|
+| WhatsApp por QR | El `webhook_id` secreto de la ruta (`business_channels`) y el token de la instancia que trae cada aviso |
+| WhatsApp de Meta | El `phone_number_id` del aviso, con `project/app/services/tenant_channel_resolver.py` |
+| «Probar» en el panel | El negocio abierto en el panel, con la cuenta de Neon Auth que es su dueña |
+| Simulación (apagada) | `X-Tenant-Slug` y el administrador del sistema anterior (`project/app/api/dependencies.py`) |
 
-### Webhook real
+Ver `docs/tenants.md`.
 
-En `project/app/api/controllers/whatsapp_webhook.py`:
+## Carga De La Configuración Publicada
 
-- se extrae `phone_number_id`
-- se consulta `project/app/services/tenant_channel_resolver.py`
-- se construye un `Tenant` válido para el runtime
+Cada mensaje carga la versión publicada del negocio:
 
-### Simulación y endpoints públicos
+- `project/app/application/runtime/tenant_runtime_loader.py`: lee lo publicado por `runtime_access` (la única puerta del motor al
+  almacén: solo lee) y lo compila con `project/app/domain/business_config/compiler.py`.
+- `project/app/application/runtime/runtime_yaml_builder.py`: arma el `runtime_yaml` del turno (el nombre es histórico: ya no hay
+  YAML de negocios).
 
-En `project/app/api/dependencies.py`:
-
-- se lee `X-Tenant-Slug`
-- se normaliza el slug
-- se resuelve el tenant vía `DBRepository`
-
-## Carga De Configuración YAML
-
-El runtime del tenant se arma en:
-
-- `project/app/application/runtime/tenant_runtime_loader.py`
-- `project/app/application/runtime/runtime_yaml_builder.py`
-- `project/app/infrastructure/config/config_service.py`
-
-Las secciones activas que se cargan y validan son:
+Las secciones compiladas son:
 
 - `sales`
 - `business`
@@ -295,6 +305,10 @@ Además se derivan bloques como:
 - `post_payment`
 - `channel`
 
+Si el negocio no existe, no tiene versión publicada o el almacén falla, el motor no responde con datos viejos: el cliente recibe
+un mensaje neutro y queda la alerta `business_config_unavailable`. Los datos de pago se descifran solo al compilar y nunca llegan
+a la IA: el prompt nombra los medios y el motor entrega los datos cuando el cliente elige uno.
+
 ## Cómo Afecta El Tenant La Respuesta
 
 El tenant cambia directamente:
@@ -305,11 +319,11 @@ El tenant cambia directamente:
 - qué capacidades o canales están disponibles
 - qué memoria reciente debe influir en la respuesta
 
-La respuesta final no es genérica. Se construye sobre el runtime YAML efectivo del tenant activo.
+La respuesta final no es genérica. Se construye sobre la versión publicada del negocio activo.
 
 ## Observaciones Técnicas Relevantes
 
-- El sistema activo está simplificado hacia Meta WhatsApp como conector productivo real.
+- El canal en uso en la nube es WhatsApp por código QR (uazapi); la API oficial de Meta tiene su conector y su webhook.
 - No hay `decision_engine.py` ni `narrative_builder.py` como archivos activos. Sus responsabilidades están distribuidas.
 - El runtime es AI-first: el backend organiza contexto, acceso y validación, pero la interpretación del turno y la redacción dependen del modelo.
 - La simulación es parte importante de la arquitectura porque permite probar el mismo motor sin enviar mensajes reales al canal.

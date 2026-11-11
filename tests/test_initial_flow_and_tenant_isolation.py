@@ -27,8 +27,8 @@ if str(PROJECT_DIR) not in sys.path:
 
 from app.application.pipeline.conversation_flow import ConversationFlow, should_send_initial_message
 from app.application.runtime import load_tenant_runtime_yaml
-from app.infrastructure.config.config_service import ConfigService
 from app.services.ai_service import AIService
+from pipeline_harness import engine_sections
 
 
 class _MemoryStub:
@@ -59,6 +59,11 @@ def _tenant(slug: str) -> SimpleNamespace:
 
 def _normalize_text(value: str) -> str:
     return " ".join(str(value or "").split())
+
+
+def _configured_greeting(slug: str) -> str:
+    """El saludo que configuró ese negocio de ejemplo (la referencia congelada de lo que recibe el motor)."""
+    return str(engine_sections(slug)["config"]["initial_message"]["text"]).strip()
 
 
 def ask(
@@ -218,26 +223,10 @@ def test_initial_message_recency_policy_blocks_recent_repeats() -> None:
 ## Separación multi-tenant en configuración inicial.
 ## ----------------------------------------
 def test_multi_tenant_initial_messages_remain_isolated() -> None:
-    cfg = ConfigService()
     tenant_a = "asesor_ai_prod"
     tenant_b = "demo"
-
-    expected_a = str(
-        (
-            cfg.load_initial_message(client_id=tenant_a).get("initial_message")
-            if isinstance(cfg.load_initial_message(client_id=tenant_a).get("initial_message"), dict)
-            else {}
-        ).get("text")
-        or ""
-    ).strip()
-    expected_b = str(
-        (
-            cfg.load_initial_message(client_id=tenant_b).get("initial_message")
-            if isinstance(cfg.load_initial_message(client_id=tenant_b).get("initial_message"), dict)
-            else {}
-        ).get("text")
-        or ""
-    ).strip()
+    expected_a = _configured_greeting(tenant_a)
+    expected_b = _configured_greeting(tenant_b)
 
     response_a, ai_used_a, meta_a = ask("hola", tenant=tenant_a, user_id=f"iso-a-{uuid4().hex[:8]}")
     response_b, ai_used_b, meta_b = ask("hola", tenant=tenant_b, user_id=f"iso-b-{uuid4().hex[:8]}")
@@ -249,26 +238,6 @@ def test_multi_tenant_initial_messages_remain_isolated() -> None:
     assert _normalize_text(response_a) == _normalize_text(expected_a)
     assert _normalize_text(response_b) == _normalize_text(expected_b)
     assert _normalize_text(response_a) != _normalize_text(response_b)
-
-
-## ----------------------------------------
-## QUÉ HACE ESTE TEST:
-## Verifica que tenant inexistente falle explícitamente sin fallback cruzado.
-##
-## POR QUÉ ES IMPORTANTE:
-## Impide que un error de tenant termine cargando config de otro cliente.
-##
-## QUÉ PROTEGE:
-## Seguridad de aislamiento y manejo estricto de errores de configuración.
-## ----------------------------------------
-def test_missing_tenant_yaml_raises_without_cross_tenant_fallback() -> None:
-    cfg = ConfigService()
-    try:
-        cfg.load_initial_message(client_id="tenant_inexistente_xyz")
-    except ValueError as exc:
-        assert "tenant no encontrado" in str(exc).strip().lower()
-        return
-    raise AssertionError("Se esperaba ValueError para tenant inexistente")
 
 
 ## ----------------------------------------
@@ -308,20 +277,17 @@ def test_greeting_gate_identifies_first_message_only_inputs() -> None:
 
 ## ----------------------------------------
 ## QUÉ HACE ESTE TEST:
-## Confirma que el mensaje inicial enviado sea exactamente el definido en YAML.
+## Confirma que el mensaje inicial enviado sea exactamente el que configuró el negocio.
 ##
 ## POR QUÉ ES IMPORTANTE:
 ## Evita hardcodes y asegura que cada tenant controle su bienvenida en config.
 ##
 ## QUÉ PROTEGE:
-## Fuente de verdad YAML para contenido inicial.
+## La configuración del negocio como única fuente del contenido inicial.
 ## ----------------------------------------
-def test_initial_message_flow_uses_yaml_defined_content() -> None:
+def test_initial_message_flow_uses_the_configured_content() -> None:
     tenant_slug = "asesor_ai_prod"
-    cfg = ConfigService()
-    expected_payload = cfg.load_initial_message(client_id=tenant_slug)
-    expected_cfg = expected_payload.get("initial_message") if isinstance(expected_payload.get("initial_message"), dict) else {}
-    expected_text = str(expected_cfg.get("text") or "").strip()
+    expected_text = _configured_greeting(tenant_slug)
 
     response, ai_used, meta = ask("hola", tenant=tenant_slug, user_id=f"yaml-initial-{uuid4().hex[:8]}")
 

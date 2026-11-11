@@ -1,0 +1,12 @@
+{
+  "secret_store:pricing.plans.0.payment.link": "https://checkout.aisalesengine.com/demo/basico",
+  "secret_store:pricing.plans.0.payment.transfer.methods.0.number": "3001234567",
+  "secret_store:pricing.plans.0.payment.transfer.methods.1.number": "3009876543",
+  "secret_store:pricing.plans.0.payment.transfer.methods.2.account_number": "1234567890",
+  "secret_store:pricing.plans.0.payment.transfer.methods.3.reference": "usuario@correo.com",
+  "secret_store:pricing.plans.1.payment.link": "https://checkout.aisalesengine.com/demo/pro",
+  "secret_store:pricing.plans.1.payment.transfer.methods.0.number": "3001234567",
+  "secret_store:pricing.plans.1.payment.transfer.methods.1.number": "3009876543",
+  "secret_store:pricing.plans.1.payment.transfer.methods.2.account_number": "1234567890",
+  "secret_store:pricing.plans.1.payment.transfer.methods.3.reference": "usuario@correo.com"
+}

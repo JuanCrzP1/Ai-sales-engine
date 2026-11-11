@@ -18,7 +18,6 @@ from pathlib import Path
 from types import SimpleNamespace
 from uuid import uuid4
 
-import yaml
 
 from app.application.runtime import load_tenant_runtime_yaml
 from app.infrastructure.ai.prompting.builder.prompt_builder import PromptBuilderService
@@ -30,6 +29,7 @@ if str(PROJECT_DIR) not in sys.path:
     sys.path.insert(0, str(PROJECT_DIR))
 
 from app.services.ai_service import AIService
+from pipeline_harness import engine_sections
 
 
 def _capabilities_block(runtime: dict) -> str:
@@ -345,10 +345,8 @@ def test_prompt_builder_includes_pricing_in_active_conversation() -> None:
 
     prompt_text = str(prompt or "")
 
-    _pricing_path = PROJECT_DIR / "config" / "tenants" / "asesor_ai_prod" / "pricing.yaml"
-    _pricing_data = yaml.safe_load(_pricing_path.read_text(encoding="utf-8"))
-    _conditions = _pricing_data.get("pricing", {}).get("conditions", [])
-    assert _conditions, "pricing.yaml no tiene conditions definidas"
+    _conditions = engine_sections("asesor_ai_prod")["pricing"].get("conditions", [])
+    assert _conditions, "el negocio no tiene condiciones de precio definidas"
     for condition in _conditions:
         assert str(condition) in prompt_text, f"Condición no encontrada en prompt: {condition!r}"
     assert "Medios de pago:" in prompt_text

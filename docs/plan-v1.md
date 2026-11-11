@@ -1,7 +1,8 @@
 # Plan de la versión 1: auditoría y fases
 
 Auditoría del sistema completo (motor, panel, nube) del 10 de noviembre de 2026 y el plan para terminar la versión 1. Cada
-hallazgo dice dónde está y cómo se comprobó. Ninguna fase se da por terminada sin sus pruebas.
+hallazgo dice dónde está y cómo se comprobó. Ninguna fase se da por terminada sin sus pruebas. Avance actualizado el 11 de
+noviembre de 2026.
 
 ## 1. Dónde estamos
 
@@ -12,12 +13,17 @@ hallazgo dice dónde está y cómo se comprobó. Ninguna fase se da por terminad
 - Configuración del negocio con contrato versionado (`BusinessConfig`): borrador, publicar, volver atrás.
 - Clave de OpenRouter por negocio, cifrada. La plataforma no tiene clave propia.
 - Probar el asistente con la IA real.
-- Bandeja de conversaciones con historial en la base, y avisos al equipo cuando el asistente pasa a una persona.
-- Producción: `asesor_ai_prod`, a nombre de su dueño, con su configuración completa.
+- WhatsApp por código QR (uazapi), conectado desde Canales con un solo botón.
+- Conversaciones en vivo (escribiendo, chulos, no leídos, responder desde el panel, pausar la IA, fotos y notas de voz que la IA
+  entiende) y paso a una persona con aviso al equipo.
+- Clientes con su etapa, ventas y reportes.
+- Producción: `asesor_ai_prod`, a nombre de su dueño. Sus borradores v3 y v4 (la configuración para vender la plataforma) están
+  guardados y sin publicar: se prueban en «Probar» y se publican desde el panel.
 
-**Todavía no hay clientes reales escribiendo:** ningún canal (WhatsApp, Telegram, Instagram, web) está conectado en la nube.
+**Canales:** WhatsApp por QR ya recibe y responde mensajes reales en la nube. Telegram, Instagram, el chat web y la API oficial de
+Meta todavía no.
 
-**Avance (10 de noviembre de 2026):**
+**Avance (al 11 de noviembre de 2026):**
 
 | Hallazgo | Estado | Cómo quedó |
 |---|---|---|
@@ -33,6 +39,8 @@ hallazgo dice dónde está y cómo se comprobó. Ninguna fase se da por terminad
 | Contenido del prompt | Hecho (v2) | Prompt por capas en una sola voz: plataforma (cómo vende, la verdad primero, dudas, pagos, formato), manual por tipo de negocio, el negocio completo en todos los mensajes, la conversación como mensajes reales y la versión del prompt en cada respuesta. Medido con la IA real en el laboratorio de calidad (`experiments/quality_lab`, `exp_20261110_calidad_prompt_v2`): puntaje 9,59 → 9,84, no inventa 1,72 → 1,92, pregunta trampa 9,06 → 10, gana 17 de 18 a ciegas, menos tokens y más rápido. Línea base A/A: 9,52 contra 9,52. Ajuste v2.1 confirmado en vivo (`exp_20261110_calidad_prompt_v2_1`): 9,44 → 9,70, dudas por precio 7,72 → 8,44, pregunta trampa 8,83 → 9,72. Un intento v2.2 empeoró y se descartó (`exp_20261110_calidad_v2_2_objeciones`). |
 | Q3, Fase 3 | Hecho | Todo lo que el panel deja configurar llega al motor (prompt v3): 184 campos conectados, 0 pendientes. Solo quedan fuera, a propósito, lo que es del equipo (la etiqueta de una cuenta y el código de una variante) y lo que enviará la plataforma ante un evento (pago confirmado y seguimiento). Capas nuevas: cómo compra y recibe el cliente, políticas, el cliente y la estrategia de venta. Laboratorio de regresión (`exp_20261110_fase3_campos_conectados`): mismas respuestas, webhook y rutas; los prompts solo suman lo nuevo. Calidad con la IA real (`exp_20261110_calidad_fase3_ficha_completa`): 9,64 contra 9,62 por respuesta, 0 precios inventados y gana 15 de 18 a ciegas; en los negocios con estrategia avanzada (`exp_20261110_calidad_fase3_objeciones`): 9,58 → 9,81, dudas por precio 9,25 → 9,5 y gana 7 de 8. Los ejemplos de restaurante, tienda de ropa y agencia de viajes (y el posicionamiento y las reglas de cierre de la escuela) tenían la estrategia escrita como si vendieran el asistente a su sector; se corrigieron para que describan lo que venden. Con la ficha real (`exp_20261110_calidad_ejemplos_limpios_ficha_real`): 8,86 → 9,36, dudas por precio 5,5 → 8,88, pregunta trampa 7,5 → 9,88 y gana 6 de 8. |
 | T3 | Hecho | Cada respuesta suma a `ai_usage` (migración 0007) por negocio, día y modelo, con el costo si OpenRouter lo informa. El panel lo muestra en «Inteligencia artificial». |
+| Fase 5 (WhatsApp) | Hecho en la nube | WhatsApp por QR, conversaciones en vivo, paso a una persona, clientes, ventas y reportes (ver Fase 5). |
+| A4 (Fase 6) | En curso | Retirados los YAML, `ConfigService`, la API de administración vieja y el *polling* de Telegram, con el motor sin diferencias en el laboratorio. Faltan los modelos con ids enteros, `AuthService` y sus tablas (ver Fase 6). |
 
 ## 2. Cómo funcionaba antes y cómo funciona hoy
 
@@ -41,12 +49,12 @@ hallazgo dice dónde está y cómo se comprobó. Ninguna fase se da por terminad
 | Configuración | 5 archivos por negocio (`business`, `sales`, `pricing`, `inventory`, `config`) y `bot_config.yaml`, editados a mano | Panel → contrato validado y versionado en Neon → compilado a las secciones que lee el motor |
 | Negocios | Una carpeta por negocio | Filas en la base, con dueño |
 | Clave de IA | Una general en el `.env` | Una por negocio, cifrada |
-| Canal | Telegram por *polling*, un negocio por proceso (`TENANT_SLUG`) | Ninguno en la nube todavía |
+| Canal | Telegram por *polling*, un negocio por proceso (`TENANT_SLUG`) | WhatsApp por código QR (uazapi), una instancia por negocio, en la nube |
 | Pasar a una persona | `human_handoff: enabled: true` y un comentario, sin reglas | Igual, más el aviso al equipo y la conversación marcada |
-| Conversaciones | Solo la memoria del motor | Memoria del motor + bandeja del panel (dos almacenes) |
+| Conversaciones | Solo la memoria del motor | Bandeja en vivo del panel + memoria del motor (dos almacenes todavía: A3) |
 
-`asesor_ai_prod` conserva todos sus datos de los YAML (164 campos). Una prueba compara lo que recibe el motor desde el panel con lo
-que recibía de los YAML: es lo mismo, más las mejoras (preguntas frecuentes, promociones, perfil comercial, textos completos).
+`asesor_ai_prod` conservó todos sus datos de los YAML (164 campos). Los YAML ya no existen: lo que el motor recibía de ellos quedó
+congelado en `tests/golden/`, y las pruebas comprueban que los negocios de ejemplo compilan exactamente a eso.
 
 ## 3. Hallazgos
 
@@ -186,7 +194,7 @@ Tamaño: S (horas), M (1–2 días), L (3–5 días). El orden importa: cada fas
 - ~~Si la base falla, error claro y alerta: nunca el YAML viejo (A2).~~ Hecho: `business_config_unavailable` y mensaje neutro.
 - ~~Mensaje de emergencia desde el panel (Q5).~~ Hecho: `messages.fallback`, en Mensajes y canales.
 - ~~Quitar `asesor_ai_prod` como negocio por defecto.~~ Hecho.
-- Los YAML quedan solo como origen de la importación; se borran en la Fase 6.
+- ~~Los YAML quedan solo como origen de la importación; se borran en la Fase 6.~~ Borrados el 11 de noviembre de 2026 (ver Fase 6).
 
 **Terminada cuando:** un negocio creado desde el panel responde en «Probar» y por la ruta de un canal, sin ninguna carpeta. Lo
 comprueban `test_a_business_created_in_the_panel_answers_without_any_yaml_folder` (ruta de un canal) y
@@ -196,7 +204,8 @@ Cómo quedó:
 - Una sola fuente: `load_tenant_runtime_yaml` lee la versión publicada (`published_sections`). Ya no existen
   `BUSINESS_CONFIG_STORE` ni `BUSINESS_CONFIG_CONTRACT_TENANTS`, ni el almacén en archivos (`business-config.json`) para el motor.
 - Sin respaldos escondidos: el flujo de ventas, el saludo, el prompt, el mensaje de respaldo, el envío por WhatsApp y Telegram ya no
-  leen YAML. Una prueba de arquitectura (`test_the_engine_never_reads_the_business_yaml`) impide volver a conectarlos.
+  leen YAML. Desde la Fase 6, una prueba de arquitectura (`test_the_yaml_readers_are_gone_and_nothing_in_the_app_uses_the_migration_catalog`)
+  comprueba que los lectores de YAML ya no existen.
 - Si la IA falla, el cliente recibe el mensaje del negocio o uno neutro; antes recibía un texto fijo de los YAML globales que
   aparentaba ayudar («Te ayudo encantada…») y, si el negocio no se podía leer, «Error de configuración de tenant».
 - Las pruebas usan la misma ruta que producción: un almacén con los nueve negocios importados y publicados. Tres archivos que
@@ -288,6 +297,26 @@ Borrar la API de administración vieja, los modelos con ids enteros, `python-jos
 tablas `admin_users`, `tenant_secrets`, `tenant_settings`, `tenant_channels`. Dividir `memory_repository.py` y `ai_execution.py`
 en módulos pequeños y quitar los errores silenciados (A4, A5).
 
+**Avance (11 de noviembre de 2026):** hecha la primera parte. Antes de borrar, cada pieza se comprobó sin uso con el mapa de
+importaciones (qué módulos alcanzan el motor, la API de la nube y la API local) y una búsqueda en todo el repositorio.
+- ~~Los 45 YAML de los 9 negocios de ejemplo~~: ahora son JSON en el formato del contrato (`business-config.json`,
+  `engine-settings.json`, `payment-values.json`), que compilan exactamente a lo mismo. Lo que el motor recibía de los YAML quedó
+  congelado en `tests/golden/`.
+- ~~`ConfigService` y el importador de los YAML~~ (`config_service.py`, `legacy_yaml_importer.py`, `legacy_store_migration.py`,
+  `payment_secrets.py`, `business_config_store.py`), `scripts/migrate_tenants_to_contract.py` y su informe. La importación de
+  ejemplos es `infrastructure/business_config/example_businesses.py`.
+- ~~La API de administración vieja~~ (`/auth`, `/clients`, `/conversations`, `/bot-config`, `/connectors`, `/dashboard`): 6
+  controladores, 6 esquemas y `crm_service`. El panel nunca la usó.
+- ~~El *polling* de Telegram~~ (un negocio fijo por proceso) y sus variables (`TELEGRAM_TOKEN`, `TELEGRAM_ADMIN_ID`, `TENANT_SLUG`).
+- ~~Archivos sin lector~~: `channels/channels.yaml`, `assets/media.yaml`, la guía de los YAML, tres módulos vacíos o duplicados,
+  `scripts/sync_tenants_to_db.py` (lo hace `bootstrap_saas_data.py`), una copia vieja de la arquitectura y evidencias históricas.
+- Verificado: la suite completa, el panel (unidad e integración) y el laboratorio de regresión contra `aa6f266`
+  (`exp_20261111_retiro_yaml_y_sistema_anterior`): motor sin diferencias en los 9 negocios; solo cambian las 12 rutas retiradas.
+
+Falta: `AuthService`, `app/models` con ids enteros y lo que los usa (`/simulate`, el webhook de Meta, el resolvedor de canales),
+las tablas del sistema anterior en Neon (borrarlas necesita la aprobación de la persona dueña), el secreto por defecto
+(`jwt_secret`), dividir `memory_repository.py` y `ai_execution.py`, y quitar los errores silenciados.
+
 **Terminada cuando:** no queda código ni tabla del sistema anterior y ningún módulo supera unas 400 líneas.
 
 ### Fase 7: operación para lanzar (M)
@@ -307,7 +336,8 @@ en módulos pequeños y quitar los errores silenciados (A4, A5).
 
 1. Cualquier persona crea su cuenta, crea su negocio, lo configura, pega su clave y conecta un canal sin ayuda.
 2. Todo lo que se configura en el panel cambia lo que hace el asistente, y hay una prueba que lo demuestra.
-3. No queda ningún YAML ni código del sistema anterior.
+3. No queda ningún YAML de negocio ni código del sistema anterior (hecho lo primero; los ajustes de la plataforma en
+   `project/config/system/` sí son YAML y se quedan).
 4. Cada mensaje hace una sola llamada al modelo y su consumo queda registrado.
 5. El asistente resuelve primero y pasa a una persona según las reglas del negocio, avisando al equipo.
 6. Ningún registro contiene tokens, contraseñas ni mensajes de clientes.

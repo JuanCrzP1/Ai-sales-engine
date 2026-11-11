@@ -756,10 +756,10 @@ describe("17 y 18. persistencia real y contrato", () => {
     expect(screen.getByRole("button", { name: "Publicar versión 2" })).toBeDisabled();
   });
 
-  it("importa los negocios existentes y el panel los abre y guarda sin perder nada", async () => {
+  it("importa los negocios de ejemplo y el panel los abre y guarda sin perder nada", async () => {
     const NINE = ["agencia_viajes", "asesor_ai_prod", "clinic", "demo", "ecommerce", "escuela_conduccion", "restaurant", "saas", "tienda_ropa"];
     const user = await openPanel("/negocios");
-    await user.click(screen.getByRole("button", { name: "Importar negocios existentes" }));
+    await user.click(screen.getByRole("button", { name: "Importar negocios de ejemplo" }));
     await screen.findByText("Se importaron 9 negocios.");
     const slugs = (await api<{ slug: string }[]>("/businesses")).map((business) => business.slug);
     expect(slugs).toEqual(expect.arrayContaining(NINE));

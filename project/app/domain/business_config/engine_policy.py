@@ -3,8 +3,8 @@
 Valores que el runtime actual aplica (comprobados en el código del motor; este módulo no los cambia):
 - longitud de respuesta: `ai_execution.py` y `prompting/sections/style.py` usan "short" y 80 palabras cuando la
   configuración no trae valores, con un mínimo de 20 palabras.
-- ventanas de conversación: `ConfigService.DEFAULT_CONVERSATION` y `conversation_flow.py` usan
-  15 minutos (activa) y 4 horas (reinicio); un 0 se trata como "sin valor".
+- ventanas de conversación: `conversation_flow.py` usa 15 minutos (activa) y 4 horas (reinicio); un 0 se trata
+  como "sin valor".
 - largo de los textos del negocio (`MAX_*_CHARS`) y de sus listas: el asistente los usa completos.
 - definición común del cierre (`COMMON_CLOSING_POLICY`): ver la constante.
 

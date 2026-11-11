@@ -20,8 +20,7 @@ from app.infrastructure.business_config import runtime_access
 from app.infrastructure.business_config.ai_settings_store import AISettingsStore
 from app.infrastructure.business_config.database import build_business_config_service, create_business_config_engine, create_local_schema
 from app.infrastructure.business_config.payment_secret_store import SECRETS_KEY_ENV
-from app.infrastructure.config.config_service import ConfigService
-from app.infrastructure.config.legacy_store_migration import import_prepared, prepare_tenant
+from app.infrastructure.business_config.example_businesses import import_example, load_example
 from app.infrastructure.persistence.memory_repository import MemoryRepository
 from app.services.ai_runtime.runtime_llm import client as client_module
 from app.services.ai_runtime.runtime_llm.prompting import RuntimeLLMImplementation
@@ -138,7 +137,7 @@ def platform(tmp_path, monkeypatch):
     key = Fernet.generate_key().decode()
     configs = build_business_config_service(engine, secrets_key=key)
     for slug in ("restaurant", "clinic"):
-        import_prepared(configs, prepare_tenant(ConfigService(), slug))
+        import_example(configs, load_example(slug))
     AISettingsStore(engine, key).save_ai_settings("restaurant", model="openai/gpt-4o-mini", api_key=KEY_A, clear_key=False)
     monkeypatch.setenv(business_config_database.DATABASE_URL_ENV, f"sqlite:///{path.as_posix()}")
     monkeypatch.setenv(SECRETS_KEY_ENV, key)

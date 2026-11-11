@@ -11,6 +11,8 @@ CORS: el panel llega a través del proxy de Vite.
 from __future__ import annotations
 
 import logging
+from collections.abc import Callable
+from typing import Any
 
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
@@ -86,6 +88,7 @@ def create_app(
     messenger: OutboundMessenger | None = None,
     commerce: CommerceStorage | None = None,
     ai_usage: AIUsageStorage | None = None,
+    examples: Callable[[BusinessConfigService], Any] | None = None,
 ) -> FastAPI:
     """La API del panel. Sin `assistant_lab`, la inteligencia artificial y el área de pruebas responden que no están disponibles.
 
@@ -113,6 +116,8 @@ def create_app(
     app.state.templates = templates if templates is not None else BusinessTemplateCatalog.from_directory()
     # WhatsApp por código QR: sin el servicio, sus rutas responden que los canales no están disponibles.
     app.state.whatsapp = whatsapp
+    # Solo la API de este equipo importa los negocios de ejemplo (`POST /api/businesses/import`).
+    app.state.examples = examples
 
     @app.middleware("http")
     async def guard(request: Request, call_next):

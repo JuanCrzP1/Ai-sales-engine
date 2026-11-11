@@ -24,7 +24,7 @@ El producto está orientado a equipos y negocios que venden por conversación:
 - operaciones donde una respuesta lenta equivale a una venta perdida
 - negocios que necesitan atender varios clientes o marcas desde una misma plataforma
 
-También está diseñado para operación multi-tenant: atiende a múltiples negocios con configuración aislada. Las cuentas, suscripciones, facturación y límites de uso los administra la plataforma externa que integra el motor.
+Es una plataforma SaaS: cada negocio crea su cuenta en el panel, configura su asistente, pega su propia clave de IA y conecta su WhatsApp. Los negocios están aislados entre sí. La plataforma no cobra ni tiene suscripciones.
 
 ## Cómo Funciona En Términos De Negocio
 
@@ -133,7 +133,7 @@ Eso permite que el producto:
 
 El sistema pierde efectividad si:
 
-- la configuración YAML no refleja el negocio real
+- la configuración publicada en el panel no refleja el negocio real
 - el pricing no está claro o está incompleto
 - el inventario no define bien la oferta
 - el tono comercial no está alineado con el mercado
@@ -153,15 +153,11 @@ Cuando el cliente conversa con el sistema, la experiencia buscada es:
 
 La salida correcta no es “inteligente” en abstracto. Es una salida que mueve la conversación hacia resultado.
 
-## Motor Integrable, No Proyecto Aislado
+## Plataforma, No Proyecto Aislado
 
-El motor está diseñado para integrarse en una plataforma externa:
-
-- múltiples tenants
-- configuración por negocio
-- separación entre transporte, pipeline, configuración y persistencia
-
-La plataforma externa administra las cuentas, las suscripciones, la facturación y los límites de uso. El motor recibe solicitudes autorizadas y ejecuta la atención comercial.
+- Muchos negocios sobre el mismo motor, cada uno con su cuenta, su configuración publicada y su clave de IA.
+- El negocio atiende desde el panel: conversaciones en vivo, clientes, ventas y reportes.
+- Separación entre canales, pipeline, configuración y persistencia: agregar un canal no toca el motor.
 
 Los precios, planes, catálogos, enlaces de pago y transferencias que aparecen en la configuración pertenecen a cada negocio: son lo que ese negocio vende a sus clientes y el motor los usa para cerrar ventas.
 

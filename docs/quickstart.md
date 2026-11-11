@@ -1,73 +1,58 @@
-# Quickstart
+# Inicio rápido
 
-## ¿Qué es esto?
+## En la nube
 
-Es un motor de ventas conversacionales por WhatsApp. Las cuentas, suscripciones y facturación los gestiona la plataforma externa que lo integra.
-No responde por responder.
-Toma el mensaje, entiende el contexto comercial del negocio y mueve la conversación hacia una acción concreta.
-Está diseñado para vender, no para simular atención.
+El panel publicado en Vercel es la forma normal de usar la plataforma:
 
-## Diferencial
+1. Crea tu cuenta (Neon Auth) y tu negocio; puedes empezar desde una plantilla.
+2. En **Asistente IA**, completa lo que vendes, precios, pagos y cómo vendes. Guarda y **publica**: el asistente solo usa lo
+   publicado.
+3. En **Ajustes → Inteligencia artificial**, pega tu clave de OpenRouter y elige el modelo.
+4. En **Probar asistente**, conversa con él usando la IA real.
+5. En **Canales**, toca «Conectar WhatsApp» y escanea el código QR con el WhatsApp del negocio.
+6. Atiende en **Conversaciones**; registra ventas en **Clientes** o **Ventas**; mira el resultado en **Reportes**.
 
-- no es automatización genérica
-- vende
-- sigue contexto
+## En este equipo
 
-Responde con criterio comercial, no con plantillas decoradas.
-Conecta dolor con impacto, impacto con dinero y dinero con decisión.
-Su salida no busca sonar tecnológica. Busca cerrar, avanzar o activar.
-
-## Ejecución
-
-**Windows (PowerShell):**
-
-```powershell
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-pip install -r project/requirements.txt
-cd project
-uvicorn app.main:app --reload
-```
-
-**macOS / Linux:**
+Requisitos: Python 3.11 o superior, Node (versión de `apps/admin-web/.nvmrc`), PostgreSQL para la memoria del motor (Docker:
+`docker compose up -d db`) y, para WhatsApp en local, ngrok.
 
 ```bash
 python -m venv .venv
-source .venv/bin/activate
-pip install -r project/requirements.txt
-cd project
-uvicorn app.main:app --reload
+source .venv/bin/activate              # Windows: .\.venv\Scripts\Activate.ps1
+pip install -r project/requirements-dev.txt
+npm --prefix apps/admin-web install
+./run_local.sh                         # Windows: run_local.bat
 ```
 
-### Simular una conversación
+`run_local` arranca:
 
-`POST /api/v1/simulate` es una ruta de pruebas internas. Está apagada por defecto y responde 404. Aunque se habilite, exige un
-token de administrador que hoy ningún entorno puede emitir, porque la autenticación definitiva queda para la fase de nube, así
-que por ahora no se puede usar de extremo a extremo. El estado completo está en `docs/operations.md`.
+| Servicio | Dónde |
+|---|---|
+| Motor (webhooks y pipeline), con el `.env` | `http://127.0.0.1:8082` |
+| Túnel ngrok hacia el motor (WhatsApp por QR en local) | la dirección que imprime al arrancar |
+| API del panel (solo este equipo, sin cuentas) | `http://127.0.0.1:8010` |
+| Panel | <http://localhost:5180> |
 
-## Resultado
+`./run_local_stop.sh` lo detiene todo.
 
-- naturalidad
-- guía
-- cierre
+La primera vez, en el panel local, **Importar negocios de ejemplo** trae los 9 negocios de ejemplo de
+`project/config/tenants/` (ya publicados). Para probarlos con la IA real, cada uno necesita su clave en «Inteligencia
+artificial».
+
+Los secretos de este equipo (`.env`, clave de cifrado) se mueven entre Windows y macOS con `secrets.local.env`: ver
+[operations.md](operations.md), «Trabajar Desde Windows Y macOS».
 
 ## Pruebas
 
-- tenant: asesor_ai_prod
+```bash
+pytest                                             # sin IA real ni base del .env
+npm --prefix apps/admin-web test
+npm --prefix apps/admin-web run test:integration
+```
 
-Mensajes dirigidos:
+`pytest -m integration` usa la IA real y gasta: solo con `OPENROUTER_API_KEY` y cuando haga falta.
 
-- como funciona
-- esta caro
-- quiero empezar
+## Simulación
 
-Lectura esperada:
-
-- "tengo muchos mensajes": dolor operativo y costo de oportunidad
-- "como funciona": explicación breve con dirección comercial
-- "esta caro": defensa de valor con conexión a dinero
-- "quiero empezar": avance directo a activación o compra
-
-## Siguiente paso
-
-- README + docs + WhatsApp
+`POST /api/v1/simulate` está apagado por defecto (404). Para probar el asistente se usa «Probar asistente» en el panel.

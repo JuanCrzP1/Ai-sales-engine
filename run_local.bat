@@ -21,25 +21,6 @@ echo [INFO] Iniciando ngrok en puerto 8082...
 start "ngrok" cmd /k ngrok http 8082
 
 :: -------------------------
-:: TELEGRAM (NO TOCAR)
-:: -------------------------
-set TELEGRAM_POLLING_ENABLED=
-if defined TELEGRAM_TOKEN set TELEGRAM_POLLING_ENABLED=1
-if not defined TELEGRAM_POLLING_ENABLED if exist ..\.env (
-	findstr /b /c:"TELEGRAM_TOKEN=" ..\.env >nul && set TELEGRAM_POLLING_ENABLED=1
-)
-if not defined TELEGRAM_POLLING_ENABLED if exist .env (
-	findstr /b /c:"TELEGRAM_TOKEN=" .env >nul && set TELEGRAM_POLLING_ENABLED=1
-)
-
-if defined TELEGRAM_POLLING_ENABLED (
-	echo [INFO] Iniciando Telegram polling...
-	start "telegram-polling" cmd /k python -m app.connectors.telegram.polling
-) else (
-	echo [INFO] TELEGRAM_TOKEN no definido. Telegram polling no se inicia.
-)
-
-:: -------------------------
 :: PANEL WEB (API en 8010, interfaz en ADMIN_WEB_PORT)
 :: -------------------------
 set ADMIN_WEB_DIR=%~dp0apps\admin-web
