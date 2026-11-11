@@ -309,6 +309,28 @@ Si el negocio no existe, no tiene versión publicada o el almacén falla, el mot
 un mensaje neutro y queda la alerta `business_config_unavailable`. Los datos de pago se descifran solo al compilar y nunca llegan
 a la IA: el prompt nombra los medios y el motor entrega los datos cuando el cliente elige uno.
 
+## Eliminar Un Chat
+
+El panel elimina un chat con `DELETE /api/conversations/{id}` (o todos los de «Probar asistente» con
+`DELETE /api/businesses/{slug}/conversations/tests`):
+
+```text
+panel (papelera del chat o de Clientes)
+-> project/app/admin_api/conversation_routes.py
+-> project/app/business_config_application/conversations.py   ConversationsService.delete: comprueba que el chat sea del usuario
+-> project/app/application/channels/contact_memory.py         EngineContactMemory: el motor olvida al cliente
+   -> project/app/infrastructure/persistence/memory_repository.py   SQLMemoryRepository.forget_contact
+-> project/app/infrastructure/business_config/conversation_store.py   ConversationStore.delete
+```
+
+- **Primero la memoria del motor:** borra el historial (`conversation_messages`), la memoria comercial (`conversation_memory`) y el
+  registro del cliente (`clients`), y su copia en RAM. Si falla, responde 503 y no se borra nada.
+- **Después la conversación:** sus mensajes, archivos y avisos se borran en cascada en la base; las ventas quedan con
+  `conversation_id` en `NULL`.
+- Cada instancia del motor guarda el registro de cada cliente en una caché que vence en `IDS_CACHE_SECONDS` (60 s), para que
+  ninguna siga usando uno borrado.
+- Los chats de prueba no tienen memoria en el motor: solo se borra la conversación.
+
 ## Cómo Afecta El Tenant La Respuesta
 
 El tenant cambia directamente:

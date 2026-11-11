@@ -68,6 +68,20 @@ La base se crea sola en `project/data/business_config.sqlite3` (ignorada por git
 | Mensajes y canales | Bienvenida, mensajes de pago, otros mensajes, canales y restricciones | `messages`, `capabilities` |
 | Revisión y publicación | Lo que falta, avisos del servidor, resumen, publicar, volver a la versión anterior, historial y restaurar | versiones del almacén |
 
+Para atender y vender:
+
+| Sección | Qué hace |
+|---|---|
+| Inicio | Lo del día (conversaciones, mensajes, quién espera a una persona) y el estado del asistente |
+| Conversaciones | Los chats en vivo: responder, pausar o reanudar la IA, atender a quien pidió una persona, eliminar un chat y borrar las pruebas |
+| Clientes | Cada cliente con su etapa, registrar una venta y eliminarlo (con su chat) |
+| Ventas | Registrar y anular ventas, y los pagos por verificar |
+| Reportes | Embudo, conversaciones por día, quién respondió y el costo de la IA |
+| Canales | Conectar WhatsApp por código QR |
+| Ajustes | La clave de IA del negocio, el modelo y su consumo |
+
+En el celular, el menú se abre con ☰ desde una barra superior que muestra la sección, el negocio y los avisos.
+
 Los campos del contrato sin pantalla propia se generan desde el esquema que publica la API, en las secciones plegables.
 
 ### Cómo se comporta

@@ -198,6 +198,27 @@ prueba no tienen caja de respuesta.
 Los gráficos (`components/ui/Charts.tsx`) usan un color por serie, globo al pasar el mouse y una tabla oculta para lectores de
 pantalla. Los dos colores de «Quién respondió» están validados para daltonismo.
 
+### D8g — El celular como una aplicación
+
+En pantallas de hasta 900 px, `layout/AppShell.tsx` muestra una barra superior con ☰ (izquierda), la sección abierta y su negocio
+(`navigation/navItems.ts`, `titleForPath`) y la campana (derecha). El menú lateral pasa a ser un panel que se desliza: fondo oscuro,
+bloquea la página de atrás, el foco entra al abrir y vuelve al ☰ al cerrar, y se cierra con la X, Escape, tocando afuera,
+deslizándolo o al elegir una opción. `lib/useMediaQuery.ts` decide si la pantalla es de celular: la campana se monta una sola vez
+(arriba en el celular, en el menú en pantalla grande), porque cada una consulta sus avisos. Ninguna pantalla se sale del ancho del
+celular (se comprobaron las 15 a 390 px).
+
+### D8h — Eliminar chats
+
+`layout/DeleteChatDialog.tsx` confirma antes de eliminar y dice qué se borra (mensajes, archivos, avisos y lo que el asistente
+recuerda del cliente) y qué no (las ventas). Lo usan Conversaciones y Clientes, porque un cliente es su chat. Si el servidor no
+puede borrarlo, lo dice y el chat sigue ahí. Los chats de «Probar asistente» se borran de una vez desde la lista, con confirmación
+en dos pasos.
+
+### D8i — Diálogos por encima de todo
+
+`components/ui/Dialog.tsx` se dibuja al final de la página (un portal de React): así cubre también el menú lateral, que tiene su
+propia capa para que el menú de la cuenta y los avisos se abran por encima del contenido.
+
 ### D9 — API separada del motor y limitada a este equipo
 
 `app.main` publica rutas del motor y en Docker escucha en `0.0.0.0`. La API del panel es otra aplicación, con el host fijo a `127.0.0.1`

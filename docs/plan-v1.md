@@ -4,6 +4,28 @@ Auditoría del sistema completo (motor, panel, nube) del 10 de noviembre de 2026
 hallazgo dice dónde está y cómo se comprobó. Ninguna fase se da por terminada sin sus pruebas. Avance actualizado el 11 de
 noviembre de 2026.
 
+## Hoja de ruta acordada (11 de noviembre de 2026)
+
+El trabajo que falta, en el orden acordado con el dueño del producto. Cada fase de la hoja de ruta agrupa partes de las fases del
+plan (sección 6).
+
+| Fase | Qué | Partes del plan | Estado |
+|---|---|---|---|
+| 1 | Eliminar chats y clientes, de la base y de la memoria del asistente; borrar las pruebas de una vez | — (nuevo) | **Hecha** (11 nov) |
+| 2 | Documentación profesional: README con capturas, guía del negocio, índice, cambios y documentos al día | — (nuevo) | **Hecha** (11 nov) |
+| 3 | Atención humana completa: horario del equipo, aviso por correo, la IA retoma sola si nadie atiende | Fase 4 (H3, H6 y la pausa con tiempo) | Siguiente |
+| 4 | Lanzamiento: monitoreo de errores, copias de seguridad probadas, correo transaccional, términos y política de datos, Vercel Pro | Fases 7 y 8 | Pendiente |
+| 5 | Retirar lo que queda del sistema anterior y partir los módulos grandes del motor | Fase 6 (resto) | Pendiente |
+| Al final | WhatsApp en un servidor de uazapi propio (hoy se usa el gratuito de pruebas, que puede borrar la instancia); después Telegram y la API oficial de Meta | Fase 5 (resto) | Mientras se construye, basta el de pruebas |
+
+**Fase 1, cómo quedó.** El chat se elimina desde Conversaciones (papelera del chat abierto) o desde Clientes, con una confirmación
+que dice qué se borra. Se borran la conversación, sus mensajes, fotos, audios y avisos (en cascada en Neon) y, en el motor, el
+historial, la memoria comercial y el registro de ese cliente (`clients`, `conversation_messages`, `conversation_memory`). Las ventas
+se conservan sin el enlace al chat. Si la memoria del motor no se puede borrar, no se borra nada. El registro de cada cliente que
+guarda cada instancia del motor en su caché vence en un minuto, para que ninguna siga usando uno borrado. Lo cubren
+`tests/test_conversation_deletion.py` y las pruebas del panel; el laboratorio de regresión (`exp_20261111_eliminar_chats`) dio
+motor sin diferencias, y una prueba de punta a punta con PostgreSQL real comprobó que no queda nada.
+
 ## 1. Dónde estamos
 
 **Ya funciona, en la nube (Vercel + Neon):**
@@ -17,6 +39,7 @@ noviembre de 2026.
 - Conversaciones en vivo (escribiendo, chulos, no leídos, responder desde el panel, pausar la IA, fotos y notas de voz que la IA
   entiende) y paso a una persona con aviso al equipo.
 - Clientes con su etapa, ventas y reportes.
+- Eliminar chats y clientes (con lo que el asistente recordaba de ellos), y el panel completo en el celular.
 - Producción: `asesor_ai_prod`, a nombre de su dueño. Sus borradores v3 y v4 (la configuración para vender la plataforma) están
   guardados y sin publicar: se prueban en «Probar» y se publican desde el panel.
 

@@ -20,6 +20,10 @@ Todo lo demás cuelga de él y se filtra por su id:
 | Ventas | `sales` |
 | Avisos al equipo | `notifications` |
 
+La memoria que el asistente guarda de cada cliente vive en las tablas del motor (`clients`, `conversation_messages`,
+`conversation_memory`), por negocio y número del cliente. Eliminar un chat desde el panel borra la conversación y también esa
+memoria (ver `architecture.md`, «Eliminar Un Chat»); las ventas se conservan.
+
 Cada consulta del almacén parte de `tenancy.tenant_of(slug)` y solo alcanza las filas de ese negocio. Una cuenta que pide un
 negocio ajeno recibe lo mismo que si no existiera (404).
 

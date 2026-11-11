@@ -86,15 +86,15 @@ Cada test debe validar una sola cosa. Si una prueba mezcla intencion, contenido,
 
 ## Mensajes De Commit
 
-Formato `tipo(ámbito): qué cambia`, en presente y en una línea; en el cuerpo, el porqué. Tipos: `feat`, `fix`, `refactor`,
-`test`, `docs`, `ci`, `chore`. Ejemplo:
+Una línea en español que diga qué cambia para el negocio, sin prefijos en inglés; si hace falta, el porqué en el cuerpo. Ejemplos:
 
 ```text
-fix(business-config): el motor lee el almacén que escribe el panel
+Eliminar chats y clientes de verdad, borrar de una vez las pruebas y diálogos que cubren toda la página
 
-Con BUSINESS_CONFIG_STORE=database el cargador abría la base del motor (DATABASE_URL),
-no la del panel: lo publicado nunca llegaba a los clientes.
+El asistente también olvida al cliente: si vuelve a escribir, empieza de cero. Las ventas se conservan.
 ```
+
+Un commit por cambio lógico. Si el cambio toca el motor, el cuerpo dice el resultado del laboratorio de regresión.
 
 ## Pull Requests
 
