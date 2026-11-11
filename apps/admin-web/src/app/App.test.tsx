@@ -72,7 +72,7 @@ describe("Acceso local", () => {
 
   it("entra directo al panel del primer negocio, sin pedir acceso ni mostrar una cuenta", async () => {
     await renderAt("/", createTestServices(createMemoryBackend([SAMPLE_DOCUMENT])));
-    expect(await screen.findByRole("heading", { level: 1, name: "Configura tu asistente de ventas" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { level: 1, name: "Café Aroma" })).toBeInTheDocument();
     expect(window.location.pathname).toBe(CAFE);
     expect(screen.queryByRole("button", { name: /^Cuenta de/ })).not.toBeInTheDocument();
   });
@@ -244,7 +244,7 @@ describe("Administración de negocios", () => {
     expect(screen.getByText(/No se ha borrado nada/)).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Reintentar" }));
-    expect(await screen.findByRole("heading", { level: 1, name: "Configura tu asistente de ventas" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { level: 1, name: "Café Aroma" })).toBeInTheDocument();
   });
 
   it("cada negocio abre su propia configuración y editar uno no toca el otro", async () => {
@@ -284,7 +284,7 @@ describe("Cuenta (servicio que verifica credenciales)", () => {
     await user.clear(screen.getByLabelText(/^Contraseña/));
     await user.type(screen.getByLabelText(/^Contraseña/), TEST_ACCOUNT.password);
     await user.click(screen.getByRole("button", { name: "Iniciar sesión" }));
-    expect(await screen.findByRole("heading", { level: 1, name: "Configura tu asistente de ventas" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { level: 1, name: "Café Aroma" })).toBeInTheDocument();
   });
 
   it("sin sesión envía a la entrada y vuelve a la página que se quería abrir", async () => {
@@ -343,10 +343,20 @@ describe("Cuenta (servicio que verifica credenciales)", () => {
 });
 
 describe("Secciones del negocio", () => {
+  it("con todo configurado, el inicio pone primero lo del día y el progreso en una franja pequeña", async () => {
+    await renderWorkspace("");
+    expect(screen.getByRole("heading", { level: 1, name: "Café Aroma" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Configura tu asistente de ventas" })).not.toBeInTheDocument();
+    const today = screen.getByRole("region", { name: "Hoy en tu negocio" });
+    const ready = screen.getByRole("region", { name: "Estado del asistente" });
+    expect(within(ready).getByText("Tu asistente está configurado")).toBeInTheDocument();
+    // Las cifras del día van antes que el estado de la configuración.
+    expect(today.compareDocumentPosition(ready) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
   it("muestra el inicio con el resumen sin afirmar que está conectado", async () => {
     await renderWorkspace("");
-    expect(screen.getByRole("heading", { level: 1, name: "Configura tu asistente de ventas" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Café Aroma" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 2, name: "Café Aroma" })).toBeInTheDocument();
     expect(screen.getAllByText("Sin conectar").length).toBeGreaterThan(0);
     expect(screen.queryByText(/desplegado|en producción|conectado al asistente real\./i)).not.toBeInTheDocument();
   });
@@ -1115,7 +1125,7 @@ describe("Formularios generados desde el contrato", () => {
     const user = await renderAt(CAFE, createTestServices(backend));
     expect(screen.getByRole("heading", { level: 1, name: "No se pudo cargar tu configuración" })).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Reintentar" }));
-    expect(await screen.findByRole("heading", { level: 1, name: "Configura tu asistente de ventas" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { level: 1, name: "Café Aroma" })).toBeInTheDocument();
   });
 });
 

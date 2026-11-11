@@ -62,7 +62,9 @@ describe("Conversaciones", () => {
     expect(inbox.requests[0]).toEqual({ business: CAFE });
     const list = await screen.findByRole("region", { name: "Lista de conversaciones" });
     const item = await within(list).findByRole("button", { name: /Laura Gómez/ });
-    expect(within(item).getByText("WhatsApp")).toBeInTheDocument();
+    // El canal va como un ícono sobre la foto, no como una etiqueta en cada chat: las etiquetas quedan para lo importante.
+    expect(within(item).getByRole("img", { name: "WhatsApp" })).toBeInTheDocument();
+    expect(within(item).queryByText("WhatsApp")).not.toBeInTheDocument();
     // Viendo un solo negocio, cada chat no repite de qué negocio es.
     expect(within(item).queryByText("Café Aroma")).not.toBeInTheDocument();
     expect(within(list).queryByText("Software Norte")).not.toBeInTheDocument();

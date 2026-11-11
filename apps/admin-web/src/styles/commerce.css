@@ -270,18 +270,6 @@
   min-width: 0;
 }
 
-.person__avatar {
-  flex: none;
-  width: 36px;
-  height: 36px;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  color: #fff;
-  font-size: 13px;
-  font-weight: 700;
-}
-
 .person__text {
   display: flex;
   flex-direction: column;

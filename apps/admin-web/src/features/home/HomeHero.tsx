@@ -2,11 +2,11 @@ import { LinkButton } from "../../components/ui/Button";
 import { Icon } from "../../components/ui/Icon";
 import { ProgressRing } from "../../components/ui/ProgressRing";
 import { sectionTitle } from "../../domain/sections";
-import { REVIEW_ITEM, sectionPath } from "../../navigation/navItems";
+import { OVERVIEW_ITEM, REVIEW_ITEM, sectionPath } from "../../navigation/navItems";
 import { useWorkspacePath } from "../../navigation/useWorkspacePath";
 import { useConfig } from "../../state/useConfig";
 
-/** Cabecera destacada del inicio: título, progreso general y acceso a lo siguiente por completar. */
+/** Cabecera destacada del inicio mientras falta configurar: título, progreso general y acceso a lo siguiente por completar. */
 export function HomeHero() {
   const { progress, document } = useConfig();
   const pathTo = useWorkspacePath();
@@ -41,5 +41,47 @@ export function HomeHero() {
         <span className="hero__ring-caption">secciones listas</span>
       </div>
     </header>
+  );
+}
+
+/** El inicio de un negocio ya configurado: su nombre arriba y, a continuación, lo del día (lo que se mira a diario). */
+export function HomeHeader() {
+  const { document } = useConfig();
+  return (
+    <header className="home-header">
+      <p className="home-header__eyebrow">Inicio</p>
+      <h1 className="home-header__title">{document.identity.name.trim() || "Tu negocio"}</h1>
+    </header>
+  );
+}
+
+/** Con todo configurado, el progreso ya no necesita una tarjeta grande: queda una franja con el estado y el siguiente paso. */
+export function AssistantReady() {
+  const { progress, meta } = useConfig();
+  const pathTo = useWorkspacePath();
+  const unpublished = meta.latestVersion !== null && meta.latestVersion !== meta.publishedVersion;
+
+  return (
+    <section className="ready-strip" aria-label="Estado del asistente">
+      <span className="ready-strip__icon" aria-hidden="true">
+        <Icon name="check" size={18} />
+      </span>
+      <div className="ready-strip__text">
+        <strong>Tu asistente está configurado</strong>
+        <span>
+          {progress.completed} de {progress.total} secciones listas
+          {unpublished ? " · tienes cambios sin publicar" : " · lo publicado es lo que responde"}
+        </span>
+      </div>
+      {unpublished ? (
+        <LinkButton to={pathTo(REVIEW_ITEM.path)} size="small">
+          Revisar y publicar
+        </LinkButton>
+      ) : (
+        <LinkButton to={pathTo(OVERVIEW_ITEM.path)} size="small" variant="ghost">
+          Ver asistente
+        </LinkButton>
+      )}
+    </section>
   );
 }

@@ -3,9 +3,10 @@ import { useParams, useSearchParams } from "react-router-dom";
 import { Button } from "../../components/ui/Button";
 import { Alert, EmptyState } from "../../components/ui/Feedback";
 import { Icon, type IconName } from "../../components/ui/Icon";
-import { contactLabel, fullDate, initials, messageTime, relativeTime } from "../../domain/inbox/format";
+import { contactLabel, fullDate, messageTime, relativeTime } from "../../domain/inbox/format";
 import { DELIVERY_LABELS, fileSize } from "../../domain/inbox/live";
 import { CHANNEL_LABELS, CHANNELS, HANDOFF_LABELS, type Channel, type ChatMessage, type ConversationSummary, type ConversationThread } from "../../domain/inbox/types";
+import { ContactAvatar } from "../../layout/ContactAvatar";
 import { persistenceErrorMessage } from "../../state/directoryContext";
 import { useConversations, useMediaUrl } from "../../state/useConversations";
 
@@ -139,9 +140,7 @@ function ConversationItem({ conversation, selected, showBusiness, onSelect }: { 
       aria-current={selected ? "true" : undefined}
       onClick={onSelect}
     >
-      <span className={`inbox-item__avatar channel-color--${conversation.channel}`} aria-hidden="true">
-        {initials(name)}
-      </span>
+      <ContactAvatar name={name} channel={conversation.channel} />
       <span className="inbox-item__body">
         <span className="inbox-item__top">
           <span className="inbox-item__name">{name}</span>
@@ -164,7 +163,6 @@ function ConversationItem({ conversation, selected, showBusiness, onSelect }: { 
         <span className="inbox-item__tags">
           {conversation.needsHuman && <span className="handoff-badge">{conversation.handoffReason ? HANDOFF_LABELS[conversation.handoffReason] : "Pide una persona"}</span>}
           {conversation.aiPaused && !conversation.needsHuman && <span className="paused-badge">Atiende tu equipo</span>}
-          <span className={`channel-badge channel-color--${conversation.channel}`}>{CHANNEL_LABELS[conversation.channel]}</span>
           {/* El negocio solo hace falta al ver los chats de todos tus negocios. */}
           {showBusiness && (
             <span className="business-badge" title="Negocio">
@@ -224,9 +222,7 @@ function ThreadView({
         <button type="button" className="thread__back" onClick={onBack}>
           ← Conversaciones
         </button>
-        <span className={`inbox-item__avatar channel-color--${conversation.channel}`} aria-hidden="true">
-          {initials(name)}
-        </span>
+        <ContactAvatar name={name} channel={conversation.channel} />
         <div className="thread__who">
           <h2 className="thread__name">{name}</h2>
           <p className="thread__meta">

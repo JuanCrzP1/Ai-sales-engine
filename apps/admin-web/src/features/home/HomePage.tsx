@@ -13,18 +13,22 @@ import { useWorkspacePath } from "../../navigation/useWorkspacePath";
 import { useConfig } from "../../state/useConfig";
 import { ActivityOverview } from "./ActivityOverview";
 import { AssistantSummary } from "./AssistantSummary";
-import { HomeHero } from "./HomeHero";
+import { AssistantReady, HomeHeader, HomeHero } from "./HomeHero";
 
 export function HomePage() {
   const { progress, issues, meta } = useConfig();
   const pathTo = useWorkspacePath();
   const { errors, warnings } = splitBySeverity(issues);
+  // Con todo configurado y guardado, lo de cada día va primero y el progreso queda en una franja pequeña.
+  const ready = progress.total > 0 && progress.completed === progress.total && errors.length === 0 && meta.latestVersion !== null;
 
   return (
     <>
-      <HomeHero />
+      {ready ? <HomeHeader /> : <HomeHero />}
 
       <ActivityOverview />
+
+      {ready && <AssistantReady />}
 
       <AssistantSummary />
 

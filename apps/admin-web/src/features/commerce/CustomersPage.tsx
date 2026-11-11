@@ -4,8 +4,9 @@ import { Alert, EmptyState } from "../../components/ui/Feedback";
 import { Icon } from "../../components/ui/Icon";
 import { PageHeader } from "../../components/ui/Layout";
 import { STAGE_HINTS, STAGE_LABELS, STAGES, formatMoney, type Customer, type Stage } from "../../domain/commerce/types";
-import { initials, relativeTime } from "../../domain/inbox/format";
+import { relativeTime } from "../../domain/inbox/format";
 import { CHANNEL_LABELS, type Channel } from "../../domain/inbox/types";
+import { ContactAvatar } from "../../layout/ContactAvatar";
 import { CONVERSATIONS_ITEM } from "../../navigation/navItems";
 import { useWorkspacePath } from "../../navigation/useWorkspacePath";
 import { useCommerceData } from "../../state/useCommerceData";
@@ -91,9 +92,7 @@ export function CustomersPage() {
                     <tr key={customer.conversationId}>
                       <td>
                         <span className="person">
-                          <span className={`person__avatar channel-color--${customer.channel}`} aria-hidden="true">
-                            {initials(name)}
-                          </span>
+                          <ContactAvatar name={name} channel={customer.channel as Channel} size="sm" />
                           <span className="person__text">
                             <strong>{name}</strong>
                             <span>+{customer.contact}</span>

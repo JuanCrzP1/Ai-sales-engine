@@ -26,7 +26,7 @@ describe("panel en la nube", () => {
     await user.type(screen.getByLabelText(/Confirmar contraseña/), "clave-segura-1");
     await user.click(screen.getByRole("button", { name: "Crear cuenta" }));
 
-    await waitFor(() => expect(screen.getByRole("heading", { level: 1, name: "Configura tu asistente de ventas" })).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByRole("heading", { level: 1, name: SAMPLE_DOCUMENT.identity.name })).toBeInTheDocument());
     expect(window.location.pathname).toBe(`/negocios/${SAMPLE_DOCUMENT.tenant_slug}`);
     expect(screen.queryByText("Solo en este equipo")).not.toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: /^Negocio/ }));

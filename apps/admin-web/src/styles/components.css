@@ -38,6 +38,75 @@
   font-weight: 700;
 }
 
+/* Inicio de un negocio ya configurado: su nombre y, debajo, lo del día */
+.home-header {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.home-header__eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-accent);
+}
+
+.home-header__title {
+  font-size: var(--text-2xl);
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.025em;
+  color: var(--color-text);
+}
+
+/* Estado del asistente cuando ya está todo configurado: una franja, no una tarjeta grande */
+.ready-strip {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-card);
+}
+
+.ready-strip__icon {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--color-success-soft);
+  color: var(--color-success);
+}
+
+.ready-strip__text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  font-size: var(--text-sm);
+}
+
+.ready-strip__text strong {
+  color: var(--color-text);
+  font-weight: 650;
+}
+
+.ready-strip__text span {
+  color: var(--color-text-muted);
+}
+
+@media (max-width: 640px) {
+  .ready-strip {
+    flex-wrap: wrap;
+  }
+}
+
 /* Hero del inicio */
 .hero {
   position: relative;

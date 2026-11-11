@@ -6,7 +6,9 @@ import { Alert, EmptyState } from "../../components/ui/Feedback";
 import { Icon } from "../../components/ui/Icon";
 import { PageHeader } from "../../components/ui/Layout";
 import { formatMoney, type Customer, type Sale } from "../../domain/commerce/types";
-import { fullDate, initials, relativeTime } from "../../domain/inbox/format";
+import { fullDate, relativeTime } from "../../domain/inbox/format";
+import type { Channel } from "../../domain/inbox/types";
+import { ContactAvatar } from "../../layout/ContactAvatar";
 import { persistenceErrorMessage } from "../../state/directoryContext";
 import { useCommerceData } from "../../state/useCommerceData";
 import { RecordSaleDialog } from "./RecordSaleDialog";
@@ -162,9 +164,7 @@ function PendingPayment({ customer, onConfirm }: { customer: Customer; onConfirm
   return (
     <li className="pending-list__item">
       <span className="person">
-        <span className={`person__avatar channel-color--${customer.channel}`} aria-hidden="true">
-          {initials(name)}
-        </span>
+        <ContactAvatar name={name} channel={customer.channel as Channel} size="sm" />
         <span className="person__text">
           <strong>{name}</strong>
           <span>Reportó el pago {relativeTime(customer.lastMessageAt)}</span>
