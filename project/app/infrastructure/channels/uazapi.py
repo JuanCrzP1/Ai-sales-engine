@@ -6,6 +6,9 @@ tokens nunca van a los registros, y los errores llegan al negocio sin detalles t
 """
 from __future__ import annotations
 
+import base64
+import binascii
+import re
 import socket
 from collections.abc import Callable
 from typing import Any
@@ -16,6 +19,7 @@ import httpx
 from app.domain.business_config.channels import (
     CONNECTION_STATUSES,
     ChannelError,
+    DeliveryReceipt,
     IncomingMessage,
     ProviderStatus,
     WhatsAppUnavailableError,
@@ -23,14 +27,31 @@ from app.domain.business_config.channels import (
     normalize_server_url,
     phone_digits,
 )
+from app.domain.business_config.conversations import MAX_MEDIA_BYTES, MediaFile
 from app.utils.logger import logger
 
 TIMEOUT = httpx.Timeout(20.0, connect=8.0)
-# Eventos que recibe el webhook: los mensajes y los cambios de conexión. Se excluye lo que envió la propia API (evita responderse a
-# sí mismo), lo que escribe el negocio desde su teléfono y los grupos.
-WEBHOOK_EVENTS = ["messages", "connection"]
+# Eventos que recibe el webhook: los mensajes, los recibos de entregado y leído, y los cambios de conexión. Se excluye lo que envió
+# la propia API (evita responderse a sí mismo), lo que escribe el negocio desde su teléfono y los grupos.
+WEBHOOK_EVENTS = ["messages", "messages_update", "connection"]
 WEBHOOK_EXCLUDE = ["wasSentByApi", "fromMeYes", "isGroupYes"]
-PERSONAL_CHAT = "@s.whatsapp.net"
+# Lo que no es el chat de un cliente: grupos, canales, difusiones y estados.
+_NOT_A_CUSTOMER = re.compile(r"@(g\.us|newsletter|broadcast)$")
+# El tipo de mensaje de WhatsApp (`messageType`, sin documentar en uazapi) → el de la bandeja.
+_KINDS = (
+    ("image", "image"),
+    ("video", "video"),
+    ("audio", "audio"),
+    ("ptt", "audio"),
+    ("document", "document"),
+    ("sticker", "sticker"),
+    ("location", "location"),
+    ("contact", "contact"),
+)
+# Los recibos de WhatsApp → el estado de lo que salió.
+_RECEIPTS = {"sent": "sent", "serverack": "sent", "delivered": "delivered", "deliveryack": "delivered", "read": "read", "played": "read"}
+# El contenido en base64 de un archivo más grande que esto no se guarda (la bandeja dice que se vea en el teléfono).
+_MAX_BASE64 = MAX_MEDIA_BYTES * 4 // 3 + 4
 # El nombre con el que aparece la conexión en «Dispositivos vinculados» del teléfono del negocio.
 DEVICE_NAME = "Asistente de ventas"
 
@@ -136,8 +157,33 @@ class UazapiClient:
             "POST", "/webhook", token=token, body={"url": url, "enabled": True, "events": WEBHOOK_EVENTS, "excludeMessages": WEBHOOK_EXCLUDE}
         )
 
-    def send_text(self, token: str, phone: str, text: str) -> None:
-        self._call("POST", "/send/text", token=token, body={"number": phone_digits(phone), "text": text})
+    def send_text(self, token: str, phone: str, text: str) -> str | None:
+        """Envía un texto y devuelve el id que le dio WhatsApp (el que traen después los recibos de entregado y leído)."""
+        payload = self._call("POST", "/send/text", token=token, body={"number": phone_digits(phone), "text": text})
+        return str(payload.get("messageid") or payload.get("id") or "").strip() or None
+
+    def presence(self, token: str, phone: str, presence: str = "composing", delay_ms: int = 30_000) -> None:
+        """Muestra «escribiendo…» (o «grabando…») en el chat del cliente; se quita sola al enviar el mensaje."""
+        self._call(
+            "POST", "/message/presence", token=token,
+            body={"number": phone_digits(phone), "presence": presence, "delay": max(1_000, min(int(delay_ms), 300_000))},
+        )
+
+    def download(self, token: str, message_id: str) -> MediaFile | None:
+        """El archivo de un mensaje (foto, audio en MP3, documento...), o None si es más grande de lo que se guarda."""
+        payload = self._call("POST", "/message/download", token=token, body={"id": message_id, "return_base64": True, "generate_mp3": True})
+        data = str(payload.get("base64Data") or "")
+        if not data or len(data) > _MAX_BASE64:
+            return None
+        if data.startswith("data:"):
+            data = data.split(",", 1)[-1]
+        try:
+            content = base64.b64decode(data, validate=False)
+        except (binascii.Error, ValueError):
+            logger.warning("uazapi_archivo_invalido")
+            return None
+        mime_type = str(payload.get("mimetype") or "application/octet-stream").split(";")[0].strip().lower()
+        return MediaFile(mime_type, content) if 0 < len(content) <= MAX_MEDIA_BYTES else None
 
 
 def _provider_status(payload: dict[str, Any]) -> ProviderStatus:
@@ -161,22 +207,66 @@ def _provider_status(payload: dict[str, Any]) -> ProviderStatus:
     )
 
 
+def _record(value: Any) -> dict[str, Any]:
+    return value if isinstance(value, dict) else {}
+
+
+def _text(value: Any) -> str:
+    return value.strip() if isinstance(value, str) else ""
+
+
+def _kind(message_type: str) -> str:
+    lowered = message_type.lower()
+    for marker, kind in _KINDS:
+        if marker in lowered:
+            return kind
+    if not lowered or any(marker in lowered for marker in ("conversation", "extendedtext", "text")):
+        return "text"
+    return "other"
+
+
 def parse_incoming(payload: dict[str, Any]) -> IncomingMessage | None:
-    """El mensaje de texto de un cliente que trae el webhook, o None si no hay que responderlo (otro evento, un grupo, un mensaje
-    del propio negocio o de la API, o sin texto)."""
-    if str(payload.get("EventType") or "").strip().lower() != "messages":
+    """El mensaje de un cliente que trae el webhook (texto, foto, audio, documento...), o None si no hay que atenderlo: otro evento,
+    un grupo o canal, un mensaje del propio negocio o de la API, o un aviso incompleto."""
+    if _text(payload.get("EventType")).lower() != "messages":
         return None
-    message = payload.get("message") if isinstance(payload.get("message"), dict) else {}
-    chat_id = str(message.get("chatid") or message.get("sender") or "")
-    if message.get("fromMe") or message.get("wasSentByApi") or message.get("isGroup") or not chat_id.endswith(PERSONAL_CHAT):
+    message = _record(payload.get("message"))
+    if not message or message.get("fromMe") or message.get("wasSentByApi") or message.get("isGroup"):
         return None
-    text = str(message.get("text") or "").strip()
-    phone = phone_digits(chat_id)
-    message_id = str(message.get("messageid") or message.get("id") or "").strip()
-    if not text or not phone or not message_id:
+    chat_id = _text(message.get("chatid")) or _text(message.get("sender"))
+    if _NOT_A_CUSTOMER.search(chat_id) or chat_id.startswith("status@"):
         return None
-    name = str(message.get("senderName") or "").strip() or None
-    return IncomingMessage(message_id=message_id, phone=phone, contact_name=name, text=text)
+    # El teléfono: del chat si es una cuenta normal; si es un id «@lid» de WhatsApp, del remitente.
+    candidates = (chat_id, _text(message.get("sender_pn")), _text(message.get("sender")))
+    phone = next((digits for jid in candidates if jid and not jid.endswith("@lid") for digits in [phone_digits(jid)] if 7 <= len(digits) <= 15), "")
+    message_id = _text(message.get("messageid")) or _text(message.get("id"))
+    if not phone or not message_id:
+        return None
+    content = _record(message.get("content"))
+    kind = _kind(_text(message.get("messageType")))
+    text = _text(message.get("text")) or _text(content.get("text")) or _text(content.get("caption"))
+    if kind == "text" and not text:
+        return None
+    mime_type = (_text(message.get("mimetype")) or _text(content.get("mimetype"))).split(";")[0].strip().lower() or None
+    file_name = _text(content.get("fileName")) or _text(message.get("fileName")) or None
+    return IncomingMessage(
+        message_id=message_id, phone=phone, contact_name=_text(message.get("senderName")) or None, text=text, kind=kind,
+        mime_type=mime_type, file_name=file_name,
+    )
+
+
+def parse_receipt(payload: dict[str, Any]) -> DeliveryReceipt | None:
+    """El recibo de entregado o leído de lo que salió (evento `messages_update`), o None si es otro evento o de un grupo."""
+    if _text(payload.get("EventType")).lower() != "messages_update":
+        return None
+    event = _record(payload.get("event"))
+    chat_id = _text(event.get("chatid")) or _text(event.get("Chat"))
+    if event.get("IsGroup") or _NOT_A_CUSTOMER.search(chat_id):
+        return None
+    status = _RECEIPTS.get((_text(payload.get("state")) or _text(event.get("Type"))).lower())
+    raw = event.get("MessageIDs")
+    ids = tuple(item.strip() for item in (raw if isinstance(raw, list) else []) if isinstance(item, str) and 0 < len(item.strip()) <= 128)[:100]
+    return DeliveryReceipt(ids, status) if status and ids else None
 
 
 def connection_event(payload: dict[str, Any]) -> ProviderStatus | None:

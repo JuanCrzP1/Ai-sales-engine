@@ -14,7 +14,7 @@ from app.business_config_application.service import ConfigReview, EditableConfig
 from app.domain.business_config.ai_settings import AISettings, KeyCheck
 from app.domain.business_config.ai_models import ModelCatalog
 from app.domain.business_config.ai_usage import AIUsageSummary
-from app.domain.business_config.conversations import BusinessActivity, ChatMessage, ConversationSummary, Notification
+from app.domain.business_config.conversations import MAX_REPLY_CHARS, REPLYABLE_CHANNELS, BusinessActivity, ChatMessage, ConversationSummary, Notification
 from app.domain.business_config.records import BusinessSummary, ConfigVersion
 from app.domain.business_config.templates import BusinessTemplate
 
@@ -186,11 +186,39 @@ def conversation_payload(summary: ConversationSummary) -> dict[str, Any]:
         "message_count": summary.message_count,
         "needs_human": summary.needs_human,
         "handoff_requested_at": _iso(summary.handoff_requested_at),
+        "handoff_reason": summary.handoff_reason,
+        "ai_paused": summary.ai_paused,
+        "unread_count": summary.unread_count,
+        "assistant_typing": summary.assistant_typing,
+        "can_reply": summary.channel in REPLYABLE_CHANNELS,
     }
 
 
 def chat_message_payload(message: ChatMessage) -> dict[str, Any]:
-    return {"id": message.id, "author": message.author, "body": message.body, "intent": message.intent, "created_at": _iso(message.created_at)}
+    media = message.media
+    return {
+        "id": message.id,
+        "author": message.author,
+        "body": message.body,
+        "intent": message.intent,
+        "created_at": _iso(message.created_at),
+        "kind": message.kind,
+        "status": message.status,
+        "media": {"id": media.id, "mime_type": media.mime_type, "size_bytes": media.size_bytes, "file_name": media.file_name} if media else None,
+        "media_note": message.media_note,
+    }
+
+
+class SendReply(_Request):
+    """Lo que el equipo responde desde la bandeja: sale por el canal del cliente."""
+
+    text: str = Field(min_length=1, max_length=MAX_REPLY_CHARS)
+
+
+class SetAssistant(_Request):
+    """`active`: la IA responde en esta conversación; si no, la atiende el equipo."""
+
+    active: bool
 
 
 def activity_payload(activity: BusinessActivity) -> dict[str, Any]:

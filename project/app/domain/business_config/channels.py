@@ -125,9 +125,22 @@ class ProviderStatus:
 
 @dataclass(frozen=True)
 class IncomingMessage:
-    """Un mensaje de texto de un cliente, ya filtrado: no es del propio negocio, ni de un grupo, ni lo envió la API."""
+    """Un mensaje de un cliente, ya filtrado: no es del propio negocio, ni de un grupo, ni lo envió la API.
+
+    `kind` es el tipo (`conversations.KINDS`); `text` es el texto o la leyenda de un archivo (puede venir vacía)."""
 
     message_id: str
     phone: str
     contact_name: str | None
     text: str
+    kind: str = "text"
+    mime_type: str | None = None
+    file_name: str | None = None
+
+
+@dataclass(frozen=True)
+class DeliveryReceipt:
+    """El aviso del canal de que lo que salió fue entregado o leído."""
+
+    message_ids: tuple[str, ...]
+    status: str

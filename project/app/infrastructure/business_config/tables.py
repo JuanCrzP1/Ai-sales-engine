@@ -15,6 +15,7 @@ from sqlalchemy import (
     JSON,
     BigInteger,
     Boolean,
+    LargeBinary,
     CheckConstraint,
     Column,
     Date,
@@ -23,6 +24,7 @@ from sqlalchemy import (
     Index,
     Integer,
     MetaData,
+    text,
     Numeric,
     Table,
     Text,
@@ -142,10 +144,32 @@ conversations = Table(
     # Migración 0005: el asistente la pasó a una persona y nadie la ha atendido todavía.
     Column("needs_human", Boolean, nullable=False, default=False),
     Column("handoff_requested_at", DateTime(timezone=True)),
+    # Migración 0009: la bandeja en vivo. La IA pausada (la atiende una persona), por qué se pasó a una persona, los mensajes del
+    # cliente sin leer, hasta cuándo el asistente está «escribiendo…» y cuándo cambió algo.
+    Column("ai_paused", Boolean, nullable=False, default=False),
+    Column("handoff_reason", Text),
+    Column("unread_count", Integer, nullable=False, default=0),
+    Column("assistant_typing_until", DateTime(timezone=True)),
+    Column("updated_at", DateTime(timezone=True), nullable=False, default=_now),
     CheckConstraint("channel IN ('whatsapp', 'instagram', 'telegram', 'web', 'prueba')", name="conversations_channel_check"),
     CheckConstraint("status IN ('open', 'closed')", name="conversations_status_check"),
     UniqueConstraint("tenant_id", "channel", "contact_ref", name="conversations_contact_key"),
     Index("conversations_tenant_recent_idx", "tenant_id", "last_message_at"),
+)
+
+# Migración 0009: las fotos, audios y documentos de las conversaciones (el enlace de WhatsApp vence).
+conversation_media = Table(
+    "conversation_media",
+    metadata,
+    Column("id", Uuid, primary_key=True, default=uuid.uuid4),
+    Column("tenant_id", Uuid, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False),
+    Column("conversation_id", Uuid, ForeignKey("conversations.id", ondelete="CASCADE"), nullable=False),
+    Column("mime_type", Text, nullable=False),
+    Column("size_bytes", Integer, nullable=False),
+    Column("file_name", Text),
+    Column("content", LargeBinary, nullable=False),
+    Column("created_at", DateTime(timezone=True), nullable=False, default=_now),
+    Index("conversation_media_conversation_idx", "conversation_id"),
 )
 
 conversation_entries = Table(
@@ -157,8 +181,28 @@ conversation_entries = Table(
     Column("body", Text, nullable=False),
     Column("intent", Text),
     Column("created_at", DateTime(timezone=True), nullable=False, default=_now),
+    # Migración 0009: el tipo, el estado, el id de WhatsApp, el archivo y lo que la IA entendió de él (transcripción o descripción).
+    Column("kind", Text, nullable=False, default="text"),
+    Column("status", Text, nullable=False, default="received"),
+    Column("provider_message_id", Text),
+    Column("media_id", Uuid, ForeignKey("conversation_media.id", ondelete="SET NULL")),
+    Column("media_note", Text),
+    Column("updated_at", DateTime(timezone=True), nullable=False, default=_now),
     CheckConstraint("author IN ('customer', 'assistant', 'agent')", name="conversation_entries_author_check"),
+    CheckConstraint(
+        "kind IN ('text', 'image', 'audio', 'video', 'document', 'sticker', 'location', 'contact', 'other')", name="conversation_entries_kind_check"
+    ),
+    CheckConstraint("status IN ('received', 'sending', 'sent', 'delivered', 'read', 'failed')", name="conversation_entries_status_check"),
     Index("conversation_entries_thread_idx", "conversation_id", "created_at"),
+    Index(
+        "conversation_entries_provider_key", "conversation_id", "provider_message_id", unique=True,
+        postgresql_where=text("provider_message_id IS NOT NULL"), sqlite_where=text("provider_message_id IS NOT NULL"),
+    ),
+    Index("conversation_entries_live_idx", "conversation_id", "updated_at"),
+    Index(
+        "conversation_entries_provider_idx", "provider_message_id",
+        postgresql_where=text("provider_message_id IS NOT NULL"), sqlite_where=text("provider_message_id IS NOT NULL"),
+    ),
 )
 
 # Avisos para el equipo de cada negocio (migración 0005). Cada persona marca como leídos los suyos en `notification_reads`.

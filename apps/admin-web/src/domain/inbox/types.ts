@@ -1,7 +1,19 @@
-/** La bandeja de conversaciones: los chats de cada negocio, de todos sus canales. */
+/** La bandeja de conversaciones: los chats de cada negocio, de todos sus canales, en vivo. */
 
 export type Channel = "whatsapp" | "instagram" | "telegram" | "web" | "prueba";
 export type Author = "customer" | "assistant" | "agent";
+export type MessageKind = "text" | "image" | "audio" | "video" | "document" | "sticker" | "location" | "contact" | "other";
+/** Lo del cliente queda «recibido»; lo que sale pasa por enviando → enviado → entregado → leído, o «no enviado». */
+export type DeliveryStatus = "received" | "sending" | "sent" | "delivered" | "read" | "failed";
+/** Por qué la conversación pasó a una persona. */
+export type HandoffReason = "human_request" | "complaint" | "payment_review" | "assistant";
+
+export const HANDOFF_LABELS: Record<HandoffReason, string> = {
+  human_request: "Pidió hablar con una persona",
+  complaint: "Tiene un reclamo",
+  payment_review: "Reportó un pago: verifícalo",
+  assistant: "Necesita a una persona",
+};
 
 export const CHANNELS: Channel[] = ["whatsapp", "instagram", "telegram", "web", "prueba"];
 
@@ -24,9 +36,26 @@ export interface ConversationSummary {
   lastMessageAt: string;
   lastMessagePreview: string | null;
   messageCount: number;
-  /** El asistente la pasó a una persona y nadie del equipo la ha atendido todavía. */
+  /** Pasó a una persona y nadie del equipo la ha atendido todavía. */
   needsHuman: boolean;
   handoffRequestedAt: string | null;
+  handoffReason?: HandoffReason | null;
+  /** La atiende el equipo: la IA no responde en este chat hasta que la reanuden. Sin dato: la IA responde. */
+  aiPaused?: boolean;
+  /** Mensajes del cliente que nadie del equipo ha visto. */
+  unreadCount?: number;
+  /** El asistente está preparando una respuesta («escribiendo…»). */
+  assistantTyping?: boolean;
+  /** Se le puede responder desde el panel (el mensaje sale por su canal). */
+  canReply?: boolean;
+}
+
+/** Un archivo de la conversación (sin su contenido: se descarga aparte). */
+export interface MediaInfo {
+  id: string;
+  mimeType: string;
+  sizeBytes: number;
+  fileName: string | null;
 }
 
 export interface ChatMessage {
@@ -35,11 +64,22 @@ export interface ChatMessage {
   body: string;
   intent: string | null;
   createdAt: string;
+  /** Sin dato: texto. */
+  kind?: MessageKind;
+  status?: DeliveryStatus;
+  media?: MediaInfo | null;
+  /** Lo que la IA entendió de una foto o un audio: la descripción o la transcripción. */
+  mediaNote?: string | null;
 }
 
 export interface ConversationThread {
   conversation: ConversationSummary;
   messages: ChatMessage[];
+}
+
+/** Lo que cambió en una conversación desde la última consulta, y la marca para la próxima (la hora del servidor). */
+export interface ConversationChanges extends ConversationThread {
+  cursor: string;
 }
 
 /** Lo que pasó hoy en un negocio. */

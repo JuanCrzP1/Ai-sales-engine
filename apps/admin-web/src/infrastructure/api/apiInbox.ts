@@ -1,4 +1,16 @@
-import type { Author, BusinessActivity, Channel, ChatMessage, ConversationSummary, ConversationThread, Notification } from "../../domain/inbox/types";
+import type {
+  Author,
+  BusinessActivity,
+  Channel,
+  ChatMessage,
+  ConversationChanges,
+  ConversationSummary,
+  ConversationThread,
+  DeliveryStatus,
+  HandoffReason,
+  MessageKind,
+  Notification,
+} from "../../domain/inbox/types";
 import type { Inbox } from "../../repositories/inbox";
 import type { HttpClient } from "./httpClient";
 
@@ -14,6 +26,11 @@ interface ApiConversation {
   message_count: number;
   needs_human: boolean;
   handoff_requested_at: string | null;
+  handoff_reason?: HandoffReason | null;
+  ai_paused?: boolean;
+  unread_count?: number;
+  assistant_typing?: boolean;
+  can_reply?: boolean;
 }
 
 interface ApiMessage {
@@ -22,6 +39,10 @@ interface ApiMessage {
   body: string;
   intent: string | null;
   created_at: string;
+  kind?: MessageKind;
+  status?: DeliveryStatus;
+  media?: { id: string; mime_type: string; size_bytes: number; file_name: string | null } | null;
+  media_note?: string | null;
 }
 
 interface ApiActivity {
@@ -66,9 +87,26 @@ const toConversation = (item: ApiConversation): ConversationSummary => ({
   messageCount: item.message_count,
   needsHuman: item.needs_human,
   handoffRequestedAt: item.handoff_requested_at,
+  handoffReason: item.handoff_reason ?? null,
+  aiPaused: item.ai_paused ?? false,
+  unreadCount: item.unread_count ?? 0,
+  assistantTyping: item.assistant_typing ?? false,
+  canReply: item.can_reply ?? false,
 });
 
-const toMessage = (item: ApiMessage): ChatMessage => ({ id: item.id, author: item.author, body: item.body, intent: item.intent, createdAt: item.created_at });
+const toMessage = (item: ApiMessage): ChatMessage => ({
+  id: item.id,
+  author: item.author,
+  body: item.body,
+  intent: item.intent,
+  createdAt: item.created_at,
+  kind: item.kind ?? "text",
+  status: item.status ?? (item.author === "customer" ? "received" : "sent"),
+  media: item.media ? { id: item.media.id, mimeType: item.media.mime_type, sizeBytes: item.media.size_bytes, fileName: item.media.file_name } : null,
+  mediaNote: item.media_note ?? null,
+});
+
+const path = (conversationId: string) => `/conversations/${encodeURIComponent(conversationId)}`;
 
 export function createApiInbox(http: HttpClient): Inbox {
   return {
@@ -81,9 +119,20 @@ export function createApiInbox(http: HttpClient): Inbox {
       return (await http.get<ApiConversation[]>(`/conversations${suffix}`)).map(toConversation);
     },
     thread: async (conversationId): Promise<ConversationThread> => {
-      const payload = await http.get<{ conversation: ApiConversation; messages: ApiMessage[] }>(`/conversations/${encodeURIComponent(conversationId)}`);
+      const payload = await http.get<{ conversation: ApiConversation; messages: ApiMessage[] }>(path(conversationId));
       return { conversation: toConversation(payload.conversation), messages: payload.messages.map(toMessage) };
     },
+    live: async (conversationId, since): Promise<ConversationChanges> => {
+      const query = since ? `?since=${encodeURIComponent(since)}` : "";
+      const payload = await http.get<{ conversation: ApiConversation; messages: ApiMessage[]; cursor: string }>(`${path(conversationId)}/live${query}`);
+      return { conversation: toConversation(payload.conversation), messages: payload.messages.map(toMessage), cursor: payload.cursor };
+    },
+    reply: async (conversationId, text) => toMessage(await http.post<ApiMessage>(`${path(conversationId)}/messages`, { text })),
+    setAssistant: async (conversationId, active) => toConversation(await http.post<ApiConversation>(`${path(conversationId)}/assistant`, { active })),
+    markRead: async (conversationId) => {
+      await http.post(`${path(conversationId)}/read`);
+    },
+    media: (conversationId, mediaId) => http.blob(`${path(conversationId)}/media/${encodeURIComponent(mediaId)}`),
     activity: async (slug): Promise<BusinessActivity> => {
       const payload = await http.get<ApiActivity>(`/businesses/${encodeURIComponent(slug)}/activity`);
       return {
@@ -94,7 +143,7 @@ export function createApiInbox(http: HttpClient): Inbox {
         waitingHuman: payload.waiting_human,
       };
     },
-    resolveHandoff: async (conversationId) => toConversation(await http.post<ApiConversation>(`/conversations/${encodeURIComponent(conversationId)}/handoff/resolve`)),
+    resolveHandoff: async (conversationId) => toConversation(await http.post<ApiConversation>(`${path(conversationId)}/handoff/resolve`)),
     notifications: async () => {
       const payload = await http.get<{ items: ApiNotification[]; unread: number }>("/notifications");
       return { items: payload.items.map(toNotification), unread: payload.unread };

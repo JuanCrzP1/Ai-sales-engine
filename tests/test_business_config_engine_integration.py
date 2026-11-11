@@ -567,7 +567,8 @@ def test_active_prompt_stays_within_budget(monkeypatch):
     # Un negocio con poca estrategia avanzada sigue con un prompt corto.
     small = load_tenant_runtime_yaml("restaurant", extra_yaml={"conversation_state": "active", "memory_context": {"last_ai_response": "ok"}})
     small_prompt, _, _ = PromptBuilderService().build(client_config_id="restaurant", user_message="siguiente", yaml_config=small, faq_results=[], progression_rules=None)
-    assert len(small_prompt) < 6_500
+    # Las reglas fijas de pasar a una persona (prompt v4) suman unos 450 caracteres, iguales en cada mensaje y cobrados desde la caché.
+    assert len(small_prompt) < 7_000
 
 
 def test_panel_document_is_valid_and_reaches_the_engine():

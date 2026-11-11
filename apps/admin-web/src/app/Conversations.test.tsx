@@ -1,6 +1,7 @@
 import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { liveTiming } from "../domain/inbox/live";
 import type { ConversationThread, Notification } from "../domain/inbox/types";
 import { createMemoryBackend, createMemoryInbox, createTestServices } from "../test/fakes";
 import { SAMPLE_DOCUMENT, SAMPLE_PLANS_DOCUMENT } from "../test/fixtures/sampleDocument";
@@ -176,5 +177,111 @@ describe("Pasar a una persona", () => {
     const today = screen.getByRole("region", { name: "Hoy en tu negocio" });
     const metric = (await within(today).findByText("Esperan a una persona")).closest(".metric") as HTMLElement;
     await waitFor(() => expect(within(metric).getByText("1")).toBeInTheDocument());
+  });
+});
+
+
+describe("Conversaciones en vivo", () => {
+  const timing = { ...liveTiming };
+  beforeEach(() => {
+    Object.assign(liveTiming, { activeMs: 20, calmMs: 20, listMs: 30 });
+    URL.createObjectURL = vi.fn(() => "blob:archivo");
+    URL.revokeObjectURL = vi.fn();
+  });
+  afterEach(() => Object.assign(liveTiming, timing));
+
+  const LAURA = THREADS[0]!;
+  const whatsappThread = (conversation: Partial<ConversationThread["conversation"]> = {}, messages: ConversationThread["messages"] = LAURA.messages): ConversationThread => ({
+    conversation: { ...LAURA.conversation, canReply: true, aiPaused: false, unreadCount: 0, ...conversation },
+    messages,
+  });
+
+  async function openChat(threads: ConversationThread[]) {
+    const opened = await openAt(`/negocios/${CAFE}/conversaciones`, threads);
+    const list = await screen.findByRole("region", { name: "Lista de conversaciones" });
+    await opened.user.click(await within(list).findByRole("button", { name: /Laura Gómez/ }));
+    const thread = screen.getByRole("region", { name: "Conversación abierta" });
+    await within(thread).findByRole("log", { name: "Mensajes con Laura Gómez" });
+    return { ...opened, thread, list };
+  }
+
+  it("lo que escribe el cliente y el «escribiendo…» del asistente aparecen solos, sin recargar", async () => {
+    const { inbox, thread } = await openChat([whatsappThread()]);
+    expect(screen.getByText("En vivo")).toBeInTheDocument();
+    inbox.receive("c1", { id: "m9", author: "customer", body: "¿Y tienen terraza?", intent: null, createdAt: new Date().toISOString(), kind: "text", status: "received" }, { assistantTyping: true });
+    const log = within(thread).getByRole("log");
+    expect(await within(log).findByText("¿Y tienen terraza?")).toBeInTheDocument();
+    expect(await within(thread).findByRole("status", { name: "El asistente está escribiendo" })).toBeInTheDocument();
+    inbox.update("c1", { assistantTyping: false });
+    await waitFor(() => expect(within(thread).queryByRole("status", { name: "El asistente está escribiendo" })).not.toBeInTheDocument());
+  });
+
+  it("el equipo responde desde el chat y la IA queda pausada en esa conversación", async () => {
+    const { user, inbox, thread } = await openChat([whatsappThread()]);
+    expect(within(thread).getByText("Atiende la IA")).toBeInTheDocument();
+    await user.type(within(thread).getByLabelText("Tu respuesta"), "Hola Laura, soy Juan del equipo{Enter}");
+    expect(await within(within(thread).getByRole("log")).findByText("Hola Laura, soy Juan del equipo")).toBeInTheDocument();
+    expect(inbox.replies).toEqual([{ conversationId: "c1", text: "Hola Laura, soy Juan del equipo" }]);
+    expect(await within(thread).findByText("Atiende tu equipo")).toBeInTheDocument();
+    expect(within(thread).getByLabelText("Tu respuesta")).toHaveValue("");
+
+    await user.click(within(thread).getByRole("button", { name: /Reanudar IA/ }));
+    expect(await within(thread).findByText("Atiende la IA")).toBeInTheDocument();
+  });
+
+  it("si la respuesta no sale, lo dice y el texto vuelve a la caja para intentarlo otra vez", async () => {
+    const { user, inbox, thread } = await openChat([whatsappThread()]);
+    inbox.failNextReply("WhatsApp no está conectado en este negocio. Conéctalo en Canales para responder desde aquí.");
+    await user.type(within(thread).getByLabelText("Tu respuesta"), "¿Sigues ahí?");
+    await user.click(within(thread).getByRole("button", { name: "Enviar respuesta" }));
+    expect(await within(thread).findByRole("alert")).toHaveTextContent("Conéctalo en Canales");
+    expect(within(thread).getByLabelText("Tu respuesta")).toHaveValue("¿Sigues ahí?");
+  });
+
+  it("los no leídos se ven en la lista y se marcan al abrir el chat", async () => {
+    const opened = await openAt(`/negocios/${CAFE}/conversaciones`, [whatsappThread({ unreadCount: 3 })]);
+    const list = await screen.findByRole("region", { name: "Lista de conversaciones" });
+    expect(await within(list).findByLabelText("3 sin leer")).toBeInTheDocument();
+    await opened.user.click(within(list).getByRole("button", { name: /Laura Gómez/ }));
+    await waitFor(() => expect(opened.inbox.readMarks).toContain("c1"));
+    await waitFor(() => expect(within(list).queryByLabelText("3 sin leer")).not.toBeInTheDocument());
+  });
+
+  it("muestra la foto con lo que vio la IA, la nota de voz con su transcripción y los chulos de lo que salió", async () => {
+    const now = new Date().toISOString();
+    const messages: ConversationThread["messages"] = [
+      { id: "f1", author: "customer", body: "", intent: null, createdAt: now, kind: "image", status: "received", media: { id: "foto-1", mimeType: "image/jpeg", sizeBytes: 2048, fileName: null }, mediaNote: "Captura de una transferencia de Nequi" },
+      { id: "a1", author: "customer", body: "", intent: null, createdAt: now, kind: "audio", status: "received", media: { id: "audio-1", mimeType: "audio/mpeg", sizeBytes: 4096, fileName: null }, mediaNote: "Quiero el plan básico" },
+      { id: "r1", author: "assistant", body: "Ya lo reviso", intent: null, createdAt: now, kind: "text", status: "read" },
+    ];
+    const opened = await openAt(`/negocios/${CAFE}/conversaciones`, [whatsappThread({}, messages)]);
+    opened.inbox.files.set("foto-1", new Blob(["jpeg"], { type: "image/jpeg" }));
+    opened.inbox.files.set("audio-1", new Blob(["mp3"], { type: "audio/mpeg" }));
+    await opened.user.click(await screen.findByRole("button", { name: /Laura Gómez/ }));
+    const log = await screen.findByRole("log", { name: "Mensajes con Laura Gómez" });
+    expect(await within(log).findByRole("img", { name: "Foto: Captura de una transferencia de Nequi" })).toBeInTheDocument();
+    expect(within(log).getByText(/La IA vio:/)).toBeInTheDocument();
+    expect(within(log).getByText(/Transcripción:/)).toBeInTheDocument();
+    expect(within(log).getByText("Quiero el plan básico", { exact: false })).toBeInTheDocument();
+    expect(within(log).getByRole("img", { name: "Leído" })).toBeInTheDocument();
+  });
+
+  it("dice por qué el chat pasó a una persona", async () => {
+    await openChat([whatsappThread({ needsHuman: true, aiPaused: true, handoffReason: "complaint", handoffRequestedAt: minutesAgo(2) })]);
+    const list = screen.getByRole("region", { name: "Lista de conversaciones" });
+    expect(within(list).getByText("Tiene un reclamo")).toBeInTheDocument();
+    const thread = screen.getByRole("region", { name: "Conversación abierta" });
+    expect(within(thread).getByText("Tiene un reclamo")).toBeInTheDocument();
+    expect(within(thread).getByText(/La IA está pausada en este chat/)).toBeInTheDocument();
+  });
+
+  it("a una conversación de prueba no se le puede responder", async () => {
+    const test: ConversationThread = {
+      conversation: { ...LAURA.conversation, channel: "prueba", canReply: false },
+      messages: LAURA.messages,
+    };
+    await openChat([test]);
+    expect(screen.queryByLabelText("Tu respuesta")).not.toBeInTheDocument();
+    expect(screen.getByText(/No llegó a ningún cliente/)).toBeInTheDocument();
   });
 });

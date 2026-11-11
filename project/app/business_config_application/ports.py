@@ -17,7 +17,16 @@ from app.domain.business_config.ai_models import AIModel
 from app.domain.business_config.ai_usage import AIUsageSummary
 from app.domain.business_config.channels import ConnectionStatus, ProviderStatus, WhatsAppConnection, WhatsAppSecrets
 from app.domain.business_config.contract import BusinessConfig, SecretRef
-from app.domain.business_config.conversations import BusinessActivity, ChatMessage, ConversationSummary, NewMessage, Notification
+from app.domain.business_config.conversations import (
+    AppendResult,
+    BusinessActivity,
+    ChatMessage,
+    ConversationSummary,
+    ConversationTarget,
+    MediaFile,
+    NewMessage,
+    Notification,
+)
 from app.domain.business_config.records import BusinessSummary, ConfigVersion, StoredConfig
 
 
@@ -144,21 +153,56 @@ class ConversationStorage(Protocol):
     """Las conversaciones de cada negocio. Toda consulta recibe los negocios que puede ver quien pregunta."""
 
     def record(
-        self, tenant_slug: str, *, channel: str, contact_ref: str, contact_name: str | None, messages: list[NewMessage], handoff: bool = False
+        self,
+        tenant_slug: str,
+        *,
+        channel: str,
+        contact_ref: str,
+        contact_name: str | None,
+        messages: list[NewMessage],
+        handoff: bool = False,
+        handoff_reason: str | None = None,
     ) -> str:
         """Agrega mensajes al hilo de ese contacto en ese canal (lo crea si no existe) y devuelve su identificador. Con `handoff`,
         la conversación queda esperando a una persona y el equipo recibe un aviso, en la misma transacción."""
         ...
 
+    def append(
+        self, tenant_slug: str, *, channel: str, contact_ref: str, contact_name: str | None, message: NewMessage, media: MediaFile | None = None
+    ) -> AppendResult:
+        """Un mensaje que llega o sale por un canal, apenas pasa. El mismo id del canal no se guarda dos veces."""
+        ...
+
+    def update_entry(
+        self, entry_id: str, *, status: str | None = None, provider_message_id: str | None = None, media: MediaFile | None = None, media_note: str | None = None
+    ) -> None: ...
+
     def recent(self, tenant_slugs: Collection[str], *, channel: str | None, limit: int, needs_human: bool | None = None) -> list[ConversationSummary]: ...
 
     def thread(self, conversation_id: str) -> tuple[ConversationSummary, list[ChatMessage]]: ...
 
+    def changes(self, conversation_id: str, since: datetime | None) -> tuple[ConversationSummary, list[ChatMessage]]: ...
+
     def business_of(self, conversation_id: str) -> str: ...
+
+    def target(self, conversation_id: str) -> ConversationTarget: ...
+
+    def media(self, conversation_id: str, media_id: str) -> MediaFile: ...
 
     def resolve_handoff(self, conversation_id: str) -> None: ...
 
+    def set_ai_paused(self, conversation_id: str, paused: bool) -> None: ...
+
+    def mark_read(self, conversation_id: str) -> None: ...
+
     def activity(self, tenant_slug: str, *, since: datetime) -> BusinessActivity: ...
+
+
+class OutboundMessenger(Protocol):
+    """Envía por su canal lo que el equipo responde desde el panel y devuelve el id que le dio el canal (o None).
+    Si el canal no puede enviarlo, lanza `ChannelError` con un mensaje para el negocio."""
+
+    def send_text(self, business_slug: str, channel: str, contact_ref: str, text: str) -> str | None: ...
 
 
 @runtime_checkable
@@ -194,6 +238,8 @@ class WhatsAppProvider(Protocol):
     def delete_instance(self, token: str) -> None: ...
 
     def set_webhook(self, token: str, url: str) -> None: ...
+
+    def send_text(self, token: str, phone: str, text: str) -> str | None: ...
 
 
 class ChannelStorage(Protocol):

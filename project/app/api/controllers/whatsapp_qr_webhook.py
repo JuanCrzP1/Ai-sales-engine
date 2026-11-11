@@ -1,30 +1,28 @@
-"""Webhook de WhatsApp por código QR (uazapi): recibe los mensajes de los clientes de cada negocio y responde con su asistente.
+"""Webhook de WhatsApp por código QR (uazapi): recibe los avisos de la instancia de cada negocio.
 
 Cada negocio tiene su propia ruta, `/channels/whatsapp/{webhook_id}`, con un identificador secreto que registra el panel al conectar.
-Además, uazapi manda el token de la instancia en cada aviso: si viene y no es el del negocio, se rechaza.
+Además, solo cuenta lo que trae el token de la instancia del negocio (uazapi lo incluye en cada aviso).
 
-- Solo se responden mensajes de texto de un cliente en un chat individual: ni grupos, ni lo que escribe el negocio desde su
-  teléfono, ni lo que envió la propia API (uazapi ya los excluye, y aquí se comprueba otra vez).
-- Un mensaje repetido (mismo identificador) se responde una sola vez.
-- Se contesta a uazapi enseguida y la respuesta se envía después: el asistente puede tardar unos segundos.
-- Cada intercambio queda en la bandeja de Conversaciones, con los datos de pago ocultos.
+La ruta solo recibe y contesta enseguida; lo que pasa con cada mensaje (guardarlo en vivo, entenderlo, responder o pasarlo a una
+persona) está en `app/application/channels/whatsapp_inbound.py`. Lo lento (entender un archivo y responder) se hace después de
+contestarle a uazapi.
 """
 from __future__ import annotations
 
 import hmac
-import threading
-import time
-from collections import OrderedDict
+from types import SimpleNamespace
 
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Request, status
 
+from app.application.channels.whatsapp_inbound import WhatsAppInbound
 from app.application.runtime import published_sections
-from app.domain.business_config.channels import WHATSAPP, ChannelError, IncomingMessage, WhatsAppSecrets
-from app.domain.business_config.conversations import NewMessage
+from app.application.runtime.business_ai import business_usage_recorder, load_business_ai
+from app.domain.business_config.channels import WhatsAppSecrets
 from app.domain.business_config.errors import BusinessConfigError
-from app.domain.business_config.payment_data import redact_payment_values
+from app.infrastructure.ai.media_interpreter import OpenRouterMediaInterpreter
 from app.infrastructure.business_config import runtime_access
-from app.infrastructure.channels.uazapi import UazapiClient, connection_event, parse_incoming
+from app.infrastructure.channels import uazapi
+from app.infrastructure.channels.uazapi import UazapiClient
 from app.models import Tenant
 from app.services.ai_service import AIService
 from app.utils.logger import logger
@@ -32,29 +30,54 @@ from app.utils.logger import logger
 router = APIRouter(prefix="/channels", tags=["WhatsApp QR"])
 
 MIN_WEBHOOK_ID = 24
-SEEN_SECONDS = 600
-SEEN_MAX = 5000
 
 
-class _SeenMessages:
-    """Los mensajes ya atendidos en este proceso, para no responder dos veces el mismo (uazapi puede avisar más de una vez)."""
-
-    def __init__(self) -> None:
-        self._items: OrderedDict[str, float] = OrderedDict()
-        self._lock = threading.Lock()
-
-    def first_time(self, key: str) -> bool:
-        now = time.monotonic()
-        with self._lock:
-            while self._items and (len(self._items) > SEEN_MAX or next(iter(self._items.values())) < now - SEEN_SECONDS):
-                self._items.popitem(last=False)
-            if key in self._items:
-                return False
-            self._items[key] = now
-            return True
+def answer_with_assistant(slug: str, phone: str, text: str) -> tuple[str, dict]:
+    """El asistente del negocio, con lo publicado y su clave de IA. Su memoria de cada cliente la guarda el motor."""
+    reply, _ai_used, metadata = AIService().generate_business_reply(
+        tenant=Tenant(name=slug, slug=slug),
+        bot_config=None,
+        user_message=text,
+        user_id=phone,
+        conversation_history=[],
+        faq_results=[],
+        yaml_config=None,
+        include_metadata=True,
+    )
+    return str(reply or ""), metadata if isinstance(metadata, dict) else {}
 
 
-_seen = _SeenMessages()
+def _business_key(slug: str) -> str | None:
+    credentials = load_business_ai(slug)
+    return credentials.api_key if credentials else None
+
+
+class _Conversations:
+    """La bandeja vista desde el motor: `runtime_access`, su única puerta al almacén."""
+
+    append = staticmethod(runtime_access.append_conversation_message)
+    update_entry = staticmethod(runtime_access.update_conversation_entry)
+    set_typing = staticmethod(runtime_access.set_conversation_typing)
+    request_handoff = staticmethod(runtime_access.request_conversation_handoff)
+    ai_paused = staticmethod(runtime_access.conversation_ai_paused)
+
+
+def build_inbound() -> WhatsAppInbound:
+    return WhatsAppInbound(
+        conversations=_Conversations(),
+        server=UazapiClient,
+        responder=answer_with_assistant,
+        media=OpenRouterMediaInterpreter(),
+        api_key=_business_key,
+        usage=business_usage_recorder,
+        sections=published_sections,
+        set_status=runtime_access.set_whatsapp_status,
+        mark_delivery=runtime_access.mark_conversation_delivery,
+    )
+
+
+# Los lectores de los avisos de uazapi: la ruta los pasa para que el flujo no dependa de cómo los manda uazapi.
+_UAZAPI = SimpleNamespace(connection_event=uazapi.connection_event, parse_receipt=uazapi.parse_receipt, parse_incoming=uazapi.parse_incoming)
 
 
 def _connection(webhook_id: str) -> WhatsAppSecrets:
@@ -85,64 +108,8 @@ async def receive_whatsapp_qr(webhook_id: str, request: Request, background: Bac
         logger.warning("whatsapp_qr_rechazado", extra={"tenant": secrets.tenant_slug, "reason": "token_distinto"})
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No autorizado")
 
-    connection = connection_event(payload)
-    if connection is not None:
-        runtime_access.set_whatsapp_status(secrets.tenant_slug, connection.status, phone=connection.phone, profile_name=connection.profile_name)
-        return {"status": "ok"}
-
-    message = parse_incoming(payload)
-    if message is None:
-        return {"status": "ignored"}
-    if not _seen.first_time(f"{secrets.tenant_slug}:{message.message_id}"):
-        return {"status": "duplicate"}
-    background.add_task(answer_message, secrets, message)
-    return {"status": "accepted"}
-
-
-def answer_message(secrets: WhatsAppSecrets, message: IncomingMessage, *, service: AIService | None = None, client: UazapiClient | None = None) -> None:
-    """Responde con el asistente del negocio, envía la respuesta por su servidor y guarda el intercambio en la bandeja."""
-    slug = secrets.tenant_slug
-    tenant = Tenant(name=slug, slug=slug)
-    reply, _ai_used, metadata = (service or AIService()).generate_business_reply(
-        tenant=tenant,
-        bot_config=None,
-        user_message=message.text,
-        user_id=message.phone,
-        conversation_history=[],
-        faq_results=[],
-        yaml_config=None,
-        include_metadata=True,
-    )
-    reply = str(reply or "").strip()
-    if not reply:
-        return
-    try:
-        (client or UazapiClient(secrets.server_url)).send_text(secrets.instance_token, message.phone, reply)
-    except ChannelError as exc:
-        logger.error("whatsapp_qr_envio_fallido", extra={"tenant": slug, "error": str(exc)})
-        return
-    logger.info("whatsapp_qr_respuesta", extra={"tenant": slug})
-    _record(secrets, message, reply, metadata if isinstance(metadata, dict) else {})
-
-
-def _record(secrets: WhatsAppSecrets, message: IncomingMessage, reply: str, metadata: dict) -> None:
-    """La bandeja no puede tumbar la respuesta: si falla, se registra el tipo de error, nunca el contenido."""
-    try:
-        try:
-            sections = published_sections(secrets.tenant_slug)
-        except Exception:  # noqa: BLE001 - sin lo publicado no hay datos de pago que ocultar
-            sections = {}
-        intent = str(metadata.get("intent") or "").strip() or None
-        runtime_access.record_conversation(
-            secrets.tenant_slug,
-            channel=WHATSAPP,
-            contact_ref=message.phone,
-            contact_name=message.contact_name,
-            messages=[
-                NewMessage("customer", redact_payment_values(message.text, sections)),
-                NewMessage("assistant", redact_payment_values(reply, sections), intent),
-            ],
-            handoff=bool(metadata.get("handoff")),
-        )
-    except Exception as exc:  # noqa: BLE001
-        logger.error("whatsapp_qr_conversacion_no_guardada", extra={"tenant": secrets.tenant_slug, "error": type(exc).__name__})
+    inbound = build_inbound()
+    received = inbound.receive(secrets, payload, parse=_UAZAPI)
+    if received.message is not None and received.stored is not None:
+        background.add_task(inbound.process, secrets, received.message, received.stored)
+    return {"status": received.status}

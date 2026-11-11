@@ -188,7 +188,7 @@ def main() -> int:
         run_sql_file(cloud, ENGINE_SCHEMA)
         print("[ok] Esquema del motor creado")
     for migration in MIGRATIONS:
-        run_sql_file(cloud, migration)
+        run_sql_file(cloud, migration, record=True)
     print(f"[ok] Almacén de BusinessConfig al día ({', '.join(path.name for path in MIGRATIONS)})")
     if local is None:
         print("[ok] Esquema listo. Sin negocios de ejemplo: los crean las cuentas reales.")

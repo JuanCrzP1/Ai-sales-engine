@@ -113,7 +113,7 @@ def main() -> int:
     from app.infrastructure.business_config.notification_store import NotificationStore
     from app.infrastructure.business_config.usage_store import UsageCounterStore
     from app.config import settings
-    from app.infrastructure.business_config.database import build_whatsapp_channel_service
+    from app.infrastructure.business_config.database import build_channel_messenger, build_whatsapp_channel_service
     from app.infrastructure.channels.platform import uazapi_platform
     from app.infrastructure.channels.public_url import engine_public_url, webhook_base
     from app.infrastructure.channels.uazapi import UazapiClient
@@ -130,6 +130,7 @@ def main() -> int:
         notifications=NotificationStore(engine),
         usage=UsageCounterStore(engine),
         whatsapp=build_whatsapp_channel_service(engine, UazapiClient, platform=platform, webhook_base=webhook_base(settings.api_prefix)),
+        messenger=build_channel_messenger(engine, UazapiClient),
     )
     uvicorn.run(app, host=HOST, port=port, log_level="warning")
     return 0

@@ -1,9 +1,19 @@
-import type { BusinessActivity, ConversationSummary, ConversationThread, InboxFilter, NotificationFeed } from "../domain/inbox/types";
+import type { BusinessActivity, ConversationChanges, ChatMessage, ConversationSummary, ConversationThread, InboxFilter, NotificationFeed } from "../domain/inbox/types";
 
 /** La bandeja de conversaciones del usuario: solo trae chats de sus negocios. Los fallos se rechazan con `PersistenceError`. */
 export interface Inbox {
   list(filter?: InboxFilter): Promise<ConversationSummary[]>;
   thread(conversationId: string): Promise<ConversationThread>;
+  /** En vivo: la conversación y solo los mensajes nuevos o que cambiaron desde `since` (sin `since`, todos). */
+  live(conversationId: string, since?: string): Promise<ConversationChanges>;
+  /** El equipo responde: el mensaje sale por el canal del cliente y la IA se pausa en ese chat. */
+  reply(conversationId: string, text: string): Promise<ChatMessage>;
+  /** Reanuda la IA en la conversación (`true`) o la pausa para atenderla el equipo (`false`). */
+  setAssistant(conversationId: string, active: boolean): Promise<ConversationSummary>;
+  /** Alguien del equipo abrió la conversación: no quedan mensajes sin leer. */
+  markRead(conversationId: string): Promise<void>;
+  /** Una foto, un audio o un documento de la conversación. */
+  media(conversationId: string, mediaId: string): Promise<Blob>;
   activity(slug: string): Promise<BusinessActivity>;
   /** Alguien del equipo ya atendió a quien pidió una persona. */
   resolveHandoff(conversationId: string): Promise<ConversationSummary>;

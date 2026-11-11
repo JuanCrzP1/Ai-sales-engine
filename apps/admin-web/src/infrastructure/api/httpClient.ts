@@ -10,6 +10,8 @@ export interface HttpClient {
   post<T>(path: string, body?: unknown): Promise<T>;
   put<T>(path: string, body: unknown): Promise<T>;
   delete(path: string): Promise<void>;
+  /** Un archivo (foto, audio, documento) en lugar de JSON. */
+  blob(path: string): Promise<Blob>;
 }
 
 const CODES: Record<string, PersistenceErrorCode> = {
@@ -44,7 +46,7 @@ export interface HttpClientOptions {
 }
 
 export function createHttpClient(baseUrl = "/api", options: HttpClientOptions = {}): HttpClient {
-  const request = async <T>(method: string, path: string, body?: unknown): Promise<T> => {
+  const send = async (method: string, path: string, body?: unknown): Promise<Response> => {
     let response: Response;
     try {
       const token = options.token ? await options.token() : null;
@@ -61,6 +63,10 @@ export function createHttpClient(baseUrl = "/api", options: HttpClientOptions = 
       throw new PersistenceError("unavailable", { cause: error });
     }
     if (!response.ok) throw await toError(response);
+    return response;
+  };
+  const request = async <T>(method: string, path: string, body?: unknown): Promise<T> => {
+    const response = await send(method, path, body);
     return (response.status === 204 ? undefined : await response.json()) as T;
   };
   return {
@@ -68,5 +74,6 @@ export function createHttpClient(baseUrl = "/api", options: HttpClientOptions = 
     post: (path, body) => request("POST", path, body),
     put: (path, body) => request("PUT", path, body),
     delete: (path) => request<void>("DELETE", path),
+    blob: async (path) => (await send("GET", path)).blob(),
   };
 }

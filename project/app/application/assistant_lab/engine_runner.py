@@ -66,7 +66,7 @@ class EngineAssistantRunner:
             include_metadata=True,
         )
         intent = str((metadata or {}).get("intent") or "").strip() or None
-        return AssistantTurn(reply=str(answer or ""), intent=intent, ai_answered=bool(ai_used), handoff=bool((metadata or {}).get("handoff")))
+        return AssistantTurn(reply=str(answer or ""), intent=intent, ai_answered=bool(ai_used), handoff=bool((metadata or {}).get("handoff")), handoff_reason=(metadata or {}).get("handoff_reason") or None)
 
     def reset(self, *, tenant_slug: str, session_id: str) -> None:
         with self._lock:

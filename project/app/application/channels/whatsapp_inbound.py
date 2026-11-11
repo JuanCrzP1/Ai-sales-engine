@@ -1,0 +1,258 @@
+"""Un mensaje de un cliente por WhatsApp (código QR, uazapi), de punta a punta, como lo haría un equipo de atención.
+
+En el webhook, enseguida (`receive`):
+1. El estado de la conexión y los recibos de entregado y leído se anotan y listo.
+2. El mensaje del cliente se guarda en la bandeja apenas llega, con su tipo y el id de WhatsApp: si el aviso se repite, no se guarda
+   ni se responde dos veces (lo garantiza la base, no la memoria de un proceso: en la nube hay muchos).
+3. Si la IA está pausada en ese chat (la atiende una persona), no se responde: el equipo lo ve en vivo.
+
+Después de contestarle a uazapi (`process`), porque responder toma unos segundos:
+4. La bandeja y el WhatsApp del cliente dicen «escribiendo…».
+5. Si es una foto o un audio, se descarga y se guarda (el enlace de WhatsApp vence), y la IA lo entiende con la clave del negocio:
+   describe la foto (y si es un comprobante de pago) o transcribe la nota de voz. Eso es lo que lee el asistente.
+6. El asistente responde con lo publicado del negocio. Si en ese momento alguien del equipo tomó el chat, no se envía nada.
+7. La respuesta sale por WhatsApp y queda en la bandeja con su id, para sus recibos. Si no sale, queda «no enviada».
+8. Si el cliente pidió una persona, reclamó o reportó un pago, la conversación pasa al equipo: la IA se pausa y llega un aviso.
+
+Todo lo que se guarda va con los datos de pago ocultos. Las dependencias entran por el constructor (las pruebas las cambian).
+"""
+from __future__ import annotations
+
+from collections.abc import Callable
+from dataclasses import dataclass
+from datetime import datetime, timedelta, timezone
+from typing import Any, Protocol
+
+from app.domain.business_config.channels import WHATSAPP, ChannelError, IncomingMessage, WhatsAppSecrets
+from app.domain.business_config.conversations import MEDIA_KINDS, TYPING_SECONDS, AppendResult, MediaFile, NewMessage
+from app.domain.business_config.payment_data import redact_payment_values
+from app.utils.logger import logger
+
+
+class WhatsAppServer(Protocol):
+    """La instancia de WhatsApp del negocio en uazapi."""
+
+    def send_text(self, token: str, phone: str, text: str) -> str | None: ...
+
+    def presence(self, token: str, phone: str, presence: str = "composing", delay_ms: int = 30_000) -> None: ...
+
+    def download(self, token: str, message_id: str) -> MediaFile | None: ...
+
+
+class ConversationGateway(Protocol):
+    """La bandeja, vista desde el motor (`runtime_access`)."""
+
+    def append(self, tenant_slug: str, *, channel: str, contact_ref: str, contact_name: str | None, message: NewMessage, media: MediaFile | None = None) -> AppendResult: ...
+
+    def update_entry(self, entry_id: str, *, status: str | None = None, provider_message_id: str | None = None, media: MediaFile | None = None, media_note: str | None = None) -> None: ...
+
+    def set_typing(self, conversation_id: str, until: datetime | None) -> None: ...
+
+    def request_handoff(self, conversation_id: str, reason: str, detail: str | None = None) -> None: ...
+
+    def ai_paused(self, conversation_id: str) -> bool: ...
+
+
+class MediaUnderstanding(Protocol):
+    """Entiende fotos y audios con la clave de IA del negocio (`infrastructure/ai/media_interpreter.py`)."""
+
+    def describe_image(self, api_key: str, media: MediaFile, *, on_usage: Any = None) -> Any: ...
+
+    def transcribe_audio(self, api_key: str, media: MediaFile, *, on_usage: Any = None) -> str | None: ...
+
+
+# El asistente del negocio: (negocio, teléfono del cliente, texto) → (respuesta, metadatos: intent, handoff, handoff_reason).
+Responder = Callable[[str, str, str], tuple[str, dict]]
+# La clave de IA del negocio (o None) y quién anota su consumo.
+KeyLoader = Callable[[str], str | None]
+UsageRecorder = Callable[[str], Any]
+# Lo publicado del negocio, para ocultar sus datos de pago en lo que se guarda.
+SectionsLoader = Callable[[str], dict]
+
+
+@dataclass(frozen=True)
+class Received:
+    """Qué pasó con un aviso del webhook y, si hace falta, el mensaje guardado que hay que procesar después de contestar."""
+
+    status: str
+    message: IncomingMessage | None = None
+    stored: AppendResult | None = None
+
+
+def _now() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+def assistant_text(message: IncomingMessage, *, note: str | None = None, payment_proof: bool = False, payment_details: str = "") -> str | None:
+    """Lo que lee el asistente de un mensaje: el texto, o lo que se entendió de un archivo. None: no se responde (un sticker)."""
+    caption = message.text.strip()
+    said = f" con el texto «{caption}»" if caption else ""
+    if message.kind == "text":
+        return caption or None
+    if message.kind == "audio":
+        return note or "[El cliente envió una nota de voz que no se pudo escuchar. Pídele con amabilidad que la escriba.]"
+    if message.kind == "image":
+        if payment_proof:
+            return f"Ya pagué, te envío el comprobante{f' ({payment_details})' if payment_details else ''}.{f' {caption}' if caption else ''}"
+        if note:
+            return f"[El cliente envió una foto{said}. En la foto se ve: {note}]"
+        return f"[El cliente envió una foto{said} que no se pudo ver.]{f' {caption}' if caption else ''}"
+    if message.kind == "video":
+        return f"[El cliente envió un video{said}.]"
+    if message.kind == "document":
+        name = f" «{message.file_name}»" if message.file_name else ""
+        return f"[El cliente envió un documento{name}{said}.]"
+    if message.kind == "location":
+        return "[El cliente compartió una ubicación.]"
+    if message.kind == "contact":
+        return "[El cliente compartió un contacto.]"
+    return caption or None
+
+
+class WhatsAppInbound:
+    def __init__(
+        self,
+        *,
+        conversations: ConversationGateway,
+        server: Callable[[str], WhatsAppServer],
+        responder: Responder,
+        media: MediaUnderstanding,
+        api_key: KeyLoader,
+        usage: UsageRecorder,
+        sections: SectionsLoader,
+        set_status: Callable[..., None],
+        mark_delivery: Callable[[str, list[str], str], int],
+    ) -> None:
+        self._conversations = conversations
+        self._server = server
+        self._responder = responder
+        self._media = media
+        self._api_key = api_key
+        self._usage = usage
+        self._sections = sections
+        self._set_status = set_status
+        self._mark_delivery = mark_delivery
+
+    # ------------------------------------------------------------------ en el webhook
+
+    def receive(self, secrets: WhatsAppSecrets, payload: dict, *, parse: Any) -> Received:
+        """Lo que se hace antes de contestarle a uazapi. `parse` trae los lectores de uazapi (conexión, recibos, mensajes)."""
+        slug = secrets.tenant_slug
+        connection = parse.connection_event(payload)
+        if connection is not None:
+            self._set_status(slug, connection.status, phone=connection.phone, profile_name=connection.profile_name)
+            return Received("ok")
+        receipt = parse.parse_receipt(payload)
+        if receipt is not None:
+            self._mark_delivery(slug, list(receipt.message_ids), receipt.status)
+            return Received("ok")
+        message = parse.parse_incoming(payload)
+        if message is None:
+            return Received("ignored")
+        stored = self._conversations.append(
+            slug, channel=WHATSAPP, contact_ref=message.phone, contact_name=message.contact_name,
+            message=NewMessage("customer", self._hide_payments(slug, message.text), kind=message.kind, provider_message_id=message.message_id),
+        )
+        if not stored.created:
+            return Received("duplicate")
+        return Received("stored" if stored.ai_paused else "accepted", message, stored)
+
+    # ------------------------------------------------------------------ después de contestar
+
+    def process(self, secrets: WhatsAppSecrets, message: IncomingMessage, stored: AppendResult) -> None:
+        """Entiende el mensaje, responde con el asistente y pasa la conversación a una persona si hace falta. Nunca lanza."""
+        answering = not stored.ai_paused
+        try:
+            if answering:
+                self._typing(secrets, message, stored)
+            understanding = self._understand(secrets, message, stored) if message.kind in MEDIA_KINDS else {}
+            if answering:
+                self._answer(secrets, message, stored, understanding)
+        except Exception as exc:  # noqa: BLE001 - un fallo aquí no puede tumbar el webhook; se registra el tipo, nunca el contenido
+            logger.error("whatsapp_qr_proceso_fallido", extra={"tenant": secrets.tenant_slug, "error": type(exc).__name__})
+        finally:
+            if answering:
+                self._quiet(stored.conversation_id)
+
+    def _typing(self, secrets: WhatsAppSecrets, message: IncomingMessage, stored: AppendResult) -> None:
+        self._conversations.set_typing(stored.conversation_id, _now() + timedelta(seconds=TYPING_SECONDS))
+        try:
+            self._server(secrets.server_url).presence(secrets.instance_token, message.phone, "composing", 30_000)
+        except ChannelError:
+            pass  # El «escribiendo…» en el teléfono del cliente es un detalle: la respuesta sale igual.
+
+    def _quiet(self, conversation_id: str) -> None:
+        try:
+            self._conversations.set_typing(conversation_id, None)
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("whatsapp_qr_escribiendo_no_apagado", extra={"error": type(exc).__name__})
+
+    def _understand(self, secrets: WhatsAppSecrets, message: IncomingMessage, stored: AppendResult) -> dict:
+        """Descarga y guarda el archivo, y lo que la IA entendió de él (foto o audio)."""
+        try:
+            media = self._server(secrets.server_url).download(secrets.instance_token, message.message_id)
+        except ChannelError as exc:
+            logger.warning("whatsapp_qr_archivo_no_descargado", extra={"tenant": secrets.tenant_slug, "error": str(exc)})
+            media = None
+        if media is None:
+            self._conversations.update_entry(stored.entry_id, media_note="El archivo no se pudo descargar o es muy grande: míralo en el WhatsApp del negocio.")
+            return {}
+        if message.file_name and not media.file_name:
+            media = MediaFile(media.mime_type, media.content, message.file_name)
+        result: dict = {}
+        key = self._api_key(secrets.tenant_slug) if message.kind in ("image", "audio") else None
+        if key and message.kind == "image":
+            seen = self._media.describe_image(key, media, on_usage=self._usage(secrets.tenant_slug))
+            if seen is not None:
+                result = {"note": seen.description, "payment_proof": seen.payment_proof, "payment_details": seen.payment_details}
+        elif key and message.kind == "audio":
+            heard = self._media.transcribe_audio(key, media, on_usage=self._usage(secrets.tenant_slug))
+            if heard:
+                result = {"note": heard}
+        note = result.get("note")
+        self._conversations.update_entry(stored.entry_id, media=media, media_note=self._hide_payments(secrets.tenant_slug, note) if note else None)
+        return result
+
+    def _answer(self, secrets: WhatsAppSecrets, message: IncomingMessage, stored: AppendResult, understanding: dict) -> None:
+        slug = secrets.tenant_slug
+        text = assistant_text(
+            message, note=understanding.get("note"), payment_proof=bool(understanding.get("payment_proof")),
+            payment_details=str(understanding.get("payment_details") or ""),
+        )
+        if not text:
+            return
+        reply, metadata = self._responder(slug, message.phone, text)
+        reply = str(reply or "").strip()
+        if not reply:
+            return
+        # Mientras el asistente pensaba, alguien del equipo pudo tomar el chat: entonces no se envía nada.
+        if self._conversations.ai_paused(stored.conversation_id):
+            logger.info("whatsapp_qr_respuesta_descartada", extra={"tenant": slug, "reason": "chat_tomado_por_el_equipo"})
+            return
+        intent = str(metadata.get("intent") or "").strip() or None
+        hidden = self._hide_payments(slug, reply)
+        try:
+            provider_id = self._server(secrets.server_url).send_text(secrets.instance_token, message.phone, reply)
+        except ChannelError as exc:
+            logger.error("whatsapp_qr_envio_fallido", extra={"tenant": slug, "error": str(exc)})
+            self._conversations.append(
+                slug, channel=WHATSAPP, contact_ref=message.phone, contact_name=None, message=NewMessage("assistant", hidden, intent, status="failed")
+            )
+            return
+        self._conversations.append(
+            slug, channel=WHATSAPP, contact_ref=message.phone, contact_name=None,
+            message=NewMessage("assistant", hidden, intent, provider_message_id=provider_id, status="sent"),
+        )
+        logger.info("whatsapp_qr_respuesta", extra={"tenant": slug})
+        if metadata.get("handoff"):
+            detail = message.text or understanding.get("note") or None
+            self._conversations.request_handoff(stored.conversation_id, str(metadata.get("handoff_reason") or "assistant"), self._hide_payments(slug, detail) if detail else None)
+
+    def _hide_payments(self, slug: str, text: str) -> str:
+        if not text:
+            return text
+        try:
+            sections = self._sections(slug)
+        except Exception:  # noqa: BLE001 - sin lo publicado no hay datos de pago que ocultar
+            sections = {}
+        return redact_payment_values(text, sections)

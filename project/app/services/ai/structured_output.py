@@ -131,6 +131,7 @@ from __future__ import annotations
 
 import json
 
+from app.services.ai.output_contract import HANDOFF_VALUES
 from app.utils.logger import logger
 
 
@@ -247,7 +248,14 @@ def normalize_metadata(raw_metadata: dict | None) -> dict:
         "mode": str(metadata.get("mode") or "").strip().lower(),
         "payment_method": str(metadata.get("payment_method") or "").strip().lower(),
         "payment_status": str(metadata.get("payment_status") or "").strip().lower(),
+        "handoff": _handoff(metadata.get("handoff")),
     }
+
+
+def _handoff(value: object) -> str:
+    """El motivo para pasar la conversación a una persona (`human_request`, `complaint`) o "" si no hay que pasarla."""
+    text = str(value or "").strip().lower()
+    return HANDOFF_VALUES.get(text, text if text in HANDOFF_VALUES.values() else "")
 
 
 def parse_structured_output(raw_text: str) -> StructuredOutputResult:
@@ -298,6 +306,7 @@ def parse_structured_output(raw_text: str) -> StructuredOutputResult:
         "mode": parsed.get("mode"),
         "payment_method": parsed.get("payment_method"),
         "payment_status": parsed.get("payment_status"),
+        "handoff": parsed.get("handoff"),
     }
     metadata_payload = parsed.get("metadata") if isinstance(parsed.get("metadata"), dict) else {}
     metadata = normalize_metadata({**top_level_metadata, **metadata_payload})

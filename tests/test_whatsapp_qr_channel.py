@@ -12,6 +12,7 @@ Sin llamadas reales: uazapi es un servidor simulado (httpx) y la IA, una respues
 """
 from __future__ import annotations
 
+import base64
 import json
 
 import httpx
@@ -30,7 +31,7 @@ from app.infrastructure.business_config.conversation_store import ConversationSt
 from app.infrastructure.business_config.database import build_business_config_service, create_business_config_engine
 from app.infrastructure.business_config.tables import business_channels
 from app.infrastructure.channels.platform import uazapi_platform
-from app.infrastructure.channels.uazapi import UazapiClient, parse_incoming
+from app.infrastructure.channels.uazapi import UazapiClient, parse_incoming, parse_receipt
 from pipeline_harness import publish_document
 from test_admin_api import BASE_URL, LOCAL_CLIENT, Local
 
@@ -92,8 +93,12 @@ class FakeUazapi:
         self.created_names: list[tuple[str, str]] = []
         self.webhooks: dict[str, dict] = {}
         self.sent: list[tuple[str, dict]] = []
+        self.presences: list[dict] = []
         self.requests: list[httpx.Request] = []
         self.created = 0
+        # Lo que devuelve /message/download por id de mensaje: (tipo, contenido).
+        self.files: dict[str, tuple[str, bytes]] = {}
+        self.fail_send = False
 
     def handler(self, request: httpx.Request) -> httpx.Response:
         self.requests.append(request)
@@ -129,8 +134,18 @@ class FakeUazapi:
             self.webhooks[token] = body
             return httpx.Response(200, json=[body])
         if path == "/send/text":
+            if self.fail_send:
+                return httpx.Response(500, json={"error": "Failed to send message"})
             self.sent.append((token, body))
-            return httpx.Response(200, json={"response": {"status": "success"}})
+            return httpx.Response(200, json={"id": "r1a2b3c4", "messageid": f"WA-OUT-{len(self.sent)}", "response": {"status": "success"}})
+        if path == "/message/presence":
+            self.presences.append(body)
+            return httpx.Response(200, json={"response": "Chat presence sent successfully"})
+        if path == "/message/download":
+            if body["id"] not in self.files:
+                return httpx.Response(404, json={"error": "Message not found"})
+            mime, content = self.files[body["id"]]
+            return httpx.Response(200, json={"fileURL": "https://cdn.example/x", "mimetype": mime, "base64Data": base64.b64encode(content).decode()})
         return httpx.Response(404, json={"error": "not found"})
 
     def client(self, server_url: str) -> UazapiClient:
@@ -150,12 +165,25 @@ def test_the_client_reads_the_qr_and_the_connected_number():
 def test_the_client_sends_text_and_registers_a_webhook_that_ignores_its_own_messages():
     server = FakeUazapi()
     client = server.client("https://free.uazapi.com")
-    client.send_text(INSTANCE_TOKEN, "+57 300 111 2233", "Hola")
+    assert client.send_text(INSTANCE_TOKEN, "+57 300 111 2233", "Hola") == "WA-OUT-1"
     client.set_webhook(INSTANCE_TOKEN, f"{WEBHOOK_BASE}/abc")
     assert server.sent == [(INSTANCE_TOKEN, {"number": "573001112233", "text": "Hola"})]
     assert server.webhooks[INSTANCE_TOKEN] == {
-        "url": f"{WEBHOOK_BASE}/abc", "enabled": True, "events": ["messages", "connection"], "excludeMessages": ["wasSentByApi", "fromMeYes", "isGroupYes"],
+        "url": f"{WEBHOOK_BASE}/abc", "enabled": True, "events": ["messages", "messages_update", "connection"],
+        "excludeMessages": ["wasSentByApi", "fromMeYes", "isGroupYes"],
     }
+
+
+def test_the_client_shows_typing_and_downloads_files_up_to_the_size_limit():
+    server = FakeUazapi()
+    client = server.client("https://free.uazapi.com")
+    client.presence(INSTANCE_TOKEN, "573009998877@s.whatsapp.net", "composing", 30_000)
+    assert server.presences == [{"number": "573009998877", "presence": "composing", "delay": 30000}]
+    server.files["FOTO1"] = ("image/jpeg", b"jpeg-bytes")
+    assert client.download(INSTANCE_TOKEN, "FOTO1").content == b"jpeg-bytes"
+    assert json.loads(server.requests[-1].content) == {"id": "FOTO1", "return_base64": True, "generate_mp3": True}
+    server.files["GRANDE"] = ("video/mp4", b"x" * (4 * 1024 * 1024 + 1))
+    assert client.download(INSTANCE_TOKEN, "GRANDE") is None
 
 
 def test_an_instance_the_server_no_longer_has_is_reported_as_gone_and_a_rejected_admin_token_as_unavailable():
@@ -177,12 +205,38 @@ INCOMING = {
 }
 
 
-def test_only_text_messages_from_a_customer_are_answered():
+def _incoming(**changes) -> dict:
+    return {**INCOMING, "message": {**INCOMING["message"], **changes}}
+
+
+def test_messages_from_customers_are_read_with_their_kind_and_the_rest_ignored():
     message = parse_incoming(INCOMING)
-    assert (message.message_id, message.phone, message.contact_name, message.text) == ("MSG1", "573009998877", "Ana", "Hola, ¿qué venden?")
-    for change in ({"fromMe": True}, {"wasSentByApi": True}, {"isGroup": True}, {"chatid": "120363@g.us"}, {"text": "  "}):
-        assert parse_incoming({**INCOMING, "message": {**INCOMING["message"], **change}}) is None
+    assert (message.message_id, message.phone, message.contact_name, message.text, message.kind) == ("MSG1", "573009998877", "Ana", "Hola, ¿qué venden?", "text")
+    for change in ({"fromMe": True}, {"wasSentByApi": True}, {"isGroup": True}, {"chatid": "120363@g.us"}, {"text": "  "}, {"chatid": "status@broadcast"}):
+        assert parse_incoming(_incoming(**change)) is None
     assert parse_incoming({**INCOMING, "EventType": "messages_update"}) is None
+    photo = parse_incoming(_incoming(messageType="ImageMessage", text="", content={"caption": "el comprobante", "mimetype": "image/jpeg"}))
+    assert (photo.kind, photo.text, photo.mime_type) == ("image", "el comprobante", "image/jpeg")
+    voice = parse_incoming(_incoming(messageType="AudioMessage", text="", content={"mimetype": "audio/ogg; codecs=opus", "PTT": True}))
+    assert (voice.kind, voice.text, voice.mime_type) == ("audio", "", "audio/ogg")
+    document = parse_incoming(_incoming(messageType="DocumentMessage", text="", content={"fileName": "factura.pdf"}))
+    assert (document.kind, document.file_name) == ("document", "factura.pdf")
+
+
+def test_a_contact_with_a_whatsapp_lid_is_answered_on_their_phone():
+    message = parse_incoming(_incoming(chatid="2459912345678@lid", sender="2459912345678@lid", sender_pn="573009998877@s.whatsapp.net"))
+    assert message.phone == "573009998877"
+    assert parse_incoming(_incoming(chatid="2459912345678@lid", sender="2459912345678@lid")) is None
+
+
+def test_delivery_receipts_are_read():
+    receipt = {"EventType": "messages_update", "token": INSTANCE_TOKEN, "type": "ReadReceipt", "state": "Read",
+               "event": {"Chat": "573009998877@s.whatsapp.net", "MessageIDs": ["WA-OUT-1"], "Type": "Read", "IsFromMe": True, "IsGroup": False}}
+    assert parse_receipt(receipt).message_ids == ("WA-OUT-1",) and parse_receipt(receipt).status == "read"
+    assert parse_receipt({**receipt, "state": "Delivered"}).status == "delivered"
+    assert parse_receipt({**receipt, "event": {**receipt["event"], "IsGroup": True}}) is None
+    assert parse_receipt({**receipt, "state": "Played"}).status == "read"
+    assert parse_receipt(INCOMING) is None
 
 
 # ---------------------------------------------------------------------------
@@ -290,49 +344,157 @@ def test_a_rejected_platform_token_is_not_explained_to_the_business(tmp_path):
 # ---------------------------------------------------------------------------
 
 class FakeAI:
+    """El asistente del negocio: responde lo que se le diga y anota lo que leyó."""
+
+    reply = "¡Hola Ana! Tenemos hamburguesas artesanales."
+    metadata: dict = {"intent": "info"}
+    received: list[str] = []
+    while_thinking = None
+
     def generate_business_reply(self, **kwargs):
-        FakeAI.received = kwargs
-        return "¡Hola Ana! Tenemos hamburguesas artesanales.", True, {"intent": "info", "handoff": False}
+        FakeAI.received.append(kwargs["user_message"])
+        FakeAI.last = kwargs
+        if FakeAI.while_thinking:
+            FakeAI.while_thinking()
+        return FakeAI.reply, True, dict(FakeAI.metadata)
+
+
+class FakeMedia:
+    """La IA que ve fotos y escucha audios, con la clave del negocio."""
+
+    keys: list[str] = []
+
+    def describe_image(self, api_key, media, *, on_usage=None):
+        from app.infrastructure.ai.media_interpreter import ImageUnderstanding
+
+        FakeMedia.keys.append(api_key)
+        return ImageUnderstanding("Captura de una transferencia de Nequi", True, "Nequi, $210.000, 10 de noviembre")
+
+    def transcribe_audio(self, api_key, media, *, on_usage=None):
+        FakeMedia.keys.append(api_key)
+        return "Hola, quiero saber el precio del plan básico"
 
 
 @pytest.fixture
 def engine_webhook(monkeypatch, tmp_path):
-    url = publish_document(monkeypatch, tmp_path, "restaurant")
-    store = create_business_config_engine(url)
     import os
 
+    url = publish_document(monkeypatch, tmp_path, "restaurant")
+    store = create_business_config_engine(url)
     channels = ChannelStore(store, os.environ["BUSINESS_CONFIG_SECRETS_KEY"])
     channels.save_whatsapp("restaurant", server_url="https://free.uazapi.com", instance_token=INSTANCE_TOKEN)
     webhook_id = channels.whatsapp_secrets("restaurant").webhook_id
     server = FakeUazapi()
+    FakeAI.reply, FakeAI.metadata, FakeAI.received, FakeAI.while_thinking = "¡Hola Ana! Tenemos hamburguesas artesanales.", {"intent": "info"}, [], None
+    FakeMedia.keys = []
     monkeypatch.setattr(whatsapp_qr_webhook, "AIService", FakeAI)
     monkeypatch.setattr(whatsapp_qr_webhook, "UazapiClient", server.client)
-    monkeypatch.setattr(whatsapp_qr_webhook, "_seen", whatsapp_qr_webhook._SeenMessages())
+    monkeypatch.setattr(whatsapp_qr_webhook, "OpenRouterMediaInterpreter", FakeMedia)
+    monkeypatch.setattr(whatsapp_qr_webhook, "_business_key", lambda _slug: "clave-del-negocio")
     app = FastAPI()
     app.include_router(whatsapp_qr_webhook.router)
-    yield TestClient(app), f"/channels/whatsapp/{webhook_id}", server, store
+    yield TestClient(app), f"/channels/whatsapp/{webhook_id}", server, ConversationStore(store)
     store.dispose()
     runtime_access.dispose_shared_engines()
 
 
-def test_a_customer_message_is_answered_through_the_business_server_and_saved_in_the_inbox(engine_webhook):
-    client, path, server, store = engine_webhook
+def _thread(conversations: ConversationStore):
+    (summary,) = conversations.recent(["restaurant"], channel="whatsapp", limit=5)
+    return conversations.thread(summary.id)
+
+
+def test_the_customer_message_is_saved_at_once_answered_with_typing_and_its_reply_keeps_the_whatsapp_id(engine_webhook):
+    client, path, server, conversations = engine_webhook
     assert client.post(path, json=INCOMING).json() == {"status": "accepted"}
+    assert server.presences == [{"number": "573009998877", "presence": "composing", "delay": 30000}]
     assert server.sent == [(INSTANCE_TOKEN, {"number": "573009998877", "text": "¡Hola Ana! Tenemos hamburguesas artesanales."})]
-    assert FakeAI.received["user_id"] == "573009998877" and FakeAI.received["tenant"].slug == "restaurant"
-    thread = ConversationStore(store).recent(["restaurant"], channel="whatsapp", limit=5)
-    assert [(item.contact_name, item.channel) for item in thread] == [("Ana", "whatsapp")]
+    assert FakeAI.last["user_id"] == "573009998877" and FakeAI.last["tenant"].slug == "restaurant"
+    summary, messages = _thread(conversations)
+    assert [(m.author, m.kind, m.status) for m in messages] == [("customer", "text", "received"), ("assistant", "text", "sent")]
+    assert summary.contact_name == "Ana" and summary.unread_count == 1 and summary.assistant_typing is False and not summary.ai_paused
 
 
-def test_the_same_message_is_answered_once(engine_webhook):
-    client, path, server, _store = engine_webhook
+def test_the_same_whatsapp_message_is_saved_and_answered_once(engine_webhook):
+    client, path, server, conversations = engine_webhook
     client.post(path, json=INCOMING)
     assert client.post(path, json=INCOMING).json() == {"status": "duplicate"}
-    assert len(server.sent) == 1
+    assert len(server.sent) == 1 and len(_thread(conversations)[1]) == 2
+
+
+def test_delivery_and_read_receipts_mark_what_went_out_and_never_go_back(engine_webhook):
+    client, path, _server, conversations = engine_webhook
+    client.post(path, json=INCOMING)
+    receipt = {"EventType": "messages_update", "token": INSTANCE_TOKEN, "type": "ReadReceipt", "state": "Read",
+               "event": {"Chat": "573009998877@s.whatsapp.net", "MessageIDs": ["WA-OUT-1"], "Type": "Read", "IsGroup": False}}
+    assert client.post(path, json=receipt).json() == {"status": "ok"}
+    assert client.post(path, json={**receipt, "state": "Delivered"}).json() == {"status": "ok"}
+    assert _thread(conversations)[1][-1].status == "read"
+
+
+def test_a_payment_receipt_photo_is_saved_seen_and_passed_to_the_team(engine_webhook):
+    client, path, server, conversations = engine_webhook
+    server.files["FOTO1"] = ("image/jpeg", b"jpeg-del-comprobante")
+    FakeAI.reply, FakeAI.metadata = "Perfecto, ya lo reviso y te confirmo en un momento.", {"intent": "buy", "handoff": True, "handoff_reason": "payment_review"}
+    photo = _incoming(messageid="FOTO1", messageType="ImageMessage", text="", content={"mimetype": "image/jpeg"})
+    assert client.post(path, json=photo).json() == {"status": "accepted"}
+    assert FakeAI.received == ["Ya pagué, te envío el comprobante (Nequi, $210.000, 10 de noviembre)."]
+    assert FakeMedia.keys == ["clave-del-negocio"]
+    summary, messages = _thread(conversations)
+    customer = messages[0]
+    assert (customer.kind, customer.media.mime_type, customer.media_note) == ("image", "image/jpeg", "Captura de una transferencia de Nequi")
+    assert conversations.media(summary.id, customer.media.id).content == b"jpeg-del-comprobante"
+    assert summary.last_message_preview == "Perfecto, ya lo reviso y te confirmo en un momento."
+    assert (summary.needs_human, summary.ai_paused, summary.handoff_reason) == (True, True, "payment_review")
+
+
+def test_a_voice_note_is_transcribed_and_answered_like_text(engine_webhook):
+    client, path, server, conversations = engine_webhook
+    server.files["AUDIO1"] = ("audio/mpeg", b"mp3")
+    voice = _incoming(messageid="AUDIO1", messageType="AudioMessage", text="", content={"mimetype": "audio/ogg; codecs=opus"})
+    client.post(path, json=voice)
+    assert FakeAI.received == ["Hola, quiero saber el precio del plan básico"]
+    customer = _thread(conversations)[1][0]
+    assert (customer.kind, customer.media_note, customer.media.mime_type) == ("audio", "Hola, quiero saber el precio del plan básico", "audio/mpeg")
+
+
+def test_after_the_handoff_the_assistant_stays_quiet_and_the_team_sees_each_new_message(engine_webhook):
+    client, path, server, conversations = engine_webhook
+    FakeAI.reply, FakeAI.metadata = "Te paso con alguien del equipo por este mismo chat.", {"intent": "info", "handoff": True, "handoff_reason": "human_request"}
+    client.post(path, json=_incoming(text="Quiero hablar con un asesor humano"))
+    assert client.post(path, json=_incoming(messageid="MSG2", text="¿Hola?")).json() == {"status": "stored"}
+    assert len(server.sent) == 1 and FakeAI.received == ["Quiero hablar con un asesor humano"]
+    summary, messages = _thread(conversations)
+    assert [m.body for m in messages][-1] == "¿Hola?" and summary.unread_count == 2 and summary.handoff_reason == "human_request"
+
+
+def test_if_the_team_takes_the_chat_while_the_assistant_thinks_nothing_is_sent(engine_webhook):
+    client, path, server, conversations = engine_webhook
+
+    def team_takes_over():
+        (summary,) = conversations.recent(["restaurant"], channel="whatsapp", limit=5)
+        conversations.set_ai_paused(summary.id, True)
+
+    FakeAI.while_thinking = team_takes_over
+    client.post(path, json=INCOMING)
+    assert server.sent == [] and [m.author for m in _thread(conversations)[1]] == ["customer"]
+
+
+def test_a_reply_that_whatsapp_rejects_stays_marked_as_not_sent(engine_webhook):
+    client, path, server, conversations = engine_webhook
+    server.fail_send = True
+    client.post(path, json=INCOMING)
+    assert [(m.author, m.status) for m in _thread(conversations)[1]] == [("customer", "received"), ("assistant", "failed")]
+
+
+def test_stickers_are_kept_but_not_answered(engine_webhook):
+    client, path, server, conversations = engine_webhook
+    server.files["ST1"] = ("image/webp", b"webp")
+    client.post(path, json=_incoming(messageid="ST1", messageType="StickerMessage", text=""))
+    assert server.sent == [] and FakeAI.received == [] and _thread(conversations)[1][0].kind == "sticker"
 
 
 def test_a_notice_with_another_token_or_an_unknown_route_is_rejected(engine_webhook):
-    client, path, server, _store = engine_webhook
+    client, path, server, _conversations = engine_webhook
     assert client.post(path, json={**INCOMING, "token": "otro"}).status_code == 403
     assert client.post(path, json={key: value for key, value in INCOMING.items() if key != "token"}).status_code == 403
     assert client.post("/channels/whatsapp/" + "x" * 40, json=INCOMING).status_code == 404
@@ -341,14 +503,14 @@ def test_a_notice_with_another_token_or_an_unknown_route_is_rejected(engine_webh
 
 
 def test_group_and_own_messages_are_ignored_and_connection_notices_update_the_status(engine_webhook):
-    client, path, server, store = engine_webhook
+    import os
+
+    client, path, server, conversations = engine_webhook
     group = {**INCOMING, "message": {**INCOMING["message"], "isGroup": True, "chatid": "120363@g.us"}}
     assert client.post(path, json=group).json() == {"status": "ignored"}
     notice = {"EventType": "connection", "token": INSTANCE_TOKEN, "instance": {"status": "connected", "profileName": "Mesa Activa"},
               "status": {"connected": True, "loggedIn": True, "jid": {"user": "573001112233"}}}
     assert client.post(path, json=notice).json() == {"status": "ok"}
-    import os
-
-    connection = ChannelStore(store, os.environ["BUSINESS_CONFIG_SECRETS_KEY"]).whatsapp("restaurant")
+    connection = ChannelStore(conversations._engine, os.environ["BUSINESS_CONFIG_SECRETS_KEY"]).whatsapp("restaurant")
     assert (connection.status, connection.phone, connection.profile_name) == ("connected", "573001112233", "Mesa Activa")
     assert server.sent == []

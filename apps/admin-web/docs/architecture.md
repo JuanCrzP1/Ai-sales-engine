@@ -146,6 +146,22 @@ vive en `domain/channels/types.ts` y el contrato en `repositories/channels.ts`, 
 `infrastructure/api/apiChannels.ts` (`/api/businesses/{slug}/channels/whatsapp`). En las pruebas, `createMemoryWhatsApp` de
 `test/fakes.ts` simula el servidor. Telegram y el chat web aparecen como «Próximamente»; Instagram se retiró.
 
+### D8e — Conversaciones en vivo
+
+La bandeja se actualiza sola, como Auream: la lista se refresca cada 5 segundos y el chat abierto pide solo lo que cambió
+(`GET /conversations/{id}/live?since=<cursor>`, con la hora del servidor como marca). Pregunta cada 1,5 segundos si hubo movimiento
+en el último minuto y cada 4 en calma, y nada con la pestaña oculta. La lógica pura (unir por id, el intervalo) está en
+`domain/inbox/live.ts`; el ciclo, en `state/useConversations.ts`.
+
+En el chat se ven:
+- las fotos, los audios (con su transcripción) y los documentos, que se descargan con la sesión del usuario (`useMediaUrl`);
+- los chulos de lo que salió y el «escribiendo…» del asistente;
+- por qué el chat pasó a una persona.
+
+El equipo responde desde la caja de abajo. El mensaje aparece enseguida («enviando»), sale por el canal del cliente y la IA se pausa
+en ese chat. Si no sale, se avisa y el texto vuelve a la caja. «Pausar IA / Reanudar IA» decide quién atiende. Las conversaciones de
+prueba no tienen caja de respuesta.
+
 ### D9 — API separada del motor y limitada a este equipo
 
 `app.main` publica rutas del motor y en Docker escucha en `0.0.0.0`. La API del panel es otra aplicación, con el host fijo a `127.0.0.1`

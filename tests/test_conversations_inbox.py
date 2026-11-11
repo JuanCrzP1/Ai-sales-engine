@@ -66,6 +66,25 @@ def _as(user: str) -> dict[str, str]:
     return {"Authorization": f"Bearer token-de-{user}"}
 
 
+class FakeMessenger:
+    """El canal del cliente: lo que el equipo responde desde el panel sale por aquí."""
+
+    def __init__(self) -> None:
+        self.sent: list[tuple[str, str, str, str]] = []
+        self.fail = False
+
+    def send_text(self, business_slug, channel, contact_ref, text):
+        from app.domain.business_config.channels import ChannelError
+
+        if self.fail:
+            raise ChannelError("WhatsApp no está conectado en este negocio. Conéctalo en Canales para responder desde aquí.")
+        self.sent.append((business_slug, channel, contact_ref, text))
+        return f"WA-AGENTE-{len(self.sent)}"
+
+
+MESSENGER = FakeMessenger()
+
+
 @pytest.fixture
 def platform(tmp_path):
     engine = create_business_config_engine(f"sqlite:///{(tmp_path / 'plataforma.sqlite3').as_posix()}")
@@ -88,7 +107,10 @@ def platform(tmp_path):
         conversations=store,
         notifications=NotificationStore(engine),
         usage=UsageCounterStore(engine),
+        messenger=MESSENGER,
     )
+    MESSENGER.sent.clear()
+    MESSENGER.fail = False
     yield engine, store, lab, TestClient(app)
     engine.dispose()
 
@@ -125,8 +147,12 @@ def test_the_migration_matches_the_tables():
     for table in (conversations, conversation_entries):
         body = re.search(rf"CREATE TABLE IF NOT EXISTS {table.name} \((.*?)\n\);", sql, re.S).group(1)
         columns = {match.group(1) for match in re.finditer(r"^\s+([a-z_]+)\s+[A-Z]+", body, re.M)} - {"constraint"}
-        # La 0005 agregó a `conversations` las columnas del traspaso a una persona.
-        added_later = {"needs_human", "handoff_requested_at"} if table is conversations else set()
+        # La 0005 agregó a `conversations` las columnas del traspaso a una persona; la 0009, las de la bandeja en vivo.
+        added_later = (
+            {"needs_human", "handoff_requested_at", "ai_paused", "handoff_reason", "unread_count", "assistant_typing_until", "updated_at"}
+            if table is conversations
+            else {"kind", "status", "provider_message_id", "media_id", "media_note", "updated_at"}
+        )
         assert columns == {column.name for column in table.columns} - added_later, table.name
     assert "REFERENCES tenants(id) ON DELETE CASCADE" in sql and "REFERENCES conversations(id) ON DELETE CASCADE" in sql
 
@@ -314,9 +340,9 @@ def test_the_engine_says_when_the_assistant_passes_the_chat_to_a_person():
     from app.infrastructure.persistence.memory_repository import MemoryRepository
     from pipeline_harness import reply
 
-    def answer(text):
+    def answer(text, **model_metadata):
         pipeline = AIPipeline(memory_service=MemoryDomainService(MemoryRepository()), ai_loader=lambda _slug: Credentials("openrouter", None, KEY))
-        pipeline.runtime.generate = lambda prompt, *, user_message, bot_config=None, **_kwargs: reply(text)
+        pipeline.runtime.generate = lambda prompt, *, user_message, bot_config=None, **_kwargs: reply(text, **model_metadata)
         _reply, _ai_used, metadata = pipeline.run(
             tenant=SimpleNamespace(slug="restaurant", name="restaurant", id="restaurant"), user_message="Necesito ayuda con mi pedido",
             user_id="cliente-1", bot_config=None, conversation_history=[], faq_results=[], yaml_config=None, include_metadata=True,
@@ -325,3 +351,131 @@ def test_the_engine_says_when_the_assistant_passes_the_chat_to_a_person():
 
     assert answer("Claro, te paso con un asesor de nuestro equipo.").get("handoff") is True
     assert not answer("Claro, ¿qué pedido es?").get("handoff")
+    # El modelo dice por qué pasa a una persona: la pidió o reclama. Un pago reportado también pasa: solo el equipo lo verifica.
+    asked = answer("Listo, te paso con el equipo por este mismo chat.", handoff="persona")
+    assert (asked["handoff"], asked["handoff_reason"]) == (True, "human_request")
+    assert answer("Lamento lo que pasó, te paso con el equipo.", handoff="reclamo")["handoff_reason"] == "complaint"
+    assert answer("Gracias, el equipo lo verifica.", payment_status="reportado")["handoff_reason"] == "payment_review"
+    assert not answer("Te ayudo con eso.", handoff="cualquier cosa").get("handoff")
+
+
+def test_the_live_inbox_migration_matches_the_tables():
+    from app.infrastructure.business_config.tables import conversation_media
+
+    sql = (ROOT_DIR / "project" / "db" / "migrations" / "0009_conversations_live.sql").read_text(encoding="utf-8")
+    body = re.search(r"CREATE TABLE IF NOT EXISTS conversation_media \((.*?)\n\);", sql, re.S).group(1)
+    columns = {match.group(1) for match in re.finditer(r"^\s+([a-z_]+)\s+[A-Z]+", body, re.M)}
+    assert columns == {column.name for column in conversation_media.columns}
+    added = {(table, column) for table, column in re.findall(r"ALTER TABLE (\w+) ADD COLUMN IF NOT EXISTS (\w+)", sql)}
+    assert added == {
+        ("conversations", name) for name in ("ai_paused", "handoff_reason", "unread_count", "assistant_typing_until", "updated_at")
+    } | {("conversation_entries", name) for name in ("kind", "status", "provider_message_id", "media_id", "media_note", "updated_at")}
+    for table, column in added:
+        assert column in (conversations if table == "conversations" else conversation_entries).columns, (table, column)
+    for index in ("conversation_entries_provider_key", "conversation_entries_live_idx", "conversation_entries_provider_idx"):
+        assert f"CREATE {'UNIQUE ' if index.endswith('_key') else ''}INDEX IF NOT EXISTS {index}" in sql
+
+
+# ---------------------------------------------------------------------------
+# La bandeja en vivo: lo nuevo, responder desde el panel, la IA pausada, leídos y archivos
+# ---------------------------------------------------------------------------
+
+def _whatsapp_chat(store: ConversationStore, *, text: str = "Hola", message_id: str = "WA-1"):
+    from app.domain.business_config.conversations import MediaFile
+
+    return store.append(
+        "restaurant", channel="whatsapp", contact_ref="573009998877", contact_name="Ana",
+        message=NewMessage("customer", text, kind="image" if message_id.startswith("FOTO") else "text", provider_message_id=message_id),
+        media=MediaFile("image/jpeg", b"jpeg") if message_id.startswith("FOTO") else None,
+    )
+
+
+def test_the_live_inbox_returns_only_what_changed_since_the_cursor(platform):
+    _engine, store, _lab, client = platform
+    first = _whatsapp_chat(store)
+    whole = client.get(f"/api/conversations/{first.conversation_id}/live", headers=_as("ana")).json()
+    assert [m["body"] for m in whole["messages"]] == ["Hola"] and whole["cursor"].endswith("Z")
+    assert whole["conversation"]["unread_count"] == 1 and whole["conversation"]["can_reply"] is True
+    later = datetime.now(timezone.utc) + timedelta(seconds=10)
+    assert client.get(f"/api/conversations/{first.conversation_id}/live", params={"since": later.isoformat()}, headers=_as("ana")).json()["messages"] == []
+    assert client.get(f"/api/conversations/{first.conversation_id}/live", params={"since": "ayer"}, headers=_as("ana")).status_code == 422
+    assert client.get(f"/api/conversations/{first.conversation_id}/live", headers=_as("beto")).status_code == 404
+
+
+def test_the_same_channel_message_is_saved_once(platform):
+    _engine, store, _lab, _client = platform
+    first, again = _whatsapp_chat(store), _whatsapp_chat(store)
+    assert first.created and not again.created and first.entry_id == again.entry_id
+    assert store.thread(first.conversation_id)[0].message_count == 1
+
+
+def test_the_team_replies_from_the_panel_and_the_assistant_steps_aside(platform):
+    _engine, store, _lab, client = platform
+    chat = _whatsapp_chat(store)
+    store.request_handoff(chat.conversation_id, "human_request", "Quiero un asesor")
+    response = client.post(f"/api/conversations/{chat.conversation_id}/messages", json={"text": "Hola Ana, soy Juan del equipo"}, headers=_as("ana"))
+    assert response.status_code == 201
+    assert (response.json()["author"], response.json()["status"]) == ("agent", "sent")
+    assert MESSENGER.sent == [("restaurant", "whatsapp", "573009998877", "Hola Ana, soy Juan del equipo")]
+    summary = client.get(f"/api/conversations/{chat.conversation_id}/live", headers=_as("ana")).json()["conversation"]
+    assert (summary["ai_paused"], summary["needs_human"]) == (True, False)
+    resumed = client.post(f"/api/conversations/{chat.conversation_id}/assistant", json={"active": True}, headers=_as("ana")).json()
+    assert (resumed["ai_paused"], resumed["needs_human"], resumed["handoff_reason"]) == (False, False, None)
+    assert client.post(f"/api/conversations/{chat.conversation_id}/messages", json={"text": "x"}, headers=_as("beto")).status_code == 404
+
+
+def test_a_reply_the_channel_does_not_deliver_is_kept_as_not_sent(platform):
+    _engine, store, _lab, client = platform
+    chat = _whatsapp_chat(store)
+    MESSENGER.fail = True
+    response = client.post(f"/api/conversations/{chat.conversation_id}/messages", json={"text": "Hola"}, headers=_as("ana"))
+    assert response.status_code == 502 and "Conéctalo en Canales" in response.json()["message"]
+    assert store.thread(chat.conversation_id)[1][-1].status == "failed"
+
+
+def test_test_chats_and_empty_replies_cannot_be_sent(platform):
+    _engine, store, _lab, client = platform
+    test_chat = store.record("restaurant", channel="prueba", contact_ref="s1", contact_name="Prueba", messages=[NewMessage("customer", "Hola")])
+    assert client.post(f"/api/conversations/{test_chat}/messages", json={"text": "Hola"}, headers=_as("ana")).status_code == 422
+    chat = _whatsapp_chat(store)
+    assert client.post(f"/api/conversations/{chat.conversation_id}/messages", json={"text": ""}, headers=_as("ana")).status_code == 422
+    assert MESSENGER.sent == []
+
+
+def test_opening_a_chat_marks_it_read_and_its_files_are_served_safely(platform):
+    _engine, store, _lab, client = platform
+    chat = _whatsapp_chat(store, text="", message_id="FOTO1")
+    assert client.post(f"/api/conversations/{chat.conversation_id}/read", headers=_as("ana")).status_code == 204
+    assert store.thread(chat.conversation_id)[0].unread_count == 0
+    media = store.thread(chat.conversation_id)[1][0].media
+    image = client.get(f"/api/conversations/{chat.conversation_id}/media/{media.id}", headers=_as("ana"))
+    assert (image.status_code, image.content, image.headers["content-type"]) == (200, b"jpeg", "image/jpeg")
+    assert image.headers["content-security-policy"] == "default-src 'none'; sandbox" and image.headers["x-content-type-options"] == "nosniff"
+    assert client.get(f"/api/conversations/{chat.conversation_id}/media/{media.id}", headers=_as("beto")).status_code == 404
+
+
+def test_a_file_that_could_run_scripts_is_only_downloaded(platform):
+    from app.domain.business_config.conversations import MediaFile
+
+    _engine, store, _lab, client = platform
+    chat = store.append(
+        "restaurant", channel="whatsapp", contact_ref="573009998877", contact_name="Ana",
+        message=NewMessage("customer", "", kind="document", provider_message_id="DOC1"), media=MediaFile("image/svg+xml", b"<svg onload=alert(1)>"),
+    )
+    media = store.thread(chat.conversation_id)[1][0].media
+    response = client.get(f"/api/conversations/{chat.conversation_id}/media/{media.id}", headers=_as("ana"))
+    assert response.headers["content-type"] == "application/octet-stream" and response.headers["content-disposition"] == "attachment"
+
+
+def test_receipts_only_move_forward_and_a_handoff_notifies_once_per_wait(platform):
+    _engine, store, _lab, _client = platform
+    chat = _whatsapp_chat(store)
+    sent = store.append("restaurant", channel="whatsapp", contact_ref="573009998877", contact_name=None, message=NewMessage("assistant", "Hola", provider_message_id="WA-OUT-1"))
+    assert store.mark_delivery("restaurant", ["WA-OUT-1"], "read") == 1
+    assert store.mark_delivery("restaurant", ["WA-OUT-1"], "delivered") == 0
+    assert store.mark_delivery("saas", ["WA-OUT-1"], "read") == 0  # los recibos de otro negocio no tocan este
+    assert next(m for m in store.thread(chat.conversation_id)[1] if m.id == sent.entry_id).status == "read"
+    store.request_handoff(chat.conversation_id, "complaint", "Me robaron")
+    store.request_handoff(chat.conversation_id, "complaint", "¿Hola?")
+    items, _unread = NotificationStore(_engine).recent(["restaurant"], ANA.user_id, limit=10)
+    assert [item.title for item in items] == ["Ana tiene un reclamo"]

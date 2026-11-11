@@ -116,8 +116,20 @@ ENABLE_WEBHOOK_PROCESSING=true
   se crea una instancia por negocio, cuyo token queda cifrado con `BUSINESS_CONFIG_SECRETS_KEY` (tabla `business_channels`,
   migración 0008). Desconectar borra la instancia del servidor. Sin estas variables (o sin dirección pública del motor), Canales
   dice que la conexión todavía no está activa.
-- El webhook solo acepta mensajes cuyo token sea el de la instancia guardada, ignora grupos y los mensajes que envía el propio
-  número o la API, y responde con la configuración publicada y la clave de IA del negocio. La conversación queda en la bandeja.
+- El webhook solo acepta avisos con el token de la instancia guardada e ignora grupos, canales y lo que envía el propio número o la
+  API. Recibe mensajes, recibos de entregado y leído (`messages_update`) y cambios de conexión. El flujo completo está en
+  `app/application/channels/whatsapp_inbound.py`:
+  1. El mensaje del cliente se guarda en la bandeja apenas llega. El mismo aviso repetido no se guarda ni se responde dos veces (lo
+     garantiza un índice único en la base).
+  2. Mientras el asistente responde, la bandeja y el WhatsApp del cliente dicen «escribiendo…».
+  3. Las fotos, audios y documentos se descargan y se guardan (`conversation_media`, hasta 4 MB), porque el enlace de WhatsApp vence.
+     La IA describe la foto (y si es un comprobante de pago) o transcribe la nota de voz con la clave del negocio y un modelo económico
+     (`MEDIA_AI_MODEL`, por omisión `google/gemini-2.5-flash-lite`); eso es lo que lee el asistente, y su costo va al consumo del
+     negocio.
+  4. Si el cliente pide una persona, reclama o reporta un pago, la conversación pasa al equipo: la IA se pausa en ese chat y llega un
+     aviso. Si alguien del equipo toma el chat mientras el asistente piensa, no se envía nada.
+  5. Desde la bandeja, el equipo responde (sale por WhatsApp y pausa la IA) y reanuda la IA cuando quiera.
+- Los contactos que WhatsApp identifica con `@lid` se atienden en su número (`sender_pn`).
 - El servidor gratuito (`https://free.uazapi.com`) sirve para probar: borra las instancias a la hora (conectar de nuevo crea
   otra). Para clientes reales se usa un servidor de pago de uazapi.
 
@@ -364,8 +376,10 @@ python scripts/setup_cloud_database.py --branch production --apply # solo las ta
 ```
 
 Las migraciones nuevas se aplican solas, como en Auream: después de cada despliegue, la API del panel en la nube aplica al
-arrancar las de `project/db/migrations` que le falten a su base, en orden, cada una en su transacción y con un candado para que dos
-arranques a la vez no choquen (`app/infrastructure/business_config/migrations.py`). Si una falla, queda en los registros de Vercel
+arrancar las de `project/db/migrations` que su base no tenga anotadas en `schema_migrations`, en orden, cada una en su transacción
+(con su anotación) y con un candado para que dos arranques a la vez no choquen (`app/infrastructure/business_config/migrations.py`).
+Toda migración debe poder repetirse: `IF NOT EXISTS` en tablas, índices y columnas, y cada restricción se quita antes de crearla (una
+prueba lo exige). Si una falla, queda en los registros de Vercel
 (`migraciones_fallaron`) y la API sigue con lo que ya había. El comando de arriba hace lo mismo desde este equipo.
 
 En `pruebas` copia las versiones, los datos de pago (ya cifrados: la clave no viaja) y los ajustes técnicos de cada negocio, y

@@ -21,6 +21,7 @@ from app.business_config_application.conversations import PlaygroundRecorder
 from app.infrastructure.business_config.conversation_store import ConversationStore
 from app.infrastructure.business_config.ai_settings_store import AISettingsStore
 from app.infrastructure.business_config.ai_usage_store import AIUsageStore
+from app.infrastructure.business_config.channel_messenger import ChannelMessenger
 from app.infrastructure.business_config.channel_store import ChannelStore
 from app.infrastructure.business_config.payment_secret_store import PaymentSecretStore
 from app.infrastructure.business_config.repository import BusinessConfigRepository
@@ -74,7 +75,23 @@ def create_business_config_engine(url: str | None = None) -> Engine:
 
 # Columnas que una migración agregó a una tabla que ya existía: una base local anterior las recibe al arrancar el panel.
 _ADDED_COLUMNS = {
-    "conversations": {"needs_human": "BOOLEAN NOT NULL DEFAULT 0", "handoff_requested_at": "DATETIME"},
+    "conversations": {
+        "needs_human": "BOOLEAN NOT NULL DEFAULT 0",
+        "handoff_requested_at": "DATETIME",
+        "ai_paused": "BOOLEAN NOT NULL DEFAULT 0",
+        "handoff_reason": "TEXT",
+        "unread_count": "INTEGER NOT NULL DEFAULT 0",
+        "assistant_typing_until": "DATETIME",
+        "updated_at": "DATETIME NOT NULL DEFAULT '1970-01-01 00:00:00'",
+    },
+    "conversation_entries": {
+        "kind": "TEXT NOT NULL DEFAULT 'text'",
+        "status": "TEXT NOT NULL DEFAULT 'received'",
+        "provider_message_id": "TEXT",
+        "media_id": "CHAR(32)",
+        "media_note": "TEXT",
+        "updated_at": "DATETIME NOT NULL DEFAULT '1970-01-01 00:00:00'",
+    },
 }
 
 
@@ -90,6 +107,10 @@ def create_local_schema(engine: Engine) -> None:
             for name, definition in columns.items():
                 if name not in present:
                     conn.exec_driver_sql(f"ALTER TABLE {table} ADD COLUMN {name} {definition}")
+        # Los índices nuevos de una tabla que ya existía (create_all solo los crea con la tabla).
+        for table in metadata.sorted_tables:
+            for index in table.indexes:
+                index.create(conn, checkfirst=True)
 
 
 def build_business_config_service(engine: Engine, *, secrets_key: str | None = None) -> BusinessConfigService:
@@ -136,3 +157,8 @@ def build_whatsapp_channel_service(
     """WhatsApp por código QR con la persistencia real. El cliente de uazapi, el servidor de la plataforma y la dirección del
     webhook los pone la raíz de composición."""
     return WhatsAppChannelService(ChannelStore(engine, secrets_key), providers, platform=platform, webhook_base=webhook_base)
+
+
+def build_channel_messenger(engine: Engine, providers: ProviderFactory, *, secrets_key: str | None = None) -> ChannelMessenger:
+    """Lo que el equipo responde desde el panel sale por el canal del cliente (WhatsApp por código QR)."""
+    return ChannelMessenger(ChannelStore(engine, secrets_key), providers)

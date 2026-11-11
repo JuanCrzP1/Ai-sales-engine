@@ -140,7 +140,7 @@ class AssistantLabService:
             raise PaymentDataUnavailableError("faltan datos de pago de esta versión: complétalos para probarla") from exc
         turn = runner.reply(tenant_slug=tenant_slug, sections=sections, credentials=credentials, session_id=session, message=text)
         if self._recorder is not None:
-            self._recorder.record(tenant_slug, session_id=session, sections=sections, message=text, reply=turn.reply, intent=turn.intent, handoff=turn.handoff)
+            self._recorder.record(tenant_slug, session_id=session, sections=sections, message=text, reply=turn.reply, intent=turn.intent, handoff=turn.handoff, handoff_reason=turn.handoff_reason)
         return PlaygroundReply(session, source, version, turn)
 
     def reset(self, tenant_slug: str, session_id: str) -> None:

@@ -28,3 +28,5 @@ AI_KEY_CHECKS_PER_USER = UsageLimit("ai_key_check_user", limit=10, window_second
 # (el panel pregunta cada pocos segundos).
 CHANNEL_SETUP_PER_USER = UsageLimit("channel_setup_user", limit=20, window_seconds=600)
 CHANNEL_STATUS_PER_BUSINESS = UsageLimit("channel_status_business", limit=400, window_seconds=600)
+# Respuestas del equipo desde la bandeja: cada una sale por WhatsApp, y los envíos masivos hacen que WhatsApp bloquee el número.
+CONVERSATION_REPLIES_PER_USER = UsageLimit("conversation_reply_user", limit=120, window_seconds=600)

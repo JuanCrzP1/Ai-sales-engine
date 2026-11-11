@@ -1,17 +1,32 @@
-"""Rutas de la bandeja de conversaciones: los chats de los negocios del usuario, sus avisos y la actividad de cada negocio.
+"""Rutas de la bandeja de conversaciones: los chats de los negocios del usuario, en vivo, sus avisos y la actividad de cada negocio.
 
 Reciben la petición, llaman a `ConversationsService` y serializan la respuesta. Solo llegan a los negocios del usuario: una
 conversación ajena responde igual que una inexistente.
+
+En vivo: el panel pide `GET /conversations/{id}/live?since=<cursor>` cada pocos segundos y recibe solo lo nuevo o lo que cambió,
+con el `cursor` para la próxima vez (la hora del servidor, no la del navegador). El equipo responde con `POST .../messages`: el
+mensaje sale por el canal del cliente y la IA se pausa en ese chat; `POST .../assistant` la reanuda o la pausa.
 """
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, Query, Request
+from fastapi import APIRouter, Depends, Query, Request, Response, status
 
+from app.admin_api.errors import ApiError
 from app.admin_api.routes import BusinessSlug, CurrentUser
-from app.admin_api.schemas import MarkNotificationsRead, activity_payload, chat_message_payload, conversation_payload, notification_payload
-from app.business_config_application.conversations import ConversationsService, NotificationsService
+from app.admin_api.schemas import (
+    MarkNotificationsRead,
+    SendReply,
+    SetAssistant,
+    activity_payload,
+    chat_message_payload,
+    conversation_payload,
+    notification_payload,
+)
+from app.business_config_application.conversations import ConversationsService, NotificationsService, ReplyNotSentError
+from app.business_config_application.usage_limits import UsageGuard
 from app.domain.business_config.errors import AssistantUnavailableError
 
 router = APIRouter(prefix="/api")
@@ -31,8 +46,25 @@ def _notifications(request: Request) -> NotificationsService:
     return service
 
 
+def _usage(request: Request) -> UsageGuard:
+    return request.app.state.usage
+
+
 Conversations = Annotated[ConversationsService, Depends(_conversations)]
 Notifications = Annotated[NotificationsService, Depends(_notifications)]
+Usage = Annotated[UsageGuard, Depends(_usage)]
+
+_INLINE_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif", "application/pdf"}
+
+
+def _since(value: str | None) -> datetime | None:
+    if not value:
+        return None
+    try:
+        moment = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        raise ApiError(status.HTTP_422_UNPROCESSABLE_ENTITY, "La marca de tiempo no es válida.", code="invalid") from None
+    return moment if moment.tzinfo else moment.replace(tzinfo=timezone.utc)
 
 
 @router.get("/conversations")
@@ -53,6 +85,55 @@ def inbox(
 def thread(conversation_id: str, user: CurrentUser, conversations: Conversations) -> dict[str, Any]:
     summary, messages = conversations.thread(user, conversation_id)
     return {"conversation": conversation_payload(summary), "messages": [chat_message_payload(message) for message in messages]}
+
+
+@router.get("/conversations/{conversation_id}/live")
+def live(
+    conversation_id: str, user: CurrentUser, conversations: Conversations, since: Annotated[str | None, Query(max_length=40)] = None
+) -> dict[str, Any]:
+    """La conversación y los mensajes nuevos o que cambiaron desde `since`, con el cursor para la próxima consulta."""
+    cursor = datetime.now(timezone.utc)
+    summary, messages = conversations.live(user, conversation_id, _since(since))
+    return {
+        "conversation": conversation_payload(summary),
+        "messages": [chat_message_payload(message) for message in messages],
+        "cursor": cursor.isoformat().replace("+00:00", "Z"),
+    }
+
+
+@router.post("/conversations/{conversation_id}/messages", status_code=status.HTTP_201_CREATED)
+def reply(conversation_id: str, body: SendReply, user: CurrentUser, conversations: Conversations, usage: Usage) -> dict[str, Any]:
+    """El equipo responde: el mensaje sale por el canal del cliente y la IA se pausa en ese chat."""
+    usage.conversation_reply(user)
+    try:
+        return chat_message_payload(conversations.reply(user, conversation_id, body.text))
+    except ReplyNotSentError as exc:
+        raise ApiError(status.HTTP_502_BAD_GATEWAY, str(exc), code="reply_not_sent") from None
+
+
+@router.post("/conversations/{conversation_id}/assistant")
+def set_assistant(conversation_id: str, body: SetAssistant, user: CurrentUser, conversations: Conversations) -> dict[str, Any]:
+    """Reanuda la IA en la conversación o la pausa para que la atienda el equipo."""
+    return conversation_payload(conversations.set_assistant(user, conversation_id, active=body.active))
+
+
+@router.post("/conversations/{conversation_id}/read", status_code=status.HTTP_204_NO_CONTENT)
+def mark_read(conversation_id: str, user: CurrentUser, conversations: Conversations) -> None:
+    conversations.mark_read(user, conversation_id)
+
+
+@router.get("/conversations/{conversation_id}/media/{media_id}")
+def media(conversation_id: str, media_id: str, user: CurrentUser, conversations: Conversations) -> Response:
+    """Una foto, un audio o un documento de la conversación."""
+    file = conversations.media(user, conversation_id, media_id)
+    # Lo que manda un cliente nunca se ejecuta en el panel: solo se muestran en línea tipos seguros, sin scripts (ni SVG ni HTML).
+    safe = file.mime_type in _INLINE_TYPES or file.mime_type.startswith(("audio/", "video/"))
+    headers = {
+        "X-Content-Type-Options": "nosniff",
+        "Content-Security-Policy": "default-src 'none'; sandbox",
+        "Content-Disposition": "inline" if safe else "attachment",
+    }
+    return Response(content=file.content, media_type=file.mime_type if safe else "application/octet-stream", headers=headers)
 
 
 @router.get("/businesses/{slug}/activity")

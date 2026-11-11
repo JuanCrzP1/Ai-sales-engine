@@ -614,6 +614,8 @@ class AIExecution:
             payment_method = str(ai_metadata.get("payment_method") or "").strip().lower()
             payment_status = str(ai_metadata.get("payment_status") or "").strip().lower()
             intent = str(ai_metadata.get("intent") or "").strip().lower()
+            # Pasa a una persona si el cliente la pidió o reclama; un pago reportado también: solo el equipo puede verificarlo.
+            handoff_reason = str(ai_metadata.get("handoff") or "").strip() or ("payment_review" if payment_status == "reportado" else "")
 
             if payment_status == "reportado":
                 _log_payment_override(
@@ -681,9 +683,11 @@ class AIExecution:
                 intent=str(route_meta.get("intent") or "").strip().lower(),
             )
             safe_context = dict(route_meta) if isinstance(route_meta, dict) else {}
-            # El asistente pasó la conversación a una persona: quien la guarda avisa al equipo del negocio.
-            if _new_op_state.active_process == "handoff":
-                safe_context["handoff"] = True
+            # La conversación pasa a una persona: quien la guarda pausa la IA en ese chat y avisa al equipo del negocio.
+            if handoff_reason:
+                safe_context.update(handoff=True, handoff_reason=handoff_reason)
+            elif _new_op_state.active_process == "handoff":
+                safe_context.update(handoff=True, handoff_reason="assistant")
             return final_response, bool(ai_used), safe_context
         except Exception:
             fallback = build_fallback_response(user_message=user_message, tenant_config=tenant_config)

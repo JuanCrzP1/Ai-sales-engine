@@ -11,7 +11,7 @@ import type { AuthService } from "../repositories/authService";
 import type { BusinessDirectory } from "../repositories/businessDirectory";
 import type { Channels, WhatsAppChannel } from "../repositories/channels";
 import type { ConfigRepository, StoredConfig } from "../repositories/configRepository";
-import type { ConversationSummary, ConversationThread, InboxFilter, Notification } from "../domain/inbox/types";
+import type { ChatMessage, ConversationSummary, ConversationThread, InboxFilter, Notification } from "../domain/inbox/types";
 import type { Inbox } from "../repositories/inbox";
 import { PersistenceError } from "../repositories/persistenceError";
 import { SAMPLE_DOCUMENT } from "./fixtures/sampleDocument";
@@ -436,15 +436,37 @@ export function createVerifyingAuthService(): AuthService {
 }
 
 
-/** Bandeja en memoria: hilos y avisos sembrados por la prueba; filtra y marca como el servidor. */
-export function createMemoryInbox(
-  seededThreads: ConversationThread[] = [],
-  seededNotifications: Notification[] = [],
-): Inbox & { requests: InboxFilter[]; resolved: string[]; notificationList: Notification[] } {
+/** Lo que la prueba hace del otro lado: llega un mensaje del cliente, el asistente escribe, la respuesta no sale. */
+export interface MemoryInboxControls {
+  requests: InboxFilter[];
+  resolved: string[];
+  notificationList: Notification[];
+  replies: { conversationId: string; text: string }[];
+  readMarks: string[];
+  /** Un mensaje nuevo en un hilo (como si llegara por el canal): aparece en vivo. */
+  receive(conversationId: string, message: ChatMessage, conversation?: Partial<ConversationSummary>): void;
+  /** Cambia la conversación (por ejemplo, el asistente está «escribiendo…»). */
+  update(conversationId: string, conversation: Partial<ConversationSummary>): void;
+  /** La próxima respuesta del equipo no sale por el canal. */
+  failNextReply(message: string): void;
+  /** Los archivos que devuelve `media`, por su id. */
+  files: Map<string, Blob>;
+}
+
+/** Bandeja en memoria: hilos y avisos sembrados por la prueba; filtra, marca y responde como el servidor, en vivo. */
+export function createMemoryInbox(seededThreads: ConversationThread[] = [], seededNotifications: Notification[] = []): Inbox & MemoryInboxControls {
   // Copias: lo que cambia una prueba (marcar como atendida) no toca los datos sembrados de las demás.
   const threads = seededThreads.map((thread) => ({ conversation: { ...thread.conversation }, messages: [...thread.messages] }));
   const requests: InboxFilter[] = [];
   const resolved: string[] = [];
+  const replies: { conversationId: string; text: string }[] = [];
+  const readMarks: string[] = [];
+  const files = new Map<string, Blob>();
+  let replyFailure: string | null = null;
+  let clock = 0;
+  // Cuándo cambió cada mensaje (un reloj de la prueba): `live` devuelve solo lo que cambió desde la marca.
+  const changedAt = new Map<string, number>();
+  for (const thread of threads) for (const message of thread.messages) changedAt.set(message.id, 0);
   const notificationList = seededNotifications.map((item) => ({ ...item }));
   const newestFirst = (a: ConversationSummary, b: ConversationSummary) => b.lastMessageAt.localeCompare(a.lastMessageAt);
   const find = (id: string) => {
@@ -452,10 +474,74 @@ export function createMemoryInbox(
     if (!found) throw new PersistenceError("not_found", { message: "Esa conversación no existe." });
     return found;
   };
+  const touch = (message: ChatMessage) => {
+    clock += 1;
+    changedAt.set(message.id, clock);
+  };
   return {
     requests,
     resolved,
     notificationList,
+    replies,
+    readMarks,
+    files,
+    receive: (conversationId, message, conversation = {}) => {
+      const thread = find(conversationId);
+      thread.messages = [...thread.messages, message];
+      touch(message);
+      thread.conversation = {
+        ...thread.conversation,
+        lastMessageAt: message.createdAt,
+        lastMessagePreview: message.body,
+        messageCount: thread.messages.length,
+        unreadCount: (thread.conversation.unreadCount ?? 0) + (message.author === "customer" ? 1 : 0),
+        ...conversation,
+      };
+    },
+    update: (conversationId, conversation) => {
+      const thread = find(conversationId);
+      thread.conversation = { ...thread.conversation, ...conversation };
+    },
+    failNextReply: (message) => {
+      replyFailure = message;
+    },
+    live: async (id, since) => {
+      const thread = find(id);
+      const mark = since === undefined ? -1 : Number(since);
+      return {
+        conversation: { ...thread.conversation },
+        messages: thread.messages.filter((message) => (changedAt.get(message.id) ?? 0) > mark),
+        cursor: String(clock),
+      };
+    },
+    reply: async (id, text) => {
+      const thread = find(id);
+      if (replyFailure) {
+        const message = replyFailure;
+        replyFailure = null;
+        throw new PersistenceError("unknown", { message });
+      }
+      replies.push({ conversationId: id, text });
+      const sent: ChatMessage = { id: `agente-${replies.length}`, author: "agent", body: text, intent: null, createdAt: new Date().toISOString(), kind: "text", status: "sent" };
+      thread.messages = [...thread.messages, sent];
+      touch(sent);
+      thread.conversation = { ...thread.conversation, aiPaused: true, needsHuman: false, lastMessagePreview: text, messageCount: thread.messages.length };
+      return sent;
+    },
+    setAssistant: async (id, active) => {
+      const thread = find(id);
+      thread.conversation = { ...thread.conversation, aiPaused: !active, ...(active ? { needsHuman: false, handoffReason: null } : {}) };
+      return { ...thread.conversation };
+    },
+    markRead: async (id) => {
+      readMarks.push(id);
+      find(id).conversation.unreadCount = 0;
+    },
+    media: async (_id, mediaId) => {
+      const file = files.get(mediaId);
+      if (!file) throw new PersistenceError("not_found", { message: "Ese archivo no existe." });
+      return file;
+    },
     list: async (filter = {}) => {
       requests.push({ ...filter });
       return threads
@@ -463,7 +549,7 @@ export function createMemoryInbox(
         .filter((item) => (!filter.business || item.business.slug === filter.business) && (!filter.channel || item.channel === filter.channel) && (!filter.waitingHuman || item.needsHuman))
         .sort(newestFirst);
     },
-    thread: async (id) => find(id),
+    thread: async (id) => ({ conversation: { ...find(id).conversation }, messages: [...find(id).messages] }),
     activity: async (slug) => {
       const mine = threads.filter((thread) => thread.conversation.business.slug === slug);
       return {

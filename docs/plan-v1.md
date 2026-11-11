@@ -254,8 +254,18 @@ IA no responde mientras alguien atiende.
   token de administrador (`UAZAPI_BASE_URL`, `UAZAPI_ADMIN_TOKEN`); el negocio nunca los ve. Se crea una instancia por negocio
   (su token, cifrado: migración 0008, `business_channels`), el webhook lleva un identificador secreto y exige el token de la
   instancia, y desconectar borra la instancia del servidor. El motor responde con lo publicado y la conversación llega a la
-  bandeja. Las variables ya están en Vercel, y las migraciones se aplican solas al desplegar (como en Auream). Falta escanear con un
-  teléfono y ver la primera respuesta. Responder desde el panel sigue pendiente.
+  bandeja. Las variables ya están en Vercel, y las migraciones se aplican solas al desplegar (como en Auream).
+
+  **Bandeja en vivo (10 de noviembre de 2026):** la primera prueba real mostró lo que faltaba y quedó resuelto.
+  - Conversaciones se actualiza sola: cada mensaje aparece apenas llega o sale, con «escribiendo…», chulos de enviado, entregado y
+    leído, y los no leídos.
+  - El equipo responde desde el panel, y la IA se pausa en ese chat hasta que la reanuden.
+  - Las fotos y las notas de voz se guardan y la IA las entiende (descripción, comprobante de pago, transcripción).
+  - Pedir una persona, reclamar o reportar un pago pasa la conversación al equipo, con aviso y la IA pausada. Antes respondía «No
+    hacemos llamadas» o repetía «ya lo reviso» sin avisar a nadie.
+  - El mismo mensaje no se procesa dos veces aunque WhatsApp avise de nuevo, y los contactos `@lid` ya no se pierden.
+  - Laboratorio: sin diferencias en el motor antes del cambio de prompt; después, solo las líneas nuevas (v4). Con el modelo real,
+    las frases de la prueba pasan a una persona con el motivo correcto.
 - Telegram por negocio: el negocio pega el token de su bot en Canales, el webhook se registra solo y el token se guarda cifrado.
 - Todos los canales detrás de una sola interfaz (`ChannelConnector`: recibir, enviar, verificar firma): agregar un canal es
   agregar un conector, no tocar el motor.
