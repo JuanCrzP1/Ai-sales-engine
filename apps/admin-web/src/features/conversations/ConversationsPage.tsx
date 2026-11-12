@@ -355,7 +355,7 @@ function ThreadView({
           {isTest
             ? "Conversación de prueba hecha desde «Probar asistente». No llegó a ningún cliente."
             : conversation.channel === "api"
-              ? "Llegó por la API desde otra plataforma (por ejemplo, Leona): respóndele desde allá. Los datos de pago se muestran ocultos."
+              ? "Llegó por la API desde otra plataforma: respóndele desde allá. Los datos de pago se muestran ocultos."
               : `Los datos de pago se muestran ocultos. Por ${CHANNEL_LABELS[conversation.channel]} todavía no se puede responder desde aquí.`}
         </footer>
       )}

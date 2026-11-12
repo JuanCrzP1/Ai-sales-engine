@@ -74,6 +74,27 @@ def test_the_request_accepts_what_automation_platforms_send():
         parse_message(["no", "es", "un", "objeto"])
 
 
+@pytest.mark.parametrize(
+    "body, path, variable",
+    [
+        ({"contact": {"id": "{customer.phone}", "name": "Laura"}, "message": "Hola"}, "contact.id", "{customer.phone}"),
+        ({"contact": {"id": "573001112233", "name": "{nombre}"}, "message": "Hola"}, "contact.name", "{nombre}"),
+        ({"contact": {"id": "573001112233"}, "message": "{last_message}"}, "message", "{last_message}"),
+        ({"contact_id": "{{ $json.phone }}", "message": "Hola"}, "contact.id", "{{ $json.phone }}"),
+    ],
+)
+def test_a_variable_the_platform_did_not_replace_is_rejected_and_named(body, path, variable):
+    # Si pasara, todos los clientes de esa plataforma caerían en un solo contacto «{nombre}» y el asistente mezclaría sus historias.
+    with pytest.raises(InvalidFieldsError) as error:
+        parse_message(body)
+    [issue] = error.value.issues
+    assert issue.path == path and f"«{variable}»" in issue.message and "no reemplazó" in issue.message
+
+
+def test_a_customer_can_still_write_braces_in_the_message():
+    assert parse_message({"contact": {"id": "1"}, "message": "Mi código es {A1} y quiero el plan"}).text == "Mi código es {A1} y quiero el plan"
+
+
 def test_a_new_key_is_named_and_says_what_it_can_do():
     assert validated_new_key("  Leona   producción ", [SCOPE_ASSISTANT_CHAT, SCOPE_ASSISTANT_CHAT]) == ("Leona producción", (SCOPE_ASSISTANT_CHAT,))
     with pytest.raises(InvalidFieldsError) as error:
@@ -268,6 +289,8 @@ def test_errors_are_clear_and_never_reach_the_assistant(api, monkeypatch):
     assert (bad_json.status_code, bad_json.json()["code"]) == (400, "invalid_json")
     invalid = client.post(URL, headers=auth, json={"contact": {}, "message": ""})
     assert invalid.status_code == 422 and {issue["path"] for issue in invalid.json()["issues"]} == {"contact.id", "message"}
+    unreplaced = client.post(URL, headers=auth, json={"contact": {"id": "{phone}", "name": "{customer.name}"}, "message": "Hola"})
+    assert unreplaced.status_code == 422 and {issue["path"] for issue in unreplaced.json()["issues"]} == {"contact.id", "contact.name"}
     # Una clave sin el permiso de conversar.
     with engine.begin() as conn:
         conn.execute(update(api_keys).values(scopes=["config:read"]))

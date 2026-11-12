@@ -1,0 +1,10 @@
+// En tu servidor (Node.js 18 o más nuevo). La clave va en una variable de entorno.
+const response = await fetch("{{URL}}", {
+  method: "POST",
+  headers: {
+    Authorization: `Bearer ${process.env.AI_SALES_ENGINE_KEY}`,
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({ contact: { id: "573001112233", name: "Laura" }, message: "Hola, ¿qué precios tienen?" }),
+});
+const { reply, handoff } = await response.json();

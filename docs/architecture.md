@@ -364,7 +364,7 @@ Lo prueban `tests/test_human_attention.py` y `tests/test_whatsapp_qr_channel.py`
 
 ## API Del Asistente
 
-Otro sistema (Leona, una web) conversa con el asistente de un negocio por HTTP (`POST /api/v1/assistant/messages`). Referencia para
+Cualquier plataforma que haga peticiones HTTP conversa con el asistente de un negocio por HTTP (`POST /api/v1/assistant/messages`). Referencia para
 quien la integra: [api.md](api.md).
 
 - **Claves** (`domain/business_config/api_keys.py`, `infrastructure/business_config/api_key_store.py`): cada una es de un negocio y

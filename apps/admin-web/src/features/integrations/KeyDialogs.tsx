@@ -40,7 +40,7 @@ export function CreateKeyDialog({ scopes, defaultName = "", create, onCreated, o
   return (
     <Dialog title="Crear una clave de API" description="Úsala en la plataforma que vas a conectar. Cada clave es solo de este negocio." onClose={onClose}>
       <form className="form-stack" onSubmit={submit} noValidate>
-        <TextField label="Nombre" value={name} onChange={setName} placeholder="Ej.: Leona" hint="Para reconocerla después: dónde la vas a usar." error={problems.name} required />
+        <TextField label="Nombre" value={name} onChange={setName} placeholder="Ej.: Mi página web" hint="Para reconocerla después: dónde la vas a usar." error={problems.name} required />
         <CheckboxGroup legend="Qué puede hacer" name="scopes" options={scopes.map((scope) => ({ value: scope.id, label: scope.label }))} values={chosen} onChange={setChosen} issue={problems.scopes ? { severity: "error", message: problems.scopes } : undefined} />
         {error && Object.keys(problems).length === 0 && <Alert tone="danger" title={error} />}
         <div className="form-actions">

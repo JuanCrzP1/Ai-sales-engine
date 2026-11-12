@@ -43,7 +43,7 @@ export function IntegrationsPage() {
       id: "api",
       icon: "link",
       name: "API del asistente",
-      description: "Conecta tu asistente a Leona, a tu página web o a cualquier sistema por HTTP: te mandan el mensaje del cliente y reciben la respuesta.",
+      description: "Conecta tu asistente a cualquier plataforma que haga peticiones HTTP: te manda el mensaje del cliente y recibe la respuesta para enviársela.",
       badge: chatKeys > 0 ? <Badge tone="success">Activa</Badge> : <Badge tone="neutral">Sin conectar</Badge>,
       action: <LinkButton to={pathTo(ASSISTANT_API_ITEM.path)} variant={chatKeys > 0 ? "secondary" : "primary"}>{chatKeys > 0 ? "Ver la conexión" : "Conectar"}</LinkButton>,
     },

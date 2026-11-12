@@ -255,8 +255,10 @@ buscador como `combobox` y opciones como `listbox`), que se maneja con flechas, 
 Sección propia del menú (entre Canales y Configuración), porque se muestra y se vende: «conéctalo con lo que ya usas». Canales queda
 para donde escriben los clientes; Integraciones, para otras herramientas.
 - `repositories/integrations.ts` (`createIntegrations(slug)`): resumen, claves (crear, listar, revocar) y la prueba de la API.
-- Tres pantallas: el resumen con tarjetas (API del asistente, IAs por MCP «Próximamente», Claves de API), la API paso a paso
-  (clave, dirección, Leona, prueba, qué responde) y la tabla de claves.
+- Tres pantallas: el resumen con tarjetas (API del asistente, IAs por MCP «Próximamente», Claves de API), la API (estado de conexión, cómo
+  funciona, datos de conexión, guías por plataforma en pestañas —`PlatformGuides.tsx` con `components/ui/Tabs.tsx`—, qué se envía
+  y qué se recibe, y la prueba) y la tabla de claves. Solo la guía de Leona dice «Probado»: se probó con un flujo real; otras
+  plataformas tendrán su pestaña cuando se prueben.
 - Una clave completa se ve una sola vez, en `NewSecretDialog`, con su botón de copiar (`components/ui/CopyButton.tsx`). Después
   solo su comienzo.
 - Los chats del canal `api` se reconocen en la bandeja (ícono y nombre «API»). No se responden desde aquí, porque se atienden en

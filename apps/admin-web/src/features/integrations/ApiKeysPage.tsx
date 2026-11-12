@@ -50,7 +50,7 @@ export function ApiKeysPage() {
         }
       >
         {data.keys.length === 0 ? (
-          <EmptyState title="Todavía no tienes claves" description="Crea una para cada plataforma que vayas a conectar, por ejemplo «Leona»." />
+          <EmptyState title="Todavía no tienes claves" description="Crea una para cada plataforma que vayas a conectar, con su nombre para reconocerla." />
         ) : (
           <div className="table-wrap">
             <table className="data-table api-keys">

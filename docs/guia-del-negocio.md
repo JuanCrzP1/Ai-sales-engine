@@ -95,12 +95,19 @@ retoma el chat». Si los dejas vacíos, usa los suyos.
 
 ## 8. Integraciones: conecta tu asistente a otras plataformas
 
-En **Integraciones → API del asistente** conectas tu asistente a otra plataforma, por ejemplo **Leona** o tu página web: la
-plataforma le manda el mensaje de tu cliente y recibe la respuesta para enviársela. Es el mismo asistente de WhatsApp.
+En **Integraciones → API del asistente** conectas tu asistente a cualquier plataforma que haga peticiones HTTP: la plataforma le
+manda el mensaje de tu cliente y le envía la respuesta. Es el mismo asistente de WhatsApp. Arriba ves si alguna plataforma ya la está
+usando («Conectada · usada hace 2 min»).
 
-1. **Crea una clave** (por ejemplo «Leona»). Se muestra **una sola vez**: cópiala y pégala en la otra plataforma.
-2. Copia la **dirección** y el **ejemplo para Leona**: la pantalla te dice qué poner en cada campo del bloque «Integración HTTP».
+1. **Tus datos de conexión:** la dirección y tu clave. Crea una clave por plataforma; se muestra **una sola vez**: cópiala y pégala allá.
+2. **Conéctala a tu plataforma:** elige su pestaña y sigue los pasos.
+   - **Leona** (probada): el flujo que conversa, con sus variables y todo listo para copiar.
+   - **Otra plataforma:** qué mandar y qué hacer con la respuesta, para cualquier sistema.
+   - **Desarrolladores:** ejemplos en cURL, JavaScript y Python.
 3. **Pruébala** desde la misma pantalla: ves lo que respondería tu asistente.
+
+Si tu plataforma manda una variable sin reemplazar (por ejemplo «{nombre}»), la API la rechaza y te dice cuál fue, para no mezclar a tus
+clientes en un solo chat.
 
 Esos chats llegan a **Conversaciones** con el canal «API» y cuentan en Clientes y Reportes. Cuando un cliente pide una persona, la
 otra plataforma recibe el aviso para pasarlo a tu equipo; la IA se pausa en ese chat hasta que toques **Reanudar IA**.

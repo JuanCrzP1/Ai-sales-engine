@@ -5,6 +5,13 @@ está en el historial de git y en `docs/plan-v1.md`.
 
 ## 12 de noviembre de 2026
 
+**La API del asistente, más clara**
+- Una sola página para cualquier plataforma: arriba dice si alguna ya la está usando, cómo funciona y tus datos de conexión.
+- Guías en pestañas: **Leona** (probada con un flujo real que conversa), **Otra plataforma** y **Desarrolladores** (cURL, JavaScript y
+  Python).
+- Si una plataforma manda una variable sin reemplazar (como «{nombre}»), la API la rechaza y dice cuál fue: tus clientes no se mezclan
+  en un mismo chat ni se gasta la IA.
+
 **Integraciones: tu asistente en otras plataformas**
 - Nueva sección **Integraciones** en el menú.
 - **API del asistente:** conecta tu asistente a Leona, a tu página web o a cualquier sistema. Te dan el mensaje del cliente y

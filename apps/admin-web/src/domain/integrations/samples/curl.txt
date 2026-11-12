@@ -1,0 +1,4 @@
+curl -X POST "{{URL}}" \
+  -H "Authorization: Bearer $AI_SALES_ENGINE_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"contact": {"id": "573001112233", "name": "Laura"}, "message": "Hola, ¿qué precios tienen?"}'

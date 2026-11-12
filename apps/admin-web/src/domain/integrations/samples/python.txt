@@ -1,0 +1,12 @@
+# En tu servidor. La clave va en una variable de entorno.
+import os
+import requests
+
+response = requests.post(
+    "{{URL}}",
+    headers={"Authorization": f"Bearer {os.environ['AI_SALES_ENGINE_KEY']}"},
+    json={"contact": {"id": "573001112233", "name": "Laura"}, "message": "Hola, ¿qué precios tienen?"},
+    timeout=30,
+)
+data = response.json()
+reply, handoff = data["reply"], data["handoff"]

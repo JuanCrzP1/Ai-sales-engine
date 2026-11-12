@@ -1,10 +1,17 @@
 # API del asistente
 
-Otra plataforma (Leona, una página web, un servidor propio) le manda al asistente de un negocio el mensaje de un cliente y recibe la
-respuesta para enviársela. Es el mismo asistente que atiende WhatsApp: responde con la configuración publicada del negocio, recuerda
+Cualquier plataforma que haga peticiones HTTP (una de automatización, una página web con su servidor, un sistema propio) le manda al
+asistente de un negocio el mensaje de un cliente y recibe la respuesta para enviársela. Es el mismo asistente que atiende WhatsApp: responde con la configuración publicada del negocio, recuerda
 a cada cliente, pasa el chat a una persona según el horario del equipo y gasta la clave de IA del negocio.
 
-En el panel: **Integraciones → API del asistente** (dirección, claves, ejemplo para Leona y prueba).
+En el panel: **Integraciones → API del asistente**. Arriba dice si alguna plataforma ya la está usando; luego vienen los datos de
+conexión (dirección y claves), una guía por plataforma (**Leona**, probada con un flujo real; **Otra plataforma**, para cualquier
+sistema; y **Desarrolladores**, con ejemplos en cURL, JavaScript y Python), qué se envía y qué se recibe, y una prueba con lo
+publicado.
+
+```
+Tu plataforma ──mensaje del cliente──▶ Asistente ──respuesta──▶ Tu plataforma (se la envía al cliente)
+```
 
 ## Autenticación
 
@@ -18,7 +25,7 @@ Authorization: Bearer ase_live_...
 - La clave decide el negocio: la petición no lo elige.
 - Necesita el permiso **Conversar con el asistente** (`assistant:chat`).
 - Una clave revocada deja de funcionar enseguida (401).
-- La clave es secreta: úsala desde un servidor o una plataforma como Leona, nunca en el código de una página web.
+- La clave es secreta: úsala desde un servidor o una plataforma de automatización, nunca en el código de una página web.
 
 ## Enviar un mensaje
 
@@ -47,12 +54,18 @@ En producción, `{motor}` es `https://ai-sales-engine-mocha.vercel.app`.
 También acepta los campos sueltos `contact_id`, `contact_name` o `phone`, y `message` como `{"text": "..."}`, porque así arman el cuerpo
 algunas plataformas de automatización.
 
+**Variables sin reemplazar.** Las plataformas arman el cuerpo con variables (`{phone_number}`, `{{contact.phone}}`). Si una llega tal
+cual porque la plataforma no reconoció su nombre, la API responde **422** y dice cuál fue (`Llegó «{nombre}» tal cual…`), sin gastar la
+IA. Si se aceptara, todos los clientes de esa plataforma caerían en un mismo contacto «{nombre}» y el asistente mezclaría sus
+historias. En `contact.id` y `contact.name` se rechaza cualquier variable; en `message`, solo cuando el mensaje entero es una variable
+(un cliente puede escribir llaves).
+
 ### Encabezado opcional: `Idempotency-Key`
 
 Si tu plataforma puede repetir un pedido (por ejemplo, porque no le llegó la respuesta), manda un identificador único por mensaje:
 
 ```
-Idempotency-Key: leona-mensaje-8f3a2
+Idempotency-Key: mensaje-8f3a2
 ```
 
 Durante 24 horas, el mismo identificador devuelve **exactamente la misma respuesta** con `"duplicate": true`, sin volver a gastar la IA
@@ -115,7 +128,7 @@ Siempre con el mismo formato:
 | 401 | `invalid_api_key` | Falta la clave, no existe o fue revocada |
 | 403 | `forbidden` | La clave no tiene el permiso para conversar |
 | 409 | `duplicate_in_progress` | El mismo `Idempotency-Key` se está respondiendo: vuelve a intentarlo en unos segundos |
-| 422 | `invalid` | Faltan datos o son demasiado largos (ver `issues`) |
+| 422 | `invalid` | Faltan datos, son demasiado largos o llegó una variable sin reemplazar (ver `issues`) |
 | 429 | `rate_limited` | Demasiados mensajes seguidos: espera lo que dice `Retry-After` (segundos) |
 | 503 | `unavailable` | El asistente no pudo responder: vuelve a intentarlo |
 
@@ -126,22 +139,44 @@ Siempre con el mismo formato:
 
 Protegen el saldo de IA del negocio si una clave se filtra o un flujo queda en un ciclo.
 
-## Ejemplo: Leona
+## Conectar una plataforma
 
-En el flujo, un bloque **Integración HTTP**:
+Lo mismo en cualquiera: cada vez que el cliente escribe, la plataforma manda la petición; le envía `reply` al cliente; si `handoff`
+es `true`, pasa el chat a su equipo; y espera el próximo mensaje para repetir. El asistente recuerda la conversación por `contact.id`.
 
-| Campo del bloque | Valor |
+### Leona (probado el 12 de noviembre de 2026)
+
+Un flujo que conversa:
+
+```
+Inicio → Esperar respuesta → Integración HTTP → Condicional «¿pidió una persona?»
+                                  ▲                 ├─ Sí: Mensaje {ase_respuesta} → Controlador de chat «Aguardando»
+                                  └─────────────────┴─ No: Esperar respuesta (envía {ase_respuesta}, guarda en ase_mensaje)
+```
+
+| Bloque | Cómo se configura |
 |---|---|
-| Método | `POST` |
-| URL | `{motor}/api/v1/assistant/messages` |
-| Encabezados | `Authorization: Bearer <tu clave>` y `Content-Type: application/json` |
-| Cuerpo | `{"contact": {"id": "{customer.phone}", "name": "{customer.name}"}, "message": "{last_message}"}` |
-| Campos de respuesta | `body.reply` → un campo del cliente (por ejemplo `respuesta_ia`); `body.handoff` → otro |
+| Esperar respuesta (al inicio) | Tu saludo; guarda la respuesta en el campo personalizado `ase_mensaje` |
+| Integración HTTP | `POST` a la dirección; encabezados `Authorization: Bearer <tu clave>` y `Content-Type: application/json` |
+| Cuerpo | `{"contact": {"id": "{phone_number}", "name": "{full_name}"}, "message": "{ase_mensaje}"}` |
+| Campos de respuesta | `body.reply` → `ase_respuesta`; `body.handoff` → `ase_handoff` |
+| Condicional | `ase_handoff` contiene `true` |
+| Salida «Sí» | Mensaje con `{ase_respuesta}` y Controlador de chat en «Aguardando» |
+| Salida «No» | Esperar respuesta que envía `{ase_respuesta}`, guarda en `ase_mensaje` y vuelve a la Integración HTTP |
+| Fallo de la integración | Un mensaje de respaldo |
 
-En la salida de éxito, un bloque **Mensaje** que envíe `{customer.respuesta_ia}`. Si `handoff` es `true`, pasa el chat al equipo
-dentro de Leona. En la salida de fallo, un mensaje de respaldo o el paso al equipo.
+- `{phone_number}` y `{full_name}` son variables del sistema de Leona; sus campos personalizados se escriben sin prefijo
+  (`{ase_mensaje}`). `{customer.phone}`, `{customer.name}` y `{nombre}` **no** existen en Leona: llegan sin reemplazar.
+- Un flujo que solo llama una vez responde un mensaje y termina: la salida «No» tiene que volver a esperar.
+- El botón «Probar petición» de Leona manda las variables sin reemplazar (la API las rechaza). Para probar, dispara el flujo a tu
+  número.
 
-## Ejemplo: terminal
+### Otra plataforma
+
+Busca su acción para hacer peticiones HTTP («Webhook», «HTTP Request», «Integración», «Llamar a una API») y usa sus variables con
+el nombre exacto para el teléfono o id del cliente, su nombre y su mensaje.
+
+### Desarrolladores
 
 ```bash
 curl -X POST "https://ai-sales-engine-mocha.vercel.app/api/v1/assistant/messages" \
@@ -150,6 +185,8 @@ curl -X POST "https://ai-sales-engine-mocha.vercel.app/api/v1/assistant/messages
   -H "Idempotency-Key: prueba-1" \
   -d '{"contact": {"id": "573001112233", "name": "Laura"}, "message": "Hola, ¿qué precios tienen?"}'
 ```
+
+El panel trae el mismo ejemplo en JavaScript y en Python. La clave va en una variable de entorno, nunca en el código de una página.
 
 ## Para quien mantiene la plataforma
 

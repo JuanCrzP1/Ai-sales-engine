@@ -40,7 +40,7 @@ lleva hacia la compra; cuando hace falta una persona, se la pasa al equipo y le 
 | **Clientes y ventas** | Cada cliente con su etapa (nuevo, interesado, listo, pagó, cliente), que avanza sola. Las ventas se registran desde el chat. |
 | **Reportes** | Embudo, conversaciones por día, quién respondió y cuánto costó la IA, comparados con el periodo anterior. |
 | **Su propia IA** | Cada negocio usa su clave de OpenRouter y elige el modelo. Ve su consumo; la plataforma no tiene una clave general. |
-| **Integraciones** | Conecta el asistente a Leona, a tu web o a cualquier sistema con su API y claves que se revocan en un clic. Pronto, IAs como Claude o ChatGPT por MCP. |
+| **Integraciones** | Conecta el asistente a cualquier plataforma con su API: guía probada para Leona, una general y ejemplos de código, con claves que se revocan en un clic. Pronto, IAs como Claude o ChatGPT por MCP. |
 | **Control total** | Configuración con versiones (borrador, publicar, volver atrás), eliminar chats y clientes, y uso cómodo en el celular. |
 
 <table>

@@ -10,6 +10,7 @@ armar el cuerpo con variables: el contacto como objeto o como campos sueltos, y 
 """
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from typing import Any
 
@@ -20,6 +21,8 @@ MAX_CONTACT_ID_CHARS = 120
 MAX_CONTACT_NAME_CHARS = 120
 MAX_MESSAGE_CHARS = 4000
 MAX_IDEMPOTENCY_KEY_CHARS = 128
+# Una variable de plataforma de automatización que llegó sin reemplazar: `{nombre}`, `{customer.phone}`, `{{ $json.phone }}`.
+_PLACEHOLDER = re.compile(r"\{\{?\s*\$?[A-Za-z_][\w.$\-\[\]]*\s*\}\}?")
 
 
 @dataclass(frozen=True)
@@ -56,9 +59,23 @@ def _text(value: Any) -> str:
     return str(value).strip() if isinstance(value, (str, int, float)) and not isinstance(value, bool) else ""
 
 
+def unresolved_variable(value: str, *, whole: bool = False) -> str | None:
+    """La variable que llegó sin reemplazar (`{nombre}`, `{{contact.phone}}`), o None.
+
+    Pasa cuando la plataforma no reconoce el nombre de una variable y la manda tal cual. Si se aceptara, todos sus clientes
+    compartirían el mismo contacto (`{nombre}`) y el asistente mezclaría sus historias. Con `whole`, solo cuenta si el valor
+    entero es la variable: un cliente puede escribir llaves en su mensaje."""
+    match = _PLACEHOLDER.fullmatch(value.strip()) if whole else _PLACEHOLDER.search(value)
+    return match.group(0) if match else None
+
+
+def _unresolved_issue(path: str, variable: str) -> FieldIssue:
+    return FieldIssue(path, f"Llegó «{variable}» tal cual: tu plataforma no reemplazó esa variable. Revisa cómo se llama allá.")
+
+
 def parse_message(payload: Any) -> ApiMessage:
     """El cuerpo de la petición, revisado. Acepta `{"contact": {"id", "name"}, "message": "..."}` y también los campos sueltos
-    `contact_id`, `contact_name`, `phone` y `message: {"text": "..."}`."""
+    `contact_id`, `contact_name`, `phone` y `message: {"text": "..."}`. Rechaza las variables que llegan sin reemplazar."""
     if not isinstance(payload, dict):
         raise InvalidFieldsError("El cuerpo debe ser un objeto JSON.", [FieldIssue("body", "Envía un objeto JSON.")])
     contact = payload.get("contact") if isinstance(payload.get("contact"), dict) else {}
@@ -67,13 +84,19 @@ def parse_message(payload: Any) -> ApiMessage:
     raw_message = payload.get("message")
     text = _text(raw_message.get("text")) if isinstance(raw_message, dict) else _text(raw_message)
     issues: list[FieldIssue] = []
-    if not contact_id or len(contact_id) > MAX_CONTACT_ID_CHARS:
+    if contact_id and (variable := unresolved_variable(contact_id)):
+        issues.append(_unresolved_issue("contact.id", variable))
+    elif not contact_id or len(contact_id) > MAX_CONTACT_ID_CHARS:
         issues.append(FieldIssue("contact.id", f"Envía el identificador del cliente (su teléfono o su id), de hasta {MAX_CONTACT_ID_CHARS} caracteres."))
-    if not text:
+    if text and (variable := unresolved_variable(text, whole=True)):
+        issues.append(_unresolved_issue("message", variable))
+    elif not text:
         issues.append(FieldIssue("message", "Envía el mensaje del cliente."))
     elif len(text) > MAX_MESSAGE_CHARS:
         issues.append(FieldIssue("message", f"El mensaje puede tener hasta {MAX_MESSAGE_CHARS} caracteres."))
-    if name is not None and len(name) > MAX_CONTACT_NAME_CHARS:
+    if name is not None and (variable := unresolved_variable(name)):
+        issues.append(_unresolved_issue("contact.name", variable))
+    elif name is not None and len(name) > MAX_CONTACT_NAME_CHARS:
         issues.append(FieldIssue("contact.name", f"El nombre puede tener hasta {MAX_CONTACT_NAME_CHARS} caracteres."))
     if issues:
         raise InvalidFieldsError("Revisa la petición.", issues)

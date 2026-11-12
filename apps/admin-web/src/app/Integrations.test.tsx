@@ -39,7 +39,8 @@ describe("Integraciones", () => {
     const { user, integrations } = await open("integraciones/api");
     await user.click(screen.getByRole("button", { name: "Crear clave" }));
     const form = screen.getByRole("dialog", { name: "Crear una clave de API" });
-    expect(within(form).getByLabelText(/^Nombre/)).toHaveValue("Leona");
+    expect(within(form).getByLabelText(/^Nombre/)).toHaveValue("");
+    await user.type(within(form).getByLabelText(/^Nombre/), "Leona");
     expect(within(form).getByRole("checkbox", { name: "Conversar con el asistente" })).toBeChecked();
     await user.click(within(form).getByRole("button", { name: "Crear clave" }));
 
@@ -49,13 +50,65 @@ describe("Integraciones", () => {
     expect(within(shown).getByText("Cópiala ahora: no se volverá a mostrar.")).toBeInTheDocument();
     await user.click(within(shown).getByRole("button", { name: "Ya la copié" }));
     expect(screen.queryByText(secret)).not.toBeInTheDocument();
-    expect(await screen.findByText(/Tienes 1 clave activa/)).toBeInTheDocument();
+    expect(await screen.findByText(`${integrations.state.keys[0]!.prefix}…`)).toBeInTheDocument();
+    expect(screen.getByText("Lista · todavía sin usar")).toBeInTheDocument();
   });
 
-  it("da la dirección, el ejemplo para Leona y deja probarla con lo publicado", async () => {
+  it("explica cómo funciona y da los datos de conexión sin hablar de una plataforma en particular", async () => {
+    await open("integraciones/api");
+    expect(screen.getByRole("list", { name: "El recorrido de cada mensaje" })).toBeInTheDocument();
+    const connection = screen.getByRole("heading", { name: "1. Tus datos de conexión" }).closest("section") as HTMLElement;
+    expect(within(connection).getByText("https://motor.example.com/api/v1/assistant/messages")).toBeInTheDocument();
+    expect(within(connection).queryByText(/Leona/)).not.toBeInTheDocument();
+    expect(screen.getByText("Sin clave")).toBeInTheDocument();
+  });
+
+  it("guía a Leona con el flujo que conversa y sus variables reales, marcada como probada", async () => {
+    await open("integraciones/api");
+    const tabs = screen.getByRole("tablist", { name: "Plataforma" });
+    expect(within(tabs).getAllByRole("tab").map((tab) => tab.textContent)).toEqual(["Leona Probado", "Otra plataforma", "Desarrolladores"]);
+    expect(within(tabs).getByRole("tab", { name: /Leona/ })).toHaveAttribute("aria-selected", "true");
+    const panel = screen.getByRole("tabpanel");
+    expect(within(panel).getByText('{"contact": {"id": "{phone_number}", "name": "{full_name}"}, "message": "{ase_mensaje}"}')).toBeInTheDocument();
+    expect(within(panel).getByText(/vuelva a la Integración HTTP/)).toBeInTheDocument();
+    expect(within(panel).getByText("Pruébalo disparando el flujo a tu número.")).toBeInTheDocument();
+  });
+
+  it("para otra plataforma dice qué mandar y avisa de las variables sin reemplazar", async () => {
+    const { user } = await open("integraciones/api");
+    await user.click(screen.getByRole("tab", { name: "Otra plataforma" }));
+    const panel = screen.getByRole("tabpanel");
+    expect(within(panel).getByText('{"contact": {"id": "573001112233", "name": "Laura"}, "message": "Hola, ¿qué precios tienen?"}')).toBeInTheDocument();
+    expect(within(panel).getByText("Usa las variables de tu plataforma con su nombre exacto.")).toBeInTheDocument();
+    expect(within(panel).queryByText(/Leona/)).not.toBeInTheDocument();
+  });
+
+  it("a quien programa le da el ejemplo en cURL, JavaScript y Python, y se recorre con el teclado", async () => {
+    const { user } = await open("integraciones/api");
+    screen.getByRole("tab", { name: /Leona/ }).focus();
+    await user.keyboard("{End}");
+    expect(screen.getByRole("tab", { name: "Desarrolladores" })).toHaveFocus();
+    expect(screen.getByRole("tab", { name: "Desarrolladores" })).toHaveAttribute("aria-selected", "true");
+    const panel = screen.getByRole("tabpanel");
+    expect(within(panel).getByText(/curl -X POST "https:\/\/motor\.example\.com\/api\/v1\/assistant\/messages"/)).toBeInTheDocument();
+    await user.click(within(panel).getByRole("radio", { name: "Python" }));
+    expect(within(panel).getByText(/requests\.post\(/)).toBeInTheDocument();
+    await user.click(within(panel).getByRole("radio", { name: "JavaScript" }));
+    expect(within(panel).getByText(/await fetch\(/)).toBeInTheDocument();
+  });
+
+  it("dice si una plataforma ya la está usando", async () => {
+    const integrations = createMemoryIntegrations();
+    const created = await integrations.createKey("Leona", ["assistant:chat"]);
+    integrations.state.keys[0]!.lastUsedAt = new Date(Date.now() - 2 * 60_000).toISOString();
+    await open("integraciones/api", integrations);
+    expect(screen.getByText(/Conectada · usada hace 2 min/)).toBeInTheDocument();
+    expect(screen.getByText(`${created.key.prefix}…`)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Ver claves" })).toHaveAttribute("href", `/negocios/${CAFE}/integraciones/claves`);
+  });
+
+  it("deja probarla con lo publicado", async () => {
     const { user, integrations } = await open("integraciones/api");
-    expect(screen.getByText("https://motor.example.com/api/v1/assistant/messages")).toBeInTheDocument();
-    expect(screen.getByText('{"contact": {"id": "{customer.phone}", "name": "{customer.name}"}, "message": "{last_message}"}')).toBeInTheDocument();
     const message = screen.getByLabelText("Mensaje del cliente");
     await user.clear(message);
     await user.type(message, "¿Tienen domicilio?");

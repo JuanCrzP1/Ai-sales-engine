@@ -1,6 +1,6 @@
 /** La bandeja de conversaciones: los chats de cada negocio, de todos sus canales, en vivo. */
 
-/** `api`: llegó por la API del asistente desde otro sistema (Integraciones → API / HTTP), por ejemplo Leona. */
+/** `api`: llegó por la API del asistente desde otro sistema (Integraciones → API del asistente). */
 export type Channel = "whatsapp" | "instagram" | "telegram" | "web" | "api" | "prueba";
 export type Author = "customer" | "assistant" | "agent";
 export type MessageKind = "text" | "image" | "audio" | "video" | "document" | "sticker" | "location" | "contact" | "other";
