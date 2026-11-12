@@ -15,6 +15,7 @@ from app.business_config_application.attention import AttentionService
 from app.business_config_application.commerce import CommerceService
 from app.business_config_application.conversations import ConversationsService
 from app.business_config_application.mcp.access import McpAccess
+from app.business_config_application.mcp.oauth import McpOAuthService
 from app.business_config_application.mcp.protocol import McpProtocol, ToolCallReport
 from app.business_config_application.mcp.tools.ai import ai_tools
 from app.business_config_application.mcp.tools.attention import attention_tools
@@ -26,6 +27,7 @@ from app.business_config_application.mcp.tools.guide import guide_tools
 from app.business_config_application.ports import ApiKeyStorage
 from app.business_config_application.service import BusinessConfigService
 from app.domain.business_config.access import LOCAL_OPERATOR, Principal
+from app.domain.business_config.oauth import ACCESS_TOKEN_PREFIX
 from app.domain.business_config.templates import BusinessTemplate
 
 # La guía viaja con el motor (en Vercel solo se publica `project/`).
@@ -42,11 +44,16 @@ class McpServer:
     keys: ApiKeyStorage
     # En este equipo, sin cuentas: las claves son del operador local.
     local: bool = False
+    # Conectar con inicio de sesión (Claude web y app, ChatGPT). Sin él, solo con clave.
+    oauth: McpOAuthService | None = None
 
     def authenticate(self, token: str) -> McpAccess | None:
-        """El acceso de quien llama con una clave activa, o None. Una clave de la nube sin dueño (anterior a las de cuenta) no
-        llega a ningún negocio: solo ve la guía."""
-        identity = self.keys.authenticate(token)
+        """El acceso de quien llama con una clave activa o un token de acceso vigente, o None. Una clave de la nube sin dueño
+        (anterior a las de cuenta) no llega a ningún negocio: solo ve la guía."""
+        if self.oauth is not None and token.startswith(ACCESS_TOKEN_PREFIX):
+            identity = self.oauth.authenticate(token)
+        else:
+            identity = self.keys.authenticate(token)
         if identity is None:
             return None
         if self.local:
@@ -71,6 +78,7 @@ def build_mcp_server(
     attention: AttentionService | None = None,
     guide: Callable[[], str] = read_guide,
     local: bool = False,
+    oauth: McpOAuthService | None = None,
     before_test: Callable[[McpAccess, str], None] = lambda caller, business: None,
     before_reply: Callable[[McpAccess], None] = lambda caller: None,
     on_created: Callable[[McpAccess, str], None] = lambda caller, business: None,
@@ -86,4 +94,4 @@ def build_mcp_server(
         *(commerce_tools(commerce, access) if commerce is not None else []),
         *(attention_tools(attention, access) if attention is not None else []),
     ]
-    return McpServer(McpProtocol(tools, on_tool_call=on_tool_call), keys, local)
+    return McpServer(McpProtocol(tools, on_tool_call=on_tool_call), keys, local, oauth)

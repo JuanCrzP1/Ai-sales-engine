@@ -5,6 +5,15 @@ está en el historial de git y en `docs/plan-v1.md`.
 
 ## 12 de noviembre de 2026
 
+**Conecta Claude y ChatGPT sin copiar claves**
+- En Claude (web y app) o ChatGPT agregas un conector personalizado con la dirección del servidor. Se abre la plataforma, inicias
+  sesión, eliges a qué negocios entra y qué puede hacer, y pulsas «Autorizar».
+- Si no habías iniciado sesión, al entrar vuelves directo a la autorización.
+- La conexión aparece en **Claves de API** con el nombre del agente y la etiqueta «Inicio de sesión». Revocarla lo desconecta al
+  instante.
+- Autorizar de nuevo el mismo agente reemplaza sus permisos, no suma conexiones.
+- Por seguridad: el acceso del agente dura una hora y se renueva solo; ningún código ni token queda guardado tal cual.
+
 **Agentes de IA en el día a día: conversaciones, ventas y atención humana**
 - Con los nuevos permisos **Conversaciones**, **Clientes y ventas** y **Atención humana**, el agente te ayuda en la operación:
   - te dice quién espera a una persona, lee los chats y les responde a tus clientes por WhatsApp cuando apruebas el texto (la IA

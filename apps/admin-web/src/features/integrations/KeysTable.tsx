@@ -5,7 +5,8 @@ import { permissionSummary, reachLabel, type ApiKey, type KeyArea } from "../../
 
 /**
  * Las claves en una tabla: para qué es cada una (sus permisos por área), a qué negocios entra, cuándo se usó, cuándo vence y su
- * estado, con «Revocar». Nunca su valor: solo su comienzo para reconocerla.
+ * estado, con «Revocar». Nunca su valor: solo su comienzo para reconocerla. Una conexión por inicio de sesión (Claude, ChatGPT) no
+ * tiene valor: se reconoce por el nombre del agente.
  */
 export function KeysTable({ keys, areas, onRevoke }: { keys: ApiKey[]; areas: KeyArea[]; onRevoke: (key: ApiKey) => void }) {
   return (
@@ -34,9 +35,7 @@ export function KeysTable({ keys, areas, onRevoke }: { keys: ApiKey[]; areas: Ke
                   {key.createdBy ? ` por ${key.createdBy}` : ""}
                 </span>
               </td>
-              <td>
-                <code>{key.prefix}…</code>
-              </td>
+              <td>{key.kind === "oauth" ? <Badge tone="accent">Inicio de sesión</Badge> : <code>{key.prefix}…</code>}</td>
               <td>{permissionSummary(key, areas)}</td>
               <td>{reachLabel(key)}</td>
               <td>{key.lastUsedAt ? relativeTime(key.lastUsedAt) : "Nunca"}</td>
@@ -48,7 +47,11 @@ export function KeysTable({ keys, areas, onRevoke }: { keys: ApiKey[]; areas: Ke
                 ) : (
                   <Badge tone="success">Activa</Badge>
                 )}
-                {key.active && <span className="api-keys__meta">{key.expiresAt ? `Vence ${fullDate(key.expiresAt)}` : "No vence"}</span>}
+                {key.active && (
+                  <span className="api-keys__meta">
+                    {key.expiresAt ? `Vence ${fullDate(key.expiresAt)}` : key.kind === "oauth" ? "Mientras no la revoques" : "No vence"}
+                  </span>
+                )}
               </td>
               <td>
                 {!key.revokedAt && (

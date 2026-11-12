@@ -1,7 +1,8 @@
 """`POST /api/mcp`: el servidor MCP (transporte HTTP «Streamable», sin estado ni flujo de eventos: cada petición JSON-RPC recibe
 su respuesta JSON).
 
-Lo usan los agentes de IA con `Authorization: Bearer <clave de API>`. Sin clave válida, 401. Límite: 300 peticiones por minuto
+Lo usan los agentes de IA con `Authorization: Bearer <clave de API>` o un token de acceso de OAuth. Sin uno válido, 401 (con la
+dirección de los metadatos de OAuth, para que el agente sepa dónde iniciar sesión). Límite: 300 peticiones por minuto
 por clave (429 con `Retry-After`). Acepta un mensaje o varios a la vez (lote); solo notificaciones, 202 sin cuerpo. Cada llamada
 a una herramienta queda en el registro (clave, herramienta, resultado y duración; nunca los datos).
 """
@@ -17,6 +18,7 @@ from fastapi.responses import JSONResponse, Response
 
 from app.business_config_application.mcp.server import McpServer
 from app.domain.business_config.errors import UsageLimitExceededError
+from app.domain.business_config.oauth import resource_metadata_url
 
 logger = logging.getLogger("mcp")
 
@@ -42,10 +44,16 @@ async def mcp_post(request: Request) -> Response:
     scheme, _, token = request.headers.get("authorization", "").partition(" ")
     caller = await run_in_threadpool(server.authenticate, token.strip()) if scheme.lower() == "bearer" and token.strip() else None
     if caller is None:
+        # Con OAuth, el agente (Claude, ChatGPT) sigue `resource_metadata` para descubrir dónde iniciar sesión (RFC 9728).
+        challenge = 'Bearer realm="ai-sales-engine"'
+        if server.oauth is not None:
+            challenge += f', resource_metadata="{resource_metadata_url(server.oauth.addresses.resource)}"'
+        if token.strip():
+            challenge += ', error="invalid_token"'
         return JSONResponse(
-            {"message": "Falta una clave válida: Authorization: Bearer <tu clave de API>. Créala en Integraciones → Claves de API."},
+            {"message": "Falta una clave válida: Authorization: Bearer <tu clave de API>. Créala en Integraciones → Claves de API, o conecta el agente iniciando sesión."},
             status.HTTP_401_UNAUTHORIZED,
-            headers={"WWW-Authenticate": 'Bearer realm="ai-sales-engine"' + (', error="invalid_token"' if token.strip() else "")},
+            headers={"WWW-Authenticate": challenge},
         )
     try:
         await run_in_threadpool(request.app.state.usage.mcp_request, caller.key_id)

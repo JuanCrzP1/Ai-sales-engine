@@ -275,7 +275,8 @@ para donde escriben los clientes; Integraciones, para otras herramientas.
   y qué se recibe, y la prueba) y la tabla de claves. Solo la guía de Leona dice «Probado»: se probó con un flujo real; otras
   plataformas tendrán su pestaña cuando se prueben.
 - **Agentes de IA (MCP)** (`AgentsPage.tsx`, `integraciones/agentes`):
-  - la dirección del servidor y lo que se pega en cada agente (`mcpSnippets`);
+  - la dirección del servidor y lo que se pega en cada agente (`mcpSnippets`); con «Claude y ChatGPT», cómo conectarlos sin clave;
+  - la pantalla `/oauth/authorize` (`OAuthConsentPage.tsx`, contrato `AgentAuthorization`, de la cuenta y no de un negocio): quién pide acceso, negocios y permisos, autorizar o cancelar;
   - las claves de agente;
   - «Claude web y ChatGPT», marcado Próximamente (OAuth).
 - **Claves:** son de la cuenta y tienen permisos por área (`PermissionMatrix.tsx`). Las áreas y lo que deja cada nivel vienen del

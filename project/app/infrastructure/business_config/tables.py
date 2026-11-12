@@ -374,7 +374,8 @@ api_keys = Table(
     Column("tenant_id", Uuid, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=True),
     Column("name", Text, nullable=False),
     Column("prefix", Text, nullable=False),
-    Column("key_hash", Text, nullable=False),
+    # La huella del valor de una clave; vacía en una conexión por OAuth, que no tiene valor fijo (migración 0014).
+    Column("key_hash", Text, nullable=True),
     Column("scopes", JSON().with_variant(JSONB(), "postgresql"), nullable=False, default=list),
     Column("created_by", Text),
     Column("created_at", DateTime(timezone=True), nullable=False, default=_now),
@@ -384,12 +385,20 @@ api_keys = Table(
     Column("owner_user_id", Text),
     Column("reach", Text, nullable=False, default="one", server_default="one"),
     Column("expires_at", DateTime(timezone=True)),
+    # `key` (un valor fijo) u `oauth` (una conexión autorizada desde el agente, con el agente que la pidió).
+    Column("kind", Text, nullable=False, default="key", server_default="key"),
+    Column("client_id", Text),
     Index("api_keys_hash_key", "key_hash", unique=True),
     Index("api_keys_tenant_idx", "tenant_id", "created_at"),
     Index("api_keys_owner_idx", "owner_user_id", "created_at"),
+    Index("api_keys_client_idx", "owner_user_id", "client_id"),
     CheckConstraint(
         "(reach = 'one' AND tenant_id IS NOT NULL) OR (reach IN ('all', 'some') AND tenant_id IS NULL)",
         name="api_keys_reach_check",
+    ),
+    CheckConstraint(
+        "(kind = 'key' AND key_hash IS NOT NULL) OR (kind = 'oauth' AND key_hash IS NULL AND client_id IS NOT NULL)",
+        name="api_keys_kind_check",
     ),
 )
 
@@ -400,6 +409,48 @@ api_key_businesses = Table(
     Column("key_id", Uuid, ForeignKey("api_keys.id", ondelete="CASCADE"), primary_key=True),
     Column("tenant_id", Uuid, ForeignKey("tenants.id", ondelete="CASCADE"), primary_key=True),
     Index("api_key_businesses_tenant_idx", "tenant_id"),
+)
+
+# Los agentes que se registraron solos para conectarse por OAuth (migración 0014).
+mcp_oauth_clients = Table(
+    "mcp_oauth_clients",
+    metadata,
+    Column("client_id", Text, primary_key=True),
+    Column("name", Text, nullable=False),
+    Column("redirect_uris", JSON().with_variant(JSONB(), "postgresql"), nullable=False),
+    Column("created_at", DateTime(timezone=True), nullable=False, default=_now),
+)
+
+# Los códigos de autorización: su huella, un solo uso y 10 minutos.
+mcp_oauth_codes = Table(
+    "mcp_oauth_codes",
+    metadata,
+    Column("code_hash", Text, primary_key=True),
+    Column("client_id", Text, ForeignKey("mcp_oauth_clients.client_id", ondelete="CASCADE"), nullable=False),
+    Column("key_id", Uuid, ForeignKey("api_keys.id", ondelete="CASCADE"), nullable=False),
+    Column("redirect_uri", Text, nullable=False),
+    Column("code_challenge", Text, nullable=False),
+    Column("resource", Text),
+    Column("expires_at", DateTime(timezone=True), nullable=False),
+    Index("mcp_oauth_codes_expiry_idx", "expires_at"),
+)
+
+# Los tokens vigentes de cada conexión (sus huellas): de acceso (1 hora) y de renovación (30 días, cambia en cada uso).
+mcp_oauth_tokens = Table(
+    "mcp_oauth_tokens",
+    metadata,
+    Column("id", Uuid, primary_key=True, default=uuid.uuid4),
+    Column("key_id", Uuid, ForeignKey("api_keys.id", ondelete="CASCADE"), nullable=False),
+    Column("client_id", Text, ForeignKey("mcp_oauth_clients.client_id", ondelete="CASCADE"), nullable=False),
+    Column("access_hash", Text, nullable=False),
+    Column("access_expires_at", DateTime(timezone=True), nullable=False),
+    Column("refresh_hash", Text, nullable=False),
+    Column("refresh_expires_at", DateTime(timezone=True), nullable=False),
+    Column("created_at", DateTime(timezone=True), nullable=False, default=_now),
+    Index("mcp_oauth_tokens_access_key", "access_hash", unique=True),
+    Index("mcp_oauth_tokens_refresh_key", "refresh_hash", unique=True),
+    Index("mcp_oauth_tokens_key_idx", "key_id"),
+    Index("mcp_oauth_tokens_expiry_idx", "refresh_expires_at"),
 )
 
 # La respuesta a cada pedido con `Idempotency-Key` (migración 0012), cifrada, para devolver la misma si se repite (24 horas).

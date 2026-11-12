@@ -94,6 +94,8 @@ _ADDED_COLUMNS = {
         "owner_user_id": "TEXT",
         "reach": "TEXT NOT NULL DEFAULT 'one'",
         "expires_at": "DATETIME",
+        "kind": "TEXT NOT NULL DEFAULT 'key'",
+        "client_id": "TEXT",
     },
     "conversation_entries": {
         "kind": "TEXT NOT NULL DEFAULT 'text'",
@@ -126,12 +128,12 @@ def create_local_schema(engine: Engine) -> None:
 
 
 # Restricciones que una migración amplió en una tabla que ya existía: (tabla, lo que trae su definición nueva).
-_WIDENED_CHECKS = ((notifications, "ai_resumed"), (conversations, "'api'"), (api_keys, "api_keys_reach_check"))
+_WIDENED_CHECKS = ((notifications, "ai_resumed"), (conversations, "'api'"), (api_keys, "api_keys_kind_check"))
 
 
 def _refresh_outdated_checks(engine: Engine) -> None:
     """Una base local anterior conserva las restricciones viejas (avisos solo `handoff`, conversaciones sin el canal `api`, claves
-    siempre de un negocio). SQLite
+    siempre de un negocio o siempre con valor fijo). SQLite
     no deja cambiar una restricción: la tabla se rehace con la definición actual y sus filas, como manda SQLite (con las llaves
     foráneas apagadas mientras tanto y sin tocar las referencias de las demás tablas)."""
     for table, marker in _WIDENED_CHECKS:

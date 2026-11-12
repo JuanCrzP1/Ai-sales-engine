@@ -47,6 +47,24 @@ export interface ApiKey {
   /** Sirve: no está revocada ni vencida. */
   active: boolean;
   expired: boolean;
+  /** `key`: un valor fijo que se mostró una vez. `oauth`: una conexión que autorizaste desde el agente (Claude, ChatGPT) iniciando sesión. */
+  kind: KeyKind;
+}
+
+export type KeyKind = "key" | "oauth";
+
+/** Qué agente pide conectarse con inicio de sesión (la pantalla de autorización), o por qué no se puede. */
+export type AuthorizationPrompt =
+  | { ready: true; clientName: string; redirectHost: string; areas: KeyArea[] }
+  | { ready: false; message: string; redirectTo: string | null };
+
+/** Lo que la persona decide en la pantalla de autorización. `params` son los de la dirección, tal como los puso el agente. */
+export interface AuthorizationDecision {
+  params: Record<string, string>;
+  approve: boolean;
+  permissions?: Record<string, AccessLevel>;
+  reach?: KeyReach;
+  businesses?: string[];
 }
 
 /** Una clave recién creada: la única vez que se ve completa. */
@@ -76,6 +94,8 @@ export interface IntegrationsOverview {
   assistantApiUrl: string | null;
   /** La dirección del servidor MCP para pegar en el agente, o null si no está disponible. */
   mcpUrl: string | null;
+  /** Claude (web y app) y ChatGPT se conectan pegando la dirección e iniciando sesión, sin clave (en el panel publicado). */
+  mcpSignIn: boolean;
   chatKeys: number;
   activeKeys: number;
   areas: KeyArea[];

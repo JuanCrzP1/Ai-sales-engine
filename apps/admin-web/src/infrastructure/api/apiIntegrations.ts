@@ -1,4 +1,4 @@
-import type { AccessLevel, KeyArea, KeyReach } from "../../domain/integrations/types";
+import type { AccessLevel, KeyArea, KeyKind, KeyReach } from "../../domain/integrations/types";
 import type { ApiKey, AssistantApiReply, Integrations, IntegrationsOverview } from "../../repositories/integrations";
 import type { HttpClient } from "./httpClient";
 
@@ -17,12 +17,13 @@ interface ApiKeyPayload {
   expires_at: string | null;
   active: boolean;
   expired: boolean;
+  kind?: KeyKind;
 }
 
 interface OverviewPayload {
   assistant_api: { url: string | null; chat_keys: number };
   api_keys: { active: number };
-  mcp: { url: string | null };
+  mcp: { url: string | null; sign_in?: boolean };
   areas: { id: string; label: string; read: string | null; write: string | null; one_business_only: boolean }[];
 }
 
@@ -42,10 +43,13 @@ function toKey(payload: ApiKeyPayload): ApiKey {
     expiresAt: payload.expires_at,
     active: payload.active,
     expired: payload.expired,
+    kind: payload.kind ?? "key",
   };
 }
 
-function toArea(payload: OverviewPayload["areas"][number]): KeyArea {
+export type AreaPayload = OverviewPayload["areas"][number];
+
+export function toArea(payload: AreaPayload): KeyArea {
   return { id: payload.id, label: payload.label, read: payload.read, write: payload.write, oneBusinessOnly: payload.one_business_only };
 }
 
@@ -53,6 +57,7 @@ function toOverview(payload: OverviewPayload): IntegrationsOverview {
   return {
     assistantApiUrl: payload.assistant_api.url,
     mcpUrl: payload.mcp.url,
+    mcpSignIn: payload.mcp.sign_in ?? false,
     chatKeys: payload.assistant_api.chat_keys,
     activeKeys: payload.api_keys.active,
     areas: payload.areas.map(toArea),

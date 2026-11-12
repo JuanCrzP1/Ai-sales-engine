@@ -25,6 +25,7 @@ import { ApiKeysPage } from "../features/integrations/ApiKeysPage";
 import { AgentsPage } from "../features/integrations/AgentsPage";
 import { AssistantApiPage } from "../features/integrations/AssistantApiPage";
 import { IntegrationsPage } from "../features/integrations/IntegrationsPage";
+import { OAuthConsentPage } from "../features/integrations/OAuthConsentPage";
 import { ReviewPage } from "../features/review/ReviewPage";
 import { AppShell } from "../layout/AppShell";
 import { AccountLayout, SettingsLayout } from "../layout/SettingsLayout";
@@ -77,6 +78,10 @@ export const appRoutes = (
     </Route>
 
     <Route element={<RequireAuth />}>
+      {/* Un agente (Claude, ChatGPT) pide conectarse: fuera de un negocio, porque la conexión es de la cuenta. */}
+      <Route element={<AuthLayout wide />}>
+        <Route path={ACCOUNT_PATHS.agentAuthorization} element={<OAuthConsentPage />} />
+      </Route>
       <Route path={ENTRY_PATH} element={<EntryRedirect />} />
       <Route path={BUSINESSES_PATH} element={<BusinessesPage />} />
       <Route path={NEW_BUSINESS_PATH} element={<WelcomePage />} />

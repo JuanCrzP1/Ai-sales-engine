@@ -15,6 +15,9 @@ Claves de API** (todas las claves).
 
 ## Conectar un agente
 
+Con **Claude (web y app) o ChatGPT** no hace falta clave: se pega la dirección y se inicia sesión (ver «Conectar con inicio de
+sesión»). Con los demás agentes:
+
 1. Crea una clave en **Integraciones → Agentes de IA → Crear clave para un agente**. Elige:
    - qué puede hacer, por área;
    - a qué negocios entra: solo uno, todos (también los que crees después) o algunos;
@@ -28,7 +31,7 @@ Claves de API** (todas las claves).
 | Claude Code | `claude mcp add --transport http ai-sales-engine https://ai-sales-engine-panel.vercel.app/api/mcp --header "Authorization: Bearer <tu clave>"` |
 | Cursor, Claude Desktop, Windsurf, Gemini CLI | En su `mcp.json`: `{"mcpServers": {"ai-sales-engine": {"url": "…/api/mcp", "headers": {"Authorization": "Bearer <tu clave>"}}}}` |
 | n8n | Nodo «MCP Client»: transporte HTTP Streamable y encabezado `Authorization: Bearer <tu clave>` |
-| Claude web y ChatGPT | Próximamente: pegando solo la dirección e iniciando sesión (OAuth) |
+| Claude (web y app) y ChatGPT | **Sin clave:** se pega la dirección como conector personalizado; el agente abre el panel, la persona inicia sesión, elige negocios y permisos y autoriza (OAuth, ver abajo) |
 
 En este equipo la dirección es `http://127.0.0.1:8010/api/mcp`, porque la API del panel solo atiende a este equipo.
 
@@ -55,7 +58,45 @@ Lo que **no** está, a propósito:
 - **Borrar chats o clientes:** no se puede deshacer.
 - **Descargar fotos y audios de los chats:** el agente ve que llegaron y su nota, no el archivo.
 
-OAuth (Claude web y ChatGPT) llega en la fase 3.
+## Conectar con inicio de sesión (OAuth 2.1)
+
+Lo que hacen Claude y ChatGPT al pegar la dirección del servidor:
+
+1. Llaman a `/api/mcp` sin token y reciben 401 con `WWW-Authenticate: Bearer resource_metadata="…/.well-known/oauth-protected-resource/api/mcp"`.
+2. Leen los metadatos del recurso (RFC 9728) y del servidor de autorización (RFC 8414). El emisor es el panel.
+3. Se registran solos en `POST /api/oauth/register` (RFC 7591). Solo agentes públicos con PKCE. Las direcciones de regreso deben ser
+   https, o http solo en el propio equipo.
+4. Abren `/oauth/authorize` en el panel. Sin sesión, el panel pide entrar y vuelve con los mismos parámetros. La persona ve qué agente
+   pide acceso y a dónde volverá, elige negocios (todos, algunos o uno) y permisos por área, y autoriza o cancela.
+5. Autorizar crea una **conexión**: una fila de `api_keys` con `kind = 'oauth'`, sin valor fijo, con los mismos permisos y alcance que
+   una clave. Si ese dueño ya tenía una con el mismo agente, la reemplaza.
+6. El agente cambia el código por tokens en `POST /api/oauth/token`, con PKCE S256:
+   - el código sirve una vez y por 10 minutos (si falla el verificador, se gasta igual);
+   - el token de acceso (`ase_at_…`) dura 1 hora;
+   - el de renovación (`ase_rt_…`) dura 30 días y cambia en cada uso (el anterior deja de servir).
+
+Reglas:
+- **Una conexión es una clave más:**
+  - se ve en «Claves de API» con el nombre del agente y la etiqueta «Inicio de sesión»;
+  - revocarla corta el token de acceso y el de renovación al instante;
+  - cuenta en el límite de claves activas.
+- **Solo huellas:** de códigos y tokens se guarda el SHA-256 (`mcp_oauth_codes`, `mcp_oauth_tokens`, migración 0014). Tomar un código o un
+  token de renovación lo borra en la misma operación: dos peticiones con el mismo no lo consiguen las dos.
+- **La pantalla de autorización no se puede incrustar** en otra página (`X-Frame-Options: DENY` y `frame-ancestors 'none'` en todo el
+  panel): nadie puede hacer que la persona pulse «Autorizar» sin saberlo.
+- **Conversar con el asistente no se autoriza a un agente:** es la API del asistente, con una clave de un negocio.
+- **Límites por IP:** registrarse, 30 por hora; pedir tokens, 120 por minuto (429 con `Retry-After`).
+- **Solo en la nube:** necesita cuentas y una dirección pública. En este equipo, el servidor responde con clave y sin `resource_metadata`.
+  En Vercel el panel reenvía `/.well-known/oauth-*` y `/api/*` al motor (`apps/admin-web/vercel.json`).
+
+| Pieza | Qué hace |
+|---|---|
+| `domain/business_config/oauth.py` | Reglas puras: registro, solicitud, PKCE, direcciones de regreso, metadatos, tiempos |
+| `business_config_application/mcp/oauth.py` | `McpOAuthService`: registrar, describir la solicitud, decidir, cambiar por tokens y reconocer un token |
+| `infrastructure/business_config/oauth_store.py` | Agentes, códigos y tokens en la base |
+| `ApiKeyStore.connect` / `identity` | La conexión como clave `oauth`, y quién llama por el id de su clave |
+| `admin_api/oauth_routes.py` | Metadatos, registro, tokens y la pantalla de autorización (con sesión) |
+| Panel: `features/integrations/OAuthConsentPage.tsx` | La pantalla `/oauth/authorize` |
 
 ## Cómo funciona
 

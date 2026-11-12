@@ -1,4 +1,5 @@
 import { createAuthClient } from "@neon/auth";
+import { createApiAgentAuthorization } from "../infrastructure/api/apiAgentAuthorization";
 import { createApiAssistantLab } from "../infrastructure/api/apiAssistantLab";
 import { createApiAttention } from "../infrastructure/api/apiAttention";
 import { createApiBusinessDirectory } from "../infrastructure/api/apiBusinessDirectory";
@@ -11,6 +12,7 @@ import { createHttpClient } from "../infrastructure/api/httpClient";
 import { createBrowserPush } from "../infrastructure/browser/browserPush";
 import { createLocalOperatorAuthService } from "../infrastructure/local/localOperatorAuthService";
 import { createNeonAuthService, type NeonAuthClient } from "../infrastructure/neon/neonAuthService";
+import type { AgentAuthorization } from "../repositories/agentAuthorization";
 import type { AssistantLab } from "../repositories/assistantLab";
 import type { Attention, DevicePush } from "../repositories/attention";
 import type { AuthService } from "../repositories/authService";
@@ -42,6 +44,8 @@ export interface ApplicationServices {
   devicePush: DevicePush;
   /** Las integraciones de un negocio: claves de API y la API del asistente. */
   createIntegrations: (slug: string) => Integrations;
+  /** Autorizar a un agente que se conecta iniciando sesión (Claude, ChatGPT). Es de la cuenta. */
+  agentAuthorization: AgentAuthorization;
 }
 
 /** Implementaciones actuales: la API local del panel, sin autenticación porque solo atiende en este equipo. */
@@ -58,6 +62,7 @@ export function createLocalServices(apiBaseUrl?: string): ApplicationServices {
     createAttention: (slug) => createApiAttention(http, slug),
     devicePush: createBrowserPush(http),
     createIntegrations: (slug) => createApiIntegrations(http, slug),
+    agentAuthorization: createApiAgentAuthorization(http),
   };
 }
 
@@ -76,6 +81,7 @@ export function createCloudServices(authUrl: string, apiBaseUrl?: string): Appli
     createAttention: (slug) => createApiAttention(http, slug),
     devicePush: createBrowserPush(http),
     createIntegrations: (slug) => createApiIntegrations(http, slug),
+    agentAuthorization: createApiAgentAuthorization(http),
   };
 }
 

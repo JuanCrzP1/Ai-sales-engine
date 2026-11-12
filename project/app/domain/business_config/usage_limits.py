@@ -39,3 +39,7 @@ API_KEYS_PER_USER = UsageLimit("api_keys_user", limit=20, window_seconds=600)
 # El servidor MCP: un agente que trabaja hace muchas llamadas seguidas (leer, editar, revisar), pero no infinitas. Protege la
 # plataforma si una clave se filtra o un agente entra en un ciclo. Probar el asistente cuenta además como «Probar asistente».
 MCP_PER_KEY = UsageLimit("mcp_key", limit=300, window_seconds=60)
+
+# OAuth del servidor MCP, por dirección IP: registrarse es raro; pedir tokens, unas veces por hora por agente.
+OAUTH_REGISTER_PER_IP = UsageLimit("oauth_register_ip", limit=30, window_seconds=3600)
+OAUTH_TOKEN_PER_IP = UsageLimit("oauth_token_ip", limit=120, window_seconds=60)

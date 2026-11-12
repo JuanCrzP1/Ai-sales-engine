@@ -16,6 +16,7 @@ import type { Customer, Report, Sale } from "../domain/commerce/types";
 import type { ConfigRepository, StoredConfig } from "../repositories/configRepository";
 import type { ChatMessage, ConversationSummary, ConversationThread, InboxFilter, Notification } from "../domain/inbox/types";
 import type { Inbox } from "../repositories/inbox";
+import type { AgentAuthorization, AuthorizationDecision } from "../repositories/agentAuthorization";
 import type { ApiKey, Integrations, NewKeyRequest } from "../repositories/integrations";
 import { SCOPE_ASSISTANT_CHAT, type KeyArea } from "../domain/integrations/types";
 import { PersistenceError } from "../repositories/persistenceError";
@@ -548,7 +549,7 @@ export const KEY_AREAS: KeyArea[] = [
   { id: "attention", label: "Atención humana", read: "Ver la atención humana.", write: "Cambiarla.", oneBusinessOnly: false },
 ];
 
-export function createMemoryIntegrations(options: { url?: string | null; mcpUrl?: string | null; business?: string } = {}) {
+export function createMemoryIntegrations(options: { url?: string | null; mcpUrl?: string | null; business?: string; signIn?: boolean } = {}) {
   const state = { keys: [] as ApiKey[], secrets: new Map<string, string>(), tried: [] as string[], counter: 0, requests: [] as NewKeyRequest[] };
   const business = options.business ?? "cafe_aroma";
   const integrations: Integrations & { state: typeof state } = {
@@ -558,6 +559,7 @@ export function createMemoryIntegrations(options: { url?: string | null; mcpUrl?
       return {
         assistantApiUrl: options.url === undefined ? "https://motor.example.com/api/v1/assistant/messages" : options.url,
         mcpUrl: options.mcpUrl === undefined ? "https://panel.example.com/api/mcp" : options.mcpUrl,
+        mcpSignIn: options.signIn ?? true,
         chatKeys: active.filter((key) => key.scopes.includes(SCOPE_ASSISTANT_CHAT)).length,
         activeKeys: active.length,
         areas: KEY_AREAS,
@@ -580,6 +582,7 @@ export function createMemoryIntegrations(options: { url?: string | null; mcpUrl?
         businesses: request.reach === "one" ? [business] : request.reach === "some" ? (request.businesses ?? []) : [], createdAt: new Date().toISOString(),
         createdBy: "laura@empresa.com", lastUsedAt: null, revokedAt: null,
         expiresAt: request.expiresInDays === null ? null : new Date(Date.now() + request.expiresInDays * 86_400_000).toISOString(), active: true, expired: false,
+        kind: "key",
       };
       state.keys.push(key);
       state.secrets.set(key.id, secret);
@@ -602,6 +605,30 @@ export function createMemoryIntegrations(options: { url?: string | null; mcpUrl?
   return integrations;
 }
 
+/** La autorización de agentes en memoria: «claude» es un agente registrado; cualquier otro, no. Guarda lo que se decide. */
+export function createMemoryAgentAuthorization() {
+  const decisions: AuthorizationDecision[] = [];
+  const service: AgentAuthorization & { decisions: AuthorizationDecision[] } = {
+    decisions,
+    describe: async (params) =>
+      params.client_id === "claude"
+        ? { ready: true, clientName: "Claude", redirectHost: "claude.ai", areas: KEY_AREAS.filter((area) => area.id !== "chat") }
+        : { ready: false, message: "El agente no está registrado. Vuelve a conectarlo desde su programa.", redirectTo: null },
+    decide: async (decision) => {
+      if (decision.approve && decision.reach === "some" && (decision.businesses ?? []).length === 0) {
+        throw new PersistenceError("invalid", { message: "Revisa la clave.", problems: [{ path: "businesses", message: "Elige al menos un negocio." }] });
+      }
+      decisions.push(structuredClone(decision));
+      const back = new URL(decision.params.redirect_uri ?? "https://claude.ai/api/mcp/auth_callback");
+      if (decision.approve) back.searchParams.set("code", "codigo-de-prueba");
+      else back.searchParams.set("error", "access_denied");
+      if (decision.params.state) back.searchParams.set("state", decision.params.state);
+      return back.toString();
+    },
+  };
+  return service;
+}
+
 /** Servicios como los de la aplicación, sobre el backend en memoria. */
 export function createTestServices(backend: MemoryBackend = createMemoryBackend(), overrides: Partial<ApplicationServices> = {}): ApplicationServices {
   const whatsapp = createMemoryWhatsApp();
@@ -619,6 +646,7 @@ export function createTestServices(backend: MemoryBackend = createMemoryBackend(
     createAttention: () => attention,
     devicePush: createMemoryDevicePush(),
     createIntegrations: () => integrations,
+    agentAuthorization: createMemoryAgentAuthorization(),
     ...overrides,
   };
 }

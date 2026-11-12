@@ -17,6 +17,7 @@ from app.domain.business_config.ai_settings import AICredentials, AISettings, As
 from app.domain.business_config.ai_models import AIModel
 from app.domain.business_config.api_keys import ApiKey, ApiKeyIdentity, CreatedApiKey
 from app.domain.business_config.key_permissions import KeyReach
+from app.domain.business_config.oauth import AuthorizationCode, OAuthClient, TokenGrant
 from app.domain.business_config.attention import AttentionSettings
 from app.domain.business_config.ai_usage import AIUsageSummary
 from app.domain.business_config.commerce import Customer, NewSale, ReportDay, ReportTotals, Sale
@@ -379,3 +380,41 @@ class ApiKeyStorage(Protocol):
     def revoke(self, tenant_slug: str, key_id: str, *, owner_user_id: str | None = None, local: bool = False) -> ApiKey: ...
 
     def authenticate(self, secret: str) -> ApiKeyIdentity | None: ...
+
+    def connect(
+        self, *, name: str, scopes: tuple[str, ...], reach: KeyReach, created_by: str | None, owner_user_id: str | None, client_id: str
+    ) -> ApiKey:
+        """Una conexión por OAuth (clave `oauth`, sin valor fijo). Reemplaza la que ese dueño ya tenía con el mismo agente."""
+        ...
+
+    def identity(self, key_id: str) -> ApiKeyIdentity | None:
+        """Quién llama con esa clave o conexión, si sigue activa y sin vencer (lo usan los tokens de OAuth)."""
+        ...
+
+
+@runtime_checkable
+class OAuthStorage(Protocol):
+    """Los agentes registrados, los códigos de autorización y los tokens del OAuth del servidor MCP (`oauth_store.py`). Solo
+    huellas: nunca un código ni un token."""
+
+    def create_client(self, client: OAuthClient) -> None: ...
+
+    def find_client(self, client_id: str) -> OAuthClient | None: ...
+
+    def save_code(self, code: AuthorizationCode) -> None: ...
+
+    def take_code(self, code_hash: str) -> AuthorizationCode | None:
+        """El código, borrándolo: sirve una sola vez."""
+        ...
+
+    def save_grant(self, grant: TokenGrant, *, now: datetime) -> None:
+        """Guarda los tokens nuevos y, de paso, borra los vencidos."""
+        ...
+
+    def take_refresh(self, refresh_hash: str) -> TokenGrant | None:
+        """Los tokens de ese token de renovación, borrándolos: al renovar, los anteriores dejan de servir."""
+        ...
+
+    def key_for_access(self, access_hash: str, now: datetime) -> str | None:
+        """La conexión de un token de acceso vigente."""
+        ...

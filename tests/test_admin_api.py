@@ -1160,6 +1160,14 @@ def test_the_api_only_has_the_routes_of_the_panel(api):
         # El servidor MCP de los agentes de IA (`mcp_routes.py`).
         ("GET", "/mcp"),
         ("POST", "/mcp"),
+        ("GET", "/.well-known/oauth-protected-resource"),
+        ("GET", "/.well-known/oauth-protected-resource/{rest:path}"),
+        ("GET", "/.well-known/oauth-authorization-server"),
+        ("GET", "/.well-known/oauth-authorization-server/{rest:path}"),
+        ("POST", "/oauth/register"),
+        ("POST", "/oauth/token"),
+        ("GET", "/oauth/authorize/request"),
+        ("POST", "/oauth/authorize/decision"),
     }
     assert api.client.post("/api/v1/simulate", json={}).status_code == 404
 

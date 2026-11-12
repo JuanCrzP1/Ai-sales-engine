@@ -148,8 +148,11 @@ respondan hoy?».
   clientes.
 - **Lo que hace queda a su nombre:** las versiones que guarda y las ventas que registra dicen «Agente «nombre de la clave»». Sus
   respuestas a los clientes aparecen en el chat como las del equipo.
-- **Para conectarlo:** la pantalla te da lo que se pega en cada agente. Pronto también Claude en la web y ChatGPT, solo con
-  iniciar sesión.
+- **Para conectarlo:**
+  - **Claude (en la web o en la app) y ChatGPT:** no necesitas clave. Agrega un conector personalizado, pega la dirección del
+    servidor e inicia sesión cuando se abra esta plataforma: eliges a qué negocios entra y qué puede hacer, y pulsas «Autorizar».
+  - **Claude Code, Cursor, n8n y otros:** crea una clave para el agente; la pantalla te da lo que se pega en cada uno.
+  - Las conexiones por inicio de sesión aparecen en **Claves de API** con el nombre del agente. Revócalas cuando quieras.
 
 ## 9. Clientes y ventas
 

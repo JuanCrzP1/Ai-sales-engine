@@ -1081,7 +1081,7 @@ def test_postgres_schema_comes_from_the_reviewed_migration():
             # Migración 0012: claves de API y respuestas repetibles de la API del asistente.
             "api_keys", "api_idempotency",
             # Migración 0013: claves de la cuenta (agentes de IA por MCP) y los negocios de cada una.
-            "api_key_businesses"} == set(metadata.tables)
+            "api_key_businesses", "mcp_oauth_clients", "mcp_oauth_codes", "mcp_oauth_tokens"} == set(metadata.tables)
 
 
 @pytest.mark.parametrize("scheme", ["postgresql", "postgres"])

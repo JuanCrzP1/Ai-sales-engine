@@ -49,6 +49,9 @@ class ApiKey:
     revoked_at: datetime | None = None
     reach: KeyReach = KeyReach("one")
     expires_at: datetime | None = None
+    # `key`: un valor fijo que se mostró una vez. `oauth`: una conexión que la persona autorizó desde el agente (Claude, ChatGPT),
+    # sin valor fijo: sus tokens rotan (`oauth.py`).
+    kind: str = "key"
 
     @property
     def active(self) -> bool:

@@ -202,9 +202,30 @@ describe("Integraciones", () => {
     expect(within(row).getByText("Negocios: ver y editar · Asistente IA: ver y editar · Datos de pago: escribir")).toBeInTheDocument();
     expect(within(row).getByText("Todos tus negocios")).toBeInTheDocument();
     expect(screen.getByText("Clave lista · todavía sin usar")).toBeInTheDocument();
-    // Claude web y ChatGPT llegan con el inicio de sesión.
-    await user.click(screen.getByRole("tab", { name: "Claude web y ChatGPT" }));
-    expect(screen.getByText("Próximamente")).toBeInTheDocument();
+    // Claude y ChatGPT se conectan sin clave: pegando la dirección e iniciando sesión. Es lo primero que se ve.
+    expect(screen.getByRole("tab", { name: "Claude y ChatGPT" })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByText("Agregar conector personalizado")).toBeInTheDocument();
+    await user.click(screen.getByRole("tab", { name: "Claude Code" }));
+    expect(screen.getByText(/--header "Authorization: Bearer TU_CLAVE"/)).toBeInTheDocument();
+  });
+
+  it("en este equipo, Claude web y ChatGPT se conectan desde el panel publicado", async () => {
+    await open("integraciones/agentes", createMemoryIntegrations({ signIn: false }));
+    expect(screen.getByText("Solo en el panel publicado")).toBeInTheDocument();
+  });
+
+  it("una conexión por inicio de sesión se ve con el nombre del agente, sin clave y sin vencimiento", async () => {
+    const integrations = createMemoryIntegrations();
+    integrations.state.keys.push({
+      id: "conexion-1", name: "Claude", prefix: "", scopes: ["assistant:read"], permissions: { assistant: "read" }, reach: "all", businesses: [],
+      createdAt: new Date().toISOString(), createdBy: "laura@empresa.com", lastUsedAt: new Date().toISOString(), revokedAt: null, expiresAt: null,
+      active: true, expired: false, kind: "oauth",
+    });
+    await open("integraciones/agentes", integrations);
+    const row = (await screen.findByText("Inicio de sesión")).closest("tr") as HTMLElement;
+    expect(within(row).getByText("Claude")).toBeInTheDocument();
+    expect(within(row).getByText("Mientras no la revoques")).toBeInTheDocument();
+    expect(within(row).getByText("Asistente IA: ver")).toBeInTheDocument();
   });
 
   it("un chat que llegó por la API se reconoce en la bandeja y se atiende desde la otra plataforma", async () => {

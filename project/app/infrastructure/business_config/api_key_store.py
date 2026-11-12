@@ -5,6 +5,9 @@ hay forma de obtener la clave desde la base.
 
 Una clave es de un negocio (`reach = 'one'`) o de una cuenta: entra a todos los negocios de su dueño (`all`) o a algunos (`some`).
 Desde un negocio se ven las claves que llegan a él: las suyas y las de la cuenta de quien pregunta que lo incluyen.
+
+Una conexión por OAuth (`kind = 'oauth'`, migración 0014) es una clave más, sin valor fijo: la reconocen sus tokens
+(`oauth_store.py`), que llegan aquí por su id (`identity`). Se ve, se revoca y se limita igual que cualquier clave.
 """
 from __future__ import annotations
 
@@ -55,7 +58,7 @@ def _key(row: Any, slugs: frozenset[str], business_slug: str | None) -> ApiKey:
     return ApiKey(
         id=str(row.id), business_slug=business_slug, name=row.name, prefix=row.prefix, scopes=tuple(row.scopes or ()),
         created_at=_utc(row.created_at), created_by=row.created_by, last_used_at=_utc(row.last_used_at), revoked_at=_utc(row.revoked_at),
-        reach=_reach(row, slugs), expires_at=_utc(row.expires_at),
+        reach=_reach(row, slugs), expires_at=_utc(row.expires_at), kind=row.kind or "key",
     )
 
 
@@ -96,6 +99,36 @@ class ApiKeyStore:
             created_by=created_by, reach=reach, expires_at=expires_at,
         )
         return CreatedApiKey(key, secret)
+
+    def connect(
+        self, *, name: str, scopes: tuple[str, ...], reach: KeyReach, created_by: str | None, owner_user_id: str | None, client_id: str
+    ) -> ApiKey:
+        """Una conexión por OAuth: una clave de la cuenta sin valor fijo. Si ese dueño ya tenía una activa con el mismo agente, la
+        revoca: autorizar de nuevo reemplaza los permisos, no suma conexiones."""
+        now, key_id = _now(), uuid.uuid4()
+        owned = api_keys.c.owner_user_id == owner_user_id if owner_user_id is not None else api_keys.c.owner_user_id.is_(None)
+        with self._engine.begin() as conn:
+            tenant_ids = {slug: tenant_of(conn, slug).id for slug in sorted(reach.businesses)}
+            conn.execute(
+                update(api_keys)
+                .where(owned, api_keys.c.client_id == client_id, api_keys.c.kind == "oauth", api_keys.c.revoked_at.is_(None))
+                .values(revoked_at=now)
+            )
+            self._require_room(conn, owner_user_id, tenant_ids.values() if reach.kind == "one" else ())
+            conn.execute(
+                insert(api_keys).values(
+                    id=key_id, tenant_id=next(iter(tenant_ids.values())) if reach.kind == "one" else None, name=name, prefix="",
+                    key_hash=None, scopes=list(scopes), created_by=created_by, created_at=now, owner_user_id=owner_user_id,
+                    reach=reach.kind, kind="oauth", client_id=client_id,
+                )
+            )
+            if reach.kind == "some":
+                conn.execute(insert(api_key_businesses), [{"key_id": key_id, "tenant_id": tenant_id} for tenant_id in tenant_ids.values()])
+        business = next(iter(reach.businesses)) if reach.kind == "one" else None
+        return ApiKey(
+            id=str(key_id), business_slug=business, name=name, prefix="", scopes=scopes, created_at=now, created_by=created_by, reach=reach,
+            kind="oauth",
+        )
 
     def _require_room(self, conn: Connection, owner_user_id: str | None, tenant_ids: Iterable[Any]) -> None:
         """Hasta `MAX_ACTIVE_KEYS` activas por negocio (las de un negocio) y por cuenta (las de la cuenta)."""
@@ -164,12 +197,22 @@ class ApiKeyStore:
         """Quién llama con una clave activa y sin vencer, o None. Anota que se usó (como mucho una vez por minuto)."""
         if not looks_like_key(secret):
             return None
+        return self._identity(api_keys.c.key_hash == fingerprint(secret))
+
+    def identity(self, key_id: str) -> ApiKeyIdentity | None:
+        try:
+            wanted = uuid.UUID(str(key_id))
+        except ValueError:
+            return None
+        return self._identity(api_keys.c.id == wanted)
+
+    def _identity(self, which) -> ApiKeyIdentity | None:
         now = _now()
         with self._engine.connect() as conn:
             row = conn.execute(
                 select(api_keys, tenants.c.slug.label("tenant_slug"))
                 .select_from(api_keys.outerjoin(tenants, tenants.c.id == api_keys.c.tenant_id))
-                .where(api_keys.c.key_hash == fingerprint(secret), api_keys.c.revoked_at.is_(None))
+                .where(which, api_keys.c.revoked_at.is_(None))
             ).first()
             if row is None or is_expired(_utc(row.expires_at), now):
                 return None

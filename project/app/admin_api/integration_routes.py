@@ -34,12 +34,14 @@ Usage = Annotated[UsageGuard, Depends(_usage)]
 
 
 @router.get("/integrations")
-def integrations_overview(slug: BusinessSlug, user: CurrentUser, service: Integrations) -> dict[str, Any]:
+def integrations_overview(request: Request, slug: BusinessSlug, user: CurrentUser, service: Integrations) -> dict[str, Any]:
     overview = service.overview(user, slug)
+    server = getattr(request.app.state, "mcp", None)
     return {
         "assistant_api": {"url": overview.assistant_api_url, "chat_keys": overview.chat_keys},
         "api_keys": {"active": overview.active_keys},
-        "mcp": {"url": overview.mcp_url},
+        # `sign_in`: Claude (web y app) y ChatGPT se conectan pegando la dirección e iniciando sesión (OAuth), sin clave.
+        "mcp": {"url": overview.mcp_url, "sign_in": getattr(server, "oauth", None) is not None},
         # Qué se puede permitir a una clave, por área (la tabla de permisos del panel).
         "areas": key_areas_payload(),
     }

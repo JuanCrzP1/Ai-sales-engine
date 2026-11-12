@@ -21,6 +21,7 @@ from app.admin_api.assistant_routes import router as assistant_router
 from app.admin_api.attention_routes import router as attention_router
 from app.admin_api.integration_routes import router as integration_router
 from app.admin_api.mcp_routes import audit_tool_call, router as mcp_router
+from app.admin_api.oauth_routes import router as oauth_router
 from app.admin_api.channel_routes import router as channel_router
 from app.admin_api.commerce_routes import router as commerce_router
 from app.admin_api.conversation_routes import router as conversation_router
@@ -30,6 +31,8 @@ from app.business_config_application.access import BusinessAccess
 from app.business_config_application.assistant_lab import AssistantLabService
 from app.business_config_application.attention import AttentionService, PushService
 from app.business_config_application.integrations import IntegrationsService
+from app.business_config_application.mcp.oauth import McpOAuthService
+from app.domain.business_config.oauth import oauth_addresses
 from app.business_config_application.mcp.server import build_mcp_server
 from app.business_config_application.channels import WhatsAppChannelService
 from app.business_config_application.commerce import CommerceService
@@ -38,6 +41,7 @@ from app.business_config_application.ports import (
     AccessTokenVerifier,
     AIUsageStorage,
     ApiKeyStorage,
+    OAuthStorage,
     AttentionStorage,
     CommerceStorage,
     EmailSender,
@@ -109,6 +113,7 @@ def create_app(
     api_keys: ApiKeyStorage | None = None,
     assistant_api_url: Callable[[], str | None] | None = None,
     mcp_url: Callable[[], str | None] | None = None,
+    oauth: OAuthStorage | None = None,
 ) -> FastAPI:
     """La API del panel. Sin `assistant_lab`, la inteligencia artificial y el área de pruebas responden que no están disponibles.
 
@@ -146,6 +151,13 @@ def create_app(
         if api_keys is not None
         else None
     )
+    # Conectar un agente con inicio de sesión (OAuth): solo en la nube, con cuentas y una dirección pública del servidor MCP.
+    public_mcp = mcp_url() if mcp_url is not None else None
+    mcp_oauth = (
+        McpOAuthService(oauth, api_keys, app.state.access, oauth_addresses(public_mcp))
+        if oauth is not None and api_keys is not None and cloud and public_mcp
+        else None
+    )
     # El servidor MCP: los agentes de IA trabajan con una clave de API y los MISMOS servicios del panel.
     app.state.mcp = (
         build_mcp_server(
@@ -164,6 +176,7 @@ def create_app(
             before_reply=lambda caller: app.state.usage.conversation_reply(caller.principal),
             on_created=lambda caller, business: app.state.attention.remember_account(caller.principal, force=True) if app.state.attention is not None and caller.principal.email else None,
             on_tool_call=audit_tool_call,
+            oauth=mcp_oauth,
         )
         if api_keys is not None
         else None
@@ -192,4 +205,5 @@ def create_app(
     app.include_router(attention_router)
     app.include_router(integration_router)
     app.include_router(mcp_router)
+    app.include_router(oauth_router)
     return app

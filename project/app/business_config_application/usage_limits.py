@@ -16,6 +16,8 @@ from app.domain.business_config.usage_limits import (
     AI_KEY_CHECKS_PER_USER,
     API_KEYS_PER_USER,
     MCP_PER_KEY,
+    OAUTH_REGISTER_PER_IP,
+    OAUTH_TOKEN_PER_IP,
     ASSISTANT_API_PER_BUSINESS,
     ASSISTANT_API_PER_KEY,
     CHANNEL_SETUP_PER_USER,
@@ -69,6 +71,12 @@ class UsageGuard:
 
     def mcp_request(self, key_id: str) -> None:
         self.spend(MCP_PER_KEY, key_id)
+
+    def oauth_register(self, client_ip: str) -> None:
+        self.spend(OAUTH_REGISTER_PER_IP, client_ip)
+
+    def oauth_token(self, client_ip: str) -> None:
+        self.spend(OAUTH_TOKEN_PER_IP, client_ip)
 
 
 class MemoryUsageCounter:

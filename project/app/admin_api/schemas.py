@@ -306,6 +306,8 @@ def api_key_payload(key, now: datetime | None = None) -> dict[str, Any]:
         "expires_at": _iso(key.expires_at),
         "active": key.usable(moment),
         "expired": key.active and not key.usable(moment),
+        # `oauth`: una conexión que la persona autorizó desde el agente (sin valor fijo ni comienzo para mostrar).
+        "kind": key.kind,
     }
 
 

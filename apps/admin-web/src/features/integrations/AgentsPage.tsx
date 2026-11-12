@@ -30,6 +30,29 @@ const CANNOT_DO = [
   "Borrar chats o clientes: no se puede deshacer.",
 ];
 
+/** Conectar sin clave: se pega la dirección en el agente y se inicia sesión aquí para elegir los permisos. */
+function SignInSteps() {
+  return (
+    <div className="form-stack">
+      <p className="field__hint">No necesitas crear una clave: pegas la dirección, inicias sesión aquí y eliges qué puede hacer.</p>
+      <ol className="guide-list">
+        <li>
+          <strong>Claude</strong> (en la web y en la app): Configuración → Conectores → <em>Agregar conector personalizado</em>. Ponle un nombre,
+          pega la dirección del servidor y pulsa <em>Conectar</em>.
+        </li>
+        <li>
+          <strong>ChatGPT</strong>: en la configuración de conectores, activa el modo de desarrollador, crea un conector, pega la dirección y
+          elige <em>OAuth</em> como autenticación.
+        </li>
+        <li>
+          Se abre esta plataforma: inicia sesión, elige a qué negocios entra y qué puede hacer, y pulsa <em>Autorizar</em>. La conexión
+          aparece abajo, con el nombre del agente; revócala cuando quieras.
+        </li>
+      </ol>
+    </div>
+  );
+}
+
 /**
  * Integraciones → Agentes de IA (MCP): que Claude, Cursor, n8n u otro agente trabaje en tus negocios hablándole, con una clave y los
  * permisos que elijas. La dirección del servidor, cómo conectar cada agente y las claves de agente.
@@ -41,7 +64,7 @@ export function AgentsPage() {
   const [creating, setCreating] = useState(false);
   const [created, setCreated] = useState<CreatedApiKey | null>(null);
   const [revokeError, setRevokeError] = useState<string | null>(null);
-  const [client, setClient] = useState("claude-code");
+  const [client, setClient] = useState("sign-in");
 
   if (data.status === "loading") return <LoadingScreen label="Cargando los agentes de IA…" />;
   const overview = data.overview;
@@ -109,16 +132,18 @@ export function AgentsPage() {
                 label="Agente"
                 value={client}
                 onChange={setClient}
-                tabs={[...snippets.map((snippet) => ({ value: snippet.id, label: snippet.label })), { value: "oauth", label: "Claude web y ChatGPT" }]}
+                tabs={[{ value: "sign-in", label: "Claude y ChatGPT" }, ...snippets.map((snippet) => ({ value: snippet.id, label: snippet.label }))]}
               >
                 {shown ? (
                   <div className="form-stack">
                     <p className="field__hint">{shown.hint} Cambia TU_CLAVE por tu clave.</p>
                     <CopyField label="Para pegar" value={shown.code} multiline />
                   </div>
+                ) : overview?.mcpSignIn ? (
+                  <SignInSteps />
                 ) : (
-                  <Alert tone="info" title="Próximamente">
-                    Podrás conectar Claude en la web y en el escritorio, y ChatGPT, pegando solo la dirección e iniciando sesión, sin copiar una clave.
+                  <Alert tone="info" title="Solo en el panel publicado">
+                    Claude en la web y ChatGPT se conectan por internet: hazlo desde el panel publicado. Aquí, usa una clave con Claude Code o Cursor.
                   </Alert>
                 )}
               </Tabs>

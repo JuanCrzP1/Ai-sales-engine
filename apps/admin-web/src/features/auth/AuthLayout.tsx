@@ -9,8 +9,9 @@ const HIGHLIGHTS: { icon: IconName; title: string; text: string }[] = [
   { icon: "shield", title: "Tu información, en tu cuenta", text: "Cada cuenta tiene su propia configuración." },
 ];
 
-/** Pantalla dividida de las páginas de cuenta: presentación de la marca y formulario. */
-export function AuthLayout() {
+/** Pantalla dividida de las páginas de cuenta: presentación de la marca y formulario. `wide`, para un formulario más amplio (autorizar
+ * a un agente, con su tabla de permisos). */
+export function AuthLayout({ wide = false }: { wide?: boolean }) {
   return (
     <div className="auth">
       <aside className="auth__showcase" aria-hidden="true">
@@ -39,7 +40,7 @@ export function AuthLayout() {
       </aside>
 
       <main className="auth__panel" id="contenido">
-        <div className="auth__card">
+        <div className={wide ? "auth__card auth__card--wide" : "auth__card"}>
           <div className="auth__logo">
             <BrandLogo width={200} />
           </div>

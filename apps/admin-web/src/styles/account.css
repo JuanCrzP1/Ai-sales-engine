@@ -142,6 +142,10 @@
   animation: fade-up 0.5s var(--ease-out) both;
 }
 
+.auth__card--wide {
+  width: min(600px, 100%);
+}
+
 .auth__logo {
   display: flex;
   justify-content: center;
