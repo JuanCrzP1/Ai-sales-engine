@@ -413,7 +413,14 @@ Cómo se comprobó (laboratorio de regresión contra `c6774a8`):
   pago»; los 4 con «Agendar» quedan con el prompt idéntico. Respuestas 10 de 10 idénticas. Versión del prompt `2026-11-12.v5`.
 - `exp_20261112_cierre_y_que_vendes`: «Qué vendes» no cambia ningún prompt; solo el valor de `business_model` en los 3 negocios que
   usaban «Checkout» o «Proceso».
-- Falta medir la calidad con la IA real (`experiments/quality_lab`), que tiene costo y necesita autorización.
+Calidad con la IA real (`experiments/quality_lab`, gpt-4o-mini con juez deepseek, 2 conversaciones por negocio, USD 0,12 en total):
+- `exp_20261112_calidad_cierre_por_estrategia` (los 5 negocios con «Confirmar la compra» o «Enviar el pago»): 9,71 → 9,65 por
+  respuesta (dentro del ruido), 0 precios inventados en los dos lados y la versión nueva gana 6 de 10 a ciegas. Con «Confirmar la
+  compra» el asistente primero confirma el pedido con su precio.
+- `exp_20261112_calidad_capturar_datos` (restaurante y saas con «Capturar datos» en los dos lados, opción nueva
+  `--closing-strategy` del laboratorio): 9,77 → 9,87 y gana 3 de 4 a ciegas. Al decidir, la versión nueva pide los datos y dice que
+  el equipo lo contacta; la anterior, en una de las conversaciones, ya le ofrecía los medios de pago. Si el cliente pregunta cómo
+  pagar, los dos le responden.
 
 Lo demás llega al motor y cada opción cambia lo que hace. Las combinaciones que el contrato rechaza son reglas a propósito (el largo
 de las respuestas va con su máximo de palabras; Nequi pide número y no cuenta). La bienvenida fija solo responde a un saludo solo.

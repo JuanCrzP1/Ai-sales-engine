@@ -11,6 +11,10 @@ de `--max-usd` (USD 0,30 por defecto); al terminar informa lo gastado de verdad.
 
     python experiments/quality_lab/run_quality_eval.py --experiment <id> --baseline <commit> [--samples 2] [--tenants a,b]
     python experiments/quality_lab/run_quality_eval.py --experiment <id> --rejudge     # vuelve a calificar sin repetir las conversaciones
+    python experiments/quality_lab/run_quality_eval.py --experiment <id> --baseline <commit> --tenants a,b --closing-strategy lead_capture
+
+Con `--closing-strategy` los negocios elegidos usan esa estrategia de cierre en los DOS lados (sirve para medir una que ningún
+ejemplo usa, como «Capturar datos»): solo se edita su `business-config.json` dentro de cada copia, nunca el repositorio.
 
 Los resultados van a `experiments/quality_lab/results/<id>/`: primero las conversaciones (`captures.json`), después el informe y los
 datos. Si el juez falla (por ejemplo, sin saldo), las conversaciones quedan guardadas y se califican después con `--rejudge`.
@@ -71,6 +75,17 @@ def _export(commit: str | None, destination: Path) -> None:
         shutil.copy2(LAB / name, harness / name)
 
 
+def _set_closing_strategy(tree: Path, tenants: list[str], strategy: str) -> None:
+    """Pone la misma estrategia de cierre en los negocios elegidos de una copia (nunca en el repositorio)."""
+    if not tenants:
+        raise SystemExit("--closing-strategy necesita --tenants: di en qué negocios cambiarla.")
+    for slug in tenants:
+        path = tree / "project" / "config" / "tenants" / slug / "business-config.json"
+        document = json.loads(path.read_text(encoding="utf-8"))
+        document["sales"].setdefault("closing", {})["strategy"] = strategy
+        path.write_text(json.dumps(document, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
 def _child_env(key: str, model: str) -> dict[str, str]:
     env = {name: os.environ[name] for name in SAFE_ENV if name in os.environ}
     env.update({"MODE": "test", "DATABASE_URL": "sqlite:///:memory:", "ENABLE_FILE_LOGS": "0", "OPENROUTER_API_KEY": key,
@@ -115,6 +130,8 @@ def main() -> int:
     parser.add_argument("--judge-model", default="deepseek/deepseek-chat-v3.1")
     parser.add_argument("--max-usd", type=float, default=0.30, help="Tope de gasto de la corrida; no arranca si el cálculo lo supera")
     parser.add_argument("--rejudge", action="store_true", help="Califica de nuevo las conversaciones ya guardadas")
+    parser.add_argument("--closing-strategy", choices=("direct_sale", "lead_capture", "booking", "checkout"),
+                        help="Estrategia de cierre para los negocios elegidos, igual en los dos lados")
     args = parser.parse_args()
     output = RESULTS / args.experiment
     captures_file = output / "captures.json"
@@ -149,6 +166,8 @@ def main() -> int:
         for label, commit, reference in (("baseline", baseline_commit, baseline_commit), ("candidate", None, f"{head} + cambios" if pending else head)):
             tree = work_path / label
             _export(commit, tree)
+            if args.closing_strategy:
+                _set_closing_strategy(tree, tenants, args.closing_strategy)
             settings = work_path / f"{label}.json"
             settings.write_text(json.dumps({"label": label, "commit": reference, "samples": args.samples, "tenants": tenants,
                                             "output": str(work_path / f"{label}.out.json")}), encoding="utf-8")
