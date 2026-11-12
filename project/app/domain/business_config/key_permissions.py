@@ -32,6 +32,12 @@ SCOPE_BUSINESSES_CREATE = "businesses:create"
 SCOPE_CONFIG_READ = "assistant:read"
 SCOPE_CONFIG_WRITE = "assistant:write"
 SCOPE_PAYMENTS_WRITE = "payments:write"
+SCOPE_CONVERSATIONS_READ = "conversations:read"
+SCOPE_CONVERSATIONS_WRITE = "conversations:write"
+SCOPE_SALES_READ = "sales:read"
+SCOPE_SALES_WRITE = "sales:write"
+SCOPE_ATTENTION_READ = "attention:read"
+SCOPE_ATTENTION_WRITE = "attention:write"
 
 
 @dataclass(frozen=True)
@@ -69,8 +75,8 @@ KEY_AREAS: tuple[KeyArea, ...] = (
     KeyArea(
         "assistant",
         "Asistente IA",
-        read="Ver la configuración de cada sección, lo que falta y lo que cambia al publicar.",
-        write="Editar la configuración, probar el asistente (gasta tu clave de IA) y publicar o volver a una versión anterior.",
+        read="Ver la configuración de cada sección, lo que falta, lo que cambia al publicar, el modelo de IA y lo que ha gastado.",
+        write="Editar la configuración, probar el asistente (gasta tu clave de IA), publicar o volver a una versión anterior y cambiar el modelo de IA. Nunca ve ni cambia tu clave de IA.",
         read_scopes=(SCOPE_CONFIG_READ,),
         write_scopes=(SCOPE_CONFIG_READ, SCOPE_CONFIG_WRITE),
     ),
@@ -80,6 +86,30 @@ KEY_AREAS: tuple[KeyArea, ...] = (
         read=None,
         write="Escribir tus números de Nequi o Daviplata, cuentas y enlaces de pago. Nunca puede leerlos: solo ve que están puestos.",
         write_scopes=(SCOPE_PAYMENTS_WRITE,),
+    ),
+    KeyArea(
+        "conversations",
+        "Conversaciones",
+        read="Leer los chats con tus clientes, quién espera a una persona y la actividad de hoy. Los datos de pago salen ocultos.",
+        write="Responderles a tus clientes por WhatsApp a nombre del negocio (pausa la IA en ese chat), marcarlos atendidos y pausar o reanudar la IA.",
+        read_scopes=(SCOPE_CONVERSATIONS_READ,),
+        write_scopes=(SCOPE_CONVERSATIONS_READ, SCOPE_CONVERSATIONS_WRITE),
+    ),
+    KeyArea(
+        "sales",
+        "Clientes y ventas",
+        read="Ver tus clientes y en qué etapa va cada uno, las ventas y los reportes.",
+        write="Registrar ventas y anularlas.",
+        read_scopes=(SCOPE_SALES_READ,),
+        write_scopes=(SCOPE_SALES_READ, SCOPE_SALES_WRITE),
+    ),
+    KeyArea(
+        "attention",
+        "Atención humana",
+        read="Ver el horario del equipo, cuánto tarda en responder, cuándo la IA retoma un chat y a dónde llegan los avisos.",
+        write="Cambiar esos ajustes. Se aplican al instante, sin publicar.",
+        read_scopes=(SCOPE_ATTENTION_READ,),
+        write_scopes=(SCOPE_ATTENTION_READ, SCOPE_ATTENTION_WRITE),
     ),
 )
 

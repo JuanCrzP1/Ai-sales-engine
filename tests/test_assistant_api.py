@@ -393,7 +393,7 @@ def test_the_owner_creates_sees_and_revokes_keys_and_the_secret_is_shown_once(pa
     overview = panel.get(f"{base}/integrations", headers=_as("ana")).json()
     assert overview["assistant_api"] == {"url": "https://motor.example.com/api/v1/assistant/messages", "chat_keys": 1}
     assert overview["api_keys"] == {"active": 1}
-    assert [area["id"] for area in overview["areas"]] == ["chat", "businesses", "assistant", "payments"]
+    assert [area["id"] for area in overview["areas"]] == ["chat", "businesses", "assistant", "payments", "conversations", "sales", "attention"]
     assert listed[0]["permissions"] == {"chat": "write"} and listed[0]["reach"] == "one" and listed[0]["businesses"] == ["restaurant"]
     revoked = panel.post(f"{base}/api-keys/{listed[0]['id']}/revoke", headers=_as("ana")).json()
     assert revoked["active"] is False and revoked["revoked_at"]

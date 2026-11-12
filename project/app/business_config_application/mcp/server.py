@@ -11,10 +11,17 @@ from pathlib import Path
 
 from app.business_config_application.access import BusinessAccess
 from app.business_config_application.assistant_lab import AssistantLabService
+from app.business_config_application.attention import AttentionService
+from app.business_config_application.commerce import CommerceService
+from app.business_config_application.conversations import ConversationsService
 from app.business_config_application.mcp.access import McpAccess
 from app.business_config_application.mcp.protocol import McpProtocol, ToolCallReport
+from app.business_config_application.mcp.tools.ai import ai_tools
+from app.business_config_application.mcp.tools.attention import attention_tools
 from app.business_config_application.mcp.tools.businesses import business_tools
+from app.business_config_application.mcp.tools.commerce import commerce_tools
 from app.business_config_application.mcp.tools.config import config_tools
+from app.business_config_application.mcp.tools.conversations import conversation_tools
 from app.business_config_application.mcp.tools.guide import guide_tools
 from app.business_config_application.ports import ApiKeyStorage
 from app.business_config_application.service import BusinessConfigService
@@ -59,9 +66,13 @@ def build_mcp_server(
     templates: Callable[[], Sequence[BusinessTemplate]],
     schema: dict,
     lab: AssistantLabService | None = None,
+    conversations: ConversationsService | None = None,
+    commerce: CommerceService | None = None,
+    attention: AttentionService | None = None,
     guide: Callable[[], str] = read_guide,
     local: bool = False,
     before_test: Callable[[McpAccess, str], None] = lambda caller, business: None,
+    before_reply: Callable[[McpAccess], None] = lambda caller: None,
     on_created: Callable[[McpAccess, str], None] = lambda caller, business: None,
     on_tool_call: Callable[[McpAccess, ToolCallReport], None] = lambda caller, report: None,
 ) -> McpServer:
@@ -69,5 +80,10 @@ def build_mcp_server(
         *guide_tools(guide, schema, templates),
         *business_tools(configs, access, templates, on_created),
         *config_tools(configs, access, lab, before_test),
+        # Lo que el servidor no tiene (por ejemplo, sin base de conversaciones) no aparece: nunca una herramienta que siempre falla.
+        *(ai_tools(lab, access) if lab is not None else []),
+        *(conversation_tools(conversations, configs, access, before_reply) if conversations is not None else []),
+        *(commerce_tools(commerce, access) if commerce is not None else []),
+        *(attention_tools(attention, access) if attention is not None else []),
     ]
     return McpServer(McpProtocol(tools, on_tool_call=on_tool_call), keys, local)

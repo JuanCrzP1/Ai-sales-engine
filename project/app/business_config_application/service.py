@@ -13,7 +13,7 @@ from __future__ import annotations
 import copy
 import json
 import uuid
-from collections.abc import Iterable, Iterator
+from collections.abc import Callable, Iterable, Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from typing import Any
@@ -40,6 +40,7 @@ from app.domain.business_config.payment_data import (
     iter_secret_refs,
     mask_payment_value,
     payment_value_problem,
+    redact_values,
 )
 from app.domain.business_config.records import BusinessSummary, ConfigVersion, PaymentFieldState, StoredConfig
 from app.domain.business_config.validation import check_business_identity, validate_document
@@ -192,6 +193,12 @@ class BusinessConfigService:
         """
         config = self.get_published(tenant_slug) if version is None else self.get_version(tenant_slug, version).config
         return compile_business_config(config, self._secrets.resolver(tenant_slug))
+
+    def payment_redactor(self, tenant_slug: str) -> Callable[[str], str]:
+        """Oculta en un texto los datos de pago que el negocio tiene guardados (también los de versiones anteriores), para lo que
+        se muestra fuera del panel (los mensajes que lee un agente). Si no se pueden descifrar, falla: nunca muestra sin ocultar."""
+        values = self._secrets.known_values(tenant_slug)
+        return lambda text: redact_values(text, values)
 
     # ------------------------------------------------------------------ validar
 

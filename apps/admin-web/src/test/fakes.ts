@@ -543,6 +543,9 @@ export const KEY_AREAS: KeyArea[] = [
   { id: "businesses", label: "Negocios", read: "Ver tus negocios y las plantillas.", write: "Crear negocios nuevos desde una plantilla.", oneBusinessOnly: false },
   { id: "assistant", label: "Asistente IA", read: "Ver la configuración.", write: "Editar, probar y publicar.", oneBusinessOnly: false },
   { id: "payments", label: "Datos de pago", read: null, write: "Escribir tus datos de pago. Nunca leerlos.", oneBusinessOnly: false },
+  { id: "conversations", label: "Conversaciones", read: "Leer los chats con tus clientes.", write: "Responderles a tus clientes.", oneBusinessOnly: false },
+  { id: "sales", label: "Clientes y ventas", read: "Ver clientes, ventas y reportes.", write: "Registrar y anular ventas.", oneBusinessOnly: false },
+  { id: "attention", label: "Atención humana", read: "Ver la atención humana.", write: "Cambiarla.", oneBusinessOnly: false },
 ];
 
 export function createMemoryIntegrations(options: { url?: string | null; mcpUrl?: string | null; business?: string } = {}) {

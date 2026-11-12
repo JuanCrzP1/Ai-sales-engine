@@ -155,9 +155,13 @@ def create_app(
             templates=app.state.templates.list,
             schema=app.state.contract_schema,
             lab=assistant_lab,
+            conversations=app.state.conversations,
+            commerce=app.state.commerce,
+            attention=app.state.attention,
             local=not cloud,
-            # Probar el asistente cuenta como «Probar asistente» del dueño de la clave.
+            # Probar el asistente y responder a un cliente cuentan como si lo hiciera el dueño de la clave desde el panel.
             before_test=lambda caller, business: app.state.usage.playground_message(caller.principal, business),
+            before_reply=lambda caller: app.state.usage.conversation_reply(caller.principal),
             on_created=lambda caller, business: app.state.attention.remember_account(caller.principal, force=True) if app.state.attention is not None and caller.principal.email else None,
             on_tool_call=audit_tool_call,
         )

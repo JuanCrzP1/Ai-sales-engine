@@ -154,6 +154,13 @@ def payment_values(runtime_yaml: dict) -> list[str]:
 
 
 def redact_payment_values(text: str, runtime_yaml: dict) -> str:
-    for value in payment_values(runtime_yaml):
+    return redact_values(text, payment_values(runtime_yaml))
+
+
+def redact_values(text: str, values: list[str] | tuple[str, ...]) -> str:
+    """Cambia cada valor (de los que tienen al menos `MIN_REDACTABLE_CHARS`) por «[dato de pago]», del más largo al más corto
+    para que uno que contiene a otro se oculte entero."""
+    chosen = sorted({value.strip() for value in values if len(value.strip()) >= MIN_REDACTABLE_CHARS}, key=len, reverse=True)
+    for value in chosen:
         text = text.replace(value, REDACTED_PAYMENT_VALUE)
     return text

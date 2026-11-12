@@ -42,11 +42,13 @@ class CommerceService:
         return self._storage.sales(business, since=self._today() - timedelta(days=self._days(days) - 1))
 
     def record_sale(
-        self, principal: Principal, business: str, *, customer_name: str, description: str, amount: object, currency: str, conversation_id: str | None = None
+        self, principal: Principal, business: str, *, customer_name: str, description: str, amount: object, currency: str,
+        conversation_id: str | None = None, created_by: str | None = None,
     ) -> Sale:
+        """`created_by`: quién la registró, si no es la persona misma (un agente con su clave)."""
         self._access.require(principal, business)
         sale = NewSale.checked(customer_name=customer_name, description=description, amount=amount, currency=currency, conversation_id=conversation_id)
-        return self._storage.record_sale(business, sale, created_by=principal.label)
+        return self._storage.record_sale(business, sale, created_by=created_by or principal.label)
 
     def cancel_sale(self, principal: Principal, business: str, sale_id: str) -> Sale:
         self._access.require(principal, business)

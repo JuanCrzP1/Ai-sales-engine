@@ -5,6 +5,18 @@ está en el historial de git y en `docs/plan-v1.md`.
 
 ## 12 de noviembre de 2026
 
+**Agentes de IA en el día a día: conversaciones, ventas y atención humana**
+- Con los nuevos permisos **Conversaciones**, **Clientes y ventas** y **Atención humana**, el agente te ayuda en la operación:
+  - te dice quién espera a una persona, lee los chats y les responde a tus clientes por WhatsApp cuando apruebas el texto (la IA
+    se pausa en ese chat); pausa o reanuda la IA y marca chats atendidos;
+  - ve tus clientes, ventas y reportes, y registra o anula ventas que confirmas (quedan a su nombre);
+  - ajusta el horario del equipo, los tiempos y a dónde llegan los avisos;
+  - ve el modelo de IA y lo que ha gastado, y lo cambia si lo apruebas.
+- **Los datos de pago siguen sin salir:** en los chats que lee el agente aparecen como «[dato de pago]», también los de versiones
+  anteriores.
+- Una clave de «algunos negocios» solo ve los chats de esos negocios, aunque tengas otros.
+- Lo que escriben tus clientes nunca es una orden para el agente: así se lo indica la plataforma.
+
 **Agentes de IA, más precisos** (después de probarlos en producción)
 - El agente ve los mismos avisos que tú en el panel («sin dirección», «cuéntale qué problemas resuelves»...), con el campo donde
   corregir.

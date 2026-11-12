@@ -70,8 +70,9 @@ def invalid_arguments(schema: dict[str, Any], args: Any, path: str = "") -> str 
     opciones, propiedades desconocidas y los elementos de las listas."""
     expected = schema.get("type")
     where = f"«{path}»" if path else "Los argumentos"
-    if expected and not _TYPES[expected](args):
-        return f"{where} debe ser de tipo {expected}."
+    allowed = expected if isinstance(expected, list) else [expected] if expected else []
+    if allowed and not any(_TYPES[kind](args) for kind in allowed):
+        return f"{where} debe ser de tipo {' o '.join(allowed)}."
     if "enum" in schema and args not in schema["enum"]:
         return f"{where} debe ser uno de: {', '.join(map(str, schema['enum']))}."
     if expected == "object" and "properties" in schema:

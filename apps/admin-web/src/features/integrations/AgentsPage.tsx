@@ -20,8 +20,15 @@ const CAN_DO = [
   "Crear negocios y montar su configuración completa: negocio, productos y precios, pagos, preguntas frecuentes y mensajes.",
   "Revisar lo que falta y lo que cambia, probar el asistente como si fuera un cliente y publicar cuando tú lo confirmes.",
   "Escribir tus datos de pago sin poder leerlos nunca, si le das ese permiso.",
+  "Leer tus conversaciones, decirte quién espera a una persona y responderles a tus clientes cuando tú lo apruebes.",
+  "Ver tus clientes, ventas y reportes, y registrar o anular ventas que confirmes.",
+  "Ajustar la atención humana y elegir el modelo de IA del asistente.",
 ];
-const CANNOT_DO = ["Conectar WhatsApp: hay que escanear el código QR con tu teléfono (en Canales).", "Poner la clave de IA del negocio (en Configuración → Inteligencia artificial)."];
+const CANNOT_DO = [
+  "Conectar WhatsApp: hay que escanear el código QR con tu teléfono (en Canales).",
+  "Ver o poner la clave de IA del negocio (en Configuración → Inteligencia artificial).",
+  "Borrar chats o clientes: no se puede deshacer.",
+];
 
 /**
  * Integraciones → Agentes de IA (MCP): que Claude, Cursor, n8n u otro agente trabaje en tus negocios hablándole, con una clave y los

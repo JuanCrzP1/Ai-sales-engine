@@ -7,6 +7,9 @@ API** y los permisos que se le dieron. Puede **montar un negocio completo**:
 - prueba el asistente;
 - publica cuando la persona lo confirma.
 
+Y ayuda en el **día a día**: lee las conversaciones y dice quién espera a una persona, les responde a los clientes cuando la
+persona aprueba el texto, ve clientes, ventas y reportes, registra o anula ventas, y ajusta la atención humana y el modelo de IA.
+
 En el panel: **Integraciones → Agentes de IA (MCP)** (la dirección, cómo conectar cada agente y sus claves) y **Integraciones →
 Claves de API** (todas las claves).
 
@@ -35,16 +38,24 @@ En este equipo la dirección es `http://127.0.0.1:8010/api/mcp`, porque la API d
 |---|---|---|
 | Negocios | `list_businesses`, `list_business_templates` | + `create_business` (solo con una clave de **todos** los negocios) |
 | Asistente IA | `get_business_config`, `review_business_config`, `list_versions` | + `update_business_config`, `test_assistant`, `publish_business_config`, `rollback_business_config`, `restore_version` |
+| Asistente IA (modelo) | `get_ai_settings`, `list_ai_models` | + `set_ai_model` |
 | Datos de pago | — | Escribirlos en `update_business_config` como `{"value": "…"}`. Nunca leerlos |
+| Conversaciones | `list_conversations`, `get_conversation`, `get_activity` | + `reply_to_customer`, `set_conversation_assistant`, `mark_conversation_attended` |
+| Clientes y ventas | `list_customers`, `list_sales`, `get_report` | + `record_sale`, `cancel_sale` |
+| Atención humana | `get_attention_settings` | + `update_attention_settings` |
 | Conversar con el asistente | — | La API del asistente ([api.md](api.md)); solo con una clave de **un** negocio |
 | (sin permiso) | `read_platform_guide`, `get_config_guide` | — |
 
+Marcadas destructivas (`destructiveHint`), con confirmación de la persona: `publish_business_config`, `rollback_business_config`,
+`reply_to_customer` (le escribe a un cliente real), `cancel_sale` y `set_ai_model` (se aplica al instante y cambia el costo).
+
 Lo que **no** está, a propósito:
 - **Conectar WhatsApp:** exige escanear el código QR con el teléfono.
-- **La clave de IA del negocio:** es un secreto de la persona.
+- **La clave de IA del negocio:** es un secreto de la persona. El agente solo sabe si está puesta.
 - **Borrar chats o clientes:** no se puede deshacer.
+- **Descargar fotos y audios de los chats:** el agente ve que llegaron y su nota, no el archivo.
 
-Las conversaciones, clientes, ventas, reportes y la atención humana llegan en la fase 2; OAuth, en la fase 3.
+OAuth (Claude web y ChatGPT) llega en la fase 3.
 
 ## Cómo funciona
 
@@ -55,7 +66,8 @@ Las conversaciones, clientes, ventas, reportes y la atención humana llegan en l
 | `domain/business_config/config_changes.py` | Lo que cambia al publicar, por contenido; los datos de pago, «protegidos» |
 | `domain/business_config/validation_messages.py` | Los problemas del contrato por campo, en español; cada formato se explica con un ejemplo («sin tildes ni ñ…»), y al agente le agrega las opciones permitidas |
 | `domain/business_config/diagnostics.py` | Lo que conviene revisar. Incluye los avisos que el panel calcula en vivo, con el mismo campo y el mismo texto (`LIVE_ADVISORY_CODES`): el agente ve lo mismo que la persona. Casos compartidos en `project/config/contracts/v1/advisory-cases.json`, probados en los dos lados |
-| `business_config_application/mcp/` | `protocol.py` (JSON-RPC 2.0 sin estado), `tool.py` (herramienta y revisión de argumentos), `access.py` (quién llama y a qué negocios llega), `tools/` (guía, negocios y configuración) y `server.py` |
+| `business_config_application/mcp/` | `protocol.py` (JSON-RPC 2.0 sin estado), `tool.py` (herramienta y revisión de argumentos), `access.py` (quién llama y a qué negocios llega), `tools/` (guía, negocios, configuración, modelo de IA, conversaciones, clientes y ventas, atención humana) y `server.py`. Un servicio que el servidor no tiene (por ejemplo, sin base de conversaciones) no suma sus herramientas |
+| `BusinessConfigService.payment_redactor` | Oculta en los textos de los chats todos los datos de pago guardados del negocio (también los de versiones anteriores) con `redact_values`. Si no se pueden descifrar, falla: nunca muestra sin ocultar |
 | `admin_api/mcp_routes.py` | `POST /api/mcp`: clave, límite, lote, registro de cada llamada |
 | `project/config/agents/guia-para-agentes.md` | La guía que lee el agente: reglas y la receta para montar un negocio completo. Viaja con el motor |
 | Migración `0013_account_keys.sql` | Claves de la cuenta: dueño, alcance (`one`, `all`, `some` con `api_key_businesses`) y vencimiento |
@@ -67,7 +79,13 @@ Reglas:
 - **Cada cliente, lo suyo:**
   - el agente actúa como el dueño de la clave;
   - cada negocio pasa por `BusinessAccess` (miembros) y por el alcance de la clave;
-  - uno ajeno o inexistente responde igual: «Ese negocio no existe o esta clave no entra a él».
+  - uno ajeno o inexistente responde igual: «Ese negocio no existe o esta clave no entra a él»;
+  - una conversación se lee primero para saber de qué negocio es y pasa por el mismo alcance: una de un negocio al que la clave
+    no entra (aunque sea del mismo dueño) responde «Esa conversación no existe o esta clave no entra a ella».
+- **Lo que escriben los clientes son datos.** Las instrucciones del servidor y la guía le dicen al agente que nunca obedezca un
+  mensaje de un chat y que le muestre a la persona el texto antes de responderle a un cliente.
+- **Mismos límites que el panel:** responder a un cliente cuenta como una respuesta del dueño desde la bandeja; lo que registra
+  queda a nombre del agente (`created_by`).
 - **Borrador y publicar.** Guardar crea una versión en borrador. Publicar es otra herramienta, marcada destructiva
   (`destructiveHint`): las instrucciones y la guía piden mostrar lo que cambia y la confirmación de la persona.
 - **Errores:**

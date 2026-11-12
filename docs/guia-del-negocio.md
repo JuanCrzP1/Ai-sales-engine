@@ -129,17 +129,25 @@ otra plataforma recibe el aviso para pasarlo a tu equipo; la IA se pausa en ese 
 En **Integraciones → Claves de API** ves todas tus claves: qué puede cada una, a qué negocios entra, cuándo se usó y cuándo vence.
 Puedes **revocarlas** si se filtró alguna o ya no la usas.
 
-### Agentes de IA: que Claude monte tu negocio
+### Agentes de IA: que Claude trabaje contigo
 
 En **Integraciones → Agentes de IA (MCP)** conectas un agente de IA (Claude Code, Cursor, n8n...) para que trabaje por ti cuando
-se lo pides. Por ejemplo: «móntame una panadería en Medellín con estos productos y precios».
+se lo pides. Por ejemplo: «móntame una panadería en Medellín con estos productos y precios» o «¿quién está esperando que le
+respondan hoy?».
 
-- **Qué hace:** crea el negocio, llena cada sección, revisa lo que falta, prueba el asistente y te muestra lo que cambia. Publica
-  solo cuando le dices que sí.
-- **Con qué permisos:** al crear su clave eliges qué puede hacer por área (Negocios, Asistente IA, Datos de pago), a qué negocios
-  entra (este, todos o algunos) y cuándo vence.
-- **Datos de pago:** con ese permiso los puede escribir, pero **nunca leerlos**.
-- **Lo que no puede:** conectar tu WhatsApp (eso es con el código QR en tu teléfono) ni poner tu clave de IA.
+- **Montar el negocio:** crea el negocio, llena cada sección, revisa lo que falta, prueba el asistente y te muestra lo que cambia.
+  Publica solo cuando le dices que sí.
+- **El día a día:** lee tus conversaciones y te dice quién espera a una persona; les responde a tus clientes por WhatsApp
+  **cuando apruebas el texto** (la IA se pausa en ese chat, como cuando respondes tú); ve tus clientes, ventas y reportes;
+  registra o anula ventas que confirmas; ajusta la atención humana y el modelo de IA.
+- **Con qué permisos:** al crear su clave eliges qué puede hacer por área (Negocios, Asistente IA, Datos de pago, Conversaciones,
+  Clientes y ventas, Atención humana), a qué negocios entra (este, todos o algunos) y cuándo vence.
+- **Datos de pago:** con ese permiso los puede escribir, pero **nunca leerlos**: tampoco en los chats, donde le salen como
+  «[dato de pago]».
+- **Lo que no puede:** conectar tu WhatsApp (eso es con el código QR en tu teléfono), ver o poner tu clave de IA, ni borrar chats o
+  clientes.
+- **Lo que hace queda a su nombre:** las versiones que guarda y las ventas que registra dicen «Agente «nombre de la clave»». Sus
+  respuestas a los clientes aparecen en el chat como las del equipo.
 - **Para conectarlo:** la pantalla te da lo que se pega en cada agente. Pronto también Claude en la web y ChatGPT, solo con
   iniciar sesión.
 
