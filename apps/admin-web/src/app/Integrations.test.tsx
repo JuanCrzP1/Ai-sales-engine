@@ -74,6 +74,18 @@ describe("Integraciones", () => {
     expect(within(panel).getByText("Pruébalo disparando el flujo a tu número.")).toBeInTheDocument();
   });
 
+  it("muestra las cabeceras de la petición como nombre y valor, listas para copiar, en los datos y en cada guía", async () => {
+    const { user } = await open("integraciones/api");
+    const connection = screen.getByRole("heading", { name: "1. Tus datos de conexión" }).closest("section") as HTMLElement;
+    const headers = (where: HTMLElement) =>
+      within(within(where).getByRole("table")).getAllByRole("row").slice(1).map((row) => within(row).getAllByRole("cell").map((cell) => cell.querySelector("code")?.textContent));
+    expect(headers(connection)).toEqual([["Authorization", "Bearer TU_CLAVE"], ["Content-Type", "application/json"]]);
+    expect(within(connection).getByText(/Cambia TU_CLAVE por tu clave/)).toBeInTheDocument();
+    expect(headers(screen.getByRole("tabpanel"))).toEqual([["Authorization", "Bearer TU_CLAVE"], ["Content-Type", "application/json"]]);
+    await user.click(screen.getByRole("tab", { name: "Otra plataforma" }));
+    expect(headers(screen.getByRole("tabpanel"))).toHaveLength(2);
+  });
+
   it("para otra plataforma dice qué mandar y avisa de las variables sin reemplazar", async () => {
     const { user } = await open("integraciones/api");
     await user.click(screen.getByRole("tab", { name: "Otra plataforma" }));

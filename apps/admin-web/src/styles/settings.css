@@ -1902,6 +1902,58 @@
   }
 }
 
+.request-headers {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.request-headers__table {
+  width: 100%;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  border-collapse: separate;
+  border-spacing: 0;
+  overflow: hidden;
+  font-size: var(--text-sm);
+}
+
+.request-headers__table th {
+  padding: 6px var(--space-3);
+  background: var(--color-surface-muted);
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  text-align: left;
+}
+
+.request-headers__table td {
+  padding: var(--space-2) var(--space-3);
+  border-top: 1px solid var(--color-border);
+  vertical-align: top;
+}
+
+.request-headers__cell {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.request-headers__cell code {
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: var(--color-surface-muted);
+  font-size: 0.92em;
+}
+
+.request-headers__hint {
+  display: block;
+  margin-top: 4px;
+  color: var(--color-text-subtle);
+  font-size: var(--text-xs);
+}
+
 .api-keys__meta {
   display: block;
   margin-top: 2px;

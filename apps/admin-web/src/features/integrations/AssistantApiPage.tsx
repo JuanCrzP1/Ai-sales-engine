@@ -16,6 +16,7 @@ import { useAssistantApiTry } from "../../state/useAssistantApiTry";
 import { useIntegrationsData } from "../../state/useIntegrationsData";
 import { CreateKeyDialog, NewSecretDialog } from "./KeyDialogs";
 import { PlatformGuides } from "./PlatformGuides";
+import { RequestHeaders } from "./RequestHeaders";
 
 const DOCS_URL = "https://github.com/JuanCrzP1/Ai-sales-engine/blob/main/docs/api.md";
 
@@ -107,6 +108,7 @@ export function AssistantApiPage() {
                 En la nube ya la tiene. En este equipo, arráncalo con ./run_local.sh, que la toma de ngrok.
               </Alert>
             )}
+            <RequestHeaders />
             <KeySummary keys={chatKeys} keysPath={pathTo(API_KEYS_ITEM.path)} onCreate={() => setCreating(true)} />
           </div>
         </Card>
@@ -198,9 +200,7 @@ function KeySummary({ keys, keysPath, onCreate }: { keys: ApiKey[]; keysPath: st
       ) : (
         <p className="field__hint">Todavía no tienes una clave. Crea una por cada plataforma que vayas a conectar.</p>
       )}
-      <p className="field__hint">
-        La clave completa solo se ve al crearla. En tu plataforma va en el encabezado <code>Authorization: Bearer</code> + la clave.
-      </p>
+      <p className="field__hint">La clave completa solo se ve al crearla: va en la cabecera «Authorization», después de «Bearer ».</p>
       <div className="key-summary__actions">
         <Button onClick={onCreate}>{keys.length > 0 ? "Crear otra clave" : "Crear clave"}</Button>
         {keys.length > 0 && (

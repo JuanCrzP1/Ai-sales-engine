@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from "react";
+import { RequestHeaders } from "./RequestHeaders";
 import { CopyField } from "../../components/ui/CopyButton";
 import { Alert, Badge } from "../../components/ui/Feedback";
 import { SegmentedControl } from "../../components/ui/SegmentedControl";
@@ -91,11 +92,11 @@ function LeonaGuide({ url }: { url: string }) {
         </Step>
         <Step number={2} title="Bloque «Integración HTTP»">
           <p>
-            Método <strong>POST</strong>. En <strong>Encabezados</strong>, <code>Authorization</code> con <code>Bearer</code> y tu clave, y{" "}
-            <code>Content-Type</code> con <code>application/json</code>.
+            Método <strong>POST</strong>. Copia la dirección, agrega las dos cabeceras en <strong>Encabezados</strong> y pega el cuerpo.
           </p>
           <div className="form-stack">
             <CopyField label="Dirección" value={url} />
+            <RequestHeaders />
             <CopyField label="Cuerpo" value={LEONA.requestBody} multiline />
           </div>
           <p className="field__hint">
@@ -158,10 +159,12 @@ function OtherPlatformGuide({ url }: { url: string }) {
       <ol className="guide-steps">
         <Step number={1} title="Cada vez que el cliente escriba, manda una petición">
           <p>
-            Método <strong>POST</strong> a esta dirección, con los encabezados <code>Authorization: Bearer</code> + tu clave y{" "}
-            <code>Content-Type: application/json</code>.
+            Método <strong>POST</strong> a esta dirección, con estas dos cabeceras.
           </p>
-          <CopyField label="Dirección" value={url} />
+          <div className="form-stack">
+            <CopyField label="Dirección" value={url} />
+            <RequestHeaders />
+          </div>
         </Step>
         <Step number={2} title="Con este cuerpo">
           <CopyField label="Cuerpo (con datos de ejemplo)" value={EXAMPLE_REQUEST_BODY} multiline />

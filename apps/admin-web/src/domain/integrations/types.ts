@@ -55,6 +55,12 @@ export interface AssistantApiReply {
 /** El encabezado que lleva cada petición; «TU_CLAVE» se cambia por la clave creada. */
 export const AUTHORIZATION_HEADER = "Authorization: Bearer TU_CLAVE";
 
+/** Las cabeceras de cada petición, como nombre y valor (así las piden las plataformas). */
+export const REQUEST_HEADERS: { name: string; value: string; hint?: string }[] = [
+  { name: "Authorization", value: "Bearer TU_CLAVE", hint: "Cambia TU_CLAVE por tu clave (empieza por ase_live_). Deja «Bearer» y un espacio antes." },
+  { name: "Content-Type", value: "application/json" },
+];
+
 /** Un cuerpo de ejemplo con datos de verdad: lo que cualquier plataforma debe mandar. */
 export const EXAMPLE_REQUEST_BODY = '{"contact": {"id": "573001112233", "name": "Laura"}, "message": "Hola, ¿qué precios tienen?"}';
 
