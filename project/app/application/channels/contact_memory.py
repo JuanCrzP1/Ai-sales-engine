@@ -20,3 +20,9 @@ class EngineContactMemory:
             raise AssistantUnavailableError(
                 "No se pudo borrar lo que el asistente recuerda de este cliente, así que el chat no se eliminó. Intenta de nuevo"
             ) from exc
+
+    def forget_business(self, business_slug: str) -> None:
+        """Al eliminar un negocio: lo que el motor tiene en memoria de sus clientes (en la base se borra con el negocio)."""
+        from app.services.ai_service import GLOBAL_MEMORY_REPOSITORY
+
+        GLOBAL_MEMORY_REPOSITORY.forget_business(tenant_slug=business_slug)

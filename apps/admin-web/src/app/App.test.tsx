@@ -194,21 +194,45 @@ describe("Administración de negocios", () => {
     expect(window.location.pathname).toBe("/negocios");
   });
 
-  it("eliminar exige escribir el identificador y no toca los demás negocios", async () => {
+  it("eliminar dice qué se pierde, exige escribir el nombre y no toca los demás negocios", async () => {
     const backend = createMemoryBackend([SAMPLE_DOCUMENT, SAMPLE_PLANS_DOCUMENT]);
     const user = await renderAt("/negocios", createTestServices(backend));
     await user.click(screen.getByRole("button", { name: "Eliminar Café Aroma" }));
-    const confirm = screen.getByRole("button", { name: "Eliminar definitivamente" });
+    const dialog = screen.getByRole("dialog", { name: "Eliminar «Café Aroma»" });
+    expect(within(dialog).getByText(/WhatsApp se desconecta/)).toBeInTheDocument();
+    const confirm = within(dialog).getByRole("button", { name: "Eliminar definitivamente" });
     expect(confirm).toBeDisabled();
 
-    await user.type(screen.getByLabelText(`Para confirmar, escribe ${SAMPLE_DOCUMENT.tenant_slug}`), SAMPLE_DOCUMENT.tenant_slug);
+    const field = within(dialog).getByLabelText("Para confirmar, escribe el nombre del negocio: Café Aroma");
+    await user.type(field, "Café");
+    expect(confirm).toBeDisabled();
+    await user.type(field, "  aroma ");
     expect(confirm).toBeEnabled();
     await user.click(confirm);
 
-    expect(await screen.findByText('Se eliminó "Café Aroma".')).toBeInTheDocument();
+    expect(await screen.findByText("Se eliminó «Café Aroma» con todo lo suyo.")).toBeInTheDocument();
     expect(backend.stored(SAMPLE_DOCUMENT.tenant_slug)).toBeNull();
     expect(backend.stored(SAMPLE_PLANS_DOCUMENT.tenant_slug)).not.toBeNull();
     expect(within(screen.getByRole("list", { name: "Negocios" })).getAllByRole("listitem")).toHaveLength(1);
+  });
+
+  it("desde Configuración → Eliminar negocio: si el servidor no puede, lo dice; si puede, vuelve a Tus negocios con el aviso", async () => {
+    const backend = createMemoryBackend([SAMPLE_DOCUMENT, SAMPLE_PLANS_DOCUMENT]);
+    const user = await renderAt(`/negocios/${SAMPLE_DOCUMENT.tenant_slug}/configuracion/eliminar-negocio`, createTestServices(backend));
+    expect(await screen.findByRole("heading", { level: 1, name: "Eliminar negocio" })).toBeInTheDocument();
+    expect(within(screen.getByRole("navigation", { name: "Configuración" })).getByRole("link", { name: /Eliminar negocio/ })).toHaveAttribute("aria-current", "page");
+    await user.click(await screen.findByRole("button", { name: "Eliminar este negocio" }));
+    const dialog = screen.getByRole("dialog", { name: "Eliminar «Café Aroma»" });
+    await user.type(within(dialog).getByLabelText(/Para confirmar/), "Café Aroma");
+    backend.failNext("remove", new PersistenceError("conflict", { message: "No se pudo desconectar WhatsApp, así que no se eliminó nada. Intenta de nuevo en unos minutos." }));
+    await user.click(within(dialog).getByRole("button", { name: "Eliminar definitivamente" }));
+    expect(await within(dialog).findByText(/no se eliminó nada/)).toBeInTheDocument();
+    expect(backend.stored(SAMPLE_DOCUMENT.tenant_slug)).not.toBeNull();
+
+    await user.click(within(dialog).getByRole("button", { name: "Eliminar definitivamente" }));
+    expect(await screen.findByText("Se eliminó «Café Aroma» con todo lo suyo.")).toBeInTheDocument();
+    expect(window.location.pathname).toBe("/negocios");
+    expect(backend.stored(SAMPLE_DOCUMENT.tenant_slug)).toBeNull();
   });
 
   it("informa si no hay nada nuevo que importar", async () => {

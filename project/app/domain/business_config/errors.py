@@ -86,6 +86,14 @@ class ConversationNotFoundError(BusinessConfigError):
     """La conversación no existe o es de un negocio al que este usuario no llega."""
 
 
+class NotOwnerError(BusinessConfigError):
+    """Es miembro del negocio, pero eso solo lo puede hacer su dueño (por ejemplo, eliminarlo). El mensaje es para el negocio."""
+
+
+class BusinessDeletionBlockedError(BusinessConfigError):
+    """No se eliminó nada: falló un paso previo (por ejemplo, desconectar WhatsApp). El mensaje es para el negocio."""
+
+
 class UsageLimitExceededError(BusinessConfigError):
     """Se superó un límite de uso; se puede volver a intentar en `retry_after_seconds`."""
 

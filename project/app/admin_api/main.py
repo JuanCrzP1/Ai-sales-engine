@@ -35,6 +35,7 @@ from app.business_config_application.mcp.oauth import McpOAuthService
 from app.domain.business_config.oauth import oauth_addresses
 from app.business_config_application.mcp.server import build_mcp_server
 from app.business_config_application.channels import WhatsAppChannelService
+from app.business_config_application.business_deletion import BusinessDeletionService
 from app.business_config_application.commerce import CommerceService
 from app.business_config_application.conversations import ConversationsService, NotificationsService
 from app.business_config_application.ports import (
@@ -183,6 +184,8 @@ def create_app(
     )
     # WhatsApp por código QR: sin el servicio, sus rutas responden que los canales no están disponibles.
     app.state.whatsapp = whatsapp
+    # Eliminar un negocio: primero WhatsApp (fuera de la base), luego todo lo suyo en una transacción y su memoria en RAM.
+    app.state.deletion = BusinessDeletionService(service, app.state.access, whatsapp=whatsapp, memory=contact_memory)
     # Solo la API de este equipo importa los negocios de ejemplo (`POST /api/businesses/import`).
     app.state.examples = examples
 

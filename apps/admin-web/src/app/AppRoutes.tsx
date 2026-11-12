@@ -21,6 +21,7 @@ import { PaymentsPage } from "../features/payments/PaymentsPage";
 import { PlaygroundPage } from "../features/playground/PlaygroundPage";
 import { AccountProfilePage, NotificationsPage, ProfilePage, SecurityPage } from "../features/profile/ProfilePage";
 import { BillingPage, QuickRepliesPage } from "../features/settings/ComingSoonPages";
+import { DeleteBusinessPage } from "../features/settings/DeleteBusinessPage";
 import { ApiKeysPage } from "../features/integrations/ApiKeysPage";
 import { AgentsPage } from "../features/integrations/AgentsPage";
 import { AssistantApiPage } from "../features/integrations/AssistantApiPage";
@@ -39,6 +40,7 @@ import {
   BILLING_ITEM,
   BUSINESSES_PATH,
   CHANNELS_ITEM,
+  DELETE_BUSINESS_ITEM,
   CONVERSATIONS_ITEM,
   CUSTOMERS_ITEM,
   ENTRY_PATH,
@@ -110,6 +112,7 @@ export const appRoutes = (
             <Route path={ATTENTION_ITEM.path} element={<AttentionSettingsPage />} />
             <Route path={QUICK_REPLIES_ITEM.path} element={<QuickRepliesPage />} />
             <Route path={BILLING_ITEM.path} element={<BillingPage />} />
+            <Route path={DELETE_BUSINESS_ITEM.path} element={<DeleteBusinessPage />} />
           </Route>
           <Route element={<AccountLayout />}>
             <Route path={ACCOUNT_PROFILE_ITEM.path} element={<AccountProfilePage />} />

@@ -147,12 +147,10 @@ def import_existing_businesses(request: Request, service: Service) -> dict[str, 
 
 
 @router.delete("/businesses/{slug}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_business(slug: BusinessSlug, service: Service, confirm: Annotated[str, Query()] = "") -> None:
-    """Borra el negocio con sus versiones y datos de pago. Exige repetir el identificador."""
-    service.get_business(slug)
-    if confirm != slug:
-        raise ApiError(status.HTTP_400_BAD_REQUEST, "Confirma el identificador del negocio para eliminarlo.", code="confirmation_required")
-    service.delete_business(slug)
+def delete_business(request: Request, slug: BusinessSlug, user: CurrentUser, confirm: Annotated[str, Query(max_length=200)] = "") -> None:
+    """Elimina el negocio y todo lo suyo, para siempre. Solo su dueño, escribiendo su nombre (`confirm`). Ver
+    `BusinessDeletionService`."""
+    request.app.state.deletion.delete(user, slug, confirm)
 
 
 # --------------------------------------------------------------------------- configuración

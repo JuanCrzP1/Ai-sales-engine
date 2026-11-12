@@ -965,8 +965,9 @@ def test_deleting_a_business_requires_confirmation_and_only_removes_that_one(api
     _create_with_document(api, "negocio_a")
     _create_with_document(api, "negocio_b")
 
-    assert api.client.delete("/api/businesses/negocio_a").status_code == 400
-    assert api.client.delete("/api/businesses/negocio_a", params={"confirm": "negocio_b"}).status_code == 400
+    missing = api.client.delete("/api/businesses/negocio_a")
+    assert missing.status_code == 422 and missing.json()["issues"][0]["path"] == "confirm"
+    assert api.client.delete("/api/businesses/negocio_a", params={"confirm": "negocio_b"}).status_code == 422
     assert len(api.client.get("/api/businesses").json()) == 2
 
     assert api.client.delete("/api/businesses/negocio_a", params={"confirm": "negocio_a"}).status_code == 204

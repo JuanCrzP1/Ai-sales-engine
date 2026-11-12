@@ -14,6 +14,8 @@ plan (sección 6).
 | 1 | Eliminar chats y clientes, de la base y de la memoria del asistente; borrar las pruebas de una vez | — (nuevo) | **Hecha** (11 nov) |
 | 2 | Documentación profesional: README con capturas, guía del negocio, índice, cambios y documentos al día | — (nuevo) | **Hecha** (11 nov) |
 | 3 | Atención humana completa: horario del equipo, lo que espera el cliente, avisos por correo y notificación, la IA retoma sola si nadie atiende | Fase 4 (H3, H6 y la pausa con tiempo) | **Hecha** (11 nov) |
+| — | Eliminar un negocio en la nube: solo el dueño, escribiendo su nombre; WhatsApp primero y todo lo demás en una transacción | — (nuevo) | **Hecha** (12 nov) |
+| — | Revisión del 12 nov (ver «Hallazgos de la revisión del 12 de noviembre») | — (nuevo) | Pendiente |
 | 4 | Lanzamiento: monitoreo de errores, copias de seguridad probadas, correo transaccional, términos y política de datos, Vercel Pro | Fases 7 y 8 | Siguiente |
 | 5 | Retirar lo que queda del sistema anterior y partir los módulos grandes del motor | Fase 6 (resto) | Pendiente |
 | Integraciones | API del asistente para otras plataformas (Leona, una web) con claves de API: **hecha** (12 nov). Servidor MCP para que un agente de IA monte y configure negocios: **fase 1 hecha** (12 nov: claves de la cuenta con permisos por área, alcance y vencimiento; crear negocios y toda la configuración, revisar, probar y publicar; ver [mcp.md](mcp.md)). **Fase 2 hecha** (12 nov: conversaciones con respuesta al cliente, clientes, ventas, reportes, atención humana y modelo de IA; los datos de pago salen ocultos de los chats). **Fase 3 hecha** (12 nov: Claude web y app y ChatGPT se conectan con inicio de sesión, OAuth 2.1 con registro dinámico y PKCE; la conexión es una clave de la cuenta que se revoca en Claves de API) | — (nuevo) | Hecha |
@@ -392,3 +394,22 @@ las tablas del sistema anterior en Neon (borrarlas necesita la aprobación de la
 - **Envíos, domicilios e inventario:** entran en la versión 1.
 - **Atención humana por defecto:** el asistente ofrece ayudar una vez antes de pasar; si nadie atiende en 30 minutos, el asistente
   retoma la conversación (el negocio puede cambiar ambos).
+
+## Hallazgos de la revisión del 12 de noviembre
+
+Auditoría de variaciones: cada opción de cada campo con opciones (y cada sí/no) se publicó en los 9 negocios de ejemplo y se
+comparó lo que recibe la IA en una conversación de 4 turnos. Solo se marca un par de opciones si da lo mismo en los 9.
+
+| Hallazgo | Qué pasa | Qué hacer |
+|---|---|---|
+| `sales.closing.strategy` | «Confirmar la compra», «Capturar datos» y «Enviar el pago» hacen lo mismo en el motor; solo «Agendar» cambia el manual de venta | Que cada estrategia le diga a la IA cómo cerrar (capturar datos sin pedir pago, enviar el pago, confirmar la compra). Cambia el prompt: con laboratorio de regresión antes y después |
+| `features.catalog_mode` | No cambia nada cuando el negocio declara `features.business_model` (los 9 ejemplos lo declaran): el tipo de negocio manda | Unificar: que el panel muestre un solo control («Qué vendes») o que el modo catálogo se derive del tipo de negocio |
+| `features.business_model` | «Catálogo» y «Checkout» llevan al mismo manual; «Proceso» no tiene manual propio (usa el de servicios) | Decidir si «Checkout» y «Proceso» merecen manual propio o si se quitan como opciones |
+
+Lo demás llega al motor y cada opción cambia lo que hace. Las combinaciones que el contrato rechaza son reglas a propósito (el largo
+de las respuestas va con su máximo de palabras; Nequi pide número y no cuenta). La bienvenida fija solo responde a un saludo solo.
+
+Arquitectura: las capas se respetan (pruebas de arquitectura del motor y del panel). Siguen en el código piezas del sistema anterior
+(`app/models`, `app/database`, `app/repositories`), usadas todavía por la API del asistente y los webhooks de WhatsApp: es la fase 5.
+Módulos que conviene partir: `memory_repository.py` (860 líneas), `ai_execution.py` (700), `ConversationsPage.tsx` (540).
+

@@ -23,6 +23,7 @@ export type NavKey =
   | "integrations"
   | "assistantApi"
   | "apiKeys"
+  | "deleteBusiness"
   | "agents";
 
 export interface NavItem {
@@ -85,6 +86,7 @@ export const NOTIFICATIONS_ITEM: NavItem = { key: "notifications", path: `${ACCO
 export const ATTENTION_ITEM: NavItem = { key: "attention", path: `${SETTINGS_BASE}/atencion-humana`, title: "Atención humana" };
 export const QUICK_REPLIES_ITEM: NavItem = { key: "quickReplies", path: `${SETTINGS_BASE}/respuestas-rapidas`, title: "Respuestas rápidas" };
 export const BILLING_ITEM: NavItem = { key: "billing", path: `${SETTINGS_BASE}/facturacion`, title: "Pagos y suscripciones" };
+export const DELETE_BUSINESS_ITEM: NavItem = { key: "deleteBusiness", path: `${SETTINGS_BASE}/eliminar-negocio`, title: "Eliminar negocio" };
 
 export interface SettingsEntry {
   item: NavItem;
@@ -123,6 +125,7 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
     ],
   },
   { title: "Facturación", entries: [{ item: BILLING_ITEM, description: "Tu plan, pagos y facturas", soon: true }] },
+  { title: "Zona de peligro", entries: [{ item: DELETE_BUSINESS_ITEM, description: "Borrarlo con todo lo suyo" }] },
 ];
 
 /** Integraciones: conectar el asistente con otras herramientas (la API del asistente, sus claves y, pronto, las IAs por MCP). */

@@ -629,6 +629,22 @@
   background: var(--color-danger-soft);
 }
 
+/* Lo que abre una acción que no se deshace: con borde, para que se vea como botón. */
+.button--danger-outline {
+  border-color: rgba(192, 38, 45, 0.4);
+}
+
+/* La confirmación final de algo que no se deshace (eliminar un negocio o un chat). */
+.button--danger-solid,
+.button--danger-solid:hover {
+  background: var(--color-danger);
+  color: #fff;
+}
+
+.button--danger-solid:hover:not(:disabled) {
+  background: #a51f25;
+}
+
 .button--small {
   padding: 5px 11px;
   font-size: var(--text-xs);

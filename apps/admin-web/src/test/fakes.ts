@@ -166,7 +166,6 @@ export function createMemoryBackend(seed: BusinessDocument[] = []): MemoryBacken
       return [...businesses.values()].map(summary);
     },
     canImportExisting: true,
-    canRemove: true,
     create: async ({ slug, name, template }) => {
       check("create");
       if (businesses.has(slug)) throw new PersistenceError("duplicate", { message: "Ya existe un negocio con ese identificador.", problems: [{ path: "slug", message: "Ya existe un negocio con ese identificador." }] });
@@ -183,9 +182,14 @@ export function createMemoryBackend(seed: BusinessDocument[] = []): MemoryBacken
       check("templates");
       return structuredClone(TEMPLATES);
     },
-    remove: async (slug) => {
+    remove: async (slug, confirmation) => {
       check("remove");
-      find(slug);
+      const business = find(slug);
+      const typed = confirmation.trim().replace(/\s+/g, " ").toLowerCase();
+      if (typed !== business.name.toLowerCase() && typed !== slug) {
+        const message = `Escribe el nombre del negocio, «${business.name}», para confirmar.`;
+        throw new PersistenceError("invalid", { message, problems: [{ path: "confirm", message }] });
+      }
       businesses.delete(slug);
     },
     importExisting: async () => {

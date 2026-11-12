@@ -147,6 +147,8 @@ class BusinessMembers(Protocol):
 
     def is_member(self, tenant_slug: str, user_id: str) -> bool: ...
 
+    def is_owner(self, tenant_slug: str, user_id: str) -> bool: ...
+
 
 @runtime_checkable
 class AccessTokenVerifier(Protocol):
@@ -218,6 +220,10 @@ class ContactMemory(Protocol):
 
     def forget(self, business_slug: str, contact_ref: str) -> None:
         """Lo olvida todo: si el cliente vuelve a escribir, el asistente empieza de cero. Si no puede, lanza la excepción."""
+        ...
+
+    def forget_business(self, business_slug: str) -> None:
+        """Al eliminar el negocio: lo que el motor tenga en memoria de sus clientes (lo guardado se borra con el negocio)."""
         ...
 
 

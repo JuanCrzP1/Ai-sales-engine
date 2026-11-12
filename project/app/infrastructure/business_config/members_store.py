@@ -24,3 +24,12 @@ class BusinessMembersStore:
         )
         with self._engine.connect() as conn:
             return conn.execute(query).first() is not None
+
+    def is_owner(self, tenant_slug: str, user_id: str) -> bool:
+        query = (
+            select(business_members.c.user_id)
+            .join(tenants, tenants.c.id == business_members.c.tenant_id)
+            .where(and_(tenants.c.slug == tenant_slug, business_members.c.user_id == user_id, business_members.c.role == "owner"))
+        )
+        with self._engine.connect() as conn:
+            return conn.execute(query).first() is not None

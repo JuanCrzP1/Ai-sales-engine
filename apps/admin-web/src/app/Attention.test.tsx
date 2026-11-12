@@ -127,7 +127,7 @@ describe("Mi cuenta → Notificaciones", () => {
 });
 
 describe("Configuración", () => {
-  it("solo tiene lo del negocio (el asistente y la facturación) y anuncia lo que viene", async () => {
+  it("solo tiene lo del negocio (el asistente, la facturación y eliminarlo) y anuncia lo que viene", async () => {
     window.history.pushState({}, "", `/negocios/${CAFE}/configuracion`);
     const user = userEvent.setup();
     render(<App services={createTestServices(createMemoryBackend([SAMPLE_DOCUMENT]))} />);
@@ -141,6 +141,7 @@ describe("Configuración", () => {
       "Atención humanaHorario del equipo y avisos",
       "Respuestas rápidasProntoMensajes guardados para responder rápido",
       "Pagos y suscripcionesProntoTu plan, pagos y facturas",
+      "Eliminar negocioBorrarlo con todo lo suyo",
     ]);
     await user.click(within(nav).getByRole("link", { name: /Respuestas rápidas/ }));
     expect(await screen.findByRole("heading", { level: 1, name: "Respuestas rápidas" })).toBeInTheDocument();

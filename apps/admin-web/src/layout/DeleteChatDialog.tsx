@@ -49,7 +49,7 @@ export function DeleteChatDialog({ conversationId, contactName, isTest = false, 
           <Button variant="ghost" onClick={onClose} disabled={busy}>
             Cancelar
           </Button>
-          <Button variant="danger" onClick={() => void confirm()} disabled={busy}>
+          <Button variant="danger" className="button--danger-solid" onClick={() => void confirm()} disabled={busy}>
             {busy ? "Eliminando…" : "Eliminar chat"}
           </Button>
         </div>

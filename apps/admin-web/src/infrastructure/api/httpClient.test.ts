@@ -74,10 +74,10 @@ describe("repositorios sobre la API", () => {
     expect(stored).toMatchObject({ latestVersion: 2, publishedVersion: null, version: { version: 2, status: "draft", createdAt: "x" } });
   });
 
-  it("eliminar envía la confirmación con el identificador del negocio", async () => {
+  it("eliminar envía el nombre que se escribió para confirmar", async () => {
     const mock = stubFetch(respond(204));
-    await createApiBusinessDirectory(createHttpClient()).remove("mi_negocio");
-    expect(mock.mock.calls[0]?.[0]).toBe("/api/businesses/mi_negocio?confirm=mi_negocio");
+    await createApiBusinessDirectory(createHttpClient()).remove("mi_negocio", "Mi Negocio & Café");
+    expect(mock.mock.calls[0]?.[0]).toBe("/api/businesses/mi_negocio?confirm=Mi%20Negocio%20%26%20Caf%C3%A9");
     expect(mock.mock.calls[0]?.[1]?.method).toBe("DELETE");
   });
 
@@ -125,9 +125,9 @@ describe("cliente de la API en la nube", () => {
     expect(persistenceErrorMessage(error)).toBe("Hiciste muchas solicitudes seguidas. Espera 40 segundos y vuelve a intentarlo.");
   });
 
-  it("los negocios de la nube no se importan de los ejemplos ni se eliminan desde el panel", () => {
+  it("los negocios de la nube no se importan de los ejemplos", () => {
     const directory = createApiBusinessDirectory(createHttpClient(), { local: false });
-    expect([directory.canImportExisting, directory.canRemove]).toEqual([false, false]);
+    expect(directory.canImportExisting).toBe(false);
     expect(createApiBusinessDirectory(createHttpClient()).canImportExisting).toBe(true);
   });
 });

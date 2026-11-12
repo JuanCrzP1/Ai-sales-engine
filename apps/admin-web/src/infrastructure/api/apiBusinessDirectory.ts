@@ -24,11 +24,10 @@ export function toSummary(payload: ApiSummary): BusinessSummary {
 export function createApiBusinessDirectory(http: HttpClient, { local = true }: { local?: boolean } = {}): BusinessDirectory {
   return {
     canImportExisting: local,
-    canRemove: local,
     list: async () => (await http.get<ApiSummary[]>("/businesses")).map(toSummary),
     create: async ({ slug, name, template }) => toSummary(await http.post<ApiSummary>("/businesses", template ? { slug, name, template } : { slug, name })),
     templates: () => http.get<BusinessTemplate[]>("/business-templates"),
-    remove: (slug) => http.delete(`/businesses/${encodeURIComponent(slug)}?confirm=${encodeURIComponent(slug)}`),
+    remove: (slug, confirmation) => http.delete(`/businesses/${encodeURIComponent(slug)}?confirm=${encodeURIComponent(confirmation)}`),
     importExisting: () => http.post("/businesses/import"),
     contractSchema: () => http.get<ContractSchema>("/contract"),
   };

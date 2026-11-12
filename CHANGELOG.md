@@ -5,6 +5,13 @@ está en el historial de git y en `docs/plan-v1.md`.
 
 ## 12 de noviembre de 2026
 
+**Eliminar un negocio, también en la nube**
+- Nuevo **Configuración → Eliminar negocio** (y «Eliminar» en Tus negocios). Te dice qué se pierde y pide escribir el nombre del
+  negocio. Solo el dueño puede hacerlo.
+- Se borra todo lo suyo: configuración y versiones, datos de pago, conversaciones con fotos y audios, clientes, ventas, reportes,
+  claves de API y ajustes. WhatsApp se desconecta y el asistente olvida a sus clientes.
+- Si WhatsApp no se puede desconectar, no se borra nada y te avisa para intentarlo de nuevo.
+
 **Conecta Claude y ChatGPT sin copiar claves**
 - En Claude (web y app) o ChatGPT agregas un conector personalizado con la dirección del servidor. Se abre la plataforma, inicias
   sesión, eliges a qué negocios entra y qué puede hacer, y pulsas «Autorizar».

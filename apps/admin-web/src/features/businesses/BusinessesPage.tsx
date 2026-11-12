@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { Button } from "../../components/ui/Button";
 import { Alert, EmptyState } from "../../components/ui/Feedback";
 import { Card, PageHeader } from "../../components/ui/Layout";
 import type { BusinessSummary } from "../../domain/config/types";
+import { DeleteBusinessDialog } from "../../layout/DeleteBusinessDialog";
 import { StandalonePage } from "../../layout/StandalonePage";
 import { useAuth } from "../../state/auth/useAuth";
 import { persistenceErrorMessage, useBusinessDirectory } from "../../state/directoryContext";
@@ -11,14 +13,18 @@ import { CreateBusinessForm } from "./CreateBusinessForm";
 
 type ListState = { status: "loading" } | { status: "error"; message: string } | { status: "ready"; businesses: BusinessSummary[] };
 
-/** Entrada del panel: los negocios que administra, para abrir uno, crear otro o importar los de ejemplo. */
+/** Entrada del panel: los negocios que administra, para abrir uno, crear otro, eliminarlo o importar los de ejemplo. */
 export function BusinessesPage() {
   const directory = useBusinessDirectory();
   // Con cuentas (en la nube) no aplica el aviso de "solo en este equipo".
   const { verifiesCredentials: withAccounts } = useAuth();
   const [list, setList] = useState<ListState>({ status: "loading" });
   const [creating, setCreating] = useState(false);
-  const [notice, setNotice] = useState<{ tone: "success" | "danger"; text: string } | null>(null);
+  // Al volver de Configuración → Eliminar negocio, el aviso de que se eliminó.
+  const deletedName = (useLocation().state as { deleted?: unknown } | null)?.deleted;
+  const [notice, setNotice] = useState<{ tone: "success" | "danger"; text: string } | null>(
+    typeof deletedName === "string" ? { tone: "success", text: `Se eliminó «${deletedName}» con todo lo suyo.` } : null,
+  );
   const [importing, setImporting] = useState(false);
 
   const refresh = useCallback(() => {
@@ -45,16 +51,7 @@ export function BusinessesPage() {
     }
   };
 
-  const remove = async (business: BusinessSummary) => {
-    setNotice(null);
-    try {
-      await directory.remove(business.slug);
-      setNotice({ tone: "success", text: `Se eliminó "${business.name}".` });
-      refresh();
-    } catch (error) {
-      setNotice({ tone: "danger", text: persistenceErrorMessage(error) });
-    }
-  };
+  const [deleting, setDeleting] = useState<BusinessSummary | null>(null);
 
   return (
     <StandalonePage>
@@ -104,7 +101,13 @@ export function BusinessesPage() {
               }
             />
           ) : (
-            <BusinessList businesses={list.businesses} onRemove={directory.canRemove ? (business) => void remove(business) : undefined} />
+            <BusinessList
+              businesses={list.businesses}
+              onRemove={(business) => {
+                setNotice(null);
+                setDeleting(business);
+              }}
+            />
           )}
         </Card>
       )}
@@ -117,6 +120,17 @@ export function BusinessesPage() {
             </Button>
           </div>
         </Card>
+      )}
+      {deleting && (
+        <DeleteBusinessDialog
+          business={deleting}
+          onClose={() => setDeleting(null)}
+          onDeleted={() => {
+            setNotice({ tone: "success", text: `Se eliminó «${deleting.name}» con todo lo suyo.` });
+            setDeleting(null);
+            refresh();
+          }}
+        />
       )}
     </StandalonePage>
   );

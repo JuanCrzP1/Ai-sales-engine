@@ -136,10 +136,9 @@ class BusinessConfigRepository:
         return [_summary(tenant, states[tenant.id], documents.get(tenant.id)) for tenant in registered]
 
     def delete_business(self, tenant_slug: str) -> None:
-        """Borra el negocio; sus versiones, datos de pago y ajustes caen en cascada. Solo en la base local."""
-        if self._engine.dialect.name != "sqlite":
-            # En PostgreSQL `tenants` es la tabla del motor: borrar aquí arrastraría sus datos.
-            raise BusinessConfigError(f"{tenant_slug}: eliminar negocios solo está disponible en la base local")
+        """Borra el negocio y TODO lo suyo en una transacción: cada tabla que depende de `tenants` (las del panel y, en PostgreSQL,
+        las del motor: `project/docs/postgresql_schema.sql`) lo hace con `ON DELETE CASCADE`. Si alguna no pudiera, falla entero y
+        no se borra nada. Lo que vive fuera de la base (WhatsApp, la memoria en RAM) lo cierra antes `BusinessDeletionService`."""
         with self._engine.begin() as conn:
             conn.execute(delete(tenants).where(tenants.c.id == tenant_of(conn, tenant_slug).id))
 

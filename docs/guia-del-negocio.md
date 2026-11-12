@@ -179,12 +179,25 @@ En el chat abierto (ícono de la papelera) o en **Clientes**. Antes de borrar, e
 
 No se puede deshacer.
 
+### Eliminar un negocio completo
+
+En **Configuración → Eliminar negocio** (o en **Tus negocios**, con «Eliminar»). Solo el dueño, y escribiendo el nombre del negocio
+para confirmar. Se borra para siempre:
+
+- la configuración del asistente con todas sus versiones, y los datos de pago;
+- las conversaciones con sus fotos y audios, los clientes, las ventas y los reportes;
+- WhatsApp se desconecta y el asistente deja de responder a tus clientes;
+- las claves de API de ese negocio y sus ajustes de atención humana e inteligencia artificial.
+
+Si no se puede desconectar WhatsApp, no se borra nada y te lo dice: inténtalo de nuevo en unos minutos. ¿Solo quieres pausarlo?
+Desconecta WhatsApp en **Canales**: conservas todo.
+
 ## 12. Configuración y Mi cuenta
 
 Hay dos lugares, como en las plataformas grandes:
 
 - **Configuración** (abajo en el menú de la izquierda) es **del negocio**: la inteligencia artificial de tu asistente, la atención
-  humana y, pronto, las respuestas rápidas y tu plan. Si tienes dos negocios, cada uno tiene la suya.
+  humana, eliminar el negocio y, pronto, las respuestas rápidas y tu plan. Si tienes dos negocios, cada uno tiene la suya.
 - **Mi cuenta** (el menú de tu foto) es **tuya**, igual en todos tus negocios:
   - **Mi perfil:** tu foto y tu nombre.
   - **Seguridad:** cambiar tu contraseña (te pide la actual y, si quieres, cierra tu sesión en los demás equipos) y cerrar la sesión

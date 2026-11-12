@@ -14,10 +14,12 @@ from app.domain.business_config.errors import (
     AssistantUnavailableError,
     BusinessAlreadyExistsError,
     BusinessConfigError,
+    BusinessDeletionBlockedError,
     BusinessNotFoundError,
     ConversationNotFoundError,
     InvalidDocumentError,
     InvalidFieldsError,
+    NotOwnerError,
     PaymentDataUnavailableError,
     PublicationError,
     SecretResolutionError,
@@ -82,6 +84,10 @@ def _api_error(request: Request, exc: BusinessConfigError) -> ApiError:
         return ApiError(status.HTTP_503_SERVICE_UNAVAILABLE, _reason(request, exc), code="unavailable")
     if isinstance(exc, ConversationNotFoundError):
         return ApiError(status.HTTP_404_NOT_FOUND, "Esa conversación no existe.", code="not_found")
+    if isinstance(exc, NotOwnerError):
+        return ApiError(status.HTTP_403_FORBIDDEN, str(exc), code="forbidden")
+    if isinstance(exc, BusinessDeletionBlockedError):
+        return ApiError(status.HTTP_409_CONFLICT, str(exc), code="conflict")
     if isinstance(exc, BusinessNotFoundError):
         return ApiError(status.HTTP_404_NOT_FOUND, "Ese negocio no existe.", code="not_found")
     if isinstance(exc, BusinessAlreadyExistsError):

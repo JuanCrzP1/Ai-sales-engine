@@ -75,6 +75,17 @@ class MemoryRepository:
         """Olvida todo lo de ese cliente (al eliminar su chat en el panel): si vuelve a escribir, empieza de cero."""
         self.reset_conversation(tenant_slug=tenant_slug, user_id=user_id)
 
+    def forget_business(self, *, tenant_slug: str) -> None:
+        """Olvida lo que esta instancia tiene en memoria de todos los clientes de un negocio (al eliminarlo): si después se crea
+        otro con el mismo identificador, empieza de cero. Lo guardado en la base se borra con el negocio."""
+        normalized = str(tenant_slug or "").strip().lower()
+        if not normalized:
+            return
+        for store in vars(self).values():
+            if isinstance(store, dict):
+                for key in [key for key in store if isinstance(key, tuple) and key and key[0] == normalized]:
+                    store.pop(key, None)
+
     def save_message(self, *, tenant_slug: str, user_id: str, message_text: str, role: str = "user") -> None:
         # Hoy: in-memory. Manana: persistencia en DB por tenant/user.
         key = self._key(tenant_slug=tenant_slug, user_id=user_id)

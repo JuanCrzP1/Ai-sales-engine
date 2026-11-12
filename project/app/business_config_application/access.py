@@ -10,7 +10,7 @@ from typing import Any
 from app.business_config_application.ports import BusinessMembers
 from app.business_config_application.service import BusinessConfigService
 from app.domain.business_config.access import Principal
-from app.domain.business_config.errors import BusinessNotFoundError
+from app.domain.business_config.errors import BusinessNotFoundError, NotOwnerError
 from app.domain.business_config.records import BusinessSummary
 
 
@@ -29,6 +29,14 @@ class BusinessAccess:
             return
         if self._members is None or not self._members.is_member(tenant_slug, principal.user_id):
             raise BusinessNotFoundError(f"{tenant_slug}: no existe o no pertenece a este usuario")
+
+    def require_owner(self, principal: Principal, tenant_slug: str) -> None:
+        """Como `require`, y además debe ser su dueño (por ejemplo, para eliminarlo)."""
+        self.require(principal, tenant_slug)
+        if self._all_access(principal) or self._members is None:
+            return
+        if not self._members.is_owner(tenant_slug, principal.user_id):
+            raise NotOwnerError("Solo el dueño del negocio puede hacer esto.")
 
     def list_for(self, principal: Principal) -> list[BusinessSummary]:
         businesses = self._configs.list_businesses()

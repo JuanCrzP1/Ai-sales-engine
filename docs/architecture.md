@@ -331,6 +331,26 @@ panel (papelera del chat o de Clientes)
   ninguna siga usando uno borrado.
 - Los chats de prueba no tienen memoria en el motor: solo se borra la conversación.
 
+## Eliminar Un Negocio
+
+`DELETE /api/businesses/{slug}?confirm=<nombre>` (Configuración → Eliminar negocio, o Tus negocios):
+
+```text
+panel (DeleteBusinessDialog)
+-> project/app/admin_api/routes.py
+-> project/app/business_config_application/business_deletion.py   BusinessDeletionService.delete
+   1. BusinessAccess.require_owner + el nombre escrito (sin distinguir mayúsculas ni espacios de más)
+   2. WhatsAppChannelService.disconnect: cierra la sesión y borra la instancia en uazapi (si falla: 409 y no se borra nada)
+   3. BusinessConfigRepository.delete_business: DELETE de `tenants`; todo lo demás cae en cascada en una transacción
+   4. EngineContactMemory.forget_business: la RAM del motor sobre los clientes de ese negocio (si falla, se registra)
+```
+
+- **Todo cae en cascada:** cada tabla con `tenant_id` lo declara con `ON DELETE CASCADE`, en las migraciones del panel y en el esquema
+  del motor (`project/docs/postgresql_schema.sql`: `clients`, `conversation_messages`, `conversation_memory`...). Si alguna no
+  pudiera, la transacción falla entera. `tests/test_business_deletion.py` comprueba que no queda ni una fila en ninguna tabla.
+- **Claves de la cuenta:** las de «algunos» pierden ese negocio; las de un solo negocio se borran con él.
+- **Los agentes por MCP no pueden eliminar negocios**, a propósito.
+
 ## Atención Humana
 
 Qué pasa cuando un chat necesita a una persona. Lo decide `domain/business_config/attention.py` (puro: sin base, sin red y con la

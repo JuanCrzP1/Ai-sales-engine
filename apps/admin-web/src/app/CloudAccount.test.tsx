@@ -7,10 +7,10 @@ import { App } from "./App";
 
 afterEach(cleanup);
 
-/** El panel en la nube: con cuentas, sin importar los negocios de ejemplo ni eliminar negocios. */
+/** El panel en la nube: con cuentas y sin importar los negocios de ejemplo. */
 function cloudServices() {
   const backend = createMemoryBackend([SAMPLE_DOCUMENT]);
-  return createTestServices(backend, { auth: createVerifyingAuthService(), directory: { ...backend.directory, canImportExisting: false, canRemove: false } });
+  return createTestServices(backend, { auth: createVerifyingAuthService(), directory: { ...backend.directory, canImportExisting: false } });
 }
 
 describe("panel en la nube", () => {
