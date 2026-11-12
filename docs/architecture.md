@@ -331,6 +331,37 @@ panel (papelera del chat o de Clientes)
   ninguna siga usando uno borrado.
 - Los chats de prueba no tienen memoria en el motor: solo se borra la conversación.
 
+## Atención Humana
+
+Qué pasa cuando un chat necesita a una persona. Lo decide `domain/business_config/attention.py` (puro: sin base, sin red y con la
+hora como argumento), con los ajustes de Ajustes → Atención humana (`business_attention_settings`, se aplican sin publicar) y lo
+publicado del negocio (el horario de «Mi negocio» y los mensajes `after_hours` y `ai_resumed`, compilados en
+`config.attention_messages`).
+
+1. **El traspaso** (`application/channels/whatsapp_inbound.py`, `_hand_off`). Si el asistente marca `handoff`:
+   - dentro del horario del equipo, la IA se pausa, el cliente empieza a esperar (`conversations.customer_waiting_since`) y recibe
+     «Una persona de nuestro equipo te responderá en unos 10 minutos» (o nada, si el negocio lo eligió);
+   - fuera del horario, el chat también espera a una persona, pero la IA no se pausa: le dice el horario y cuándo lo atienden (o el
+     mensaje del negocio) y sigue ayudando.
+   En los dos casos se crea un aviso en la campana (uno por espera) y `TeamAlerts` lo envía.
+2. **Los avisos** (`business_config_application/attention.py`, `TeamAlerts`): por correo con Resend
+   (`infrastructure/notifications/resend_email.py`, solo cuando un chat pasa a una persona) y como notificación Web Push a todos los
+   dispositivos de los dueños (`infrastructure/notifications/web_push.py`: cifrado `aes128gcm` y firma VAPID). Cada canal se
+   reserva en `notification_deliveries` antes de enviar: aunque dos procesos lo intenten, sale una vez. Nunca lanza.
+3. **La espera.** Un mensaje del cliente con la IA pausada empieza la espera si no había una; la respuesta del equipo (desde el
+   panel o desde el celular del negocio) y «Ya lo atendí» la terminan.
+4. **La IA retoma** (`application/attention/resume_sweep.py`). La revisión busca chats pausados con un cliente esperando desde antes
+   del tiempo que eligió su negocio, los reserva de forma atómica (`ConversationStore.resume_waiting`: una sola vez), envía la
+   disculpa, responde lo que el cliente escribió mientras esperaba y avisa. El chat sigue esperando a una persona, y la IA no se
+   vuelve a pausar sola (`ai_resumed_at`) hasta que alguien del equipo lo atienda. La corren Vercel cada 15 minutos
+   (`project/vercel.json` → `/api/v1/internal/attention/run`, con `CRON_SECRET`), el tráfico del motor y del panel (una vez por
+   minuto por proceso) y cada mensaje que llega a un chat pausado (una vez cada 5 s).
+5. **Respuestas desde el celular.** El webhook ya no excluye lo que escribe el negocio desde su teléfono: `uazapi.parse_own_message`
+   lo lee, queda en la bandeja como respuesta del equipo (sin repetirse) y la IA se pausa en ese chat. Lo que envía la API sigue
+   excluido.
+
+Lo prueban `tests/test_human_attention.py` y `tests/test_whatsapp_qr_channel.py`.
+
 ## Cómo Afecta El Tenant La Respuesta
 
 El tenant cambia directamente:

@@ -31,6 +31,8 @@ interface ApiConversation {
   unread_count?: number;
   assistant_typing?: boolean;
   can_reply?: boolean;
+  customer_waiting_since?: string | null;
+  ai_resumed_at?: string | null;
 }
 
 interface ApiMessage {
@@ -57,7 +59,7 @@ interface ApiNotification {
   id: string;
   business: { slug: string; name: string };
   conversation_id: string | null;
-  kind: "handoff";
+  kind: "handoff" | "ai_resumed";
   title: string;
   body: string | null;
   created_at: string;
@@ -92,6 +94,8 @@ const toConversation = (item: ApiConversation): ConversationSummary => ({
   unreadCount: item.unread_count ?? 0,
   assistantTyping: item.assistant_typing ?? false,
   canReply: item.can_reply ?? false,
+  customerWaitingSince: item.customer_waiting_since ?? null,
+  aiResumedAt: item.ai_resumed_at ?? null,
 });
 
 const toMessage = (item: ApiMessage): ChatMessage => ({

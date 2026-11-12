@@ -127,8 +127,13 @@ def main() -> int:
     from app.infrastructure.channels.platform import uazapi_platform
     from app.infrastructure.channels.public_url import engine_public_url, webhook_base
     from app.infrastructure.channels.uazapi import UazapiClient
+    from app.infrastructure.business_config.attention_store import AttentionStore
+    from app.infrastructure.business_config.push_store import PushStore
+    from app.infrastructure.notifications.resend_email import ResendEmailSender
+    from app.infrastructure.notifications.web_push import WebPushSender
 
     platform = uazapi_platform()
+    push_store = PushStore(engine)
     if platform is None:
         print("[aviso] Sin UAZAPI_BASE_URL y UAZAPI_ADMIN_TOKEN en el .env: Canales dirá que WhatsApp por código QR no está disponible.")
     elif engine_public_url() is None:
@@ -145,6 +150,10 @@ def main() -> int:
         ai_usage=AIUsageStore(engine),
         examples=import_examples,
         contact_memory=_contact_memory(),
+        attention=AttentionStore(engine),
+        push_storage=push_store,
+        email=ResendEmailSender(),
+        push=WebPushSender(push_store.vapid_keys),
     )
     uvicorn.run(app, host=HOST, port=port, log_level="warning")
     return 0

@@ -12,6 +12,7 @@ from app.business_config_application.assistant_lab import PlaygroundReply
 from app.business_config_application.channels import WhatsAppView
 from app.business_config_application.service import ConfigReview, EditableConfig
 from app.domain.business_config.ai_settings import AISettings, KeyCheck
+from app.domain.business_config.attention import REPLY_MINUTES, RESUME_MINUTES, TIMEZONES
 from app.domain.business_config.ai_models import ModelCatalog
 from app.domain.business_config.ai_usage import AIUsageSummary
 from app.domain.business_config.conversations import MAX_REPLY_CHARS, REPLYABLE_CHANNELS, BusinessActivity, ChatMessage, ConversationSummary, Notification
@@ -192,6 +193,8 @@ def conversation_payload(summary: ConversationSummary) -> dict[str, Any]:
         "assistant_typing": summary.assistant_typing,
         "can_reply": summary.channel in REPLYABLE_CHANNELS,
         "stage": summary.stage,
+        "customer_waiting_since": _iso(summary.customer_waiting_since),
+        "ai_resumed_at": _iso(summary.ai_resumed_at),
     }
 
 
@@ -250,3 +253,35 @@ class MarkNotificationsRead(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
     ids: list[str] | None = Field(default=None, max_length=100)
+
+
+# ---------------------------------------------------------------------------------------------------------- atención humana
+
+
+def _hours(hours) -> list[dict[str, Any]]:
+    return [{"days": list(item.days), "opens": item.opens, "closes": item.closes} for item in hours]
+
+
+def attention_payload(view) -> dict[str, Any]:
+    """Los ajustes de atención humana del negocio, con lo que el panel necesita para mostrarlos con honestidad."""
+    settings = view.settings
+    return {
+        "hours_mode": settings.hours_mode,
+        "team_hours": _hours(settings.team_hours),
+        "timezone": settings.timezone,
+        "reply_minutes": settings.reply_minutes,
+        "resume_after_minutes": settings.resume_after_minutes,
+        "email_enabled": settings.email_enabled,
+        "email_to": settings.email_to,
+        "updated_at": _iso(settings.updated_at),
+        "business_hours": _hours(view.business_hours),
+        "account_emails": view.account_emails,
+        "email_available": view.email_available,
+        "team_available_now": view.team_available_now,
+        "next_opening": _iso(view.next_opening),
+        "options": {
+            "timezones": [{"id": key, "label": label} for key, label in TIMEZONES.items()],
+            "reply_minutes": list(REPLY_MINUTES),
+            "resume_after_minutes": list(RESUME_MINUTES),
+        },
+    }

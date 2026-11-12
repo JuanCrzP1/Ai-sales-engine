@@ -5,6 +5,11 @@ Cada mensaje de un canal se guarda apenas llega o sale (`append`), con su tipo, 
 repetido no se guarda dos veces (índice único por conversación). Cuando la conversación pasa a una persona, queda esperando a alguien
 del equipo, la IA se pausa y se crea un aviso en `notifications`, en la misma transacción. Mientras siga esperando no se crean más
 avisos: el equipo recibe uno por cada espera. Todo cambio anota `updated_at`, así el panel pide solo lo que cambió.
+
+Atención humana (migración 0011): mientras la IA está pausada, `customer_waiting_since` dice desde cuándo el cliente espera sin
+respuesta. Lo borra la respuesta del equipo, «Ya lo atendí» o la IA al retomar. La IA retoma un chat una sola vez por espera aunque
+dos procesos lo intenten a la vez (`resume_waiting`), y después de retomarlo no se vuelve a pausar sola hasta que alguien del equipo
+lo atienda: así un cliente que insiste en hablar con una persona no queda en pausa cada media hora.
 """
 from __future__ import annotations
 
@@ -26,6 +31,7 @@ from app.domain.business_config.conversations import (
     STATUSES,
     AppendResult,
     BusinessActivity,
+    WaitingChat,
     ChatMessage,
     ConversationSummary,
     ConversationTarget,
@@ -64,6 +70,8 @@ _SUMMARY = (
     conversations.c.assistant_typing_until,
     conversations.c.updated_at,
     conversations.c.stage,
+    conversations.c.customer_waiting_since,
+    conversations.c.ai_resumed_at,
 )
 
 # El hilo sin el contenido de los archivos: solo sus datos.
@@ -116,6 +124,8 @@ def _summary(row: Any, now: datetime | None = None) -> ConversationSummary:
         assistant_typing=bool(typing_until and typing_until > (now or _now())),
         updated_at=_utc(row.updated_at),
         stage=row.stage or "new",
+        customer_waiting_since=_utc(row.customer_waiting_since),
+        ai_resumed_at=_utc(row.ai_resumed_at),
     )
 
 
@@ -279,6 +289,15 @@ class ConversationStore:
         from_customer = sum(1 for message in added if message.author == "customer")
         if from_customer:
             changes["unread_count"] = conversations.c.unread_count + from_customer
+            # Con la IA pausada, el cliente empieza a esperar a una persona desde su primer mensaje sin respuesta.
+            state = conn.execute(
+                select(conversations.c.ai_paused, conversations.c.customer_waiting_since).where(conversations.c.id == conversation_id)
+            ).first()
+            if state is not None and state.ai_paused and state.customer_waiting_since is None:
+                changes["customer_waiting_since"] = now
+        if any(message.author == "agent" for message in added):
+            # Alguien del equipo respondió: el cliente ya no espera y el chat vuelve a ser del equipo.
+            changes.update(customer_waiting_since=None, ai_resumed_at=None)
         # Lo que reconoció el asistente hace avanzar la etapa del cliente (nunca retrocede).
         reached = [stage for message in added if message.author == "assistant" for stage in [stage_for_intent(message.intent)] if stage]
         if reached:
@@ -347,39 +366,60 @@ class ConversationStore:
         """El asistente está «escribiendo…» hasta `until`; None lo apaga."""
         self._update(conversation_id, assistant_typing_until=until)
 
-    def request_handoff(self, conversation_id: str, reason: str, detail: str | None = None) -> None:
-        """La conversación pasa a una persona: espera al equipo, la IA se pausa y, si no estaba esperando ya, se avisa al equipo."""
+    def request_handoff(self, conversation_id: str, reason: str, detail: str | None = None, *, pause_ai: bool = True) -> str | None:
+        """La conversación pasa a una persona: espera al equipo y, si no estaba esperando ya, se avisa al equipo. Con `pause_ai`
+        (hay alguien del equipo en su horario) la IA se pausa y el cliente empieza a esperar; sin él (fuera del horario) la IA sigue
+        ayudando mientras tanto. Devuelve el id del aviso nuevo, o None si ya estaba esperando."""
         with self._engine.begin() as conn:
-            self._handoff(conn, self._key(conversation_id), reason, detail, _now())
+            return self._handoff(conn, self._key(conversation_id), reason, detail, _now(), pause_ai=pause_ai)
 
-    def _handoff(self, conn: Connection, conversation_id: uuid.UUID, reason: str, detail: str | None, now: datetime) -> None:
+    def _handoff(
+        self, conn: Connection, conversation_id: uuid.UUID, reason: str, detail: str | None, now: datetime, *, pause_ai: bool = True
+    ) -> str | None:
         reason = reason if reason in HANDOFF_REASONS else "assistant"
         row = conn.execute(
-            select(conversations.c.tenant_id, conversations.c.channel, conversations.c.contact_name, conversations.c.needs_human, conversations.c.stage)
-            .where(conversations.c.id == conversation_id)
+            select(
+                conversations.c.tenant_id, conversations.c.channel, conversations.c.contact_name, conversations.c.needs_human,
+                conversations.c.stage, conversations.c.ai_paused, conversations.c.customer_waiting_since, conversations.c.ai_resumed_at,
+            ).where(conversations.c.id == conversation_id)
         ).first()
         if row is None:
             raise ConversationNotFoundError("la conversación no existe")
-        # El área de pruebas no tiene a nadie del otro lado: se marca, pero la IA sigue respondiendo.
-        changes: dict[str, Any] = {"handoff_reason": reason, "updated_at": now, "ai_paused": row.channel != "prueba"}
+        # El área de pruebas no tiene a nadie del otro lado: se marca, pero la IA sigue respondiendo. Después de que la IA retomó sola
+        # un chat que nadie atendió, tampoco se vuelve a pausar hasta que alguien del equipo lo atienda.
+        pause = pause_ai and row.channel != "prueba" and row.ai_resumed_at is None
+        changes: dict[str, Any] = {"handoff_reason": reason, "updated_at": now}
+        if pause:
+            changes["ai_paused"] = True
+            if row.customer_waiting_since is None:
+                changes["customer_waiting_since"] = now
         if reason == "payment_review" and advanced(row.stage, "payment"):
             changes["stage"] = "payment"
+        notification_id = None
         if not row.needs_human:
             changes.update(needs_human=True, handoff_requested_at=now)
+            notification_id = uuid.uuid4()
             conn.execute(
                 insert(notifications).values(
-                    id=uuid.uuid4(), tenant_id=row.tenant_id, conversation_id=conversation_id, kind="handoff",
+                    id=notification_id, tenant_id=row.tenant_id, conversation_id=conversation_id, kind="handoff",
                     title=handoff_title(reason, row.channel, row.contact_name), body=preview(detail) if detail else None, created_at=now,
                 )
             )
         conn.execute(update(conversations).where(conversations.c.id == conversation_id).values(**changes))
+        return str(notification_id) if notification_id is not None else None
 
     def set_ai_paused(self, conversation_id: str, paused: bool) -> None:
-        """Pausa o reanuda la IA en la conversación. Al reanudarla, la conversación deja de esperar a una persona."""
-        changes: dict[str, Any] = {"ai_paused": paused}
+        """Pausa o reanuda la IA en la conversación. Al reanudarla, la conversación deja de esperar a una persona. Pausarla a mano es
+        tomar el chat: la IA ya no lo considera retomado por ella."""
+        changes: dict[str, Any] = {"ai_paused": paused, "ai_resumed_at": None}
         if not paused:
-            changes.update(needs_human=False, handoff_reason=None)
+            changes.update(needs_human=False, handoff_reason=None, customer_waiting_since=None)
         self._update(conversation_id, **changes)
+
+    def team_replied(self, conversation_id: str) -> None:
+        """Alguien del equipo respondió por fuera del panel (desde el celular del negocio): el chat es suyo, la IA se pausa y el
+        cliente deja de esperar."""
+        self._update(conversation_id, ai_paused=True, needs_human=False, customer_waiting_since=None, ai_resumed_at=None)
 
     def is_ai_paused(self, conversation_id: str) -> bool:
         with self._engine.connect() as conn:
@@ -389,8 +429,80 @@ class ConversationStore:
         return bool(paused)
 
     def resolve_handoff(self, conversation_id: str) -> None:
-        """Alguien del equipo ya atendió a quien pidió una persona: deja de esperar."""
-        self._update(conversation_id, needs_human=False)
+        """Alguien del equipo ya atendió a quien pidió una persona (desde aquí o desde su celular): el cliente deja de esperar."""
+        self._update(conversation_id, needs_human=False, customer_waiting_since=None, ai_resumed_at=None)
+
+    # ------------------------------------------------------------------ la IA retoma lo que nadie atendió
+
+    def waiting_chats(self, *, waiting_before: datetime, limit: int = 100) -> list[WaitingChat]:
+        """Los chats con la IA pausada y un cliente esperando desde antes de `waiting_before`, los más antiguos primero. Las pruebas
+        nunca esperan (su IA no se pausa)."""
+        query = (
+            select(conversations.c.id, tenants.c.slug, conversations.c.channel, conversations.c.contact_ref, conversations.c.customer_waiting_since)
+            .join(tenants, tenants.c.id == conversations.c.tenant_id)
+            .where(
+                conversations.c.ai_paused.is_(True),
+                conversations.c.customer_waiting_since.is_not(None),
+                conversations.c.customer_waiting_since <= waiting_before,
+                conversations.c.channel != "prueba",
+            )
+            .order_by(conversations.c.customer_waiting_since)
+            .limit(limit)
+        )
+        with self._engine.connect() as conn:
+            return [WaitingChat(str(row.id), row.slug, row.channel, row.contact_ref, _utc(row.customer_waiting_since)) for row in conn.execute(query)]
+
+    def resume_waiting(self, conversation_id: str, *, waiting_before: datetime, minutes: int) -> str | None:
+        """La IA retoma el chat si su cliente sigue esperando desde antes de `waiting_before`. Una sola vez: si otro proceso ya lo
+        retomó o alguien del equipo respondió, no hace nada y devuelve None. Si lo retoma, avisa al equipo y devuelve el id del aviso.
+        El chat sigue esperando a una persona (`needs_human`): la IA solo atiende mientras tanto."""
+        key, now = self._key(conversation_id), _now()
+        with self._engine.begin() as conn:
+            claimed = conn.execute(
+                update(conversations)
+                .where(
+                    conversations.c.id == key,
+                    conversations.c.ai_paused.is_(True),
+                    conversations.c.customer_waiting_since.is_not(None),
+                    conversations.c.customer_waiting_since <= waiting_before,
+                )
+                .values(ai_paused=False, customer_waiting_since=None, ai_resumed_at=now, updated_at=now)
+            ).rowcount
+            if claimed != 1:
+                return None
+            row = conn.execute(select(conversations.c.tenant_id, conversations.c.contact_name).where(conversations.c.id == key)).one()
+            notification_id = uuid.uuid4()
+            conn.execute(
+                insert(notifications).values(
+                    id=notification_id, tenant_id=row.tenant_id, conversation_id=key, kind="ai_resumed",
+                    title=f"La IA retomó el chat con {row.contact_name or 'un cliente'}",
+                    body=f"Nadie le respondió en {minutes} minutos. El chat sigue esperando a alguien del equipo.", created_at=now,
+                )
+            )
+        return str(notification_id)
+
+    def pending_customer_text(self, conversation_id: str, *, since: datetime) -> str:
+        """Lo que escribió el cliente desde `since` y nadie le respondió, en un solo texto (las fotos y audios, con lo que la IA
+        entendió de ellos). Es lo que lee el asistente al retomar el chat."""
+        query = (
+            select(conversation_entries.c.body, conversation_entries.c.kind, conversation_entries.c.media_note)
+            .where(
+                conversation_entries.c.conversation_id == self._key(conversation_id),
+                conversation_entries.c.author == "customer",
+                conversation_entries.c.created_at >= since,
+            )
+            .order_by(conversation_entries.c.created_at)
+        )
+        with self._engine.connect() as conn:
+            rows = conn.execute(query).all()
+        lines = []
+        for row in rows:
+            text = str(row.body or "").strip()
+            if row.kind != "text" and row.media_note:
+                text = f"{text} [{row.media_note}]".strip()
+            if text:
+                lines.append(text)
+        return "\n".join(lines)
 
     def mark_read(self, conversation_id: str) -> None:
         """Alguien del equipo abrió la conversación: no quedan mensajes sin leer."""

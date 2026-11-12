@@ -9,7 +9,7 @@ Todo lo demás cuelga de él y se filtra por su id:
 
 | Qué | Dónde |
 |---|---|
-| Dueño (cuenta de Neon Auth) | `business_members` |
+| Dueño (cuenta de Neon Auth) y su correo, para los avisos | `business_members` |
 | Configuración comercial, en versiones (borrador, publicada, archivadas) | `business_configs` |
 | Datos de pago (cifrados; el documento solo guarda referencias `secret_store:`) | `business_config_secrets` |
 | Ajustes técnicos del motor | `business_engine_settings` |
@@ -18,11 +18,15 @@ Todo lo demás cuelga de él y se filtra por su id:
 | Canal de WhatsApp por QR (token de la instancia, cifrado) | `business_channels` |
 | Conversaciones, mensajes y archivos | `conversations`, `conversation_entries`, `conversation_media` |
 | Ventas | `sales` |
-| Avisos al equipo | `notifications` |
+| Avisos al equipo, y cómo salió cada uno por correo y notificación | `notifications`, `notification_deliveries` |
+| Atención humana: horario del equipo, espera del cliente, cuándo retoma la IA, correo de avisos | `business_attention_settings` |
 
 La memoria que el asistente guarda de cada cliente vive en las tablas del motor (`clients`, `conversation_messages`,
 `conversation_memory`), por negocio y número del cliente. Eliminar un chat desde el panel borra la conversación y también esa
 memoria (ver `architecture.md`, «Eliminar Un Chat»); las ventas se conservan.
+
+Las notificaciones son de cada persona, no de un negocio: `push_subscriptions` guarda los navegadores y celulares donde las activó, y
+le llegan las de todos sus negocios. Las claves con que la plataforma las firma están en `platform_keys`.
 
 Cada consulta del almacén parte de `tenancy.tenant_of(slug)` y solo alcanza las filas de ese negocio. Una cuenta que pide un
 negocio ajeno recibe lo mismo que si no existiera (404).

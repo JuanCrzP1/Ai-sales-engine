@@ -13,8 +13,8 @@ plan (sección 6).
 |---|---|---|---|
 | 1 | Eliminar chats y clientes, de la base y de la memoria del asistente; borrar las pruebas de una vez | — (nuevo) | **Hecha** (11 nov) |
 | 2 | Documentación profesional: README con capturas, guía del negocio, índice, cambios y documentos al día | — (nuevo) | **Hecha** (11 nov) |
-| 3 | Atención humana completa: horario del equipo, aviso por correo, la IA retoma sola si nadie atiende | Fase 4 (H3, H6 y la pausa con tiempo) | Siguiente |
-| 4 | Lanzamiento: monitoreo de errores, copias de seguridad probadas, correo transaccional, términos y política de datos, Vercel Pro | Fases 7 y 8 | Pendiente |
+| 3 | Atención humana completa: horario del equipo, lo que espera el cliente, avisos por correo y notificación, la IA retoma sola si nadie atiende | Fase 4 (H3, H6 y la pausa con tiempo) | **Hecha** (11 nov) |
+| 4 | Lanzamiento: monitoreo de errores, copias de seguridad probadas, correo transaccional, términos y política de datos, Vercel Pro | Fases 7 y 8 | Siguiente |
 | 5 | Retirar lo que queda del sistema anterior y partir los módulos grandes del motor | Fase 6 (resto) | Pendiente |
 | Al final | WhatsApp en un servidor de uazapi propio (hoy se usa el gratuito de pruebas, que puede borrar la instancia); después Telegram y la API oficial de Meta | Fase 5 (resto) | Mientras se construye, basta el de pruebas |
 
@@ -25,6 +25,21 @@ se conservan sin el enlace al chat. Si la memoria del motor no se puede borrar, 
 guarda cada instancia del motor en su caché vence en un minuto, para que ninguna siga usando uno borrado. Lo cubren
 `tests/test_conversation_deletion.py` y las pruebas del panel; el laboratorio de regresión (`exp_20261111_eliminar_chats`) dio
 motor sin diferencias, y una prueba de punta a punta con PostgreSQL real comprobó que no queda nada.
+
+**Fase 3, cómo quedó.** Ajustes → Atención humana (se aplica al instante) y dos mensajes nuevos en Asistente IA → Mensajes (se
+publican). Ver `docs/architecture.md`, «Atención Humana».
+- Horario del equipo: el de «Mi negocio», uno propio o siempre. Dentro de él, al pasar a una persona la IA se pausa y el cliente
+  sabe cuánto suele tardar el equipo; fuera de él la IA sigue ayudando y le dice el horario y cuándo lo atienden.
+- Avisos al equipo: la campana, un correo (Resend, una sola vez por aviso) y notificaciones en el navegador y el celular (Web Push con
+  claves VAPID que se crean solas). El panel se puede instalar en el celular; en iPhone las notificaciones solo llegan así.
+- La IA retoma sola un chat cuyo cliente esperó más de lo elegido (por defecto 30 minutos): pide disculpas, responde lo pendiente y
+  avisa. Una sola vez por espera y sin volver a pausarse hasta que alguien atienda. La revisa Vercel cada 15 minutos (plan Hobby),
+  el tráfico del motor y del panel, y cada mensaje que llega a un chat pausado.
+- Lo que el dueño escribe desde su celular en el chat de un cliente queda en la bandeja como respuesta del equipo y pausa la IA.
+- Migración `0011_human_attention.sql`. Lo cubren `tests/test_human_attention.py` (38), las pruebas del panel
+  (`src/app/Attention.test.tsx`) y el laboratorio `exp_20261111_atencion_humana` (motor sin diferencias en las respuestas).
+- Falta en la nube: `RESEND_API_KEY` y `EMAIL_FROM` (correo) y `CRON_SECRET` (revisión cada 15 minutos) en el proyecto del motor.
+  Sin ellas todo lo demás funciona y el panel dice que el correo no está activado.
 
 ## 1. Dónde estamos
 

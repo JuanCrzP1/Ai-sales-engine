@@ -1891,3 +1891,23 @@
   color: var(--color-text-muted);
   font-size: var(--text-sm);
 }
+
+/* La campana ofrece activar las notificaciones en este dispositivo. */
+.bell__push {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-accent-soft);
+  color: var(--color-text);
+  font-size: var(--text-sm);
+}
+
+.bell__push--error {
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
+}

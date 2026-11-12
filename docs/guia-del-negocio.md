@@ -21,7 +21,7 @@ En **Asistente IA** hay cinco secciones. Lo esencial está primero en cada una; 
 | **Productos** | Lo que vendes, con precios, disponibilidad y detalles (planes o catálogo) |
 | **Pagos** | Cómo te pagan (enlace, Nequi, Daviplata, cuenta, Bre-B), promociones, garantía y devoluciones |
 | **Cómo atiende** | El tono, qué tan largas son sus respuestas, preguntas frecuentes y tu forma de vender |
-| **Mensajes** | El saludo, qué dice al recibir un pago y qué dice si no puede responder |
+| **Mensajes** | El saludo, qué dice al recibir un pago, al pasar a una persona (también fuera de tu horario y si la IA retoma el chat) y qué dice si no puede responder |
 
 Cada cambio se **guarda** como borrador. Tus clientes no ven nada hasta que lo **publicas** (botón **Publicar**). Si publicaste
 algo por error, en **Publicar** puedes volver a la versión anterior.
@@ -65,10 +65,32 @@ enviado y leído. Las fotos y las notas de voz se guardan, y el asistente las en
 - **Responder tú:** escribe en el chat y toca **Enviar**. La IA se pausa en ese chat para no hablar encima de ti.
 - **Pausar o reanudar la IA:** con el botón de arriba del chat. Al reanudar, el asistente vuelve a responder.
 - **Cuando el cliente necesita a una persona:** si pide hablar con alguien, tiene un reclamo o reporta un pago, el chat pasa a tu
-  equipo, la IA se pausa y te llega un **aviso** a la campana. Atiéndelo y toca **Ya lo atendí**.
+  equipo y te avisamos (ver la sección 7). Atiéndelo y toca **Ya lo atendí**.
+- **Si respondes desde el celular del negocio**, tu mensaje también aparece en el chat y la IA se pausa para no hablar encima de ti.
 - **Filtros:** «Esperan a una persona», por canal, o los chats de **todos tus negocios** juntos.
 
-## 7. Clientes y ventas
+## 7. Atención humana: cuando un cliente necesita a una persona
+
+En **Ajustes → Atención humana** decides qué pasa. Se aplica al instante, sin publicar.
+
+- **Horario del equipo:** el mismo de «Mi negocio», otro solo para el equipo, o «siempre hay alguien».
+  - **Dentro del horario**, la IA se pausa en ese chat y el cliente recibe «Una persona de nuestro equipo te responderá en unos 10
+    minutos» (tú eliges el tiempo, o que no se le diga).
+  - **Fuera del horario**, la IA sigue ayudando y le dice al cliente tu horario y cuándo lo atienden. El chat queda marcado para que
+    tu equipo lo vea al llegar.
+- **Si nadie responde:** si el cliente espera más de lo que elegiste (por defecto 30 minutos), la IA retoma el chat, le pide
+  disculpas, responde lo que quedó pendiente y te avisa. Puedes elegir «Nunca».
+- **Avisos:** además de la campana, te llega un **correo** con lo que pidió el cliente y un botón para abrir el chat (a tu correo o
+  al que escribas; toca **Enviar correo de prueba** para verlo), y una **notificación** en el celular o el computador, como un
+  mensaje de WhatsApp. Actívalas en cada dispositivo con **Activar notificaciones** (también desde la campana).
+
+> En **iPhone y iPad** primero instala el panel: en Safari toca Compartir → **Agregar a pantalla de inicio** y ábrelo desde ese
+> ícono. Ahí podrás activar las notificaciones.
+
+Lo que dice el asistente en esos momentos lo escribes en **Asistente IA → Mensajes**: «Fuera del horario del equipo» y «Cuando la IA
+retoma el chat». Si los dejas vacíos, usa los suyos.
+
+## 8. Clientes y ventas
 
 En **Clientes** está cada persona que te escribió, con su **etapa**: Nuevo, Interesado, Listo para comprar, Pagó (por verificar) y
 Cliente. La etapa avanza sola con lo que el asistente reconoce en la conversación.
@@ -78,12 +100,12 @@ Cliente. La etapa avanza sola con lo que el asistente reconoce en la conversaci�
 - **Pagos por verificar:** en Ventas ves quién dice que ya pagó. Revisa el comprobante y registra la venta.
 - **Anular una venta:** queda marcada como anulada y deja de sumar.
 
-## 8. Reportes
+## 9. Reportes
 
 En **Reportes** eliges 7, 30 o 90 días y ves: conversaciones nuevas, ventas, ingresos, cuántos pasaron a una persona, el embudo de
 ventas, conversaciones por día, quién respondió (tu asistente o tu equipo) y cuánto costó la IA, comparado con el periodo anterior.
 
-## 9. Eliminar un chat o un cliente
+## 10. Eliminar un chat o un cliente
 
 En el chat abierto (ícono de la papelera) o en **Clientes**. Antes de borrar, el panel te dice exactamente qué pasa:
 
@@ -93,10 +115,11 @@ En el chat abierto (ícono de la papelera) o en **Clientes**. Antes de borrar, e
 
 No se puede deshacer.
 
-## 10. Desde el celular
+## 11. Desde el celular
 
 El panel funciona en el celular como una aplicación: el menú se abre con **☰**, la campana de avisos está siempre arriba y los chats
-se ven como en WhatsApp.
+se ven como en WhatsApp. Puedes instalarlo en la pantalla de inicio (en Chrome: menú → **Instalar app**; en iPhone: Compartir →
+**Agregar a pantalla de inicio**) para abrirlo con un toque y recibir notificaciones.
 
 ## Preguntas frecuentes
 
@@ -110,6 +133,9 @@ puede responder**. Recarga tu saldo de OpenRouter y vuelve a funcionar solo.
 de cada modelo y tu gasto de cada día.
 
 **¿Otras personas ven mis negocios?** No. Cada cuenta solo ve los negocios que creó.
+
+**¿Y si no estoy pendiente del panel?** Activa las notificaciones en tu celular y deja el correo de avisos encendido (Ajustes →
+Atención humana). Si aun así nadie responde a tiempo, la IA retoma el chat para que el cliente no quede esperando.
 
 **¿Puedo deshacer un cambio publicado?** Sí: en **Publicar** vuelves a la versión anterior, o recuperas cualquier versión del
 historial.

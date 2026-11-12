@@ -103,7 +103,9 @@ Finalidad comercial, sin origen en los YAML. No se compilan salvo los marcados `
 | inventory | `inventory.items[].variants[].prices[].currency` | Moneda (código ISO de tres letras). | texto con formato validado | cliente | conectado | pantalla |
 | knowledge | `knowledge.faqs[].answer` | Respuesta oficial del negocio. | texto | cliente | conectado | pantalla |
 | knowledge | `knowledge.faqs[].question` | Pregunta tal como la haría el cliente. | texto | cliente | conectado | pantalla |
+| messages | `messages.after_hours` | Mensaje cuando un chat pasa a una persona fuera del horario del equipo. Si falta, uno con el horario y cuándo lo atienden. | texto | cliente | conectado | pantalla |
 | messages | `messages.after_sale` | Mensaje después de una compra: la IA lo usa cuando el cliente escribe después de pagar. | texto | cliente | conectado | pantalla |
+| messages | `messages.ai_resumed` | Mensaje cuando la IA retoma un chat que nadie del equipo respondió a tiempo. Si falta, uno de la plataforma. | texto | cliente | conectado | pantalla |
 | messages | `messages.data_request` | Mensaje para pedir los datos del cliente. | texto | cliente | conectado | pantalla |
 | messages | `messages.fallback` | Mensaje exacto cuando la IA no puede responder (sin clave, sin saldo o con el proveedor caído). Si falta, uno neutro de la plataforma. | texto | cliente | conectado | pantalla |
 | messages | `messages.follow_up` | Mensaje de seguimiento a un cliente que no respondió. Se guarda; lo enviará la plataforma cuando los canales puedan escribir primero. | texto | cliente | programado | pantalla |
@@ -351,10 +353,10 @@ si el motor actual lo usa y de dónde viene.
 
 | Audiencia | Conectados | Programados | Solo panel | Pendientes |
 |---|---|---|---|---|
-| cliente | 131 | 2 | 2 | 0 |
+| cliente | 133 | 2 | 2 | 0 |
 | avanzado | 51 | 0 | 0 | 0 |
 | sistema | 2 | 0 | 0 | 0 |
-| **Total** | 184 | 2 | 2 | 0 |
+| **Total** | 186 | 2 | 2 | 0 |
 
 | Campo | Audiencia | Motor | Origen | Interfaz | Descripción |
 |---|---|---|---|---|---|
@@ -421,7 +423,9 @@ si el motor actual lo usa y de dónde viene.
 | `inventory.track_stock` | cliente | conectado | `inventory.track_stock` | pantalla | Si el negocio controla existencias. |
 | `knowledge.faqs[].answer` | cliente | conectado | nuevo | pantalla | Respuesta oficial del negocio. |
 | `knowledge.faqs[].question` | cliente | conectado | nuevo | pantalla | Pregunta tal como la haría el cliente. |
+| `messages.after_hours` | cliente | conectado | nuevo | pantalla | Mensaje cuando un chat pasa a una persona fuera del horario del equipo. Si falta, uno con el horario y cuándo lo atienden. |
 | `messages.after_sale` | cliente | conectado | nuevo | pantalla | Mensaje después de una compra: la IA lo usa cuando el cliente escribe después de pagar. |
+| `messages.ai_resumed` | cliente | conectado | nuevo | pantalla | Mensaje cuando la IA retoma un chat que nadie del equipo respondió a tiempo. Si falta, uno de la plataforma. |
 | `messages.data_request` | cliente | conectado | nuevo | pantalla | Mensaje para pedir los datos del cliente. |
 | `messages.fallback` | cliente | conectado | nuevo | pantalla | Mensaje exacto cuando la IA no puede responder (sin clave, sin saldo o con el proveedor caído). Si falta, uno neutro de la plataforma. |
 | `messages.follow_up` | cliente | programado | nuevo | pantalla | Mensaje de seguimiento a un cliente que no respondió. Se guarda; lo enviará la plataforma cuando los canales puedan escribir primero. |

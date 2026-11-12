@@ -276,6 +276,10 @@ export interface Messages {
   follow_up?: string | null;
   /** Mensaje al pasar la conversación a una persona. [motor: conectado] */
   human_handoff?: string | null;
+  /** Mensaje cuando un chat pasa a una persona fuera del horario del equipo. Si falta, uno con el horario y cuándo lo atienden. [motor: conectado] */
+  after_hours?: string | null;
+  /** Mensaje cuando la IA retoma un chat que nadie del equipo respondió a tiempo. Si falta, uno de la plataforma. [motor: conectado] */
+  ai_resumed?: string | null;
   /** Mensaje exacto cuando la IA no puede responder (sin clave, sin saldo o con el proveedor caído). Si falta, uno neutro de la plataforma. [motor: conectado] */
   fallback?: string | null;
 }

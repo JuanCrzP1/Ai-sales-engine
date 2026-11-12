@@ -25,7 +25,7 @@ from app.infrastructure.business_config.channel_messenger import ChannelMessenge
 from app.infrastructure.business_config.channel_store import ChannelStore
 from app.infrastructure.business_config.payment_secret_store import PaymentSecretStore
 from app.infrastructure.business_config.repository import BusinessConfigRepository
-from app.infrastructure.business_config.tables import metadata
+from app.infrastructure.business_config.tables import metadata, notifications
 
 DATABASE_URL_ENV = "BUSINESS_CONFIG_DATABASE_URL"
 DEFAULT_LOCAL_DATABASE = Path(__file__).resolve().parents[3] / "data" / "business_config.sqlite3"
@@ -84,6 +84,11 @@ _ADDED_COLUMNS = {
         "assistant_typing_until": "DATETIME",
         "updated_at": "DATETIME NOT NULL DEFAULT '1970-01-01 00:00:00'",
         "stage": "TEXT NOT NULL DEFAULT 'new'",
+        "customer_waiting_since": "DATETIME",
+        "ai_resumed_at": "DATETIME",
+    },
+    "business_members": {
+        "email": "TEXT",
     },
     "conversation_entries": {
         "kind": "TEXT NOT NULL DEFAULT 'text'",
@@ -112,6 +117,30 @@ def create_local_schema(engine: Engine) -> None:
         for table in metadata.sorted_tables:
             for index in table.indexes:
                 index.create(conn, checkfirst=True)
+    _widen_notification_kinds(engine)
+
+
+def _widen_notification_kinds(engine: Engine) -> None:
+    """Una base local anterior a la migración 0011 solo acepta avisos `handoff`. SQLite no deja cambiar una restricción: la tabla se
+    rehace con la definición actual y sus filas (como manda SQLite: con las llaves foráneas apagadas mientras tanto)."""
+    with engine.connect() as conn:
+        current = conn.exec_driver_sql("SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'notifications'").scalar()
+        if not current or "ai_resumed" in current:
+            return
+        columns = ", ".join(column.name for column in notifications.columns)
+        conn.exec_driver_sql("PRAGMA foreign_keys=OFF")
+        conn.exec_driver_sql("PRAGMA legacy_alter_table=ON")
+        try:
+            for index in notifications.indexes:
+                conn.exec_driver_sql(f"DROP INDEX IF EXISTS {index.name}")
+            conn.exec_driver_sql("ALTER TABLE notifications RENAME TO notifications_before_0011")
+            notifications.create(conn)
+            conn.exec_driver_sql(f"INSERT INTO notifications ({columns}) SELECT {columns} FROM notifications_before_0011")
+            conn.exec_driver_sql("DROP TABLE notifications_before_0011")
+            conn.commit()
+        finally:
+            conn.exec_driver_sql("PRAGMA legacy_alter_table=OFF")
+            conn.exec_driver_sql("PRAGMA foreign_keys=ON")
 
 
 def build_business_config_service(engine: Engine, *, secrets_key: str | None = None) -> BusinessConfigService:

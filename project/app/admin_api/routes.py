@@ -62,6 +62,10 @@ def _principal(request: Request) -> Principal:
     principal = verifier.verify(token.strip()) if scheme.lower() == "bearer" else None
     if principal is None:
         raise ApiError(status.HTTP_401_UNAUTHORIZED, "Tu sesión terminó. Vuelve a entrar.", code="unauthenticated")
+    # El correo de la cuenta, para los avisos por correo de sus negocios (como mucho cada 10 minutos por proceso).
+    attention = getattr(request.app.state, "attention", None)
+    if attention is not None:
+        attention.remember_account(principal)
     return principal
 
 
@@ -119,7 +123,12 @@ def create_business(request: Request, payload: CreateBusiness, user: CurrentUser
         except TemplateNotFoundError:
             raise ApiError(UNPROCESSABLE, "Esa plantilla no existe.", code="invalid", issues=[{"path": "template", "message": "Elige otra plantilla."}]) from None
         document = template.instantiate(payload.slug, payload.name)
-    return summary_payload(access.create_for(user, payload.slug, payload.name, document=document))
+    created = access.create_for(user, payload.slug, payload.name, document=document)
+    # El negocio nuevo ya sabe adónde avisar por correo a su dueño.
+    attention = getattr(request.app.state, "attention", None)
+    if attention is not None:
+        attention.remember_account(user, force=True)
+    return summary_payload(created)
 
 
 @router.post("/businesses/import")

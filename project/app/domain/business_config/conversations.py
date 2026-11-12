@@ -82,6 +82,10 @@ class ConversationSummary:
     updated_at: datetime | None = None
     # La etapa a la que llegó el cliente (`commerce.STAGES`).
     stage: str = "new"
+    # Desde cuándo el cliente espera a una persona sin respuesta (la IA está pausada).
+    customer_waiting_since: datetime | None = None
+    # Cuándo la IA retomó sola el chat porque nadie del equipo respondió a tiempo.
+    ai_resumed_at: datetime | None = None
 
 
 @dataclass(frozen=True)
@@ -165,7 +169,19 @@ class BusinessActivity:
     waiting_human: int = 0
 
 
-NOTIFICATION_KINDS = ("handoff",)
+@dataclass(frozen=True)
+class WaitingChat:
+    """Un chat con la IA pausada y un cliente esperando a una persona."""
+
+    id: str
+    business_slug: str
+    channel: str
+    contact_ref: str
+    waiting_since: datetime
+
+
+# `handoff`: un chat pasó a una persona. `ai_resumed`: la IA retomó un chat que nadie atendió a tiempo.
+NOTIFICATION_KINDS = ("handoff", "ai_resumed")
 
 
 @dataclass(frozen=True)

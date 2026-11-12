@@ -13,7 +13,8 @@ export type NavKey =
   | "reports"
   | "assistantHub"
   | "channels"
-  | "settings";
+  | "settings"
+  | "attention";
 
 export interface NavItem {
   key: NavKey;
@@ -57,8 +58,16 @@ export const CUSTOMERS_ITEM: NavItem = { key: "customers", path: "clientes", tit
 export const SALES_ITEM: NavItem = { key: "sales", path: "ventas", title: "Ventas" };
 export const REPORTS_ITEM: NavItem = { key: "reports", path: "reportes", title: "Reportes" };
 export const CHANNELS_ITEM: NavItem = { key: "channels", path: "canales", title: "Canales" };
-/** Ajustes del negocio: hoy, su inteligencia artificial. */
+/** Ajustes del negocio: su inteligencia artificial y la atención humana. Se aplican al instante, sin publicar. */
 export const SETTINGS_ITEM: NavItem = { key: "settings", path: AI_ITEM.path, title: "Ajustes" };
+export const ATTENTION_ITEM: NavItem = { key: "attention", path: "atencion-humana", title: "Atención humana" };
+export const SETTINGS_TABS: NavItem[] = [AI_ITEM, ATTENTION_ITEM];
+
+/** Si la ruta es una pestaña de Ajustes (`/negocios/x/atencion-humana`). */
+export function isSettingsPath(pathname: string): boolean {
+  const last = pathname.replace(/\/+$/, "").split("/").pop() ?? "";
+  return SETTINGS_TABS.some((item) => item.path === last);
+}
 
 export const SECTION_ITEMS: NavItem[] = CONFIG_SECTIONS.map((section) => ({
   key: section.id,
@@ -117,6 +126,7 @@ export function isAssistantPath(pathname: string): boolean {
 /** El nombre de la sección abierta, para la barra superior en el celular. */
 export function titleForPath(pathname: string): string {
   if (isAssistantPath(pathname)) return ASSISTANT_HUB_ITEM.title;
+  if (isSettingsPath(pathname)) return SETTINGS_ITEM.title;
   const last = pathname.replace(/\/+$/, "").split("/").pop() ?? "";
   const item = [CONVERSATIONS_ITEM, CUSTOMERS_ITEM, SALES_ITEM, REPORTS_ITEM, CHANNELS_ITEM, SETTINGS_ITEM].find((entry) => entry.path === last);
   return item?.title ?? HOME_ITEM.title;

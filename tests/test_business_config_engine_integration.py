@@ -27,6 +27,7 @@ from app.application.pipeline.conversation_flow import get_conversation_state
 from app.application.pipeline.response_postprocessor import enforce_max_words
 from app.application.runtime import BusinessUnavailableError, load_tenant_runtime_yaml, published_sections, runtime_from_sections
 from app.application.runtime import tenant_runtime_loader as loader
+from app.domain.business_config.attention import AttentionSettings, handoff_plan, published_attention
 from app.domain.business_config.compiler import compile_business_config
 from app.domain.business_config.contract import BusinessConfig
 from app.domain.business_config.engine_policy import MAX_INDUSTRY_CHARS, MAX_VALUE_PROPOSITION_CHARS, RESPONSE_LENGTH_MAX_WORDS
@@ -367,6 +368,28 @@ def test_payment_report_message_is_optional(monkeypatch, tmp_path):
     (_, without_message), = run_with_document(monkeypatch, tmp_path / "sin", "saas", lambda d: d["messages"].pop("payment_reported"), turns)
     assert with_message.strip() == _document("saas")["messages"]["payment_reported"].strip()
     assert without_message == "Gracias, lo reviso."
+
+
+def test_the_attention_messages_reach_the_platform_from_what_was_published(monkeypatch, tmp_path):
+    """«Fuera del horario del equipo» y «Cuando la IA retoma» los envía la plataforma (no la IA): llegan desde lo publicado, junto
+    con el horario de «Mi negocio», y deciden lo que se le dice al cliente."""
+    hours = [{"days": ["lunes", "martes", "miercoles", "jueves", "viernes"], "opens": "08:00", "closes": "18:00"}]
+
+    def mutate(document: dict) -> None:
+        document["identity"]["opening_hours"] = hours
+        document["messages"].update(after_hours="Atendemos de 8 a 6. Mañana te escribe Laura.", ai_resumed="Perdón la demora, sigo yo.")
+
+    publish_document(monkeypatch, tmp_path, "restaurant", mutate)
+    published = published_attention(published_sections("restaurant"))
+    assert published.after_hours == "Atendemos de 8 a 6. Mañana te escribe Laura." and published.ai_resumed == "Perdón la demora, sigo yo."
+    assert [item.days for item in published.business_hours] == [tuple(hours[0]["days"])]
+    # Un martes a las 9 p. m. (hora de Colombia) no hay nadie: la IA sigue y el cliente recibe el mensaje del negocio.
+    night = datetime(2026, 11, 11, 2, 0, tzinfo=timezone.utc)
+    plan = handoff_plan(AttentionSettings(), published.business_hours, night, after_hours_message=published.after_hours)
+    assert (plan.team_available, plan.pause_ai, plan.notice) == (False, False, "Atendemos de 8 a 6. Mañana te escribe Laura.")
+    # Sin los mensajes, la plataforma usa los suyos.
+    publish_document(monkeypatch, tmp_path / "sin", "restaurant", lambda d: d["identity"].update(opening_hours=hours))
+    assert published_attention(published_sections("restaurant")).after_hours is None
 
 
 def test_conversation_windows_drive_the_conversation_state(monkeypatch, tmp_path):
@@ -988,6 +1011,8 @@ CONNECTED_EVIDENCE: dict[str, str] = {
     "terms.price_note": "test_connected_fields_change_the_prompt",
     "terms.roi_break_even_bookings": "test_connected_fields_change_the_prompt",
     "messages.after_sale": "test_the_after_sale_message_reaches_the_ai_once_the_customer_paid",
+    "messages.after_hours": "test_the_attention_messages_reach_the_platform_from_what_was_published",
+    "messages.ai_resumed": "test_the_attention_messages_reach_the_platform_from_what_was_published",
 }
 
 

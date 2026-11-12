@@ -150,9 +150,13 @@ def test_the_migration_matches_the_tables():
     for table in (conversations, conversation_entries):
         body = re.search(rf"CREATE TABLE IF NOT EXISTS {table.name} \((.*?)\n\);", sql, re.S).group(1)
         columns = {match.group(1) for match in re.finditer(r"^\s+([a-z_]+)\s+[A-Z]+", body, re.M)} - {"constraint"}
-        # La 0005 agregó a `conversations` las columnas del traspaso a una persona; la 0009, las de la bandeja en vivo.
+        # La 0005 agregó a `conversations` las columnas del traspaso a una persona; la 0009, las de la bandeja en vivo; la 0010, la
+        # etapa; la 0011, la espera del cliente y cuándo retomó la IA.
         added_later = (
-            {"needs_human", "handoff_requested_at", "ai_paused", "handoff_reason", "unread_count", "assistant_typing_until", "updated_at", "stage"}
+            {
+                "needs_human", "handoff_requested_at", "ai_paused", "handoff_reason", "unread_count", "assistant_typing_until", "updated_at",
+                "stage", "customer_waiting_since", "ai_resumed_at",
+            }
             if table is conversations
             else {"kind", "status", "provider_message_id", "media_id", "media_note", "updated_at"}
         )

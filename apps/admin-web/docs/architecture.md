@@ -219,6 +219,21 @@ en dos pasos.
 `components/ui/Dialog.tsx` se dibuja al final de la página (un portal de React): así cubre también el menú lateral, que tiene su
 propia capa para que el menú de la cuenta y los avisos se abran por encima del contenido.
 
+### D8j — Atención humana y notificaciones del dispositivo
+
+Ajustes tiene dos pestañas (`SETTINGS_TABS`): Inteligencia artificial y Atención humana. Las dos se aplican al instante, sin
+publicar; lo que dice el asistente (fuera del horario, al retomar) está en Mensajes y sí se publica.
+- `repositories/attention.ts` define dos contratos: `Attention` (los ajustes de un negocio, `createAttention(slug)`) y `DevicePush` (las
+  notificaciones de la persona en este navegador, una sola instancia de la aplicación).
+- `infrastructure/browser/browserPush.ts` junta las API del navegador (Service Worker, Push, Notification) con la del panel. El
+  permiso se pide primero, mientras dura el toque en el botón (Safari lo exige). En iPhone y iPad sin instalar el panel devuelve
+  `install`, y la pantalla explica cómo instalarlo.
+- `public/sw.js` muestra la notificación y, al tocarla, abre ese chat en una ventana del panel (solo rutas del propio panel). No guarda
+  nada en caché. `vercel.json` lo sirve sin caché para que los cambios lleguen enseguida.
+- La campana ofrece «Activar notificaciones» mientras no estén activadas ni bloqueadas, y distingue los avisos `ai_resumed` (la IA
+  retomó un chat). El aviso del chat abierto dice si la IA está pausada (y desde cuándo espera el cliente), si la retomó o si el chat
+  llegó fuera del horario.
+
 ### D9 — API separada del motor y limitada a este equipo
 
 `app.main` publica rutas del motor y en Docker escucha en `0.0.0.0`. La API del panel es otra aplicación, con el host fijo a `127.0.0.1`

@@ -5,6 +5,15 @@ está en el historial de git y en `docs/plan-v1.md`.
 
 ## 11 de noviembre de 2026
 
+**Atención humana completa** (Fase 3)
+- Ajustes → Atención humana: el horario del equipo (el de tu negocio, otro o siempre), lo que se le dice al cliente y cuándo retoma
+  la IA. Se aplica al instante.
+- Dentro del horario, el cliente sabe cuánto tarda tu equipo; fuera de él, la IA sigue ayudando y le dice cuándo lo atienden.
+- Si nadie responde a tiempo, la IA retoma el chat, pide disculpas, responde lo pendiente y te avisa. Ningún cliente queda esperando.
+- Avisos por correo y notificaciones en el celular y el computador, además de la campana. El panel se puede instalar en el celular.
+- Lo que respondes desde el celular del negocio aparece en el chat y pausa la IA.
+- Dos mensajes nuevos en Asistente IA → Mensajes: «Fuera del horario del equipo» y «Cuando la IA retoma el chat».
+
 **Una sola puerta de entrada**
 - La dirección del motor y el enlace del repositorio en GitHub llevan al panel, que es donde se trabaja.
 

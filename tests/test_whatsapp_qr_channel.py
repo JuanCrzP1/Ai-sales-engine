@@ -31,7 +31,7 @@ from app.infrastructure.business_config.conversation_store import ConversationSt
 from app.infrastructure.business_config.database import build_business_config_service, create_business_config_engine
 from app.infrastructure.business_config.tables import business_channels
 from app.infrastructure.channels.platform import uazapi_platform
-from app.infrastructure.channels.uazapi import UazapiClient, parse_incoming, parse_receipt
+from app.infrastructure.channels.uazapi import parse_own_message, UazapiClient, parse_incoming, parse_receipt
 from pipeline_harness import publish_document
 from test_admin_api import BASE_URL, LOCAL_CLIENT, Local
 
@@ -162,7 +162,7 @@ def test_the_client_reads_the_qr_and_the_connected_number():
     assert all(request.headers["token"] == INSTANCE_TOKEN for request in server.requests)
 
 
-def test_the_client_sends_text_and_registers_a_webhook_that_ignores_its_own_messages():
+def test_the_client_sends_text_and_registers_a_webhook_that_ignores_what_the_api_sent():
     server = FakeUazapi()
     client = server.client("https://free.uazapi.com")
     assert client.send_text(INSTANCE_TOKEN, "+57 300 111 2233", "Hola") == "WA-OUT-1"
@@ -170,7 +170,8 @@ def test_the_client_sends_text_and_registers_a_webhook_that_ignores_its_own_mess
     assert server.sent == [(INSTANCE_TOKEN, {"number": "573001112233", "text": "Hola"})]
     assert server.webhooks[INSTANCE_TOKEN] == {
         "url": f"{WEBHOOK_BASE}/abc", "enabled": True, "events": ["messages", "messages_update", "connection"],
-        "excludeMessages": ["wasSentByApi", "fromMeYes", "isGroupYes"],
+        # Lo que escribe el negocio desde su celular sí llega: es una respuesta del equipo.
+        "excludeMessages": ["wasSentByApi", "isGroupYes"],
     }
 
 
@@ -398,6 +399,37 @@ def engine_webhook(monkeypatch, tmp_path):
     runtime_access.dispose_shared_engines()
 
 
+OWN = {
+    "EventType": "messages",
+    "token": INSTANCE_TOKEN,
+    "message": {"messageid": "PHONE1", "chatid": "573009998877@s.whatsapp.net", "sender": "573001112233@s.whatsapp.net",
+                "fromMe": True, "wasSentByApi": False, "isGroup": False, "messageType": "Conversation", "text": "Hola Ana, soy Laura del restaurante"},
+}
+
+
+def test_what_the_business_writes_from_its_phone_is_read_as_a_reply_to_that_customer():
+    own = parse_own_message(OWN)
+    assert (own.message_id, own.phone, own.text, own.kind, own.contact_name) == ("PHONE1", "573009998877", "Hola Ana, soy Laura del restaurante", "text", None)
+    # Lo que envió la API, un mensaje del cliente, un grupo o un chat sin número no son respuestas del equipo.
+    for change in ({"wasSentByApi": True}, {"fromMe": False}, {"isGroup": True}, {"chatid": "120363@g.us"}, {"chatid": "1234@lid"}):
+        assert parse_own_message({**OWN, "message": {**OWN["message"], **change}}) is None
+    assert parse_incoming(OWN) is None
+
+
+def test_a_reply_from_the_business_phone_takes_the_chat_and_the_assistant_stops_answering(engine_webhook):
+    client, path, server, conversations = engine_webhook
+    client.post(path, json=INCOMING)
+    assert client.post(path, json=OWN).json() == {"status": "team_reply"}
+    assert client.post(path, json=OWN).json() == {"status": "duplicate"}
+    summary, messages = _thread(conversations)
+    assert [(m.author, m.body) for m in messages][-1] == ("agent", "Hola Ana, soy Laura del restaurante")
+    assert (summary.ai_paused, summary.needs_human, summary.customer_waiting_since) == (True, False, None)
+    # El cliente responde: la IA no habla encima de Laura, y el cliente empieza a esperarla.
+    assert client.post(path, json=_incoming(messageid="MSG2", text="¡Gracias Laura!")).json() == {"status": "stored"}
+    assert len(server.sent) == 1
+    assert _thread(conversations)[0].customer_waiting_since is not None
+
+
 def _thread(conversations: ConversationStore):
     (summary,) = conversations.recent(["restaurant"], channel="whatsapp", limit=5)
     return conversations.thread(summary.id)
@@ -443,8 +475,12 @@ def test_a_payment_receipt_photo_is_saved_seen_and_passed_to_the_team(engine_web
     customer = messages[0]
     assert (customer.kind, customer.media.mime_type, customer.media_note) == ("image", "image/jpeg", "Captura de una transferencia de Nequi")
     assert conversations.media(summary.id, customer.media.id).content == b"jpeg-del-comprobante"
-    assert summary.last_message_preview == "Perfecto, ya lo reviso y te confirmo en un momento."
+    # Después de la respuesta, el cliente sabe cuánto suele tardar el equipo (el restaurante no tiene horario: siempre hay alguien).
+    assert [m.body for m in messages if m.author == "assistant"] == [
+        "Perfecto, ya lo reviso y te confirmo en un momento.", "Una persona de nuestro equipo te responderá en unos 10 minutos.",
+    ]
     assert (summary.needs_human, summary.ai_paused, summary.handoff_reason) == (True, True, "payment_review")
+    assert summary.customer_waiting_since is not None
 
 
 def test_a_voice_note_is_transcribed_and_answered_like_text(engine_webhook):
@@ -462,7 +498,10 @@ def test_after_the_handoff_the_assistant_stays_quiet_and_the_team_sees_each_new_
     FakeAI.reply, FakeAI.metadata = "Te paso con alguien del equipo por este mismo chat.", {"intent": "info", "handoff": True, "handoff_reason": "human_request"}
     client.post(path, json=_incoming(text="Quiero hablar con un asesor humano"))
     assert client.post(path, json=_incoming(messageid="MSG2", text="¿Hola?")).json() == {"status": "stored"}
-    assert len(server.sent) == 1 and FakeAI.received == ["Quiero hablar con un asesor humano"]
+    assert [sent["text"] for _token, sent in server.sent] == [
+        "Te paso con alguien del equipo por este mismo chat.", "Una persona de nuestro equipo te responderá en unos 10 minutos.",
+    ]
+    assert FakeAI.received == ["Quiero hablar con un asesor humano"]
     summary, messages = _thread(conversations)
     assert [m.body for m in messages][-1] == "¿Hola?" and summary.unread_count == 2 and summary.handoff_reason == "human_request"
 

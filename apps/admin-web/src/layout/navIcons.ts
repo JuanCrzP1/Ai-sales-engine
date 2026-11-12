@@ -20,4 +20,5 @@ export const NAV_ICONS: Record<NavItem["key"], IconName> = {
   assistantHub: "sparkles",
   channels: "plug",
   settings: "settings",
+  attention: "headset",
 };

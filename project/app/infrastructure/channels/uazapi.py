@@ -32,9 +32,10 @@ from app.utils.logger import logger
 
 TIMEOUT = httpx.Timeout(20.0, connect=8.0)
 # Eventos que recibe el webhook: los mensajes, los recibos de entregado y leído, y los cambios de conexión. Se excluye lo que envió
-# la propia API (evita responderse a sí mismo), lo que escribe el negocio desde su teléfono y los grupos.
+# la propia API (evita responderse a sí mismo) y los grupos. Lo que el negocio escribe desde su celular sí llega: es una respuesta del
+# equipo, y la IA no debe hablar encima de ella (`parse_own_message`).
 WEBHOOK_EVENTS = ["messages", "messages_update", "connection"]
-WEBHOOK_EXCLUDE = ["wasSentByApi", "fromMeYes", "isGroupYes"]
+WEBHOOK_EXCLUDE = ["wasSentByApi", "isGroupYes"]
 # Lo que no es el chat de un cliente: grupos, canales, difusiones y estados.
 _NOT_A_CUSTOMER = re.compile(r"@(g\.us|newsletter|broadcast)$")
 # El tipo de mensaje de WhatsApp (`messageType`, sin documentar en uazapi) → el de la bandeja.
@@ -238,6 +239,25 @@ def parse_incoming(payload: dict[str, Any]) -> IncomingMessage | None:
         return None
     # El teléfono: del chat si es una cuenta normal; si es un id «@lid» de WhatsApp, del remitente.
     candidates = (chat_id, _text(message.get("sender_pn")), _text(message.get("sender")))
+    return _message(message, candidates, contact_name=_text(message.get("senderName")) or None)
+
+
+def parse_own_message(payload: dict[str, Any]) -> IncomingMessage | None:
+    """Lo que el negocio escribió desde su celular (o WhatsApp Web) en el chat de un cliente: una respuesta del equipo. None si es
+    otro evento, lo envió la API (eso ya está en la bandeja), es de un grupo o no se puede saber de qué cliente es."""
+    if _text(payload.get("EventType")).lower() != "messages":
+        return None
+    message = _record(payload.get("message"))
+    if not message or message.get("fromMe") is not True or message.get("wasSentByApi") or message.get("isGroup"):
+        return None
+    chat_id = _text(message.get("chatid"))
+    if not chat_id or _NOT_A_CUSTOMER.search(chat_id) or chat_id.startswith("status@"):
+        return None
+    # El cliente es el chat (el remitente es el propio negocio); de un id «@lid», su número viene en `chatid_pn` si uazapi lo trae.
+    return _message(message, (chat_id, _text(message.get("chatid_pn"))), contact_name=None)
+
+
+def _message(message: dict[str, Any], candidates: tuple[str, ...], *, contact_name: str | None) -> IncomingMessage | None:
     phone = next((digits for jid in candidates if jid and not jid.endswith("@lid") for digits in [phone_digits(jid)] if 7 <= len(digits) <= 15), "")
     message_id = _text(message.get("messageid")) or _text(message.get("id"))
     if not phone or not message_id:
@@ -250,8 +270,7 @@ def parse_incoming(payload: dict[str, Any]) -> IncomingMessage | None:
     mime_type = (_text(message.get("mimetype")) or _text(content.get("mimetype"))).split(";")[0].strip().lower() or None
     file_name = _text(content.get("fileName")) or _text(message.get("fileName")) or None
     return IncomingMessage(
-        message_id=message_id, phone=phone, contact_name=_text(message.get("senderName")) or None, text=text, kind=kind,
-        mime_type=mime_type, file_name=file_name,
+        message_id=message_id, phone=phone, contact_name=contact_name, text=text, kind=kind, mime_type=mime_type, file_name=file_name,
     )
 
 

@@ -7,6 +7,7 @@ quien usa estos puertos. Toda operación recibe el negocio y solo alcanza sus da
 from __future__ import annotations
 
 from collections.abc import Callable, Collection
+from dataclasses import dataclass
 from datetime import date, datetime
 from enum import Enum
 from typing import Any, Protocol, runtime_checkable
@@ -14,6 +15,7 @@ from typing import Any, Protocol, runtime_checkable
 from app.domain.business_config.access import Principal
 from app.domain.business_config.ai_settings import AICredentials, AISettings, AssistantTurn, KeyCheck
 from app.domain.business_config.ai_models import AIModel
+from app.domain.business_config.attention import AttentionSettings
 from app.domain.business_config.ai_usage import AIUsageSummary
 from app.domain.business_config.commerce import Customer, NewSale, ReportDay, ReportTotals, Sale
 from app.domain.business_config.channels import ConnectionStatus, ProviderStatus, WhatsAppConnection, WhatsAppSecrets
@@ -28,6 +30,7 @@ from app.domain.business_config.conversations import (
     NewMessage,
     Notification,
 )
+from app.domain.business_config.push import PushMessage, PushSubscription
 from app.domain.business_config.records import BusinessSummary, ConfigVersion, StoredConfig
 
 
@@ -285,3 +288,71 @@ class ChannelStorage(Protocol):
     def set_status(self, tenant_slug: str, status: ConnectionStatus, *, phone: str | None = None, profile_name: str | None = None) -> None: ...
 
     def delete_whatsapp(self, tenant_slug: str) -> None: ...
+
+
+# ---------------------------------------------------------------------------------------------------------- atención humana
+
+
+class EmailNotSent(RuntimeError):
+    """El correo no salió. El mensaje es para el negocio (nunca trae claves)."""
+
+
+@dataclass(frozen=True)
+class PushOutcome:
+    """Cómo le fue a una notificación: `sent`, `gone` (la suscripción ya no existe: se olvida) o `failed`."""
+
+    status: str
+    detail: str | None = None
+
+
+class EmailSender(Protocol):
+    """Envía correos de la plataforma (`infrastructure/notifications/resend_email.py`)."""
+
+    @property
+    def configured(self) -> bool: ...
+
+    def send(self, *, to: list[str], subject: str, html: str, text: str, idempotency_key: str | None = None) -> str | None: ...
+
+
+class PushSender(Protocol):
+    """Envía una notificación a un navegador o celular (`infrastructure/notifications/web_push.py`)."""
+
+    def send(self, subscription: PushSubscription, message: PushMessage) -> PushOutcome: ...
+
+
+class AttentionStorage(Protocol):
+    """Los ajustes de atención humana, el equipo de cada negocio y el envío de sus avisos (`attention_store.py`)."""
+
+    def attention_settings(self, tenant_slug: str) -> AttentionSettings: ...
+
+    def save_attention_settings(self, tenant_slug: str, settings: AttentionSettings) -> AttentionSettings: ...
+
+    def owner_emails(self, tenant_slug: str) -> list[str]: ...
+
+    def member_ids(self, tenant_slug: str) -> list[str]: ...
+
+    def remember_email(self, user_id: str, email: str) -> None: ...
+
+    def alert(self, notification_id: str) -> Any: ...
+
+    def claim_delivery(self, notification_id: str, channel: str) -> bool: ...
+
+    def finish_delivery(self, notification_id: str, channel: str, status: str, detail: str | None = None) -> None: ...
+
+
+class PushStorage(Protocol):
+    """Las suscripciones a notificaciones de cada persona y la clave pública de la plataforma (`push_store.py`)."""
+
+    def vapid_public_key(self) -> str: ...
+
+    def subscribe(self, subscription: PushSubscription) -> None: ...
+
+    def unsubscribe(self, user_id: str, endpoint: str) -> bool: ...
+
+    def is_subscribed(self, user_id: str, endpoint: str) -> bool: ...
+
+    def subscriptions_for(self, user_ids: Collection[str]) -> list[PushSubscription]: ...
+
+    def forget(self, endpoint: str) -> None: ...
+
+    def mark_delivered(self, endpoint: str) -> None: ...

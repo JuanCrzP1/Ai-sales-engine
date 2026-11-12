@@ -304,9 +304,7 @@ function ThreadView({
               {conversation.handoffRequestedAt ? `Desde ${relativeTime(conversation.handoffRequestedAt)}. ` : ""}
               {isTest
                 ? "Así te avisaremos cuando un cliente real lo pida."
-                : canReply
-                  ? "La IA está pausada en este chat: respóndele desde aquí."
-                  : `Atiéndelo por ${CHANNEL_LABELS[conversation.channel]} y márcalo cuando esté listo.`}
+                : handoffStatus(conversation, canReply)}
             </span>
           </div>
           <Button size="small" onClick={() => void act(() => onResolve(conversation.id), "No se pudo marcar como atendida. Vuelve a intentarlo.")} disabled={busy}>
@@ -522,4 +520,15 @@ function MediaContent({ conversationId, message }: { conversationId: string; mes
       )}
     </div>
   );
+}
+
+/** Qué pasa con un chat que espera a una persona: si la IA está pausada, si la retomó sola o si llegó fuera del horario. */
+function handoffStatus(conversation: ConversationSummary, canReply: boolean): string {
+  const ago = (iso: string) => (relativeTime(iso) === "ahora" ? "hace un momento" : relativeTime(iso));
+  const waiting = conversation.customerWaitingSince ? ` El cliente espera respuesta desde ${ago(conversation.customerWaitingSince)}.` : "";
+  if (conversation.aiPaused) {
+    return canReply ? `La IA está pausada en este chat: respóndele desde aquí.${waiting}` : `Atiéndelo por ${CHANNEL_LABELS[conversation.channel]} y márcalo cuando esté listo.`;
+  }
+  if (conversation.aiResumedAt) return `Nadie respondió a tiempo, así que la IA retomó el chat ${ago(conversation.aiResumedAt)}. Respóndele cuando puedas.`;
+  return "Llegó fuera del horario de tu equipo: la IA sigue ayudándole mientras tanto.";
 }

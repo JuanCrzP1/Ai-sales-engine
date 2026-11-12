@@ -4,11 +4,15 @@ import { Icon } from "../components/ui/Icon";
 import { relativeTime } from "../domain/inbox/format";
 import type { Notification } from "../domain/inbox/types";
 import { CONVERSATIONS_ITEM, workspacePath } from "../navigation/navItems";
+import { useDevicePush } from "../state/useDevicePush";
 import { useNotifications } from "../state/useNotifications";
 
 /** Campana de avisos: cuántos faltan por leer y la lista. Abrir uno lleva a su conversación y lo marca como leído. */
 export function NotificationBell() {
   const { feed, markRead } = useNotifications();
+  const push = useDevicePush();
+  // Se ofrece activarlas en este dispositivo mientras no se hayan activado ni bloqueado.
+  const offerPush = push.support === "supported" && push.subscribed === false && push.permission === "default";
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
   const root = useRef<HTMLDivElement>(null);
@@ -61,6 +65,15 @@ export function NotificationBell() {
               </button>
             )}
           </div>
+          {offerPush && (
+            <div className="bell__push">
+              <span>Recibe estos avisos aunque el panel esté cerrado.</span>
+              <button type="button" className="bell__mark" onClick={() => void push.enable()} disabled={push.busy}>
+                {push.busy ? "Activando…" : "Activar notificaciones"}
+              </button>
+            </div>
+          )}
+          {push.notice && !push.notice.ok && <p className="bell__push bell__push--error">{push.notice.message}</p>}
           {items.length === 0 ? (
             <p className="bell__empty">No tienes avisos. Cuando el asistente pase un chat a una persona de tu equipo, te avisamos aquí.</p>
           ) : (
@@ -69,11 +82,11 @@ export function NotificationBell() {
                 <li key={item.id}>
                   <button type="button" className={`bell__item${item.read ? "" : " bell__item--unread"}`} onClick={() => openNotification(item)}>
                     <span className="bell__icon" aria-hidden="true">
-                      <Icon name="headset" size={16} />
+                      <Icon name={item.kind === "ai_resumed" ? "robot" : "headset"} size={16} />
                     </span>
                     <span className="bell__text">
                       <span className="bell__title">{item.title}</span>
-                      {item.body && <span className="bell__body">«{item.body}»</span>}
+                      {item.body && <span className="bell__body">{item.kind === "handoff" ? `«${item.body}»` : item.body}</span>}
                       <span className="bell__meta">
                         {item.business.name} · {relativeTime(item.createdAt)}
                       </span>

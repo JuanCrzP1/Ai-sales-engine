@@ -22,14 +22,17 @@ from app.domain.business_config.ai_settings import AICredentials
 from app.domain.business_config.ai_usage import AIUsage
 from app.domain.business_config.channels import ConnectionStatus, WhatsAppSecrets
 from app.domain.business_config.contract import BusinessConfig, SecretRef
-from app.domain.business_config.conversations import AppendResult, MediaFile, NewMessage
+from app.domain.business_config.attention import AttentionSettings
+from app.domain.business_config.conversations import AppendResult, MediaFile, NewMessage, WaitingChat
 from app.domain.business_config.errors import BusinessConfigError
 from app.infrastructure.business_config.ai_settings_store import AISettingsStore
 from app.infrastructure.business_config.ai_usage_store import AIUsageStore
+from app.infrastructure.business_config.attention_store import AttentionStore
 from app.infrastructure.business_config.channel_store import ChannelStore
 from app.infrastructure.business_config.conversation_store import ConversationStore
 from app.infrastructure.business_config.database import create_business_config_engine, database_url, sqlite_file
 from app.infrastructure.business_config.payment_secret_store import SECRET_STORE_SOURCE, PaymentSecretStore
+from app.infrastructure.business_config.push_store import PushStore
 from app.infrastructure.business_config.repository import BusinessConfigRepository
 from app.infrastructure.business_config.secrets_key import find_secrets_key
 
@@ -41,9 +44,16 @@ __all__ = [
     "reader_for",
     "append_conversation_message",
     "conversation_ai_paused",
+    "conversation_team_replied",
     "mark_conversation_delivery",
     "record_ai_usage",
     "request_conversation_handoff",
+    "alert_stores",
+    "attention_settings",
+    "pending_customer_text",
+    "resume_waiting_chat",
+    "waiting_chats",
+    "whatsapp_secrets",
     "set_conversation_typing",
     "set_whatsapp_status",
     "update_conversation_entry",
@@ -143,9 +153,45 @@ def set_conversation_typing(conversation_id: str, until: datetime | None) -> Non
     ConversationStore(_store_engine()).set_typing(conversation_id, until)
 
 
-def request_conversation_handoff(conversation_id: str, reason: str, detail: str | None = None) -> None:
-    """La conversación pasa a una persona: la IA se pausa en ese chat y el equipo recibe un aviso."""
-    ConversationStore(_store_engine()).request_handoff(conversation_id, reason, detail)
+def request_conversation_handoff(conversation_id: str, reason: str, detail: str | None = None, *, pause_ai: bool = True) -> str | None:
+    """La conversación pasa a una persona y el equipo recibe un aviso (su id, o None si ya esperaba). Con `pause_ai`, la IA se pausa."""
+    return ConversationStore(_store_engine()).request_handoff(conversation_id, reason, detail, pause_ai=pause_ai)
+
+
+def attention_settings(tenant_slug: str) -> AttentionSettings:
+    """Los ajustes de atención humana del negocio (sin guardar, los de por defecto)."""
+    return AttentionStore(_store_engine()).attention_settings(tenant_slug)
+
+
+def waiting_chats(*, waiting_before: datetime, limit: int = 100) -> list[WaitingChat]:
+    """Los chats con la IA pausada y un cliente esperando desde antes de `waiting_before`."""
+    return ConversationStore(_store_engine()).waiting_chats(waiting_before=waiting_before, limit=limit)
+
+
+def resume_waiting_chat(conversation_id: str, *, waiting_before: datetime, minutes: int) -> str | None:
+    """La IA retoma el chat (una sola vez) si su cliente sigue esperando: el id del aviso al equipo, o None si ya no hacía falta."""
+    return ConversationStore(_store_engine()).resume_waiting(conversation_id, waiting_before=waiting_before, minutes=minutes)
+
+
+def pending_customer_text(conversation_id: str, *, since: datetime) -> str:
+    """Lo que escribió el cliente desde `since` sin respuesta, en un solo texto."""
+    return ConversationStore(_store_engine()).pending_customer_text(conversation_id, since=since)
+
+
+def whatsapp_secrets(tenant_slug: str) -> WhatsAppSecrets | None:
+    """La conexión de WhatsApp del negocio (servidor y token), o None si no está conectado."""
+    return ChannelStore(_store_engine(), find_secrets_key()).whatsapp_secrets(tenant_slug)
+
+
+def alert_stores() -> tuple[AttentionStore, PushStore]:
+    """Lo que hace falta para avisar al equipo: sus ajustes y correos, y las suscripciones a notificaciones."""
+    engine = _store_engine()
+    return AttentionStore(engine), PushStore(engine, find_secrets_key())
+
+
+def conversation_team_replied(conversation_id: str) -> None:
+    """Alguien del equipo respondió desde el celular del negocio: la IA se pausa en ese chat y el cliente deja de esperar."""
+    ConversationStore(_store_engine()).team_replied(conversation_id)
 
 
 def conversation_ai_paused(conversation_id: str) -> bool:

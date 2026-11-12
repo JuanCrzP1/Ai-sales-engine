@@ -116,8 +116,9 @@ ENABLE_WEBHOOK_PROCESSING=true
   se crea una instancia por negocio, cuyo token queda cifrado con `BUSINESS_CONFIG_SECRETS_KEY` (tabla `business_channels`,
   migración 0008). Desconectar borra la instancia del servidor. Sin estas variables (o sin dirección pública del motor), Canales
   dice que la conexión todavía no está activa.
-- El webhook solo acepta avisos con el token de la instancia guardada e ignora grupos, canales y lo que envía el propio número o la
-  API. Recibe mensajes, recibos de entregado y leído (`messages_update`) y cambios de conexión. El flujo completo está en
+- El webhook solo acepta avisos con el token de la instancia guardada e ignora grupos, canales y lo que envía la API. Lo que el
+  negocio escribe desde su celular en el chat de un cliente sí llega: queda como respuesta del equipo y pausa la IA en ese chat. Las
+  instancias conectadas antes del 11 de noviembre de 2026 lo reciben después de volver a conectar (así se registra el webhook nuevo). Recibe mensajes, recibos de entregado y leído (`messages_update`) y cambios de conexión. El flujo completo está en
   `app/application/channels/whatsapp_inbound.py`:
   1. El mensaje del cliente se guarda en la bandeja apenas llega. El mismo aviso repetido no se guarda ni se responde dos veces (lo
      garantiza un índice único en la base).
@@ -126,12 +127,34 @@ ENABLE_WEBHOOK_PROCESSING=true
      La IA describe la foto (y si es un comprobante de pago) o transcribe la nota de voz con la clave del negocio y un modelo económico
      (`MEDIA_AI_MODEL`, por omisión `google/gemini-2.5-flash-lite`); eso es lo que lee el asistente, y su costo va al consumo del
      negocio.
-  4. Si el cliente pide una persona, reclama o reporta un pago, la conversación pasa al equipo: la IA se pausa en ese chat y llega un
-     aviso. Si alguien del equipo toma el chat mientras el asistente piensa, no se envía nada.
+  4. Si el cliente pide una persona, reclama o reporta un pago, la conversación pasa al equipo según su horario (ver «Atención
+     Humana» abajo). Si alguien del equipo toma el chat mientras el asistente piensa, no se envía nada.
   5. Desde la bandeja, el equipo responde (sale por WhatsApp y pausa la IA) y reanuda la IA cuando quiera.
 - Los contactos que WhatsApp identifica con `@lid` se atienden en su número (`sender_pn`).
 - El servidor gratuito (`https://free.uazapi.com`) sirve para probar: borra las instancias a la hora (conectar de nuevo crea
   otra). Para clientes reales se usa un servidor de pago de uazapi.
+
+### Atención Humana: Correo, Notificaciones Y Revisión Periódica
+
+Lo que hace cada negocio está en Ajustes → Atención humana (ver `docs/architecture.md`, «Atención Humana»). La plataforma pone:
+
+| Variable (proyecto del motor) | Para qué | Si falta |
+|---|---|---|
+| `RESEND_API_KEY` (*Sensitive*) | La clave de [Resend](https://resend.com) para los correos de aviso | No salen correos; el panel dice «El correo de avisos aún no está activado en la plataforma». Todo lo demás funciona |
+| `EMAIL_FROM` | El remitente, p. ej. `AI Sales Engine <avisos@tudominio.com>`, con el dominio verificado en Resend | Se usa `onboarding@resend.dev`, el de pruebas de Resend, que **solo entrega al correo de la cuenta de Resend** |
+| `CRON_SECRET` (*Sensitive*, 16 caracteres o más) | Protege `/api/v1/internal/attention/run`, que Vercel llama cada 15 minutos (`project/vercel.json`) | La ruta responde 503 y la IA retoma los chats solo con el tráfico del motor y del panel |
+| `PANEL_URL` | La dirección del panel para los enlaces de los correos y la raíz del motor | `https://ai-sales-engine-panel.vercel.app` |
+
+- **Notificaciones (Web Push):** no llevan variables. Las claves VAPID se crean solas la primera vez (tabla `platform_keys`, la parte
+  secreta cifrada con `BUSINESS_CONFIG_SECRETS_KEY`). Cada persona las activa en cada navegador desde Ajustes → Atención humana o la
+  campana. En iPhone y iPad solo funcionan con el panel instalado («Agregar a pantalla de inicio»).
+- **Puntualidad:** en el plan Hobby, Vercel corre la revisión cada 15 minutos, así que una espera de 30 minutos se retoma entre los
+  30 y los 45 minutos si nadie usa la plataforma; con tráfico (el panel abierto o mensajes entrantes), al minuto. En Pro se puede
+  cada minuto (`* * * * *` en `project/vercel.json`).
+- **En este equipo:** los lanzadores ponen `ATTENTION_SWEEP_ON_TRAFFIC=1`, así la revisión corre con el tráfico local.
+- **Registros útiles:** `whatsapp_qr_paso_a_una_persona` (con `team_available` y `ai_paused`), `aviso_por_correo_enviado`,
+  `aviso_por_correo_fallido`, `aviso_por_notificacion` (cuántos dispositivos), `ia_retomo_chat`, `revision_de_atencion_fallida`.
+  Cómo salió cada aviso queda en `notification_deliveries` (`sent`, `failed` con su motivo o `skipped`).
 
 ### Flags De Operación
 

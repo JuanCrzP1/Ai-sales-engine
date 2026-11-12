@@ -7,6 +7,7 @@ import { paymentHolders } from "../domain/config/document";
 import type { BusinessDocument, BusinessSummary, BusinessTemplate, Diagnostic, PaymentFields, PaymentFieldState, PaymentValues, VersionInfo, VersionStatus } from "../domain/config/types";
 import { createLocalOperatorAuthService } from "../infrastructure/local/localOperatorAuthService";
 import type { AIModelOption, AISettings, AIUsage, AssistantLab, ConfigSource, ModelCatalog } from "../repositories/assistantLab";
+import type { Attention, AttentionSettings, AttentionView, DevicePush, PushPermission, PushSupport } from "../repositories/attention";
 import type { AuthService } from "../repositories/authService";
 import type { BusinessDirectory } from "../repositories/businessDirectory";
 import type { Channels, WhatsAppChannel } from "../repositories/channels";
@@ -454,10 +455,84 @@ export function createMemoryCommerce(seed: { customers?: Customer[]; sales?: Sal
   };
 }
 
+/** La atención humana en memoria: guarda lo que se envía, valida como el servidor lo esencial y registra los correos de prueba. */
+export function createMemoryAttention(seed: Partial<AttentionView> = {}): Attention & { view: AttentionView; testEmails: number; failEmail: boolean } {
+  const state = {
+    view: {
+      hoursMode: "business",
+      teamHours: [],
+      timezone: "America/Bogota",
+      replyMinutes: 10,
+      resumeAfterMinutes: 30,
+      emailEnabled: true,
+      emailTo: null,
+      updatedAt: null,
+      businessHours: [{ days: ["lunes", "martes", "miercoles", "jueves", "viernes"], opens: "08:00", closes: "18:00" }],
+      accountEmails: ["laura@empresa.com"],
+      emailAvailable: true,
+      teamAvailableNow: true,
+      nextOpening: null,
+      options: {
+        timezones: [
+          { id: "America/Bogota", label: "Colombia" },
+          { id: "America/Mexico_City", label: "México (Ciudad de México)" },
+        ],
+        replyMinutes: [0, 5, 10, 15, 30, 60, 120, 240],
+        resumeAfterMinutes: [10, 15, 30, 45, 60, 120, 240],
+      },
+      ...seed,
+    } as AttentionView,
+    testEmails: 0,
+    failEmail: false,
+  };
+  return Object.assign(state, {
+    get: async () => structuredClone(state.view),
+    save: async (settings: AttentionSettings) => {
+      if (settings.hoursMode === "custom" && settings.teamHours.length === 0) {
+        throw new PersistenceError("invalid", { message: "Revisa la atención humana.", problems: [{ path: "team_hours", message: "Agrega al menos una franja, o elige otro horario." }] });
+      }
+      state.view = { ...state.view, ...settings, emailTo: settings.emailTo?.trim() || null, updatedAt: new Date().toISOString() };
+      return structuredClone(state.view);
+    },
+    sendTestEmail: async () => {
+      if (state.failEmail) throw new PersistenceError("unknown", { message: "El correo de avisos aún no está activado en la plataforma." });
+      state.testEmails += 1;
+      return state.view.emailTo ? [state.view.emailTo] : state.view.accountEmails;
+    },
+  });
+}
+
+/** Las notificaciones de un navegador en memoria: soportadas, con permiso por dar. */
+export function createMemoryDevicePush(initial: { support?: PushSupport; permission?: PushPermission; subscribed?: boolean } = {}) {
+  const state = { support: initial.support ?? "supported", permission: initial.permission ?? "default", subscribed: initial.subscribed ?? false, tests: 0, denyNext: false };
+  const push: DevicePush & { state: typeof state } = {
+    state,
+    support: () => state.support as PushSupport,
+    permission: () => state.permission as PushPermission,
+    subscribed: async () => state.subscribed,
+    enable: async () => {
+      if (state.denyNext) {
+        state.permission = "denied";
+        throw new PersistenceError("unknown", { message: "Bloqueaste las notificaciones para este sitio. Permítelas en la configuración del navegador y vuelve a intentarlo." });
+      }
+      state.permission = "granted";
+      state.subscribed = true;
+    },
+    disable: async () => {
+      state.subscribed = false;
+    },
+    test: async () => {
+      state.tests += 1;
+    },
+  };
+  return push;
+}
+
 /** Servicios como los de la aplicación, sobre el backend en memoria. */
 export function createTestServices(backend: MemoryBackend = createMemoryBackend(), overrides: Partial<ApplicationServices> = {}): ApplicationServices {
   const whatsapp = createMemoryWhatsApp();
   const commerce = createMemoryCommerce();
+  const attention = createMemoryAttention();
   return {
     auth: createLocalOperatorAuthService(),
     directory: backend.directory,
@@ -466,6 +541,8 @@ export function createTestServices(backend: MemoryBackend = createMemoryBackend(
     inbox: createMemoryInbox(),
     createChannels: () => whatsapp.channels,
     createCommerce: () => commerce,
+    createAttention: () => attention,
+    devicePush: createMemoryDevicePush(),
     ...overrides,
   };
 }

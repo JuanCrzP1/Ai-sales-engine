@@ -31,7 +31,9 @@ from app.domain.business_config.engine_policy import COMMON_CLOSING_POLICY
 SecretResolver = Callable[[SecretRef], str]
 
 # Claves de `config` que solo produce el contrato: los YAML no las tienen (ver `commercial_profile.py`).
-CONTRACT_ONLY_CONFIG_KEYS = ("profile", "knowledge", "messages")
+CONTRACT_ONLY_CONFIG_KEYS = ("profile", "knowledge", "messages", "attention_messages")
+# Los mensajes de la atención humana: los envía la plataforma, no la IA (`domain/business_config/attention.py`).
+ATTENTION_MESSAGES = ("after_hours", "ai_resumed")
 
 
 def _put(target: dict, key: str, value: Any) -> None:
@@ -284,6 +286,10 @@ def _config(config: BusinessConfig) -> dict:
     section["initial_message"] = {"enabled": config.messages.welcome.enabled, "text": config.messages.welcome.text}
     if config.messages.fallback is not None:
         section["fallback_message"] = config.messages.fallback
+    # Lo que dice la plataforma (no la IA) cuando un chat pasa a una persona fuera del horario o cuando la IA retoma un chat.
+    attention = {key: text.strip() for key in ATTENTION_MESSAGES if (text := getattr(config.messages, key)) and text.strip()}
+    if attention:
+        section["attention_messages"] = attention
     section["features"] = _features(config)
     section["response"] = {"length": config.response_style.length, "max_words": config.response_style.effective_max_words()}
     section["profile"] = compile_profile(config)

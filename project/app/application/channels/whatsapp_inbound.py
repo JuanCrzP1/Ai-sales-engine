@@ -1,7 +1,8 @@
 """Un mensaje de un cliente por WhatsApp (código QR, uazapi), de punta a punta, como lo haría un equipo de atención.
 
 En el webhook, enseguida (`receive`):
-1. El estado de la conexión y los recibos de entregado y leído se anotan y listo.
+1. El estado de la conexión y los recibos de entregado y leído se anotan y listo. Lo que el negocio escribe desde su celular en el
+   chat de un cliente queda en la bandeja como respuesta del equipo y pausa la IA en ese chat, como si respondiera desde el panel.
 2. El mensaje del cliente se guarda en la bandeja apenas llega, con su tipo y el id de WhatsApp: si el aviso se repite, no se guarda
    ni se responde dos veces (lo garantiza la base, no la memoria de un proceso: en la nube hay muchos).
 3. Si la IA está pausada en ese chat (la atiende una persona), no se responde: el equipo lo ve en vivo.
@@ -12,7 +13,12 @@ Después de contestarle a uazapi (`process`), porque responder toma unos segundo
    describe la foto (y si es un comprobante de pago) o transcribe la nota de voz. Eso es lo que lee el asistente.
 6. El asistente responde con lo publicado del negocio. Si en ese momento alguien del equipo tomó el chat, no se envía nada.
 7. La respuesta sale por WhatsApp y queda en la bandeja con su id, para sus recibos. Si no sale, queda «no enviada».
-8. Si el cliente pidió una persona, reclamó o reportó un pago, la conversación pasa al equipo: la IA se pausa y llega un aviso.
+8. Si el cliente pidió una persona, reclamó o reportó un pago, la conversación pasa al equipo y le llega un aviso (en la campana, por
+   correo y como notificación). Dentro del horario del equipo la IA se pausa y el cliente sabe cuánto suele tardar; fuera del horario
+   la IA sigue ayudándole y le dice cuándo lo atienden (`domain/business_config/attention.py`).
+
+Si nadie del equipo responde a tiempo, la revisión periódica retoma el chat (`application/attention/resume_sweep.py`) y aquí se le
+pide disculpas al cliente y el asistente responde lo que quedó pendiente (`continue_after_resume`).
 
 Todo lo que se guarda va con los datos de pago ocultos. Las dependencias entran por el constructor (las pruebas las cambian).
 """
@@ -23,6 +29,13 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from typing import Any, Protocol
 
+from app.domain.business_config.attention import (
+    DEFAULT_RESUMED_NOTICE,
+    AttentionSettings,
+    HandoffPlan,
+    handoff_plan,
+    published_attention,
+)
 from app.domain.business_config.channels import WHATSAPP, ChannelError, IncomingMessage, WhatsAppSecrets
 from app.domain.business_config.conversations import MEDIA_KINDS, TYPING_SECONDS, AppendResult, MediaFile, NewMessage
 from app.domain.business_config.payment_data import redact_payment_values
@@ -48,9 +61,11 @@ class ConversationGateway(Protocol):
 
     def set_typing(self, conversation_id: str, until: datetime | None) -> None: ...
 
-    def request_handoff(self, conversation_id: str, reason: str, detail: str | None = None) -> None: ...
+    def request_handoff(self, conversation_id: str, reason: str, detail: str | None = None, *, pause_ai: bool = True) -> str | None: ...
 
     def ai_paused(self, conversation_id: str) -> bool: ...
+
+    def team_replied(self, conversation_id: str) -> None: ...
 
 
 class MediaUnderstanding(Protocol):
@@ -66,8 +81,12 @@ Responder = Callable[[str, str, str], tuple[str, dict]]
 # La clave de IA del negocio (o None) y quién anota su consumo.
 KeyLoader = Callable[[str], str | None]
 UsageRecorder = Callable[[str], Any]
-# Lo publicado del negocio, para ocultar sus datos de pago en lo que se guarda.
+# Lo publicado del negocio, para ocultar sus datos de pago en lo que se guarda (y leer su horario y sus mensajes de atención).
 SectionsLoader = Callable[[str], dict]
+# Los ajustes de atención humana del negocio (Ajustes → Atención humana).
+AttentionLoader = Callable[[str], AttentionSettings]
+# Avisa al equipo por correo y notificación (`TeamAlerts.deliver`): recibe el id del aviso, o None si no hubo aviso nuevo.
+AlertSender = Callable[[str | None], None]
 
 
 @dataclass(frozen=True)
@@ -122,6 +141,9 @@ class WhatsAppInbound:
         sections: SectionsLoader,
         set_status: Callable[..., None],
         mark_delivery: Callable[[str, list[str], str], int],
+        attention: AttentionLoader | None = None,
+        alerts: AlertSender | None = None,
+        clock: Callable[[], datetime] | None = None,
     ) -> None:
         self._conversations = conversations
         self._server = server
@@ -132,6 +154,9 @@ class WhatsAppInbound:
         self._sections = sections
         self._set_status = set_status
         self._mark_delivery = mark_delivery
+        self._attention = attention or (lambda _slug: AttentionSettings())
+        self._alerts = alerts or (lambda _notification: None)
+        self._clock = clock or _now
 
     # ------------------------------------------------------------------ en el webhook
 
@@ -146,6 +171,17 @@ class WhatsAppInbound:
         if receipt is not None:
             self._mark_delivery(slug, list(receipt.message_ids), receipt.status)
             return Received("ok")
+        own = parse.parse_own_message(payload)
+        if own is not None:
+            saved = self._conversations.append(
+                slug, channel=WHATSAPP, contact_ref=own.phone, contact_name=None,
+                message=NewMessage("agent", self._hide_payments(slug, own.text), kind=own.kind, provider_message_id=own.message_id, status="sent"),
+            )
+            if saved.created:
+                # Alguien del equipo respondió desde el celular: el chat es suyo y la IA no habla encima de esa persona.
+                self._conversations.team_replied(saved.conversation_id)
+                logger.info("whatsapp_qr_respuesta_desde_el_celular", extra={"tenant": slug})
+            return Received("team_reply" if saved.created else "duplicate")
         message = parse.parse_incoming(payload)
         if message is None:
             return Received("ignored")
@@ -230,23 +266,71 @@ class WhatsAppInbound:
             logger.info("whatsapp_qr_respuesta_descartada", extra={"tenant": slug, "reason": "chat_tomado_por_el_equipo"})
             return
         intent = str(metadata.get("intent") or "").strip() or None
-        hidden = self._hide_payments(slug, reply)
-        try:
-            provider_id = self._server(secrets.server_url).send_text(secrets.instance_token, message.phone, reply)
-        except ChannelError as exc:
-            logger.error("whatsapp_qr_envio_fallido", extra={"tenant": slug, "error": str(exc)})
-            self._conversations.append(
-                slug, channel=WHATSAPP, contact_ref=message.phone, contact_name=None, message=NewMessage("assistant", hidden, intent, status="failed")
-            )
+        if not self._say(secrets, message.phone, reply, intent):
             return
-        self._conversations.append(
-            slug, channel=WHATSAPP, contact_ref=message.phone, contact_name=None,
-            message=NewMessage("assistant", hidden, intent, provider_message_id=provider_id, status="sent"),
-        )
         logger.info("whatsapp_qr_respuesta", extra={"tenant": slug})
         if metadata.get("handoff"):
             detail = message.text or understanding.get("note") or None
-            self._conversations.request_handoff(stored.conversation_id, str(metadata.get("handoff_reason") or "assistant"), self._hide_payments(slug, detail) if detail else None)
+            self._hand_off(secrets, message.phone, stored.conversation_id, str(metadata.get("handoff_reason") or "assistant"), detail)
+
+    def _say(self, secrets: WhatsAppSecrets, phone: str, text: str, intent: str | None = None) -> bool:
+        """Envía un mensaje del asistente por WhatsApp y lo deja en la bandeja (o «no enviado» si no salió). Dice si salió."""
+        slug = secrets.tenant_slug
+        hidden = self._hide_payments(slug, text)
+        try:
+            provider_id = self._server(secrets.server_url).send_text(secrets.instance_token, phone, text)
+        except ChannelError as exc:
+            logger.error("whatsapp_qr_envio_fallido", extra={"tenant": slug, "error": str(exc)})
+            self._conversations.append(
+                slug, channel=WHATSAPP, contact_ref=phone, contact_name=None, message=NewMessage("assistant", hidden, intent, status="failed")
+            )
+            return False
+        self._conversations.append(
+            slug, channel=WHATSAPP, contact_ref=phone, contact_name=None,
+            message=NewMessage("assistant", hidden, intent, provider_message_id=provider_id, status="sent"),
+        )
+        return True
+
+    def _hand_off(self, secrets: WhatsAppSecrets, phone: str, conversation_id: str, reason: str, detail: str | None) -> None:
+        """El chat pasa a una persona: según el horario del equipo, la IA se pausa o sigue; el cliente sabe qué esperar y el equipo
+        recibe el aviso (campana, correo y notificación)."""
+        slug = secrets.tenant_slug
+        plan = self._handoff_plan(slug)
+        notification = self._conversations.request_handoff(
+            conversation_id, reason, self._hide_payments(slug, detail) if detail else None, pause_ai=plan.pause_ai
+        )
+        if plan.notice:
+            self._say(secrets, phone, plan.notice)
+        logger.info("whatsapp_qr_paso_a_una_persona", extra={"tenant": slug, "team_available": plan.team_available, "ai_paused": plan.pause_ai})
+        self._alerts(notification)
+
+    def _handoff_plan(self, slug: str) -> HandoffPlan:
+        """Qué pasa al pasar el chat a una persona. Si no se pueden leer los ajustes, como siempre: la IA se pausa, sin aviso extra."""
+        try:
+            settings = self._attention(slug)
+            published = published_attention(self._sections(slug))
+            return handoff_plan(settings, published.business_hours, self._clock(), after_hours_message=published.after_hours)
+        except Exception as exc:  # noqa: BLE001 - la atención humana nunca puede impedir que el chat pase a una persona
+            logger.warning("atencion_humana_no_disponible", extra={"tenant": slug, "error": type(exc).__name__})
+            return HandoffPlan(team_available=True, pause_ai=True, notice=None)
+
+    # ------------------------------------------------------------------ la IA retoma un chat que nadie atendió
+
+    def continue_after_resume(self, secrets: WhatsAppSecrets, conversation_id: str, phone: str, pending_text: str) -> None:
+        """La IA retomó el chat porque nadie del equipo respondió a tiempo: pide disculpas (con el mensaje del negocio, si lo escribió)
+        y responde lo que el cliente escribió mientras esperaba. Nunca lanza."""
+        slug = secrets.tenant_slug
+        try:
+            try:
+                notice = published_attention(self._sections(slug)).ai_resumed or DEFAULT_RESUMED_NOTICE
+            except Exception:  # noqa: BLE001 - sin lo publicado, el mensaje de la plataforma
+                notice = DEFAULT_RESUMED_NOTICE
+            self._say(secrets, phone, notice)
+            if pending_text.strip():
+                waiting = IncomingMessage(message_id="", phone=phone, contact_name=None, text=pending_text.strip())
+                self._answer(secrets, waiting, AppendResult(conversation_id, "", True, False), {})
+        except Exception as exc:  # noqa: BLE001
+            logger.error("whatsapp_qr_retomar_fallido", extra={"tenant": slug, "error": type(exc).__name__})
 
     def _hide_payments(self, slug: str, text: str) -> str:
         if not text:

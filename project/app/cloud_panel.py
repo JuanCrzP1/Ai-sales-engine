@@ -17,10 +17,12 @@ from app.infrastructure.business_config.database import (
     build_business_config_service,
     create_business_config_engine,
 )
+from app.infrastructure.business_config.attention_store import AttentionStore
 from app.infrastructure.business_config.migrations import ensure_migrations
 from app.infrastructure.business_config.conversation_store import ConversationStore
 from app.infrastructure.business_config.members_store import BusinessMembersStore
 from app.infrastructure.business_config.notification_store import NotificationStore
+from app.infrastructure.business_config.push_store import PushStore
 from app.infrastructure.business_config.secrets_key import find_secrets_key
 from app.infrastructure.business_config.usage_store import UsageCounterStore
 
@@ -37,6 +39,8 @@ def build_cloud_panel_api(auth_url: str) -> FastAPI:
     from app.infrastructure.channels.platform import uazapi_platform
     from app.infrastructure.channels.public_url import webhook_base
     from app.infrastructure.channels.uazapi import UazapiClient
+    from app.infrastructure.notifications.resend_email import ResendEmailSender
+    from app.infrastructure.notifications.web_push import WebPushSender
 
     engine = create_business_config_engine()
     # Como en Auream: cada despliegue deja la base al día solo, sin correr nada a mano.
@@ -53,6 +57,7 @@ def build_cloud_panel_api(auth_url: str) -> FastAPI:
         default_model=settings.openrouter_model,
     )
     access = BusinessAccess(service, BusinessMembersStore(engine))
+    push_store = PushStore(engine, key)
     return create_app(
         service,
         lab,
@@ -68,4 +73,8 @@ def build_cloud_panel_api(auth_url: str) -> FastAPI:
         commerce=CommerceStore(engine),
         ai_usage=AIUsageStore(engine),
         contact_memory=EngineContactMemory(),
+        attention=AttentionStore(engine),
+        push_storage=push_store,
+        email=ResendEmailSender(),
+        push=WebPushSender(push_store.vapid_keys),
     )

@@ -36,7 +36,7 @@ lleva hacia la compra; cuando hace falta una persona, se la pasa al equipo y le 
 | **Un asistente que vende** | Responde con lo que el negocio publicó: productos, precios, pagos, políticas y su forma de vender. No inventa precios ni planes. |
 | **WhatsApp en un minuto** | El negocio toca «Conectar WhatsApp» y escanea un código QR. El servidor y los tokens los pone la plataforma. |
 | **Conversaciones en vivo** | Como WhatsApp Web: escribiendo…, chulos de enviado y leído, no leídos, fotos y notas de voz que la IA entiende. |
-| **Paso a una persona** | Si el cliente pide hablar con alguien, reclama o reporta un pago, la IA se pausa en ese chat y el equipo recibe un aviso. |
+| **Paso a una persona** | Si el cliente pide hablar con alguien, reclama o reporta un pago, el chat pasa al equipo según su horario. El equipo recibe aviso en la campana, por correo y en el celular, y si nadie responde a tiempo la IA retoma el chat. |
 | **Clientes y ventas** | Cada cliente con su etapa (nuevo, interesado, listo, pagó, cliente), que avanza sola. Las ventas se registran desde el chat. |
 | **Reportes** | Embudo, conversaciones por día, quién respondió y cuánto costó la IA, comparados con el periodo anterior. |
 | **Su propia IA** | Cada negocio usa su clave de OpenRouter y elige el modelo. Ve su consumo; la plataforma no tiene una clave general. |
@@ -106,8 +106,8 @@ trae 9 negocios de prueba. Detalle: [docs/quickstart.md](docs/quickstart.md).
 ## Calidad
 
 ```bash
-pytest                                             # motor y almacén: 1.527 pruebas, sin IA real ni base del .env
-npm --prefix apps/admin-web test                   # panel: 238 pruebas
+pytest                                             # motor y almacén: 1.569 pruebas, sin IA real ni base del .env
+npm --prefix apps/admin-web test                   # panel: 251 pruebas
 npm --prefix apps/admin-web run test:integration   # panel contra la API real
 ```
 
@@ -138,8 +138,8 @@ npm --prefix apps/admin-web run test:integration   # panel contra la API real
 |---|---|---|
 | 1 | Eliminar chats y clientes, de la base y de la memoria del asistente | Hecha |
 | 2 | Documentación profesional | Hecha |
-| 3 | Atención humana completa: horario del equipo, aviso por correo y la IA retoma sola | Siguiente |
-| 4 | Lanzamiento: monitoreo, copias de seguridad probadas, correo, términos y política de datos, Vercel Pro | Pendiente |
+| 3 | Atención humana completa: horario del equipo, avisos por correo y en el celular, y la IA retoma sola | Hecha |
+| 4 | Lanzamiento: monitoreo, copias de seguridad probadas, correo, términos y política de datos, Vercel Pro | Siguiente |
 | 5 | Retirar lo que queda del sistema anterior y partir los módulos grandes del motor | Pendiente |
 | — | WhatsApp en un servidor de uazapi propio (hoy se usa el de pruebas) | Al final |
 

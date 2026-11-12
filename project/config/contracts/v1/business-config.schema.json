@@ -1406,6 +1406,36 @@
           "title": "Human Handoff",
           "x-engine": "conectado"
         },
+        "after_hours": {
+          "anyOf": [
+            {
+              "maxLength": 800,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Mensaje cuando un chat pasa a una persona fuera del horario del equipo. Si falta, uno con el horario y cuándo lo atienden.",
+          "title": "After Hours",
+          "x-engine": "conectado"
+        },
+        "ai_resumed": {
+          "anyOf": [
+            {
+              "maxLength": 800,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Mensaje cuando la IA retoma un chat que nadie del equipo respondió a tiempo. Si falta, uno de la plataforma.",
+          "title": "Ai Resumed",
+          "x-engine": "conectado"
+        },
         "fallback": {
           "anyOf": [
             {

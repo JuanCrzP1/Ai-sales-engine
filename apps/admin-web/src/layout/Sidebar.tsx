@@ -2,7 +2,7 @@ import { useRef, type ReactNode, type TouchEvent } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { BrandMark } from "../components/brand/BrandMark";
 import { Icon } from "../components/ui/Icon";
-import { ASSISTANT_HUB_ITEM, CHANNELS_ITEM, isAssistantPath, MAIN_ITEMS, SETTINGS_ITEM, type NavItem } from "../navigation/navItems";
+import { ASSISTANT_HUB_ITEM, CHANNELS_ITEM, isAssistantPath, isSettingsPath, MAIN_ITEMS, SETTINGS_ITEM, type NavItem } from "../navigation/navItems";
 import { useWorkspacePath } from "../navigation/useWorkspacePath";
 import { useAuth } from "../state/auth/useAuth";
 import { useConfig } from "../state/useConfig";
@@ -85,7 +85,7 @@ export function Sidebar({ id, open, compact = false, onClose }: SidebarProps) {
           )}
         </NavEntry>
         <NavEntry item={CHANNELS_ITEM} />
-        <NavEntry item={SETTINGS_ITEM} />
+        <NavEntry item={SETTINGS_ITEM} active={isSettingsPath(pathname)} />
       </nav>
 
       {verifiesCredentials && (

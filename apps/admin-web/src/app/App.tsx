@@ -3,6 +3,7 @@ import { createBrowserRouter, createRoutesFromElements, RouterProvider } from "r
 import { Button } from "../components/ui/Button";
 import { ErrorBoundary } from "../layout/ErrorBoundary";
 import { LoadingScreen, StatusScreen } from "../layout/StatusScreen";
+import { DevicePushContext } from "../state/attentionContext";
 import { AuthProvider } from "../state/auth/AuthProvider";
 import { DirectoryContext } from "../state/directoryContext";
 import { InboxContext } from "../state/inboxContext";
@@ -20,6 +21,7 @@ export function App({ services }: { services?: ApplicationServices }) {
       <ServicesContext.Provider value={resolved}>
         <DirectoryContext.Provider value={resolved.directory}>
           <InboxContext.Provider value={resolved.inbox}>
+          <DevicePushContext.Provider value={resolved.devicePush}>
           <AuthProvider
             service={resolved.auth}
             renderLoading={() => <LoadingScreen label="Abriendo tu panel…" />}
@@ -31,6 +33,7 @@ export function App({ services }: { services?: ApplicationServices }) {
           >
             <RouterProvider router={router} />
           </AuthProvider>
+          </DevicePushContext.Provider>
           </InboxContext.Provider>
         </DirectoryContext.Provider>
       </ServicesContext.Provider>

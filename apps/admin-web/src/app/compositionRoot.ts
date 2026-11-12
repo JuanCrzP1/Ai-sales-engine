@@ -1,14 +1,17 @@
 import { createAuthClient } from "@neon/auth";
 import { createApiAssistantLab } from "../infrastructure/api/apiAssistantLab";
+import { createApiAttention } from "../infrastructure/api/apiAttention";
 import { createApiBusinessDirectory } from "../infrastructure/api/apiBusinessDirectory";
 import { createApiChannels } from "../infrastructure/api/apiChannels";
 import { createApiCommerce } from "../infrastructure/api/apiCommerce";
 import { createApiConfigRepository } from "../infrastructure/api/apiConfigRepository";
 import { createApiInbox } from "../infrastructure/api/apiInbox";
 import { createHttpClient } from "../infrastructure/api/httpClient";
+import { createBrowserPush } from "../infrastructure/browser/browserPush";
 import { createLocalOperatorAuthService } from "../infrastructure/local/localOperatorAuthService";
 import { createNeonAuthService, type NeonAuthClient } from "../infrastructure/neon/neonAuthService";
 import type { AssistantLab } from "../repositories/assistantLab";
+import type { Attention, DevicePush } from "../repositories/attention";
 import type { AuthService } from "../repositories/authService";
 import type { BusinessDirectory } from "../repositories/businessDirectory";
 import type { Channels } from "../repositories/channels";
@@ -31,6 +34,10 @@ export interface ApplicationServices {
   /** Los canales de un negocio (por ahora, WhatsApp por código QR). */
   createChannels: (slug: string) => Channels;
   createCommerce: (slug: string) => Commerce;
+  /** La atención humana de un negocio (Ajustes → Atención humana). */
+  createAttention: (slug: string) => Attention;
+  /** Las notificaciones en este navegador o celular (de la persona, no de un negocio). */
+  devicePush: DevicePush;
 }
 
 /** Implementaciones actuales: la API local del panel, sin autenticación porque solo atiende en este equipo. */
@@ -44,6 +51,8 @@ export function createLocalServices(apiBaseUrl?: string): ApplicationServices {
     inbox: createApiInbox(http),
     createChannels: (slug) => createApiChannels(http, slug),
     createCommerce: (slug) => createApiCommerce(http, slug),
+    createAttention: (slug) => createApiAttention(http, slug),
+    devicePush: createBrowserPush(http),
   };
 }
 
@@ -59,6 +68,8 @@ export function createCloudServices(authUrl: string, apiBaseUrl?: string): Appli
     inbox: createApiInbox(http),
     createChannels: (slug) => createApiChannels(http, slug),
     createCommerce: (slug) => createApiCommerce(http, slug),
+    createAttention: (slug) => createApiAttention(http, slug),
+    devicePush: createBrowserPush(http),
   };
 }
 

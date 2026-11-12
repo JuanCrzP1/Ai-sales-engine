@@ -974,3 +974,171 @@
 .settings-card--collapsible:hover {
   transform: none;
 }
+
+/* ---------------------------------------------------------------- Ajustes → Atención humana */
+.attention-form {
+  margin-top: var(--space-4);
+}
+
+.team-hours {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.team-hours__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md, 12px);
+  background: var(--color-surface-muted);
+}
+
+.team-hours__row > .field__message {
+  flex-basis: 100%;
+  margin: 0;
+}
+
+.team-hours__days {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.day-chip {
+  min-width: 44px;
+  min-height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 999px;
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.day-chip--on {
+  border-color: var(--color-accent);
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+}
+
+.day-chip:focus-visible,
+.team-hours__remove:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.team-hours__times {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-2);
+  margin-left: auto;
+}
+
+.team-hours__time {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: var(--text-xs, 12px);
+  color: var(--color-text-muted);
+}
+
+.team-hours__time .input {
+  width: 156px;
+}
+
+.team-hours__remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: 10px;
+  background: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
+.team-hours__remove:hover {
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
+}
+
+.attention-alerts {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--space-5);
+}
+
+.device-push {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding-left: var(--space-5);
+  border-left: 1px solid var(--color-border);
+}
+
+.device-push__head {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.device-push__head .field__hint {
+  margin: 2px 0 0;
+}
+
+.device-push__icon {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--color-success-soft);
+  color: var(--color-success);
+}
+
+.device-push__title {
+  margin: 0;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.device-push__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+@media (max-width: 900px) {
+  .attention-alerts {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .device-push {
+    padding: var(--space-4) 0 0;
+    border-left: 0;
+    border-top: 1px solid var(--color-border);
+  }
+
+  .team-hours__times {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .team-hours__time {
+    flex: 1;
+  }
+
+  .team-hours__time .input {
+    width: 100%;
+  }
+}

@@ -121,6 +121,8 @@ business_members = Table(
     Column("user_id", Text, primary_key=True),
     Column("role", Text, nullable=False),
     Column("created_at", DateTime(timezone=True), nullable=False, default=_now),
+    # Migración 0011: el correo de la cuenta, tomado de su sesión, para los avisos por correo.
+    Column("email", Text),
     CheckConstraint("role IN ('owner')", name="business_members_role_check"),
     Index("business_members_user_idx", "user_id"),
 )
@@ -153,11 +155,20 @@ conversations = Table(
     Column("updated_at", DateTime(timezone=True), nullable=False, default=_now),
     # Migración 0010: la etapa a la que llegó el cliente (solo avanza).
     Column("stage", Text, nullable=False, default="new"),
+    # Migración 0011: desde cuándo el cliente espera a una persona sin respuesta, y cuándo la IA retomó sola el chat.
+    Column("customer_waiting_since", DateTime(timezone=True)),
+    Column("ai_resumed_at", DateTime(timezone=True)),
     CheckConstraint("channel IN ('whatsapp', 'instagram', 'telegram', 'web', 'prueba')", name="conversations_channel_check"),
     CheckConstraint("stage IN ('new', 'interested', 'ready', 'payment', 'customer')", name="conversations_stage_check"),
     CheckConstraint("status IN ('open', 'closed')", name="conversations_status_check"),
     UniqueConstraint("tenant_id", "channel", "contact_ref", name="conversations_contact_key"),
     Index("conversations_tenant_recent_idx", "tenant_id", "last_message_at"),
+    Index(
+        "conversations_waiting_idx",
+        "customer_waiting_since",
+        postgresql_where=text("ai_paused AND customer_waiting_since IS NOT NULL"),
+        sqlite_where=text("ai_paused AND customer_waiting_since IS NOT NULL"),
+    ),
 )
 
 # Migración 0009: las fotos, audios y documentos de las conversaciones (el enlace de WhatsApp vence).
@@ -238,7 +249,7 @@ notifications = Table(
     Column("title", Text, nullable=False),
     Column("body", Text),
     Column("created_at", DateTime(timezone=True), nullable=False, default=_now),
-    CheckConstraint("kind IN ('handoff')", name="notifications_kind_check"),
+    CheckConstraint("kind IN ('handoff', 'ai_resumed')", name="notifications_kind_check"),
     Index("notifications_tenant_recent_idx", "tenant_id", "created_at"),
 )
 
@@ -287,4 +298,69 @@ business_channels = Table(
     Column("phone", Text),
     Column("profile_name", Text),
     Column("updated_at", DateTime(timezone=True), nullable=False, default=_now),
+)
+
+# Atención humana (migración 0011): el horario del equipo, lo que se le dice al cliente, cuándo retoma la IA y a qué correo llegan los
+# avisos. Una fila por negocio; sin fila, los valores por defecto (`domain/business_config/attention.py`).
+ATTENTION_HOURS_MODES = ("business", "custom", "always")
+business_attention_settings = Table(
+    "business_attention_settings",
+    metadata,
+    Column("tenant_id", Uuid, ForeignKey("tenants.id", ondelete="CASCADE"), primary_key=True),
+    Column("hours_mode", Text, nullable=False, default="business"),
+    Column("team_hours", JSON().with_variant(JSONB(), "postgresql"), nullable=False, default=list),
+    Column("timezone", Text, nullable=False, default="America/Bogota"),
+    Column("reply_minutes", Integer, nullable=False, default=10),
+    Column("resume_after_minutes", Integer),
+    Column("email_enabled", Boolean, nullable=False, default=True),
+    Column("email_to", Text),
+    Column("updated_at", DateTime(timezone=True), nullable=False, default=_now),
+    CheckConstraint("hours_mode IN ('business', 'custom', 'always')", name="business_attention_settings_hours_mode_check"),
+    CheckConstraint(
+        "reply_minutes BETWEEN 0 AND 1440 AND (resume_after_minutes IS NULL OR resume_after_minutes BETWEEN 1 AND 1440)",
+        name="business_attention_settings_minutes_check",
+    ),
+)
+
+# Cada aviso sale una sola vez por canal (correo, notificación push): la fila se reserva antes de enviar.
+DELIVERY_CHANNELS = ("email", "push")
+DELIVERY_STATUSES = ("sending", "sent", "failed", "skipped")
+notification_deliveries = Table(
+    "notification_deliveries",
+    metadata,
+    Column("notification_id", Uuid, ForeignKey("notifications.id", ondelete="CASCADE"), primary_key=True),
+    Column("channel", Text, primary_key=True),
+    Column("status", Text, nullable=False),
+    Column("detail", Text),
+    Column("created_at", DateTime(timezone=True), nullable=False, default=_now),
+    Column("updated_at", DateTime(timezone=True), nullable=False, default=_now),
+    CheckConstraint("channel IN ('email', 'push')", name="notification_deliveries_channel_check"),
+    CheckConstraint("status IN ('sending', 'sent', 'failed', 'skipped')", name="notification_deliveries_status_check"),
+)
+
+# Los navegadores y celulares donde cada persona activó las notificaciones (Web Push).
+push_subscriptions = Table(
+    "push_subscriptions",
+    metadata,
+    Column("id", Uuid, primary_key=True, default=uuid.uuid4),
+    Column("user_id", Text, nullable=False),
+    Column("endpoint", Text, nullable=False),
+    Column("p256dh", Text, nullable=False),
+    Column("auth", Text, nullable=False),
+    Column("device", Text),
+    Column("created_at", DateTime(timezone=True), nullable=False, default=_now),
+    Column("last_success_at", DateTime(timezone=True)),
+    Index("push_subscriptions_endpoint_key", "endpoint", unique=True),
+    Index("push_subscriptions_user_idx", "user_id"),
+)
+
+# Claves de la plataforma que se crean solas la primera vez (las de las notificaciones push). La parte secreta va cifrada con la
+# clave de los datos de pago.
+platform_keys = Table(
+    "platform_keys",
+    metadata,
+    Column("name", Text, primary_key=True),
+    Column("public_value", Text, nullable=False),
+    Column("secret_ciphertext", Text, nullable=False),
+    Column("created_at", DateTime(timezone=True), nullable=False, default=_now),
 )

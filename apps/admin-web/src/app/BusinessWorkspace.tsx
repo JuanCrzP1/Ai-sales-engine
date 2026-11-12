@@ -6,6 +6,7 @@ import { LoadingScreen, StatusScreen } from "../layout/StatusScreen";
 import { ENTRY_PATH } from "../navigation/navItems";
 import { persistenceErrorMessage } from "../repositories/persistenceError";
 import { AssistantLabContext } from "../state/assistantLabContext";
+import { AttentionContext } from "../state/attentionContext";
 import { ChannelsContext } from "../state/channelsContext";
 import { CommerceContext } from "../state/commerceContext";
 import { ConfigProvider } from "../state/ConfigProvider";
@@ -17,11 +18,12 @@ type SchemaState = { status: "loading" } | { status: "error"; message: string } 
 /** Espacio de trabajo del negocio de la ruta: cada negocio tiene su propia configuración, y la ruta decide cuál se edita. */
 export function BusinessWorkspace() {
   const { slug = "" } = useParams();
-  const { createConfigRepository, createAssistantLab, createChannels, createCommerce, directory } = useApplicationServices();
+  const { createConfigRepository, createAssistantLab, createChannels, createCommerce, createAttention, directory } = useApplicationServices();
   const repository = useMemo(() => createConfigRepository(slug), [createConfigRepository, slug]);
   const assistantLab = useMemo(() => createAssistantLab(slug), [createAssistantLab, slug]);
   const channels = useMemo(() => createChannels(slug), [createChannels, slug]);
   const commerce = useMemo(() => createCommerce(slug), [createCommerce, slug]);
+  const attention = useMemo(() => createAttention(slug), [createAttention, slug]);
   const [schema, setSchema] = useState<SchemaState>({ status: "loading" });
   const [attempt, setAttempt] = useState(0);
 
@@ -67,7 +69,9 @@ export function BusinessWorkspace() {
         <AssistantLabContext.Provider value={assistantLab}>
           <ChannelsContext.Provider value={channels}>
             <CommerceContext.Provider value={commerce}>
-            <Outlet />
+              <AttentionContext.Provider value={attention}>
+                <Outlet />
+              </AttentionContext.Provider>
             </CommerceContext.Provider>
           </ChannelsContext.Provider>
         </AssistantLabContext.Provider>

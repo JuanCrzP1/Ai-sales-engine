@@ -112,6 +112,16 @@ class Messages(ContractModel):
         json_schema_extra=SCHEDULED,
     )
     human_handoff: MessageText | None = Field(default=None, description="Mensaje al pasar la conversación a una persona.", json_schema_extra=CONNECTED)
+    after_hours: MessageText | None = Field(
+        default=None,
+        description="Mensaje cuando un chat pasa a una persona fuera del horario del equipo. Si falta, uno con el horario y cuándo lo atienden.",
+        json_schema_extra=CONNECTED,
+    )
+    ai_resumed: MessageText | None = Field(
+        default=None,
+        description="Mensaje cuando la IA retoma un chat que nadie del equipo respondió a tiempo. Si falta, uno de la plataforma.",
+        json_schema_extra=CONNECTED,
+    )
     fallback: MessageText | None = Field(
         default=None,
         description="Mensaje exacto cuando la IA no puede responder (sin clave, sin saldo o con el proveedor caído). Si falta, uno neutro de la plataforma.",

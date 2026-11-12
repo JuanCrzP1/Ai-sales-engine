@@ -137,6 +137,8 @@ ADMIN_WEB_DIR="$SCRIPT_DIR/apps/admin-web"
 ADMIN_WEB_PORT=5180
 # Abrir la dirección del motor lleva a este panel, no al de la nube.
 export PANEL_URL="${PANEL_URL:-http://localhost:$ADMIN_WEB_PORT}"
+# La IA retoma los chats que nadie atendió con el tráfico local (en Vercel, además, cada 15 minutos).
+export ATTENTION_SWEEP_ON_TRAFFIC="${ATTENTION_SWEEP_ON_TRAFFIC:-1}"
 
 if ! command -v npm >/dev/null 2>&1; then
     echo "[AVISO] npm no esta instalado. El panel web no se inicia."

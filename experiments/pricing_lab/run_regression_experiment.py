@@ -97,6 +97,9 @@ EXPECTED_ROUTE_CHANGES |= {
 }
 # La raíz del motor lleva al panel (11 de noviembre de 2026): no responde mensajes ni toca a los negocios.
 EXPECTED_ROUTE_CHANGES |= {"GET /"}
+# La revisión periódica de la atención humana (11 de noviembre de 2026): la IA retoma los chats que nadie atendió. Protegida con
+# `CRON_SECRET`; no toca las respuestas.
+EXPECTED_ROUTE_CHANGES |= {"GET /api/v1/internal/attention/run", "POST /api/v1/internal/attention/run"}
 
 # Zonas del repositorio, de la más específica a la más general, para clasificar las diferencias de Git.
 CHANGE_ZONES = [

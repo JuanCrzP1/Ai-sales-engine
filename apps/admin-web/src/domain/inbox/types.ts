@@ -48,6 +48,10 @@ export interface ConversationSummary {
   assistantTyping?: boolean;
   /** Se le puede responder desde el panel (el mensaje sale por su canal). */
   canReply?: boolean;
+  /** Desde cuándo el cliente espera a una persona sin respuesta (la IA está pausada). */
+  customerWaitingSince?: string | null;
+  /** Cuándo la IA retomó sola el chat porque nadie del equipo respondió a tiempo. */
+  aiResumedAt?: string | null;
 }
 
 /** Un archivo de la conversación (sin su contenido: se descarga aparte). */
@@ -91,12 +95,12 @@ export interface BusinessActivity {
   waitingHuman: number;
 }
 
-/** Un aviso para el equipo: por ahora, que el asistente pasó una conversación a una persona. `read` es de quien lo ve. */
+/** Un aviso para el equipo: un chat pasó a una persona (`handoff`) o la IA retomó uno que nadie atendió (`ai_resumed`). `read` es de quien lo ve. */
 export interface Notification {
   id: string;
   business: { slug: string; name: string };
   conversationId: string | null;
-  kind: "handoff";
+  kind: "handoff" | "ai_resumed";
   title: string;
   body: string | null;
   createdAt: string;

@@ -418,6 +418,8 @@ NEW_CONTRACT_FIELDS: dict[str, tuple[str, str]] = {
     "messages.follow_up": ("Mensaje de seguimiento", "pantalla"),
     "messages.human_handoff": ("Mensaje al pasar a una persona", "pantalla"),
     "messages.fallback": ("Mensaje si el asistente no puede responder", "pantalla"),
+    "messages.after_hours": ("Mensaje fuera del horario del equipo", "pantalla"),
+    "messages.ai_resumed": ("Mensaje cuando la IA retoma la conversación", "pantalla"),
     "response_style.formality": ("Nivel de formalidad", "pantalla"),
     "response_style.emojis": ("Uso de emojis", "pantalla"),
     "response_style.instructions": ("Indicaciones de comunicación", "pantalla"),

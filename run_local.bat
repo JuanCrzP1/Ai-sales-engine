@@ -27,6 +27,8 @@ set ADMIN_WEB_DIR=%~dp0apps\admin-web
 set ADMIN_WEB_PORT=5180
 rem Abrir la direccion del motor lleva a este panel, no al de la nube.
 if not defined PANEL_URL set "PANEL_URL=http://localhost:%ADMIN_WEB_PORT%"
+rem La IA retoma los chats que nadie atendio con el trafico local.
+if not defined ATTENTION_SWEEP_ON_TRAFFIC set "ATTENTION_SWEEP_ON_TRAFFIC=1"
 where npm >nul 2>nul
 if errorlevel 1 (
 	echo [AVISO] npm no esta instalado. El panel web no se inicia.

@@ -1,6 +1,7 @@
 import { AssistantOverviewPage } from "../features/overview/AssistantOverviewPage";
 import { Route } from "react-router-dom";
 import { AISettingsPage } from "../features/ai/AISettingsPage";
+import { AttentionSettingsPage } from "../features/attention/AttentionSettingsPage";
 import { AssistantPage } from "../features/assistant/AssistantPage";
 import { AuthLayout } from "../features/auth/AuthLayout";
 import { SignInPage } from "../features/auth/SignInPage";
@@ -24,6 +25,7 @@ import { AppShell } from "../layout/AppShell";
 import { ACCOUNT_PATHS } from "../navigation/accountPaths";
 import {
   AI_ITEM,
+  ATTENTION_ITEM,
   BUSINESSES_PATH,
   CHANNELS_ITEM,
   CONVERSATIONS_ITEM,
@@ -78,6 +80,7 @@ export const appRoutes = (
           <Route path={sectionPath("messages")} element={<MessagesPage />} />
           <Route path={REVIEW_ITEM.path} element={<ReviewPage />} />
           <Route path={AI_ITEM.path} element={<AISettingsPage />} />
+          <Route path={ATTENTION_ITEM.path} element={<AttentionSettingsPage />} />
           <Route path={PLAYGROUND_ITEM.path} element={<PlaygroundPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Route>

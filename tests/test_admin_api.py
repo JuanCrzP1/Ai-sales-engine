@@ -1120,6 +1120,14 @@ def test_the_api_only_has_the_routes_of_the_panel(api):
         ("POST", "/conversations/{conversation_id}/handoff/resolve"),
         ("GET", "/notifications"),
         ("POST", "/notifications/read"),
+        # Atención humana y notificaciones del navegador (`attention_routes.py`).
+        ("GET", f"{business}/attention"),
+        ("PUT", f"{business}/attention"),
+        ("POST", f"{business}/attention/test-email"),
+        ("GET", "/notifications/push"),
+        ("POST", "/notifications/push"),
+        ("POST", "/notifications/push/remove"),
+        ("POST", "/notifications/push/test"),
     }
     assert api.client.post("/api/v1/simulate", json={}).status_code == 404
 
