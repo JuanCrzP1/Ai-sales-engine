@@ -221,8 +221,8 @@ propia capa para que el menú de la cuenta y los avisos se abran por encima del 
 
 ### D8j — Atención humana y notificaciones del dispositivo
 
-Ajustes tiene dos pestañas (`SETTINGS_TABS`): Inteligencia artificial y Atención humana. Las dos se aplican al instante, sin
-publicar; lo que dice el asistente (fuera del horario, al retomar) está en Mensajes y sí se publica.
+Lo que dice el asistente (fuera del horario, al retomar) está en Mensajes y sí se publica; la atención humana, en Configuración (D8k),
+y se aplica al instante.
 - `repositories/attention.ts` define dos contratos: `Attention` (los ajustes de un negocio, `createAttention(slug)`) y `DevicePush` (las
   notificaciones de la persona en este navegador, una sola instancia de la aplicación).
 - `infrastructure/browser/browserPush.ts` junta las API del navegador (Service Worker, Push, Notification) con la del panel. El
@@ -233,6 +233,22 @@ publicar; lo que dice el asistente (fuera del horario, al retomar) está en Mens
 - La campana ofrece «Activar notificaciones» mientras no estén activadas ni bloqueadas, y distingue los avisos `ai_resumed` (la IA
   retomó un chat). El aviso del chat abierto dice si la IA está pausada (y desde cuándo espera el cliente), si la retomó o si el chat
   llegó fuera del horario.
+
+### D8k — Configuración como una sección con su propio menú
+
+`layout/SettingsLayout.tsx` agrupa todo lo que no es atender ni entrenar al asistente, con un menú propio (`SETTINGS_GROUPS`): Cuenta
+(Mi perfil, solo con cuentas), Asistente (Inteligencia artificial, Atención humana, Respuestas rápidas) y Facturación (Pagos y
+suscripciones). Lo que todavía no existe se ve con «Pronto» y su página dice qué traerá, para saber hacia dónde va la plataforma. En
+el celular el menú es una fila de pestañas que se desliza. Todas las rutas viven bajo `/configuracion/…`; las anteriores (`/ia`,
+`/atencion-humana`) redirigen. `isAssistantPath` ignora las rutas de Configuración, así una sección no se confunde con una pestaña del
+asistente de nombre parecido. El menú de la cuenta abre Mi perfil y Configuración dentro del negocio; fuera de un negocio, el perfil
+sigue en su propia página (`/perfil`).
+
+En Inteligencia artificial cada parte se guarda por separado: el proveedor (OpenRouter; los demás, «Pronto»), la clave y el modelo.
+La clave guardada se ve oculta (`sk-or-v1-••••…` y sus últimos caracteres) y nunca se vuelve a mostrar completa: el servidor solo la
+guarda cifrada y no la devuelve, como OpenAI, Stripe u OpenRouter. «Cambiar clave» abre el campo para pegar otra, con el ojo para ver
+lo que se pegó antes de guardar. El modelo se elige en una lista desplegable con buscador (`ModelPicker`: botón con `aria-haspopup`,
+buscador como `combobox` y opciones como `listbox`), que se maneja con flechas, Enter y Escape.
 
 ### D9 — API separada del motor y limitada a este equipo
 

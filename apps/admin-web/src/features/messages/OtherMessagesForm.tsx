@@ -10,7 +10,7 @@ const FIELDS: { key: "data_request" | "human_handoff" | "after_hours" | "ai_resu
     key: "after_hours",
     label: "Fuera del horario del equipo",
     placeholder: "Ej.: Nuestro equipo atiende de lunes a viernes de 8 a 6. Te escribimos apenas abramos.",
-    hint: "Cuando un chat pasa a una persona fuera del horario de Ajustes → Atención humana. Si lo dejas vacío, el asistente dice tu horario y cuándo lo atienden.",
+    hint: "Cuando un chat pasa a una persona fuera del horario de Configuración → Atención humana. Si lo dejas vacío, el asistente dice tu horario y cuándo lo atienden.",
   },
   {
     key: "ai_resumed",

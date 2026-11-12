@@ -1,5 +1,5 @@
 /**
- * Atención humana (Ajustes → Atención humana): cuándo hay alguien del equipo, qué se le dice al cliente, cuándo retoma la IA un chat
+ * Atención humana (Configuración → Atención humana): cuándo hay alguien del equipo, qué se le dice al cliente, cuándo retoma la IA un chat
  * que nadie atendió y adónde llegan los avisos. Se aplica al instante: no hay que publicar.
  */
 

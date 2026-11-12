@@ -7,7 +7,7 @@ El panel publicado en Vercel es la forma normal de usar la plataforma:
 1. Crea tu cuenta (Neon Auth) y tu negocio; puedes empezar desde una plantilla.
 2. En **Asistente IA**, completa lo que vendes, precios, pagos y cómo vendes. Guarda y **publica**: el asistente solo usa lo
    publicado.
-3. En **Ajustes → Inteligencia artificial**, pega tu clave de OpenRouter y elige el modelo.
+3. En **Configuración → Inteligencia artificial**, pega tu clave de OpenRouter y elige el modelo.
 4. En **Probar asistente**, conversa con él usando la IA real.
 5. En **Canales**, toca «Conectar WhatsApp» y escanea el código QR con el WhatsApp del negocio.
 6. Atiende en **Conversaciones**; registra ventas en **Clientes** o **Ventas**; mira el resultado en **Reportes**.

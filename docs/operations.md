@@ -136,7 +136,7 @@ ENABLE_WEBHOOK_PROCESSING=true
 
 ### Atención Humana: Correo, Notificaciones Y Revisión Periódica
 
-Lo que hace cada negocio está en Ajustes → Atención humana (ver `docs/architecture.md`, «Atención Humana»). La plataforma pone:
+Lo que hace cada negocio está en Configuración → Atención humana (ver `docs/architecture.md`, «Atención Humana»). La plataforma pone:
 
 | Variable (proyecto del motor) | Para qué | Si falta |
 |---|---|---|
@@ -146,7 +146,7 @@ Lo que hace cada negocio está en Ajustes → Atención humana (ver `docs/archit
 | `PANEL_URL` | La dirección del panel para los enlaces de los correos y la raíz del motor | `https://ai-sales-engine-panel.vercel.app` |
 
 - **Notificaciones (Web Push):** no llevan variables. Las claves VAPID se crean solas la primera vez (tabla `platform_keys`, la parte
-  secreta cifrada con `BUSINESS_CONFIG_SECRETS_KEY`). Cada persona las activa en cada navegador desde Ajustes → Atención humana o la
+  secreta cifrada con `BUSINESS_CONFIG_SECRETS_KEY`). Cada persona las activa en cada navegador desde Configuración → Atención humana o la
   campana. En iPhone y iPad solo funcionan con el panel instalado («Agregar a pantalla de inicio»).
 - **Puntualidad:** en el plan Hobby, Vercel corre la revisión cada 15 minutos, así que una espera de 30 minutos se retoma entre los
   30 y los 45 minutos si nadie usa la plataforma; con tráfico (el panel abierto o mensajes entrantes), al minuto. En Pro se puede
@@ -421,7 +421,7 @@ tiene pantallas y su raíz redirige a `PANEL_URL`, o al panel publicado si no es
   estrategia de ejemplo, nunca datos de pago, dirección ni testimonios, y queda en borrador hasta que el negocio la revise y publique.
 - Al entrar, el panel abre directo el primer negocio del usuario (o la bienvenida para crearlo). El menú: Inicio, Conversaciones,
   Clientes, Ventas y Reportes; abajo, Asistente IA (un resumen con una tarjeta por sección y su estado; las pestañas de
-  entrenamiento, organizadas en tarjetas: lo esencial primero y las opciones avanzadas plegadas; Probar y Publicar), Canales y Ajustes.
+  entrenamiento, organizadas en tarjetas: lo esencial primero y las opciones avanzadas plegadas; Probar y Publicar), Canales y Configuración.
 - Conversaciones: cada hilo es un contacto en un canal y pertenece a un negocio (`conversations` y `conversation_entries`,
   migraciones 0004 y 0009). Llegan las de WhatsApp por QR, en vivo, y las de «Probar asistente» (canal `prueba`, que no cuenta en
   Clientes ni en Reportes). Los datos de pago se guardan ocultos.

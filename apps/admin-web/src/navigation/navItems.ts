@@ -14,7 +14,10 @@ export type NavKey =
   | "assistantHub"
   | "channels"
   | "settings"
-  | "attention";
+  | "attention"
+  | "profileSettings"
+  | "quickReplies"
+  | "billing";
 
 export interface NavItem {
   key: NavKey;
@@ -49,7 +52,7 @@ export interface CreatedFromTemplate {
 /** Resumen del Asistente IA: cada sección en una tarjeta, con su estado. Es la entrada desde el menú. */
 export const OVERVIEW_ITEM: NavItem = { key: "overview", path: "asistente", title: "Resumen" };
 /** Herramientas del asistente: fuera del recorrido guiado de configuración. */
-export const AI_ITEM: NavItem = { key: "ai", path: "ia", title: "Inteligencia artificial" };
+export const AI_ITEM: NavItem = { key: "ai", path: "configuracion/inteligencia-artificial", title: "Inteligencia artificial" };
 export const PLAYGROUND_ITEM: NavItem = { key: "playground", path: "probar", title: "Probar asistente" };
 
 /** Menú principal: atender y vender. */
@@ -58,15 +61,43 @@ export const CUSTOMERS_ITEM: NavItem = { key: "customers", path: "clientes", tit
 export const SALES_ITEM: NavItem = { key: "sales", path: "ventas", title: "Ventas" };
 export const REPORTS_ITEM: NavItem = { key: "reports", path: "reportes", title: "Reportes" };
 export const CHANNELS_ITEM: NavItem = { key: "channels", path: "canales", title: "Canales" };
-/** Ajustes del negocio: su inteligencia artificial y la atención humana. Se aplican al instante, sin publicar. */
-export const SETTINGS_ITEM: NavItem = { key: "settings", path: AI_ITEM.path, title: "Ajustes" };
-export const ATTENTION_ITEM: NavItem = { key: "attention", path: "atencion-humana", title: "Atención humana" };
-export const SETTINGS_TABS: NavItem[] = [AI_ITEM, ATTENTION_ITEM];
+/**
+ * Configuración: la cuenta, lo que usa el asistente para atender (su IA, la atención humana, las respuestas rápidas) y la
+ * facturación. Se aplica al instante, sin publicar. Lo que aún no existe se muestra con «Próximamente».
+ */
+export const SETTINGS_BASE = "configuracion";
+export const SETTINGS_ITEM: NavItem = { key: "settings", path: SETTINGS_BASE, title: "Configuración" };
+export const PROFILE_SETTINGS_ITEM: NavItem = { key: "profileSettings", path: `${SETTINGS_BASE}/perfil`, title: "Mi perfil" };
+export const ATTENTION_ITEM: NavItem = { key: "attention", path: `${SETTINGS_BASE}/atencion-humana`, title: "Atención humana" };
+export const QUICK_REPLIES_ITEM: NavItem = { key: "quickReplies", path: `${SETTINGS_BASE}/respuestas-rapidas`, title: "Respuestas rápidas" };
+export const BILLING_ITEM: NavItem = { key: "billing", path: `${SETTINGS_BASE}/facturacion`, title: "Pagos y suscripciones" };
 
-/** Si la ruta es una pestaña de Ajustes (`/negocios/x/atencion-humana`). */
+export interface SettingsEntry {
+  item: NavItem;
+  description: string;
+  /** Todavía no existe: se ve, con «Próximamente», para saber lo que viene. */
+  soon?: boolean;
+  /** Solo con cuentas (en la nube): el acceso local no tiene perfil. */
+  account?: boolean;
+}
+
+/** El menú de Configuración, por grupos. */
+export const SETTINGS_GROUPS: { title: string; entries: SettingsEntry[] }[] = [
+  { title: "Cuenta", entries: [{ item: PROFILE_SETTINGS_ITEM, description: "Tu foto, tus datos y tu sesión", account: true }] },
+  {
+    title: "Asistente",
+    entries: [
+      { item: AI_ITEM, description: "Proveedor, clave y modelo" },
+      { item: ATTENTION_ITEM, description: "Horario del equipo y avisos" },
+      { item: QUICK_REPLIES_ITEM, description: "Mensajes guardados para responder rápido", soon: true },
+    ],
+  },
+  { title: "Facturación", entries: [{ item: BILLING_ITEM, description: "Tu plan, pagos y facturas", soon: true }] },
+];
+
+/** Si la ruta es de Configuración (`/negocios/x/configuracion/...`). */
 export function isSettingsPath(pathname: string): boolean {
-  const last = pathname.replace(/\/+$/, "").split("/").pop() ?? "";
-  return SETTINGS_TABS.some((item) => item.path === last);
+  return /\/configuracion(\/|$)/.test(pathname.replace(/\/+$/, ""));
 }
 
 export const SECTION_ITEMS: NavItem[] = CONFIG_SECTIONS.map((section) => ({
@@ -119,6 +150,8 @@ export const ASSISTANT_HUB_ITEM: NavItem = { key: "assistantHub", path: OVERVIEW
 
 /** Si la ruta es una pestaña del Asistente IA (`/negocios/x/pagos`). */
 export function isAssistantPath(pathname: string): boolean {
+  // Configuración tiene sus propias secciones: ninguna es una pestaña del asistente aunque se llame parecido.
+  if (isSettingsPath(pathname)) return false;
   const last = pathname.replace(/\/+$/, "").split("/").pop() ?? "";
   return ASSISTANT_TABS.some(({ item }) => item.path === last);
 }

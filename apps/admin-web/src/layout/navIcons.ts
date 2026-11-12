@@ -21,4 +21,7 @@ export const NAV_ICONS: Record<NavItem["key"], IconName> = {
   channels: "plug",
   settings: "settings",
   attention: "headset",
+  profileSettings: "user",
+  quickReplies: "message",
+  billing: "card",
 };

@@ -1,4 +1,4 @@
-"""Rutas de la atención humana (Ajustes → Atención humana) y de las notificaciones de cada navegador.
+"""Rutas de la atención humana (Configuración → Atención humana) y de las notificaciones de cada navegador.
 
 Reciben la petición, llaman a `AttentionService` y `PushService` y serializan la respuesta. Los ajustes son de un negocio (solo de
 quien pregunta); las notificaciones son de la persona: cada navegador o celular donde las activó.

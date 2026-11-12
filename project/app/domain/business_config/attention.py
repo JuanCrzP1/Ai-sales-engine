@@ -1,6 +1,6 @@
 """Atención humana: cuándo hay alguien del equipo, qué se le dice al cliente y cuándo la IA retoma un chat que nadie atendió.
 
-Son ajustes de la operación del negocio (Ajustes → Atención humana): se aplican al instante, sin publicar una versión del asistente.
+Son ajustes de la operación del negocio (Configuración → Atención humana): se aplican al instante, sin publicar una versión del asistente.
 Lo que el asistente le dice al cliente en esos momentos sí es del asistente (Asistente IA → Mensajes) y se publica.
 
 - **Horario del equipo:** el mismo de «Mi negocio», otro propio, o siempre hay alguien. Sin horario, siempre hay alguien.

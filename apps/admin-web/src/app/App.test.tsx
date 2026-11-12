@@ -330,7 +330,11 @@ describe("Cuenta (servicio que verifica credenciales)", () => {
     expect(menu()).toHaveFocus();
 
     await user.click(menu());
+    expect(within(menu().closest(".user-menu") as HTMLElement).getByRole("link", { name: "Configuración" })).toHaveAttribute("href", `${CAFE}/configuracion/inteligencia-artificial`);
     await user.click(screen.getByRole("link", { name: "Mi perfil" }));
+    // El perfil se abre dentro de Configuración del negocio.
+    expect(window.location.pathname).toBe(`${CAFE}/configuracion/perfil`);
+    expect(within(screen.getByRole("navigation", { name: "Configuración" })).getByRole("link", { name: /Mi perfil/ })).toHaveAttribute("aria-current", "page");
     const name = await screen.findByLabelText(/^Nombre/);
     await user.clear(name);
     await user.type(name, "Laura Ruiz");

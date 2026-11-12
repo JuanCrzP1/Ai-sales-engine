@@ -5,8 +5,14 @@ está en el historial de git y en `docs/plan-v1.md`.
 
 ## 11 de noviembre de 2026
 
+**Configuración, más clara y completa**
+- «Ajustes» ahora es **Configuración**, con su propio menú: Mi perfil, Inteligencia artificial, Atención humana, y Respuestas rápidas y
+  Pagos y suscripciones marcadas «Próximamente». También se abre desde el menú de tu cuenta.
+- Inteligencia artificial por partes: el proveedor (OpenRouter; OpenAI, Anthropic y Google, pronto), la clave guardada oculta con
+  «Cambiar clave», y el modelo en una lista desplegable con buscador.
+
 **Atención humana completa** (Fase 3)
-- Ajustes → Atención humana: el horario del equipo (el de tu negocio, otro o siempre), lo que se le dice al cliente y cuándo retoma
+- Configuración → Atención humana: el horario del equipo (el de tu negocio, otro o siempre), lo que se le dice al cliente y cuándo retoma
   la IA. Se aplica al instante.
 - Dentro del horario, el cliente sabe cuánto tarda tu equipo; fuera de él, la IA sigue ayudando y le dice cuándo lo atienden.
 - Si nadie responde a tiempo, la IA retoma el chat, pide disculpas, responde lo pendiente y te avisa. Ningún cliente queda esperando.

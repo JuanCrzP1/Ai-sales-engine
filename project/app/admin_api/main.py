@@ -127,7 +127,7 @@ def create_app(
     app.state.contract_schema = business_config_json_schema()
     # Las plantillas para empezar un negocio: se validan aquí, al arrancar.
     app.state.templates = templates if templates is not None else BusinessTemplateCatalog.from_directory()
-    # Atención humana (Ajustes) y notificaciones del navegador: sin almacén, sus rutas responden que no están disponibles.
+    # Atención humana (Configuración) y notificaciones del navegador: sin almacén, sus rutas responden que no están disponibles.
     app.state.attention = AttentionService(attention, app.state.access, service, email) if attention is not None else None
     app.state.push = PushService(push_storage, push) if push_storage is not None else None
     # WhatsApp por código QR: sin el servicio, sus rutas responden que los canales no están disponibles.

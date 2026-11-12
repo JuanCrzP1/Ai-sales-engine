@@ -334,7 +334,7 @@ panel (papelera del chat o de Clientes)
 ## Atención Humana
 
 Qué pasa cuando un chat necesita a una persona. Lo decide `domain/business_config/attention.py` (puro: sin base, sin red y con la
-hora como argumento), con los ajustes de Ajustes → Atención humana (`business_attention_settings`, se aplican sin publicar) y lo
+hora como argumento), con los ajustes de Configuración → Atención humana (`business_attention_settings`, se aplican sin publicar) y lo
 publicado del negocio (el horario de «Mi negocio» y los mensajes `after_hours` y `ai_resumed`, compilados en
 `config.attention_messages`).
 

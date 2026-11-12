@@ -44,7 +44,7 @@ describe("Menú del negocio", () => {
   it("tiene primero atender y vender, y después la configuración", async () => {
     await openAt(`/negocios/${CAFE}`);
     const links = within(screen.getByRole("navigation", { name: "Menú del negocio" })).getAllByRole("link");
-    expect(links.map((link) => link.textContent?.replace(/\d+$/, "").trim())).toEqual(["Inicio", "Conversaciones", "Clientes", "Ventas", "Reportes", "Asistente IA", "Canales", "Ajustes"]);
+    expect(links.map((link) => link.textContent?.replace(/\d+$/, "").trim())).toEqual(["Inicio", "Conversaciones", "Clientes", "Ventas", "Reportes", "Asistente IA", "Canales", "Configuración"]);
   });
 
   it("el inicio muestra lo que pasó hoy en el negocio", async () => {

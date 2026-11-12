@@ -44,7 +44,7 @@ function nextOpeningText(iso: string, timezone: string): string {
 }
 
 /**
- * Ajustes → Atención humana: el horario del equipo, lo que ve el cliente cuando su chat pasa a una persona, cuándo retoma la IA un chat
+ * Configuración → Atención humana: el horario del equipo, lo que ve el cliente cuando su chat pasa a una persona, cuándo retoma la IA un chat
  * que nadie atendió y cómo se avisa al equipo. Se aplica al instante; los mensajes que dice el asistente están en Asistente IA → Mensajes.
  */
 export function AttentionSettingsPage() {

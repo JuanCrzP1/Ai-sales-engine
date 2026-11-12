@@ -1,5 +1,5 @@
 import { AssistantOverviewPage } from "../features/overview/AssistantOverviewPage";
-import { Route } from "react-router-dom";
+import { Navigate, Route } from "react-router-dom";
 import { AISettingsPage } from "../features/ai/AISettingsPage";
 import { AttentionSettingsPage } from "../features/attention/AttentionSettingsPage";
 import { AssistantPage } from "../features/assistant/AssistantPage";
@@ -19,13 +19,16 @@ import { HomePage } from "../features/home/HomePage";
 import { MessagesPage } from "../features/messages/MessagesPage";
 import { PaymentsPage } from "../features/payments/PaymentsPage";
 import { PlaygroundPage } from "../features/playground/PlaygroundPage";
-import { ProfilePage } from "../features/profile/ProfilePage";
+import { ProfilePage, ProfileSettingsPage } from "../features/profile/ProfilePage";
+import { BillingPage, QuickRepliesPage } from "../features/settings/ComingSoonPages";
 import { ReviewPage } from "../features/review/ReviewPage";
 import { AppShell } from "../layout/AppShell";
+import { SettingsLayout } from "../layout/SettingsLayout";
 import { ACCOUNT_PATHS } from "../navigation/accountPaths";
 import {
   AI_ITEM,
   ATTENTION_ITEM,
+  BILLING_ITEM,
   BUSINESSES_PATH,
   CHANNELS_ITEM,
   CONVERSATIONS_ITEM,
@@ -34,9 +37,12 @@ import {
   NEW_BUSINESS_PATH,
   OVERVIEW_ITEM,
   PLAYGROUND_ITEM,
+  PROFILE_SETTINGS_ITEM,
+  QUICK_REPLIES_ITEM,
   REPORTS_ITEM,
   REVIEW_ITEM,
   SALES_ITEM,
+  SETTINGS_BASE,
   sectionPath,
 } from "../navigation/navItems";
 import { BusinessWorkspace } from "./BusinessWorkspace";
@@ -79,8 +85,17 @@ export const appRoutes = (
           <Route path={sectionPath("assistant")} element={<AssistantPage />} />
           <Route path={sectionPath("messages")} element={<MessagesPage />} />
           <Route path={REVIEW_ITEM.path} element={<ReviewPage />} />
-          <Route path={AI_ITEM.path} element={<AISettingsPage />} />
-          <Route path={ATTENTION_ITEM.path} element={<AttentionSettingsPage />} />
+          <Route element={<SettingsLayout />}>
+            <Route path={PROFILE_SETTINGS_ITEM.path} element={<ProfileSettingsPage />} />
+            <Route path={AI_ITEM.path} element={<AISettingsPage />} />
+            <Route path={ATTENTION_ITEM.path} element={<AttentionSettingsPage />} />
+            <Route path={QUICK_REPLIES_ITEM.path} element={<QuickRepliesPage />} />
+            <Route path={BILLING_ITEM.path} element={<BillingPage />} />
+          </Route>
+          <Route path={SETTINGS_BASE} element={<Navigate to={AI_ITEM.path.split("/").pop()!} replace />} />
+          {/* Las direcciones de antes de Configuración siguen funcionando. */}
+          <Route path="ia" element={<Navigate to={`../${AI_ITEM.path}`} replace />} />
+          <Route path="atencion-humana" element={<Navigate to={`../${ATTENTION_ITEM.path}`} replace />} />
           <Route path={PLAYGROUND_ITEM.path} element={<PlaygroundPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Route>

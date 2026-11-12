@@ -78,7 +78,7 @@ Para atender y vender:
 | Ventas | Registrar y anular ventas, y los pagos por verificar |
 | Reportes | Embudo, conversaciones por día, quién respondió y el costo de la IA |
 | Canales | Conectar WhatsApp por código QR |
-| Ajustes | Inteligencia artificial (la clave del negocio, el modelo y su consumo) y Atención humana (horario del equipo, lo que espera el cliente, cuándo retoma la IA, correo y notificaciones de este dispositivo) |
+| Configuración | Con su propio menú: Mi perfil (en la nube), Inteligencia artificial (proveedor, clave oculta, modelo en una lista desplegable y consumo), Atención humana (horario del equipo, lo que espera el cliente, cuándo retoma la IA, correo y notificaciones de este dispositivo), y Respuestas rápidas y Pagos y suscripciones, marcadas «Próximamente». También se abre desde el menú de la cuenta |
 
 En el celular, el menú se abre con ☰ desde una barra superior que muestra la sección, el negocio y los avisos. El panel se puede
 instalar en la pantalla de inicio (`public/manifest.webmanifest`) y recibe notificaciones con su service worker (`public/sw.js`).

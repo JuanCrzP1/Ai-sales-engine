@@ -16,6 +16,8 @@ export function AIUsageCard() {
 
   return (
     <Card
+      icon="chart"
+      tone="amber"
       title="Consumo de los últimos 30 días"
       description="Cada respuesta de tu asistente, también las de Probar, se cobra en tu cuenta de OpenRouter. El detalle exacto está en openrouter.ai, en Activity."
     >

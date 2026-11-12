@@ -1,6 +1,6 @@
 """La IA retoma sola los chats que nadie del equipo atendió a tiempo.
 
-Cada negocio elige cuánto puede esperar un cliente (Ajustes → Atención humana; por defecto 30 minutos, o nunca). Una revisión busca
+Cada negocio elige cuánto puede esperar un cliente (Configuración → Atención humana; por defecto 30 minutos, o nunca). Una revisión busca
 los chats con la IA pausada y un cliente esperando desde antes de ese tiempo y, en cada uno:
 
 1. Reserva el chat de forma atómica (`resume_waiting`): si otra revisión ya lo tomó o alguien del equipo respondió, no hace nada.

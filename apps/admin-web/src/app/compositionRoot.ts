@@ -34,7 +34,7 @@ export interface ApplicationServices {
   /** Los canales de un negocio (por ahora, WhatsApp por código QR). */
   createChannels: (slug: string) => Channels;
   createCommerce: (slug: string) => Commerce;
-  /** La atención humana de un negocio (Ajustes → Atención humana). */
+  /** La atención humana de un negocio (Configuración → Atención humana). */
   createAttention: (slug: string) => Attention;
   /** Las notificaciones en este navegador o celular (de la persona, no de un negocio). */
   devicePush: DevicePush;

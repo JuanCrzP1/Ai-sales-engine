@@ -1,10 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import { COMPACT_SCREEN, useMediaQuery } from "../lib/useMediaQuery";
-import { isAssistantPath, isSettingsPath, titleForPath } from "../navigation/navItems";
+import { isAssistantPath, titleForPath } from "../navigation/navItems";
 import { useConfig } from "../state/useConfig";
 import { AssistantTabs } from "./AssistantTabs";
-import { SettingsTabs } from "./SettingsTabs";
 import { ErrorBoundary } from "./ErrorBoundary";
 import { NotificationBell } from "./NotificationBell";
 import { SaveProblems } from "./SaveProblems";
@@ -108,7 +107,6 @@ export function AppShell() {
         <fieldset className="main__edit-area" disabled={save.status === "saving"}>
           <div className="main__inner" key={location.pathname}>
             {isAssistantPath(location.pathname) && <AssistantTabs />}
-            {isSettingsPath(location.pathname) && <SettingsTabs />}
             <ErrorBoundary variant="section" resetKey={location.pathname}>
               <Outlet />
             </ErrorBoundary>

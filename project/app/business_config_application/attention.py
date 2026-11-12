@@ -1,6 +1,6 @@
 """Atención humana en el panel y avisos al equipo.
 
-- `AttentionService`: los ajustes de Ajustes → Atención humana de cada negocio (solo los de quien pregunta), con el horario de «Mi
+- `AttentionService`: los ajustes de Configuración → Atención humana de cada negocio (solo los de quien pregunta), con el horario de «Mi
   negocio» para mostrarlo, si hay alguien del equipo ahora, y el correo de prueba.
 - `PushService`: activar y desactivar las notificaciones en cada navegador o celular, y enviar una de prueba.
 - `TeamAlerts`: entrega un aviso (un chat pasó a una persona, la IA retomó un chat) por correo y como notificación. Cada aviso sale
@@ -202,7 +202,7 @@ def alert_email(*, title: str, business_name: str, detail: str | None, link: str
         text_lines += ["", f"«{detail}»"]
     if link:
         text_lines += ["", f"Abrir el chat: {link}"]
-    text_lines += ["", f"Recibes este correo porque atiendes {footer_business}. Cámbialo en Ajustes → Atención humana."]
+    text_lines += ["", f"Recibes este correo porque atiendes {footer_business}. Cámbialo en Configuración → Atención humana."]
     esc = html.escape
     quote_block = (
         f'<p style="margin:16px 0;padding:12px 16px;background:#f4f6f8;border-left:3px solid #16a34a;border-radius:6px;color:#1f2937">'
@@ -224,7 +224,7 @@ def alert_email(*, title: str, business_name: str, detail: str | None, link: str
         f"{quote_block}{button}"
         '<hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0">'
         f'<p style="margin:0;font-size:12px;color:#6b7280">Recibes este correo porque atiendes {esc(footer_business)}. '
-        "Cámbialo en Ajustes → Atención humana.</p></div>"
+        "Cámbialo en Configuración → Atención humana.</p></div>"
     )
     return subject, "\n".join(text_lines), body
 

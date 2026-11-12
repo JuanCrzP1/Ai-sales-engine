@@ -14,7 +14,7 @@ const CAFE = SAMPLE_DOCUMENT.tenant_slug;
 const ago = (minutes: number) => new Date(Date.now() - minutes * 60_000).toISOString();
 
 async function openAttention(options: { attention?: ReturnType<typeof createMemoryAttention>; push?: ReturnType<typeof createMemoryDevicePush> } = {}) {
-  window.history.pushState({}, "", `/negocios/${CAFE}/atencion-humana`);
+  window.history.pushState({}, "", `/negocios/${CAFE}/configuracion/atencion-humana`);
   const user = userEvent.setup();
   const attention = options.attention ?? createMemoryAttention();
   const push = options.push ?? createMemoryDevicePush();
@@ -23,10 +23,10 @@ async function openAttention(options: { attention?: ReturnType<typeof createMemo
   return { user, attention, push };
 }
 
-describe("Ajustes → Atención humana", () => {
-  it("vive en Ajustes junto a la inteligencia artificial y dice si hay alguien ahora", async () => {
+describe("Configuración → Atención humana", () => {
+  it("vive en Configuración junto a la inteligencia artificial y dice si hay alguien ahora", async () => {
     await openAttention();
-    const tabs = screen.getByRole("navigation", { name: "Ajustes" });
+    const tabs = screen.getByRole("navigation", { name: "Configuración" });
     expect(within(tabs).getByRole("link", { name: /Inteligencia artificial/ })).toBeInTheDocument();
     expect(within(tabs).getByRole("link", { name: /Atención humana/ })).toHaveAttribute("aria-current", "page");
     expect(screen.getByText("Ahora hay alguien de tu equipo")).toBeInTheDocument();
@@ -101,6 +101,34 @@ describe("Ajustes → Atención humana", () => {
     cleanup();
     await openAttention({ push: createMemoryDevicePush({ support: "install" }) });
     expect(screen.getByText("En iPhone y iPad, primero instala el panel")).toBeInTheDocument();
+  });
+});
+
+describe("Configuración", () => {
+  it("agrupa la cuenta, el asistente y la facturación, y anuncia lo que viene", async () => {
+    window.history.pushState({}, "", `/negocios/${CAFE}/configuracion`);
+    const user = userEvent.setup();
+    render(<App services={createTestServices(createMemoryBackend([SAMPLE_DOCUMENT]))} />);
+    // Sin ruta concreta, abre la inteligencia artificial.
+    await screen.findByRole("heading", { level: 1, name: "Inteligencia artificial" });
+    const nav = screen.getByRole("navigation", { name: "Configuración" });
+    // Con el acceso local no hay cuenta: no aparece «Mi perfil».
+    expect(within(nav).queryByRole("link", { name: /Mi perfil/ })).not.toBeInTheDocument();
+    expect(within(nav).getAllByRole("link").map((link) => link.textContent)).toEqual([
+      "Inteligencia artificialProveedor, clave y modelo",
+      "Atención humanaHorario del equipo y avisos",
+      "Respuestas rápidasProntoMensajes guardados para responder rápido",
+      "Pagos y suscripcionesProntoTu plan, pagos y facturas",
+    ]);
+    await user.click(within(nav).getByRole("link", { name: /Respuestas rápidas/ }));
+    expect(await screen.findByRole("heading", { level: 1, name: "Respuestas rápidas" })).toBeInTheDocument();
+    expect(screen.getByText("Próximamente")).toBeInTheDocument();
+    // Cada sección se dibuja de nuevo al cambiar de ruta: el menú se vuelve a buscar.
+    await user.click(within(screen.getByRole("navigation", { name: "Configuración" })).getByRole("link", { name: /Pagos y suscripciones/ }));
+    expect(await screen.findByText("Hoy la plataforma no te cobra nada.")).toBeInTheDocument();
+    // No se confunde con la pestaña «Pagos» del Asistente IA.
+    expect(screen.queryByRole("navigation", { name: "Asistente IA" })).not.toBeInTheDocument();
+    expect(window.location.pathname).toBe(`/negocios/${CAFE}/configuracion/facturacion`);
   });
 });
 

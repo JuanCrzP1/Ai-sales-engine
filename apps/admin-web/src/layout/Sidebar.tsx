@@ -75,7 +75,7 @@ export function Sidebar({ id, open, compact = false, onClose }: SidebarProps) {
           <NavEntry key={item.key} item={item} end={item.key === "home"} />
         ))}
         <p className="nav__heading" aria-hidden="true">
-          Configuración
+          Tu negocio
         </p>
         <NavEntry item={ASSISTANT_HUB_ITEM} active={isAssistantPath(pathname)}>
           {pending > 0 && (

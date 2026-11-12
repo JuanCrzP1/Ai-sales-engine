@@ -26,7 +26,7 @@ guarda cada instancia del motor en su caché vence en un minuto, para que ningun
 `tests/test_conversation_deletion.py` y las pruebas del panel; el laboratorio de regresión (`exp_20261111_eliminar_chats`) dio
 motor sin diferencias, y una prueba de punta a punta con PostgreSQL real comprobó que no queda nada.
 
-**Fase 3, cómo quedó.** Ajustes → Atención humana (se aplica al instante) y dos mensajes nuevos en Asistente IA → Mensajes (se
+**Fase 3, cómo quedó.** Configuración → Atención humana (se aplica al instante) y dos mensajes nuevos en Asistente IA → Mensajes (se
 publican). Ver `docs/architecture.md`, «Atención Humana».
 - Horario del equipo: el de «Mi negocio», uno propio o siempre. Dentro de él, al pasar a una persona la IA se pausa y el cliente
   sabe cuánto suele tardar el equipo; fuera de él la IA sigue ayudando y le dice el horario y cuándo lo atienden.

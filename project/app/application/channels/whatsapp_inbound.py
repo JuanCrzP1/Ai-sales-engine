@@ -83,7 +83,7 @@ KeyLoader = Callable[[str], str | None]
 UsageRecorder = Callable[[str], Any]
 # Lo publicado del negocio, para ocultar sus datos de pago en lo que se guarda (y leer su horario y sus mensajes de atención).
 SectionsLoader = Callable[[str], dict]
-# Los ajustes de atención humana del negocio (Ajustes → Atención humana).
+# Los ajustes de atención humana del negocio (Configuración → Atención humana).
 AttentionLoader = Callable[[str], AttentionSettings]
 # Avisa al equipo por correo y notificación (`TeamAlerts.deliver`): recibe el id del aviso, o None si no hubo aviso nuevo.
 AlertSender = Callable[[str | None], None]

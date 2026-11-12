@@ -1,11 +1,13 @@
 import { useEffect, useId, useRef, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useParams } from "react-router-dom";
 import { Avatar } from "../components/ui/Avatar";
 import { Icon } from "../components/ui/Icon";
 import { ACCOUNT_PATHS } from "../navigation/accountPaths";
+import { AI_ITEM, PROFILE_SETTINGS_ITEM } from "../navigation/navItems";
+import { useWorkspacePath } from "../navigation/useWorkspacePath";
 import { useAuth, useCurrentUser } from "../state/auth/useAuth";
 
-/** La cuenta, abajo en la barra lateral: foto, nombre y correo; despliega hacia arriba el perfil y el cierre de sesión. */
+/** La cuenta, abajo en la barra lateral: foto, nombre y correo; despliega hacia arriba el perfil, la configuración y el cierre de sesión. */
 export function UserMenu() {
   const user = useCurrentUser();
   const { signOut } = useAuth();
@@ -14,6 +16,9 @@ export function UserMenu() {
   const rootRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const location = useLocation();
+  const pathTo = useWorkspacePath();
+  // Dentro de un negocio, el perfil vive en su Configuración; fuera (crear el primer negocio), en su propia página.
+  const inBusiness = Boolean(useParams().slug);
 
   useEffect(() => setOpen(false), [location.pathname]);
 
@@ -63,10 +68,16 @@ export function UserMenu() {
               <span>{user.email}</span>
             </div>
           </div>
-          <Link className="user-menu__item" to={ACCOUNT_PATHS.profile}>
+          <Link className="user-menu__item" to={inBusiness ? pathTo(PROFILE_SETTINGS_ITEM.path) : ACCOUNT_PATHS.profile}>
             <Icon name="user" size={16} />
             Mi perfil
           </Link>
+          {inBusiness && (
+            <Link className="user-menu__item" to={pathTo(AI_ITEM.path)}>
+              <Icon name="settings" size={16} />
+              Configuración
+            </Link>
+          )}
           <button type="button" className="user-menu__item user-menu__item--danger" onClick={() => void signOut()}>
             <Icon name="logout" size={16} />
             Cerrar sesión

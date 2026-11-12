@@ -7,6 +7,7 @@ import { App } from "./App";
 
 const BUSINESS = `/negocios/${SAMPLE_DOCUMENT.tenant_slug}`;
 const KEY = "sk-or-v1-clave-ficticia-de-prueba-0001";
+const AI = "/configuracion/inteligencia-artificial";
 const LOADING = /Abriendo tu panel…|Cargando tu configuración…|Cargando negocios…|Cargando la inteligencia artificial…/;
 
 afterEach(cleanup);
@@ -23,39 +24,54 @@ async function open(path: string, labs: MemoryAssistantLabs = createMemoryAssist
 }
 
 describe("Inteligencia artificial", () => {
-  it("vive en Ajustes, y el área de pruebas es una pestaña del Asistente IA", async () => {
-    await open("/ia");
+  it("vive en Configuración, y el área de pruebas es una pestaña del Asistente IA", async () => {
+    await open(AI);
     const nav = screen.getByRole("navigation", { name: "Menú del negocio" });
-    expect(within(nav).getByRole("link", { name: /^Ajustes/ })).toHaveAttribute("aria-current", "page");
+    expect(within(nav).getByRole("link", { name: /^Configuración/ })).toHaveAttribute("aria-current", "page");
+    expect(within(screen.getByRole("navigation", { name: "Configuración" })).getByRole("link", { name: /Inteligencia artificial/ })).toHaveAttribute("aria-current", "page");
     expect(screen.getByRole("heading", { level: 1, name: "Inteligencia artificial" })).toBeInTheDocument();
+    cleanup();
+    // La dirección de antes sigue llevando aquí.
+    await open("/ia");
+    expect(window.location.pathname).toBe(`${BUSINESS}${AI}`);
     cleanup();
     await open("/probar");
     expect(within(screen.getByRole("navigation", { name: "Asistente IA" })).getByRole("link", { name: "Probar" })).toHaveAttribute("aria-current", "page");
     expect(within(screen.getByRole("navigation", { name: "Menú del negocio" })).getByRole("link", { name: /^Asistente IA/ })).toHaveAttribute("aria-current", "page");
   });
 
-  it("guarda la clave sin volver a mostrarla y la comprueba", async () => {
-    const { user, labs } = await open("/ia");
+  it("guarda la clave, la muestra oculta, la comprueba y deja cambiarla", async () => {
+    const { user, labs } = await open(AI);
     expect(await screen.findByText("Sin clave")).toBeInTheDocument();
+    expect(screen.getByText("Falta la clave")).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: "OpenRouter" })).toHaveAttribute("aria-checked", "true");
+    expect(screen.getByRole("radio", { name: "OpenAI, próximamente" })).toHaveAttribute("aria-disabled", "true");
 
     await user.type(screen.getByLabelText(/Clave de OpenRouter/), KEY);
-    await user.click(await screen.findByRole("radio", { name: /GPT-4o-mini OpenAI/ }));
-    await user.click(screen.getByRole("button", { name: "Guardar" }));
+    await user.click(screen.getByRole("button", { name: "Mostrar contraseña" }));
+    expect(screen.getByLabelText(/Clave de OpenRouter/)).toHaveAttribute("type", "text");
+    await user.click(screen.getByRole("button", { name: "Guardar clave" }));
 
-    expect(await screen.findByText("Configurada ••••0001")).toBeInTheDocument();
+    expect(await screen.findByText("Clave guardada. El asistente de este negocio ya la usa.")).toBeInTheDocument();
     expect(labs.keys.get(SAMPLE_DOCUMENT.tenant_slug)).toBe(KEY);
-    expect(screen.getByLabelText(/Nueva clave/)).toHaveValue("");
+    expect(screen.getByText(/^sk-or-v1-•+0001$/)).toBeInTheDocument();
+    expect(screen.getByText("Conectado")).toBeInTheDocument();
     expect(document.body.textContent).not.toContain(KEY);
 
     await user.click(screen.getByRole("button", { name: "Comprobar la clave" }));
     expect(await screen.findByText("La clave funciona.")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Cambiar clave" }));
+    expect(screen.getByLabelText(/Nueva clave de OpenRouter/)).toHaveValue("");
+    await user.click(screen.getByRole("button", { name: "Cancelar" }));
+    expect(screen.getByRole("button", { name: "Cambiar clave" })).toBeInTheDocument();
   });
 
   it("señala una clave incompleta en su campo", async () => {
-    const { user } = await open("/ia");
+    const { user } = await open(AI);
     await screen.findByText("Sin clave");
     await user.type(screen.getByLabelText(/Clave de OpenRouter/), "corta-de-mas-x");
-    await user.click(screen.getByRole("button", { name: "Guardar" }));
+    await user.click(screen.getByRole("button", { name: "Guardar clave" }));
     expect(await screen.findByText("Pega la clave completa de OpenRouter, sin espacios.")).toBeInTheDocument();
   });
 });
@@ -66,7 +82,7 @@ describe("Probar asistente", () => {
     await user.type(screen.getByLabelText("Mensaje de prueba"), "Hola");
     await user.click(screen.getByRole("button", { name: "Enviar" }));
     expect(await screen.findByText("Este negocio todavía no tiene su clave de IA")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Agregar la clave" })).toHaveAttribute("href", `${BUSINESS}/ia`);
+    expect(screen.getByRole("link", { name: "Agregar la clave" })).toHaveAttribute("href", `${BUSINESS}${AI}`);
   });
 
   it("conversa, continúa la misma conversación y empieza otra", async () => {
@@ -117,7 +133,7 @@ describe("Consumo de la IA", () => {
       costUsd: 0.4231,
       days: [{ day: "2026-11-10", replies: 1234, tokens: 1_200_000 }],
     });
-    await open("/ia", labs);
+    await open(AI, labs);
     const card = (await screen.findByRole("heading", { name: "Consumo de los últimos 30 días" })).closest("section") as HTMLElement;
     const metric = (label: string) => (within(card).getByText(label).closest(".metric") as HTMLElement).querySelector(".metric__value")?.textContent;
     await waitFor(() => expect(metric("Respuestas de la IA")).toBe("1.234"));
@@ -128,7 +144,7 @@ describe("Consumo de la IA", () => {
   it("sin costo informado no lo muestra como cero", async () => {
     const labs = createMemoryAssistantLabs();
     labs.usage.set(SAMPLE_DOCUMENT.tenant_slug, { since: "2026-10-12", replies: 3, promptTokens: 900, completionTokens: 60, costUsd: null, days: [] });
-    await open("/ia", labs);
+    await open(AI, labs);
     expect(await screen.findByText(/OpenRouter no informó el costo/)).toBeInTheDocument();
   });
 });
@@ -143,40 +159,60 @@ describe("Probar asistente: lo que entendió la IA", () => {
 });
 
 describe("Elegir el modelo", () => {
-  it("se elige de la lista de OpenRouter buscando por nombre, sin copiarlo a mano", async () => {
+  it("se elige en una lista desplegable buscando por nombre, sin copiarlo a mano", async () => {
     const labs = createMemoryAssistantLabs();
     labs.keys.set(SAMPLE_DOCUMENT.tenant_slug, KEY);
-    const { user } = await open("/ia", labs);
-    const picker = await screen.findByRole("group", { name: "Modelo" });
-    // Sin buscar: el del sistema elegido y los recomendados primero.
-    expect(within(picker).getByRole("radio", { name: /Predeterminado del sistema/ })).toBeChecked();
-    expect(within(picker).getByText(/Elegido:/).textContent).toMatch(/GPT-4o-mini · OpenAI \(el del sistema\)/);
-    expect(within(picker).getAllByText("Recomendado")).toHaveLength(2);
+    const { user } = await open(AI, labs);
+    // Cerrada, muestra el elegido (el del sistema) con su costo.
+    const trigger = await screen.findByRole("button", { name: /^Modelo GPT-4o-mini/ });
+    expect(trigger).toHaveAttribute("aria-expanded", "false");
+    expect(within(trigger).getByText("Del sistema")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Guardar modelo" })).toBeDisabled();
 
-    await user.type(within(picker).getByRole("searchbox", { name: "Buscar modelo" }), "gemini{Enter}");
-    expect(within(picker).getByText("1 resultado")).toBeInTheDocument();
-    expect(within(picker).queryByRole("radio", { name: /Claude/ })).not.toBeInTheDocument();
-    await user.click(within(picker).getByRole("radio", { name: /Gemini 2.5 Flash/ }));
-    await user.click(screen.getByRole("button", { name: "Guardar" }));
+    await user.click(trigger);
+    const list = screen.getByRole("listbox", { name: "Modelos" });
+    expect(within(list).getByRole("option", { name: /Predeterminado del sistema/ })).toHaveAttribute("aria-selected", "true");
+    expect(within(list).getAllByText("Recomendado")).toHaveLength(2);
+    expect(screen.getByRole("combobox", { name: "Buscar modelo" })).toHaveFocus();
 
-    expect(await screen.findByText("Guardado. El asistente de este negocio ya usa esta configuración.")).toBeInTheDocument();
+    await user.keyboard("gemini");
+    expect(within(list).getByText("1 resultado")).toBeInTheDocument();
+    expect(within(list).queryByRole("option", { name: /Claude/ })).not.toBeInTheDocument();
+    await user.keyboard("{Enter}");
+    expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^Modelo Gemini 2.5 Flash/ })).toHaveFocus();
+    await user.click(screen.getByRole("button", { name: "Guardar modelo" }));
+
+    expect(await screen.findByText("Guardado. El asistente de este negocio ya usa este modelo.")).toBeInTheDocument();
     expect((await labs.create(SAMPLE_DOCUMENT.tenant_slug).getAISettings()).model).toBe("google/gemini-2.5-flash");
   });
 
+  it("se cierra con Escape o al tocar afuera, sin cambiar el elegido", async () => {
+    const { user } = await open(AI);
+    await user.click(await screen.findByRole("button", { name: /^Modelo/ }));
+    await user.keyboard("{ArrowDown}{ArrowDown}{Escape}");
+    expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^Modelo GPT-4o-mini/ })).toHaveFocus();
+    await user.click(screen.getByRole("button", { name: /^Modelo/ }));
+    await user.click(screen.getByRole("heading", { level: 1 }));
+    expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
+  });
+
   it("muestra cuánto cuestan 1.000 respuestas y marca los gratis", async () => {
-    await open("/ia");
-    const picker = await screen.findByRole("group", { name: "Modelo" });
-    const mini = within(picker).getByRole("radio", { name: /GPT-4o-mini OpenAI/ }).closest("label") as HTMLElement;
+    const { user } = await open(AI);
+    await user.click(await screen.findByRole("button", { name: /^Modelo/ }));
+    const list = screen.getByRole("listbox", { name: "Modelos" });
+    const mini = within(list).getByRole("option", { name: /GPT-4o-mini OpenAI/ });
     expect(within(mini).getByText(/USD\s?0,32 por cada 1\.000 respuestas/)).toBeInTheDocument();
     expect(within(mini).getByText("Entrada 0,15 · salida 0,60 USD por millón de tokens")).toBeInTheDocument();
-    const free = within(picker).getByRole("radio", { name: /Llama 3.3/ }).closest("label") as HTMLElement;
+    const free = within(list).getByRole("option", { name: /Llama 3.3/ });
     expect(within(free).getByText("Gratis, con límites de uso de OpenRouter")).toBeInTheDocument();
   });
 
   it("si la lista de OpenRouter no carga, deja escribir el modelo", async () => {
     const labs = createMemoryAssistantLabs();
     labs.catalog.current = null;
-    await open("/ia", labs);
+    await open(AI, labs);
     expect(await screen.findByLabelText(/Modelo/)).toHaveAttribute("placeholder", "openai/gpt-4o-mini");
     expect(screen.getByText(/No se pudo cargar la lista de OpenRouter/)).toBeInTheDocument();
   });

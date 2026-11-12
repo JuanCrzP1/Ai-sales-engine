@@ -35,8 +35,11 @@ Tu asistente responde con **tu propia cuenta de OpenRouter** (el servicio que da
 usa tu negocio.
 
 1. Crea una clave en [openrouter.ai](https://openrouter.ai) y recárgale saldo.
-2. En **Ajustes → Inteligencia artificial**, pega la clave, guárdala y toca **Comprobar la clave**.
-3. Elige el modelo: la lista muestra los recomendados y cuánto cuestan más o menos 1.000 respuestas.
+2. En **Configuración → Inteligencia artificial** (también desde el menú de tu cuenta), pega la clave en **Clave de API de
+   OpenRouter**, toca **Guardar clave** y luego **Comprobar la clave**. Por seguridad, después solo verás sus últimos caracteres;
+   para cambiarla, toca **Cambiar clave** y pega la nueva.
+3. Elige el modelo en la lista desplegable (puedes buscar por nombre): muestra los recomendados y cuánto cuestan más o menos 1.000
+   respuestas. Toca **Guardar modelo**.
 
 En esa misma pantalla ves cuánto has gastado por día.
 
@@ -71,7 +74,7 @@ enviado y leído. Las fotos y las notas de voz se guardan, y el asistente las en
 
 ## 7. Atención humana: cuando un cliente necesita a una persona
 
-En **Ajustes → Atención humana** decides qué pasa. Se aplica al instante, sin publicar.
+En **Configuración → Atención humana** decides qué pasa. Se aplica al instante, sin publicar.
 
 - **Horario del equipo:** el mismo de «Mi negocio», otro solo para el equipo, o «siempre hay alguien».
   - **Dentro del horario**, la IA se pausa en ese chat y el cliente recibe «Una persona de nuestro equipo te responderá en unos 10
@@ -129,12 +132,12 @@ pasarte con una persona. Por eso conviene tener los productos y las preguntas fr
 **¿Qué pasa si la IA falla o me quedo sin saldo?** El cliente recibe el mensaje que escribiste en **Mensajes → Si el asistente no
 puede responder**. Recarga tu saldo de OpenRouter y vuelve a funcionar solo.
 
-**¿Cuánto cuesta cada respuesta?** Depende del modelo que elijas. En **Ajustes → Inteligencia artificial** ves el costo aproximado
+**¿Cuánto cuesta cada respuesta?** Depende del modelo que elijas. En **Configuración → Inteligencia artificial** ves el costo aproximado
 de cada modelo y tu gasto de cada día.
 
 **¿Otras personas ven mis negocios?** No. Cada cuenta solo ve los negocios que creó.
 
-**¿Y si no estoy pendiente del panel?** Activa las notificaciones en tu celular y deja el correo de avisos encendido (Ajustes →
+**¿Y si no estoy pendiente del panel?** Activa las notificaciones en tu celular y deja el correo de avisos encendido (Configuración →
 Atención humana). Si aun así nadie responde a tiempo, la IA retoma el chat para que el cliente no quede esperando.
 
 **¿Puedo deshacer un cambio publicado?** Sí: en **Publicar** vuelves a la versión anterior, o recuperas cualquier versión del
