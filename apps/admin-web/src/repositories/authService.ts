@@ -1,4 +1,4 @@
-import type { ProfileUpdate, Session, SignInInput, SignUpInput, UserProfile } from "../domain/auth/types";
+import type { PasswordChange, ProfileUpdate, Session, SignInInput, SignUpInput, UserProfile } from "../domain/auth/types";
 
 /**
  * Contrato de autenticación del panel, independiente de dónde vivan las cuentas.
@@ -18,4 +18,8 @@ export interface AuthService {
   signUp(input: SignUpInput): Promise<Session>;
   signOut(): Promise<void>;
   updateProfile(update: ProfileUpdate): Promise<UserProfile>;
+  /** Cambia la contraseña. Con la actual equivocada rechaza con `wrong_password`. */
+  changePassword(change: PasswordChange): Promise<void>;
+  /** Cierra la sesión en todos los demás equipos; esta sigue abierta. */
+  signOutOtherDevices(): Promise<void>;
 }

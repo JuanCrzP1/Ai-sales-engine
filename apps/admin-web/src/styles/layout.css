@@ -91,9 +91,17 @@
 }
 
 .nav {
+  flex: 1;
   display: flex;
   flex-direction: column;
   gap: 2px;
+}
+
+/* Configuración, fija abajo y separada de las secciones del negocio. */
+.nav__bottom {
+  margin-top: auto;
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--sidebar-border);
 }
 
 .nav__heading {

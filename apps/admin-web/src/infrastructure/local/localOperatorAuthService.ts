@@ -1,4 +1,4 @@
-import type { Session, UserProfile } from "../../domain/auth/types";
+import { AuthError, type Session, type UserProfile } from "../../domain/auth/types";
 import type { AuthService } from "../../repositories/authService";
 
 /**
@@ -27,5 +27,8 @@ export function createLocalOperatorAuthService(): AuthService {
     signUp: unsupported,
     signOut: unsupported,
     updateProfile: unsupported,
+    // Sin cuentas no hay contraseña ni otras sesiones: la interfaz no ofrece estas opciones.
+    changePassword: () => Promise.reject(new AuthError("unsupported")),
+    signOutOtherDevices: () => Promise.reject(new AuthError("unsupported")),
   };
 }

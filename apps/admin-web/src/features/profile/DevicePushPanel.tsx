@@ -3,13 +3,21 @@ import { Alert, Badge } from "../../components/ui/Feedback";
 import { Icon } from "../../components/ui/Icon";
 import { useDevicePush } from "../../state/useDevicePush";
 
-/** Las notificaciones en este navegador o celular: activarlas, probarlas o quitarlas. Cada persona las activa en cada dispositivo. */
-export function DevicePushPanel() {
+/**
+ * Las notificaciones en este navegador o celular: activarlas, probarlas o quitarlas. Cada persona las activa en cada dispositivo.
+ * Sin `header`, va dentro de una tarjeta que ya tiene su título.
+ */
+export function DevicePushPanel({ header = true }: { header?: boolean }) {
   const push = useDevicePush();
 
   return (
     <div className="device-push">
-      <div className="device-push__head">
+      {!header && push.subscribed && (
+        <div>
+          <Badge tone="success">Activadas en este dispositivo</Badge>
+        </div>
+      )}
+      {header && <div className="device-push__head">
         <span className="device-push__icon" aria-hidden="true">
           <Icon name="bell" size={18} />
         </span>
@@ -18,7 +26,7 @@ export function DevicePushPanel() {
           <p className="field__hint">Suenan como un mensaje de WhatsApp aunque el panel esté cerrado. Actívalas en cada celular o computador donde atiendes.</p>
         </div>
         {push.subscribed && <Badge tone="success">Activadas</Badge>}
-      </div>
+      </div>}
 
       {push.support === "unsupported" && <Alert tone="info" title="Este navegador no puede recibir notificaciones. Usa Chrome, Edge, Firefox o Safari actualizados." />}
       {push.support === "install" && (

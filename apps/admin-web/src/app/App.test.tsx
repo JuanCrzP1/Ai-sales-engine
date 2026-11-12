@@ -330,11 +330,14 @@ describe("Cuenta (servicio que verifica credenciales)", () => {
     expect(menu()).toHaveFocus();
 
     await user.click(menu());
-    expect(within(menu().closest(".user-menu") as HTMLElement).getByRole("link", { name: "Configuración" })).toHaveAttribute("href", `${CAFE}/configuracion/inteligencia-artificial`);
+    // El menú de la foto es solo de la persona; la configuración del negocio está fija abajo en el menú de la izquierda.
+    const panel = menu().closest(".user-menu") as HTMLElement;
+    expect(within(panel).getAllByRole("link").map((link) => link.textContent)).toEqual(["Mi perfil", "Seguridad", "Notificaciones"]);
+    expect(within(panel).queryByRole("link", { name: "Configuración" })).not.toBeInTheDocument();
+    expect(within(sidebarNav()).getByRole("link", { name: "Configuración" }).closest(".nav__bottom")).not.toBeNull();
     await user.click(screen.getByRole("link", { name: "Mi perfil" }));
-    // El perfil se abre dentro de Configuración del negocio.
-    expect(window.location.pathname).toBe(`${CAFE}/configuracion/perfil`);
-    expect(within(screen.getByRole("navigation", { name: "Configuración" })).getByRole("link", { name: /Mi perfil/ })).toHaveAttribute("aria-current", "page");
+    expect(window.location.pathname).toBe(`${CAFE}/cuenta/perfil`);
+    expect(within(screen.getByRole("navigation", { name: "Mi cuenta" })).getByRole("link", { name: /Mi perfil/ })).toHaveAttribute("aria-current", "page");
     const name = await screen.findByLabelText(/^Nombre/);
     await user.clear(name);
     await user.type(name, "Laura Ruiz");
@@ -343,6 +346,48 @@ describe("Cuenta (servicio que verifica credenciales)", () => {
 
     await user.upload(screen.getByLabelText("Cambiar foto"), new File(["texto"], "notas.txt", { type: "text/plain" }));
     expect(await screen.findByText("Usa una imagen JPG, PNG, WebP o GIF.")).toBeInTheDocument();
+  });
+});
+
+describe("Mi cuenta → Seguridad", () => {
+  const verifying = (auth: ReturnType<typeof createVerifyingAuthService>) => createTestServices(createMemoryBackend([SAMPLE_DOCUMENT]), { auth });
+  it("cambia la contraseña pidiendo la actual y cierra la sesión en los demás equipos", async () => {
+    const auth = createVerifyingAuthService() as ReturnType<typeof createVerifyingAuthService> & { readonly otherDevicesSignedOut: number };
+    await auth.signUp({ ...TEST_ACCOUNT });
+    const user = await renderAt(`${CAFE}/cuenta/seguridad`, verifying(auth));
+    expect(await screen.findByRole("heading", { level: 1, name: "Seguridad" })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Cambiar contraseña" }));
+    expect(screen.getByText("Escribe tu contraseña actual.")).toBeInTheDocument();
+
+    await user.type(screen.getByLabelText(/^Contraseña actual/), "equivocada1");
+    await user.type(screen.getByLabelText(/^Contraseña nueva/), "nueva-clave-9");
+    await user.type(screen.getByLabelText(/^Repite la contraseña nueva/), "nueva-clave-9");
+    await user.click(screen.getByRole("button", { name: "Cambiar contraseña" }));
+    expect(await screen.findByText("La contraseña actual no es correcta.")).toBeInTheDocument();
+
+    await user.clear(screen.getByLabelText(/^Contraseña actual/));
+    await user.type(screen.getByLabelText(/^Contraseña actual/), TEST_ACCOUNT.password);
+    await user.click(screen.getByRole("button", { name: "Cambiar contraseña" }));
+    expect(await screen.findByText("Listo, tu contraseña cambió.")).toBeInTheDocument();
+    expect(auth.otherDevicesSignedOut).toBe(1);
+    // La nueva sirve para entrar.
+    await auth.signOut();
+    await expect(auth.signIn({ email: TEST_ACCOUNT.email, password: "nueva-clave-9" })).resolves.toBeTruthy();
+  });
+
+  it("cierra la sesión en los demás equipos con confirmación, y el perfil viejo lleva a Mi cuenta", async () => {
+    const auth = createVerifyingAuthService() as ReturnType<typeof createVerifyingAuthService> & { readonly otherDevicesSignedOut: number };
+    await auth.signUp({ ...TEST_ACCOUNT });
+    const user = await renderAt(`${CAFE}/cuenta/seguridad`, verifying(auth));
+    await user.click(await screen.findByRole("button", { name: "Cerrar sesión en los demás equipos" }));
+    await user.click(screen.getByRole("button", { name: "Sí, cerrarlas" }));
+    expect(await screen.findByText(/cerramos tu sesión en los demás equipos/)).toBeInTheDocument();
+    expect(auth.otherDevicesSignedOut).toBe(1);
+    cleanup();
+    await renderAt(`${CAFE}/configuracion/perfil`, verifying(auth));
+    expect(await screen.findByRole("heading", { level: 1, name: "Mi perfil" })).toBeInTheDocument();
+    expect(window.location.pathname).toBe(`${CAFE}/cuenta/perfil`);
   });
 });
 

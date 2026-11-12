@@ -5,6 +5,12 @@ está en el historial de git y en `docs/plan-v1.md`.
 
 ## 12 de noviembre de 2026
 
+**Configuración del negocio y Mi cuenta, separadas**
+- **Configuración** es solo del negocio y va fija abajo en el menú de la izquierda.
+- **Mi cuenta**, en el menú de tu foto, es tuya: Mi perfil, **Seguridad** (cambiar tu contraseña y cerrar tu sesión en los demás
+  equipos) y **Notificaciones** (los avisos en este celular o computador).
+- Las direcciones de antes siguen funcionando.
+
 **Siempre sabes si falta publicar**
 - Arriba del editor del asistente: «Cambios sin publicar» en ámbar con el botón **Revisar y publicar**, o «Publicado · es lo que
   responde a tus clientes». Un punto ámbar en «Asistente IA» mientras haya cambios guardados sin publicar.

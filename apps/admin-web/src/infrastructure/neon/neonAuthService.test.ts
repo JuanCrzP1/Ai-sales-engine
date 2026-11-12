@@ -29,6 +29,11 @@ function fakeClient(overrides: Partial<NeonAuthClient> = {}) {
       return ok({});
     }),
     updateUser: vi.fn(async () => ok({})),
+    // Como Better Auth: con la contraseña actual equivocada responde 400 INVALID_PASSWORD.
+    changePassword: vi.fn(async ({ currentPassword }) =>
+      currentPassword === "clave-segura-1" ? ok({}) : { data: null, error: { status: 400, code: "INVALID_PASSWORD", message: "Invalid password" } },
+    ),
+    revokeOtherSessions: vi.fn(async () => ok({})),
     ...overrides,
   };
   return client;
@@ -74,6 +79,17 @@ describe("cuentas con Neon Auth", () => {
     expect(client.signUp.email).toHaveBeenCalledWith({ name: "Beto", email: "beto@example.com", password: "clave-segura-2" });
     expect(session.user.email).toBe("beto@example.com");
     expect(await service.token()).toBe("jwt-nuevo");
+  });
+
+  it("cambia la contraseña pidiendo la actual y puede cerrar la sesión en los demás equipos", async () => {
+    const client = fakeClient();
+    const auth = createNeonAuthService(client);
+    await auth.signIn({ email: USER.email, password: "clave-segura-1" });
+    expect(await authError(auth.changePassword({ currentPassword: "equivocada", newPassword: "nueva-clave-2", signOutOtherDevices: true }))).toBe("wrong_password");
+    await auth.changePassword({ currentPassword: "clave-segura-1", newPassword: "nueva-clave-2", signOutOtherDevices: true });
+    expect(client.changePassword).toHaveBeenLastCalledWith({ currentPassword: "clave-segura-1", newPassword: "nueva-clave-2", revokeOtherSessions: true });
+    await auth.signOutOtherDevices();
+    expect(client.revokeOtherSessions).toHaveBeenCalledTimes(1);
   });
 
   it("una caída de la red se informa como error de cuenta y el token queda vacío", async () => {

@@ -82,37 +82,59 @@ describe("Configuración → Atención humana", () => {
     expect(screen.getByText("Ahora estás fuera del horario")).toBeInTheDocument();
   });
 
+  it("las notificaciones del celular se activan en Mi cuenta, porque son de cada persona", async () => {
+    const { user } = await openAttention();
+    await user.click(screen.getByRole("link", { name: "Activarlas en Mi cuenta" }));
+    expect(await screen.findByRole("heading", { level: 1, name: "Notificaciones" })).toBeInTheDocument();
+    expect(window.location.pathname).toBe(`/negocios/${CAFE}/cuenta/notificaciones`);
+  });
+});
+
+async function openNotifications(push = createMemoryDevicePush()) {
+  window.history.pushState({}, "", `/negocios/${CAFE}/cuenta/notificaciones`);
+  const user = userEvent.setup();
+  render(<App services={createTestServices(createMemoryBackend([SAMPLE_DOCUMENT]), { devicePush: push })} />);
+  await screen.findByRole("heading", { level: 1, name: "Notificaciones" });
+  return { user, push };
+}
+
+describe("Mi cuenta → Notificaciones", () => {
   it("activa, prueba y quita las notificaciones de este dispositivo", async () => {
-    const { user, push } = await openAttention();
+    const { user, push } = await openNotifications();
+    // Con el acceso local no hay perfil ni contraseña: Mi cuenta solo tiene las notificaciones.
+    const nav = screen.getByRole("navigation", { name: "Mi cuenta" });
+    expect(within(nav).getAllByRole("link").map((link) => link.textContent)).toEqual(["NotificacionesAvisos en tu celular y computador"]);
     await user.click(await screen.findByRole("button", { name: "Activar notificaciones" }));
-    expect(await screen.findByText("Activadas")).toBeInTheDocument();
+    expect(await screen.findByText("Activadas en este dispositivo")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Enviar una prueba" }));
     await waitFor(() => expect(push.state.tests).toBe(1));
     await user.click(screen.getByRole("button", { name: "Desactivar aquí" }));
     expect(await screen.findByRole("button", { name: "Activar notificaciones" })).toBeInTheDocument();
+    // Los correos son de cada negocio: se configuran en su Atención humana.
+    expect(screen.getByRole("link", { name: "Configurar en Atención humana" })).toHaveAttribute("href", `/negocios/${CAFE}/configuracion/atencion-humana`);
   });
 
   it("explica qué hacer si el navegador las bloquea o si es un iPhone sin instalar el panel", async () => {
     const push = createMemoryDevicePush();
     push.state.denyNext = true;
-    const { user } = await openAttention({ push });
+    const { user } = await openNotifications(push);
     await user.click(await screen.findByRole("button", { name: "Activar notificaciones" }));
     expect(await screen.findByText("Bloqueaste las notificaciones para este sitio.")).toBeInTheDocument();
     cleanup();
-    await openAttention({ push: createMemoryDevicePush({ support: "install" }) });
+    await openNotifications(createMemoryDevicePush({ support: "install" }));
     expect(screen.getByText("En iPhone y iPad, primero instala el panel")).toBeInTheDocument();
   });
 });
 
 describe("Configuración", () => {
-  it("agrupa la cuenta, el asistente y la facturación, y anuncia lo que viene", async () => {
+  it("solo tiene lo del negocio (el asistente y la facturación) y anuncia lo que viene", async () => {
     window.history.pushState({}, "", `/negocios/${CAFE}/configuracion`);
     const user = userEvent.setup();
     render(<App services={createTestServices(createMemoryBackend([SAMPLE_DOCUMENT]))} />);
     // Sin ruta concreta, abre la inteligencia artificial.
     await screen.findByRole("heading", { level: 1, name: "Inteligencia artificial" });
     const nav = screen.getByRole("navigation", { name: "Configuración" });
-    // Con el acceso local no hay cuenta: no aparece «Mi perfil».
+    // Lo personal (Mi perfil) no está aquí: es de Mi cuenta.
     expect(within(nav).queryByRole("link", { name: /Mi perfil/ })).not.toBeInTheDocument();
     expect(within(nav).getAllByRole("link").map((link) => link.textContent)).toEqual([
       "Inteligencia artificialProveedor, clave y modelo",

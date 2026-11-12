@@ -17,7 +17,8 @@ _PANEL = re.compile(r"(?:import\.meta\.env|process\.env|env)\.((?:VITE_)?[A-Z][A
 
 def _tracked(*paths: str) -> list[Path]:
     output = subprocess.run(["git", "ls-files", *paths], cwd=ROOT, capture_output=True, text=True, check=True).stdout
-    return [ROOT / line for line in output.splitlines() if line.endswith((".py", ".ts", ".tsx"))]
+    # Un archivo movido o borrado sigue en la lista de git hasta el próximo commit: se salta.
+    return [ROOT / line for line in output.splitlines() if line.endswith((".py", ".ts", ".tsx")) and (ROOT / line).exists()]
 
 
 def _names(pattern: re.Pattern[str], files: list[Path]) -> set[str]:

@@ -45,7 +45,7 @@ Tu asistente responde con **tu propia cuenta de OpenRouter** (el servicio que da
 usa tu negocio.
 
 1. Crea una clave en [openrouter.ai](https://openrouter.ai) y recárgale saldo.
-2. En **Configuración → Inteligencia artificial** (también desde el menú de tu cuenta), pega la clave en **Clave de API de
+2. En **Configuración → Inteligencia artificial** (abajo en el menú de la izquierda), pega la clave en **Clave de API de
    OpenRouter**, toca **Guardar clave** y luego **Comprobar la clave**. Por seguridad, después solo verás sus últimos caracteres;
    para cambiarla, toca **Cambiar clave** y pega la nueva.
 3. Elige el modelo en la lista desplegable (puedes buscar por nombre): muestra los recomendados y cuánto cuestan más o menos 1.000
@@ -95,7 +95,7 @@ En **Configuración → Atención humana** decides qué pasa. Se aplica al insta
   disculpas, responde lo que quedó pendiente y te avisa. Puedes elegir «Nunca».
 - **Avisos:** además de la campana, te llega un **correo** con lo que pidió el cliente y un botón para abrir el chat (a tu correo o
   al que escribas; toca **Enviar correo de prueba** para verlo), y una **notificación** en el celular o el computador, como un
-  mensaje de WhatsApp. Actívalas en cada dispositivo con **Activar notificaciones** (también desde la campana).
+  mensaje de WhatsApp. Actívalas en cada dispositivo en **Mi cuenta → Notificaciones** (el menú de tu foto; también desde la campana).
 
 > En **iPhone y iPad** primero instala el panel: en Safari toca Compartir → **Agregar a pantalla de inicio** y ábrelo desde ese
 > ícono. Ahí podrás activar las notificaciones.
@@ -154,7 +154,20 @@ En el chat abierto (ícono de la papelera) o en **Clientes**. Antes de borrar, e
 
 No se puede deshacer.
 
-## 12. Desde el celular
+## 12. Configuración y Mi cuenta
+
+Hay dos lugares, como en las plataformas grandes:
+
+- **Configuración** (abajo en el menú de la izquierda) es **del negocio**: la inteligencia artificial de tu asistente, la atención
+  humana y, pronto, las respuestas rápidas y tu plan. Si tienes dos negocios, cada uno tiene la suya.
+- **Mi cuenta** (el menú de tu foto) es **tuya**, igual en todos tus negocios:
+  - **Mi perfil:** tu foto y tu nombre.
+  - **Seguridad:** cambiar tu contraseña (te pide la actual y, si quieres, cierra tu sesión en los demás equipos) y cerrar la sesión
+    en todos los demás equipos, por ejemplo si la dejaste abierta en un computador ajeno.
+  - **Notificaciones:** activar los avisos en este celular o computador. Los correos de avisos son de cada negocio y siguen en
+    Configuración → Atención humana.
+
+## 13. Desde el celular
 
 El panel funciona en el celular como una aplicación: el menú se abre con **☰**, la campana de avisos está siempre arriba y los chats
 se ven como en WhatsApp. Puedes instalarlo en la pantalla de inicio (en Chrome: menú → **Instalar app**; en iPhone: Compartir →
@@ -173,8 +186,8 @@ de cada modelo y tu gasto de cada día.
 
 **¿Otras personas ven mis negocios?** No. Cada cuenta solo ve los negocios que creó.
 
-**¿Y si no estoy pendiente del panel?** Activa las notificaciones en tu celular y deja el correo de avisos encendido (Configuración →
-Atención humana). Si aun así nadie responde a tiempo, la IA retoma el chat para que el cliente no quede esperando.
+**¿Y si no estoy pendiente del panel?** Activa las notificaciones en tu celular (menú de tu foto → **Notificaciones**) y deja el correo
+de avisos encendido (Configuración → Atención humana). Si aun así nadie responde a tiempo, la IA retoma el chat para que el cliente no quede esperando.
 
 **¿Puedo deshacer un cambio publicado?** Sí: en **Publicar** vuelves a la versión anterior, o recuperas cualquier versión del
 historial.

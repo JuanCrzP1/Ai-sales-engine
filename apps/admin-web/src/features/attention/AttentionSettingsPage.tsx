@@ -1,18 +1,18 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
-import { Button } from "../../components/ui/Button";
+import { Button, LinkButton } from "../../components/ui/Button";
 import { ChatPreview } from "../../components/ui/ChatPreview";
 import { RadioGroup } from "../../components/ui/ChoiceGroup";
 import { Alert } from "../../components/ui/Feedback";
+import { Icon } from "../../components/ui/Icon";
 import { SelectField, TextField } from "../../components/ui/FormFields";
 import { Card, PageHeader } from "../../components/ui/Layout";
 import { Toggle } from "../../components/ui/Toggle";
 import { hoursText, waitNotice, waitText, type AttentionSettings, type HoursMode } from "../../domain/attention/types";
 import { LoadingScreen } from "../../layout/StatusScreen";
-import { sectionPath } from "../../navigation/navItems";
+import { NOTIFICATIONS_ITEM, sectionPath } from "../../navigation/navItems";
 import { useWorkspacePath } from "../../navigation/useWorkspacePath";
 import { useAttentionSettings } from "../../state/useAttentionSettings";
-import { DevicePushPanel } from "./DevicePushPanel";
 import { TeamHoursEditor } from "./TeamHoursEditor";
 
 const NEVER = "nunca";
@@ -196,7 +196,22 @@ export function AttentionSettingsPage() {
               )}
               {attention.emailResult && <Alert tone={attention.emailResult.ok ? "success" : "danger"} title={attention.emailResult.message} />}
             </div>
-            <DevicePushPanel />
+            <div className="device-push">
+              <div className="device-push__head">
+                <span className="device-push__icon" aria-hidden="true">
+                  <Icon name="bell" size={18} />
+                </span>
+                <div>
+                  <p className="device-push__title">Notificaciones en tu celular</p>
+                  <p className="field__hint">Son de cada persona y de cada dispositivo: cada quien las activa en su cuenta.</p>
+                </div>
+              </div>
+              <div>
+                <LinkButton variant="secondary" size="small" to={pathTo(NOTIFICATIONS_ITEM.path)}>
+                  Activarlas en Mi cuenta
+                </LinkButton>
+              </div>
+            </div>
           </div>
         </Card>
 

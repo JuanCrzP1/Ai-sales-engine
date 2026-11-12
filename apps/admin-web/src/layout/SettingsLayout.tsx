@@ -1,16 +1,16 @@
 import { useEffect, useRef } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { Icon } from "../components/ui/Icon";
-import { SETTINGS_GROUPS } from "../navigation/navItems";
+import { ACCOUNT_GROUPS, SETTINGS_GROUPS, type SettingsGroup } from "../navigation/navItems";
 import { useWorkspacePath } from "../navigation/useWorkspacePath";
 import { useAuth } from "../state/auth/useAuth";
 import { NAV_ICONS } from "./navIcons";
 
 /**
- * Configuración: su propio menú por grupos (Cuenta, Asistente, Facturación) a la izquierda y la sección abierta a la derecha. En el
- * celular, el menú es una fila de pestañas que se desliza de lado. Lo que aún no existe se ve con «Pronto».
+ * Una sección con su propio menú a la izquierda y la página abierta a la derecha (en el celular, una fila de pestañas que se
+ * desliza de lado). La usan Configuración (lo del negocio) y Mi cuenta (lo de la persona). Lo que aún no existe se ve con «Pronto».
  */
-export function SettingsLayout() {
+function SectionMenuLayout({ label, title, subtitle, groups }: { label: string; title: string; subtitle: string; groups: SettingsGroup[] }) {
   const pathTo = useWorkspacePath();
   const { verifiesCredentials } = useAuth();
   const { pathname } = useLocation();
@@ -26,9 +26,10 @@ export function SettingsLayout() {
 
   return (
     <div className="settings-layout">
-      <nav ref={nav} className="settings-nav" aria-label="Configuración">
-        <p className="settings-nav__title">Configuración</p>
-        {SETTINGS_GROUPS.map((group) => {
+      <nav ref={nav} className="settings-nav" aria-label={label}>
+        <p className="settings-nav__title">{title}</p>
+        <p className="settings-nav__subtitle">{subtitle}</p>
+        {groups.map((group) => {
           const entries = group.entries.filter((entry) => !entry.account || verifiesCredentials);
           if (entries.length === 0) return null;
           return (
@@ -57,4 +58,14 @@ export function SettingsLayout() {
       </div>
     </div>
   );
+}
+
+/** Configuración: solo lo del negocio abierto (su asistente y su facturación). */
+export function SettingsLayout() {
+  return <SectionMenuLayout label="Configuración" title="Configuración" subtitle="De este negocio" groups={SETTINGS_GROUPS} />;
+}
+
+/** Mi cuenta: lo de la persona, igual en todos sus negocios. */
+export function AccountLayout() {
+  return <SectionMenuLayout label="Mi cuenta" title="Mi cuenta" subtitle="Igual en todos tus negocios" groups={ACCOUNT_GROUPS} />;
 }

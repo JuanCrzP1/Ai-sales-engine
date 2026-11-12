@@ -234,15 +234,26 @@ y se aplica al instante.
   retomó un chat). El aviso del chat abierto dice si la IA está pausada (y desde cuándo espera el cliente), si la retomó o si el chat
   llegó fuera del horario.
 
-### D8k — Configuración como una sección con su propio menú
+### D8k — Configuración (del negocio) y Mi cuenta (de la persona)
 
-`layout/SettingsLayout.tsx` agrupa todo lo que no es atender ni entrenar al asistente, con un menú propio (`SETTINGS_GROUPS`): Cuenta
-(Mi perfil, solo con cuentas), Asistente (Inteligencia artificial, Atención humana, Respuestas rápidas) y Facturación (Pagos y
-suscripciones). Lo que todavía no existe se ve con «Pronto» y su página dice qué traerá, para saber hacia dónde va la plataforma. En
+Como en Shopify, Intercom o HubSpot, se separan dos cosas que antes se mezclaban (Mi perfil vivía dentro de la Configuración del
+negocio y «Configuración» aparecía dos veces):
+- **Configuración** es del negocio abierto y va sola, fija abajo en el menú de la izquierda (`.nav__bottom`). Su menú propio
+  (`SETTINGS_GROUPS`): Asistente (Inteligencia artificial, Atención humana, Respuestas rápidas) y Facturación (Pagos y suscripciones).
+- **Mi cuenta** es de la persona, igual en todos sus negocios, y se abre desde el menú de la foto (que ya no tiene «Configuración»):
+  Mi perfil, Seguridad y Notificaciones (`ACCOUNT_GROUPS`, rutas `/cuenta/…`). Seguridad cambia la contraseña con la actual y, por
+  defecto, cierra las demás sesiones; también cierra todas las demás sesiones aparte (`AuthService.changePassword` y
+  `signOutOtherDevices`, sobre `change-password` y `revoke-other-sessions` de Neon Auth). Las notificaciones del dispositivo pasaron
+  de Atención humana a Mi cuenta, porque son de cada persona y de cada dispositivo; Atención humana enlaza allá. Con el acceso local
+  (sin cuentas) Mi cuenta solo muestra Notificaciones.
+- Las dos usan el mismo diseño con menú propio (`layout/SettingsLayout.tsx`: `SettingsLayout` y `AccountLayout`). `/configuracion/perfil`
+  redirige a `/cuenta/perfil`.
+
+En Configuración, Lo que todavía no existe se ve con «Pronto» y su página dice qué traerá, para saber hacia dónde va la plataforma. En
 el celular el menú es una fila de pestañas que se desliza. Todas las rutas viven bajo `/configuracion/…`; las anteriores (`/ia`,
 `/atencion-humana`) redirigen. `isAssistantPath` ignora las rutas de Configuración, así una sección no se confunde con una pestaña del
-asistente de nombre parecido. El menú de la cuenta abre Mi perfil y Configuración dentro del negocio; fuera de un negocio, el perfil
-sigue en su propia página (`/perfil`).
+asistente de nombre parecido. Fuera de un negocio (antes de crear el primero), Mi cuenta es una sola
+página (`/perfil`) con todo.
 
 En Inteligencia artificial cada parte se guarda por separado: el proveedor (OpenRouter; los demás, «Pronto»), la clave y el modelo.
 La clave guardada se ve oculta (`sk-or-v1-••••…` y sus últimos caracteres) y nunca se vuelve a mostrar completa: el servidor solo la

@@ -609,6 +609,12 @@
   white-space: nowrap;
 }
 
+.user-menu__separator {
+  height: 1px;
+  margin: 4px 0;
+  background: var(--color-border);
+}
+
 .user-menu__item {
   display: flex;
   align-items: center;

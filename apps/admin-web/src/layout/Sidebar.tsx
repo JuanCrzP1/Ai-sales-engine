@@ -98,7 +98,10 @@ export function Sidebar({ id, open, compact = false, onClose }: SidebarProps) {
         </NavEntry>
         <NavEntry item={CHANNELS_ITEM} />
         <NavEntry item={INTEGRATIONS_ITEM} active={isIntegrationsPath(pathname)} />
-        <NavEntry item={SETTINGS_ITEM} active={isSettingsPath(pathname)} />
+        {/* Como en las plataformas serias: la configuración del negocio va sola, fija abajo. Lo personal está en el menú de la foto. */}
+        <div className="nav__bottom">
+          <NavEntry item={SETTINGS_ITEM} active={isSettingsPath(pathname)} />
+        </div>
       </nav>
 
       {verifiesCredentials && (

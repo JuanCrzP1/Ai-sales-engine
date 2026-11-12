@@ -39,6 +39,10 @@ export interface NeonAuthClient {
   signUp: { email(input: { email: string; password: string; name: string }): Promise<NeonResult<unknown>> };
   signOut(): Promise<unknown>;
   updateUser(input: { name?: string; image?: string | null }): Promise<NeonResult<unknown>>;
+  /** `POST /change-password` de Better Auth. */
+  changePassword(input: { currentPassword: string; newPassword: string; revokeOtherSessions?: boolean }): Promise<NeonResult<unknown>>;
+  /** `POST /revoke-other-sessions` de Better Auth. */
+  revokeOtherSessions(): Promise<NeonResult<unknown>>;
 }
 
 /** El servicio de cuentas, más el token de la sesión que piden las peticiones a la API del panel. */
@@ -56,6 +60,10 @@ const codeOf = (error: NeonAuthFailure) => `${error.code ?? ""} ${error.message 
 
 function signInFailure(error: NeonAuthFailure): AuthErrorCode {
   return error.status === 401 || /INVALID_EMAIL_OR_PASSWORD|INVALID_PASSWORD|USER_NOT_FOUND|CREDENTIAL/.test(codeOf(error)) ? "invalid_credentials" : "unexpected";
+}
+
+function passwordChangeFailure(error: NeonAuthFailure): AuthErrorCode {
+  return /INVALID_PASSWORD|INCORRECT|WRONG/.test(codeOf(error)) || error.status === 400 || error.status === 401 ? "wrong_password" : "unexpected";
 }
 
 function signUpFailure(error: NeonAuthFailure): AuthErrorCode {
@@ -114,6 +122,16 @@ export function createNeonAuthService(client: NeonAuthClient): NeonAuthService {
         const { error } = await client.updateUser(changes);
         if (error) throw new AuthError("unexpected");
         return (await signedIn()).user;
+      }),
+    changePassword: ({ currentPassword, newPassword, signOutOtherDevices }) =>
+      guarded(async () => {
+        const { error } = await client.changePassword({ currentPassword, newPassword, revokeOtherSessions: signOutOtherDevices });
+        if (error) throw new AuthError(passwordChangeFailure(error));
+      }),
+    signOutOtherDevices: () =>
+      guarded(async () => {
+        const { error } = await client.revokeOtherSessions();
+        if (error) throw new AuthError("unexpected");
       }),
     token: async () => {
       try {

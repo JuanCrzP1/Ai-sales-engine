@@ -608,6 +608,7 @@ export function createTestServices(backend: MemoryBackend = createMemoryBackend(
 export function createVerifyingAuthService(): AuthService {
   const accounts = new Map<string, { profile: UserProfile; password: string }>();
   let session: Session | null = null;
+  let otherDevicesSignedOut = 0;
   const start = (profile: UserProfile): Session => (session = { user: profile, startedAt: new Date().toISOString() });
 
   return {
@@ -636,7 +637,21 @@ export function createVerifyingAuthService(): AuthService {
       session = { ...session, user: profile };
       return profile;
     },
-  };
+    async changePassword({ currentPassword, newPassword, signOutOtherDevices }) {
+      if (!session) throw new AuthError("not_signed_in");
+      const account = accounts.get(session.user.email);
+      if (!account || account.password !== currentPassword) throw new AuthError("wrong_password");
+      account.password = newPassword;
+      if (signOutOtherDevices) otherDevicesSignedOut += 1;
+    },
+    async signOutOtherDevices() {
+      if (!session) throw new AuthError("not_signed_in");
+      otherDevicesSignedOut += 1;
+    },
+    get otherDevicesSignedOut() {
+      return otherDevicesSignedOut;
+    },
+  } as AuthService & { readonly otherDevicesSignedOut: number };
 }
 
 

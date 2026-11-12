@@ -1,13 +1,19 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
 import { Avatar } from "../components/ui/Avatar";
-import { Icon } from "../components/ui/Icon";
+import { Icon, type IconName } from "../components/ui/Icon";
 import { ACCOUNT_PATHS } from "../navigation/accountPaths";
-import { AI_ITEM, PROFILE_SETTINGS_ITEM } from "../navigation/navItems";
+import { ACCOUNT_PROFILE_ITEM, NOTIFICATIONS_ITEM, SECURITY_ITEM, type NavItem } from "../navigation/navItems";
 import { useWorkspacePath } from "../navigation/useWorkspacePath";
 import { useAuth, useCurrentUser } from "../state/auth/useAuth";
 
-/** La cuenta, abajo en la barra lateral: foto, nombre y correo; despliega hacia arriba el perfil, la configuración y el cierre de sesión. */
+const ACCOUNT_LINKS: { item: NavItem; icon: IconName; title?: string }[] = [
+  { item: ACCOUNT_PROFILE_ITEM, icon: "user" },
+  { item: SECURITY_ITEM, icon: "shield" },
+  { item: NOTIFICATIONS_ITEM, icon: "bell" },
+];
+
+/** La cuenta, abajo en la barra lateral: foto, nombre y correo; despliega hacia arriba Mi cuenta (perfil, seguridad, notificaciones) y el cierre de sesión. */
 export function UserMenu() {
   const user = useCurrentUser();
   const { signOut } = useAuth();
@@ -68,16 +74,14 @@ export function UserMenu() {
               <span>{user.email}</span>
             </div>
           </div>
-          <Link className="user-menu__item" to={inBusiness ? pathTo(PROFILE_SETTINGS_ITEM.path) : ACCOUNT_PATHS.profile}>
-            <Icon name="user" size={16} />
-            Mi perfil
-          </Link>
-          {inBusiness && (
-            <Link className="user-menu__item" to={pathTo(AI_ITEM.path)}>
-              <Icon name="settings" size={16} />
-              Configuración
+          {/* Solo lo de la persona: lo del negocio está en Configuración, abajo en el menú de la izquierda. */}
+          {(inBusiness ? ACCOUNT_LINKS : [{ item: ACCOUNT_PROFILE_ITEM, icon: "user" as const, title: "Mi cuenta" }]).map(({ item, icon, title }) => (
+            <Link key={item.key} className="user-menu__item" to={inBusiness ? pathTo(item.path) : ACCOUNT_PATHS.profile}>
+              <Icon name={icon} size={16} />
+              {title ?? item.title}
             </Link>
-          )}
+          ))}
+          <div className="user-menu__separator" role="separator" />
           <button type="button" className="user-menu__item user-menu__item--danger" onClick={() => void signOut()}>
             <Icon name="logout" size={16} />
             Cerrar sesión

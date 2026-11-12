@@ -28,10 +28,19 @@ export interface SignUpInput {
 
 export type ProfileUpdate = Partial<Pick<UserProfile, "name" | "avatarUrl">>;
 
+/** Cambiar la contraseña: pide la actual y, si se quiere, cierra la sesión en los demás equipos. */
+export interface PasswordChange {
+  currentPassword: string;
+  newPassword: string;
+  signOutOtherDevices: boolean;
+}
+
 export type AuthErrorCode =
   | "invalid_credentials"
   | "email_taken"
   | "not_signed_in"
+  | "wrong_password"
+  | "unsupported"
   | "storage_unavailable"
   | "storage_corrupted"
   | "unexpected";

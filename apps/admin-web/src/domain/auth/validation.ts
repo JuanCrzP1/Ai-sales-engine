@@ -3,7 +3,7 @@
 export const PASSWORD_MIN_LENGTH = 8;
 export const NAME_MAX_LENGTH = 60;
 
-export type AuthField = "name" | "email" | "password" | "confirmPassword";
+export type AuthField = "name" | "email" | "currentPassword" | "password" | "confirmPassword";
 export type AuthFieldErrors = Partial<Record<AuthField, string>>;
 
 /** Si el servicio de autenticación comprueba contraseñas (ver `AuthService.verifiesCredentials`). */
@@ -62,6 +62,16 @@ export function validateSignUp(
   });
 }
 
+/** Cambiar la contraseña: la actual, una nueva que cumpla las reglas y sea distinta, y su confirmación. */
+export function validatePasswordChange(input: { currentPassword: string; password: string; confirmPassword: string }): AuthFieldErrors {
+  const reused = input.password && input.password === input.currentPassword ? "La nueva contraseña debe ser distinta de la actual." : undefined;
+  return collect({
+    currentPassword: input.currentPassword ? undefined : "Escribe tu contraseña actual.",
+    password: validateNewPassword(input.password) ?? reused,
+    confirmPassword: input.confirmPassword === input.password ? undefined : "Las contraseñas no coinciden.",
+  });
+}
+
 export function hasErrors(errors: AuthFieldErrors): boolean {
   return Object.keys(errors).length > 0;
 }
@@ -69,7 +79,7 @@ export function hasErrors(errors: AuthFieldErrors): boolean {
 /** Conserva solo los campos con mensaje. */
 function collect(candidates: AuthFieldErrors): AuthFieldErrors {
   const errors: AuthFieldErrors = {};
-  for (const field of ["name", "email", "password", "confirmPassword"] as const) {
+  for (const field of ["name", "email", "currentPassword", "password", "confirmPassword"] as const) {
     const message = candidates[field];
     if (message) errors[field] = message;
   }

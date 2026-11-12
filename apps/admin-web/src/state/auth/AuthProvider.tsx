@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { authErrorMessage } from "../../domain/auth/messages";
-import type { ProfileUpdate, Session, SignInInput, SignUpInput } from "../../domain/auth/types";
+import type { PasswordChange, ProfileUpdate, Session, SignInInput, SignUpInput } from "../../domain/auth/types";
 import type { AuthService } from "../../repositories/authService";
 import { AuthContext, type AuthContextValue } from "./authContext";
 
@@ -54,9 +54,12 @@ export function AuthProvider({ service, children, renderLoading, renderError }: 
     [service],
   );
 
+  const changePassword = useCallback((change: PasswordChange) => service.changePassword(change), [service]);
+  const signOutOtherDevices = useCallback(() => service.signOutOtherDevices(), [service]);
+
   const value = useMemo<AuthContextValue>(
-    () => ({ session, verifiesCredentials: service.verifiesCredentials, signIn, signUp, signOut, updateProfile }),
-    [session, service.verifiesCredentials, signIn, signUp, signOut, updateProfile],
+    () => ({ session, verifiesCredentials: service.verifiesCredentials, signIn, signUp, signOut, updateProfile, changePassword, signOutOtherDevices }),
+    [session, service.verifiesCredentials, signIn, signUp, signOut, updateProfile, changePassword, signOutOtherDevices],
   );
 
   if (boot.status === "loading") return <>{renderLoading()}</>;
