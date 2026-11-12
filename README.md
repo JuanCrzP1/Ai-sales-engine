@@ -152,7 +152,7 @@ El detalle y el avance de cada fase: [docs/plan-v1.md](docs/plan-v1.md). Los cam
 | Dueños de negocio | [Guía del negocio](docs/guia-del-negocio.md) |
 | Empezar a desarrollar | [Inicio rápido](docs/quickstart.md) · [Cómo contribuir](CONTRIBUTING.md) |
 | Entender el sistema | [Arquitectura](docs/architecture.md) · [Negocios](docs/tenants.md) · [Contrato de configuración](docs/business-config.md) |
-| Operar | [Operación: variables, nube, canales y depuración](docs/operations.md) |
+| Operar | [Desplegar: plataformas y variables](docs/despliegue.md) · [Operación: nube, canales y depuración](docs/operations.md) |
 | El panel | [Panel](apps/admin-web/README.md) · [Su arquitectura](apps/admin-web/docs/architecture.md) |
 | Producto y plan | [Producto](docs/product.md) · [Plan de la versión 1](docs/plan-v1.md) · [Cambios](CHANGELOG.md) |
 

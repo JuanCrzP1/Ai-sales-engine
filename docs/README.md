@@ -25,7 +25,8 @@ Cada documento tiene un lector. Empieza por el tuyo.
 
 | Documento | Qué encuentras |
 |---|---|
-| [Operación](operations.md) | Variables de entorno, Vercel y Neon, WhatsApp por QR, secretos entre equipos y cómo depurar |
+| [Desplegar](despliegue.md) | Qué necesita el proyecto para funcionar en Vercel o en otro lugar: piezas, servicios y cada variable con dónde va |
+| [Operación](operations.md) | Vercel y Neon, WhatsApp por QR, atención humana, secretos entre equipos y cómo depurar |
 | [Plan de la versión 1](plan-v1.md) | Auditoría, fases y el avance de cada una |
 | [Cambios](../CHANGELOG.md) | Qué cambió y cuándo |
 

@@ -51,31 +51,10 @@ Validación mínima esperada:
 
 ## Variables De Entorno
 
-Las variables relevantes salen de `project/app/config/settings/base.py`.
-
-Las más importantes para operación real son:
-
-```env
-DATABASE_URL=
-
-LLM_PROVIDER=openrouter
-OPENROUTER_BASE_URL=https://openrouter.ai/api/v1
-OPENROUTER_MODEL=openai/gpt-4o-mini
-OPENROUTER_ADVANCED_MODEL=openai/gpt-4.1-mini
-LLM_TIMEOUT_SECONDS=15
-
-PUBLIC_BASE_URL=http://localhost:8000
-
-META_ACCESS_TOKEN=
-META_PHONE_NUMBER_ID=
-META_VERIFY_TOKEN=
-META_APP_SECRET=
-META_BUSINESS_ACCOUNT_ID=
-
-ENABLE_AI_RESPONSES=true
-ENABLE_SIMULATION_ENDPOINT=false
-ENABLE_WEBHOOK_PROCESSING=true
-```
+Qué variable va dónde (este equipo o Vercel), con cada una explicada: [Desplegar](despliegue.md), «Las variables». La plantilla
+con todas, sin valores, es `project/.env.example`: se copia a `.env` en la raíz para trabajar en este equipo. Los valores de
+producción solo viven en Vercel. Una prueba (`tests/test_env_example.py`) falla si el código lee una variable que la plantilla no
+documenta.
 
 ## Qué Hace Cada Grupo De Variables
 
