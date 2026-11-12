@@ -93,7 +93,22 @@ En **Configuración → Atención humana** decides qué pasa. Se aplica al insta
 Lo que dice el asistente en esos momentos lo escribes en **Asistente IA → Mensajes**: «Fuera del horario del equipo» y «Cuando la IA
 retoma el chat». Si los dejas vacíos, usa los suyos.
 
-## 8. Clientes y ventas
+## 8. Integraciones: conecta tu asistente a otras plataformas
+
+En **Integraciones → API del asistente** conectas tu asistente a otra plataforma, por ejemplo **Leona** o tu página web: la
+plataforma le manda el mensaje de tu cliente y recibe la respuesta para enviársela. Es el mismo asistente de WhatsApp.
+
+1. **Crea una clave** (por ejemplo «Leona»). Se muestra **una sola vez**: cópiala y pégala en la otra plataforma.
+2. Copia la **dirección** y el **ejemplo para Leona**: la pantalla te dice qué poner en cada campo del bloque «Integración HTTP».
+3. **Pruébala** desde la misma pantalla: ves lo que respondería tu asistente.
+
+Esos chats llegan a **Conversaciones** con el canal «API» y cuentan en Clientes y Reportes. Cuando un cliente pide una persona, la
+otra plataforma recibe el aviso para pasarlo a tu equipo; la IA se pausa en ese chat hasta que toques **Reanudar IA**.
+
+En **Integraciones → Claves de API** ves todas tus claves, cuándo se usó cada una y puedes **revocarlas** si se filtró alguna o ya no
+la usas. Pronto también podrás conectar IAs como Claude o ChatGPT para que configuren tu asistente por ti.
+
+## 9. Clientes y ventas
 
 En **Clientes** está cada persona que te escribió, con su **etapa**: Nuevo, Interesado, Listo para comprar, Pagó (por verificar) y
 Cliente. La etapa avanza sola con lo que el asistente reconoce en la conversación.
@@ -103,12 +118,12 @@ Cliente. La etapa avanza sola con lo que el asistente reconoce en la conversaci�
 - **Pagos por verificar:** en Ventas ves quién dice que ya pagó. Revisa el comprobante y registra la venta.
 - **Anular una venta:** queda marcada como anulada y deja de sumar.
 
-## 9. Reportes
+## 10. Reportes
 
 En **Reportes** eliges 7, 30 o 90 días y ves: conversaciones nuevas, ventas, ingresos, cuántos pasaron a una persona, el embudo de
 ventas, conversaciones por día, quién respondió (tu asistente o tu equipo) y cuánto costó la IA, comparado con el periodo anterior.
 
-## 10. Eliminar un chat o un cliente
+## 11. Eliminar un chat o un cliente
 
 En el chat abierto (ícono de la papelera) o en **Clientes**. Antes de borrar, el panel te dice exactamente qué pasa:
 
@@ -118,7 +133,7 @@ En el chat abierto (ícono de la papelera) o en **Clientes**. Antes de borrar, e
 
 No se puede deshacer.
 
-## 11. Desde el celular
+## 12. Desde el celular
 
 El panel funciona en el celular como una aplicación: el menú se abre con **☰**, la campana de avisos está siempre arriba y los chats
 se ven como en WhatsApp. Puedes instalarlo en la pantalla de inicio (en Chrome: menú → **Instalar app**; en iPhone: Compartir →

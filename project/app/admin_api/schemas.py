@@ -285,3 +285,18 @@ def attention_payload(view) -> dict[str, Any]:
             "resume_after_minutes": list(RESUME_MINUTES),
         },
     }
+
+
+def api_key_payload(key) -> dict[str, Any]:
+    """Una clave de API sin su valor: solo su comienzo para reconocerla."""
+    return {
+        "id": key.id,
+        "name": key.name,
+        "prefix": key.prefix,
+        "scopes": list(key.scopes),
+        "created_at": _iso(key.created_at),
+        "created_by": key.created_by,
+        "last_used_at": _iso(key.last_used_at),
+        "revoked_at": _iso(key.revoked_at),
+        "active": key.active,
+    }

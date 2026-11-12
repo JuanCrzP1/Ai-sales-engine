@@ -30,3 +30,9 @@ CHANNEL_SETUP_PER_USER = UsageLimit("channel_setup_user", limit=20, window_secon
 CHANNEL_STATUS_PER_BUSINESS = UsageLimit("channel_status_business", limit=400, window_seconds=600)
 # Respuestas del equipo desde la bandeja: cada una sale por WhatsApp, y los envíos masivos hacen que WhatsApp bloquee el número.
 CONVERSATION_REPLIES_PER_USER = UsageLimit("conversation_reply_user", limit=120, window_seconds=600)
+# La API del asistente: la llama un sistema (Leona, una web), no una persona. Cada clave tiene un ritmo; el negocio, un techo por
+# hora entre todas sus claves, para que una clave filtrada o un ciclo mal armado no le gaste el saldo de IA.
+ASSISTANT_API_PER_KEY = UsageLimit("assistant_api_key", limit=60, window_seconds=60)
+ASSISTANT_API_PER_BUSINESS = UsageLimit("assistant_api_business", limit=1500, window_seconds=3600)
+# Crear claves de API: pocas seguidas.
+API_KEYS_PER_USER = UsageLimit("api_keys_user", limit=20, window_seconds=600)

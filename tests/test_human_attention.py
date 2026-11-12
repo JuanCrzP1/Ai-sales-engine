@@ -56,7 +56,7 @@ from app.domain.business_config.push import PushMessage, PushSubscription, valid
 from app.infrastructure.business_config.attention_store import AttentionStore
 from app.infrastructure.business_config.conversation_store import ConversationStore
 from app.infrastructure.business_config.database import (
-    _widen_notification_kinds,
+    _refresh_outdated_checks,
     build_business_config_service,
     create_business_config_engine,
     create_local_schema,
@@ -315,7 +315,7 @@ def test_an_old_local_database_accepts_the_new_alerts(tmp_path):
             """
         )
     engine = create_business_config_engine(f"sqlite:///{path.as_posix()}")
-    _widen_notification_kinds(engine)
+    _refresh_outdated_checks(engine)
     with engine.begin() as conn:
         assert "ai_resumed" in conn.exec_driver_sql("SELECT sql FROM sqlite_master WHERE name = 'notifications'").scalar()
         conn.exec_driver_sql("INSERT INTO notifications VALUES ('m', 't', NULL, 'ai_resumed', 'La IA retomó', NULL, '2026-11-11 10:00:00')")

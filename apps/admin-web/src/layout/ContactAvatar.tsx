@@ -7,6 +7,7 @@ const CHANNEL_ICONS: Record<Exclude<Channel, "whatsapp">, IconName> = {
   instagram: "camera",
   telegram: "send",
   web: "chat",
+  api: "link",
   prueba: "flask",
 };
 

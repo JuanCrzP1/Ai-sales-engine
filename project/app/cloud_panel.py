@@ -17,6 +17,7 @@ from app.infrastructure.business_config.database import (
     build_business_config_service,
     create_business_config_engine,
 )
+from app.infrastructure.business_config.api_key_store import ApiKeyStore
 from app.infrastructure.business_config.attention_store import AttentionStore
 from app.infrastructure.business_config.migrations import ensure_migrations
 from app.infrastructure.business_config.conversation_store import ConversationStore
@@ -37,7 +38,7 @@ def build_cloud_panel_api(auth_url: str) -> FastAPI:
     from app.infrastructure.business_config.ai_usage_store import AIUsageStore
     from app.infrastructure.business_config.commerce_store import CommerceStore
     from app.infrastructure.channels.platform import uazapi_platform
-    from app.infrastructure.channels.public_url import webhook_base
+    from app.infrastructure.channels.public_url import assistant_api_url, webhook_base
     from app.infrastructure.channels.uazapi import UazapiClient
     from app.infrastructure.notifications.resend_email import ResendEmailSender
     from app.infrastructure.notifications.web_push import WebPushSender
@@ -77,4 +78,6 @@ def build_cloud_panel_api(auth_url: str) -> FastAPI:
         push_storage=push_store,
         email=ResendEmailSender(),
         push=WebPushSender(push_store.vapid_keys),
+        api_keys=ApiKeyStore(engine),
+        assistant_api_url=lambda: assistant_api_url(settings.api_prefix),
     )

@@ -8,7 +8,7 @@ variable, con dónde va. La plantilla con todas las variables es [`project/.env.
 
 | Pieza | Qué es | Hoy | Si se mueve a otra parte, necesita |
 |---|---|---|---|
-| **Motor** | La API en Python (FastAPI): webhooks de WhatsApp, la IA, la API del panel (`/panel/api`) y la revisión de la atención humana | Vercel, proyecto `ai-sales-engine` (carpeta raíz `project`) | Python 3.11 o más; `pip install -r project/requirements.txt`; arrancar `uvicorn app.main:app` desde `project/`. Que las tareas en segundo plano terminen después de responder (en un servidor propio, siempre) |
+| **Motor** | La API en Python (FastAPI): webhooks de WhatsApp, la IA, la API del asistente para otras plataformas, la API del panel (`/panel/api`) y la revisión de la atención humana | Vercel, proyecto `ai-sales-engine` (carpeta raíz `project`) | Python 3.11 o más; `pip install -r project/requirements.txt`; arrancar `uvicorn app.main:app` desde `project/`. Que las tareas en segundo plano terminen después de responder (en un servidor propio, siempre) |
 | **Panel** | La aplicación web (React + Vite): archivos estáticos | Vercel, proyecto `ai-sales-engine-panel` (carpeta `apps/admin-web`) | `npm ci && npm run build` → servir `dist/`. Dos reglas: `/api/*` → `{motor}/panel/api/*`, y todo lo demás → `index.html`. Servir `sw.js` sin caché |
 | **Base de datos** | PostgreSQL con las tablas del motor y del panel | Neon (rama `production`; `pruebas` para Preview) | Cualquier PostgreSQL. Las migraciones se aplican solas al arrancar la API del panel (`project/db/migrations`) |
 | **Cuentas** | Inicio de sesión de los dueños de negocio | Neon Auth (Better Auth), de la misma base | Neon Auth u otro Better Auth compatible: el motor verifica sus tokens con sus claves públicas (`NEON_AUTH_URL`) |
@@ -77,6 +77,7 @@ equipos con `python scripts/local_secrets.py export` (ver [Operación](operation
 
 1. `GET {motor}/health` responde `{"status": "ok"}` y `{motor}/` lleva al panel.
 2. `POST {motor}/api/v1/internal/attention/run` sin clave responde **401** (con `CRON_SECRET` configurado; **503** si falta).
+   `POST {motor}/api/v1/assistant/messages` sin clave responde **401** (la API del asistente está publicada).
 3. Entrar al panel, crear un negocio, poner su clave de IA y probarlo en «Probar».
 4. Configuración → Atención humana: «Enviar correo de prueba» y «Activar notificaciones».
 5. Canales: conectar WhatsApp con el QR y escribirle desde otro número.

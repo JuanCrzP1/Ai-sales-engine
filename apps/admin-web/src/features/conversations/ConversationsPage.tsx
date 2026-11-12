@@ -273,7 +273,8 @@ function ThreadView({
         <button type="button" className="thread__delete" aria-label="Eliminar chat" title="Eliminar chat" onClick={() => setDeleting(true)}>
           <Icon name="trash" size={18} />
         </button>
-        {canReply && (
+        {/* Quién atiende se decide en todo chat real con un cliente: también los que llegan por la API, aunque se respondan allá. */}
+        {(canReply || conversation.channel === "api") && (
           <div className="thread__actions">
             <span className={`attendant attendant--${conversation.aiPaused ? "team" : "ai"}`}>
               <Icon name={conversation.aiPaused ? "headset" : "robot"} size={14} /> {conversation.aiPaused ? "Atiende tu equipo" : "Atiende la IA"}
@@ -353,7 +354,9 @@ function ThreadView({
         <footer className="thread__footer">
           {isTest
             ? "Conversación de prueba hecha desde «Probar asistente». No llegó a ningún cliente."
-            : `Los datos de pago se muestran ocultos. Por ${CHANNEL_LABELS[conversation.channel]} todavía no se puede responder desde aquí.`}
+            : conversation.channel === "api"
+              ? "Llegó por la API desde otra plataforma (por ejemplo, Leona): respóndele desde allá. Los datos de pago se muestran ocultos."
+              : `Los datos de pago se muestran ocultos. Por ${CHANNEL_LABELS[conversation.channel]} todavía no se puede responder desde aquí.`}
         </footer>
       )}
     </div>
@@ -527,7 +530,9 @@ function handoffStatus(conversation: ConversationSummary, canReply: boolean): st
   const ago = (iso: string) => (relativeTime(iso) === "ahora" ? "hace un momento" : relativeTime(iso));
   const waiting = conversation.customerWaitingSince ? ` El cliente espera respuesta desde ${ago(conversation.customerWaitingSince)}.` : "";
   if (conversation.aiPaused) {
-    return canReply ? `La IA está pausada en este chat: respóndele desde aquí.${waiting}` : `Atiéndelo por ${CHANNEL_LABELS[conversation.channel]} y márcalo cuando esté listo.`;
+    if (canReply) return `La IA está pausada en este chat: respóndele desde aquí.${waiting}`;
+    if (conversation.channel === "api") return `La IA está pausada: atiéndelo desde la plataforma conectada y toca «Reanudar IA» cuando el asistente pueda seguir.${waiting}`;
+    return `Atiéndelo por ${CHANNEL_LABELS[conversation.channel]} y márcalo cuando esté listo.`;
   }
   if (conversation.aiResumedAt) return `Nadie respondió a tiempo, así que la IA retomó el chat ${ago(conversation.aiResumedAt)}. Respóndele cuando puedas.`;
   return "Llegó fuera del horario de tu equipo: la IA sigue ayudándole mientras tanto.";

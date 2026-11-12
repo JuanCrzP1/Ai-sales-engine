@@ -6,6 +6,7 @@ import { createApiChannels } from "../infrastructure/api/apiChannels";
 import { createApiCommerce } from "../infrastructure/api/apiCommerce";
 import { createApiConfigRepository } from "../infrastructure/api/apiConfigRepository";
 import { createApiInbox } from "../infrastructure/api/apiInbox";
+import { createApiIntegrations } from "../infrastructure/api/apiIntegrations";
 import { createHttpClient } from "../infrastructure/api/httpClient";
 import { createBrowserPush } from "../infrastructure/browser/browserPush";
 import { createLocalOperatorAuthService } from "../infrastructure/local/localOperatorAuthService";
@@ -18,6 +19,7 @@ import type { Channels } from "../repositories/channels";
 import type { Commerce } from "../repositories/commerce";
 import type { ConfigRepository } from "../repositories/configRepository";
 import type { Inbox } from "../repositories/inbox";
+import type { Integrations } from "../repositories/integrations";
 
 /**
  * Servicios de la aplicación. Es el ÚNICO punto donde se eligen las implementaciones: pantallas, estado y reglas solo
@@ -38,6 +40,8 @@ export interface ApplicationServices {
   createAttention: (slug: string) => Attention;
   /** Las notificaciones en este navegador o celular (de la persona, no de un negocio). */
   devicePush: DevicePush;
+  /** Las integraciones de un negocio: claves de API y la API del asistente. */
+  createIntegrations: (slug: string) => Integrations;
 }
 
 /** Implementaciones actuales: la API local del panel, sin autenticación porque solo atiende en este equipo. */
@@ -53,6 +57,7 @@ export function createLocalServices(apiBaseUrl?: string): ApplicationServices {
     createCommerce: (slug) => createApiCommerce(http, slug),
     createAttention: (slug) => createApiAttention(http, slug),
     devicePush: createBrowserPush(http),
+    createIntegrations: (slug) => createApiIntegrations(http, slug),
   };
 }
 
@@ -70,6 +75,7 @@ export function createCloudServices(authUrl: string, apiBaseUrl?: string): Appli
     createCommerce: (slug) => createApiCommerce(http, slug),
     createAttention: (slug) => createApiAttention(http, slug),
     devicePush: createBrowserPush(http),
+    createIntegrations: (slug) => createApiIntegrations(http, slug),
   };
 }
 

@@ -358,10 +358,11 @@ describe("Secciones del negocio", () => {
     expect(today.compareDocumentPosition(ready) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
-  it("muestra el inicio con el resumen sin afirmar que está conectado", async () => {
+  it("muestra el inicio con el resumen y el estado real de WhatsApp, sin inventar", async () => {
     await renderWorkspace("");
     expect(screen.getByRole("heading", { level: 2, name: "Café Aroma" })).toBeInTheDocument();
-    expect(screen.getAllByText("Sin conectar").length).toBeGreaterThan(0);
+    // El WhatsApp de prueba está sin conectar: el inicio lo dice tal cual.
+    expect(await screen.findByText("WhatsApp sin conectar")).toBeInTheDocument();
     expect(screen.queryByText(/desplegado|en producción|conectado al asistente real\./i)).not.toBeInTheDocument();
   });
 

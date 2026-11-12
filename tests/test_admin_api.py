@@ -1128,6 +1128,12 @@ def test_the_api_only_has_the_routes_of_the_panel(api):
         ("POST", "/notifications/push"),
         ("POST", "/notifications/push/remove"),
         ("POST", "/notifications/push/test"),
+        # Integraciones: claves de API y la API del asistente (`integration_routes.py`).
+        ("GET", f"{business}/integrations"),
+        ("GET", f"{business}/api-keys"),
+        ("POST", f"{business}/api-keys"),
+        ("POST", f"{business}/api-keys/{{key_id}}/revoke"),
+        ("POST", f"{business}/integrations/assistant-api/try"),
     }
     assert api.client.post("/api/v1/simulate", json={}).status_code == 404
 

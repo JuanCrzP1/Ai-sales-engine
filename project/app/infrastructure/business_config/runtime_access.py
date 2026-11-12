@@ -22,11 +22,14 @@ from app.domain.business_config.ai_settings import AICredentials
 from app.domain.business_config.ai_usage import AIUsage
 from app.domain.business_config.channels import ConnectionStatus, WhatsAppSecrets
 from app.domain.business_config.contract import BusinessConfig, SecretRef
+from app.business_config_application.usage_limits import UsageGuard
+from app.domain.business_config.api_keys import ApiKeyIdentity
 from app.domain.business_config.attention import AttentionSettings
 from app.domain.business_config.conversations import AppendResult, MediaFile, NewMessage, WaitingChat
 from app.domain.business_config.errors import BusinessConfigError
 from app.infrastructure.business_config.ai_settings_store import AISettingsStore
 from app.infrastructure.business_config.ai_usage_store import AIUsageStore
+from app.infrastructure.business_config.api_key_store import ApiKeyStore
 from app.infrastructure.business_config.attention_store import AttentionStore
 from app.infrastructure.business_config.channel_store import ChannelStore
 from app.infrastructure.business_config.conversation_store import ConversationStore
@@ -34,7 +37,9 @@ from app.infrastructure.business_config.database import create_business_config_e
 from app.infrastructure.business_config.payment_secret_store import SECRET_STORE_SOURCE, PaymentSecretStore
 from app.infrastructure.business_config.push_store import PushStore
 from app.infrastructure.business_config.repository import BusinessConfigRepository
+from app.infrastructure.business_config.idempotency_store import IdempotencyStore
 from app.infrastructure.business_config.secrets_key import find_secrets_key
+from app.infrastructure.business_config.usage_store import UsageCounterStore
 
 __all__ = [
     "SECRET_STORE_SOURCE",
@@ -44,6 +49,10 @@ __all__ = [
     "reader_for",
     "append_conversation_message",
     "conversation_ai_paused",
+    "idempotency_store",
+    "conversation_stage",
+    "authenticate_api_key",
+    "usage_guard",
     "conversation_team_replied",
     "mark_conversation_delivery",
     "record_ai_usage",
@@ -192,6 +201,26 @@ def alert_stores() -> tuple[AttentionStore, PushStore]:
 def conversation_team_replied(conversation_id: str) -> None:
     """Alguien del equipo respondió desde el celular del negocio: la IA se pausa en ese chat y el cliente deja de esperar."""
     ConversationStore(_store_engine()).team_replied(conversation_id)
+
+
+def conversation_stage(conversation_id: str) -> str:
+    """La etapa a la que llegó el cliente de esa conversación."""
+    return ConversationStore(_store_engine()).stage_of(conversation_id)
+
+
+def idempotency_store() -> IdempotencyStore:
+    """Las respuestas ya dadas a cada `Idempotency-Key` de la API del asistente, cifradas."""
+    return IdempotencyStore(_store_engine(), find_secrets_key())
+
+
+def authenticate_api_key(secret: str) -> ApiKeyIdentity | None:
+    """El negocio y los permisos de una clave de API activa, o None."""
+    return ApiKeyStore(_store_engine()).authenticate(secret)
+
+
+def usage_guard() -> UsageGuard:
+    """Los límites de uso con el contador compartido de la base (todas las instancias cuentan juntas)."""
+    return UsageGuard(UsageCounterStore(_store_engine()))
 
 
 def conversation_ai_paused(conversation_id: str) -> bool:

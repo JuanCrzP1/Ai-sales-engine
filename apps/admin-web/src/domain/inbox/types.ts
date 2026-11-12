@@ -1,6 +1,7 @@
 /** La bandeja de conversaciones: los chats de cada negocio, de todos sus canales, en vivo. */
 
-export type Channel = "whatsapp" | "instagram" | "telegram" | "web" | "prueba";
+/** `api`: llegó por la API del asistente desde otro sistema (Integraciones → API / HTTP), por ejemplo Leona. */
+export type Channel = "whatsapp" | "instagram" | "telegram" | "web" | "api" | "prueba";
 export type Author = "customer" | "assistant" | "agent";
 export type MessageKind = "text" | "image" | "audio" | "video" | "document" | "sticker" | "location" | "contact" | "other";
 /** Lo del cliente queda «recibido»; lo que sale pasa por enviando → enviado → entregado → leído, o «no enviado». */
@@ -15,13 +16,14 @@ export const HANDOFF_LABELS: Record<HandoffReason, string> = {
   assistant: "Necesita a una persona",
 };
 
-export const CHANNELS: Channel[] = ["whatsapp", "instagram", "telegram", "web", "prueba"];
+export const CHANNELS: Channel[] = ["whatsapp", "instagram", "telegram", "web", "api", "prueba"];
 
 export const CHANNEL_LABELS: Record<Channel, string> = {
   whatsapp: "WhatsApp",
   instagram: "Instagram",
   telegram: "Telegram",
   web: "Chat web",
+  api: "API",
   prueba: "Prueba",
 };
 

@@ -4,6 +4,7 @@ import { isAvailable, offerEntries, paymentOptionsCount } from "../../domain/con
 import { labelFor, OFFER_MODELS, RESPONSE_LENGTHS } from "../../domain/config/options";
 import { initials } from "../../lib/text";
 import { useConfig } from "../../state/useConfig";
+import { useWhatsAppStatus } from "../../state/useWhatsAppStatus";
 
 /** Tarjeta de resumen del asistente en el inicio. */
 export function AssistantSummary() {
@@ -23,10 +24,7 @@ export function AssistantSummary() {
           <h2 className="card__title">{name}</h2>
           <p className="card__description">{identity.industry.trim() || "Aún no has indicado a qué se dedica tu negocio."}</p>
         </div>
-        <Badge tone="neutral">
-          <span className="live-dot" aria-hidden="true" />
-          Sin conectar
-        </Badge>
+        <WhatsAppBadge />
       </div>
       <div className="stat-grid">
         <Stat icon="box" tone="blue" value={String(available)} label={available === 1 ? "producto o servicio disponible" : "productos o servicios disponibles"} />
@@ -35,6 +33,20 @@ export function AssistantSummary() {
         <Stat icon="smile" tone="amber" value={labelFor(RESPONSE_LENGTHS, style.length ?? "short")} label="largo de respuestas" />
       </div>
     </section>
+  );
+}
+
+/** El estado real de WhatsApp: conectado, conectándose o sin conectar (nada mientras se averigua). */
+function WhatsAppBadge() {
+  const status = useWhatsAppStatus();
+  if (status === null) return null;
+  const [tone, label] =
+    status === "connected" ? (["success", "WhatsApp conectado"] as const) : status === "connecting" ? (["warning", "WhatsApp conectándose"] as const) : (["neutral", "WhatsApp sin conectar"] as const);
+  return (
+    <Badge tone={tone}>
+      <span className={`live-dot${status === "connected" ? " live-dot--on" : ""}`} aria-hidden="true" />
+      {label}
+    </Badge>
   );
 }
 

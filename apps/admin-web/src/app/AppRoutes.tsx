@@ -21,12 +21,17 @@ import { PaymentsPage } from "../features/payments/PaymentsPage";
 import { PlaygroundPage } from "../features/playground/PlaygroundPage";
 import { ProfilePage, ProfileSettingsPage } from "../features/profile/ProfilePage";
 import { BillingPage, QuickRepliesPage } from "../features/settings/ComingSoonPages";
+import { ApiKeysPage } from "../features/integrations/ApiKeysPage";
+import { AssistantApiPage } from "../features/integrations/AssistantApiPage";
+import { IntegrationsPage } from "../features/integrations/IntegrationsPage";
 import { ReviewPage } from "../features/review/ReviewPage";
 import { AppShell } from "../layout/AppShell";
 import { SettingsLayout } from "../layout/SettingsLayout";
 import { ACCOUNT_PATHS } from "../navigation/accountPaths";
 import {
   AI_ITEM,
+  API_KEYS_ITEM,
+  ASSISTANT_API_ITEM,
   ATTENTION_ITEM,
   BILLING_ITEM,
   BUSINESSES_PATH,
@@ -34,6 +39,7 @@ import {
   CONVERSATIONS_ITEM,
   CUSTOMERS_ITEM,
   ENTRY_PATH,
+  INTEGRATIONS_ITEM,
   NEW_BUSINESS_PATH,
   OVERVIEW_ITEM,
   PLAYGROUND_ITEM,
@@ -78,6 +84,9 @@ export const appRoutes = (
           <Route path={SALES_ITEM.path} element={<SalesPage />} />
           <Route path={REPORTS_ITEM.path} element={<ReportsPage />} />
           <Route path={CHANNELS_ITEM.path} element={<ChannelsPage />} />
+          <Route path={INTEGRATIONS_ITEM.path} element={<IntegrationsPage />} />
+          <Route path={ASSISTANT_API_ITEM.path} element={<AssistantApiPage />} />
+          <Route path={API_KEYS_ITEM.path} element={<ApiKeysPage />} />
           <Route path={OVERVIEW_ITEM.path} element={<AssistantOverviewPage />} />
           <Route path={sectionPath("business")} element={<BusinessPage />} />
           <Route path={sectionPath("catalog")} element={<CatalogPage />} />

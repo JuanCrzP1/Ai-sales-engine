@@ -15,6 +15,7 @@ from typing import Any, Protocol, runtime_checkable
 from app.domain.business_config.access import Principal
 from app.domain.business_config.ai_settings import AICredentials, AISettings, AssistantTurn, KeyCheck
 from app.domain.business_config.ai_models import AIModel
+from app.domain.business_config.api_keys import ApiKey, CreatedApiKey
 from app.domain.business_config.attention import AttentionSettings
 from app.domain.business_config.ai_usage import AIUsageSummary
 from app.domain.business_config.commerce import Customer, NewSale, ReportDay, ReportTotals, Sale
@@ -356,3 +357,13 @@ class PushStorage(Protocol):
     def forget(self, endpoint: str) -> None: ...
 
     def mark_delivered(self, endpoint: str) -> None: ...
+
+
+class ApiKeyStorage(Protocol):
+    """Las claves de API de cada negocio (`api_key_store.py`)."""
+
+    def create(self, tenant_slug: str, *, name: str, scopes: tuple[str, ...], created_by: str | None) -> CreatedApiKey: ...
+
+    def list_keys(self, tenant_slug: str) -> list[ApiKey]: ...
+
+    def revoke(self, tenant_slug: str, key_id: str) -> ApiKey: ...

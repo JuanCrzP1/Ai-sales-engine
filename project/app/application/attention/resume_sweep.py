@@ -20,10 +20,14 @@ from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from app.domain.business_config.attention import RESUME_MINUTES, AttentionSettings, resume_due
+from app.domain.business_config.assistant_api import API_CHANNEL
 from app.domain.business_config.channels import WHATSAPP, WhatsAppSecrets
 from app.domain.business_config.conversations import WaitingChat
 from app.utils.logger import logger
 
+# Los canales en los que la IA retoma: por WhatsApp pide disculpas y responde lo pendiente; por la API (Leona, una web) no hay por
+# dónde escribirle al cliente, así que solo vuelve a atender y responde su próximo mensaje.
+RESUMABLE_CHANNELS = (WHATSAPP, API_CHANNEL)
 # Ningún negocio puede elegir menos que esto: los chats que esperan menos ni se consultan.
 SHORTEST_WAIT = timedelta(minutes=min(RESUME_MINUTES))
 
@@ -62,7 +66,7 @@ class ResumeSweep:
         settings: dict[str, AttentionSettings | None] = {}
         resumed = 0
         for chat in chats:
-            if chat.channel != WHATSAPP:
+            if chat.channel not in RESUMABLE_CHANNELS:
                 continue
             if chat.business_slug not in settings:
                 try:
@@ -90,8 +94,9 @@ class ResumeSweep:
         if notification is None:
             return False  # Otra revisión lo tomó, o alguien del equipo respondió justo antes.
         try:
-            secrets = self._secrets(chat.business_slug)
-            if secrets is None:
+            if chat.channel != WHATSAPP:
+                pass  # Por la API no hay por dónde escribirle: la IA responde su próximo mensaje.
+            elif (secrets := self._secrets(chat.business_slug)) is None:
                 logger.warning("ia_retomo_sin_whatsapp", extra={"tenant": chat.business_slug})
             else:
                 self._continue(secrets, chat.id, chat.contact_ref, pending)

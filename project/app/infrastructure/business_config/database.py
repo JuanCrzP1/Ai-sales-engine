@@ -25,7 +25,7 @@ from app.infrastructure.business_config.channel_messenger import ChannelMessenge
 from app.infrastructure.business_config.channel_store import ChannelStore
 from app.infrastructure.business_config.payment_secret_store import PaymentSecretStore
 from app.infrastructure.business_config.repository import BusinessConfigRepository
-from app.infrastructure.business_config.tables import metadata, notifications
+from app.infrastructure.business_config.tables import conversations, metadata, notifications
 
 DATABASE_URL_ENV = "BUSINESS_CONFIG_DATABASE_URL"
 DEFAULT_LOCAL_DATABASE = Path(__file__).resolve().parents[3] / "data" / "business_config.sqlite3"
@@ -117,26 +117,38 @@ def create_local_schema(engine: Engine) -> None:
         for table in metadata.sorted_tables:
             for index in table.indexes:
                 index.create(conn, checkfirst=True)
-    _widen_notification_kinds(engine)
+    _refresh_outdated_checks(engine)
 
 
-def _widen_notification_kinds(engine: Engine) -> None:
-    """Una base local anterior a la migración 0011 solo acepta avisos `handoff`. SQLite no deja cambiar una restricción: la tabla se
-    rehace con la definición actual y sus filas (como manda SQLite: con las llaves foráneas apagadas mientras tanto)."""
+# Restricciones que una migración amplió en una tabla que ya existía: (tabla, lo que trae su definición nueva).
+_WIDENED_CHECKS = ((notifications, "ai_resumed"), (conversations, "'api'"))
+
+
+def _refresh_outdated_checks(engine: Engine) -> None:
+    """Una base local anterior conserva las restricciones viejas (avisos solo `handoff`, conversaciones sin el canal `api`). SQLite
+    no deja cambiar una restricción: la tabla se rehace con la definición actual y sus filas, como manda SQLite (con las llaves
+    foráneas apagadas mientras tanto y sin tocar las referencias de las demás tablas)."""
+    for table, marker in _WIDENED_CHECKS:
+        _rebuild_if_outdated(engine, table, marker)
+
+
+def _rebuild_if_outdated(engine: Engine, table, marker: str) -> None:
     with engine.connect() as conn:
-        current = conn.exec_driver_sql("SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'notifications'").scalar()
-        if not current or "ai_resumed" in current:
+        current = conn.exec_driver_sql("SELECT sql FROM sqlite_master WHERE type = 'table' AND name = ?", (table.name,)).scalar()
+        if not current or marker in current:
             return
-        columns = ", ".join(column.name for column in notifications.columns)
+        present = {row[1] for row in conn.exec_driver_sql(f"PRAGMA table_info({table.name})")}
+        columns = ", ".join(column.name for column in table.columns if column.name in present)
+        old = f"{table.name}_before_upgrade"
         conn.exec_driver_sql("PRAGMA foreign_keys=OFF")
         conn.exec_driver_sql("PRAGMA legacy_alter_table=ON")
         try:
-            for index in notifications.indexes:
+            for index in table.indexes:
                 conn.exec_driver_sql(f"DROP INDEX IF EXISTS {index.name}")
-            conn.exec_driver_sql("ALTER TABLE notifications RENAME TO notifications_before_0011")
-            notifications.create(conn)
-            conn.exec_driver_sql(f"INSERT INTO notifications ({columns}) SELECT {columns} FROM notifications_before_0011")
-            conn.exec_driver_sql("DROP TABLE notifications_before_0011")
+            conn.exec_driver_sql(f"ALTER TABLE {table.name} RENAME TO {old}")
+            table.create(conn)
+            conn.exec_driver_sql(f"INSERT INTO {table.name} ({columns}) SELECT {columns} FROM {old}")
+            conn.exec_driver_sql(f"DROP TABLE {old}")
             conn.commit()
         finally:
             conn.exec_driver_sql("PRAGMA legacy_alter_table=OFF")

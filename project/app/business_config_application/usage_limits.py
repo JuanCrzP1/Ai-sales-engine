@@ -14,6 +14,9 @@ from app.domain.business_config.access import Principal
 from app.domain.business_config.errors import UsageLimitExceededError
 from app.domain.business_config.usage_limits import (
     AI_KEY_CHECKS_PER_USER,
+    API_KEYS_PER_USER,
+    ASSISTANT_API_PER_BUSINESS,
+    ASSISTANT_API_PER_KEY,
     CHANNEL_SETUP_PER_USER,
     CHANNEL_STATUS_PER_BUSINESS,
     CONVERSATION_REPLIES_PER_USER,
@@ -55,6 +58,13 @@ class UsageGuard:
 
     def conversation_reply(self, user: Principal) -> None:
         self.spend(CONVERSATION_REPLIES_PER_USER, user.user_id)
+
+    def assistant_api(self, key_id: str, tenant_slug: str) -> None:
+        self.spend(ASSISTANT_API_PER_KEY, key_id)
+        self.spend(ASSISTANT_API_PER_BUSINESS, tenant_slug)
+
+    def api_key_creation(self, user: Principal) -> None:
+        self.spend(API_KEYS_PER_USER, user.user_id)
 
 
 class MemoryUsageCounter:

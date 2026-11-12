@@ -362,6 +362,26 @@ publicado del negocio (el horario de «Mi negocio» y los mensajes `after_hours`
 
 Lo prueban `tests/test_human_attention.py` y `tests/test_whatsapp_qr_channel.py`.
 
+## API Del Asistente
+
+Otro sistema (Leona, una web) conversa con el asistente de un negocio por HTTP (`POST /api/v1/assistant/messages`). Referencia para
+quien la integra: [api.md](api.md).
+
+- **Claves** (`domain/business_config/api_keys.py`, `infrastructure/business_config/api_key_store.py`): cada una es de un negocio y
+  tiene permisos (`assistant:chat`). Se muestra una sola vez; la base guarda su huella SHA-256 y su comienzo visible. Se crean,
+  listan y revocan desde Integraciones (`admin_api/integration_routes.py`, `business_config_application/integrations.py`).
+- **Ruta** (`api/controllers/assistant_api.py`): reconoce la clave, comprueba el permiso y los límites (60 por minuto por clave,
+  1.500 por hora por negocio), revisa el cuerpo (`domain/business_config/assistant_api.py`) y responde con `{code, message, issues}`
+  en los errores.
+- **Flujo** (`application/channels/assistant_api.py`): el mismo de WhatsApp en el canal `api`. Guarda el mensaje (datos de pago
+  ocultos), responde con lo publicado y la memoria del cliente, y pasa a una persona con la misma regla de horario
+  (`application/channels/handoff_plan.py`, compartida con WhatsApp). La respuesta sale completa para el cliente; entregarla es del
+  sistema que llamó. Si la IA está pausada, no responde (`attended_by: team`).
+- **Pedidos repetidos**: con `Idempotency-Key`, la respuesta queda cifrada 24 horas (`api_idempotency`,
+  `infrastructure/business_config/idempotency_store.py`) y se devuelve igual, sin gastar la IA.
+- **La IA retoma** los chats de la API que nadie atendió igual que los de WhatsApp, pero en silencio: no hay por dónde escribirle al
+  cliente, así que responde su próximo mensaje.
+
 ## Cómo Afecta El Tenant La Respuesta
 
 El tenant cambia directamente:

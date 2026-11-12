@@ -30,3 +30,13 @@ def engine_public_url() -> str | None:
 def webhook_base(api_prefix: str) -> str | None:
     public = engine_public_url()
     return f"{public}{api_prefix}{WEBHOOK_PATH}" if public else None
+
+
+# La API del asistente (`app/api/controllers/assistant_api.py`), sin el prefijo de la API.
+ASSISTANT_API_PATH = "/assistant/messages"
+
+
+def assistant_api_url(api_prefix: str) -> str | None:
+    """La dirección pública de la API del asistente, o None si el motor no tiene una."""
+    public = engine_public_url()
+    return f"{public}{api_prefix}{ASSISTANT_API_PATH}" if public else None

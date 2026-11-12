@@ -3,6 +3,20 @@
 Lo que cambió en AI Sales Engine, de lo más reciente a lo más antiguo. Cada entrada dice qué gana el negocio; el detalle técnico
 está en el historial de git y en `docs/plan-v1.md`.
 
+## 12 de noviembre de 2026
+
+**Integraciones: tu asistente en otras plataformas**
+- Nueva sección **Integraciones** en el menú.
+- **API del asistente:** conecta tu asistente a Leona, a tu página web o a cualquier sistema. Te dan el mensaje del cliente y
+  reciben la respuesta: el mismo asistente de WhatsApp, con la memoria de cada cliente y el paso a una persona.
+- Paso a paso para Leona, con todo listo para copiar, y una prueba desde el panel.
+- **Claves de API:** se muestran una sola vez, se ve cuándo se usó cada una y se revocan en un clic.
+- Los chats que llegan así aparecen en Conversaciones con el canal «API» y cuentan en Clientes y Reportes.
+- El Inicio muestra el estado real de tu WhatsApp, en lugar de «Sin conectar» siempre.
+
+**Variables ordenadas**
+- Una plantilla con todas las variables, separadas entre este equipo y Vercel, y una guía para desplegar en otra parte.
+
 ## 11 de noviembre de 2026
 
 **Configuración, más clara y completa**

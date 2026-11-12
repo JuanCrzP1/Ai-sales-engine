@@ -250,6 +250,18 @@ guarda cifrada y no la devuelve, como OpenAI, Stripe u OpenRouter. «Cambiar cla
 lo que se pegó antes de guardar. El modelo se elige en una lista desplegable con buscador (`ModelPicker`: botón con `aria-haspopup`,
 buscador como `combobox` y opciones como `listbox`), que se maneja con flechas, Enter y Escape.
 
+### D8l — Integraciones
+
+Sección propia del menú (entre Canales y Configuración), porque se muestra y se vende: «conéctalo con lo que ya usas». Canales queda
+para donde escriben los clientes; Integraciones, para otras herramientas.
+- `repositories/integrations.ts` (`createIntegrations(slug)`): resumen, claves (crear, listar, revocar) y la prueba de la API.
+- Tres pantallas: el resumen con tarjetas (API del asistente, IAs por MCP «Próximamente», Claves de API), la API paso a paso
+  (clave, dirección, Leona, prueba, qué responde) y la tabla de claves.
+- Una clave completa se ve una sola vez, en `NewSecretDialog`, con su botón de copiar (`components/ui/CopyButton.tsx`). Después
+  solo su comienzo.
+- Los chats del canal `api` se reconocen en la bandeja (ícono y nombre «API»). No se responden desde aquí, porque se atienden en
+  la plataforma conectada, pero sí se pausa y se reanuda la IA.
+
 ### D9 — API separada del motor y limitada a este equipo
 
 `app.main` publica rutas del motor y en Docker escucha en `0.0.0.0`. La API del panel es otra aplicación, con el host fijo a `127.0.0.1`

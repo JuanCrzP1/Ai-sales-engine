@@ -19,6 +19,7 @@ from fastapi.responses import JSONResponse
 
 from app.admin_api.assistant_routes import router as assistant_router
 from app.admin_api.attention_routes import router as attention_router
+from app.admin_api.integration_routes import router as integration_router
 from app.admin_api.channel_routes import router as channel_router
 from app.admin_api.commerce_routes import router as commerce_router
 from app.admin_api.conversation_routes import router as conversation_router
@@ -27,12 +28,14 @@ from app.admin_api.routes import router
 from app.business_config_application.access import BusinessAccess
 from app.business_config_application.assistant_lab import AssistantLabService
 from app.business_config_application.attention import AttentionService, PushService
+from app.business_config_application.integrations import IntegrationsService
 from app.business_config_application.channels import WhatsAppChannelService
 from app.business_config_application.commerce import CommerceService
 from app.business_config_application.conversations import ConversationsService, NotificationsService
 from app.business_config_application.ports import (
     AccessTokenVerifier,
     AIUsageStorage,
+    ApiKeyStorage,
     AttentionStorage,
     CommerceStorage,
     EmailSender,
@@ -101,6 +104,8 @@ def create_app(
     push_storage: PushStorage | None = None,
     email: EmailSender | None = None,
     push: PushSender | None = None,
+    api_keys: ApiKeyStorage | None = None,
+    assistant_api_url: Callable[[], str | None] | None = None,
 ) -> FastAPI:
     """La API del panel. Sin `assistant_lab`, la inteligencia artificial y el área de pruebas responden que no están disponibles.
 
@@ -130,6 +135,12 @@ def create_app(
     # Atención humana (Configuración) y notificaciones del navegador: sin almacén, sus rutas responden que no están disponibles.
     app.state.attention = AttentionService(attention, app.state.access, service, email) if attention is not None else None
     app.state.push = PushService(push_storage, push) if push_storage is not None else None
+    # Integraciones: las claves de API del negocio y la API del asistente (su dirección y una prueba con lo publicado).
+    app.state.integrations = (
+        IntegrationsService(api_keys, app.state.access, assistant_api_url=assistant_api_url or (lambda: None), lab=assistant_lab)
+        if api_keys is not None
+        else None
+    )
     # WhatsApp por código QR: sin el servicio, sus rutas responden que los canales no están disponibles.
     app.state.whatsapp = whatsapp
     # Solo la API de este equipo importa los negocios de ejemplo (`POST /api/businesses/import`).
@@ -152,4 +163,5 @@ def create_app(
     app.include_router(channel_router)
     app.include_router(commerce_router)
     app.include_router(attention_router)
+    app.include_router(integration_router)
     return app

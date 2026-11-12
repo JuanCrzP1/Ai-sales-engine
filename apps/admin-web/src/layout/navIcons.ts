@@ -24,4 +24,7 @@ export const NAV_ICONS: Record<NavItem["key"], IconName> = {
   profileSettings: "user",
   quickReplies: "message",
   billing: "card",
+  integrations: "link",
+  assistantApi: "link",
+  apiKeys: "shield",
 };

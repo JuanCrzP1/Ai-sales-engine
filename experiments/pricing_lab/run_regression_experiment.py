@@ -100,6 +100,8 @@ EXPECTED_ROUTE_CHANGES |= {"GET /"}
 # La revisión periódica de la atención humana (11 de noviembre de 2026): la IA retoma los chats que nadie atendió. Protegida con
 # `CRON_SECRET`; no toca las respuestas.
 EXPECTED_ROUTE_CHANGES |= {"GET /api/v1/internal/attention/run", "POST /api/v1/internal/attention/run"}
+# La API del asistente (12 de noviembre de 2026): otro sistema conversa con el asistente con una clave de API del negocio.
+EXPECTED_ROUTE_CHANGES |= {"POST /api/v1/assistant/messages"}
 
 # Zonas del repositorio, de la más específica a la más general, para clasificar las diferencias de Git.
 CHANGE_ZONES = [

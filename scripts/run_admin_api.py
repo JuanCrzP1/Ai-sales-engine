@@ -125,7 +125,8 @@ def main() -> int:
     from app.infrastructure.business_config.commerce_store import CommerceStore
     from app.infrastructure.business_config.example_businesses import import_examples
     from app.infrastructure.channels.platform import uazapi_platform
-    from app.infrastructure.channels.public_url import engine_public_url, webhook_base
+    from app.infrastructure.business_config.api_key_store import ApiKeyStore
+    from app.infrastructure.channels.public_url import assistant_api_url, engine_public_url, webhook_base
     from app.infrastructure.channels.uazapi import UazapiClient
     from app.infrastructure.business_config.attention_store import AttentionStore
     from app.infrastructure.business_config.push_store import PushStore
@@ -154,6 +155,8 @@ def main() -> int:
         push_storage=push_store,
         email=ResendEmailSender(),
         push=WebPushSender(push_store.vapid_keys),
+        api_keys=ApiKeyStore(engine),
+        assistant_api_url=lambda: assistant_api_url(settings.api_prefix),
     )
     uvicorn.run(app, host=HOST, port=port, log_level="warning")
     return 0

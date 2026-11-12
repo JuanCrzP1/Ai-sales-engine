@@ -1077,7 +1077,9 @@ def test_postgres_schema_comes_from_the_reviewed_migration():
         create_local_schema(FakeEngine())
     assert {"tenants", "business_configs", "business_config_secrets", "business_engine_settings", "business_ai_settings", "business_members", "conversations", "conversation_entries", "notifications", "notification_reads", "rate_limits", "ai_usage", "business_channels", "conversation_media", "sales",
             # Migración 0011: atención humana.
-            "business_attention_settings", "notification_deliveries", "push_subscriptions", "platform_keys"} == set(metadata.tables)
+            "business_attention_settings", "notification_deliveries", "push_subscriptions", "platform_keys",
+            # Migración 0012: claves de API y respuestas repetibles de la API del asistente.
+            "api_keys", "api_idempotency"} == set(metadata.tables)
 
 
 @pytest.mark.parametrize("scheme", ["postgresql", "postgres"])

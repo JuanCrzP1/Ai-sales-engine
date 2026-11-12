@@ -40,6 +40,7 @@ lleva hacia la compra; cuando hace falta una persona, se la pasa al equipo y le 
 | **Clientes y ventas** | Cada cliente con su etapa (nuevo, interesado, listo, pagó, cliente), que avanza sola. Las ventas se registran desde el chat. |
 | **Reportes** | Embudo, conversaciones por día, quién respondió y cuánto costó la IA, comparados con el periodo anterior. |
 | **Su propia IA** | Cada negocio usa su clave de OpenRouter y elige el modelo. Ve su consumo; la plataforma no tiene una clave general. |
+| **Integraciones** | Conecta el asistente a Leona, a tu web o a cualquier sistema con su API y claves que se revocan en un clic. Pronto, IAs como Claude o ChatGPT por MCP. |
 | **Control total** | Configuración con versiones (borrador, publicar, volver atrás), eliminar chats y clientes, y uso cómodo en el celular. |
 
 <table>
@@ -106,8 +107,8 @@ trae 9 negocios de prueba. Detalle: [docs/quickstart.md](docs/quickstart.md).
 ## Calidad
 
 ```bash
-pytest                                             # motor y almacén: 1.569 pruebas, sin IA real ni base del .env
-npm --prefix apps/admin-web test                   # panel: 251 pruebas
+pytest                                             # motor y almacén: 1.588 pruebas, sin IA real ni base del .env
+npm --prefix apps/admin-web test                   # panel: 259 pruebas
 npm --prefix apps/admin-web run test:integration   # panel contra la API real
 ```
 
@@ -139,6 +140,7 @@ npm --prefix apps/admin-web run test:integration   # panel contra la API real
 | 1 | Eliminar chats y clientes, de la base y de la memoria del asistente | Hecha |
 | 2 | Documentación profesional | Hecha |
 | 3 | Atención humana completa: horario del equipo, avisos por correo y en el celular, y la IA retoma sola | Hecha |
+| — | Integraciones: API del asistente con claves (hecha); IAs conectadas por MCP (siguiente) | En curso |
 | 4 | Lanzamiento: monitoreo, copias de seguridad probadas, correo, términos y política de datos, Vercel Pro | Siguiente |
 | 5 | Retirar lo que queda del sistema anterior y partir los módulos grandes del motor | Pendiente |
 | — | WhatsApp en un servidor de uazapi propio (hoy se usa el de pruebas) | Al final |
@@ -151,6 +153,7 @@ El detalle y el avance de cada fase: [docs/plan-v1.md](docs/plan-v1.md). Los cam
 |---|---|
 | Dueños de negocio | [Guía del negocio](docs/guia-del-negocio.md) |
 | Empezar a desarrollar | [Inicio rápido](docs/quickstart.md) · [Cómo contribuir](CONTRIBUTING.md) |
+| Conectar otras plataformas | [API del asistente](docs/api.md) |
 | Entender el sistema | [Arquitectura](docs/architecture.md) · [Negocios](docs/tenants.md) · [Contrato de configuración](docs/business-config.md) |
 | Operar | [Desplegar: plataformas y variables](docs/despliegue.md) · [Operación: nube, canales y depuración](docs/operations.md) |
 | El panel | [Panel](apps/admin-web/README.md) · [Su arquitectura](apps/admin-web/docs/architecture.md) |

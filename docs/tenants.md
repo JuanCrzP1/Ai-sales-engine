@@ -20,6 +20,7 @@ Todo lo demás cuelga de él y se filtra por su id:
 | Ventas | `sales` |
 | Avisos al equipo, y cómo salió cada uno por correo y notificación | `notifications`, `notification_deliveries` |
 | Atención humana: horario del equipo, espera del cliente, cuándo retoma la IA, correo de avisos | `business_attention_settings` |
+| Claves de API (solo su huella) y respuestas repetibles de la API del asistente (cifradas, 24 h) | `api_keys`, `api_idempotency` |
 
 La memoria que el asistente guarda de cada cliente vive en las tablas del motor (`clients`, `conversation_messages`,
 `conversation_memory`), por negocio y número del cliente. Eliminar un chat desde el panel borra la conversación y también esa
@@ -41,6 +42,7 @@ mensaje neutro y queda la alerta `business_config_unavailable`.
 | WhatsApp por QR (uazapi): `POST /api/v1/channels/whatsapp/{webhook_id}` | El `webhook_id` secreto de `business_channels`, más el token de la instancia que trae cada aviso |
 | WhatsApp Cloud API de Meta: `POST /api/v1/whatsapp/webhook` | El `phone_number_id` del aviso (`services/tenant_channel_resolver.py`), con la firma de Meta |
 | Panel en la nube (`/panel/api/...`) | La cuenta de Neon Auth (JWT) y su fila en `business_members` |
+| API del asistente: `POST /api/v1/assistant/messages` | La clave de API (`Authorization: Bearer ase_live_…`): cada clave es de un solo negocio |
 | Panel local (`127.0.0.1:8010`) | Solo este equipo, sin cuentas: el operador local ve todos los negocios |
 
 Con el negocio identificado, el motor carga su versión publicada (`application/runtime/tenant_runtime_loader.py`) y responde con

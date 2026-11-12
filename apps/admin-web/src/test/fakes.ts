@@ -16,6 +16,8 @@ import type { Customer, Report, Sale } from "../domain/commerce/types";
 import type { ConfigRepository, StoredConfig } from "../repositories/configRepository";
 import type { ChatMessage, ConversationSummary, ConversationThread, InboxFilter, Notification } from "../domain/inbox/types";
 import type { Inbox } from "../repositories/inbox";
+import type { ApiKey, Integrations } from "../repositories/integrations";
+import { SCOPE_ASSISTANT_CHAT } from "../domain/integrations/types";
 import { PersistenceError } from "../repositories/persistenceError";
 import { SAMPLE_DOCUMENT } from "./fixtures/sampleDocument";
 
@@ -528,11 +530,56 @@ export function createMemoryDevicePush(initial: { support?: PushSupport; permiss
   return push;
 }
 
+/** Las integraciones en memoria: claves con su valor (solo al crearlas) y la prueba de la API. */
+export function createMemoryIntegrations(options: { url?: string | null } = {}) {
+  const state = { keys: [] as ApiKey[], secrets: new Map<string, string>(), tried: [] as string[], counter: 0 };
+  const integrations: Integrations & { state: typeof state } = {
+    state,
+    overview: async () => {
+      const active = state.keys.filter((key) => key.active);
+      return {
+        assistantApiUrl: options.url === undefined ? "https://motor.example.com/api/v1/assistant/messages" : options.url,
+        chatKeys: active.filter((key) => key.scopes.includes(SCOPE_ASSISTANT_CHAT)).length,
+        activeKeys: active.length,
+        scopes: [{ id: SCOPE_ASSISTANT_CHAT, label: "Conversar con el asistente" }],
+      };
+    },
+    keys: async () => structuredClone([...state.keys].sort((a, b) => Number(b.active) - Number(a.active))),
+    createKey: async (name, scopes) => {
+      if (!name.trim()) throw new PersistenceError("invalid", { message: "Revisa la clave.", problems: [{ path: "name", message: "Ponle un nombre." }] });
+      state.counter += 1;
+      const secret = `ase_live_${"Ab12Cd".padEnd(40, String(state.counter))}`;
+      const key: ApiKey = {
+        id: `clave-${state.counter}`, name: name.trim(), prefix: secret.slice(0, 15), scopes, createdAt: new Date().toISOString(),
+        createdBy: "laura@empresa.com", lastUsedAt: null, revokedAt: null, active: true,
+      };
+      state.keys.push(key);
+      state.secrets.set(key.id, secret);
+      return { key: structuredClone(key), secret };
+    },
+    revokeKey: async (id) => {
+      const key = state.keys.find((item) => item.id === id)!;
+      key.active = false;
+      key.revokedAt = new Date().toISOString();
+      return structuredClone(key);
+    },
+    tryAssistantApi: async (message) => {
+      state.tried.push(message);
+      return {
+        conversation_id: "prueba", reply: `Respuesta a: ${message}`, parts: [`Respuesta a: ${message}`], handoff: false, handoff_reason: null,
+        attended_by: "assistant", intent: "info", stage: "new", fallback: false, duplicate: false,
+      };
+    },
+  };
+  return integrations;
+}
+
 /** Servicios como los de la aplicación, sobre el backend en memoria. */
 export function createTestServices(backend: MemoryBackend = createMemoryBackend(), overrides: Partial<ApplicationServices> = {}): ApplicationServices {
   const whatsapp = createMemoryWhatsApp();
   const commerce = createMemoryCommerce();
   const attention = createMemoryAttention();
+  const integrations = createMemoryIntegrations();
   return {
     auth: createLocalOperatorAuthService(),
     directory: backend.directory,
@@ -543,6 +590,7 @@ export function createTestServices(backend: MemoryBackend = createMemoryBackend(
     createCommerce: () => commerce,
     createAttention: () => attention,
     devicePush: createMemoryDevicePush(),
+    createIntegrations: () => integrations,
     ...overrides,
   };
 }

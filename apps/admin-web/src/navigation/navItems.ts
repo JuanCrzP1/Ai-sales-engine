@@ -17,7 +17,10 @@ export type NavKey =
   | "attention"
   | "profileSettings"
   | "quickReplies"
-  | "billing";
+  | "billing"
+  | "integrations"
+  | "assistantApi"
+  | "apiKeys";
 
 export interface NavItem {
   key: NavKey;
@@ -95,6 +98,16 @@ export const SETTINGS_GROUPS: { title: string; entries: SettingsEntry[] }[] = [
   { title: "Facturación", entries: [{ item: BILLING_ITEM, description: "Tu plan, pagos y facturas", soon: true }] },
 ];
 
+/** Integraciones: conectar el asistente con otras herramientas (la API del asistente, sus claves y, pronto, las IAs por MCP). */
+export const INTEGRATIONS_ITEM: NavItem = { key: "integrations", path: "integraciones", title: "Integraciones" };
+export const ASSISTANT_API_ITEM: NavItem = { key: "assistantApi", path: "integraciones/api", title: "API del asistente" };
+export const API_KEYS_ITEM: NavItem = { key: "apiKeys", path: "integraciones/claves", title: "Claves de API" };
+
+/** Si la ruta es de Integraciones (`/negocios/x/integraciones/...`). */
+export function isIntegrationsPath(pathname: string): boolean {
+  return /\/integraciones(\/|$)/.test(pathname.replace(/\/+$/, ""));
+}
+
 /** Si la ruta es de Configuración (`/negocios/x/configuracion/...`). */
 export function isSettingsPath(pathname: string): boolean {
   return /\/configuracion(\/|$)/.test(pathname.replace(/\/+$/, ""));
@@ -150,8 +163,8 @@ export const ASSISTANT_HUB_ITEM: NavItem = { key: "assistantHub", path: OVERVIEW
 
 /** Si la ruta es una pestaña del Asistente IA (`/negocios/x/pagos`). */
 export function isAssistantPath(pathname: string): boolean {
-  // Configuración tiene sus propias secciones: ninguna es una pestaña del asistente aunque se llame parecido.
-  if (isSettingsPath(pathname)) return false;
+  // Configuración e Integraciones tienen sus propias secciones: ninguna es una pestaña del asistente aunque se llame parecido.
+  if (isSettingsPath(pathname) || isIntegrationsPath(pathname)) return false;
   const last = pathname.replace(/\/+$/, "").split("/").pop() ?? "";
   return ASSISTANT_TABS.some(({ item }) => item.path === last);
 }
@@ -160,6 +173,7 @@ export function isAssistantPath(pathname: string): boolean {
 export function titleForPath(pathname: string): string {
   if (isAssistantPath(pathname)) return ASSISTANT_HUB_ITEM.title;
   if (isSettingsPath(pathname)) return SETTINGS_ITEM.title;
+  if (isIntegrationsPath(pathname)) return INTEGRATIONS_ITEM.title;
   const last = pathname.replace(/\/+$/, "").split("/").pop() ?? "";
   const item = [CONVERSATIONS_ITEM, CUSTOMERS_ITEM, SALES_ITEM, REPORTS_ITEM, CHANNELS_ITEM, SETTINGS_ITEM].find((entry) => entry.path === last);
   return item?.title ?? HOME_ITEM.title;

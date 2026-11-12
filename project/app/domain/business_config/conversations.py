@@ -17,7 +17,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime
 
-CHANNELS = ("whatsapp", "instagram", "telegram", "web", "prueba")
+# `api`: llegó por la API del asistente (Integraciones → API / HTTP), desde otro sistema como Leona.
+CHANNELS = ("whatsapp", "instagram", "telegram", "web", "api", "prueba")
 # Los canales a los que el equipo puede responder desde el panel (el mensaje sale por el canal).
 REPLYABLE_CHANNELS = ("whatsapp",)
 AUTHORS = ("customer", "assistant", "agent")

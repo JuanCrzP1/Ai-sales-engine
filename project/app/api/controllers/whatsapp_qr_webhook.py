@@ -18,19 +18,16 @@ from types import SimpleNamespace
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Request, status
 
 from app.application.attention.resume_sweep import ResumeSweep, SweepResult, Throttle
+from app.api.controllers.team_alerts import deliver_alert
 from app.application.channels.whatsapp_inbound import WhatsAppInbound
 from app.application.runtime import published_sections
 from app.application.runtime.business_ai import business_usage_recorder, load_business_ai
-from app.business_config_application.attention import TeamAlerts
 from app.domain.business_config.channels import WhatsAppSecrets
 from app.domain.business_config.errors import BusinessConfigError
 from app.infrastructure.ai.media_interpreter import OpenRouterMediaInterpreter
 from app.infrastructure.business_config import runtime_access
 from app.infrastructure.channels import uazapi
-from app.infrastructure.channels.public_url import panel_url
 from app.infrastructure.channels.uazapi import UazapiClient
-from app.infrastructure.notifications.resend_email import ResendEmailSender
-from app.infrastructure.notifications.web_push import WebPushSender
 from app.models import Tenant
 from app.services.ai_service import AIService
 from app.utils.logger import logger
@@ -58,18 +55,6 @@ def answer_with_assistant(slug: str, phone: str, text: str) -> tuple[str, dict]:
 def now() -> datetime:
     """La hora del motor (las pruebas la fijan para no depender del reloj)."""
     return datetime.now(timezone.utc)
-
-
-def deliver_alert(notification_id: str | None) -> None:
-    """Avisa al equipo por correo y notificación. Nunca lanza: el aviso de la campana ya quedó guardado."""
-    if not notification_id:
-        return
-    try:
-        attention, push = runtime_access.alert_stores()
-        alerts = TeamAlerts(attention, push_storage=push, email=ResendEmailSender(), push=WebPushSender(push.vapid_keys), panel_url=panel_url())
-        alerts.deliver(notification_id)
-    except Exception as exc:  # noqa: BLE001
-        logger.error("aviso_al_equipo_fallido", extra={"error": type(exc).__name__})
 
 
 def _business_key(slug: str) -> str | None:

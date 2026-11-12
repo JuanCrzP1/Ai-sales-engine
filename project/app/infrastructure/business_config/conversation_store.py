@@ -48,6 +48,8 @@ from app.domain.business_config.errors import ConversationNotFoundError
 from app.infrastructure.business_config.tables import conversation_entries, conversation_media, conversations, notifications, tenants
 from app.infrastructure.business_config.tenancy import tenant_of
 
+# Los canales en los que la IA retoma un chat que nadie atendió (las pruebas nunca esperan).
+RESUMABLE_CHANNELS = ("whatsapp", "api")
 # El panel pide lo que cambió desde su última marca, con este margen: un cambio que se guardó justo en ese instante no se pierde.
 LIVE_OVERLAP = timedelta(seconds=3)
 
@@ -421,6 +423,14 @@ class ConversationStore:
         cliente deja de esperar."""
         self._update(conversation_id, ai_paused=True, needs_human=False, customer_waiting_since=None, ai_resumed_at=None)
 
+    def stage_of(self, conversation_id: str) -> str:
+        """La etapa a la que llegó el cliente de esa conversación."""
+        with self._engine.connect() as conn:
+            stage = conn.execute(select(conversations.c.stage).where(conversations.c.id == self._key(conversation_id))).scalar_one_or_none()
+        if stage is None:
+            raise ConversationNotFoundError("la conversación no existe")
+        return stage
+
     def is_ai_paused(self, conversation_id: str) -> bool:
         with self._engine.connect() as conn:
             paused = conn.execute(select(conversations.c.ai_paused).where(conversations.c.id == self._key(conversation_id))).scalar_one_or_none()
@@ -444,7 +454,7 @@ class ConversationStore:
                 conversations.c.ai_paused.is_(True),
                 conversations.c.customer_waiting_since.is_not(None),
                 conversations.c.customer_waiting_since <= waiting_before,
-                conversations.c.channel != "prueba",
+                conversations.c.channel.in_(RESUMABLE_CHANNELS),
             )
             .order_by(conversations.c.customer_waiting_since)
             .limit(limit)

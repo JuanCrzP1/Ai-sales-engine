@@ -129,7 +129,7 @@ business_members = Table(
 
 # Bandeja de conversaciones (ver `project/db/migrations/0004_conversations.sql`): el hilo de cada contacto en cada canal, de un
 # solo negocio, y sus mensajes. Los datos de pago se guardan ocultos.
-CONVERSATION_CHANNELS = ("whatsapp", "instagram", "telegram", "web", "prueba")
+CONVERSATION_CHANNELS = ("whatsapp", "instagram", "telegram", "web", "api", "prueba")
 conversations = Table(
     "conversations",
     metadata,
@@ -158,7 +158,7 @@ conversations = Table(
     # Migración 0011: desde cuándo el cliente espera a una persona sin respuesta, y cuándo la IA retomó sola el chat.
     Column("customer_waiting_since", DateTime(timezone=True)),
     Column("ai_resumed_at", DateTime(timezone=True)),
-    CheckConstraint("channel IN ('whatsapp', 'instagram', 'telegram', 'web', 'prueba')", name="conversations_channel_check"),
+    CheckConstraint("channel IN ('whatsapp', 'instagram', 'telegram', 'web', 'api', 'prueba')", name="conversations_channel_check"),
     CheckConstraint("stage IN ('new', 'interested', 'ready', 'payment', 'customer')", name="conversations_stage_check"),
     CheckConstraint("status IN ('open', 'closed')", name="conversations_status_check"),
     UniqueConstraint("tenant_id", "channel", "contact_ref", name="conversations_contact_key"),
@@ -363,4 +363,33 @@ platform_keys = Table(
     Column("public_value", Text, nullable=False),
     Column("secret_ciphertext", Text, nullable=False),
     Column("created_at", DateTime(timezone=True), nullable=False, default=_now),
+)
+
+# Claves de API de cada negocio (migración 0012): solo su huella y su comienzo visible; la clave completa se muestra una vez.
+api_keys = Table(
+    "api_keys",
+    metadata,
+    Column("id", Uuid, primary_key=True, default=uuid.uuid4),
+    Column("tenant_id", Uuid, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False),
+    Column("name", Text, nullable=False),
+    Column("prefix", Text, nullable=False),
+    Column("key_hash", Text, nullable=False),
+    Column("scopes", JSON().with_variant(JSONB(), "postgresql"), nullable=False, default=list),
+    Column("created_by", Text),
+    Column("created_at", DateTime(timezone=True), nullable=False, default=_now),
+    Column("last_used_at", DateTime(timezone=True)),
+    Column("revoked_at", DateTime(timezone=True)),
+    Index("api_keys_hash_key", "key_hash", unique=True),
+    Index("api_keys_tenant_idx", "tenant_id", "created_at"),
+)
+
+# La respuesta a cada pedido con `Idempotency-Key` (migración 0012), cifrada, para devolver la misma si se repite (24 horas).
+api_idempotency = Table(
+    "api_idempotency",
+    metadata,
+    Column("tenant_id", Uuid, ForeignKey("tenants.id", ondelete="CASCADE"), primary_key=True),
+    Column("idempotency_key", Text, primary_key=True),
+    Column("response_ciphertext", Text, nullable=False),
+    Column("created_at", DateTime(timezone=True), nullable=False, default=_now),
+    Index("api_idempotency_created_idx", "created_at"),
 )

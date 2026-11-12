@@ -29,13 +29,8 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from typing import Any, Protocol
 
-from app.domain.business_config.attention import (
-    DEFAULT_RESUMED_NOTICE,
-    AttentionSettings,
-    HandoffPlan,
-    handoff_plan,
-    published_attention,
-)
+from app.application.channels.handoff_plan import plan_handoff
+from app.domain.business_config.attention import DEFAULT_RESUMED_NOTICE, AttentionSettings, HandoffPlan, published_attention
 from app.domain.business_config.channels import WHATSAPP, ChannelError, IncomingMessage, WhatsAppSecrets
 from app.domain.business_config.conversations import MEDIA_KINDS, TYPING_SECONDS, AppendResult, MediaFile, NewMessage
 from app.domain.business_config.payment_data import redact_payment_values
@@ -305,14 +300,8 @@ class WhatsAppInbound:
         self._alerts(notification)
 
     def _handoff_plan(self, slug: str) -> HandoffPlan:
-        """Qué pasa al pasar el chat a una persona. Si no se pueden leer los ajustes, como siempre: la IA se pausa, sin aviso extra."""
-        try:
-            settings = self._attention(slug)
-            published = published_attention(self._sections(slug))
-            return handoff_plan(settings, published.business_hours, self._clock(), after_hours_message=published.after_hours)
-        except Exception as exc:  # noqa: BLE001 - la atención humana nunca puede impedir que el chat pase a una persona
-            logger.warning("atencion_humana_no_disponible", extra={"tenant": slug, "error": type(exc).__name__})
-            return HandoffPlan(team_available=True, pause_ai=True, notice=None)
+        """Qué pasa al pasar el chat a una persona (la misma regla en todos los canales: `handoff_plan.py`)."""
+        return plan_handoff(slug, attention=self._attention, sections=self._sections, now=self._clock())
 
     # ------------------------------------------------------------------ la IA retoma un chat que nadie atendió
 
