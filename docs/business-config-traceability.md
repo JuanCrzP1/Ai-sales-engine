@@ -27,16 +27,16 @@ Clases: **A** configuración que edita el cliente; **B** configuración comercia
 
 | Negocio | Campos | Comerciales | Datos de pago (referencias) | Técnicos | Definición común | A | B | C | D | E |
 |---|---|---|---|---|---|---|---|---|---|---|
-| agencia_viajes | 143 | 127 | 5 | 6 | 5 | 91 | 35 | 6 | 5 | 6 |
-| asesor_ai_prod | 164 | 148 | 5 | 6 | 5 | 83 | 64 | 6 | 5 | 6 |
-| clinic | 110 | 94 | 5 | 6 | 5 | 72 | 21 | 6 | 5 | 6 |
-| demo | 162 | 141 | 10 | 6 | 5 | 93 | 47 | 4 | 10 | 8 |
-| ecommerce | 109 | 93 | 5 | 6 | 5 | 72 | 20 | 6 | 5 | 6 |
-| escuela_conduccion | 144 | 128 | 5 | 6 | 5 | 103 | 24 | 6 | 5 | 6 |
-| restaurant | 126 | 109 | 5 | 7 | 5 | 89 | 19 | 6 | 5 | 7 |
-| saas | 112 | 96 | 5 | 6 | 5 | 72 | 23 | 6 | 5 | 6 |
-| tienda_ropa | 136 | 120 | 5 | 6 | 5 | 100 | 19 | 6 | 5 | 6 |
-| **Total** | 1206 | 1056 | 50 | 55 | 45 | 775 | 272 | 52 | 50 | 57 |
+| agencia_viajes | 143 | 126 | 5 | 6 | 5 | 91 | 34 | 6 | 5 | 7 |
+| asesor_ai_prod | 164 | 147 | 5 | 6 | 5 | 83 | 63 | 6 | 5 | 7 |
+| clinic | 110 | 93 | 5 | 6 | 5 | 72 | 20 | 6 | 5 | 7 |
+| demo | 162 | 140 | 10 | 6 | 5 | 93 | 46 | 4 | 10 | 9 |
+| ecommerce | 109 | 92 | 5 | 6 | 5 | 72 | 19 | 6 | 5 | 7 |
+| escuela_conduccion | 144 | 127 | 5 | 6 | 5 | 103 | 23 | 6 | 5 | 7 |
+| restaurant | 126 | 108 | 5 | 7 | 5 | 89 | 18 | 6 | 5 | 8 |
+| saas | 112 | 95 | 5 | 6 | 5 | 72 | 22 | 6 | 5 | 7 |
+| tienda_ropa | 136 | 119 | 5 | 6 | 5 | 100 | 18 | 6 | 5 | 7 |
+| **Total** | 1206 | 1047 | 50 | 55 | 45 | 775 | 263 | 52 | 50 | 66 |
 
 ## Funcionalidades comerciales conservadas
 
@@ -50,10 +50,9 @@ JSON Schema: es la validación que aplica el contrato. **Valores actuales** cuen
 | Extensión de los mensajes | `config.response.length` | Tamaño de la respuesta, en el prompt y al recortarla. | `response_style.length` | short \| medium \| long | short (8), medium (1) | conectado |
 | Extensión de los mensajes | `config.response.max_words` | Máximo de palabras por respuesta, dentro del rango de `length`. | `response_style.max_words` | entero (mínimo 20) | 60 (8), 75 (1) | conectado |
 | Interruptores de venta | `config.features.pricing_enabled` | `true`: permite usar precios en la conversación. | `features.pricing_enabled` | interruptor true/false | true (9) | conectado |
-| Interruptores de venta | `config.features.catalog_mode` | `true`: vende opciones tipo catálogo. `false`: vende un servicio o plan. | `features.catalog_mode` | interruptor true/false | true (5), false (4) | conectado |
 | Interruptores de venta | `config.features.multi_currency` | `true`: permite manejar más de una moneda. | `features.multi_currency` | interruptor true/false | false (6), true (3) | conectado |
 | Interruptores de venta | `config.features.multi_plan` | `true`: permite ofrecer varios planes. | `features.multi_plan` | interruptor true/false | false (5), true (4) | conectado |
-| Interruptores de venta | `config.features.business_model` | Tipo de negocio; con él el motor decide cuándo mostrar precios. | `features.business_model` | saas \| catalog \| checkout \| service_booking \| process | catalog (2), saas (2), checkout (2), service_booking (1), process (1) | conectado |
+| Interruptores de venta | `config.features.business_model` | Qué vende el negocio; con él el asistente usa el manual de venta de ese tipo. | `features.business_model` | catalog \| saas \| services \| service_booking | catalog (4), saas (2), service_booking (1), services (1) | conectado |
 | Atención | `sales.support.info_handling.explain_first` | `true`: primero aclara la duda. `false`: vende directo. | `sales.support.explain_first` | interruptor true/false | true (8), false (1) | conectado |
 | Atención | `sales.support.info_handling.sell_after` | `true`: después de explicar, vuelve a llevar al cliente a avanzar. | `sales.support.sell_after` | interruptor true/false | true (9) | conectado |
 | Atención | `sales.qualification.detect_offer_fit` | `true`: valida si la oferta encaja antes de empujar el cierre. | `sales.qualification.detect_offer_fit` | interruptor true/false | true (2) | conectado |
@@ -322,8 +321,8 @@ recibe lo mismo que con los YAML. Si los YAML de un negocio no coinciden, la imp
 | `config.capabilities.system_channels.allowed` | todos | Canales por los que funciona el producto | A | `capabilities.product_channels` | renombrado | no | sí: prompt | — | `test_connected_fields_change_the_prompt` |
 | `config.conversation.active_window_minutes` | agencia_viajes, asesor_ai_prod, clinic, ecommerce, escuela_conduccion, restaurant, saas, tienda_ropa | Ventanas de la conversación | C | ajustes técnicos: `conversation.active_window_minutes` | ajuste técnico, fuera del documento comercial | no | sí: estado y reinicio de la conversación | Parámetro interno: cuándo el motor considera activa o nueva una conversación. | `test_conversation_windows_drive_the_conversation_state` |
 | `config.conversation.reset_hours` | agencia_viajes, asesor_ai_prod, clinic, ecommerce, escuela_conduccion, restaurant, saas, tienda_ropa | Ventanas de la conversación | C | ajustes técnicos: `conversation.reset_hours` | ajuste técnico, fuera del documento comercial | no | sí: estado y reinicio de la conversación | Parámetro interno: cuándo el motor considera activa o nueva una conversación. | `test_conversation_windows_drive_the_conversation_state` |
-| `config.features.business_model` | agencia_viajes, asesor_ai_prod, clinic, ecommerce, escuela_conduccion, restaurant, saas, tienda_ropa | Tipo de negocio | B | `features.business_model` | sección `features` | no | sí: prompt (cuándo mostrar precios) | — | `test_connected_fields_change_the_prompt` |
-| `config.features.catalog_mode` | todos | Vende opciones tipo catálogo o un servicio o plan | B | `features.catalog_mode` | sección `features` | no | sí: prompt (cuándo mostrar precios) | — | `test_connected_fields_change_the_prompt` |
+| `config.features.business_model` | agencia_viajes, asesor_ai_prod, clinic, ecommerce, escuela_conduccion, restaurant, saas, tienda_ropa | Qué vende el negocio | B | `features.business_model` | sección `features`; `checkout` pasa a `catalog` y `process` a `services` | no | sí: prompt (manual de venta) | — | `test_connected_fields_change_the_prompt` |
+| `config.features.catalog_mode` | todos | Vende opciones tipo catálogo o un servicio o plan | E | `compiled` | — | no | no | Se deduce de la oferta y de «Qué vendes» (`features.business_model`): el motor lo recibe igual, ya no se escribe. | — |
 | `config.features.multi_currency` | todos | Permite manejar más de una moneda | B | `features.multi_currency` | sección `features` | pantalla | sí: prompt (todas las monedas o solo la primera) | En agencia_viajes es true con una sola moneda: permitirlo no obliga a usarlo. | `test_connected_fields_change_the_prompt` |
 | `config.features.multi_plan` | todos | Permite ofrecer varios planes | B | `features.multi_plan` | sección `features` | pantalla | sí: prompt (recomendar un solo plan) | En asesor_ai_prod, clinic y saas es true con un solo plan: permitirlo no obliga a usarlo. | `test_connected_fields_change_the_prompt` |
 | `config.features.pricing_enabled` | todos | Permite usar precios en la conversación | B | `features.pricing_enabled` | sección `features` | pantalla | sí: prompt (si da precios) | — | `test_connected_fields_change_the_prompt` |
@@ -354,9 +353,9 @@ si el motor actual lo usa y de dónde viene.
 | Audiencia | Conectados | Programados | Solo panel | Pendientes |
 |---|---|---|---|---|
 | cliente | 133 | 2 | 2 | 0 |
-| avanzado | 51 | 0 | 0 | 0 |
+| avanzado | 50 | 0 | 0 | 0 |
 | sistema | 2 | 0 | 0 | 0 |
-| **Total** | 186 | 2 | 2 | 0 |
+| **Total** | 185 | 2 | 2 | 0 |
 
 | Campo | Audiencia | Motor | Origen | Interfaz | Descripción |
 |---|---|---|---|---|---|
@@ -371,8 +370,7 @@ si el motor actual lo usa y de dónde viene.
 | `capabilities.restrictions.disallowed_actions` | cliente | conectado | `config.capabilities.constraints.**` | pantalla | Acciones que el negocio no realiza (p. ej. llamadas). |
 | `capabilities.restrictions.disallowed_channels` | cliente | conectado | `config.capabilities.constraints.**` | pantalla | Canales por los que el negocio no atiende. |
 | `capabilities.service_channels` | cliente | conectado | `config.capabilities.business_channels.allowed` | pantalla | Canales de atención al cliente. |
-| `features.business_model` | avanzado | conectado | `config.features.business_model` | no | Tipo de negocio; con él el motor decide cuándo mostrar precios. |
-| `features.catalog_mode` | avanzado | conectado | `config.features.catalog_mode` | no | true: vende opciones tipo catálogo. false: vende un servicio o plan. |
+| `features.business_model` | avanzado | conectado | `config.features.business_model` | no | Qué vende el negocio: catalog (productos), saas (planes o suscripción), services (servicios) o service_booking (servicios con cita). El asistente usa el manual de venta de ese tipo; sin indicar, se deduce de la oferta. |
 | `features.multi_currency` | avanzado | conectado | `config.features.multi_currency` | pantalla | true: da los precios en todas sus monedas. false: solo en la primera de cada precio. |
 | `features.multi_plan` | avanzado | conectado | `config.features.multi_plan` | pantalla | true: puede ofrecer varios planes. false: recomienda uno solo, el que mejor encaje. |
 | `features.pricing_enabled` | avanzado | conectado | `config.features.pricing_enabled` | pantalla | true: permite usar precios en la conversación. false: el asistente no da valores. |

@@ -136,7 +136,7 @@ def test_repeating_the_import_neither_duplicates_nor_overwrites(store):
 def test_every_yaml_field_is_stored_where_the_catalog_declares(store, slug):
     document = _with_settings(store, slug)
     resolve = store.secrets.resolver(slug)
-    kinds = {"typed": 0, "technical": 0, "secret": 0, "policy": 0}
+    kinds = {"typed": 0, "technical": 0, "secret": 0, "policy": 0, "derived": 0}
     problems = []
     for leaf in legacy_leaves(_sections(slug)):
         entry = find_entry(leaf.pattern)
@@ -200,7 +200,9 @@ def test_switches_and_commercial_options_keep_their_values(store, slug):
             assert check_leaf(document, leaf) is None
             checked += 1
     assert checked >= 15, "cada negocio tiene interruptores y opciones comerciales"
-    assert document["features"] == _sections(slug)["config"]["features"]
+    # El modo catálogo ya no se escribe: se deduce al compilar, con el mismo valor que tenía.
+    assert document["features"] == {k: v for k, v in _sections(slug)["config"]["features"].items() if k != "catalog_mode"}
+    assert store.service.compile_sections(slug)["config"]["features"] == _sections(slug)["config"]["features"]
 
 
 @pytest.mark.parametrize("slug", TENANTS)

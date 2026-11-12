@@ -112,7 +112,7 @@ export function AssistantPage() {
         />
         <ContractSection
           title="Cómo vende el negocio"
-          description="Interruptores comerciales: si da precios, en cuántas monedas y si recomienda un solo plan. Si no los indicas, se deducen de tu oferta."
+          description="Qué vendes, si da precios, en cuántas monedas y si recomienda un solo plan. Si no los indicas, se deducen de tu oferta."
           section="features"
           icon="toggles"
           tone="slate"

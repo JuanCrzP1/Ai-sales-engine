@@ -266,10 +266,13 @@ def _inventory(config: BusinessConfig) -> dict:
 
 
 def _features(config: BusinessConfig) -> dict:
-    if config.features is not None:
-        return config.features.model_dump(exclude_none=True)
-    # Sin interruptores explícitos: se derivan de la oferta.
     is_catalog = config.offer.model == "catalog"
+    if config.features is not None:
+        declared = config.features.model_dump(exclude_none=True)
+        # El modo catálogo ya no se escribe: vende productos si su oferta es un catálogo o si dijo que vende productos.
+        catalog_mode = is_catalog or declared.get("business_model") == "catalog"
+        return {"pricing_enabled": declared.pop("pricing_enabled"), "catalog_mode": catalog_mode, **declared}
+    # Sin interruptores explícitos: se derivan de la oferta.
     features: dict[str, Any] = {"pricing_enabled": True, "catalog_mode": is_catalog}
     if is_catalog:
         features["business_model"] = "catalog"

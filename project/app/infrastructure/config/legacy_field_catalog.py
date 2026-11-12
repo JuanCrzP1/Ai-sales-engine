@@ -67,6 +67,8 @@ PROFILE_TEST = "test_each_profile_option_reaches_the_prompt"
 CATALOG_PRICES_TEST = "test_catalog_prices_reach_the_prompt"
 LEGACY_DESTINATION = "engine_settings.legacy"
 POLICY_DESTINATION = "engine_policy"
+# Campos que ya no se escriben en el documento: el compilador los deduce de otros (la referencia congelada comprueba el valor).
+DERIVED_DESTINATION = "compiled"
 
 
 @dataclass(frozen=True)
@@ -82,9 +84,11 @@ class LegacyField:
     evidence: tuple[str, ...] = field(default_factory=tuple)
 
     @property
-    def kind(self) -> Literal["typed", "technical", "secret", "policy"]:
+    def kind(self) -> Literal["typed", "technical", "secret", "policy", "derived"]:
         if self.destination == POLICY_DESTINATION:
             return "policy"
+        if self.destination == DERIVED_DESTINATION:
+            return "derived"
         if self.destination.startswith("engine_settings."):
             return "technical"
         return "secret" if self.destination.startswith("secret:") else "typed"
@@ -362,10 +366,10 @@ CATALOG: tuple[LegacyField, ...] = (
        note="Parámetro interno: cuándo el motor considera activa o nueva una conversación."),
     _f("config.features.pricing_enabled", "Permite usar precios en la conversación", "B", "features.pricing_enabled",
        transform="sección `features`", engine="sí: prompt (si da precios)", panel="pantalla", evidence=[ENGINE_TEST]),
-    _f("config.features.catalog_mode", "Vende opciones tipo catálogo o un servicio o plan", "B", "features.catalog_mode", transform="sección `features`",
-       engine="sí: prompt (cuándo mostrar precios)", evidence=[ENGINE_TEST]),
-    _f("config.features.business_model", "Tipo de negocio", "B", "features.business_model", transform="sección `features`",
-       engine="sí: prompt (cuándo mostrar precios)", evidence=[ENGINE_TEST]),
+    _f("config.features.catalog_mode", "Vende opciones tipo catálogo o un servicio o plan", "E", DERIVED_DESTINATION,
+       note="Se deduce de la oferta y de «Qué vendes» (`features.business_model`): el motor lo recibe igual, ya no se escribe."),
+    _f("config.features.business_model", "Qué vende el negocio", "B", "features.business_model", transform="sección `features`; `checkout` pasa a `catalog` y `process` a `services`",
+       engine="sí: prompt (manual de venta)", evidence=[ENGINE_TEST]),
     _f("config.features.multi_currency", "Permite manejar más de una moneda", "B", "features.multi_currency", transform="sección `features`",
        engine="sí: prompt (todas las monedas o solo la primera)", panel="pantalla", evidence=[ENGINE_TEST],
        note="En agencia_viajes es true con una sola moneda: permitirlo no obliga a usarlo."),
@@ -463,10 +467,9 @@ COMMERCIAL_CONTROLS: tuple[CommercialControl, ...] = (
     CommercialControl("Extensión de los mensajes", "config.response.length", "Tamaño de la respuesta, en el prompt y al recortarla."),
     CommercialControl("Extensión de los mensajes", "config.response.max_words", "Máximo de palabras por respuesta, dentro del rango de `length`."),
     CommercialControl("Interruptores de venta", "config.features.pricing_enabled", "`true`: permite usar precios en la conversación."),
-    CommercialControl("Interruptores de venta", "config.features.catalog_mode", "`true`: vende opciones tipo catálogo. `false`: vende un servicio o plan."),
     CommercialControl("Interruptores de venta", "config.features.multi_currency", "`true`: permite manejar más de una moneda."),
     CommercialControl("Interruptores de venta", "config.features.multi_plan", "`true`: permite ofrecer varios planes."),
-    CommercialControl("Interruptores de venta", "config.features.business_model", "Tipo de negocio; con él el motor decide cuándo mostrar precios."),
+    CommercialControl("Interruptores de venta", "config.features.business_model", "Qué vende el negocio; con él el asistente usa el manual de venta de ese tipo."),
     CommercialControl("Atención", "sales.support.info_handling.explain_first", "`true`: primero aclara la duda. `false`: vende directo."),
     CommercialControl("Atención", "sales.support.info_handling.sell_after", "`true`: después de explicar, vuelve a llevar al cliente a avanzar."),
     CommercialControl("Atención", "sales.qualification.detect_offer_fit", "`true`: valida si la oferta encaja antes de empujar el cierre."),
@@ -584,6 +587,8 @@ def check_leaf(document: dict, leaf: LegacyLeaf) -> str | None:
     entry = find_entry(leaf.pattern)
     if entry is None:
         return f"{leaf.path}: campo sin catalogar ({leaf.pattern})"
+    if entry.kind == "derived":
+        return f"{leaf.path}: se deduce al compilar y no debe estar en los documentos" if resolve_path(document, leaf.path) is not None else None
     path = destination_path(entry, leaf)
     found = resolve_path(document, path)
     if entry.kind == "policy":

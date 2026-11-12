@@ -94,6 +94,41 @@ def test_a_booking_business_gets_the_booking_playbook():
     assert playbook.business_kind(PromptView(runtime)) == "booking"
 
 
+def _with_closing(slug: str, strategy: str | None) -> PromptView:
+    runtime = load_tenant_runtime_yaml(slug)
+    closing = {k: v for k, v in (runtime["sales"].get("closing") or {}).items() if k != "strategy"}
+    if strategy is not None:
+        closing["strategy"] = strategy
+    runtime["sales"] = {**runtime["sales"], "closing": closing}
+    return PromptView(runtime)
+
+
+@pytest.mark.parametrize("slug", ["restaurant", "saas", "tienda_ropa"])
+def test_each_closing_strategy_tells_the_ai_how_to_close(slug):
+    """Confirmar la compra, enviar el pago y capturar datos cierran distinto en el mismo negocio; agendar usa el manual con cita."""
+    closings = {strategy: playbook.render(_with_closing(slug, strategy)) for strategy in ("direct_sale", "checkout", "lead_capture", "booking")}
+    assert len(set(closings.values())) == 4
+    for strategy in ("direct_sale", "checkout", "lead_capture"):
+        assert closings[strategy].endswith(instructions.CLOSING_STRATEGIES[strategy].strip())
+    assert "confirma con él lo que decidió" in closings["direct_sale"]
+    assert "directo al pago" in closings["checkout"]
+    assert "No le pidas que pague" in closings["lead_capture"] and "llévalo a pagar" not in closings["lead_capture"]
+    assert closings["booking"] == f"{instructions.PLAYBOOKS['booking'].strip()}\n{instructions.PLAYBOOK_CLOSINGS['booking'].strip()}"
+
+
+def test_without_a_closing_strategy_the_business_type_decides_how_to_close():
+    view = _with_closing("restaurant", None)
+    assert playbook.render(view).endswith(instructions.PLAYBOOK_CLOSINGS["catalog"])
+
+
+def test_every_closing_strategy_of_the_contract_has_its_closing():
+    from typing import get_args
+
+    from app.domain.business_config.contract.sales import ClosingStrategy
+
+    assert set(get_args(ClosingStrategy)) == {*instructions.CLOSING_STRATEGIES, "booking"}
+
+
 # ---------------------------------------------------------------------------
 # Presupuesto por capa
 # ---------------------------------------------------------------------------

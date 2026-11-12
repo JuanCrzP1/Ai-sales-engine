@@ -227,7 +227,6 @@
     },
     "features": {
       "pricing_enabled": true,
-      "catalog_mode": false,
       "multi_currency": false,
       "multi_plan": true,
       "business_model": "saas"

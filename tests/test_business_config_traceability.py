@@ -88,7 +88,7 @@ def test_catalog_engine_column_matches_the_contract_status():
     for slug in TENANTS:
         for leaf in legacy_leaves(_sections(slug)):
             entry = find_entry(leaf.pattern)
-            if entry.kind in ("technical", "policy"):
+            if entry.kind in ("technical", "policy", "derived"):
                 continue
             covering = covering_leaf(destination_path(entry, leaf), set(fields))
             if covering in fields and entry.engine.startswith("sí") != (fields[covering].engine == "conectado"):
@@ -191,7 +191,7 @@ def test_commercial_controls_keep_their_values_in_the_contract():
     "path, options",
     [
         ("response_style.length", "short \\| medium \\| long"),
-        ("features.business_model", "saas \\| catalog \\| checkout \\| service_booking \\| process"),
+        ("features.business_model", "catalog \\| saas \\| services \\| service_booking"),
         ("features.pricing_enabled", "interruptor true/false"),
         ("messages.welcome.enabled", "interruptor true/false"),
         ("sales.support.explain_first", "interruptor true/false"),
@@ -216,6 +216,8 @@ def test_every_yaml_switch_is_typed_in_the_commercial_contract():
         entry = find_entry(pattern)
         if pattern.startswith("config.flags."):
             assert entry.kind == "technical", pattern
+        elif entry.kind == "derived":
+            assert entry.category == "E" and entry.note, pattern
         else:
             assert entry.kind == "typed" and entry.category in "AB", pattern
 
@@ -245,8 +247,9 @@ def test_exceptions_to_the_commercial_contract_are_exactly_the_documented_ones()
         "config.initial_message.recency.**",
     }
     assert common == {"sales.closing.behavior.<estrategia>.goal", "sales.closing.next_step.action"}
+    assert {entry.pattern for entry in CATALOG if entry.kind == "derived"} == {"config.features.catalog_mode"}
     for entry in CATALOG:
-        if entry.kind in ("technical", "policy"):
+        if entry.kind in ("technical", "policy", "derived"):
             assert entry.note and entry.category in "CE", entry.pattern
 
 

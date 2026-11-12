@@ -1173,9 +1173,14 @@ describe("Formularios generados desde el contrato", () => {
     await saveAndWait(user);
     expect(storedOf(backend).sales.objections?.[0]).toMatchObject({ topic: "price" });
 
-    await user.selectOptions(screen.getByLabelText(/^Tipo de negocio/), "saas");
+    const whatYouSell = screen.getByRole("group", { name: "Qué vendes" });
+    expect(within(whatYouSell).getAllByRole("radio").map((radio) => radio.closest("label")?.textContent)).toEqual([
+      "Productos", "Planes o suscripción", "Servicios", "Servicios con cita", "Sin indicar",
+    ]);
+    await user.click(within(whatYouSell).getByRole("radio", { name: "Planes o suscripción" }));
     await saveAndWait(user);
     expect(storedOf(backend).features?.business_model).toBe("saas");
+    expect(screen.queryByText("Vende opciones de catálogo")).toBeNull();
 
     const objection = screen.getByRole("heading", { name: "Objeciones: el precio" }).closest(".subcard") as HTMLElement;
     await user.click(within(objection).getByRole("button", { name: "Quitar" }));

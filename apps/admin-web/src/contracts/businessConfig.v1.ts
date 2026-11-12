@@ -171,18 +171,16 @@ export interface Faq {
   answer: string;
 }
 
-/** Cómo vende el negocio. Los valores se conservan tal cual; las contradicciones con la oferta las señala el diagnóstico. */
+/** Cómo vende el negocio. Los valores se conservan tal cual; las contradicciones con la oferta las señala el diagnóstico. El antiguo «modo catálogo» (`catalog_mode`) ya no se escribe: el motor lo recibe deducido de lo que vende el negocio y de su oferta. */
 export interface Features {
   /** true: permite usar precios en la conversación. false: el asistente no da valores. [motor: conectado] */
   pricing_enabled: boolean;
-  /** true: vende opciones tipo catálogo. false: vende un servicio o plan. [motor: conectado] */
-  catalog_mode: boolean;
   /** true: da los precios en todas sus monedas. false: solo en la primera de cada precio. [motor: conectado] */
   multi_currency?: boolean | null;
   /** true: puede ofrecer varios planes. false: recomienda uno solo, el que mejor encaje. [motor: conectado] */
   multi_plan?: boolean | null;
-  /** Tipo de negocio; con él el motor decide cuándo mostrar precios. [motor: conectado] */
-  business_model?: "saas" | "catalog" | "checkout" | "service_booking" | "process" | null;
+  /** Qué vende el negocio: catalog (productos), saas (planes o suscripción), services (servicios) o service_booking (servicios con cita). El asistente usa el manual de venta de ese tipo; sin indicar, se deduce de la oferta. [motor: conectado] */
+  business_model?: "catalog" | "saas" | "services" | "service_booking" | null;
 }
 
 export interface Financing {

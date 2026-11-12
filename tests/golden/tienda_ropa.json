@@ -301,7 +301,7 @@
       "multi_currency": false,
       "multi_plan": false,
       "catalog_mode": true,
-      "business_model": "checkout"
+      "business_model": "catalog"
     },
     "flags": {
       "ai_first": true,

@@ -247,7 +247,7 @@ plan.
 | `business.city` y `business.location.city` | mismo dato, mismo valor en los nueve negocios | **Unificado** en `identity.location.city`; la compilación lo devuelve a las dos rutas |
 | `sales.closing.required_data` y `capabilities.data_collection.fields` | solapados (inglés/español) | Se conservan; diagnóstico `dato_de_cierre_no_solicitado` si el cierre pide un dato que no se recoge. El prompt los une en una sola lista en español, sin repetir |
 | `closing_methods.data_collection` y `data_collection.enabled` | dependientes | Validación: cerrar pidiendo datos exige recogida de datos activa |
-| `features.catalog_mode`, `business_model` | relacionados con `offer.model` | Interruptores comerciales con sus valores; si faltan, se derivan; diagnóstico `modo_catalogo_contradice_oferta` (ecommerce) |
+| `features.business_model` («Qué vendes») | relacionado con `offer.model` | `catalog`, `saas`, `services` o `service_booking`; si falta, se deduce de la oferta. `catalog_mode` ya no se escribe: se compila deducido (oferta de catálogo o `catalog`). `checkout` y `process` se leen como `catalog` y `services` |
 | `features.multi_currency`, `multi_plan` | permiten, no obligan | Interruptores comerciales con sus valores; el diagnóstico solo señala `false` con varias monedas o planes |
 | `features.pricing_enabled` | si el asistente da precios | Interruptor comercial, conectado: con `false` no da valores y dice que el equipo los confirma |
 | `response_style.max_words` | ajuste fino de `length` | Audiencia `avanzado`; rango validado contra `length` |
@@ -573,7 +573,7 @@ cual (cambiarlos es decisión del negocio):
   venta; recomendaciones hacia `plan_pro`, que no existe.
 - **demo:** recomendaciones hacia `plan_pro` y `plan_basico`, pero sus planes son `pro` y `basico`.
 - **agencia_viajes:** el retorno está en reservas, que el motor no lee.
-- **ecommerce:** oferta por planes con `catalog_mode = true`.
+- **ecommerce:** oferta por planes que se vende como productos (`business_model = catalog`).
 - **tienda_ropa:** modalidades presencial y envío, pero domicilio y recogida disponibles.
 - **agencia_viajes, escuela_conduccion, restaurant, tienda_ropa:** cierre por link de pago sin link.
 - **Todos:** comparten los mismos datos de transferencia (comparados por hash), lo que sugiere datos de

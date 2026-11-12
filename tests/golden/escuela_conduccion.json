@@ -321,7 +321,7 @@
       "multi_currency": false,
       "multi_plan": false,
       "catalog_mode": true,
-      "business_model": "process"
+      "business_model": "services"
     },
     "flags": {
       "ai_first": true,

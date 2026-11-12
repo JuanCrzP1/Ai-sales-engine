@@ -59,9 +59,6 @@ def review(config: BusinessConfig, *, today: date | None = None) -> list[Diagnos
                 f"El perfil de pago '{profile.id}' acepta transferencias, pero todas sus cuentas están inactivas.")
 
     features = config.features
-    if features is not None and features.catalog_mode != (config.offer.model == "catalog"):
-        add("modo_catalogo_contradice_oferta", "incoherencia", "features.catalog_mode",
-            f"catalog_mode={features.catalog_mode} pero la oferta es de tipo '{config.offer.model}'.")
     if features is not None and features.multi_plan is False and len(config.offer.plans or []) > 1:
         add("multi_plan_contradice_oferta", "incoherencia", "features.multi_plan",
             f"multi_plan=false pero la oferta tiene {len(config.offer.plans)} planes.")

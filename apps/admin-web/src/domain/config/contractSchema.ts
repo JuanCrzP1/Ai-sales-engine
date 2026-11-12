@@ -222,10 +222,9 @@ const FIELD_LABELS: Record<string, string> = {
   currency: "Moneda",
   amount: "Precio",
   pricing_enabled: "Puede usar precios en la conversación",
-  catalog_mode: "Vende opciones de catálogo",
   multi_currency: "Maneja varias monedas",
   multi_plan: "Ofrece varios planes",
-  business_model: "Tipo de negocio",
+  business_model: "Qué vendes",
   segment: "Tipo de cliente",
   company_size: "Tamaño de la empresa",
   maturity: "Situación al llegar",
@@ -291,7 +290,6 @@ const VALUE_LABELS: Record<string, string> = {
   saas: "Software por suscripción",
   catalog: "Catálogo",
   service_booking: "Servicio con reserva",
-  process: "Proceso guiado",
   miercoles: "Miércoles",
   sabado: "Sábado",
 };
@@ -336,12 +334,13 @@ export function pathLabel(path: string): string | null {
  * usa la descripción del contrato.
  */
 const FIELD_HINTS: Record<string, string> = {
-  strategy: "Qué busca el asistente cuando el cliente está listo para comprar.",
+  strategy:
+    "Cómo cierra el asistente. Confirmar la compra: confirma lo que lleva y le dice cómo pagar. Enviar el pago: lo lleva directo a pagar. Capturar datos: pide sus datos para que el equipo lo contacte, sin cobrar. Agendar: pide los datos para la cita.",
   forbid: "Lo que el asistente nunca debe hacer al responder.",
   no_skip_steps: "Si es «Sí», sigue los pasos en orden sin saltarse ninguno.",
   guided_process: "Si es «Sí», acompaña al cliente paso a paso (útil para trámites o inscripciones).",
   pricing_enabled: "Si es «No», el asistente no da precios: dice que el equipo los confirma.",
-  catalog_mode: "«Sí» si vendes productos de un catálogo; «No» si vendes planes o servicios.",
+  business_model: "El asistente vende según lo que elijas. Sin indicar, lo deduce de tu oferta.",
   multi_currency: "Si es «No», da cada precio solo en su primera moneda.",
   multi_plan: "Si es «No», recomienda un solo plan, el que mejor encaje, en lugar de mostrarlos todos.",
   detect_offer_fit: "Si es «Sí», confirma que la opción le sirve al cliente antes de llevarlo a comprar.",
@@ -354,7 +353,14 @@ export function fieldHint(key: string, node: SchemaNode): string | undefined {
   return FIELD_HINTS[key] ?? (FIELD_LABELS[key] ? node.description : undefined);
 }
 
-export function valueLabel(value: string): string {
+/** Etiquetas propias de un campo, cuando el mismo valor significa otra cosa en otro campo («catalog» en la oferta y en «Qué vendes»). */
+const FIELD_VALUE_LABELS: Record<string, Record<string, string>> = {
+  business_model: { catalog: "Productos", saas: "Planes o suscripción", services: "Servicios", service_booking: "Servicios con cita" },
+};
+
+export function valueLabel(value: string, field?: string): string {
+  const own = field ? FIELD_VALUE_LABELS[field]?.[value] : undefined;
+  if (own) return own;
   if (VALUE_LABELS[value]) return VALUE_LABELS[value];
   const text = value.replace(/_/g, " ");
   return text.charAt(0).toUpperCase() + text.slice(1);

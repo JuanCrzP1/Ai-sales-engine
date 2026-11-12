@@ -338,7 +338,6 @@
     },
     "features": {
       "pricing_enabled": true,
-      "catalog_mode": true,
       "multi_currency": true,
       "multi_plan": false,
       "business_model": "catalog"

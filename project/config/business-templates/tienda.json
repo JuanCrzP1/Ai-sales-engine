@@ -295,10 +295,9 @@
     },
     "features": {
       "pricing_enabled": true,
-      "catalog_mode": true,
       "multi_currency": false,
       "multi_plan": false,
-      "business_model": "checkout"
+      "business_model": "catalog"
     }
   }
 }

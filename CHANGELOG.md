@@ -5,6 +5,17 @@ está en el historial de git y en `docs/plan-v1.md`.
 
 ## 12 de noviembre de 2026
 
+**El asistente cierra como elegiste**
+- La **estrategia de cierre** ya cambia lo que hace el asistente:
+  - **Confirmar la compra**: confirma con el cliente lo que decidió, le pide los datos y le dice cómo pagar.
+  - **Enviar el pago**: apenas decide, lo lleva directo a pagar, sin más preguntas.
+  - **Capturar datos**: le pide sus datos para que tu equipo lo contacte y no le cobra, salvo que el cliente lo pida.
+  - **Agendar**: igual que antes.
+- **Qué vendes** reemplaza a «Tipo de negocio» y «Modo catálogo», que decían lo mismo. Eliges entre Productos, Planes o
+  suscripción, Servicios y Servicios con cita, y el asistente vende según eso.
+- Si tu negocio tenía «Checkout», ahora aparece como Productos, y si tenía «Proceso», como Servicios. Para guiar al cliente paso a
+  paso sigue estando «Guiar paso a paso».
+
 **Eliminar un negocio, también en la nube**
 - Nuevo **Configuración → Eliminar negocio** (y «Eliminar» en Tus negocios). Te dice qué se pierde y pide escribir el nombre del
   negocio. Solo el dueño puede hacerlo.

@@ -102,7 +102,7 @@ export function ContractField({ root, name, node, value, path, required = false,
         />
       );
     case "choice": {
-      const options = (shape.node.enum ?? []).map((option) => ({ value: option, label: valueLabel(option) }));
+      const options = (shape.node.enum ?? []).map((option) => ({ value: option, label: valueLabel(option, name) }));
       if (options.length <= MAX_SEGMENTS) {
         return (
           <SegmentedControl

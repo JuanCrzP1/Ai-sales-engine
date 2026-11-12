@@ -15,7 +15,7 @@ plan (sección 6).
 | 2 | Documentación profesional: README con capturas, guía del negocio, índice, cambios y documentos al día | — (nuevo) | **Hecha** (11 nov) |
 | 3 | Atención humana completa: horario del equipo, lo que espera el cliente, avisos por correo y notificación, la IA retoma sola si nadie atiende | Fase 4 (H3, H6 y la pausa con tiempo) | **Hecha** (11 nov) |
 | — | Eliminar un negocio en la nube: solo el dueño, escribiendo su nombre; WhatsApp primero y todo lo demás en una transacción | — (nuevo) | **Hecha** (12 nov) |
-| — | Revisión del 12 nov (ver «Hallazgos de la revisión del 12 de noviembre») | — (nuevo) | Pendiente |
+| — | Revisión del 12 nov (ver «Hallazgos de la revisión del 12 de noviembre») | — (nuevo) | Hecha (12 nov) |
 | 4 | Lanzamiento: monitoreo de errores, copias de seguridad probadas, correo transaccional, términos y política de datos, Vercel Pro | Fases 7 y 8 | Siguiente |
 | 5 | Retirar lo que queda del sistema anterior y partir los módulos grandes del motor | Fase 6 (resto) | Pendiente |
 | Integraciones | API del asistente para otras plataformas (Leona, una web) con claves de API: **hecha** (12 nov). Servidor MCP para que un agente de IA monte y configure negocios: **fase 1 hecha** (12 nov: claves de la cuenta con permisos por área, alcance y vencimiento; crear negocios y toda la configuración, revisar, probar y publicar; ver [mcp.md](mcp.md)). **Fase 2 hecha** (12 nov: conversaciones con respuesta al cliente, clientes, ventas, reportes, atención humana y modelo de IA; los datos de pago salen ocultos de los chats). **Fase 3 hecha** (12 nov: Claude web y app y ChatGPT se conectan con inicio de sesión, OAuth 2.1 con registro dinámico y PKCE; la conexión es una clave de la cuenta que se revoca en Claves de API) | — (nuevo) | Hecha |
@@ -402,9 +402,18 @@ comparó lo que recibe la IA en una conversación de 4 turnos. Solo se marca un 
 
 | Hallazgo | Qué pasa | Qué hacer |
 |---|---|---|
-| `sales.closing.strategy` | «Confirmar la compra», «Capturar datos» y «Enviar el pago» hacen lo mismo en el motor; solo «Agendar» cambia el manual de venta | Que cada estrategia le diga a la IA cómo cerrar (capturar datos sin pedir pago, enviar el pago, confirmar la compra). Cambia el prompt: con laboratorio de regresión antes y después |
-| `features.catalog_mode` | No cambia nada cuando el negocio declara `features.business_model` (los 9 ejemplos lo declaran): el tipo de negocio manda | Unificar: que el panel muestre un solo control («Qué vendes») o que el modo catálogo se derive del tipo de negocio |
-| `features.business_model` | «Catálogo» y «Checkout» llevan al mismo manual; «Proceso» no tiene manual propio (usa el de servicios) | Decidir si «Checkout» y «Proceso» merecen manual propio o si se quitan como opciones |
+| `sales.closing.strategy` | «Confirmar la compra», «Capturar datos» y «Enviar el pago» hacen lo mismo en el motor; solo «Agendar» cambia el manual de venta | **Hecho.** El manual de venta termina con el cierre de la estrategia elegida (`instructions.CLOSING_STRATEGIES`); sin estrategia, el del tipo de negocio. «Capturar datos» no pide pago salvo que el cliente lo pida |
+| `features.catalog_mode` | No cambia nada cuando el negocio declara `features.business_model` (los 9 ejemplos lo declaran): el tipo de negocio manda | **Hecho.** Sale del documento: el compilador lo deduce (oferta de catálogo o «Productos») y el motor recibe el mismo valor. Un documento guardado con él se sigue leyendo |
+| `features.business_model` | «Catálogo» y «Checkout» llevan al mismo manual; «Proceso» no tiene manual propio | **Hecho.** Ahora es «Qué vendes»: Productos, Planes o suscripción, Servicios (nuevo, con su manual) y Servicios con cita. Lo guardado con `checkout` se lee como `catalog` y con `process` como `services` |
+
+Cómo se comprobó (laboratorio de regresión contra `c6774a8`):
+- `exp_20261112_cierre_paso_a_reorganizar`: separar el cierre del manual sin cambiar textos, motor sin diferencias (9 de 9 negocios,
+  135 turnos). Control negativo: al alterar la línea de cierre de productos, el laboratorio marca los 3 negocios de catálogo.
+- `exp_20261112_cierre_por_estrategia`: solo cambia la última línea del manual en los 5 negocios con «Confirmar la compra» o «Enviar el
+  pago»; los 4 con «Agendar» quedan con el prompt idéntico. Respuestas 10 de 10 idénticas. Versión del prompt `2026-11-12.v5`.
+- `exp_20261112_cierre_y_que_vendes`: «Qué vendes» no cambia ningún prompt; solo el valor de `business_model` en los 3 negocios que
+  usaban «Checkout» o «Proceso».
+- Falta medir la calidad con la IA real (`experiments/quality_lab`), que tiene costo y necesita autorización.
 
 Lo demás llega al motor y cada opción cambia lo que hace. Las combinaciones que el contrato rechaza son reglas a propósito (el largo
 de las respuestas va con su máximo de palabras; Nequi pide número y no cuenta). La bienvenida fija solo responde a un saludo solo.

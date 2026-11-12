@@ -727,11 +727,11 @@ def test_every_value_of_each_option_is_accepted_and_others_are_rejected(path):
         ("asesor_ai_prod", "plans", "saas"),
         ("clinic", "plans", "service_booking"),
         ("demo", "plans", None),
-        ("ecommerce", "plans", "checkout"),
-        ("escuela_conduccion", "catalog", "process"),
+        ("ecommerce", "plans", "catalog"),
+        ("escuela_conduccion", "catalog", "services"),
         ("restaurant", "catalog", "catalog"),
         ("saas", "plans", "saas"),
-        ("tienda_ropa", "catalog", "checkout"),
+        ("tienda_ropa", "catalog", "catalog"),
     ],
 )
 def test_the_same_contract_serves_each_business_model(slug, offer_model, business_model):
@@ -739,6 +739,27 @@ def test_the_same_contract_serves_each_business_model(slug, offer_model, busines
     assert config.offer.model == offer_model and config.features.business_model == business_model
     assert (config.offer.plans is not None) == (offer_model == "plans")
     assert (config.offer.catalog is not None) == (offer_model == "catalog")
+
+
+@pytest.mark.parametrize("retired, now", [("checkout", "catalog"), ("process", "services")])
+def test_a_document_saved_with_a_retired_option_is_still_read(retired, now):
+    """Antes de unificar «Qué vendes» había «Checkout», «Proceso» y el modo catálogo: lo guardado así se sigue leyendo."""
+    document = _document("restaurant")
+    document["features"] = {"pricing_enabled": True, "catalog_mode": False, "business_model": retired}
+    config = BusinessConfig.model_validate(document)
+    assert config.features.business_model == now
+    assert "catalog_mode" not in config.model_dump(mode="json")["features"]
+
+
+@pytest.mark.parametrize(
+    "offer_model_slug, business_model, catalog_mode",
+    [("restaurant", None, True), ("saas", None, False), ("saas", "catalog", True), ("restaurant", "services", True), ("saas", "services", False)],
+)
+def test_the_engine_still_receives_catalog_mode_deduced(offer_model_slug, business_model, catalog_mode):
+    """El modo catálogo ya no se escribe: vende productos si su oferta es un catálogo o si dijo que vende productos."""
+    document = _document(offer_model_slug)
+    document["features"] = {"pricing_enabled": True, **({"business_model": business_model} if business_model else {})}
+    assert _compile(document, offer_model_slug)["config"]["features"]["catalog_mode"] is catalog_mode
 
 
 # ---------------------------------------------------------------------------
@@ -824,7 +845,7 @@ EXPECTED_DIAGNOSTICS = {
     "asesor_ai_prod": ["recomienda_oferta_no_disponible", "sin_canales_de_atencion"],
     "clinic": ["agenda_sin_horarios", "sin_problemas_del_cliente"],
     "demo": ["recomienda_oferta_no_disponible", "recomienda_oferta_no_disponible"],
-    "ecommerce": ["modo_catalogo_contradice_oferta", "sin_problemas_del_cliente"],
+    "ecommerce": ["sin_problemas_del_cliente"],
     "escuela_conduccion": ["cierre_por_link_sin_link", "agenda_sin_horarios"],
     "restaurant": ["cierre_por_link_sin_link", "sin_problemas_del_cliente"],
     "saas": ["sin_problemas_del_cliente"],
@@ -853,7 +874,6 @@ DIAGNOSTIC_CASES = {
     "transferencias_sin_cuentas_activas": lambda d: d["payments"][0].update(
         transfer_enabled=True, transfer_methods=[{"type": "nequi", "number": {"secret_ref": "secret_store:numero"}, "enabled": False}]
     ),
-    "modo_catalogo_contradice_oferta": lambda d: d.update(features={"pricing_enabled": True, "catalog_mode": False}),
     "multi_moneda_contradice_oferta": lambda d: (
         d.update(features={"pricing_enabled": True, "catalog_mode": True, "multi_currency": False}),
         d["offer"]["catalog"]["items"][0]["prices"].append({"currency": "USD", "amount": 5}),

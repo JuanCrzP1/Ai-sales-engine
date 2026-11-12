@@ -783,8 +783,8 @@ CONNECTED_CASES = {
     "canales": ("saas", lambda d: d["capabilities"].update(service_channels=["whatsapp", "instagram"]),
                 "Atiendes por: whatsapp, instagram.", 0),
     "canales_producto": ("saas", lambda d: d["capabilities"].update(product_channels=["telegram"]), "Lo que vende funciona en: telegram.", 0),
-    "modo_catalogo": ("restaurant", lambda d: d.update(features={"pricing_enabled": True, "catalog_mode": False}),
-                      "CÓMO SE VENDE EN ESTE NEGOCIO (servicios)", 0),
+    "que_vendes_servicios": ("restaurant", lambda d: d["features"].update(business_model="services"),
+                             "CÓMO SE VENDE EN ESTE NEGOCIO (servicios)", 0),
     "tono": ("restaurant", lambda d: d["response_style"].update(tone="paciente y muy claro"), "Tono: paciente y muy claro.", 1),
     "descripcion_plan": ("saas", lambda d: _first_plan(d).update(name="Plan Caja", description="Incluye soporte por chat"),
                          "- Plan Caja — ", 0),
@@ -881,7 +881,6 @@ CONNECTED_EVIDENCE: dict[str, str] = {
     "messages.payment_reported": "test_payment_report_message_is_optional",
     "response_style.length": "test_each_response_length_option_controls_prompt_and_truncation",
     "response_style.max_words": "test_changing_the_contract_changes_response_length",
-    "features.catalog_mode": "test_connected_fields_change_the_prompt",
     "features.business_model": "test_connected_fields_change_the_prompt",
     # Perfil comercial, tono, preguntas frecuentes y precios del catálogo: solo con el contrato.
     "identity.name": "test_the_profile_block_reaches_the_prompt",

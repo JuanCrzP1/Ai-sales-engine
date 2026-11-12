@@ -827,17 +827,11 @@
     },
     "Features": {
       "additionalProperties": false,
-      "description": "Cómo vende el negocio. Los valores se conservan tal cual; las contradicciones con la oferta las señala el diagnóstico.",
+      "description": "Cómo vende el negocio. Los valores se conservan tal cual; las contradicciones con la oferta las señala el diagnóstico.\n\nEl antiguo «modo catálogo» (`catalog_mode`) ya no se escribe: el motor lo recibe deducido de lo que vende el negocio y de su oferta.",
       "properties": {
         "pricing_enabled": {
           "description": "true: permite usar precios en la conversación. false: el asistente no da valores.",
           "title": "Pricing Enabled",
-          "type": "boolean",
-          "x-engine": "conectado"
-        },
-        "catalog_mode": {
-          "description": "true: vende opciones tipo catálogo. false: vende un servicio o plan.",
-          "title": "Catalog Mode",
           "type": "boolean",
           "x-engine": "conectado"
         },
@@ -873,11 +867,10 @@
           "anyOf": [
             {
               "enum": [
-                "saas",
                 "catalog",
-                "checkout",
-                "service_booking",
-                "process"
+                "saas",
+                "services",
+                "service_booking"
               ],
               "type": "string"
             },
@@ -886,14 +879,13 @@
             }
           ],
           "default": null,
-          "description": "Tipo de negocio; con él el motor decide cuándo mostrar precios.",
+          "description": "Qué vende el negocio: catalog (productos), saas (planes o suscripción), services (servicios) o service_booking (servicios con cita). El asistente usa el manual de venta de ese tipo; sin indicar, se deduce de la oferta.",
           "title": "Business Model",
           "x-engine": "conectado"
         }
       },
       "required": [
-        "pricing_enabled",
-        "catalog_mode"
+        "pricing_enabled"
       ],
       "title": "Features",
       "type": "object"

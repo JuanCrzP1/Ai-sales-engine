@@ -17,20 +17,44 @@ from app.domain.business_config.engine_settings import EngineSettings
 from app.domain.business_config.primitives import ADVANCED, CLIENT, CONNECTED, SCHEMA_VERSION, SYSTEM, ContractModel, Slug, ensure_unique
 
 
+BusinessModel = Literal["catalog", "saas", "services", "service_booking"]
+# Opciones que se retiraron de «Qué vendes» y a cuál equivalen: un documento guardado con ellas se sigue leyendo.
+# «Checkout» repetía la estrategia de cierre «Enviar el pago»; «Proceso», el paso a paso de `sales.conversation_flow`.
+RETIRED_BUSINESS_MODELS = {"checkout": "catalog", "process": "services"}
+
+
 class Features(ContractModel):
-    """Cómo vende el negocio. Los valores se conservan tal cual; las contradicciones con la oferta las señala el diagnóstico."""
+    """Cómo vende el negocio. Los valores se conservan tal cual; las contradicciones con la oferta las señala el diagnóstico.
+
+    El antiguo «modo catálogo» (`catalog_mode`) ya no se escribe: el motor lo recibe deducido de lo que vende el negocio y de su oferta.
+    """
 
     pricing_enabled: bool = Field(description="true: permite usar precios en la conversación. false: el asistente no da valores.", json_schema_extra=CONNECTED)
-    catalog_mode: bool = Field(description="true: vende opciones tipo catálogo. false: vende un servicio o plan.", json_schema_extra=CONNECTED)
     multi_currency: bool | None = Field(
         default=None, description="true: da los precios en todas sus monedas. false: solo en la primera de cada precio.", json_schema_extra=CONNECTED
     )
     multi_plan: bool | None = Field(
         default=None, description="true: puede ofrecer varios planes. false: recomienda uno solo, el que mejor encaje.", json_schema_extra=CONNECTED
     )
-    business_model: Literal["saas", "catalog", "checkout", "service_booking", "process"] | None = Field(
-        default=None, description="Tipo de negocio; con él el motor decide cuándo mostrar precios.", json_schema_extra=CONNECTED
+    business_model: BusinessModel | None = Field(
+        default=None,
+        description=(
+            "Qué vende el negocio: catalog (productos), saas (planes o suscripción), services (servicios) o service_booking "
+            "(servicios con cita). El asistente usa el manual de venta de ese tipo; sin indicar, se deduce de la oferta."
+        ),
+        json_schema_extra=CONNECTED,
     )
+
+    @model_validator(mode="before")
+    @classmethod
+    def _read_retired_options(cls, data: object) -> object:
+        """Un documento guardado antes de unificar «Qué vendes» se sigue leyendo: sin `catalog_mode` y con la opción equivalente."""
+        if not isinstance(data, dict):
+            return data
+        data = {key: value for key, value in data.items() if key != "catalog_mode"}
+        if data.get("business_model") in RETIRED_BUSINESS_MODELS:
+            data["business_model"] = RETIRED_BUSINESS_MODELS[data["business_model"]]
+        return data
 
 
 # ---------------------------------------------------------------------------
