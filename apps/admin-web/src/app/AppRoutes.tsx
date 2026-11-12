@@ -22,6 +22,7 @@ import { PlaygroundPage } from "../features/playground/PlaygroundPage";
 import { AccountProfilePage, NotificationsPage, ProfilePage, SecurityPage } from "../features/profile/ProfilePage";
 import { BillingPage, QuickRepliesPage } from "../features/settings/ComingSoonPages";
 import { ApiKeysPage } from "../features/integrations/ApiKeysPage";
+import { AgentsPage } from "../features/integrations/AgentsPage";
 import { AssistantApiPage } from "../features/integrations/AssistantApiPage";
 import { IntegrationsPage } from "../features/integrations/IntegrationsPage";
 import { ReviewPage } from "../features/review/ReviewPage";
@@ -30,6 +31,7 @@ import { AccountLayout, SettingsLayout } from "../layout/SettingsLayout";
 import { ACCOUNT_PATHS } from "../navigation/accountPaths";
 import {
   AI_ITEM,
+  AGENTS_ITEM,
   API_KEYS_ITEM,
   ASSISTANT_API_ITEM,
   ATTENTION_ITEM,
@@ -90,6 +92,7 @@ export const appRoutes = (
           <Route path={INTEGRATIONS_ITEM.path} element={<IntegrationsPage />} />
           <Route path={ASSISTANT_API_ITEM.path} element={<AssistantApiPage />} />
           <Route path={API_KEYS_ITEM.path} element={<ApiKeysPage />} />
+          <Route path={AGENTS_ITEM.path} element={<AgentsPage />} />
           <Route path={OVERVIEW_ITEM.path} element={<AssistantOverviewPage />} />
           <Route path={sectionPath("business")} element={<BusinessPage />} />
           <Route path={sectionPath("catalog")} element={<CatalogPage />} />

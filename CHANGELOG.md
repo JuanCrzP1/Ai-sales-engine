@@ -5,6 +5,15 @@ está en el historial de git y en `docs/plan-v1.md`.
 
 ## 12 de noviembre de 2026
 
+**Agentes de IA (MCP): que Claude monte tu negocio**
+- Nueva pantalla **Integraciones → Agentes de IA (MCP)**: la dirección del servidor y lo que se pega en Claude Code, Cursor (y
+  Claude Desktop, Windsurf, Gemini CLI) y n8n.
+- Un agente puede crear negocios y montar su configuración completa: negocio, productos y precios, pagos, preguntas frecuentes y
+  mensajes. Revisa lo que falta y lo que cambia, prueba el asistente y publica solo cuando confirmas.
+- **Claves de la cuenta:** al crear una clave eliges qué puede hacer por área, a qué negocios entra (este, todos o algunos) y cuándo
+  vence. Los datos de pago se pueden escribir, nunca leer.
+- Cada cliente, lo suyo: una clave solo llega a los negocios de quien la creó.
+
 **Configuración del negocio y Mi cuenta, separadas**
 - **Configuración** es solo del negocio y va fija abajo en el menú de la izquierda.
 - **Mi cuenta**, en el menú de tu foto, es tuya: Mi perfil, **Seguridad** (cambiar tu contraseña y cerrar tu sesión en los demás

@@ -16,8 +16,8 @@ import type { Customer, Report, Sale } from "../domain/commerce/types";
 import type { ConfigRepository, StoredConfig } from "../repositories/configRepository";
 import type { ChatMessage, ConversationSummary, ConversationThread, InboxFilter, Notification } from "../domain/inbox/types";
 import type { Inbox } from "../repositories/inbox";
-import type { ApiKey, Integrations } from "../repositories/integrations";
-import { SCOPE_ASSISTANT_CHAT } from "../domain/integrations/types";
+import type { ApiKey, Integrations, NewKeyRequest } from "../repositories/integrations";
+import { SCOPE_ASSISTANT_CHAT, type KeyArea } from "../domain/integrations/types";
 import { PersistenceError } from "../repositories/persistenceError";
 import { SAMPLE_DOCUMENT } from "./fixtures/sampleDocument";
 
@@ -537,27 +537,46 @@ export function createMemoryDevicePush(initial: { support?: PushSupport; permiss
 }
 
 /** Las integraciones en memoria: claves con su valor (solo al crearlas) y la prueba de la API. */
-export function createMemoryIntegrations(options: { url?: string | null } = {}) {
-  const state = { keys: [] as ApiKey[], secrets: new Map<string, string>(), tried: [] as string[], counter: 0 };
+/** Las áreas que define el motor (`key_permissions.py`), para las pruebas del panel. */
+export const KEY_AREAS: KeyArea[] = [
+  { id: "chat", label: "Conversar con el asistente", read: null, write: "Mandarle mensajes de clientes y recibir sus respuestas.", oneBusinessOnly: true },
+  { id: "businesses", label: "Negocios", read: "Ver tus negocios y las plantillas.", write: "Crear negocios nuevos desde una plantilla.", oneBusinessOnly: false },
+  { id: "assistant", label: "Asistente IA", read: "Ver la configuración.", write: "Editar, probar y publicar.", oneBusinessOnly: false },
+  { id: "payments", label: "Datos de pago", read: null, write: "Escribir tus datos de pago. Nunca leerlos.", oneBusinessOnly: false },
+];
+
+export function createMemoryIntegrations(options: { url?: string | null; mcpUrl?: string | null; business?: string } = {}) {
+  const state = { keys: [] as ApiKey[], secrets: new Map<string, string>(), tried: [] as string[], counter: 0, requests: [] as NewKeyRequest[] };
+  const business = options.business ?? "cafe_aroma";
   const integrations: Integrations & { state: typeof state } = {
     state,
     overview: async () => {
       const active = state.keys.filter((key) => key.active);
       return {
         assistantApiUrl: options.url === undefined ? "https://motor.example.com/api/v1/assistant/messages" : options.url,
+        mcpUrl: options.mcpUrl === undefined ? "https://panel.example.com/api/mcp" : options.mcpUrl,
         chatKeys: active.filter((key) => key.scopes.includes(SCOPE_ASSISTANT_CHAT)).length,
         activeKeys: active.length,
-        scopes: [{ id: SCOPE_ASSISTANT_CHAT, label: "Conversar con el asistente" }],
+        areas: KEY_AREAS,
       };
     },
     keys: async () => structuredClone([...state.keys].sort((a, b) => Number(b.active) - Number(a.active))),
-    createKey: async (name, scopes) => {
-      if (!name.trim()) throw new PersistenceError("invalid", { message: "Revisa la clave.", problems: [{ path: "name", message: "Ponle un nombre." }] });
+    createKey: async (request) => {
+      state.requests.push(structuredClone(request));
+      const problems = [
+        ...(request.name.trim() ? [] : [{ path: "name", message: "Ponle un nombre." }]),
+        ...(Object.keys(request.permissions).length > 0 ? [] : [{ path: "permissions", message: "Dale acceso al menos a un área." }]),
+        ...(request.permissions.chat && request.reach !== "one" ? [{ path: "permissions.chat", message: "Es de un solo negocio." }] : []),
+      ];
+      if (problems.length > 0) throw new PersistenceError("invalid", { message: "Revisa la clave.", problems });
       state.counter += 1;
       const secret = `ase_live_${"Ab12Cd".padEnd(40, String(state.counter))}`;
+      const scopes = Object.entries(request.permissions).flatMap(([area, level]) => (area === "chat" ? [SCOPE_ASSISTANT_CHAT] : [`${area}:${level}`]));
       const key: ApiKey = {
-        id: `clave-${state.counter}`, name: name.trim(), prefix: secret.slice(0, 15), scopes, createdAt: new Date().toISOString(),
-        createdBy: "laura@empresa.com", lastUsedAt: null, revokedAt: null, active: true,
+        id: `clave-${state.counter}`, name: request.name.trim(), prefix: secret.slice(0, 15), scopes, permissions: request.permissions, reach: request.reach,
+        businesses: request.reach === "one" ? [business] : request.reach === "some" ? (request.businesses ?? []) : [], createdAt: new Date().toISOString(),
+        createdBy: "laura@empresa.com", lastUsedAt: null, revokedAt: null,
+        expiresAt: request.expiresInDays === null ? null : new Date(Date.now() + request.expiresInDays * 86_400_000).toISOString(), active: true, expired: false,
       };
       state.keys.push(key);
       state.secrets.set(key.id, secret);

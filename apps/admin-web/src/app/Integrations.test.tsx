@@ -29,11 +29,12 @@ describe("Integraciones", () => {
     expect(within(nav).getByRole("link", { name: /^Integraciones/ })).toHaveAttribute("aria-current", "page");
     expect(screen.getByRole("heading", { level: 1, name: "Integraciones" })).toBeInTheDocument();
     const groups = screen.getAllByRole("heading", { level: 2 }).map((heading) => heading.textContent);
-    expect(groups).toEqual(["Disponibles 3", "Próximamente 4"]);
+    expect(groups).toEqual(["Disponibles 4", "Próximamente 3"]);
     const names = (group: string) =>
       within(screen.getByRole("region", { name: new RegExp(`^${group}`) })).getAllByRole("heading", { level: 3 }).map((heading) => heading.textContent);
-    expect(names("Disponibles")).toEqual(["OpenRouter", "API del asistente", "Claves de API"]);
-    expect(names("Próximamente")).toEqual(["Agentes de IA (MCP)", "OpenAI", "Anthropic", "Google Gemini"]);
+    expect(names("Disponibles")).toEqual(["OpenRouter", "API del asistente", "Claves de API", "Agentes de IA (MCP)"]);
+    expect(names("Próximamente")).toEqual(["OpenAI", "Anthropic", "Google Gemini"]);
+    expect(screen.getByRole("link", { name: "Configurar Agentes de IA (MCP)" })).toHaveAttribute("href", `/negocios/${CAFE}/integraciones/agentes`);
     expect(screen.getByRole("link", { name: "Configurar API del asistente" })).toHaveAttribute("href", `/negocios/${CAFE}/integraciones/api`);
     expect(screen.getByRole("link", { name: "Configurar OpenRouter" })).toHaveAttribute("href", `/negocios/${CAFE}/configuracion/inteligencia-artificial`);
     expect(screen.queryByRole("link", { name: /OpenAI/ })).not.toBeInTheDocument();
@@ -41,7 +42,7 @@ describe("Integraciones", () => {
 
   it("filtra por categoría (y lo recuerda en la dirección) y busca sin importar las tildes", async () => {
     const integrations = createMemoryIntegrations();
-    await integrations.createKey("Mi web", ["assistant:chat"]);
+    await integrations.createKey({ name: "Mi web", permissions: { chat: "write" }, reach: "one", expiresInDays: null });
     integrations.state.keys[0]!.lastUsedAt = new Date(Date.now() - 5 * 60_000).toISOString();
     const { user } = await open("integraciones", integrations);
     expect(screen.getByText("En uso · usada hace 5 min")).toBeInTheDocument();
@@ -63,8 +64,10 @@ describe("Integraciones", () => {
     const form = screen.getByRole("dialog", { name: "Crear una clave de API" });
     expect(within(form).getByLabelText(/^Nombre/)).toHaveValue("");
     await user.type(within(form).getByLabelText(/^Nombre/), "Leona");
-    expect(within(form).getByRole("checkbox", { name: "Conversar con el asistente" })).toBeChecked();
+    // Para conversar con el asistente basta el nombre: es de este negocio y no hay tabla de permisos.
+    expect(within(form).queryByRole("radiogroup", { name: "Asistente IA" })).not.toBeInTheDocument();
     await user.click(within(form).getByRole("button", { name: "Crear clave" }));
+    expect(integrations.state.requests[0]).toEqual({ name: "Leona", permissions: { chat: "write" }, reach: "one", expiresInDays: null });
 
     const shown = await screen.findByRole("dialog", { name: "Clave «Leona» creada" });
     const secret = integrations.state.secrets.get("clave-1")!;
@@ -133,7 +136,7 @@ describe("Integraciones", () => {
 
   it("dice si una plataforma ya la está usando", async () => {
     const integrations = createMemoryIntegrations();
-    const created = await integrations.createKey("Leona", ["assistant:chat"]);
+    const created = await integrations.createKey({ name: "Leona", permissions: { chat: "write" }, reach: "one", expiresInDays: null });
     integrations.state.keys[0]!.lastUsedAt = new Date(Date.now() - 2 * 60_000).toISOString();
     await open("integraciones/api", integrations);
     expect(screen.getByText(/Conectada · usada hace 2 min/)).toBeInTheDocument();
@@ -159,17 +162,49 @@ describe("Integraciones", () => {
 
   it("lista las claves, no muestra su valor y deja revocarlas", async () => {
     const integrations = createMemoryIntegrations();
-    const created = await integrations.createKey("Leona", ["assistant:chat"]);
+    const created = await integrations.createKey({ name: "Leona", permissions: { chat: "write" }, reach: "one", expiresInDays: null });
     const { user } = await open("integraciones/claves", integrations);
     const row = (await screen.findByText("Leona")).closest("tr") as HTMLElement;
     expect(within(row).getByText(`${created.key.prefix}…`)).toBeInTheDocument();
     expect(within(row).getByText("Conversar con el asistente")).toBeInTheDocument();
+    expect(within(row).getByText("Solo este negocio")).toBeInTheDocument();
     expect(within(row).getByText("Nunca")).toBeInTheDocument();
+    expect(within(row).getByText("No vence")).toBeInTheDocument();
     expect(document.body.textContent).not.toContain(created.secret);
     await user.click(within(row).getByRole("button", { name: "Revocar" }));
     await user.click(within(row).getByRole("button", { name: "Sí, revocarla" }));
     await waitFor(() => expect(within(screen.getByText("Leona").closest("tr") as HTMLElement).getByText("Revocada")).toBeInTheDocument());
     expect(integrations.state.keys[0]!.active).toBe(false);
+  });
+
+  it("crea una clave para un agente con permisos por área, todos los negocios y vencimiento, y da lo que se pega en cada agente", async () => {
+    const { user, integrations } = await open("integraciones/agentes");
+    expect(screen.getByRole("heading", { level: 1, name: "Agentes de IA (MCP)" })).toBeInTheDocument();
+    expect(screen.getByText("Sin conectar")).toBeInTheDocument();
+    expect(screen.getByText("https://panel.example.com/api/mcp")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Crear clave para un agente" }));
+    const form = screen.getByRole("dialog", { name: "Crear una clave para un agente de IA" });
+    await user.type(within(form).getByLabelText(/^Nombre/), "Claude de Juan");
+    // Por defecto: todos los negocios, crear negocios y editar el asistente, y vence a los 90 días.
+    expect(within(form).getByRole("radio", { name: /Todos mis negocios/ })).toBeChecked();
+    const chat = within(form).getByRole("radiogroup", { name: "Conversar con el asistente" });
+    expect(within(chat).getByRole("radio", { name: "Permitir" })).toBeDisabled();
+    await user.click(within(within(form).getByRole("radiogroup", { name: "Datos de pago" })).getByRole("radio", { name: "Permitir" }));
+    await user.click(within(form).getByRole("button", { name: "Crear clave" }));
+    expect(integrations.state.requests[0]).toEqual({
+      name: "Claude de Juan", permissions: { businesses: "write", assistant: "write", payments: "write" }, reach: "all", expiresInDays: 90,
+    });
+    const shown = await screen.findByRole("dialog", { name: "Clave «Claude de Juan» creada" });
+    const secret = integrations.state.secrets.get("clave-1")!;
+    expect(within(shown).getByText(`claude mcp add --transport http ai-sales-engine https://panel.example.com/api/mcp --header "Authorization: Bearer ${secret}"`)).toBeInTheDocument();
+    await user.click(within(shown).getByRole("button", { name: "Ya la copié" }));
+    const row = (await screen.findByText("Claude de Juan")).closest("tr") as HTMLElement;
+    expect(within(row).getByText("Negocios: ver y editar · Asistente IA: ver y editar · Datos de pago: escribir")).toBeInTheDocument();
+    expect(within(row).getByText("Todos tus negocios")).toBeInTheDocument();
+    expect(screen.getByText("Clave lista · todavía sin usar")).toBeInTheDocument();
+    // Claude web y ChatGPT llegan con el inicio de sesión.
+    await user.click(screen.getByRole("tab", { name: "Claude web y ChatGPT" }));
+    expect(screen.getByText("Próximamente")).toBeInTheDocument();
   });
 
   it("un chat que llegó por la API se reconoce en la bandeja y se atiende desde la otra plataforma", async () => {

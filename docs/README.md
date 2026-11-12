@@ -16,6 +16,7 @@ Cada documento tiene un lector. Empieza por el tuyo.
 | [Inicio rápido](quickstart.md) | Instalar, arrancar todo en tu equipo y correr las pruebas |
 | [Cómo contribuir](../CONTRIBUTING.md) | Reglas, pruebas, laboratorio de regresión y mensajes de commit |
 | [API del asistente](api.md) | Para conectar el asistente a cualquier plataforma: autenticación, mensajes, respuestas, errores y guías por plataforma |
+| [Servidor MCP](mcp.md) | Para que un agente de IA (Claude, Cursor, n8n) monte y configure negocios: claves con permisos por área, herramientas y cómo agregar una |
 | [Arquitectura del motor](architecture.md) | Por dónde entra un mensaje, cómo se arma la respuesta y cómo se borra un chat |
 | [Negocios](tenants.md) | Cómo se aísla cada negocio, qué tablas lo forman y los negocios de ejemplo |
 | [Contrato de configuración](business-config.md) | BusinessConfig v1: el documento de cada negocio, sus versiones, datos de pago y la API del panel |

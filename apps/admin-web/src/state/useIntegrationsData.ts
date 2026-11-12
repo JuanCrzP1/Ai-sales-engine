@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import type { ApiKey, CreatedApiKey, IntegrationsOverview } from "../repositories/integrations";
+import type { ApiKey, CreatedApiKey, IntegrationsOverview, NewKeyRequest } from "../repositories/integrations";
 import { PersistenceError, persistenceErrorMessage } from "../repositories/persistenceError";
 import { useIntegrations } from "./integrationsContext";
 
@@ -10,7 +10,7 @@ export interface IntegrationsData {
   error: string | null;
   reload: () => void;
   /** Crea una clave; devuelve la clave con su valor completo (solo esta vez) o los problemas por campo. */
-  createKey: (name: string, scopes: string[]) => Promise<{ created: CreatedApiKey } | { error: string; problems: Record<string, string> }>;
+  createKey: (request: NewKeyRequest) => Promise<{ created: CreatedApiKey } | { error: string; problems: Record<string, string> }>;
   revokeKey: (id: string) => Promise<string | null>;
 }
 
@@ -46,9 +46,9 @@ export function useIntegrationsData(): IntegrationsData {
   const reload = useCallback(() => setAttempt((count) => count + 1), []);
 
   const createKey = useCallback<IntegrationsData["createKey"]>(
-    async (name, scopes) => {
+    async (request) => {
       try {
-        const created = await integrations.createKey(name, scopes);
+        const created = await integrations.createKey(request);
         reload();
         return { created };
       } catch (reason) {

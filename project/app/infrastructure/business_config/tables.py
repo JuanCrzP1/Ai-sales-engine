@@ -370,7 +370,8 @@ api_keys = Table(
     "api_keys",
     metadata,
     Column("id", Uuid, primary_key=True, default=uuid.uuid4),
-    Column("tenant_id", Uuid, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False),
+    # El negocio de una clave de un solo negocio (`reach = 'one'`); vacío si entra a todos o a algunos (migración 0013).
+    Column("tenant_id", Uuid, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=True),
     Column("name", Text, nullable=False),
     Column("prefix", Text, nullable=False),
     Column("key_hash", Text, nullable=False),
@@ -379,8 +380,26 @@ api_keys = Table(
     Column("created_at", DateTime(timezone=True), nullable=False, default=_now),
     Column("last_used_at", DateTime(timezone=True)),
     Column("revoked_at", DateTime(timezone=True)),
+    # La cuenta que la creó (Neon Auth); vacía en este equipo, sin cuentas.
+    Column("owner_user_id", Text),
+    Column("reach", Text, nullable=False, default="one", server_default="one"),
+    Column("expires_at", DateTime(timezone=True)),
     Index("api_keys_hash_key", "key_hash", unique=True),
     Index("api_keys_tenant_idx", "tenant_id", "created_at"),
+    Index("api_keys_owner_idx", "owner_user_id", "created_at"),
+    CheckConstraint(
+        "(reach = 'one' AND tenant_id IS NOT NULL) OR (reach IN ('all', 'some') AND tenant_id IS NULL)",
+        name="api_keys_reach_check",
+    ),
+)
+
+# Los negocios de una clave que entra a algunos (`reach = 'some'`).
+api_key_businesses = Table(
+    "api_key_businesses",
+    metadata,
+    Column("key_id", Uuid, ForeignKey("api_keys.id", ondelete="CASCADE"), primary_key=True),
+    Column("tenant_id", Uuid, ForeignKey("tenants.id", ondelete="CASCADE"), primary_key=True),
+    Index("api_key_businesses_tenant_idx", "tenant_id"),
 )
 
 # La respuesta a cada pedido con `Idempotency-Key` (migración 0012), cifrada, para devolver la misma si se repite (24 horas).

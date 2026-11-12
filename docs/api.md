@@ -22,8 +22,10 @@ Authorization: Bearer ase_live_...
 ```
 
 - Las claves se crean en **Integraciones → Claves de API**. Se muestran **una sola vez**: la plataforma guarda solo su huella.
-- La clave decide el negocio: la petición no lo elige.
+- La clave decide el negocio: la petición no lo elige. Por eso conversar necesita una clave de **un solo negocio**. Las claves de la
+  cuenta (de todos o de algunos negocios) son para los agentes de IA: ver [mcp.md](mcp.md).
 - Necesita el permiso **Conversar con el asistente** (`assistant:chat`).
+- Una clave vencida deja de funcionar como una revocada.
 - Una clave revocada deja de funcionar enseguida (401).
 - La clave es secreta: úsala desde un servidor o una plataforma de automatización, nunca en el código de una página web.
 

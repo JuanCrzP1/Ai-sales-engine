@@ -29,4 +29,5 @@ export const NAV_ICONS: Record<NavItem["key"], IconName> = {
   integrations: "link",
   assistantApi: "link",
   apiKeys: "shield",
+  agents: "sparkles",
 };

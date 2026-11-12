@@ -15,6 +15,7 @@ from app.domain.business_config.errors import UsageLimitExceededError
 from app.domain.business_config.usage_limits import (
     AI_KEY_CHECKS_PER_USER,
     API_KEYS_PER_USER,
+    MCP_PER_KEY,
     ASSISTANT_API_PER_BUSINESS,
     ASSISTANT_API_PER_KEY,
     CHANNEL_SETUP_PER_USER,
@@ -65,6 +66,9 @@ class UsageGuard:
 
     def api_key_creation(self, user: Principal) -> None:
         self.spend(API_KEYS_PER_USER, user.user_id)
+
+    def mcp_request(self, key_id: str) -> None:
+        self.spend(MCP_PER_KEY, key_id)
 
 
 class MemoryUsageCounter:

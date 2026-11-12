@@ -1,23 +1,27 @@
-"""Integraciones del panel: conectar el asistente con otras herramientas.
+"""Integraciones del panel: conectar el asistente y la plataforma con otras herramientas.
 
-- Claves de API de cada negocio: crearlas (la clave se muestra una sola vez), verlas y revocarlas. Solo las del negocio de quien
-  pregunta; uno ajeno responde como inexistente.
+- Claves de API: crearlas (la clave se muestra una sola vez), verlas y revocarlas. Una clave es de un negocio (para conversar con
+  su asistente, por ejemplo desde Leona) o de la cuenta de quien la crea, con permisos por área para los agentes de IA (MCP):
+  entra a todos sus negocios o a algunos. Desde un negocio se ven las claves que llegan a él; uno ajeno responde como inexistente.
 - La API del asistente: su dirección pública y una prueba desde el panel que responde como lo haría la API, con lo publicado.
+- El servidor MCP: su dirección pública, para pegarla en el agente.
 """
 from __future__ import annotations
 
 import logging
 from collections.abc import Callable
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from typing import Any
 
 from app.business_config_application.access import BusinessAccess
 from app.business_config_application.assistant_lab import AssistantLabService
 from app.business_config_application.ports import ApiKeyStorage
 from app.domain.business_config.access import Principal
-from app.domain.business_config.api_keys import SCOPE_ASSISTANT_CHAT, ApiKey, CreatedApiKey, validated_new_key
+from app.domain.business_config.api_keys import ApiKey, CreatedApiKey, validated_key_name
 from app.domain.business_config.assistant_api import ApiReply, reply_payload
 from app.domain.business_config.errors import AssistantUnavailableError
+from app.domain.business_config.key_permissions import SCOPE_ASSISTANT_CHAT, expiry_from, validated_permissions, validated_reach
 
 logger = logging.getLogger("integrations")
 
@@ -31,6 +35,13 @@ class IntegrationsOverview:
     assistant_api_url: str | None
     active_keys: int
     chat_keys: int
+    # La dirección del servidor MCP para pegar en el agente, o None si no está disponible.
+    mcp_url: str | None = None
+
+
+def _owner(principal: Principal) -> dict[str, Any]:
+    """De quién son las claves de la cuenta: el usuario; en este equipo, sin cuentas, el operador local."""
+    return {"owner_user_id": None, "local": True} if principal.local_operator else {"owner_user_id": principal.user_id, "local": False}
 
 
 class IntegrationsService:
@@ -40,36 +51,55 @@ class IntegrationsService:
         access: BusinessAccess,
         *,
         assistant_api_url: Callable[[], str | None] = lambda: None,
+        mcp_url: Callable[[], str | None] = lambda: None,
         lab: AssistantLabService | None = None,
+        now: Callable[[], datetime] = lambda: datetime.now(timezone.utc),
     ) -> None:
         self._keys = keys
         self._access = access
         self._api_url = assistant_api_url
+        self._mcp_url = mcp_url
         self._lab = lab
+        self._now = now
 
     def overview(self, principal: Principal, business: str) -> IntegrationsOverview:
         self._access.require(principal, business)
-        active = [key for key in self._keys.list_keys(business) if key.active]
+        now = self._now()
+        usable = [key for key in self._keys.list_keys(business, **_owner(principal)) if key.usable(now)]
         return IntegrationsOverview(
             assistant_api_url=self._api_url(),
-            active_keys=len(active),
-            chat_keys=sum(1 for key in active if SCOPE_ASSISTANT_CHAT in key.scopes),
+            active_keys=len(usable),
+            chat_keys=sum(1 for key in usable if SCOPE_ASSISTANT_CHAT in key.scopes),
+            mcp_url=self._mcp_url(),
         )
 
     def keys(self, principal: Principal, business: str) -> list[ApiKey]:
         self._access.require(principal, business)
-        return self._keys.list_keys(business)
+        return self._keys.list_keys(business, **_owner(principal))
 
     def create_key(self, principal: Principal, business: str, payload: dict[str, Any]) -> CreatedApiKey:
+        """Una clave nueva desde este negocio: de él solo, de todos los negocios de la cuenta o de algunos (todos de quien la crea)."""
         self._access.require(principal, business)
-        name, scopes = validated_new_key(payload.get("name"), payload.get("scopes"))
-        created = self._keys.create(business, name=name, scopes=scopes, created_by=principal.label)
-        logger.info("clave_de_api_creada", extra={"tenant": business, "scopes": list(scopes)})
+        name = validated_key_name(payload.get("name"))
+        reach = validated_reach(payload.get("reach"), payload.get("businesses"), current=business)
+        for slug in reach.businesses:
+            self._access.require(principal, slug)
+        permissions = payload.get("permissions")
+        # Antes, una clave se pedía con `scopes`; conversar con el asistente sigue llegando así desde integraciones viejas.
+        if permissions is None and payload.get("scopes") == [SCOPE_ASSISTANT_CHAT]:
+            permissions = {"chat": "write"}
+        scopes = validated_permissions(permissions, reach.kind)
+        expires_at = expiry_from(payload.get("expires_in_days"), self._now())
+        owner = _owner(principal)
+        created = self._keys.create(
+            name=name, scopes=scopes, reach=reach, created_by=principal.label, owner_user_id=owner["owner_user_id"], expires_at=expires_at,
+        )
+        logger.info("clave_de_api_creada", extra={"tenant": business, "scopes": list(scopes), "reach": reach.kind})
         return created
 
     def revoke_key(self, principal: Principal, business: str, key_id: str) -> ApiKey:
         self._access.require(principal, business)
-        revoked = self._keys.revoke(business, key_id)
+        revoked = self._keys.revoke(business, key_id, **_owner(principal))
         logger.info("clave_de_api_revocada", extra={"tenant": business})
         return revoked
 

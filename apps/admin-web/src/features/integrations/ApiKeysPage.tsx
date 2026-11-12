@@ -1,35 +1,38 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { Button } from "../../components/ui/Button";
-import { ConfirmButton } from "../../components/ui/ConfirmButton";
-import { Alert, Badge, EmptyState } from "../../components/ui/Feedback";
+import { Alert, EmptyState } from "../../components/ui/Feedback";
 import { Icon } from "../../components/ui/Icon";
 import { Card, PageHeader } from "../../components/ui/Layout";
 import type { CreatedApiKey } from "../../domain/integrations/types";
-import { fullDate, relativeTime } from "../../domain/inbox/format";
 import { LoadingScreen } from "../../layout/StatusScreen";
 import { INTEGRATIONS_ITEM } from "../../navigation/navItems";
 import { useWorkspacePath } from "../../navigation/useWorkspacePath";
 import { useIntegrationsData } from "../../state/useIntegrationsData";
 import { CreateKeyDialog, NewSecretDialog } from "./KeyDialogs";
+import { KeysTable } from "./KeysTable";
 
-/** Integraciones → Claves de API: todas las claves del negocio, para qué es cada una, cuándo se usó y revocarla. */
+/**
+ * Integraciones → Claves de API: todas las claves que llegan a este negocio (las suyas y las de tu cuenta), qué puede cada una, a
+ * qué negocios entra, cuándo se usó y cuándo vence, y revocarla.
+ */
 export function ApiKeysPage() {
   const data = useIntegrationsData();
   const pathTo = useWorkspacePath();
+  const business = useParams().slug ?? "";
   const [creating, setCreating] = useState(false);
   const [created, setCreated] = useState<CreatedApiKey | null>(null);
   const [revokeError, setRevokeError] = useState<string | null>(null);
 
   if (data.status === "loading") return <LoadingScreen label="Cargando las claves…" />;
-  const labels = new Map((data.overview?.scopes ?? []).map((scope) => [scope.id, scope.label]));
+  const areas = data.overview?.areas ?? [];
 
   return (
     <>
       <PageHeader
         eyebrow="Integraciones"
         title="Claves de API"
-        description="Cada clave deja que otra plataforma use este negocio. Se muestra una sola vez al crearla; si una se filtra o ya no la usas, revócala."
+        description="Cada clave deja que otra plataforma o un agente de IA trabaje con tus negocios, solo con lo que le permitas. Se muestra una sola vez al crearla; si una se filtra o ya no la usas, revócala."
         actions={
           <Link className="back-link" to={pathTo(INTEGRATIONS_ITEM.path)}>
             <Icon name="arrowLeft" size={16} /> Integraciones
@@ -43,6 +46,7 @@ export function ApiKeysPage() {
         icon="shield"
         tone="emerald"
         title="Tus claves"
+        description="Las de este negocio y las de tu cuenta que entran a él."
         actions={
           <Button size="small" onClick={() => setCreating(true)} disabled={!data.overview}>
             Crear clave
@@ -50,62 +54,24 @@ export function ApiKeysPage() {
         }
       >
         {data.keys.length === 0 ? (
-          <EmptyState title="Todavía no tienes claves" description="Crea una para cada plataforma que vayas a conectar, con su nombre para reconocerla." />
+          <EmptyState title="Todavía no tienes claves" description="Crea una para cada plataforma o agente que vayas a conectar, con su nombre para reconocerla." />
         ) : (
-          <div className="table-wrap">
-            <table className="data-table api-keys">
-              <thead>
-                <tr>
-                  <th scope="col">Nombre</th>
-                  <th scope="col">Clave</th>
-                  <th scope="col">Permisos</th>
-                  <th scope="col">Último uso</th>
-                  <th scope="col">Estado</th>
-                  <th scope="col">
-                    <span className="visually-hidden">Acciones</span>
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.keys.map((key) => (
-                  <tr key={key.id} className={key.active ? undefined : "api-keys__revoked"}>
-                    <td>
-                      <strong>{key.name}</strong>
-                      <span className="api-keys__meta">
-                        Creada {fullDate(key.createdAt)}
-                        {key.createdBy ? ` por ${key.createdBy}` : ""}
-                      </span>
-                    </td>
-                    <td>
-                      <code>{key.prefix}…</code>
-                    </td>
-                    <td>{key.scopes.map((scope) => labels.get(scope) ?? scope).join(", ")}</td>
-                    <td>{key.lastUsedAt ? relativeTime(key.lastUsedAt) : "Nunca"}</td>
-                    <td>{key.active ? <Badge tone="success">Activa</Badge> : <Badge tone="neutral">Revocada</Badge>}</td>
-                    <td>
-                      {key.active && (
-                        <ConfirmButton
-                          confirmLabel="Sí, revocarla"
-                          onConfirm={() => {
-                            setRevokeError(null);
-                            void data.revokeKey(key.id).then(setRevokeError);
-                          }}
-                        >
-                          Revocar
-                        </ConfirmButton>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <KeysTable
+            keys={data.keys}
+            areas={areas}
+            onRevoke={(key) => {
+              setRevokeError(null);
+              void data.revokeKey(key.id).then(setRevokeError);
+            }}
+          />
         )}
       </Card>
 
       {creating && data.overview && (
         <CreateKeyDialog
-          scopes={data.overview.scopes}
+          purpose="any"
+          areas={areas}
+          business={business}
           create={data.createKey}
           onClose={() => setCreating(false)}
           onCreated={(key) => {
@@ -114,7 +80,7 @@ export function ApiKeysPage() {
           }}
         />
       )}
-      {created && <NewSecretDialog created={created} onClose={() => setCreated(null)} />}
+      {created && <NewSecretDialog created={created} mcpUrl={data.overview?.mcpUrl} onClose={() => setCreated(null)} />}
     </>
   );
 }

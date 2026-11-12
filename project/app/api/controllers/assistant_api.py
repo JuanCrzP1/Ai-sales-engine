@@ -78,7 +78,8 @@ async def assistant_message(request: Request) -> Any:
     identity = runtime_access.authenticate_api_key(token.strip()) if scheme.lower() == "bearer" else None
     if identity is None:
         return _error(status.HTTP_401_UNAUTHORIZED, "invalid_api_key", "La clave de API no es válida o fue revocada.", headers={"WWW-Authenticate": "Bearer"})
-    if SCOPE_ASSISTANT_CHAT not in identity.scopes:
+    # Conversar es con el asistente de UN negocio: una clave de la cuenta (de todos o de algunos negocios) no sirve aquí.
+    if SCOPE_ASSISTANT_CHAT not in identity.scopes or identity.reach.kind != "one" or not identity.business_slug:
         return _error(status.HTTP_403_FORBIDDEN, "forbidden", "Esta clave no tiene permiso para conversar con el asistente.")
     try:
         runtime_access.usage_guard().assistant_api(identity.key_id, identity.business_slug)

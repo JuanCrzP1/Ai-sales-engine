@@ -36,3 +36,6 @@ ASSISTANT_API_PER_KEY = UsageLimit("assistant_api_key", limit=60, window_seconds
 ASSISTANT_API_PER_BUSINESS = UsageLimit("assistant_api_business", limit=1500, window_seconds=3600)
 # Crear claves de API: pocas seguidas.
 API_KEYS_PER_USER = UsageLimit("api_keys_user", limit=20, window_seconds=600)
+# El servidor MCP: un agente que trabaja hace muchas llamadas seguidas (leer, editar, revisar), pero no infinitas. Protege la
+# plataforma si una clave se filtra o un agente entra en un ciclo. Probar el asistente cuenta además como «Probar asistente».
+MCP_PER_KEY = UsageLimit("mcp_key", limit=300, window_seconds=60)

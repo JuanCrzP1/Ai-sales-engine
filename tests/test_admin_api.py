@@ -1157,6 +1157,9 @@ def test_the_api_only_has_the_routes_of_the_panel(api):
         ("POST", f"{business}/api-keys"),
         ("POST", f"{business}/api-keys/{{key_id}}/revoke"),
         ("POST", f"{business}/integrations/assistant-api/try"),
+        # El servidor MCP de los agentes de IA (`mcp_routes.py`).
+        ("GET", "/mcp"),
+        ("POST", "/mcp"),
     }
     assert api.client.post("/api/v1/simulate", json={}).status_code == 404
 

@@ -40,3 +40,17 @@ def assistant_api_url(api_prefix: str) -> str | None:
     """La dirección pública de la API del asistente, o None si el motor no tiene una."""
     public = engine_public_url()
     return f"{public}{api_prefix}{ASSISTANT_API_PATH}" if public else None
+
+
+# El servidor MCP vive en la API del panel: en la nube, el panel reenvía `/api/*` al motor (`apps/admin-web/vercel.json`).
+MCP_PATH = "/api/mcp"
+
+
+def mcp_url() -> str:
+    """La dirección del servidor MCP para pegar en un agente: la del panel publicado más `/api/mcp`."""
+    return f"{panel_url()}{MCP_PATH}"
+
+
+def local_mcp_url(port: int) -> str:
+    """En este equipo, la API del panel directamente (solo atiende a este equipo)."""
+    return f"http://127.0.0.1:{port}{MCP_PATH}"

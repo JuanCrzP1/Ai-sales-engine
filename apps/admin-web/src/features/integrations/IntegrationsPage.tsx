@@ -19,7 +19,7 @@ import {
   type IntegrationTarget,
 } from "../../domain/integrations/catalog";
 import { LoadingScreen } from "../../layout/StatusScreen";
-import { AI_ITEM, API_KEYS_ITEM, ASSISTANT_API_ITEM } from "../../navigation/navItems";
+import { AGENTS_ITEM, AI_ITEM, API_KEYS_ITEM, ASSISTANT_API_ITEM } from "../../navigation/navItems";
 import { useWorkspacePath } from "../../navigation/useWorkspacePath";
 import { useAISettings } from "../../state/useAISettings";
 import { useIntegrationsData } from "../../state/useIntegrationsData";
@@ -28,6 +28,7 @@ const TARGET_PATHS: Record<IntegrationTarget, string> = {
   "ai-settings": AI_ITEM.path,
   "assistant-api": ASSISTANT_API_ITEM.path,
   "api-keys": API_KEYS_ITEM.path,
+  agents: AGENTS_ITEM.path,
 };
 
 /**

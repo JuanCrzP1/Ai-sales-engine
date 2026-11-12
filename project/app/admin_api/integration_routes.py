@@ -1,4 +1,4 @@
-"""Rutas de Integraciones: las claves de API del negocio y la API del asistente (su dirección y una prueba).
+"""Rutas de Integraciones: las claves de API (de un negocio o de la cuenta), la API del asistente y la dirección del servidor MCP.
 
 Reciben la petición, llaman a `IntegrationsService` y serializan la respuesta. Una clave completa sale una sola vez: en la respuesta
 de crearla. Después solo se ve su comienzo.
@@ -11,10 +11,9 @@ from fastapi import APIRouter, Body, Depends, Request, status
 
 from app.admin_api.errors import ApiError
 from app.admin_api.routes import BusinessSlug, CurrentUser
-from app.admin_api.schemas import api_key_payload
+from app.admin_api.schemas import api_key_payload, key_areas_payload
 from app.business_config_application.integrations import IntegrationsService
 from app.business_config_application.usage_limits import UsageGuard
-from app.domain.business_config.api_keys import SCOPES
 
 router = APIRouter(prefix="/api/businesses/{slug}")
 
@@ -40,7 +39,9 @@ def integrations_overview(slug: BusinessSlug, user: CurrentUser, service: Integr
     return {
         "assistant_api": {"url": overview.assistant_api_url, "chat_keys": overview.chat_keys},
         "api_keys": {"active": overview.active_keys},
-        "scopes": [{"id": key, "label": label} for key, label in SCOPES.items()],
+        "mcp": {"url": overview.mcp_url},
+        # Qué se puede permitir a una clave, por área (la tabla de permisos del panel).
+        "areas": key_areas_payload(),
     }
 
 

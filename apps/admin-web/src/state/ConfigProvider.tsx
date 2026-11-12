@@ -88,17 +88,30 @@ export function ConfigProvider({ slug, repository, children, renderLoading, rend
   useEffect(() => {
     let active = true;
     setLoad({ status: "loading" });
-    repository.load().then(
-      (stored) => {
-        if (!active) return;
-        applyStored(stored);
-        setSave({ ...INITIAL_SAVE, savedAt: stored.version?.createdAt ?? null });
-        setLoad({ status: "ready" });
-      },
-      (error: unknown) => {
-        if (active) setLoad({ status: "error", message: persistenceErrorMessage(error), notFound: error instanceof PersistenceError && error.code === "not_found" });
-      },
-    );
+    repository
+      .load()
+      .then(async (stored) => {
+        // Lo publicado llega junto con lo que se edita: la pantalla aparece completa, sin un instante de «comparando».
+        const target = stored.publishedVersion;
+        if (target !== null && target !== stored.version?.version && !versionCache.current.has(target)) {
+          await repository.versionDocument(target).then(
+            ({ document }) => versionCache.current.set(target, document),
+            () => undefined,
+          );
+        }
+        return stored;
+      })
+      .then(
+        (stored) => {
+          if (!active) return;
+          applyStored(stored);
+          setSave({ ...INITIAL_SAVE, savedAt: stored.version?.createdAt ?? null });
+          setLoad({ status: "ready" });
+        },
+        (error: unknown) => {
+          if (active) setLoad({ status: "error", message: persistenceErrorMessage(error), notFound: error instanceof PersistenceError && error.code === "not_found" });
+        },
+      );
     return () => {
       active = false;
     };

@@ -32,8 +32,9 @@ from app.domain.business_config.api_keys import (
     SCOPE_ASSISTANT_CHAT,
     fingerprint,
     looks_like_key,
-    validated_new_key,
+    validated_key_name,
 )
+from app.domain.business_config.key_permissions import KeyReach, validated_permissions
 from app.domain.business_config.assistant_api import parse_message
 from app.domain.business_config.errors import InvalidFieldsError
 from app.domain.business_config.usage_limits import UsageLimit
@@ -55,6 +56,7 @@ from app.infrastructure.business_config.usage_store import UsageCounterStore
 from pipeline_harness import publish_document
 
 URL = "/assistant/messages"
+RESTAURANT = KeyReach("one", frozenset({"restaurant"}))
 PAYMENT_NUMBER = "3001234567"
 
 
@@ -96,10 +98,14 @@ def test_a_customer_can_still_write_braces_in_the_message():
 
 
 def test_a_new_key_is_named_and_says_what_it_can_do():
-    assert validated_new_key("  Leona   producción ", [SCOPE_ASSISTANT_CHAT, SCOPE_ASSISTANT_CHAT]) == ("Leona producción", (SCOPE_ASSISTANT_CHAT,))
+    assert validated_key_name("  Leona   producción ") == "Leona producción"
+    assert validated_permissions({"chat": "write"}, "one") == (SCOPE_ASSISTANT_CHAT,)
     with pytest.raises(InvalidFieldsError) as error:
-        validated_new_key("", ["config:write"])
-    assert {issue.path for issue in error.value.issues} == {"name", "scopes"}
+        validated_key_name("")
+    assert [issue.path for issue in error.value.issues] == ["name"]
+    with pytest.raises(InvalidFieldsError) as error:
+        validated_permissions({"chat": "read"}, "one")
+    assert [issue.path for issue in error.value.issues] == ["permissions.chat"]
 
 
 # ---------------------------------------------------------------------------
@@ -119,7 +125,7 @@ def store(tmp_path):
 
 def test_a_key_is_shown_once_and_only_its_fingerprint_is_stored(store):
     keys = ApiKeyStore(store)
-    created = keys.create("restaurant", name="Leona", scopes=(SCOPE_ASSISTANT_CHAT,), created_by="ana@example.com")
+    created = keys.create(reach=RESTAURANT, owner_user_id=None, name="Leona", scopes=(SCOPE_ASSISTANT_CHAT,), created_by="ana@example.com")
     assert created.secret.startswith(KEY_PREFIX) and looks_like_key(created.secret) and created.key.prefix == created.secret[:15]
     with store.connect() as conn:
         row = conn.execute(select(api_keys)).one()
@@ -134,8 +140,8 @@ def test_a_key_is_shown_once_and_only_its_fingerprint_is_stored(store):
 
 def test_a_revoked_key_stops_working_and_stays_listed_after_the_active_ones(store):
     keys = ApiKeyStore(store)
-    old = keys.create("restaurant", name="Vieja", scopes=(SCOPE_ASSISTANT_CHAT,), created_by=None)
-    new = keys.create("restaurant", name="Nueva", scopes=(SCOPE_ASSISTANT_CHAT,), created_by=None)
+    old = keys.create(reach=RESTAURANT, owner_user_id=None, name="Vieja", scopes=(SCOPE_ASSISTANT_CHAT,), created_by=None)
+    new = keys.create(reach=RESTAURANT, owner_user_id=None, name="Nueva", scopes=(SCOPE_ASSISTANT_CHAT,), created_by=None)
     revoked = keys.revoke("restaurant", old.key.id)
     assert not revoked.active and keys.authenticate(old.secret) is None and keys.authenticate(new.secret) is not None
     assert [key.name for key in keys.list_keys("restaurant")] == ["Nueva", "Vieja"]
@@ -148,9 +154,9 @@ def test_a_revoked_key_stops_working_and_stays_listed_after_the_active_ones(stor
 def test_a_business_has_a_limit_of_active_keys(store):
     keys = ApiKeyStore(store)
     for index in range(MAX_ACTIVE_KEYS):
-        keys.create("restaurant", name=f"Clave {index}", scopes=(SCOPE_ASSISTANT_CHAT,), created_by=None)
+        keys.create(reach=RESTAURANT, owner_user_id=None, name=f"Clave {index}", scopes=(SCOPE_ASSISTANT_CHAT,), created_by=None)
     with pytest.raises(InvalidFieldsError):
-        keys.create("restaurant", name="Una más", scopes=(SCOPE_ASSISTANT_CHAT,), created_by=None)
+        keys.create(reach=RESTAURANT, owner_user_id=None, name="Una más", scopes=(SCOPE_ASSISTANT_CHAT,), created_by=None)
 
 
 def test_an_old_local_database_accepts_api_conversations(tmp_path):
@@ -205,7 +211,7 @@ class FakeAI:
 def api(monkeypatch, tmp_path):
     url = publish_document(monkeypatch, tmp_path, "restaurant")
     engine = create_business_config_engine(url)
-    key = ApiKeyStore(engine).create("restaurant", name="Leona", scopes=(SCOPE_ASSISTANT_CHAT,), created_by=None)
+    key = ApiKeyStore(engine).create(reach=RESTAURANT, owner_user_id=None, name="Leona", scopes=(SCOPE_ASSISTANT_CHAT,), created_by=None)
     FakeAI.reply, FakeAI.metadata, FakeAI.ai_used, FakeAI.calls = (
         "Claro. El plan cuesta $50.000 y lo pagas por Nequi al 3001234567.", {"intent": "buy"}, True, [],
     )
@@ -386,11 +392,15 @@ def test_the_owner_creates_sees_and_revokes_keys_and_the_secret_is_shown_once(pa
     assert [(key["name"], key["active"]) for key in listed] == [("Leona", True)] and "secret" not in listed[0] and secret not in str(listed)
     overview = panel.get(f"{base}/integrations", headers=_as("ana")).json()
     assert overview["assistant_api"] == {"url": "https://motor.example.com/api/v1/assistant/messages", "chat_keys": 1}
-    assert overview["api_keys"] == {"active": 1} and overview["scopes"] == [{"id": SCOPE_ASSISTANT_CHAT, "label": "Conversar con el asistente"}]
+    assert overview["api_keys"] == {"active": 1}
+    assert [area["id"] for area in overview["areas"]] == ["chat", "businesses", "assistant", "payments"]
+    assert listed[0]["permissions"] == {"chat": "write"} and listed[0]["reach"] == "one" and listed[0]["businesses"] == ["restaurant"]
     revoked = panel.post(f"{base}/api-keys/{listed[0]['id']}/revoke", headers=_as("ana")).json()
     assert revoked["active"] is False and revoked["revoked_at"]
-    invalid = panel.post(f"{base}/api-keys", headers=_as("ana"), json={"name": "", "scopes": []})
-    assert invalid.status_code == 422 and {issue["path"] for issue in invalid.json()["issues"]} == {"name", "scopes"}
+    invalid = panel.post(f"{base}/api-keys", headers=_as("ana"), json={"name": "", "permissions": {"chat": "write"}})
+    assert invalid.status_code == 422 and [issue["path"] for issue in invalid.json()["issues"]] == ["name"]
+    nothing = panel.post(f"{base}/api-keys", headers=_as("ana"), json={"name": "Vacía", "permissions": {}})
+    assert nothing.status_code == 422 and [issue["path"] for issue in nothing.json()["issues"]] == ["permissions"]
 
 
 def test_nobody_reaches_the_keys_of_someone_elses_business(panel):

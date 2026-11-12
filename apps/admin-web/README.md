@@ -78,7 +78,7 @@ Para atender y vender:
 | Ventas | Registrar y anular ventas, y los pagos por verificar |
 | Reportes | Embudo, conversaciones por día, quién respondió y el costo de la IA |
 | Canales | Conectar WhatsApp por código QR |
-| Integraciones | La API del asistente para otras plataformas (estado de conexión, dirección y claves, guías por plataforma en pestañas y prueba), las claves de API del negocio y, pronto, las IAs conectadas por MCP |
+| Integraciones | Un catálogo con logos reales. La API del asistente para otras plataformas (estado de conexión, dirección y claves, guías por plataforma en pestañas y prueba); los agentes de IA por MCP (dirección, lo que se pega en cada agente y sus claves); y las claves de API con permisos por área, negocios a los que entran y vencimiento |
 | Configuración | Solo lo del negocio, fija abajo en el menú: Inteligencia artificial (proveedor, clave oculta, modelo en una lista desplegable y consumo), Atención humana (horario del equipo, lo que espera el cliente, cuándo retoma la IA y correo de avisos), y Respuestas rápidas y Pagos y suscripciones, marcadas «Próximamente» |
 | Mi cuenta | Desde el menú de la foto, lo de la persona: Mi perfil, Seguridad (cambiar la contraseña y cerrar las demás sesiones) y Notificaciones (avisos en este dispositivo) |
 

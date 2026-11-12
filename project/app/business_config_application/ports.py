@@ -15,7 +15,8 @@ from typing import Any, Protocol, runtime_checkable
 from app.domain.business_config.access import Principal
 from app.domain.business_config.ai_settings import AICredentials, AISettings, AssistantTurn, KeyCheck
 from app.domain.business_config.ai_models import AIModel
-from app.domain.business_config.api_keys import ApiKey, CreatedApiKey
+from app.domain.business_config.api_keys import ApiKey, ApiKeyIdentity, CreatedApiKey
+from app.domain.business_config.key_permissions import KeyReach
 from app.domain.business_config.attention import AttentionSettings
 from app.domain.business_config.ai_usage import AIUsageSummary
 from app.domain.business_config.commerce import Customer, NewSale, ReportDay, ReportTotals, Sale
@@ -360,10 +361,21 @@ class PushStorage(Protocol):
 
 
 class ApiKeyStorage(Protocol):
-    """Las claves de API de cada negocio (`api_key_store.py`)."""
+    """Las claves de API: de un negocio o de una cuenta (`api_key_store.py`). `local` es este equipo, sin cuentas."""
 
-    def create(self, tenant_slug: str, *, name: str, scopes: tuple[str, ...], created_by: str | None) -> CreatedApiKey: ...
+    def create(
+        self,
+        *,
+        name: str,
+        scopes: tuple[str, ...],
+        reach: KeyReach,
+        created_by: str | None,
+        owner_user_id: str | None,
+        expires_at: datetime | None = None,
+    ) -> CreatedApiKey: ...
 
-    def list_keys(self, tenant_slug: str) -> list[ApiKey]: ...
+    def list_keys(self, tenant_slug: str, *, owner_user_id: str | None = None, local: bool = False) -> list[ApiKey]: ...
 
-    def revoke(self, tenant_slug: str, key_id: str) -> ApiKey: ...
+    def revoke(self, tenant_slug: str, key_id: str, *, owner_user_id: str | None = None, local: bool = False) -> ApiKey: ...
+
+    def authenticate(self, secret: str) -> ApiKeyIdentity | None: ...

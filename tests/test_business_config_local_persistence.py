@@ -1079,7 +1079,9 @@ def test_postgres_schema_comes_from_the_reviewed_migration():
             # Migración 0011: atención humana.
             "business_attention_settings", "notification_deliveries", "push_subscriptions", "platform_keys",
             # Migración 0012: claves de API y respuestas repetibles de la API del asistente.
-            "api_keys", "api_idempotency"} == set(metadata.tables)
+            "api_keys", "api_idempotency",
+            # Migración 0013: claves de la cuenta (agentes de IA por MCP) y los negocios de cada una.
+            "api_key_businesses"} == set(metadata.tables)
 
 
 @pytest.mark.parametrize("scheme", ["postgresql", "postgres"])

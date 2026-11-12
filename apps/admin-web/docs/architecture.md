@@ -274,6 +274,17 @@ para donde escriben los clientes; Integraciones, para otras herramientas.
   funciona, datos de conexión, guías por plataforma en pestañas —`PlatformGuides.tsx` con `components/ui/Tabs.tsx`—, qué se envía
   y qué se recibe, y la prueba) y la tabla de claves. Solo la guía de Leona dice «Probado»: se probó con un flujo real; otras
   plataformas tendrán su pestaña cuando se prueben.
+- **Agentes de IA (MCP)** (`AgentsPage.tsx`, `integraciones/agentes`):
+  - la dirección del servidor y lo que se pega en cada agente (`mcpSnippets`);
+  - las claves de agente;
+  - «Claude web y ChatGPT», marcado Próximamente (OAuth).
+- **Claves:** son de la cuenta y tienen permisos por área (`PermissionMatrix.tsx`). Las áreas y lo que deja cada nivel vienen del
+  motor (`overview.areas`), así que un área nueva se dibuja sola.
+- **Crear una clave** (`CreateKeyDialog`, según `purpose`):
+  - para conversar con el asistente basta el nombre;
+  - para agentes se elige a qué negocios entra (este, todos o algunos, con `useMyBusinesses`), qué puede y cuándo vence.
+- **Tabla de claves** (`KeysTable.tsx`, compartida): qué puede cada clave, a qué negocios entra, el último uso, el vencimiento y
+  revocar.
 - Una clave completa se ve una sola vez, en `NewSecretDialog`, con su botón de copiar (`components/ui/CopyButton.tsx`). Después
   solo su comienzo.
 - Los chats del canal `api` se reconocen en la bandeja (ícono y nombre «API»). No se responden desde aquí, porque se atienden en

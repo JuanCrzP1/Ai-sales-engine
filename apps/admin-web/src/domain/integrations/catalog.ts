@@ -4,7 +4,7 @@
  *
  * Solo aparece como disponible lo que de verdad funciona hoy; lo demás va en «Próximamente».
  */
-import { connectionState, type ApiKey } from "./types";
+import { agentConnection, connectionState, type ApiKey } from "./types";
 
 export type IntegrationCategory = "ai" | "platforms" | "agents" | "security";
 
@@ -21,7 +21,7 @@ export type CategoryFilter = IntegrationCategory | "all";
 export type IntegrationMarkId = "openrouter" | "openai" | "anthropic" | "gemini" | "mcp" | "api" | "keys";
 
 /** Adónde lleva su tarjeta: la pantalla lo traduce a una dirección del panel. */
-export type IntegrationTarget = "ai-settings" | "assistant-api" | "api-keys";
+export type IntegrationTarget = "ai-settings" | "assistant-api" | "api-keys" | "agents";
 
 export type IntegrationStatus =
   /** Conectada: `detail` dice cómo va (cuándo se usó, cuántas claves). */
@@ -51,6 +51,7 @@ export function categoryLabel(category: IntegrationCategory): string {
 
 export function buildCatalog({ keys, aiConfigured }: CatalogInput): CatalogEntry[] {
   const api = connectionState(keys);
+  const agents = agentConnection(keys);
   const activeKeys = keys.filter((key) => key.active).length;
   return [
     {
@@ -88,9 +89,12 @@ export function buildCatalog({ keys, aiConfigured }: CatalogInput): CatalogEntry
       mark: "mcp",
       name: "Agentes de IA (MCP)",
       category: "agents",
-      tagline: "Que Claude, ChatGPT, Cursor, Gemini o n8n configuren y consulten tu plataforma, con los mismos permisos del panel.",
-      status: { kind: "soon" },
-      target: null,
+      tagline: "Que Claude, Cursor o n8n monten y configuren tus negocios cuando se lo pides, con los permisos que elijas.",
+      status:
+        agents.kind === "connected" ? { kind: "active", detail: "En uso", lastUsedAt: agents.lastUsedAt }
+        : agents.kind === "ready" ? { kind: "active", detail: "Clave lista · todavía sin usar", lastUsedAt: null }
+        : { kind: "available" },
+      target: "agents",
     },
     {
       id: "openai",

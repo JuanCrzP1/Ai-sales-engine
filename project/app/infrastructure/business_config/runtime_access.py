@@ -214,7 +214,7 @@ def idempotency_store() -> IdempotencyStore:
 
 
 def authenticate_api_key(secret: str) -> ApiKeyIdentity | None:
-    """El negocio y los permisos de una clave de API activa, o None."""
+    """El negocio, los permisos y el alcance de una clave de API activa y sin vencer, o None."""
     return ApiKeyStore(_store_engine()).authenticate(secret)
 
 

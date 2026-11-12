@@ -2,8 +2,6 @@
 from __future__ import annotations
 
 import logging
-import re
-from collections.abc import Iterable
 from dataclasses import asdict
 from typing import Any
 
@@ -26,6 +24,7 @@ from app.domain.business_config.errors import (
     UsageLimitExceededError,
     VersionConflictError,
 )
+from app.domain.business_config.validation_messages import validation_issues
 
 logger = logging.getLogger("admin-api")
 
@@ -43,14 +42,6 @@ def _wait(seconds: int) -> str:
         return "unos segundos" if seconds < 10 else f"{seconds} segundos"
     minutes = -(-seconds // 60)
     return "1 minuto" if minutes == 1 else f"{minutes} minutos"
-
-# Pydantic añade al recorrido las ramas de los tipos compuestos (`int`, `float`, `function-after[...]`...).
-_UNION_BRANCHES = {"int", "float", "str", "bool"}
-_TECHNICAL_MESSAGES = {
-    "model=plans requiere al menos un plan y ningún catálogo": "Agrega al menos un plan o servicio.",
-    "model=catalog requiere un catálogo y ningún plan": "Agrega al menos un producto al catálogo.",
-}
-
 
 class ApiError(Exception):
     """Error esperado de la API, con su estado HTTP y los problemas por campo, si los hay."""
@@ -73,49 +64,6 @@ class ApiError(Exception):
 
     def payload(self) -> dict[str, Any]:
         return {"code": self.code, "message": self.message, "issues": self.issues}
-
-
-def _is_branch(part: Any) -> bool:
-    return isinstance(part, str) and (part in _UNION_BRANCHES or "[" in part or part.startswith("constrained-"))
-
-
-def issue_path(location: Iterable[Any]) -> str:
-    return ".".join(str(part) for part in location if not _is_branch(part))
-
-
-def _message(error: dict[str, Any]) -> str:
-    kind = error["type"]
-    context = error.get("ctx") or {}
-    if kind == "value_error":
-        text = re.sub(r"^Value error, ", "", error["msg"])
-        return _TECHNICAL_MESSAGES.get(text, text[:1].upper() + text[1:] + ("" if text.endswith(".") else "."))
-    if kind == "missing":
-        return "Este dato es obligatorio."
-    if kind == "string_too_long":
-        return f"Admite hasta {context.get('max_length')} caracteres."
-    if kind == "too_long":
-        return f"Admite hasta {context.get('max_length')} elementos."
-    if kind == "too_short":
-        return f"Necesita al menos {context.get('min_length')} elemento."
-    if kind == "string_pattern_mismatch":
-        return "El formato no es válido."
-    if kind in {"greater_than_equal", "greater_than"}:
-        return f"Debe ser {context.get('ge', context.get('gt'))} o más."
-    if kind in {"literal_error", "enum"}:
-        return "Elige una de las opciones permitidas."
-    if kind == "extra_forbidden":
-        return "Este dato no forma parte de la configuración."
-    if kind.startswith(("date_", "datetime_")):
-        return "Escribe una fecha válida."
-    return "El valor no tiene el tipo esperado."
-
-
-def validation_issues(errors: Iterable[dict[str, Any]]) -> list[dict[str, str]]:
-    """Un problema por campo, con su ruta en el documento. Sin `input`: podría ser un dato de pago."""
-    issues: dict[str, str] = {}
-    for error in errors:
-        issues.setdefault(issue_path(error["loc"]), _message(error))
-    return [{"path": path, "message": message} for path, message in issues.items()]
 
 
 def _reason(request: Request, exc: Exception) -> str:

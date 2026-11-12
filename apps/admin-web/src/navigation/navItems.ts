@@ -22,7 +22,8 @@ export type NavKey =
   | "billing"
   | "integrations"
   | "assistantApi"
-  | "apiKeys";
+  | "apiKeys"
+  | "agents";
 
 export interface NavItem {
   key: NavKey;
@@ -128,6 +129,7 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
 export const INTEGRATIONS_ITEM: NavItem = { key: "integrations", path: "integraciones", title: "Integraciones" };
 export const ASSISTANT_API_ITEM: NavItem = { key: "assistantApi", path: "integraciones/api", title: "API del asistente" };
 export const API_KEYS_ITEM: NavItem = { key: "apiKeys", path: "integraciones/claves", title: "Claves de API" };
+export const AGENTS_ITEM: NavItem = { key: "agents", path: "integraciones/agentes", title: "Agentes de IA (MCP)" };
 
 /** Si la ruta es de Integraciones (`/negocios/x/integraciones/...`). */
 export function isIntegrationsPath(pathname: string): boolean {

@@ -20,6 +20,7 @@ from fastapi.responses import JSONResponse
 from app.admin_api.assistant_routes import router as assistant_router
 from app.admin_api.attention_routes import router as attention_router
 from app.admin_api.integration_routes import router as integration_router
+from app.admin_api.mcp_routes import audit_tool_call, router as mcp_router
 from app.admin_api.channel_routes import router as channel_router
 from app.admin_api.commerce_routes import router as commerce_router
 from app.admin_api.conversation_routes import router as conversation_router
@@ -29,6 +30,7 @@ from app.business_config_application.access import BusinessAccess
 from app.business_config_application.assistant_lab import AssistantLabService
 from app.business_config_application.attention import AttentionService, PushService
 from app.business_config_application.integrations import IntegrationsService
+from app.business_config_application.mcp.server import build_mcp_server
 from app.business_config_application.channels import WhatsAppChannelService
 from app.business_config_application.commerce import CommerceService
 from app.business_config_application.conversations import ConversationsService, NotificationsService
@@ -106,6 +108,7 @@ def create_app(
     push: PushSender | None = None,
     api_keys: ApiKeyStorage | None = None,
     assistant_api_url: Callable[[], str | None] | None = None,
+    mcp_url: Callable[[], str | None] | None = None,
 ) -> FastAPI:
     """La API del panel. Sin `assistant_lab`, la inteligencia artificial y el área de pruebas responden que no están disponibles.
 
@@ -137,7 +140,27 @@ def create_app(
     app.state.push = PushService(push_storage, push) if push_storage is not None else None
     # Integraciones: las claves de API del negocio y la API del asistente (su dirección y una prueba con lo publicado).
     app.state.integrations = (
-        IntegrationsService(api_keys, app.state.access, assistant_api_url=assistant_api_url or (lambda: None), lab=assistant_lab)
+        IntegrationsService(
+            api_keys, app.state.access, assistant_api_url=assistant_api_url or (lambda: None), mcp_url=mcp_url or (lambda: None), lab=assistant_lab,
+        )
+        if api_keys is not None
+        else None
+    )
+    # El servidor MCP: los agentes de IA trabajan con una clave de API y los MISMOS servicios del panel.
+    app.state.mcp = (
+        build_mcp_server(
+            service,
+            app.state.access,
+            api_keys,
+            templates=app.state.templates.list,
+            schema=app.state.contract_schema,
+            lab=assistant_lab,
+            local=not cloud,
+            # Probar el asistente cuenta como «Probar asistente» del dueño de la clave.
+            before_test=lambda caller, business: app.state.usage.playground_message(caller.principal, business),
+            on_created=lambda caller, business: app.state.attention.remember_account(caller.principal, force=True) if app.state.attention is not None and caller.principal.email else None,
+            on_tool_call=audit_tool_call,
+        )
         if api_keys is not None
         else None
     )
@@ -164,4 +187,5 @@ def create_app(
     app.include_router(commerce_router)
     app.include_router(attention_router)
     app.include_router(integration_router)
+    app.include_router(mcp_router)
     return app

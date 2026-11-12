@@ -16,7 +16,7 @@ plan (sección 6).
 | 3 | Atención humana completa: horario del equipo, lo que espera el cliente, avisos por correo y notificación, la IA retoma sola si nadie atiende | Fase 4 (H3, H6 y la pausa con tiempo) | **Hecha** (11 nov) |
 | 4 | Lanzamiento: monitoreo de errores, copias de seguridad probadas, correo transaccional, términos y política de datos, Vercel Pro | Fases 7 y 8 | Siguiente |
 | 5 | Retirar lo que queda del sistema anterior y partir los módulos grandes del motor | Fase 6 (resto) | Pendiente |
-| Integraciones | API del asistente para otras plataformas (Leona, una web) con claves de API: **hecha** (12 nov). Servidor MCP para que IAs como Claude, ChatGPT, Cursor o n8n configuren y consulten la plataforma: **siguiente** (primero con clave; después con inicio de sesión OAuth para claude.ai y ChatGPT) | — (nuevo) | En curso |
+| Integraciones | API del asistente para otras plataformas (Leona, una web) con claves de API: **hecha** (12 nov). Servidor MCP para que un agente de IA monte y configure negocios: **fase 1 hecha** (12 nov: claves de la cuenta con permisos por área, alcance y vencimiento; crear negocios y toda la configuración, revisar, probar y publicar; ver [mcp.md](mcp.md)). Fase 2: conversaciones, clientes, ventas, reportes y atención humana. Fase 3: OAuth para Claude web y ChatGPT | — (nuevo) | En curso |
 | Al final | WhatsApp en un servidor de uazapi propio (hoy se usa el gratuito de pruebas, que puede borrar la instancia); después Telegram y la API oficial de Meta | Fase 5 (resto) | Mientras se construye, basta el de pruebas |
 
 **Fase 1, cómo quedó.** El chat se elimina desde Conversaciones (papelera del chat abierto) o desde Clientes, con una confirmación

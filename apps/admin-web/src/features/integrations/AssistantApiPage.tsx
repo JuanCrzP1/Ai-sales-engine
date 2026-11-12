@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { Link } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { Button, LinkButton } from "../../components/ui/Button";
 import { ChatPreview } from "../../components/ui/ChatPreview";
 import { CopyField } from "../../components/ui/CopyButton";
@@ -40,6 +40,7 @@ export function AssistantApiPage() {
   const data = useIntegrationsData();
   const tryout = useAssistantApiTry();
   const pathTo = useWorkspacePath();
+  const business = useParams().slug ?? "";
   const [creating, setCreating] = useState(false);
   const [created, setCreated] = useState<CreatedApiKey | null>(null);
   const [message, setMessage] = useState("Hola, ¿qué precios tienen?");
@@ -156,7 +157,9 @@ export function AssistantApiPage() {
 
       {creating && overview && (
         <CreateKeyDialog
-          scopes={overview.scopes}
+          purpose="chat"
+          areas={overview.areas}
+          business={business}
           create={data.createKey}
           onClose={() => setCreating(false)}
           onCreated={(key) => {

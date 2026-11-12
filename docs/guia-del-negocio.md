@@ -126,8 +126,22 @@ clientes en un solo chat.
 Esos chats llegan a **Conversaciones** con el canal «API» y cuentan en Clientes y Reportes. Cuando un cliente pide una persona, la
 otra plataforma recibe el aviso para pasarlo a tu equipo; la IA se pausa en ese chat hasta que toques **Reanudar IA**.
 
-En **Integraciones → Claves de API** ves todas tus claves, cuándo se usó cada una y puedes **revocarlas** si se filtró alguna o ya no
-la usas. Pronto también podrás conectar IAs como Claude o ChatGPT para que configuren tu asistente por ti.
+En **Integraciones → Claves de API** ves todas tus claves: qué puede cada una, a qué negocios entra, cuándo se usó y cuándo vence.
+Puedes **revocarlas** si se filtró alguna o ya no la usas.
+
+### Agentes de IA: que Claude monte tu negocio
+
+En **Integraciones → Agentes de IA (MCP)** conectas un agente de IA (Claude Code, Cursor, n8n...) para que trabaje por ti cuando
+se lo pides. Por ejemplo: «móntame una panadería en Medellín con estos productos y precios».
+
+- **Qué hace:** crea el negocio, llena cada sección, revisa lo que falta, prueba el asistente y te muestra lo que cambia. Publica
+  solo cuando le dices que sí.
+- **Con qué permisos:** al crear su clave eliges qué puede hacer por área (Negocios, Asistente IA, Datos de pago), a qué negocios
+  entra (este, todos o algunos) y cuándo vence.
+- **Datos de pago:** con ese permiso los puede escribir, pero **nunca leerlos**.
+- **Lo que no puede:** conectar tu WhatsApp (eso es con el código QR en tu teléfono) ni poner tu clave de IA.
+- **Para conectarlo:** la pantalla te da lo que se pega en cada agente. Pronto también Claude en la web y ChatGPT, solo con
+  iniciar sesión.
 
 ## 9. Clientes y ventas
 

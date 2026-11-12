@@ -25,7 +25,7 @@ from app.infrastructure.business_config.channel_messenger import ChannelMessenge
 from app.infrastructure.business_config.channel_store import ChannelStore
 from app.infrastructure.business_config.payment_secret_store import PaymentSecretStore
 from app.infrastructure.business_config.repository import BusinessConfigRepository
-from app.infrastructure.business_config.tables import conversations, metadata, notifications
+from app.infrastructure.business_config.tables import api_keys, conversations, metadata, notifications
 
 DATABASE_URL_ENV = "BUSINESS_CONFIG_DATABASE_URL"
 DEFAULT_LOCAL_DATABASE = Path(__file__).resolve().parents[3] / "data" / "business_config.sqlite3"
@@ -90,6 +90,11 @@ _ADDED_COLUMNS = {
     "business_members": {
         "email": "TEXT",
     },
+    "api_keys": {
+        "owner_user_id": "TEXT",
+        "reach": "TEXT NOT NULL DEFAULT 'one'",
+        "expires_at": "DATETIME",
+    },
     "conversation_entries": {
         "kind": "TEXT NOT NULL DEFAULT 'text'",
         "status": "TEXT NOT NULL DEFAULT 'received'",
@@ -121,11 +126,12 @@ def create_local_schema(engine: Engine) -> None:
 
 
 # Restricciones que una migración amplió en una tabla que ya existía: (tabla, lo que trae su definición nueva).
-_WIDENED_CHECKS = ((notifications, "ai_resumed"), (conversations, "'api'"))
+_WIDENED_CHECKS = ((notifications, "ai_resumed"), (conversations, "'api'"), (api_keys, "api_keys_reach_check"))
 
 
 def _refresh_outdated_checks(engine: Engine) -> None:
-    """Una base local anterior conserva las restricciones viejas (avisos solo `handoff`, conversaciones sin el canal `api`). SQLite
+    """Una base local anterior conserva las restricciones viejas (avisos solo `handoff`, conversaciones sin el canal `api`, claves
+    siempre de un negocio). SQLite
     no deja cambiar una restricción: la tabla se rehace con la definición actual y sus filas, como manda SQLite (con las llaves
     foráneas apagadas mientras tanto y sin tocar las referencias de las demás tablas)."""
     for table, marker in _WIDENED_CHECKS:
