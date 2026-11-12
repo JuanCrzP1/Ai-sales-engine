@@ -86,6 +86,10 @@ class ConversationNotFoundError(BusinessConfigError):
     """La conversación no existe o es de un negocio al que este usuario no llega."""
 
 
+class QuickReplyNotFoundError(BusinessConfigError):
+    """La respuesta rápida no existe o es de otro negocio."""
+
+
 class NotOwnerError(BusinessConfigError):
     """Es miembro del negocio, pero eso solo lo puede hacer su dueño (por ejemplo, eliminarlo). El mensaje es para el negocio."""
 

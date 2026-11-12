@@ -121,7 +121,7 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
     entries: [
       { item: AI_ITEM, description: "Proveedor, clave y modelo" },
       { item: ATTENTION_ITEM, description: "Horario del equipo y avisos" },
-      { item: QUICK_REPLIES_ITEM, description: "Mensajes guardados para responder rápido", soon: true },
+      { item: QUICK_REPLIES_ITEM, description: "Mensajes guardados para responder rápido" },
     ],
   },
   { title: "Facturación", entries: [{ item: BILLING_ITEM, description: "Tu plan, pagos y facturas", soon: true }] },

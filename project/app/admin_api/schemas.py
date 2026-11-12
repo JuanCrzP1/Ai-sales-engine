@@ -288,6 +288,24 @@ def attention_payload(view) -> dict[str, Any]:
     }
 
 
+def quick_reply_payload(reply) -> dict[str, Any]:
+    """Una respuesta rápida: cada mensaje va como pieza de texto (así caben los archivos el día que el chat pueda enviarlos)."""
+    return {
+        "id": reply.id,
+        "shortcut": reply.shortcut,
+        "category": reply.category,
+        "pieces": [{"kind": "text", "text": text} for text in reply.pieces],
+        "use_count": reply.use_count,
+        "last_used_at": _iso(reply.last_used_at),
+        "created_at": _iso(reply.created_at),
+        "updated_at": _iso(reply.updated_at),
+    }
+
+
+def quick_replies_payload(view) -> dict[str, Any]:
+    return {"quick_replies": [quick_reply_payload(reply) for reply in view.replies], "can_manage": view.can_manage}
+
+
 def api_key_payload(key, now: datetime | None = None) -> dict[str, Any]:
     """Una clave de API sin su valor: solo su comienzo para reconocerla, lo que puede por área, a qué negocios entra y si vence."""
     moment = now or datetime.now(timezone.utc)

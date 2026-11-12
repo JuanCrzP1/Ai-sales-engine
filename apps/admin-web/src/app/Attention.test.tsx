@@ -139,16 +139,17 @@ describe("Configuración", () => {
     expect(within(nav).getAllByRole("link").map((link) => link.textContent)).toEqual([
       "Inteligencia artificialProveedor, clave y modelo",
       "Atención humanaHorario del equipo y avisos",
-      "Respuestas rápidasProntoMensajes guardados para responder rápido",
+      "Respuestas rápidasMensajes guardados para responder rápido",
       "Pagos y suscripcionesProntoTu plan, pagos y facturas",
       "Eliminar negocioBorrarlo con todo lo suyo",
     ]);
     await user.click(within(nav).getByRole("link", { name: /Respuestas rápidas/ }));
     expect(await screen.findByRole("heading", { level: 1, name: "Respuestas rápidas" })).toBeInTheDocument();
-    expect(screen.getByText("Próximamente")).toBeInTheDocument();
+    expect(await screen.findByText("Responde en segundos, sin copiar y pegar")).toBeInTheDocument();
     // Cada sección se dibuja de nuevo al cambiar de ruta: el menú se vuelve a buscar.
     await user.click(within(screen.getByRole("navigation", { name: "Configuración" })).getByRole("link", { name: /Pagos y suscripciones/ }));
     expect(await screen.findByText("Hoy la plataforma no te cobra nada.")).toBeInTheDocument();
+    expect(screen.getByText("Próximamente")).toBeInTheDocument();
     // No se confunde con la pestaña «Pagos» del Asistente IA.
     expect(screen.queryByRole("navigation", { name: "Asistente IA" })).not.toBeInTheDocument();
     expect(window.location.pathname).toBe(`/negocios/${CAFE}/configuracion/facturacion`);

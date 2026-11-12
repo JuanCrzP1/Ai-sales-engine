@@ -19,6 +19,7 @@ from app.domain.business_config.api_keys import ApiKey, ApiKeyIdentity, CreatedA
 from app.domain.business_config.key_permissions import KeyReach
 from app.domain.business_config.oauth import AuthorizationCode, OAuthClient, TokenGrant
 from app.domain.business_config.attention import AttentionSettings
+from app.domain.business_config.quick_replies import QuickReply, QuickReplyDraft
 from app.domain.business_config.ai_usage import AIUsageSummary
 from app.domain.business_config.commerce import Customer, NewSale, ReportDay, ReportTotals, Sale
 from app.domain.business_config.channels import ConnectionStatus, ProviderStatus, WhatsAppConnection, WhatsAppSecrets
@@ -327,6 +328,20 @@ class PushSender(Protocol):
     """Envía una notificación a un navegador o celular (`infrastructure/notifications/web_push.py`)."""
 
     def send(self, subscription: PushSubscription, message: PushMessage) -> PushOutcome: ...
+
+
+class QuickReplyStorage(Protocol):
+    """Las respuestas rápidas de cada negocio (`quick_reply_store.py`). Una de otro negocio se trata como inexistente."""
+
+    def list(self, tenant_slug: str) -> list[QuickReply]: ...
+
+    def create(self, tenant_slug: str, draft: QuickReplyDraft, *, created_by: str | None) -> QuickReply: ...
+
+    def update(self, tenant_slug: str, reply_id: str, draft: QuickReplyDraft) -> QuickReply: ...
+
+    def delete(self, tenant_slug: str, reply_id: str) -> None: ...
+
+    def mark_used(self, tenant_slug: str, reply_id: str) -> QuickReply: ...
 
 
 class AttentionStorage(Protocol):

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type KeyboardEvent } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { Button } from "../../components/ui/Button";
 import { ConfirmButton } from "../../components/ui/ConfirmButton";
@@ -9,11 +9,10 @@ import { DELIVERY_LABELS, fileSize } from "../../domain/inbox/live";
 import { CHANNEL_LABELS, CHANNELS, HANDOFF_LABELS, type Channel, type ChatMessage, type ConversationSummary, type ConversationThread } from "../../domain/inbox/types";
 import { ContactAvatar } from "../../layout/ContactAvatar";
 import { DeleteChatDialog } from "../../layout/DeleteChatDialog";
-import { persistenceErrorMessage } from "../../state/directoryContext";
 import { useConversations, useMediaUrl } from "../../state/useConversations";
+import { Composer } from "./Composer";
 
 const AUTHOR_LABELS: Record<ChatMessage["author"], string> = { customer: "Cliente", assistant: "Asistente IA", agent: "Equipo" };
-const MAX_REPLY = 4000;
 
 /** Bandeja de conversaciones en vivo: los chats de tus clientes, quién los atiende y la respuesta del equipo, sin recargar. */
 export function ConversationsPage() {
@@ -349,7 +348,7 @@ function ThreadView({
       )}
 
       {canReply ? (
-        <Composer aiActive={!conversation.aiPaused} onSend={(text) => onReply(conversation.id, text)} />
+        <Composer businessSlug={conversation.business.slug} contactName={conversation.contactName} aiActive={!conversation.aiPaused} onSend={(text) => onReply(conversation.id, text)} />
       ) : (
         <footer className="thread__footer">
           {isTest
@@ -360,71 +359,6 @@ function ThreadView({
         </footer>
       )}
     </div>
-  );
-}
-
-function Composer({ aiActive, onSend }: { aiActive: boolean; onSend: (text: string) => Promise<void> }) {
-  const [text, setText] = useState("");
-  const [sending, setSending] = useState(false);
-  const [problem, setProblem] = useState<string | null>(null);
-  const trimmed = text.trim();
-
-  const send = async () => {
-    if (!trimmed || sending) return;
-    setSending(true);
-    setProblem(null);
-    const sent = trimmed;
-    setText("");
-    try {
-      await onSend(sent);
-    } catch (error) {
-      setText(sent);
-      setProblem(persistenceErrorMessage(error));
-    } finally {
-      setSending(false);
-    }
-  };
-
-  const onKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
-      event.preventDefault();
-      void send();
-    }
-  };
-
-  return (
-    <form
-      className="composer"
-      aria-label="Responder al cliente"
-      onSubmit={(event) => {
-        event.preventDefault();
-        void send();
-      }}
-    >
-      {problem && <p className="composer__problem" role="alert">{problem}</p>}
-      <div className="composer__row">
-        <label className="visually-hidden" htmlFor="composer-text">
-          Tu respuesta
-        </label>
-        <textarea
-          id="composer-text"
-          className="composer__input"
-          rows={1}
-          maxLength={MAX_REPLY}
-          value={text}
-          placeholder={aiActive ? "Escribe para tomar la conversación…" : "Escribe tu respuesta…"}
-          onChange={(event) => setText(event.target.value)}
-          onKeyDown={onKeyDown}
-        />
-        <Button type="submit" disabled={!trimmed || sending} aria-label="Enviar respuesta">
-          <Icon name="send" size={16} /> {sending ? "Enviando…" : "Enviar"}
-        </Button>
-      </div>
-      <p className="composer__hint">
-        {aiActive ? "Al responder tú, la IA se pausa en este chat hasta que la reanudes." : "La IA está pausada: este chat lo atiende tu equipo."} Enter envía · Mayús+Enter
-        hace un salto de línea.
-      </p>
-    </form>
   );
 }
 

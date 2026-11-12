@@ -19,6 +19,7 @@ from app.infrastructure.business_config.database import (
 )
 from app.infrastructure.business_config.api_key_store import ApiKeyStore
 from app.infrastructure.business_config.attention_store import AttentionStore
+from app.infrastructure.business_config.quick_reply_store import QuickReplyStore
 from app.infrastructure.business_config.migrations import ensure_migrations
 from app.infrastructure.business_config.conversation_store import ConversationStore
 from app.infrastructure.business_config.members_store import BusinessMembersStore
@@ -84,4 +85,5 @@ def build_cloud_panel_api(auth_url: str) -> FastAPI:
         mcp_url=mcp_url,
         # Claude (web y app) y ChatGPT se conectan pegando la dirección e iniciando sesión en el panel.
         oauth=OAuthStore(engine),
+        quick_replies=QuickReplyStore(engine),
     )

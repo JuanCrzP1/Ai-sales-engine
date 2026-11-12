@@ -76,6 +76,9 @@ Ves cada chat **en vivo**, sin recargar: cuando el cliente escribe, cuando el as
 enviado y leído. Las fotos y las notas de voz se guardan, y el asistente las entiende (por ejemplo, reconoce un comprobante de pago).
 
 - **Responder tú:** escribe en el chat y toca **Enviar**. La IA se pausa en ese chat para no hablar encima de ti.
+- **Respuestas rápidas:** escribe **/** al empezar el mensaje (por ejemplo `/precios`) o toca el rayo ⚡ junto al cuadro de texto,
+  y elige con el mouse o con ↑ ↓ y Enter. Si es un solo mensaje, queda en el cuadro para que lo retoques antes de enviarlo; si son
+  varios, quedan en espera y salen en orden al tocar **Enviar**. Ver la sección 12.
 - **Pausar o reanudar la IA:** con el botón de arriba del chat. Al reanudar, el asistente vuelve a responder.
 - **Cuando el cliente necesita a una persona:** si pide hablar con alguien, tiene un reclamo o reporta un pago, el chat pasa a tu
   equipo y te avisamos (ver la sección 7). Atiéndelo y toca **Ya lo atendí**.
@@ -197,13 +200,26 @@ Desconecta WhatsApp en **Canales**: conservas todo.
 Hay dos lugares, como en las plataformas grandes:
 
 - **Configuración** (abajo en el menú de la izquierda) es **del negocio**: la inteligencia artificial de tu asistente, la atención
-  humana, eliminar el negocio y, pronto, las respuestas rápidas y tu plan. Si tienes dos negocios, cada uno tiene la suya.
+  humana, las respuestas rápidas, eliminar el negocio y, pronto, tu plan. Si tienes dos negocios, cada uno tiene la suya.
 - **Mi cuenta** (el menú de tu foto) es **tuya**, igual en todos tus negocios:
   - **Mi perfil:** tu foto y tu nombre.
   - **Seguridad:** cambiar tu contraseña (te pide la actual y, si quieres, cierra tu sesión en los demás equipos) y cerrar la sesión
     en todos los demás equipos, por ejemplo si la dejaste abierta en un computador ajeno.
   - **Notificaciones:** activar los avisos en este celular o computador. Los correos de avisos son de cada negocio y siguen en
     Configuración → Atención humana.
+
+### Respuestas rápidas
+
+Son los mensajes que tu equipo envía todos los días (el saludo, los precios, cómo pagar, los envíos), guardados para ponerlos en un
+chat sin copiar y pegar. Se crean en **Configuración → Respuestas rápidas** y se aplican al instante, sin publicar.
+
+- **Atajo:** cómo la buscas en el chat. `precios` se busca escribiendo `/precios`. No se repite en el negocio.
+- **Categoría** (opcional): «Precios», «Pagos», «Envíos»… agrupa las respuestas en el chat y en la lista.
+- **Mensajes:** de 1 a 10, que salen en orden, uno tras otro. Escribe `{nombre}` (o toca **+ {nombre}**) y se cambia por el primer
+  nombre del cliente; si no lo sabemos, se quita. La vista previa te muestra cómo le llega.
+- **Duplicar** crea una copia con otro atajo para que solo cambies lo distinto. Cada respuesta dice cuántas veces la ha usado tu
+  equipo, y en el chat las más usadas salen primero.
+- Por ahora son textos: las fotos y los documentos llegarán cuando el chat del panel pueda enviarlos.
 
 ## 13. Desde el celular
 

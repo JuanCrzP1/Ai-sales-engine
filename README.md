@@ -140,8 +140,9 @@ npm --prefix apps/admin-web run test:integration   # panel contra la API real
 | 1 | Eliminar chats y clientes, de la base y de la memoria del asistente | Hecha |
 | 2 | Documentación profesional | Hecha |
 | 3 | Atención humana completa: horario del equipo, avisos por correo y en el celular, y la IA retoma sola | Hecha |
-| — | Integraciones: API del asistente con claves (hecha); IAs conectadas por MCP (siguiente) | En curso |
-| 4 | Lanzamiento: monitoreo, copias de seguridad probadas, correo, términos y política de datos, Vercel Pro | Siguiente |
+| — | Integraciones: API del asistente con claves y agentes de IA por MCP (Claude, ChatGPT) | Hecha |
+| — | Terminar la plataforma: respuestas rápidas (hecha), centro de ayuda, consola de soporte, roles del equipo, chat web y Telegram | En curso |
+| 4 | Lanzamiento: monitoreo, copias de seguridad probadas, correo, términos y política de datos, Vercel Pro; pagos y suscripciones al final | Cuando esté terminada |
 | 5 | Retirar lo que queda del sistema anterior y partir los módulos grandes del motor | Pendiente |
 | — | WhatsApp en un servidor de uazapi propio (hoy se usa el de pruebas) | Al final |
 

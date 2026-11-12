@@ -8,6 +8,8 @@ import type { BusinessDocument, BusinessSummary, BusinessTemplate, Diagnostic, P
 import { createLocalOperatorAuthService } from "../infrastructure/local/localOperatorAuthService";
 import type { AIModelOption, AISettings, AIUsage, AssistantLab, ConfigSource, ModelCatalog } from "../repositories/assistantLab";
 import type { Attention, AttentionSettings, AttentionView, DevicePush, PushPermission, PushSupport } from "../repositories/attention";
+import type { QuickReplies, QuickReply, QuickReplyInput } from "../repositories/quickReplies";
+import { normalizeShortcut, SHORTCUT_PATTERN } from "../domain/quickReplies/quickReplies";
 import type { AuthService } from "../repositories/authService";
 import type { BusinessDirectory } from "../repositories/businessDirectory";
 import type { Channels, WhatsAppChannel } from "../repositories/channels";
@@ -633,12 +635,75 @@ export function createMemoryAgentAuthorization() {
   return service;
 }
 
+/** Las respuestas rápidas en memoria, con las mismas reglas que el servidor (atajo único y normalizado, de 1 a 10 mensajes). */
+export function createMemoryQuickReplies(seed: QuickReply[] = [], options: { canManage?: boolean } = {}) {
+  const state = { replies: structuredClone(seed), canManage: options.canManage ?? true, used: [] as string[], failList: false };
+  let next = seed.length + 1;
+  const check = (input: QuickReplyInput, id?: string): QuickReplyInput => {
+    const shortcut = normalizeShortcut(input.shortcut);
+    const problems: { path: string; message: string }[] = [];
+    if (!shortcut) problems.push({ path: "shortcut", message: "Escribe el atajo, por ejemplo «precios»." });
+    else if (!SHORTCUT_PATTERN.test(shortcut)) problems.push({ path: "shortcut", message: "El atajo admite hasta 40 letras sin tildes, números, espacios, guiones y guiones bajos." });
+    else if (state.replies.some((reply) => reply.shortcut === shortcut && reply.id !== id)) problems.push({ path: "shortcut", message: "Ya tienes una respuesta rápida con ese atajo. Usa otro." });
+    if (input.pieces.length === 0) problems.push({ path: "pieces", message: "Escribe al menos un mensaje." });
+    input.pieces.forEach((piece, index) => {
+      if (!piece.text.trim()) problems.push({ path: `pieces[${index}].text`, message: `El mensaje ${index + 1} está vacío: escríbelo o quítalo.` });
+    });
+    if (problems.length) throw new PersistenceError("invalid", { message: problems.length === 1 ? problems[0]!.message : "Revisa la respuesta rápida.", problems });
+    const category = input.category?.replace(/\s+/g, " ").trim() ?? "";
+    return { shortcut, category: category ? category.charAt(0).toUpperCase() + category.slice(1) : null, pieces: input.pieces.map((piece) => ({ kind: "text", text: piece.text.trim() })) };
+  };
+  const find = (id: string) => {
+    const reply = state.replies.find((item) => item.id === id);
+    if (!reply) throw new PersistenceError("not_found", { message: "Esa respuesta rápida no existe." });
+    return reply;
+  };
+  const sorted = () => [...state.replies].sort((a, b) => b.useCount - a.useCount || a.shortcut.localeCompare(b.shortcut));
+  const service: QuickReplies & typeof state = Object.assign(state, {
+    list: async () => {
+      if (state.failList) throw new PersistenceError("unavailable", { message: "No se pudieron cargar las respuestas rápidas." });
+      return { replies: structuredClone(sorted()), canManage: state.canManage };
+    },
+    create: async (input: QuickReplyInput) => {
+      const clean = check(input);
+      const now = new Date().toISOString();
+      const reply: QuickReply = { id: `rapida-${next++}`, ...clean, useCount: 0, lastUsedAt: null, createdAt: now, updatedAt: now };
+      state.replies.push(reply);
+      return structuredClone(reply);
+    },
+    update: async (id: string, input: QuickReplyInput) => {
+      const reply = find(id);
+      Object.assign(reply, check(input, id), { updatedAt: new Date().toISOString() });
+      return structuredClone(reply);
+    },
+    remove: async (id: string) => {
+      find(id);
+      state.replies = state.replies.filter((reply) => reply.id !== id);
+    },
+    markUsed: async (id: string) => {
+      const reply = find(id);
+      reply.useCount += 1;
+      reply.lastUsedAt = new Date().toISOString();
+      state.used.push(reply.shortcut);
+      return structuredClone(reply);
+    },
+  });
+  return service;
+}
+
+/** Una respuesta rápida lista para sembrar en las pruebas. */
+export function quickReply(shortcut: string, texts: string[], extra: Partial<QuickReply> = {}): QuickReply {
+  const now = new Date().toISOString();
+  return { id: `semilla-${shortcut}`, shortcut, category: null, pieces: texts.map((text) => ({ kind: "text", text })), useCount: 0, lastUsedAt: null, createdAt: now, updatedAt: now, ...extra };
+}
+
 /** Servicios como los de la aplicación, sobre el backend en memoria. */
 export function createTestServices(backend: MemoryBackend = createMemoryBackend(), overrides: Partial<ApplicationServices> = {}): ApplicationServices {
   const whatsapp = createMemoryWhatsApp();
   const commerce = createMemoryCommerce();
   const attention = createMemoryAttention();
   const integrations = createMemoryIntegrations();
+  const quickReplies = createMemoryQuickReplies();
   return {
     auth: createLocalOperatorAuthService(),
     directory: backend.directory,
@@ -648,6 +713,7 @@ export function createTestServices(backend: MemoryBackend = createMemoryBackend(
     createChannels: () => whatsapp.channels,
     createCommerce: () => commerce,
     createAttention: () => attention,
+    createQuickReplies: () => quickReplies,
     devicePush: createMemoryDevicePush(),
     createIntegrations: () => integrations,
     agentAuthorization: createMemoryAgentAuthorization(),

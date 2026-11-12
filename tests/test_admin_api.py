@@ -1169,6 +1169,12 @@ def test_the_api_only_has_the_routes_of_the_panel(api):
         ("POST", "/oauth/token"),
         ("GET", "/oauth/authorize/request"),
         ("POST", "/oauth/authorize/decision"),
+        # Respuestas rápidas (`quick_reply_routes.py`).
+        ("GET", f"{business}/quick-replies"),
+        ("POST", f"{business}/quick-replies"),
+        ("PUT", f"{business}/quick-replies/{{reply_id}}"),
+        ("DELETE", f"{business}/quick-replies/{{reply_id}}"),
+        ("POST", f"{business}/quick-replies/{{reply_id}}/use"),
     }
     assert api.client.post("/api/v1/simulate", json={}).status_code == 404
 

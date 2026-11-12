@@ -19,6 +19,7 @@ from fastapi.responses import JSONResponse
 
 from app.admin_api.assistant_routes import router as assistant_router
 from app.admin_api.attention_routes import router as attention_router
+from app.admin_api.quick_reply_routes import router as quick_reply_router
 from app.admin_api.integration_routes import router as integration_router
 from app.admin_api.mcp_routes import audit_tool_call, router as mcp_router
 from app.admin_api.oauth_routes import router as oauth_router
@@ -30,6 +31,7 @@ from app.admin_api.routes import router
 from app.business_config_application.access import BusinessAccess
 from app.business_config_application.assistant_lab import AssistantLabService
 from app.business_config_application.attention import AttentionService, PushService
+from app.business_config_application.quick_replies import QuickRepliesService
 from app.business_config_application.integrations import IntegrationsService
 from app.business_config_application.mcp.oauth import McpOAuthService
 from app.domain.business_config.oauth import oauth_addresses
@@ -44,6 +46,7 @@ from app.business_config_application.ports import (
     ApiKeyStorage,
     OAuthStorage,
     AttentionStorage,
+    QuickReplyStorage,
     CommerceStorage,
     EmailSender,
     ContactMemory,
@@ -115,6 +118,7 @@ def create_app(
     assistant_api_url: Callable[[], str | None] | None = None,
     mcp_url: Callable[[], str | None] | None = None,
     oauth: OAuthStorage | None = None,
+    quick_replies: QuickReplyStorage | None = None,
 ) -> FastAPI:
     """La API del panel. Sin `assistant_lab`, la inteligencia artificial y el área de pruebas responden que no están disponibles.
 
@@ -144,6 +148,8 @@ def create_app(
     # Atención humana (Configuración) y notificaciones del navegador: sin almacén, sus rutas responden que no están disponibles.
     app.state.attention = AttentionService(attention, app.state.access, service, email) if attention is not None else None
     app.state.push = PushService(push_storage, push) if push_storage is not None else None
+    # Respuestas rápidas (Configuración y el chat): sin almacén, sus rutas responden que no están disponibles.
+    app.state.quick_replies = QuickRepliesService(quick_replies, app.state.access) if quick_replies is not None else None
     # Integraciones: las claves de API del negocio y la API del asistente (su dirección y una prueba con lo publicado).
     app.state.integrations = (
         IntegrationsService(
@@ -206,6 +212,7 @@ def create_app(
     app.include_router(channel_router)
     app.include_router(commerce_router)
     app.include_router(attention_router)
+    app.include_router(quick_reply_router)
     app.include_router(integration_router)
     app.include_router(mcp_router)
     app.include_router(oauth_router)

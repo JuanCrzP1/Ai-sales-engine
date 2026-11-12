@@ -29,6 +29,7 @@ from app.infrastructure.business_config.database import build_business_config_se
 from app.infrastructure.business_config.example_businesses import import_example, load_example
 from app.infrastructure.business_config.members_store import BusinessMembersStore
 from app.infrastructure.business_config.notification_store import NotificationStore
+from app.infrastructure.business_config.quick_reply_store import QuickReplyStore
 from app.infrastructure.business_config.tables import business_members, metadata, tenants
 from app.infrastructure.business_config.usage_store import UsageCounterStore
 from app.infrastructure.persistence.memory_repository import MemoryRepository
@@ -112,6 +113,7 @@ def cloud(tmp_path):
         commerce=CommerceStore(engine),
         attention=AttentionStore(engine),
         api_keys=ApiKeyStore(engine),
+        quick_replies=QuickReplyStore(engine),
         whatsapp=whatsapp,  # type: ignore[arg-type]
         contact_memory=memory,
     )
@@ -120,13 +122,15 @@ def cloud(tmp_path):
 
 
 def _fill(client: TestClient, store: ConversationStore, slug: str = "restaurant") -> None:
-    """Un negocio con un poco de todo: chats con aviso al equipo, una venta, atención humana y claves."""
+    """Un negocio con un poco de todo: chats con aviso al equipo, una venta, atención humana, respuestas rápidas y claves."""
     chat = store.record(slug, channel="whatsapp", contact_ref="+571", contact_name="Laura", messages=[NewMessage("customer", "Quiero una persona")], handoff=True, handoff_reason="human_request")
     sale = {"customer_name": "Laura", "description": "Cena", "amount": "50000", "currency": "COP", "conversation_id": chat}
     assert client.post(f"/api/businesses/{slug}/sales", headers=_as("ana"), json=sale).status_code == 201
     attention = client.get(f"/api/businesses/{slug}/attention", headers=_as("ana")).json()
     payload = {key: attention[key] for key in ("hours_mode", "team_hours", "timezone", "reply_minutes", "resume_after_minutes", "email_enabled", "email_to")}
     assert client.put(f"/api/businesses/{slug}/attention", headers=_as("ana"), json={**payload, "reply_minutes": 30}).status_code == 200
+    quick = {"shortcut": "precios", "category": "Precios", "pieces": [{"kind": "text", "text": "Hola {nombre}, te cuento los precios."}]}
+    assert client.post(f"/api/businesses/{slug}/quick-replies", headers=_as("ana"), json=quick).status_code == 201
     for body in (
         {"name": "Leona", "reach": "one", "permissions": {"chat": "write"}},
         {"name": "Claude de algunos", "reach": "some", "businesses": [slug, "clinic"], "permissions": {"assistant": "read"}},
@@ -152,7 +156,7 @@ def test_the_owner_deletes_everything_of_the_business_and_nothing_else(cloud):
     _fill(client, store)
     _fill(client, store, "clinic")
     before = _rows_of(engine, ids["restaurant"])
-    assert {"business_configs", "conversations", "sales", "notifications", "business_attention_settings", "api_keys", "business_members"} <= set(before)
+    assert {"business_configs", "conversations", "sales", "notifications", "business_attention_settings", "quick_replies", "api_keys", "business_members"} <= set(before)
     clinic_before = _rows_of(engine, ids["clinic"])
 
     name = next(item["name"] for item in client.get("/api/businesses", headers=_as("ana")).json() if item["slug"] == "restaurant")

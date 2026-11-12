@@ -463,3 +463,25 @@ api_idempotency = Table(
     Column("created_at", DateTime(timezone=True), nullable=False, default=_now),
     Index("api_idempotency_created_idx", "created_at"),
 )
+
+# Respuestas rápidas (migración 0015): los mensajes guardados de cada negocio que el equipo pone en un chat. El atajo es único en el
+# negocio; los mensajes van en orden (`pieces`, una lista JSON de textos). Se borran con el negocio.
+quick_replies = Table(
+    "quick_replies",
+    metadata,
+    Column("id", Uuid, primary_key=True, default=uuid.uuid4),
+    Column("tenant_id", Uuid, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False),
+    Column("shortcut", Text, nullable=False),
+    Column("category", Text),
+    Column("pieces", JSON().with_variant(JSONB(), "postgresql"), nullable=False),
+    Column("use_count", Integer, nullable=False, default=0),
+    Column("last_used_at", DateTime(timezone=True)),
+    Column("created_by", Text),
+    Column("created_at", DateTime(timezone=True), nullable=False, default=_now),
+    Column("updated_at", DateTime(timezone=True), nullable=False, default=_now),
+    UniqueConstraint("tenant_id", "shortcut", name="quick_replies_shortcut_unique"),
+    CheckConstraint("length(shortcut) BETWEEN 1 AND 40", name="quick_replies_shortcut_check"),
+    CheckConstraint("category IS NULL OR length(category) BETWEEN 1 AND 40", name="quick_replies_category_check"),
+    CheckConstraint("use_count >= 0", name="quick_replies_use_count_check"),
+    Index("quick_replies_tenant_idx", "tenant_id", "category", "shortcut"),
+)

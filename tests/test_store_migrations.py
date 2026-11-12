@@ -22,7 +22,7 @@ from app.infrastructure.business_config import migrations
 
 def test_migrations_are_ordered_and_every_statement_can_run_again():
     names = [path.name for path in migrations.MIGRATIONS]
-    assert names == sorted(names) and names[-1] == "0014_mcp_oauth.sql"
+    assert names == sorted(names) and names[-1] == "0015_quick_replies.sql"
     assert all(migrations.MIGRATION_NAME.fullmatch(name) for name in names)
     for path in migrations.MIGRATIONS:
         sql = re.sub(r"--[^\n]*", "", path.read_text(encoding="utf-8"))

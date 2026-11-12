@@ -5,6 +5,13 @@ está en el historial de git y en `docs/plan-v1.md`.
 
 ## 12 de noviembre de 2026
 
+**Respuestas rápidas**
+- Nuevo **Configuración → Respuestas rápidas** (ya no dice «Pronto»): guarda los mensajes que tu equipo envía todos los días con un
+  atajo, una categoría y de 1 a 10 mensajes, con vista previa de cómo le llegan al cliente.
+- En el chat, escribe **/** o toca el rayo ⚡ para buscarlas por atajo, categoría o texto. Un solo mensaje queda en el cuadro para
+  retocarlo; varios salen en orden. `{nombre}` se cambia por el nombre del cliente.
+- Cada respuesta dice cuántas veces se usó, y las más usadas salen primero. Se pueden duplicar, editar y borrar.
+
 **El asistente cierra como elegiste**
 - La **estrategia de cierre** ya cambia lo que hace el asistente:
   - **Confirmar la compra**: confirma con el cliente lo que decidió, le pide los datos y le dice cómo pagar.

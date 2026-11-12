@@ -382,6 +382,26 @@ publicado del negocio (el horario de «Mi negocio» y los mensajes `after_hours`
 
 Lo prueban `tests/test_human_attention.py` y `tests/test_whatsapp_qr_channel.py`.
 
+## Respuestas Rápidas
+
+Los mensajes guardados de cada negocio que el equipo pone en un chat (Configuración → Respuestas rápidas). No pasan por el motor ni
+por el prompt: el panel los pone en el cuadro de texto y salen como cualquier respuesta del equipo (`POST /conversations/{id}/messages`).
+
+- **Reglas** (`domain/business_config/quick_replies.py`, puro): el atajo se normaliza («/Crédito » → «credito») y no se repite en el
+  negocio; categoría opcional; de 1 a 10 mensajes de hasta 4.000 caracteres; máximo 500 por negocio. `{nombre}` se cambia por el
+  primer nombre del cliente al usarla (lo hace el panel, `domain/quickReplies/quickReplies.ts`).
+- **Servicio** (`business_config_application/quick_replies.py`): verlas y marcarlas como usadas, quien llega al negocio; crearlas,
+  editarlas y borrarlas, su dueño (el único rol que existe hoy; cuando haya asesores, ellos solo las usarán).
+- **Almacén** (`infrastructure/business_config/quick_reply_store.py`, tabla `quick_replies`, migración 0015): cada operación se filtra
+  por el negocio; una respuesta de otro negocio responde como inexistente. Se borran con el negocio (cascada).
+- **API** (`admin_api/quick_reply_routes.py`): `GET/POST /businesses/{slug}/quick-replies`, `PUT/DELETE .../{id}` y
+  `POST .../{id}/use`.
+- **Panel:** la página `features/quickReplies/` y, en el chat, `features/conversations/Composer.tsx` con `QuickReplyPicker.tsx`
+  («/» o ⚡). Las respuestas de varios mensajes quedan en espera y salen en orden; si uno no sale, lo que falta vuelve a la espera.
+
+Lo prueban `tests/test_quick_replies.py`, `tests/test_business_deletion.py` y `apps/admin-web/src/app/QuickReplies.test.tsx`. El
+laboratorio `exp_20261112_respuestas_rapidas` dio motor sin diferencias.
+
 ## API Del Asistente
 
 Cualquier plataforma que haga peticiones HTTP conversa con el asistente de un negocio por HTTP (`POST /api/v1/assistant/messages`). Referencia para

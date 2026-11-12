@@ -38,21 +38,6 @@ function ComingSoon({ title, description, icon, highlights, children }: ComingSo
   );
 }
 
-export function QuickRepliesPage() {
-  return (
-    <ComingSoon
-      title="Respuestas rápidas"
-      description="Mensajes que tu equipo usa seguido, guardados para enviarlos con un toque desde el chat."
-      icon="message"
-      highlights={[
-        "Guardar respuestas con un atajo, por ejemplo /precios o /horario",
-        "Escribir «/» en el chat y elegir la respuesta",
-        "Organizarlas por tema y usarlas también desde el celular",
-      ]}
-    />
-  );
-}
-
 export function BillingPage() {
   return (
     <ComingSoon

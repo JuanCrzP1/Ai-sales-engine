@@ -129,6 +129,7 @@ def main() -> int:
     from app.infrastructure.channels.public_url import assistant_api_url, engine_public_url, local_mcp_url, webhook_base
     from app.infrastructure.channels.uazapi import UazapiClient
     from app.infrastructure.business_config.attention_store import AttentionStore
+    from app.infrastructure.business_config.quick_reply_store import QuickReplyStore
     from app.infrastructure.business_config.push_store import PushStore
     from app.infrastructure.notifications.resend_email import ResendEmailSender
     from app.infrastructure.notifications.web_push import WebPushSender
@@ -152,6 +153,7 @@ def main() -> int:
         examples=import_examples,
         contact_memory=_contact_memory(),
         attention=AttentionStore(engine),
+        quick_replies=QuickReplyStore(engine),
         push_storage=push_store,
         email=ResendEmailSender(),
         push=WebPushSender(push_store.vapid_keys),
