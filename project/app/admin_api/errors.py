@@ -28,6 +28,7 @@ from app.domain.business_config.errors import (
     VersionConflictError,
 )
 from app.domain.business_config.validation_messages import validation_issues
+from app.domain.business_config.help import HelpArticleNotFoundError
 
 logger = logging.getLogger("admin-api")
 
@@ -85,6 +86,8 @@ def _api_error(request: Request, exc: BusinessConfigError) -> ApiError:
         return ApiError(status.HTTP_503_SERVICE_UNAVAILABLE, _reason(request, exc), code="unavailable")
     if isinstance(exc, ConversationNotFoundError):
         return ApiError(status.HTTP_404_NOT_FOUND, "Esa conversación no existe.", code="not_found")
+    if isinstance(exc, HelpArticleNotFoundError):
+        return ApiError(status.HTTP_404_NOT_FOUND, "Ese artículo de ayuda no existe.", code="not_found")
     if isinstance(exc, QuickReplyNotFoundError):
         return ApiError(status.HTTP_404_NOT_FOUND, "Esa respuesta rápida no existe.", code="not_found")
     if isinstance(exc, NotOwnerError):

@@ -6,7 +6,7 @@ Cada documento tiene un lector. Empieza por el tuyo.
 
 | Documento | Qué encuentras |
 |---|---|
-| [Guía del negocio](guia-del-negocio.md) | Crear la cuenta, enseñarle al asistente, conectar WhatsApp, atender, vender y ver los reportes |
+| [Guía del negocio](guia-del-negocio.md) | El índice del Centro de ayuda: crear la cuenta, enseñarle al asistente, conectar WhatsApp, atender, vender y ver los reportes |
 | [Producto](product.md) | Qué problema resuelve y cómo vende el asistente |
 
 ## Si vas a desarrollar

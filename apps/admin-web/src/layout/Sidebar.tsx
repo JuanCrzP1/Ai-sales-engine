@@ -5,8 +5,10 @@ import { Icon } from "../components/ui/Icon";
 import {
   ASSISTANT_HUB_ITEM,
   CHANNELS_ITEM,
+  HELP_ITEM,
   INTEGRATIONS_ITEM,
   isAssistantPath,
+  isHelpCenterPath,
   isIntegrationsPath,
   isSettingsPath,
   MAIN_ITEMS,
@@ -17,6 +19,7 @@ import { useWorkspacePath } from "../navigation/useWorkspacePath";
 import { useAuth } from "../state/auth/useAuth";
 import { useConfig } from "../state/useConfig";
 import { BusinessSwitcher } from "./BusinessSwitcher";
+import { HelpButton } from "./HelpPanel";
 import { NAV_ICONS } from "./navIcons";
 import { NotificationBell } from "./NotificationBell";
 import { UserMenu } from "./UserMenu";
@@ -27,6 +30,8 @@ interface SidebarProps {
   /** Celular: el menú es un panel que se desliza, con su botón de cerrar; los avisos están en la barra superior. */
   compact?: boolean;
   onClose?: () => void;
+  /** Abre la ayuda de la pantalla (junto a los avisos). */
+  onOpenHelp?: () => void;
 }
 
 /** Cuánto hay que deslizar el panel hacia la izquierda para cerrarlo. */
@@ -36,7 +41,7 @@ const SWIPE_TO_CLOSE = 60;
  * Menú del negocio: primero atender y vender; después, su configuración. Como en Slack o Linear, los avisos van junto a la marca y
  * la cuenta abajo: el contenido no pierde alto con una barra superior.
  */
-export function Sidebar({ id, open, compact = false, onClose }: SidebarProps) {
+export function Sidebar({ id, open, compact = false, onClose, onOpenHelp }: SidebarProps) {
   const { progress, publication } = useConfig();
   const { verifiesCredentials } = useAuth();
   const { pathname } = useLocation();
@@ -75,7 +80,10 @@ export function Sidebar({ id, open, compact = false, onClose }: SidebarProps) {
             <Icon name="close" size={18} />
           </button>
         ) : (
-          <NotificationBell />
+          <span className="sidebar__actions">
+            {onOpenHelp && <HelpButton onOpen={onOpenHelp} />}
+            <NotificationBell />
+          </span>
         )}
       </div>
 
@@ -100,6 +108,7 @@ export function Sidebar({ id, open, compact = false, onClose }: SidebarProps) {
         <NavEntry item={INTEGRATIONS_ITEM} active={isIntegrationsPath(pathname)} />
         {/* Como en las plataformas serias: la configuración del negocio va sola, fija abajo. Lo personal está en el menú de la foto. */}
         <div className="nav__bottom">
+          <NavEntry item={HELP_ITEM} active={isHelpCenterPath(pathname)} />
           <NavEntry item={SETTINGS_ITEM} active={isSettingsPath(pathname)} />
         </div>
       </nav>

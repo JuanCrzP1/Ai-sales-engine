@@ -8,6 +8,7 @@ import { AuthProvider } from "../state/auth/AuthProvider";
 import { DirectoryContext } from "../state/directoryContext";
 import { InboxContext } from "../state/inboxContext";
 import { AgentAuthorizationContext } from "../state/integrationsContext";
+import { HelpContext } from "../state/helpContext";
 import { QuickRepliesContext } from "../state/quickRepliesContext";
 import { appRoutes } from "./AppRoutes";
 import { createServices, type ApplicationServices } from "./compositionRoot";
@@ -26,6 +27,7 @@ export function App({ services }: { services?: ApplicationServices }) {
           <DevicePushContext.Provider value={resolved.devicePush}>
           <AgentAuthorizationContext.Provider value={resolved.agentAuthorization}>
           <QuickRepliesContext.Provider value={resolved.createQuickReplies}>
+          <HelpContext.Provider value={resolved.help}>
           <AuthProvider
             service={resolved.auth}
             renderLoading={() => <LoadingScreen label="Abriendo tu panel…" />}
@@ -37,6 +39,7 @@ export function App({ services }: { services?: ApplicationServices }) {
           >
             <RouterProvider router={router} />
           </AuthProvider>
+          </HelpContext.Provider>
           </QuickRepliesContext.Provider>
           </AgentAuthorizationContext.Provider>
           </DevicePushContext.Provider>

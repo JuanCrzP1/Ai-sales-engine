@@ -1175,6 +1175,10 @@ def test_the_api_only_has_the_routes_of_the_panel(api):
         ("PUT", f"{business}/quick-replies/{{reply_id}}"),
         ("DELETE", f"{business}/quick-replies/{{reply_id}}"),
         ("POST", f"{business}/quick-replies/{{reply_id}}/use"),
+        # El Centro de ayuda (`help_routes.py`).
+        ("GET", "/help"),
+        ("GET", "/help/search"),
+        ("GET", "/help/articles/{slug}"),
     }
     assert api.client.post("/api/v1/simulate", json={}).status_code == 404
 

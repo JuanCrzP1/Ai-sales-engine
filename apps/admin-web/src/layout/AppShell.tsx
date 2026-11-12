@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import { COMPACT_SCREEN, useMediaQuery } from "../lib/useMediaQuery";
-import { isAssistantPath, titleForPath } from "../navigation/navItems";
+import { isAssistantPath, isHelpCenterPath, titleForPath } from "../navigation/navItems";
 import { useConfig } from "../state/useConfig";
 import { AssistantTabs } from "./AssistantTabs";
 import { ErrorBoundary } from "./ErrorBoundary";
+import { HelpButton, HelpPanel } from "./HelpPanel";
 import { NotificationBell } from "./NotificationBell";
 import { SaveProblems } from "./SaveProblems";
 import { Sidebar } from "./Sidebar";
@@ -20,6 +21,7 @@ const SIDEBAR_ID = "menu-principal";
  */
 export function AppShell() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
   const location = useLocation();
   const { save, document } = useConfig();
   const compact = useMediaQuery(COMPACT_SCREEN);
@@ -27,9 +29,18 @@ export function AppShell() {
   const wasOpen = useRef(false);
 
   const closeMenu = useCallback(() => setMenuOpen(false), []);
+  const closeHelp = useCallback(() => setHelpOpen(false), []);
+  // En el Centro de ayuda, la ayuda de la pantalla sobra.
+  const openHelp = isHelpCenterPath(location.pathname)
+    ? undefined
+    : () => {
+        setMenuOpen(false);
+        setHelpOpen(true);
+      };
 
   useEffect(() => {
     setMenuOpen(false);
+    setHelpOpen(false);
     window.scrollTo?.({ top: 0 });
   }, [location.pathname]);
 
@@ -87,12 +98,18 @@ export function AppShell() {
           <span className="mobile-header__business">{document.identity.name.trim() || "Tu negocio"}</span>
         </div>
         {/* En el celular los avisos van aquí, siempre a mano; en pantalla grande, en la barra lateral. */}
-        {compact && <NotificationBell />}
+        {compact && (
+          <span className="mobile-header__actions">
+            {openHelp && <HelpButton onOpen={openHelp} />}
+            <NotificationBell />
+          </span>
+        )}
       </header>
 
       <div className={`drawer-backdrop${menuOpen ? " drawer-backdrop--visible" : ""}`} aria-hidden="true" onClick={closeMenu} />
 
-      <Sidebar id={SIDEBAR_ID} open={menuOpen} compact={compact} onClose={closeMenu} />
+      <Sidebar id={SIDEBAR_ID} open={menuOpen} compact={compact} onClose={closeMenu} onOpenHelp={openHelp} />
+      <HelpPanel open={helpOpen} onClose={closeHelp} />
 
       <main className="main" id="contenido" tabIndex={-1}>
         {/* Sin barra superior: la cuenta y los avisos viven en la barra lateral. El estado de guardado solo importa al configurar. */}

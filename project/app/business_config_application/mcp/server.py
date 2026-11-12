@@ -14,6 +14,7 @@ from app.business_config_application.assistant_lab import AssistantLabService
 from app.business_config_application.attention import AttentionService
 from app.business_config_application.commerce import CommerceService
 from app.business_config_application.conversations import ConversationsService
+from app.business_config_application.help import HelpService
 from app.business_config_application.mcp.access import McpAccess
 from app.business_config_application.mcp.oauth import McpOAuthService
 from app.business_config_application.mcp.protocol import McpProtocol, ToolCallReport
@@ -24,6 +25,7 @@ from app.business_config_application.mcp.tools.commerce import commerce_tools
 from app.business_config_application.mcp.tools.config import config_tools
 from app.business_config_application.mcp.tools.conversations import conversation_tools
 from app.business_config_application.mcp.tools.guide import guide_tools
+from app.business_config_application.mcp.tools.help import help_tools
 from app.business_config_application.ports import ApiKeyStorage
 from app.business_config_application.service import BusinessConfigService
 from app.domain.business_config.access import LOCAL_OPERATOR, Principal
@@ -76,6 +78,7 @@ def build_mcp_server(
     conversations: ConversationsService | None = None,
     commerce: CommerceService | None = None,
     attention: AttentionService | None = None,
+    help: HelpService | None = None,
     guide: Callable[[], str] = read_guide,
     local: bool = False,
     oauth: McpOAuthService | None = None,
@@ -86,6 +89,7 @@ def build_mcp_server(
 ) -> McpServer:
     tools = [
         *guide_tools(guide, schema, templates),
+        *(help_tools(help) if help is not None else []),
         *business_tools(configs, access, templates, on_created),
         *config_tools(configs, access, lab, before_test),
         # Lo que el servidor no tiene (por ejemplo, sin base de conversaciones) no aparece: nunca una herramienta que siempre falla.

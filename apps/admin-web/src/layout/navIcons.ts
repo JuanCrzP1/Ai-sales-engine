@@ -31,4 +31,5 @@ export const NAV_ICONS: Record<NavItem["key"], IconName> = {
   apiKeys: "shield",
   agents: "sparkles",
   deleteBusiness: "trash",
+  help: "question",
 };

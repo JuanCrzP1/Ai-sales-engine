@@ -1,247 +1,78 @@
 # Guía del negocio
 
-Todo lo que necesitas para poner a vender a tu asistente por WhatsApp y atender desde el panel. Sin términos técnicos.
+Toda la ayuda para dueños de negocio vive en el **Centro de ayuda** del panel (menú → **Ayuda**, o el botón **?** junto a la
+campana para ver la ayuda de la pantalla en la que estás). Aquí está el mismo contenido, por tema, para leerlo desde el repositorio.
 
-## 1. Crea tu cuenta y tu negocio
+Los artículos están en [`project/content/help`](../project/content/help/README.md): son la única fuente. Cambia el artículo, no
+este índice.
 
-1. Entra al panel y toca **Crear cuenta**: tu nombre, tu correo y una contraseña.
-2. Crea tu negocio. Puedes empezar **de cero** o con una **plantilla** (restaurante, tienda, agencia de viajes, escuela,
-   servicios con cita o software). La plantilla trae ejemplos de productos, precios y textos para que solo los cambies; nunca
-   trae datos de pago.
+## Primeros pasos
 
-Puedes tener varios negocios: cámbiate entre ellos con el selector de arriba del menú.
+- [Qué es AI Sales Engine](../project/content/help/primeros-pasos/que-es-ai-sales-engine.md): Un asistente de ventas con IA que atiende a tus clientes por WhatsApp con la información de tu negocio, y un panel para atender con tu equipo.
+- [Empieza aquí: tu asistente vendiendo en 5 pasos](../project/content/help/primeros-pasos/empieza-aqui.md): Los pasos para dejar a tu asistente atendiendo por WhatsApp, en el orden que más ayuda. El Centro de ayuda marca solos los que ya hiciste.
+- [Crea tu cuenta y tu negocio](../project/content/help/primeros-pasos/crear-cuenta-y-negocio.md): Crear la cuenta, crear tu negocio de cero o con una plantilla, y cambiar entre varios negocios.
+- [Usa el panel desde el celular](../project/content/help/primeros-pasos/desde-el-celular.md): El panel funciona como una aplicación en tu celular. Instálalo en la pantalla de inicio para abrirlo con un toque y recibir avisos.
+- [Preguntas frecuentes](../project/content/help/primeros-pasos/preguntas-frecuentes.md): Si el asistente puede inventar precios, qué pasa si la IA falla, cuánto cuesta cada respuesta, quién ve tus negocios y más.
 
-## 2. Enséñale a tu asistente lo que vendes
+## Conversaciones
 
-En **Asistente IA** hay cinco secciones. Lo esencial está primero en cada una; lo avanzado está plegado para cuando quieras afinar.
+- [Tus chats en vivo](../project/content/help/conversaciones/bandeja-en-vivo.md): Cómo ves cada conversación en tiempo real, las fotos y audios, los filtros y los chats de todos tus negocios juntos.
+- [Responde tú y pausa la IA](../project/content/help/conversaciones/responder-y-pausar-la-ia.md): Escribirle a un cliente desde el panel o desde el celular del negocio, pausar y reanudar la IA en un chat y marcarlo como atendido.
+- [Elimina un chat o un cliente](../project/content/help/conversaciones/eliminar-un-chat.md): Qué se borra y qué se conserva al eliminar una conversación o un cliente.
 
-| Sección | Qué le cuentas |
-|---|---|
-| **Mi negocio** | Cómo se llama, a qué te dedicas, dónde estás, tu horario y qué te hace diferente |
-| **Productos** | Lo que vendes, con precios, disponibilidad y detalles (planes o catálogo) |
-| **Pagos** | Cómo te pagan (enlace, Nequi, Daviplata, cuenta, Bre-B), promociones, garantía y devoluciones |
-| **Cómo atiende** | El tono, qué tan largas son sus respuestas, preguntas frecuentes y tu forma de vender |
-| **Mensajes** | El saludo, qué dice al recibir un pago, al pasar a una persona (también fuera de tu horario y si la IA retoma el chat) y qué dice si no puede responder |
+## Respuestas rápidas
 
-Cada cambio se **guarda** como borrador. Tus clientes no ven nada hasta que lo **publicas** (botón **Publicar**). Si publicaste
-algo por error, en **Publicar** puedes volver a la versión anterior.
+- [Crea tus respuestas rápidas](../project/content/help/respuestas-rapidas/crear-respuestas-rapidas.md): Guardar los mensajes que tu equipo envía todos los días, con un atajo, el nombre del cliente y varios mensajes en orden.
+- [Usa una respuesta rápida en el chat](../project/content/help/respuestas-rapidas/usar-respuestas-rapidas.md): Buscarlas escribiendo «/» o con el rayo, elegirlas con el teclado y enviar varios mensajes en orden.
+- [Organiza tus respuestas rápidas](../project/content/help/respuestas-rapidas/organizar-respuestas-rapidas.md): Categorías, buscar, duplicar, editar, borrar y ver cuántas veces las usa tu equipo.
 
-**Siempre sabes si falta publicar.** Arriba del editor ves el estado:
+## Atención humana
 
-- **Guardado · 12:42 · Cambios sin publicar** (en ámbar, con el botón **Revisar y publicar**): guardaste cambios que tus clientes
-  todavía no ven. «Asistente IA» lleva un punto ámbar en el menú mientras tanto.
-- **Publicado · es lo que responde a tus clientes**: todo lo guardado ya está publicado.
+- [Cuándo un chat pasa a tu equipo](../project/content/help/atencion-humana/cuando-pasa-a-una-persona.md): Por qué el asistente le pasa un chat a una persona, qué ve el cliente y qué haces tú para atenderlo.
+- [El horario del equipo](../project/content/help/atencion-humana/horario-del-equipo.md): Cuándo hay alguien para atender a los clientes que piden una persona, y qué ve el cliente dentro y fuera de ese horario.
+- [Si nadie responde, la IA retoma el chat](../project/content/help/atencion-humana/si-nadie-responde.md): Para que ningún cliente quede esperando sin respuesta, la IA vuelve a atender cuando tu equipo no responde a tiempo.
+- [Avisos a tu equipo por correo y notificación](../project/content/help/atencion-humana/avisos-a-tu-equipo.md): El correo que llega cuando un chat pasa a una persona, a qué dirección llega, el correo de prueba y las notificaciones.
 
-Antes de publicar, **Revisar y publicar** te muestra **lo que cambia**, sección por sección (por ejemplo, «Mi negocio · Marca:
-Asesor Comercial → Ai sales engine»). Los datos de pago aparecen como «actualizado», nunca su valor. Y en **Probar** te avisa cuando
-estás probando cambios que tus clientes aún no ven.
+## Clientes, ventas y reportes
 
-**Tus datos de pago están protegidos:** se guardan cifrados y en el panel solo ves una parte para reconocerlos (`••••4567`). La
-IA nunca los ve: cuando el cliente elige cómo pagar, el sistema le envía el dato correcto.
+- [Tus clientes y sus etapas](../project/content/help/clientes-y-ventas/etapas-de-clientes.md): Cada persona que te escribió, la etapa en la que va y cómo avanza sola con lo que pasa en la conversación.
+- [Registra, verifica y anula ventas](../project/content/help/clientes-y-ventas/registrar-una-venta.md): Registrar lo que compró un cliente, revisar los pagos por verificar y anular una venta.
+- [Reportes: cómo le va a tu negocio](../project/content/help/clientes-y-ventas/reportes.md): Conversaciones, ventas, ingresos, el embudo, quién respondió y cuánto costó la IA, comparado con el periodo anterior.
 
-## 3. Pon tu clave de IA
+## Asistente IA
 
-Tu asistente responde con **tu propia cuenta de OpenRouter** (el servicio que da acceso a los modelos de IA). Así pagas solo lo que
-usa tu negocio.
+- [Cómo aprende tu asistente: las cinco secciones](../project/content/help/asistente/como-aprende-tu-asistente.md): Lo que le cuentas en cada sección de Asistente IA, qué es lo esencial y qué es para afinar después.
+- [Mi negocio: quién eres, dónde estás y tu horario](../project/content/help/asistente/mi-negocio.md): Los datos con los que el asistente presenta tu negocio, cómo vendes (planes o catálogo), tu ubicación y tu horario de atención.
+- [Productos y servicios: lo que vendes y sus precios](../project/content/help/asistente/productos-y-servicios.md): Agregar lo que vendes con su precio, marcar lo que no está disponible y contar cómo recibe el cliente lo que compra.
+- [Pagos y cierre: cómo te pagan, con tus datos protegidos](../project/content/help/asistente/pagos-y-cierre.md): Los medios de pago que ofrece el asistente, por qué tus datos de pago están protegidos, promociones, políticas y cómo cierra una venta.
+- [Cómo atiende: tono, preguntas frecuentes y forma de vender](../project/content/help/asistente/como-atiende.md): La personalidad del asistente, las preguntas frecuentes, las instrucciones comerciales, qué vendes y el tipo de cierre.
+- [Mensajes y canales: la bienvenida y los mensajes fijos](../project/content/help/asistente/mensajes-del-asistente.md): La bienvenida, lo que dice al recibir un pago, al pasar a una persona, fuera del horario, al retomar un chat y si no puede responder.
+- [Prueba a tu asistente antes que tus clientes](../project/content/help/asistente/probar-el-asistente.md): Conversar con tu asistente como si fueras un cliente, con la IA real, y elegir si pruebas lo que estás editando o lo publicado.
+- [Guardar, publicar y volver a una versión anterior](../project/content/help/asistente/guardar-y-publicar.md): Por qué lo que cambias no llega a tus clientes hasta publicar, cómo ves lo que cambia antes de publicar y cómo vuelves atrás.
 
-1. Crea una clave en [openrouter.ai](https://openrouter.ai) y recárgale saldo.
-2. En **Configuración → Inteligencia artificial** (abajo en el menú de la izquierda), pega la clave en **Clave de API de
-   OpenRouter**, toca **Guardar clave** y luego **Comprobar la clave**. Por seguridad, después solo verás sus últimos caracteres;
-   para cambiarla, toca **Cambiar clave** y pega la nueva.
-3. Elige el modelo en la lista desplegable (puedes buscar por nombre): muestra los recomendados y cuánto cuestan más o menos 1.000
-   respuestas. Toca **Guardar modelo**.
+## Canales
 
-En esa misma pantalla ves cuánto has gastado por día.
+- [Conecta tu WhatsApp con el código QR](../project/content/help/canales/conectar-whatsapp.md): Vincular el número de WhatsApp de tu negocio en un minuto, escaneando un código desde el celular.
+- [Cuida tu número de WhatsApp](../project/content/help/canales/cuidar-tu-numero.md): Por qué la conexión por código QR no es oficial y qué hacer para que WhatsApp no bloquee tu número.
+- [Desconecta o cambia tu número](../project/content/help/canales/desconectar-whatsapp.md): Pausar a tu asistente en WhatsApp sin perder nada, o conectar otro número.
 
-## 4. Prueba a tu asistente
+## Integraciones y agentes
 
-En **Asistente IA → Probar**, escríbele como si fueras un cliente. Responde con la IA real. Puedes probar **lo que estás editando**
-(antes de publicar) o **lo publicado** (lo que hoy reciben tus clientes).
+- [El catálogo de integraciones](../project/content/help/integraciones/catalogo-de-integraciones.md): Dónde conectas tu asistente con la IA que lo hace responder, otras plataformas de atención y los agentes de IA.
+- [Conecta tu asistente a otra plataforma con la API](../project/content/help/integraciones/api-del-asistente.md): Usar el mismo asistente de WhatsApp desde Leona u otra plataforma que haga peticiones HTTP, con tu dirección y tu clave.
+- [Tus claves de API](../project/content/help/integraciones/claves-de-api.md): Qué puede hacer cada clave, a qué negocios entra, cuándo vence, cuándo se usó y cómo revocarla.
+- [Agentes de IA: que Claude trabaje contigo](../project/content/help/integraciones/agentes-de-ia.md): Lo que puede hacer un agente de IA conectado por MCP (montar tu negocio y ayudarte en el día a día) y lo que nunca puede hacer.
+- [Conecta Claude, ChatGPT u otro agente](../project/content/help/integraciones/conectar-claude-o-chatgpt.md): Claude y ChatGPT se conectan iniciando sesión, sin clave; Claude Code, Cursor y n8n, con una clave para el agente.
 
-Las pruebas aparecen en Conversaciones marcadas como «Prueba». No cuentan en Clientes ni en Reportes, y puedes borrarlas de una
-vez con **Borrar pruebas**.
+## Inteligencia artificial
 
-## 5. Conecta tu WhatsApp
+- [Pon tu clave de IA (OpenRouter)](../project/content/help/inteligencia-artificial/clave-de-openrouter.md): Crear tu clave en OpenRouter, pegarla, comprobarla y cambiarla. Sin clave, el asistente de ese negocio no puede responder.
+- [Elige el modelo y mira lo que gastas](../project/content/help/inteligencia-artificial/elegir-el-modelo.md): Qué modelo de IA usa tu asistente, cuánto cuesta más o menos, y el consumo de los últimos 30 días.
+- [Si la IA falla o te quedas sin saldo](../project/content/help/inteligencia-artificial/si-la-ia-falla.md): Qué recibe el cliente cuando la IA no puede responder y cómo lo resuelves.
 
-1. En **Canales**, toca **Conectar WhatsApp**. Aparece un código QR.
-2. En el celular del negocio: WhatsApp → **Dispositivos vinculados** → **Vincular un dispositivo**, y escanea el código.
-3. Listo: tu asistente empieza a responder los chats de ese número con lo que publicaste.
+## Tu cuenta y tu negocio
 
-> Es una conexión no oficial (como WhatsApp Web). Úsala con el número de WhatsApp Business de tu negocio y evita los envíos
-> masivos: WhatsApp puede bloquear los números que los hacen. La API oficial de Meta llegará más adelante.
-
-## 6. Atiende desde Conversaciones
-
-Ves cada chat **en vivo**, sin recargar: cuando el cliente escribe, cuando el asistente está «escribiendo…» y los chulos de
-enviado y leído. Las fotos y las notas de voz se guardan, y el asistente las entiende (por ejemplo, reconoce un comprobante de pago).
-
-- **Responder tú:** escribe en el chat y toca **Enviar**. La IA se pausa en ese chat para no hablar encima de ti.
-- **Respuestas rápidas:** escribe **/** al empezar el mensaje (por ejemplo `/precios`) o toca el rayo ⚡ junto al cuadro de texto,
-  y elige con el mouse o con ↑ ↓ y Enter. Si es un solo mensaje, queda en el cuadro para que lo retoques antes de enviarlo; si son
-  varios, quedan en espera y salen en orden al tocar **Enviar**. Ver la sección 12.
-- **Pausar o reanudar la IA:** con el botón de arriba del chat. Al reanudar, el asistente vuelve a responder.
-- **Cuando el cliente necesita a una persona:** si pide hablar con alguien, tiene un reclamo o reporta un pago, el chat pasa a tu
-  equipo y te avisamos (ver la sección 7). Atiéndelo y toca **Ya lo atendí**.
-- **Si respondes desde el celular del negocio**, tu mensaje también aparece en el chat y la IA se pausa para no hablar encima de ti.
-- **Filtros:** «Esperan a una persona», por canal, o los chats de **todos tus negocios** juntos.
-
-## 7. Atención humana: cuando un cliente necesita a una persona
-
-En **Configuración → Atención humana** decides qué pasa. Se aplica al instante, sin publicar.
-
-- **Horario del equipo:** el mismo de «Mi negocio», otro solo para el equipo, o «siempre hay alguien».
-  - **Dentro del horario**, la IA se pausa en ese chat y el cliente recibe «Una persona de nuestro equipo te responderá en unos 10
-    minutos» (tú eliges el tiempo, o que no se le diga).
-  - **Fuera del horario**, la IA sigue ayudando y le dice al cliente tu horario y cuándo lo atienden. El chat queda marcado para que
-    tu equipo lo vea al llegar.
-- **Si nadie responde:** si el cliente espera más de lo que elegiste (por defecto 30 minutos), la IA retoma el chat, le pide
-  disculpas, responde lo que quedó pendiente y te avisa. Puedes elegir «Nunca».
-- **Avisos:** además de la campana, te llega un **correo** con lo que pidió el cliente y un botón para abrir el chat (a tu correo o
-  al que escribas; toca **Enviar correo de prueba** para verlo), y una **notificación** en el celular o el computador, como un
-  mensaje de WhatsApp. Actívalas en cada dispositivo en **Mi cuenta → Notificaciones** (el menú de tu foto; también desde la campana).
-
-> En **iPhone y iPad** primero instala el panel: en Safari toca Compartir → **Agregar a pantalla de inicio** y ábrelo desde ese
-> ícono. Ahí podrás activar las notificaciones.
-
-Lo que dice el asistente en esos momentos lo escribes en **Asistente IA → Mensajes**: «Fuera del horario del equipo» y «Cuando la IA
-retoma el chat». Si los dejas vacíos, usa los suyos.
-
-## 8. Integraciones: conecta tu asistente a otras plataformas
-
-**Integraciones** es un catálogo, como en las plataformas grandes: pestañas por categoría (Inteligencia artificial, Plataformas,
-Agentes de IA y Seguridad), un buscador, y las tarjetas agrupadas en **Activas**, **Disponibles** y **Próximamente**, cada una con el
-logo del servicio. Desde ahí llegas a la IA de tu asistente (OpenRouter), la API y tus claves.
-
-En **Integraciones → API del asistente** conectas tu asistente a cualquier plataforma que haga peticiones HTTP: la plataforma le
-manda el mensaje de tu cliente y le envía la respuesta. Es el mismo asistente de WhatsApp. Arriba ves si alguna plataforma ya la está
-usando («Conectada · usada hace 2 min»).
-
-1. **Tus datos de conexión:** la dirección y tu clave. Crea una clave por plataforma; se muestra **una sola vez**: cópiala y pégala allá.
-2. **Conéctala a tu plataforma:** elige su pestaña y sigue los pasos.
-   - **Leona** (probada): el flujo que conversa, con sus variables y todo listo para copiar.
-   - **Otra plataforma:** qué mandar y qué hacer con la respuesta, para cualquier sistema.
-   - **Desarrolladores:** ejemplos en cURL, JavaScript y Python.
-3. **Pruébala** desde la misma pantalla: ves lo que respondería tu asistente.
-
-Si tu plataforma manda una variable sin reemplazar (por ejemplo «{nombre}»), la API la rechaza y te dice cuál fue, para no mezclar a tus
-clientes en un solo chat.
-
-Esos chats llegan a **Conversaciones** con el canal «API» y cuentan en Clientes y Reportes. Cuando un cliente pide una persona, la
-otra plataforma recibe el aviso para pasarlo a tu equipo; la IA se pausa en ese chat hasta que toques **Reanudar IA**.
-
-En **Integraciones → Claves de API** ves todas tus claves: qué puede cada una, a qué negocios entra, cuándo se usó y cuándo vence.
-Puedes **revocarlas** si se filtró alguna o ya no la usas.
-
-### Agentes de IA: que Claude trabaje contigo
-
-En **Integraciones → Agentes de IA (MCP)** conectas un agente de IA (Claude Code, Cursor, n8n...) para que trabaje por ti cuando
-se lo pides. Por ejemplo: «móntame una panadería en Medellín con estos productos y precios» o «¿quién está esperando que le
-respondan hoy?».
-
-- **Montar el negocio:** crea el negocio, llena cada sección, revisa lo que falta, prueba el asistente y te muestra lo que cambia.
-  Publica solo cuando le dices que sí.
-- **El día a día:** lee tus conversaciones y te dice quién espera a una persona; les responde a tus clientes por WhatsApp
-  **cuando apruebas el texto** (la IA se pausa en ese chat, como cuando respondes tú); ve tus clientes, ventas y reportes;
-  registra o anula ventas que confirmas; ajusta la atención humana y el modelo de IA.
-- **Con qué permisos:** al crear su clave eliges qué puede hacer por área (Negocios, Asistente IA, Datos de pago, Conversaciones,
-  Clientes y ventas, Atención humana), a qué negocios entra (este, todos o algunos) y cuándo vence.
-- **Datos de pago:** con ese permiso los puede escribir, pero **nunca leerlos**: tampoco en los chats, donde le salen como
-  «[dato de pago]».
-- **Lo que no puede:** conectar tu WhatsApp (eso es con el código QR en tu teléfono), ver o poner tu clave de IA, ni borrar chats o
-  clientes.
-- **Lo que hace queda a su nombre:** las versiones que guarda y las ventas que registra dicen «Agente «nombre de la clave»». Sus
-  respuestas a los clientes aparecen en el chat como las del equipo.
-- **Para conectarlo:**
-  - **Claude (en la web o en la app) y ChatGPT:** no necesitas clave. Agrega un conector personalizado, pega la dirección del
-    servidor e inicia sesión cuando se abra esta plataforma: eliges a qué negocios entra y qué puede hacer, y pulsas «Autorizar».
-  - **Claude Code, Cursor, n8n y otros:** crea una clave para el agente; la pantalla te da lo que se pega en cada uno.
-  - Las conexiones por inicio de sesión aparecen en **Claves de API** con el nombre del agente. Revócalas cuando quieras.
-
-## 9. Clientes y ventas
-
-En **Clientes** está cada persona que te escribió, con su **etapa**: Nuevo, Interesado, Listo para comprar, Pagó (por verificar) y
-Cliente. La etapa avanza sola con lo que el asistente reconoce en la conversación.
-
-- **Registrar una venta:** desde el cliente o desde **Ventas → Registrar venta**. El cliente pasa a «Cliente» y la venta suma en los
-  reportes.
-- **Pagos por verificar:** en Ventas ves quién dice que ya pagó. Revisa el comprobante y registra la venta.
-- **Anular una venta:** queda marcada como anulada y deja de sumar.
-
-## 10. Reportes
-
-En **Reportes** eliges 7, 30 o 90 días y ves: conversaciones nuevas, ventas, ingresos, cuántos pasaron a una persona, el embudo de
-ventas, conversaciones por día, quién respondió (tu asistente o tu equipo) y cuánto costó la IA, comparado con el periodo anterior.
-
-## 11. Eliminar un chat o un cliente
-
-En el chat abierto (ícono de la papelera) o en **Clientes**. Antes de borrar, el panel te dice exactamente qué pasa:
-
-- Se borran los mensajes, las fotos, los audios y los avisos de ese chat.
-- El asistente olvida lo que sabía de ese cliente: si vuelve a escribir, empieza de cero.
-- **Las ventas que registraste se conservan** en Ventas y en los reportes.
-
-No se puede deshacer.
-
-### Eliminar un negocio completo
-
-En **Configuración → Eliminar negocio** (o en **Tus negocios**, con «Eliminar»). Solo el dueño, y escribiendo el nombre del negocio
-para confirmar. Se borra para siempre:
-
-- la configuración del asistente con todas sus versiones, y los datos de pago;
-- las conversaciones con sus fotos y audios, los clientes, las ventas y los reportes;
-- WhatsApp se desconecta y el asistente deja de responder a tus clientes;
-- las claves de API de ese negocio y sus ajustes de atención humana e inteligencia artificial.
-
-Si no se puede desconectar WhatsApp, no se borra nada y te lo dice: inténtalo de nuevo en unos minutos. ¿Solo quieres pausarlo?
-Desconecta WhatsApp en **Canales**: conservas todo.
-
-## 12. Configuración y Mi cuenta
-
-Hay dos lugares, como en las plataformas grandes:
-
-- **Configuración** (abajo en el menú de la izquierda) es **del negocio**: la inteligencia artificial de tu asistente, la atención
-  humana, las respuestas rápidas, eliminar el negocio y, pronto, tu plan. Si tienes dos negocios, cada uno tiene la suya.
-- **Mi cuenta** (el menú de tu foto) es **tuya**, igual en todos tus negocios:
-  - **Mi perfil:** tu foto y tu nombre.
-  - **Seguridad:** cambiar tu contraseña (te pide la actual y, si quieres, cierra tu sesión en los demás equipos) y cerrar la sesión
-    en todos los demás equipos, por ejemplo si la dejaste abierta en un computador ajeno.
-  - **Notificaciones:** activar los avisos en este celular o computador. Los correos de avisos son de cada negocio y siguen en
-    Configuración → Atención humana.
-
-### Respuestas rápidas
-
-Son los mensajes que tu equipo envía todos los días (el saludo, los precios, cómo pagar, los envíos), guardados para ponerlos en un
-chat sin copiar y pegar. Se crean en **Configuración → Respuestas rápidas** y se aplican al instante, sin publicar.
-
-- **Atajo:** cómo la buscas en el chat. `precios` se busca escribiendo `/precios`. No se repite en el negocio.
-- **Categoría** (opcional): «Precios», «Pagos», «Envíos»… agrupa las respuestas en el chat y en la lista.
-- **Mensajes:** de 1 a 10, que salen en orden, uno tras otro. Escribe `{nombre}` (o toca **+ {nombre}**) y se cambia por el primer
-  nombre del cliente; si no lo sabemos, se quita. La vista previa te muestra cómo le llega.
-- **Duplicar** crea una copia con otro atajo para que solo cambies lo distinto. Cada respuesta dice cuántas veces la ha usado tu
-  equipo, y en el chat las más usadas salen primero.
-- Por ahora son textos: las fotos y los documentos llegarán cuando el chat del panel pueda enviarlos.
-
-## 13. Desde el celular
-
-El panel funciona en el celular como una aplicación: el menú se abre con **☰**, la campana de avisos está siempre arriba y los chats
-se ven como en WhatsApp. Puedes instalarlo en la pantalla de inicio (en Chrome: menú → **Instalar app**; en iPhone: Compartir →
-**Agregar a pantalla de inicio**) para abrirlo con un toque y recibir notificaciones.
-
-## Preguntas frecuentes
-
-**¿Mi asistente puede inventar precios?** No debería: responde solo con lo que publicaste, y si algo no está, lo dice y ofrece
-pasarte con una persona. Por eso conviene tener los productos y las preguntas frecuentes completos.
-
-**¿Qué pasa si la IA falla o me quedo sin saldo?** El cliente recibe el mensaje que escribiste en **Mensajes → Si el asistente no
-puede responder**. Recarga tu saldo de OpenRouter y vuelve a funcionar solo.
-
-**¿Cuánto cuesta cada respuesta?** Depende del modelo que elijas. En **Configuración → Inteligencia artificial** ves el costo aproximado
-de cada modelo y tu gasto de cada día.
-
-**¿Otras personas ven mis negocios?** No. Cada cuenta solo ve los negocios que creó.
-
-**¿Y si no estoy pendiente del panel?** Activa las notificaciones en tu celular (menú de tu foto → **Notificaciones**) y deja el correo
-de avisos encendido (Configuración → Atención humana). Si aun así nadie responde a tiempo, la IA retoma el chat para que el cliente no quede esperando.
-
-**¿Puedo deshacer un cambio publicado?** Sí: en **Publicar** vuelves a la versión anterior, o recuperas cualquier versión del
-historial.
+- [Configuración y Mi cuenta, qué va en cada una](../project/content/help/cuenta/configuracion-y-mi-cuenta.md): Configuración es del negocio; Mi cuenta es tuya, igual en todos tus negocios.
+- [Contraseña y sesiones](../project/content/help/cuenta/seguridad-y-sesiones.md): Cambiar tu contraseña y cerrar la sesión en los demás equipos, por ejemplo si la dejaste abierta en un computador ajeno.
+- [Activa las notificaciones en tu celular o computador](../project/content/help/cuenta/activar-notificaciones.md): Recibir un aviso como un mensaje de WhatsApp cuando un cliente necesita a una persona, aunque el panel esté cerrado.
+- [Elimina un negocio](../project/content/help/cuenta/eliminar-un-negocio.md): Qué se borra para siempre al eliminar un negocio, quién puede hacerlo y cómo pausarlo sin perder nada.

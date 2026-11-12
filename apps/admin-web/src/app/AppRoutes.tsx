@@ -21,6 +21,8 @@ import { PaymentsPage } from "../features/payments/PaymentsPage";
 import { PlaygroundPage } from "../features/playground/PlaygroundPage";
 import { AccountProfilePage, NotificationsPage, ProfilePage, SecurityPage } from "../features/profile/ProfilePage";
 import { QuickRepliesPage } from "../features/quickReplies/QuickRepliesPage";
+import { HelpArticlePage } from "../features/help/HelpArticlePage";
+import { HelpCenterPage } from "../features/help/HelpCenterPage";
 import { BillingPage } from "../features/settings/ComingSoonPages";
 import { DeleteBusinessPage } from "../features/settings/DeleteBusinessPage";
 import { ApiKeysPage } from "../features/integrations/ApiKeysPage";
@@ -45,6 +47,7 @@ import {
   CONVERSATIONS_ITEM,
   CUSTOMERS_ITEM,
   ENTRY_PATH,
+  HELP_ITEM,
   INTEGRATIONS_ITEM,
   NEW_BUSINESS_PATH,
   OVERVIEW_ITEM,
@@ -128,6 +131,8 @@ export const appRoutes = (
           <Route path="ia" element={<Navigate to={`../${AI_ITEM.path}`} replace />} />
           <Route path="atencion-humana" element={<Navigate to={`../${ATTENTION_ITEM.path}`} replace />} />
           <Route path={PLAYGROUND_ITEM.path} element={<PlaygroundPage />} />
+          <Route path={HELP_ITEM.path} element={<HelpCenterPage />} />
+          <Route path={`${HELP_ITEM.path}/:article`} element={<HelpArticlePage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Route>

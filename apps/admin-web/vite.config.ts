@@ -9,9 +9,13 @@ const { ADMIN_API_PORT = "8010" } = loadEnv("", ".", "ADMIN_API_");
 const ADMIN_WEB_PORT = 5180;
 const LOCAL_SERVER = { host: "127.0.0.1", port: ADMIN_WEB_PORT, strictPort: true, proxy: { "/api": `http://127.0.0.1:${ADMIN_API_PORT}` } };
 
+/** Los artículos del Centro de ayuda viven con el motor (`project/content/help`); las pruebas del panel los leen para revisar que cada
+ *  enlace a una pantalla exista. Solo esa carpeta, además de la del panel. */
+const HELP_CONTENT = "../../project/content/help";
+
 export default defineConfig({
   plugins: [react()],
-  server: LOCAL_SERVER,
+  server: { ...LOCAL_SERVER, fs: { allow: [".", HELP_CONTENT] } },
   preview: { ...LOCAL_SERVER, port: 4173 },
   test: {
     environment: "jsdom",

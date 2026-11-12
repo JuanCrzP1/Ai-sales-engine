@@ -5,6 +5,14 @@ está en el historial de git y en `docs/plan-v1.md`.
 
 ## 12 de noviembre de 2026
 
+**Centro de ayuda**
+- Nuevo **Ayuda** en el menú, junto a Configuración: un buscador, **Empieza aquí** con los cinco pasos para dejar al asistente
+  vendiendo (se marcan solos cuando los haces) y 41 artículos en 10 temas que siguen el menú del panel.
+- **La ayuda de cada pantalla:** el botón **?** junto a la campana abre al lado los artículos de la pantalla en la que estás, sin
+  salir de ella, con el que la explica primero.
+- Cada artículo dice cuánto se tarda en leer, tiene su índice, los relacionados y enlaces que te llevan directo a la pantalla.
+- Los agentes de IA conectados por MCP leen la misma ayuda (`search_help` y `read_help_article`) para explicarte cómo se hace algo.
+
 **Respuestas rápidas**
 - Nuevo **Configuración → Respuestas rápidas** (ya no dice «Pronto»): guarda los mensajes que tu equipo envía todos los días con un
   atajo, una categoría y de 1 a 10 mensajes, con vista previa de cómo le llegan al cliente.

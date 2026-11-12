@@ -145,7 +145,7 @@ def test_each_key_sees_only_the_tools_it_was_allowed(cloud):
     client, _engine = cloud
     reader = _key(client, reach="some", businesses=["restaurant"], permissions={"assistant": "read"})
     names = {tool["name"] for tool in _rpc(client, reader, "tools/list").json()["result"]["tools"]}
-    assert names == {"read_platform_guide", "get_config_guide", "get_business_config", "review_business_config", "list_versions", "get_ai_settings", "list_ai_models"}
+    assert names == {"read_platform_guide", "get_config_guide", "search_help", "read_help_article", "get_business_config", "review_business_config", "list_versions", "get_ai_settings", "list_ai_models"}
     full = {tool["name"]: tool for tool in _rpc(client, _key(client), "tools/list").json()["result"]["tools"]}
     assert {"create_business", "update_business_config", "publish_business_config", "test_assistant"} <= set(full)
     assert full["publish_business_config"]["annotations"]["destructiveHint"] is True

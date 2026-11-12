@@ -47,7 +47,7 @@ En este equipo la dirección es `http://127.0.0.1:8010/api/mcp`, porque la API d
 | Clientes y ventas | `list_customers`, `list_sales`, `get_report` | + `record_sale`, `cancel_sale` |
 | Atención humana | `get_attention_settings` | + `update_attention_settings` |
 | Conversar con el asistente | — | La API del asistente ([api.md](api.md)); solo con una clave de **un** negocio |
-| (sin permiso) | `read_platform_guide`, `get_config_guide` | — |
+| (sin permiso) | `read_platform_guide`, `get_config_guide`, `search_help`, `read_help_article` | — |
 
 Marcadas destructivas (`destructiveHint`), con confirmación de la persona: `publish_business_config`, `rollback_business_config`,
 `reply_to_customer` (le escribe a un cliente real), `cancel_sale` y `set_ai_model` (se aplica al instante y cambia el costo).

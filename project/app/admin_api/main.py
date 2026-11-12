@@ -20,6 +20,7 @@ from fastapi.responses import JSONResponse
 from app.admin_api.assistant_routes import router as assistant_router
 from app.admin_api.attention_routes import router as attention_router
 from app.admin_api.quick_reply_routes import router as quick_reply_router
+from app.admin_api.help_routes import router as help_router
 from app.admin_api.integration_routes import router as integration_router
 from app.admin_api.mcp_routes import audit_tool_call, router as mcp_router
 from app.admin_api.oauth_routes import router as oauth_router
@@ -32,6 +33,7 @@ from app.business_config_application.access import BusinessAccess
 from app.business_config_application.assistant_lab import AssistantLabService
 from app.business_config_application.attention import AttentionService, PushService
 from app.business_config_application.quick_replies import QuickRepliesService
+from app.business_config_application.help import HelpService
 from app.business_config_application.integrations import IntegrationsService
 from app.business_config_application.mcp.oauth import McpOAuthService
 from app.domain.business_config.oauth import oauth_addresses
@@ -119,6 +121,7 @@ def create_app(
     mcp_url: Callable[[], str | None] | None = None,
     oauth: OAuthStorage | None = None,
     quick_replies: QuickReplyStorage | None = None,
+    help_center: HelpService | None = None,
 ) -> FastAPI:
     """La API del panel. Sin `assistant_lab`, la inteligencia artificial y el área de pruebas responden que no están disponibles.
 
@@ -150,6 +153,8 @@ def create_app(
     app.state.push = PushService(push_storage, push) if push_storage is not None else None
     # Respuestas rápidas (Configuración y el chat): sin almacén, sus rutas responden que no están disponibles.
     app.state.quick_replies = QuickRepliesService(quick_replies, app.state.access) if quick_replies is not None else None
+    # El Centro de ayuda: los artículos de `content/help`, los mismos para el panel y para los agentes (MCP).
+    app.state.help = help_center if help_center is not None else HelpService.from_directory()
     # Integraciones: las claves de API del negocio y la API del asistente (su dirección y una prueba con lo publicado).
     app.state.integrations = (
         IntegrationsService(
@@ -177,6 +182,7 @@ def create_app(
             conversations=app.state.conversations,
             commerce=app.state.commerce,
             attention=app.state.attention,
+            help=app.state.help,
             local=not cloud,
             # Probar el asistente y responder a un cliente cuentan como si lo hiciera el dueño de la clave desde el panel.
             before_test=lambda caller, business: app.state.usage.playground_message(caller.principal, business),
@@ -213,6 +219,7 @@ def create_app(
     app.include_router(commerce_router)
     app.include_router(attention_router)
     app.include_router(quick_reply_router)
+    app.include_router(help_router)
     app.include_router(integration_router)
     app.include_router(mcp_router)
     app.include_router(oauth_router)

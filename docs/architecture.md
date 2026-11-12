@@ -402,6 +402,27 @@ por el prompt: el panel los pone en el cuadro de texto y salen como cualquier re
 Lo prueban `tests/test_quick_replies.py`, `tests/test_business_deletion.py` y `apps/admin-web/src/app/QuickReplies.test.tsx`. El
 laboratorio `exp_20261112_respuestas_rapidas` dio motor sin diferencias.
 
+## Centro De Ayuda
+
+La ayuda de la plataforma: artículos en Markdown que leen las personas en el panel y los agentes por MCP. No toca datos de ningún
+negocio ni pasa por el motor.
+
+- **Artículos** (`project/content/help/<tema>/<slug>.md`, ver su `README.md`): encabezado de metadatos y texto con un Markdown
+  limitado (secciones, listas de un nivel, tablas, avisos y enlaces a otro artículo, a una pantalla `panel:ruta` o `https://`).
+- **Reglas** (`domain/business_config/help.py`, puro): los temas en el orden del menú (`HELP_MODULES`), leer un artículo y rechazar
+  uno mal escrito, revisar que los enlaces entre artículos existan y buscar (título > palabras clave y resumen > texto; sin tildes,
+  con la raíz de cada palabra y sin las que aparecen en todo).
+- **Servicio** (`business_config_application/help.py`): lee la carpeta una vez al arrancar; un artículo mal escrito detiene el
+  arranque con el motivo.
+- **API** (`admin_api/help_routes.py`, con sesión): `GET /help`, `GET /help/search?q=` y `GET /help/articles/{slug}`.
+- **MCP** (`mcp/tools/help.py`, sin permiso): `search_help` y `read_help_article`.
+- **Panel:** `features/help/` (el Centro de ayuda en `ayuda`, cada artículo en `ayuda/<slug>`, «Empieza aquí» marcado con lo que el
+  panel ve del negocio y el lector de Markdown, que nunca pinta HTML crudo) y `layout/HelpPanel.tsx` (la ayuda de la pantalla abierta,
+  desde el botón **?** junto a la campana). Qué artículo explica cada pantalla está en `domain/help/help.ts`.
+
+Lo prueban `tests/test_help_center.py` y `apps/admin-web/src/app/Help.test.tsx` (que también lee los artículos reales para revisar
+cada `panel:ruta`).
+
 ## API Del Asistente
 
 Cualquier plataforma que haga peticiones HTTP conversa con el asistente de un negocio por HTTP (`POST /api/v1/assistant/messages`). Referencia para

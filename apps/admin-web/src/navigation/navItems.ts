@@ -24,7 +24,8 @@ export type NavKey =
   | "assistantApi"
   | "apiKeys"
   | "deleteBusiness"
-  | "agents";
+  | "agents"
+  | "help";
 
 export interface NavItem {
   key: NavKey;
@@ -134,6 +135,22 @@ export const ASSISTANT_API_ITEM: NavItem = { key: "assistantApi", path: "integra
 export const API_KEYS_ITEM: NavItem = { key: "apiKeys", path: "integraciones/claves", title: "Claves de API" };
 export const AGENTS_ITEM: NavItem = { key: "agents", path: "integraciones/agentes", title: "Agentes de IA (MCP)" };
 
+/** El Centro de ayuda: abajo en el menú, junto a Configuración. Cada artículo es `ayuda/<slug>`; un tema, `ayuda?tema=<id>`. */
+export const HELP_ITEM: NavItem = { key: "help", path: "ayuda", title: "Ayuda" };
+
+export function helpArticlePath(slug: string): string {
+  return `${HELP_ITEM.path}/${slug}`;
+}
+
+export function helpModulePath(module: string): string {
+  return `${HELP_ITEM.path}?tema=${encodeURIComponent(module)}`;
+}
+
+/** Si la ruta es del Centro de ayuda (`/negocios/x/ayuda/...`). */
+export function isHelpCenterPath(pathname: string): boolean {
+  return /\/ayuda(\/|$)/.test(pathname.replace(/\/+$/, ""));
+}
+
 /** Si la ruta es de Integraciones (`/negocios/x/integraciones/...`). */
 export function isIntegrationsPath(pathname: string): boolean {
   return /\/integraciones(\/|$)/.test(pathname.replace(/\/+$/, ""));
@@ -211,6 +228,7 @@ export function titleForPath(pathname: string): string {
   if (isSettingsPath(pathname)) return SETTINGS_ITEM.title;
   if (isAccountPath(pathname)) return "Mi cuenta";
   if (isIntegrationsPath(pathname)) return INTEGRATIONS_ITEM.title;
+  if (isHelpCenterPath(pathname)) return HELP_ITEM.title;
   const last = pathname.replace(/\/+$/, "").split("/").pop() ?? "";
   const item = [CONVERSATIONS_ITEM, CUSTOMERS_ITEM, SALES_ITEM, REPORTS_ITEM, CHANNELS_ITEM, SETTINGS_ITEM].find((entry) => entry.path === last);
   return item?.title ?? HOME_ITEM.title;

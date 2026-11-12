@@ -9,6 +9,7 @@ import { createApiConfigRepository } from "../infrastructure/api/apiConfigReposi
 import { createApiInbox } from "../infrastructure/api/apiInbox";
 import { createApiIntegrations } from "../infrastructure/api/apiIntegrations";
 import { createApiQuickReplies } from "../infrastructure/api/apiQuickReplies";
+import { createApiHelp } from "../infrastructure/api/apiHelp";
 import { createHttpClient } from "../infrastructure/api/httpClient";
 import { createBrowserPush } from "../infrastructure/browser/browserPush";
 import { createLocalOperatorAuthService } from "../infrastructure/local/localOperatorAuthService";
@@ -24,6 +25,7 @@ import type { ConfigRepository } from "../repositories/configRepository";
 import type { Inbox } from "../repositories/inbox";
 import type { Integrations } from "../repositories/integrations";
 import type { QuickReplies } from "../repositories/quickReplies";
+import type { Help } from "../repositories/help";
 
 /**
  * Servicios de la aplicación. Es el ÚNICO punto donde se eligen las implementaciones: pantallas, estado y reglas solo
@@ -44,6 +46,8 @@ export interface ApplicationServices {
   createAttention: (slug: string) => Attention;
   /** Las respuestas rápidas de un negocio (Configuración → Respuestas rápidas y el chat). */
   createQuickReplies: (slug: string) => QuickReplies;
+  /** El Centro de ayuda: el mismo en todos los negocios. */
+  help: Help;
   /** Las notificaciones en este navegador o celular (de la persona, no de un negocio). */
   devicePush: DevicePush;
   /** Las integraciones de un negocio: claves de API y la API del asistente. */
@@ -65,6 +69,7 @@ export function createLocalServices(apiBaseUrl?: string): ApplicationServices {
     createCommerce: (slug) => createApiCommerce(http, slug),
     createAttention: (slug) => createApiAttention(http, slug),
     createQuickReplies: (slug) => createApiQuickReplies(http, slug),
+    help: createApiHelp(http),
     devicePush: createBrowserPush(http),
     createIntegrations: (slug) => createApiIntegrations(http, slug),
     agentAuthorization: createApiAgentAuthorization(http),
@@ -85,6 +90,7 @@ export function createCloudServices(authUrl: string, apiBaseUrl?: string): Appli
     createCommerce: (slug) => createApiCommerce(http, slug),
     createAttention: (slug) => createApiAttention(http, slug),
     createQuickReplies: (slug) => createApiQuickReplies(http, slug),
+    help: createApiHelp(http),
     devicePush: createBrowserPush(http),
     createIntegrations: (slug) => createApiIntegrations(http, slug),
     agentAuthorization: createApiAgentAuthorization(http),

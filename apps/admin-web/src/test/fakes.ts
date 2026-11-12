@@ -9,6 +9,7 @@ import { createLocalOperatorAuthService } from "../infrastructure/local/localOpe
 import type { AIModelOption, AISettings, AIUsage, AssistantLab, ConfigSource, ModelCatalog } from "../repositories/assistantLab";
 import type { Attention, AttentionSettings, AttentionView, DevicePush, PushPermission, PushSupport } from "../repositories/attention";
 import type { QuickReplies, QuickReply, QuickReplyInput } from "../repositories/quickReplies";
+import type { Help, HelpArticle, HelpModule } from "../repositories/help";
 import { normalizeShortcut, SHORTCUT_PATTERN } from "../domain/quickReplies/quickReplies";
 import type { AuthService } from "../repositories/authService";
 import type { BusinessDirectory } from "../repositories/businessDirectory";
@@ -697,6 +698,52 @@ export function quickReply(shortcut: string, texts: string[], extra: Partial<Qui
   return { id: `semilla-${shortcut}`, shortcut, category: null, pieces: texts.map((text) => ({ kind: "text", text })), useCount: 0, lastUsedAt: null, createdAt: now, updatedAt: now, ...extra };
 }
 
+/** Un artículo de ayuda para las pruebas: su resumen sale del texto. */
+export function helpArticle(slug: string, module: string, title: string, body: string, related: string[] = []): HelpArticle & { relatedSlugs: string[] } {
+  const sections = [...body.matchAll(/^## +(.+)$/gm)].map((match) => ({ id: match[1]!.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, ""), title: match[1]! }));
+  return { slug, module, moduleName: module, title, summary: `Resumen de ${title.toLowerCase()}.`, minutes: 1, updated: "2026-11-12", body, sections, related: [], relatedSlugs: related };
+}
+
+const HELP_SEED = [
+  helpArticle("empieza-aqui", "primeros-pasos", "Empieza aquí: tu asistente vendiendo en 5 pasos", "En el inicio ves tu avance.\n\n## Los pasos\n\n1. **Enséñale lo que vendes** en [Asistente IA](panel:asistente).\n2. Pon tu clave: [Pon tu clave de IA](clave-de-openrouter).", ["conectar-whatsapp"]),
+  helpArticle("clave-de-openrouter", "inteligencia-artificial", "Pon tu clave de IA (OpenRouter)", "Crea tu clave en [openrouter.ai](https://openrouter.ai).\n\n> **Importante:** cada negocio tiene su clave."),
+  helpArticle("conectar-whatsapp", "canales", "Conecta tu WhatsApp con el código QR", "## Conectar\n\n1. En [Canales](panel:canales), toca **Conectar WhatsApp**.\n2. Escanea el código.\n\n## Si el código venció\n\nToca `Generar otro código`.\n\n| Paso | Dónde |\n|---|---|\n| Escanear | Dispositivos vinculados |", ["empieza-aqui"]),
+  helpArticle("cuidar-tu-numero", "canales", "Cuida tu número de WhatsApp", "- Usa WhatsApp Business.\n- Evita los envíos masivos."),
+  helpArticle("bandeja-en-vivo", "conversaciones", "Tus chats en vivo", "Ves cada chat en vivo."),
+];
+
+const HELP_MODULES_SEED = [
+  { id: "primeros-pasos", name: "Primeros pasos", description: "Crear tu cuenta y tu negocio" },
+  { id: "conversaciones", name: "Conversaciones", description: "Atender en vivo" },
+  { id: "canales", name: "Canales", description: "Conectar tu WhatsApp" },
+  { id: "inteligencia-artificial", name: "Inteligencia artificial", description: "Tu clave y el modelo" },
+];
+
+/** El Centro de ayuda en memoria: unos pocos artículos de varios temas, con búsqueda por palabras. */
+export function createMemoryHelp(seed = HELP_SEED) {
+  const state = { searches: [] as string[], failIndex: false };
+  const summary = ({ slug, module, title, summary: text, minutes, updated }: HelpArticle) => ({ slug, module, title, summary: text, minutes, updated });
+  const service: Help & typeof state = Object.assign(state, {
+    index: async (): Promise<HelpModule[]> => {
+      if (state.failIndex) throw new PersistenceError("unavailable", { message: "No se pudo cargar la ayuda." });
+      return HELP_MODULES_SEED.map((module) => ({ ...module, articles: seed.filter((article) => article.module === module.id).map(summary) }));
+    },
+    search: async (query: string) => {
+      state.searches.push(query);
+      const words = query.toLowerCase().split(/\s+/).filter((word) => word.length > 2);
+      return seed.filter((article) => words.some((word) => `${article.title} ${article.body}`.toLowerCase().includes(word))).map(summary);
+    },
+    article: async (slug: string) => {
+      const found = seed.find((article) => article.slug === slug);
+      if (!found) throw new PersistenceError("not_found", { message: "Ese artículo de ayuda no existe." });
+      const moduleName = HELP_MODULES_SEED.find((module) => module.id === found.module)?.name ?? found.module;
+      const { relatedSlugs, ...article } = found;
+      return { ...structuredClone(article), moduleName, related: seed.filter((other) => relatedSlugs.includes(other.slug)).map(summary) };
+    },
+  });
+  return service;
+}
+
 /** Servicios como los de la aplicación, sobre el backend en memoria. */
 export function createTestServices(backend: MemoryBackend = createMemoryBackend(), overrides: Partial<ApplicationServices> = {}): ApplicationServices {
   const whatsapp = createMemoryWhatsApp();
@@ -717,6 +764,7 @@ export function createTestServices(backend: MemoryBackend = createMemoryBackend(
     devicePush: createMemoryDevicePush(),
     createIntegrations: () => integrations,
     agentAuthorization: createMemoryAgentAuthorization(),
+    help: createMemoryHelp(),
     ...overrides,
   };
 }
