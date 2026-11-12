@@ -110,4 +110,39 @@ def review(config: BusinessConfig, *, today: date | None = None) -> list[Diagnos
         add("agenda_sin_horarios", "incompleto", "identity.opening_hours",
             "El servicio requiere agendar, pero no hay horarios de atención.")
 
+    found.extend(_live_advisories(config))
+    return found
+
+
+# Avisos que el panel calcula en vivo mientras se edita (`apps/admin-web/src/domain/validation/rules.ts`), con el mismo campo y el
+# mismo texto: así el agente que trabaja por MCP ve lo mismo que la persona en la pantalla. Los casos compartidos están en
+# `project/config/contracts/v1/advisory-cases.json` y los prueban los dos lados.
+LIVE_ADVISORY_CODES = ("sin_direccion", "cuentas_repetidas", "sin_medios_de_pago", "sin_problemas_del_cliente", "sin_mensaje_de_pago_reportado")
+
+
+def _live_advisories(config: BusinessConfig) -> list[Diagnostic]:
+    found: list[Diagnostic] = []
+    location = config.identity.location
+    if location is not None and location.type in ("fisico", "mixto") and not (location.address or "").strip():
+        found.append(Diagnostic("sin_direccion", "incompleto", "identity.location.address", "Sin dirección, el asistente no podrá decir dónde queda tu local."))
+
+    has_link = any(profile.link and profile.link_enabled is not False for profile in config.payments)
+    has_transfer = False
+    for index, profile in enumerate(config.payments):
+        active = [method.type for method in profile.transfer_methods if profile.transfer_enabled and method.enabled is not False]
+        has_transfer = has_transfer or bool(active)
+        if len(set(active)) != len(active):
+            found.append(Diagnostic("cuentas_repetidas", "incoherencia", f"payments.{index}.transfer_methods.duplicates",
+                                    "Hay dos cuentas del mismo tipo: el asistente solo comparte la primera de cada tipo."))
+    if not has_link and not has_transfer:
+        found.append(Diagnostic("sin_medios_de_pago", "incompleto", "payments", "No hay ningún medio de pago: el asistente no podrá indicar cómo pagar."))
+
+    sales = config.sales
+    if not sales.customer_problems and not (sales.buying_motivation and sales.buying_motivation.primary):
+        found.append(Diagnostic("sin_problemas_del_cliente", "incompleto", "sales.customer_problems",
+                                "Cuéntale al asistente qué problemas resuelves o por qué te compran; le ayuda a vender mejor."))
+
+    if not (config.messages.payment_reported or "").strip():
+        found.append(Diagnostic("sin_mensaje_de_pago_reportado", "incompleto", "messages.payment_reported",
+                                "Sin este mensaje, el asistente responderá con sus propias palabras cuando el cliente diga que ya pagó."))
     return found

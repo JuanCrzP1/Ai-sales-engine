@@ -299,6 +299,9 @@ El dueño no sabía que tenía que publicar: el asistente seguía con la versió
 - Arriba del editor (`layout/SaveStatus.tsx`): «Guardado · hh:mm · Cambios sin publicar» en ámbar con «Revisar y publicar», o
   «Publicado · es lo que responde a tus clientes». En el menú, un punto ámbar en «Asistente IA». El Inicio y «Probar» usan el mismo
   estado.
+- Los avisos en vivo que también da el servidor (`domain/validation/liveAdvisories.ts`) tienen el mismo campo y el mismo texto en los
+  dos lados (casos compartidos en `project/config/contracts/v1/advisory-cases.json`, prueba `advisoryParity.test.ts`). «Publicar» no
+  repite los diagnósticos que la pantalla ya muestra en vivo (`serverOnlyDiagnostics`).
 - En Revisión (`features/review/PublishChanges.tsx`): «Lo que cambia al publicar», por sección, con cómo estaba y cómo queda. Los
   campos se nombran con el contrato (`schemaFieldNamer`) y los elementos de una lista por su título. Los datos de pago cambian de
   referencia cuando cambia su valor: se informan como «actualizado (protegido)», nunca su valor.

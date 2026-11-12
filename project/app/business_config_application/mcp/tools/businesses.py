@@ -49,7 +49,7 @@ def business_tools(
             except StopIteration:
                 raise InvalidFieldsError("Esa plantilla no existe.", [FieldIssue("template", "Usa una de list_business_templates.")]) from None
             document = template.instantiate(slug, name)
-        created = access.create_for(caller.principal, slug, name, document=document)
+        created = access.create_for(caller.principal, slug, name, document=document, created_by=caller.author)
         on_created(caller, created.slug)
         return {
             **_summary(created),

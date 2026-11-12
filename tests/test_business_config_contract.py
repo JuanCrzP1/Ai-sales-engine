@@ -818,16 +818,17 @@ def test_an_example_rejects_documents_of_another_tenant(tmp_path):
 # Diagnóstico: los nueve negocios y sus diferencias comerciales
 # ---------------------------------------------------------------------------
 
+# Los avisos en vivo del panel (`LIVE_ADVISORY_CODES`) también cuentan: sin motivo de compra ni problemas del cliente, el panel ya avisaba.
 EXPECTED_DIAGNOSTICS = {
     "agencia_viajes": ["cierre_por_link_sin_link", "agenda_sin_horarios"],
     "asesor_ai_prod": ["recomienda_oferta_no_disponible", "sin_canales_de_atencion"],
-    "clinic": ["agenda_sin_horarios"],
+    "clinic": ["agenda_sin_horarios", "sin_problemas_del_cliente"],
     "demo": ["recomienda_oferta_no_disponible", "recomienda_oferta_no_disponible"],
-    "ecommerce": ["modo_catalogo_contradice_oferta"],
+    "ecommerce": ["modo_catalogo_contradice_oferta", "sin_problemas_del_cliente"],
     "escuela_conduccion": ["cierre_por_link_sin_link", "agenda_sin_horarios"],
-    "restaurant": ["cierre_por_link_sin_link"],
-    "saas": [],
-    "tienda_ropa": ["cierre_por_link_sin_link", "entrega_sin_modalidad", "entrega_sin_modalidad"],
+    "restaurant": ["cierre_por_link_sin_link", "sin_problemas_del_cliente"],
+    "saas": ["sin_problemas_del_cliente"],
+    "tienda_ropa": ["cierre_por_link_sin_link", "entrega_sin_modalidad", "entrega_sin_modalidad", "sin_problemas_del_cliente"],
 }
 
 

@@ -80,7 +80,7 @@ def config_tools(
             "saved_version": saved.version,
             "status": "borrador",
             "payment_values_saved": len(values),
-            "warnings": [diagnostic.message for diagnostic in review.diagnostics],
+            "warnings": [{"field": item.path, "message": item.message} for item in review.diagnostics],
             "next": NEXT_AFTER_SAVE,
         }
 
@@ -98,7 +98,7 @@ def config_tools(
             "first_publication": summary.published_version is None,
             "can_publish": report.compiles,
             "blocking_problem": problem,
-            "warnings": [diagnostic.message for diagnostic in report.diagnostics],
+            "warnings": [{"field": item.path, "message": item.message} for item in report.diagnostics],
             "changes": changes,
             "how_to_present": "Muéstrale a la persona lo que cambia, en sus palabras, y pídele que confirme antes de publish_business_config.",
         }

@@ -37,8 +37,10 @@ class BusinessAccess:
         mine = self._members.slugs_of(principal.user_id) if self._members is not None else set()
         return [business for business in businesses if business.slug in mine]
 
-    def create_for(self, principal: Principal, tenant_slug: str, name: str, *, document: dict[str, Any] | None = None) -> BusinessSummary:
+    def create_for(
+        self, principal: Principal, tenant_slug: str, name: str, *, document: dict[str, Any] | None = None, created_by: str | None = None
+    ) -> BusinessSummary:
         """Crea el negocio con este usuario como dueño, en la misma transacción. Con `document` (una plantilla), guarda su primer
-        borrador: nada se publica hasta que el negocio lo revise."""
+        borrador a nombre de quien lo creó (por defecto, el usuario): nada se publica hasta que el negocio lo revise."""
         owner = None if self._all_access(principal) else principal.user_id
-        return self._configs.create_business(tenant_slug, name, document=document, owner_id=owner)
+        return self._configs.create_business(tenant_slug, name, document=document, owner_id=owner, created_by=created_by or principal.label)

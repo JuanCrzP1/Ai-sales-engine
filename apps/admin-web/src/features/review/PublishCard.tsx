@@ -8,6 +8,7 @@ import { formatDateTime } from "../../lib/format";
 import type { ActionResult, ReviewReport } from "../../state/configContext";
 import { persistenceErrorMessage } from "../../state/directoryContext";
 import { useConfig } from "../../state/useConfig";
+import { serverOnlyDiagnostics } from "../../domain/validation/liveAdvisories";
 import { PublishChanges } from "./PublishChanges";
 
 const STATUS_LABELS: Record<VersionInfo["status"], string> = { draft: "Borrador", published: "Publicada", archived: "Anterior" };
@@ -73,10 +74,10 @@ export function PublishCard() {
           <p>{report.compileError}</p>
         </Alert>
       )}
-      {report && report.diagnostics.length > 0 && !dirty && (
+      {report && serverOnlyDiagnostics(report.diagnostics).length > 0 && !dirty && (
         <Alert tone="warning" title="Conviene revisar antes de publicar">
           <ul>
-            {report.diagnostics.map((item, index) => (
+            {serverOnlyDiagnostics(report.diagnostics).map((item, index) => (
               <li key={`${item.code}-${index}`}>{item.message}</li>
             ))}
           </ul>

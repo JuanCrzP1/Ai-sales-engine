@@ -5,6 +5,13 @@ está en el historial de git y en `docs/plan-v1.md`.
 
 ## 12 de noviembre de 2026
 
+**Agentes de IA, más precisos** (después de probarlos en producción)
+- El agente ve los mismos avisos que tú en el panel («sin dirección», «cuéntale qué problemas resuelves»...), con el campo donde
+  corregir.
+- Los errores de formato dicen qué usar: «solo letras sin tildes ni ñ, números y guion bajo (por ejemplo, pan_aliniado)».
+- La primera versión de un negocio queda a nombre de quien lo creó, persona o agente.
+- En «Publicar» ya no se repiten los avisos que la pantalla muestra en vivo.
+
 **Agentes de IA (MCP): que Claude monte tu negocio**
 - Nueva pantalla **Integraciones → Agentes de IA (MCP)**: la dirección del servidor y lo que se pega en Claude Code, Cursor (y
   Claude Desktop, Windsurf, Gemini CLI) y n8n.

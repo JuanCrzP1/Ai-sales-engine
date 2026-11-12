@@ -53,7 +53,8 @@ Las conversaciones, clientes, ventas, reportes y la atención humana llegan en l
 | `domain/business_config/key_permissions.py` | Áreas, niveles y su traducción a permisos internos (`scopes`). Reglas: conversar es de un negocio; crear negocios exige todos; al menos un área; vencimientos permitidos |
 | `domain/business_config/agent_edits.py` | Cambios parciales (`merged`: los objetos se combinan, las listas se reemplazan, `null` quita); `{"value": …}` → referencia cifrada nueva; identificador del negocio desde su nombre |
 | `domain/business_config/config_changes.py` | Lo que cambia al publicar, por contenido; los datos de pago, «protegidos» |
-| `domain/business_config/validation_messages.py` | Los problemas del contrato por campo, en español; al agente le agrega las opciones permitidas |
+| `domain/business_config/validation_messages.py` | Los problemas del contrato por campo, en español; cada formato se explica con un ejemplo («sin tildes ni ñ…»), y al agente le agrega las opciones permitidas |
+| `domain/business_config/diagnostics.py` | Lo que conviene revisar. Incluye los avisos que el panel calcula en vivo, con el mismo campo y el mismo texto (`LIVE_ADVISORY_CODES`): el agente ve lo mismo que la persona. Casos compartidos en `project/config/contracts/v1/advisory-cases.json`, probados en los dos lados |
 | `business_config_application/mcp/` | `protocol.py` (JSON-RPC 2.0 sin estado), `tool.py` (herramienta y revisión de argumentos), `access.py` (quién llama y a qué negocios llega), `tools/` (guía, negocios y configuración) y `server.py` |
 | `admin_api/mcp_routes.py` | `POST /api/mcp`: clave, límite, lote, registro de cada llamada |
 | `project/config/agents/guia-para-agentes.md` | La guía que lee el agente: reglas y la receta para montar un negocio completo. Viaja con el motor |

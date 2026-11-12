@@ -123,8 +123,10 @@ class BusinessConfigService:
         document: dict[str, Any] | None = None,
         payment_values: dict[str, str] | None = None,
         owner_id: str | None = None,
+        created_by: str | None = None,
     ) -> BusinessSummary:
-        """Registra un negocio (con su dueño, si se indica) y, si se indica, guarda su primera versión en borrador."""
+        """Registra un negocio (con su dueño, si se indica) y, si se indica, guarda su primera versión en borrador a nombre de
+        `created_by` (quien lo creó: una persona en el panel o un agente de IA)."""
         check_business_identity(tenant_slug, name)
         if document is not None:
             # Antes de registrar nada: un documento rechazado no deja un negocio a medias.
@@ -133,7 +135,7 @@ class BusinessConfigService:
                 self._secrets.verify_key()
         self._storage.create_business(tenant_slug, name.strip(), owner_id=owner_id)
         if document is not None:
-            self.save_changes(tenant_slug, document, payment_values=payment_values)
+            self.save_changes(tenant_slug, document, payment_values=payment_values, created_by=created_by)
         return self._storage.business(tenant_slug)
 
     def get_business(self, tenant_slug: str) -> BusinessSummary:

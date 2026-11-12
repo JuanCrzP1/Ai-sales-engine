@@ -17,6 +17,15 @@ _TECHNICAL_MESSAGES = {
 }
 
 
+# Qué formato pide cada patrón del contrato, en palabras y con un ejemplo (`primitives.py`, `contract/identity.py`).
+_PATTERN_MESSAGES = {
+    r"^[a-z0-9][a-z0-9_]*$": "Usa solo minúsculas sin tildes ni ñ, números y guion bajo (por ejemplo, mi_negocio).",
+    r"^[A-Za-z0-9][A-Za-z0-9_.-]*$": "Usa solo letras sin tildes ni ñ, números, guion, punto o guion bajo, sin espacios (por ejemplo, pan_aliniado).",
+    r"^[A-Z]{3}$": "Usa el código de 3 letras en mayúsculas (por ejemplo, COP o USD).",
+    r"^([01]\d|2[0-3]):[0-5]\d$": "Usa la hora en formato de 24 horas, HH:MM (por ejemplo, 08:00 o 18:30).",
+}
+
+
 def _is_branch(part: Any) -> bool:
     return isinstance(part, str) and (part in _UNION_BRANCHES or "[" in part or part.startswith("constrained-"))
 
@@ -40,7 +49,7 @@ def issue_message(error: dict[str, Any]) -> str:
     if kind == "too_short":
         return f"Necesita al menos {context.get('min_length')} elemento."
     if kind == "string_pattern_mismatch":
-        return "El formato no es válido."
+        return _PATTERN_MESSAGES.get(str(context.get("pattern")), "El formato no es válido.")
     if kind in {"greater_than_equal", "greater_than"}:
         return f"Debe ser {context.get('ge', context.get('gt'))} o más."
     if kind in {"literal_error", "enum"}:

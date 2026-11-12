@@ -266,6 +266,8 @@ def test_an_agent_builds_a_complete_business_and_publishes_it_when_asked(cloud):
     assert "••••8899" in states
     review = call("review_business_config", business=business)
     assert review["first_publication"] is True and review["can_publish"] is True and review["changes"] == []
+    # El agente ve los mismos avisos que el panel, con su campo: la plantilla tiene local físico pero no dirección.
+    assert {"field": "identity.location.address", "message": "Sin dirección, el asistente no podrá decir dónde queda tu local."} in review["warnings"]
 
     reply = call("test_assistant", business=business, message="¿Cuánto cuesta el pan?")
     assert reply["reply"].startswith("¡Hola!") and FakeLab.asked[-1] == (business, "¿Cuánto cuesta el pan?", "draft")
@@ -283,7 +285,8 @@ def test_an_agent_builds_a_complete_business_and_publishes_it_when_asked(cloud):
     assert business in [item["slug"] for item in client.get("/api/businesses", headers=_as("ana")).json()]
     assert business not in [item["slug"] for item in client.get("/api/businesses", headers=_as("beto")).json()]
     versions = call("list_versions", business=business)["versions"]
-    assert any("Agente «Claude de prueba»" in (item["created_by"] or "") for item in versions)
+    # Todas, también la primera (la de la plantilla al crear el negocio), quedan a nombre del agente y de su dueño.
+    assert all(item["created_by"] == "Agente «Claude de prueba» (ana@example.com)" for item in versions)
     # Ningún dato de pago salió jamás hacia el agente.
     assert not any(NEQUI in text_ or LINK in text_ for text_ in responses)
 
@@ -297,6 +300,11 @@ def test_what_breaks_the_contract_comes_back_to_be_fixed_and_nothing_is_saved(cl
     issues = {issue["path"]: issue for issue in broken["structuredContent"]["issues"]}
     assert "identity.name" in issues and "offer.model" in issues and "options" in issues["offer.model"]
     assert _call(client, secret, "list_versions", business="restaurant")["structuredContent"]["versions"] == before
+    current = _call(client, secret, "get_business_config", business="restaurant")["structuredContent"]["document"]
+    items = current["offer"]["catalog"]["items"]
+    items[0]["id"] = "pan_aliñado"
+    accent = _call(client, secret, "update_business_config", business="restaurant", changes={"offer": {"catalog": {"items": items}}})
+    assert accent["isError"] is True and "sin tildes ni ñ" in accent["structuredContent"]["issues"][0]["message"]
     stray = _call(client, secret, "update_business_config", business="restaurant", changes={"identity": {"description": {"value": NEQUI}}})
     assert stray["isError"] is True and NEQUI not in json.dumps(stray)
     latest = _call(client, secret, "get_business_config", business="restaurant")["structuredContent"]["latest_version"]

@@ -1,0 +1,46 @@
+{
+  "_about": "Avisos que el panel calcula en vivo y el servidor repite en su diagnóstico (lo que lee el agente por MCP). Cada caso aplica `changes` a un documento válido (como update_business_config: objetos combinados, listas reemplazadas) y espera el aviso con ese `field` y ese `message`, en los dos lados. Lo prueban tests/test_business_config_advisories.py y apps/admin-web/src/domain/validation/advisoryParity.test.ts.",
+  "cases": [
+    {
+      "code": "sin_direccion",
+      "changes": { "identity": { "location": { "type": "fisico", "address": "" } } },
+      "field": "identity.location.address",
+      "message": "Sin dirección, el asistente no podrá decir dónde queda tu local."
+    },
+    {
+      "code": "cuentas_repetidas",
+      "changes": {
+        "payments": [
+          {
+            "id": "principal",
+            "transfer_enabled": true,
+            "transfer_methods": [
+              { "type": "nequi", "number": { "secret_ref": "secret_store:principal.nequi.number.a" } },
+              { "type": "nequi", "number": { "secret_ref": "secret_store:principal.nequi.number.b" } }
+            ]
+          }
+        ]
+      },
+      "field": "payments.0.transfer_methods.duplicates",
+      "message": "Hay dos cuentas del mismo tipo: el asistente solo comparte la primera de cada tipo."
+    },
+    {
+      "code": "sin_medios_de_pago",
+      "changes": { "payments": [{ "id": "principal", "transfer_enabled": false, "transfer_methods": [] }], "capabilities": { "closing_methods": { "payment_link": false, "human_handoff": true } } },
+      "field": "payments",
+      "message": "No hay ningún medio de pago: el asistente no podrá indicar cómo pagar."
+    },
+    {
+      "code": "sin_problemas_del_cliente",
+      "changes": { "sales": { "customer_problems": [], "buying_motivation": null } },
+      "field": "sales.customer_problems",
+      "message": "Cuéntale al asistente qué problemas resuelves o por qué te compran; le ayuda a vender mejor."
+    },
+    {
+      "code": "sin_mensaje_de_pago_reportado",
+      "changes": { "messages": { "payment_reported": null } },
+      "field": "messages.payment_reported",
+      "message": "Sin este mensaje, el asistente responderá con sus propias palabras cuando el cliente diga que ya pagó."
+    }
+  ]
+}
