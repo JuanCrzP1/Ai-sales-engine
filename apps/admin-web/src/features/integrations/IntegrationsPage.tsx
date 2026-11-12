@@ -43,7 +43,7 @@ export function IntegrationsPage() {
   const raw = params.get("categoria");
   const category: CategoryFilter = isCategory(raw) ? raw : "all";
   const header = (
-    <PageHeader title="Integraciones" description="Conecta tu asistente con las herramientas que ya usas: la IA que lo hace responder, otras plataformas de atención y, pronto, los agentes de IA que te ayudan a administrarlo." />
+    <PageHeader title="Integraciones" description="Conecta tu asistente con las herramientas que ya usas: la IA que lo hace responder, otras plataformas de atención y los agentes de IA que te ayudan a montarlo y administrarlo." />
   );
 
   // Espera también a la IA: así OpenRouter no aparece un instante «Sin conectar» antes de saber que tiene su clave.
