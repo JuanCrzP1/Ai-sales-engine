@@ -1,5 +1,5 @@
 import type { BusinessDocument, Diagnostic, PaymentFields, VersionInfo, VersionStatus } from "../../domain/config/types";
-import type { ConfigRepository, ReviewReport, StoredConfig } from "../../repositories/configRepository";
+import type { ConfigRepository, ReviewReport, StoredConfig, VersionDocument } from "../../repositories/configRepository";
 import type { ApiSummary } from "./apiBusinessDirectory";
 import type { HttpClient } from "./httpClient";
 
@@ -50,6 +50,10 @@ export function createApiConfigRepository(http: HttpClient, slug: string): Confi
       return { version: report.version, diagnostics: report.diagnostics, compiles: report.compiles, compileError: report.compile_error };
     },
     history: async () => (await http.get<ApiVersion[]>(`${base}/versions`)).map(toVersion),
+    versionDocument: async (version): Promise<VersionDocument> => {
+      const payload = await http.get<{ version: ApiVersion; document: BusinessDocument }>(`${base}/versions/${version}`);
+      return { version: toVersion(payload.version), document: payload.document };
+    },
     publish: async (version) => toStored(await http.post<ApiConfig>(`${base}/publish`, { version })),
     rollback: async () => toStored(await http.post<ApiConfig>(`${base}/rollback`)),
     restore: async (version) => toStored(await http.post<ApiConfig>(`${base}/versions/${version}/restore`)),

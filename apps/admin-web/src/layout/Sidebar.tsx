@@ -37,10 +37,11 @@ const SWIPE_TO_CLOSE = 60;
  * la cuenta abajo: el contenido no pierde alto con una barra superior.
  */
 export function Sidebar({ id, open, compact = false, onClose }: SidebarProps) {
-  const { progress } = useConfig();
+  const { progress, publication } = useConfig();
   const { verifiesCredentials } = useAuth();
   const { pathname } = useLocation();
   const pending = progress.total - progress.completed;
+  const unpublished = publication === "pending";
   const touchStart = useRef<number | null>(null);
 
   const onTouchStart = (event: TouchEvent) => {
@@ -88,6 +89,7 @@ export function Sidebar({ id, open, compact = false, onClose }: SidebarProps) {
           Tu negocio
         </p>
         <NavEntry item={ASSISTANT_HUB_ITEM} active={isAssistantPath(pathname)}>
+          {unpublished && <span className="nav__dot" role="img" aria-label="Cambios sin publicar" title="Tienes cambios guardados que tus clientes todavía no ven" />}
           {pending > 0 && (
             <span className="nav__count" title={`${pending} ${pending === 1 ? "sección pendiente" : "secciones pendientes"}`}>
               {pending}

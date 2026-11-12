@@ -136,6 +136,20 @@
   font-size: var(--text-sm);
 }
 
+.nav__dot {
+  margin-left: auto;
+  width: 8px;
+  height: 8px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: #f59e0b;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.25);
+}
+
+.nav__dot + .nav__count {
+  margin-left: 6px;
+}
+
 .nav__count {
   margin-left: auto;
   min-width: 20px;

@@ -8,6 +8,7 @@ import { formatDateTime } from "../../lib/format";
 import type { ActionResult, ReviewReport } from "../../state/configContext";
 import { persistenceErrorMessage } from "../../state/directoryContext";
 import { useConfig } from "../../state/useConfig";
+import { PublishChanges } from "./PublishChanges";
 
 const STATUS_LABELS: Record<VersionInfo["status"], string> = { draft: "Borrador", published: "Publicada", archived: "Anterior" };
 
@@ -63,6 +64,8 @@ export function PublishCard() {
           <dd>{meta.publishedVersion ?? "Ninguna"}</dd>
         </div>
       </dl>
+
+      <PublishChanges />
 
       {dirty && <p className="field__hint">Tienes cambios sin guardar: guárdalos para poder publicarlos.</p>}
       {report && !report.compiles && !dirty && current && (

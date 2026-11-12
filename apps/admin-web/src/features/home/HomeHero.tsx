@@ -57,9 +57,10 @@ export function HomeHeader() {
 
 /** Con todo configurado, el progreso ya no necesita una tarjeta grande: queda una franja con el estado y el siguiente paso. */
 export function AssistantReady() {
-  const { progress, meta } = useConfig();
+  const { progress, publication } = useConfig();
   const pathTo = useWorkspacePath();
-  const unpublished = meta.latestVersion !== null && meta.latestVersion !== meta.publishedVersion;
+  // Por contenido, no por número de versión: guardar sin cambiar nada no deja cambios pendientes.
+  const unpublished = publication === "pending" || publication === "never";
 
   return (
     <section className="ready-strip" aria-label="Estado del asistente">
@@ -70,7 +71,7 @@ export function AssistantReady() {
         <strong>Tu asistente está configurado</strong>
         <span>
           {progress.completed} de {progress.total} secciones listas
-          {unpublished ? " · tienes cambios sin publicar" : " · lo publicado es lo que responde"}
+          {publication === "never" ? " · todavía no lo has publicado" : unpublished ? " · tienes cambios sin publicar" : " · lo publicado es lo que responde"}
         </span>
       </div>
       {unpublished ? (

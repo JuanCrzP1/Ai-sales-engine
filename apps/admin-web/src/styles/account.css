@@ -400,6 +400,21 @@
   color: var(--color-danger);
 }
 
+.save-status--pending {
+  background: var(--color-warning-soft);
+  border-color: #f3d79a;
+  color: var(--color-warning);
+  font-weight: 600;
+}
+
+.save-status__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #f59e0b;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2);
+}
+
 .save-status__retry {
   margin-left: 4px;
   padding: 2px 8px;

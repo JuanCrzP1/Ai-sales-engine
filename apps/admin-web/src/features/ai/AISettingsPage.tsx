@@ -2,7 +2,8 @@ import { useEffect, useState, type FormEvent } from "react";
 import { Button, LinkButton } from "../../components/ui/Button";
 import { ConfirmButton } from "../../components/ui/ConfirmButton";
 import { Alert, Badge } from "../../components/ui/Feedback";
-import { Icon, type IconName } from "../../components/ui/Icon";
+import { Icon } from "../../components/ui/Icon";
+import { IntegrationMark, type IntegrationMarkKind } from "../../components/brand/IntegrationMark";
 import { Card, PageHeader } from "../../components/ui/Layout";
 import { PasswordField } from "../../components/ui/PasswordField";
 import { LoadingScreen } from "../../layout/StatusScreen";
@@ -16,16 +17,16 @@ interface Provider {
   id: string;
   name: string;
   description: string;
-  icon: IconName;
+  mark: IntegrationMarkKind;
   available: boolean;
 }
 
 /** Los proveedores de IA. Hoy, OpenRouter (da acceso a los modelos de todos los demás con una sola clave); los otros, pronto. */
 const PROVIDERS: Provider[] = [
-  { id: "openrouter", name: "OpenRouter", description: "Modelos de OpenAI, Google, Anthropic y más con una sola clave.", icon: "layers", available: true },
-  { id: "openai", name: "OpenAI", description: "GPT con tu clave de OpenAI.", icon: "sparkles", available: false },
-  { id: "anthropic", name: "Anthropic", description: "Claude con tu clave de Anthropic.", icon: "sparkles", available: false },
-  { id: "google", name: "Google Gemini", description: "Gemini con tu clave de Google AI Studio.", icon: "sparkles", available: false },
+  { id: "openrouter", name: "OpenRouter", description: "Modelos de OpenAI, Google, Anthropic y más con una sola clave.", mark: "openrouter", available: true },
+  { id: "openai", name: "OpenAI", description: "GPT con tu clave de OpenAI.", mark: "openai", available: false },
+  { id: "anthropic", name: "Anthropic", description: "Claude con tu clave de Anthropic.", mark: "anthropic", available: false },
+  { id: "google", name: "Google Gemini", description: "Gemini con tu clave de Google AI Studio.", mark: "gemini", available: false },
 ];
 
 /** La clave guardada, oculta: el comienzo de las claves de OpenRouter y sus últimos caracteres. */
@@ -97,9 +98,7 @@ export function AISettingsPage() {
                   aria-disabled={!provider.available}
                   className={`provider-tile${provider.available ? " provider-tile--selected" : " provider-tile--soon"}`}
                 >
-                  <span className="provider-tile__icon" aria-hidden="true">
-                    <Icon name={provider.icon} size={18} />
-                  </span>
+                  <IntegrationMark kind={provider.mark} size="md" />
                   <span className="provider-tile__text">
                     <span className="provider-tile__name">
                       {provider.name}

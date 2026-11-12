@@ -39,7 +39,7 @@ interface MemoryBusiness {
   published: number[];
 }
 
-type FailingOperation = "list" | "create" | "templates" | "remove" | "importExisting" | "contractSchema" | "load" | "save" | "review" | "history" | "publish" | "rollback" | "restore";
+type FailingOperation = "list" | "create" | "templates" | "remove" | "importExisting" | "contractSchema" | "load" | "save" | "review" | "history" | "versionDocument" | "publish" | "rollback" | "restore";
 
 export interface MemoryBackend {
   directory: BusinessDirectory;
@@ -219,6 +219,12 @@ export function createMemoryBackend(seed: BusinessDocument[] = []): MemoryBacken
     history: async () => {
       check("history");
       return find(slug).versions.map(toInfo);
+    },
+    versionDocument: async (version) => {
+      check("versionDocument");
+      const target = find(slug).versions.find((item) => item.version === version);
+      if (!target) throw new PersistenceError("not_found", { message: "Esa versión no existe." });
+      return { version: toInfo(target), document: structuredClone(target.document) };
     },
     publish: async (version) => {
       check("publish");

@@ -20,6 +20,12 @@ export interface SaveRequest {
   baseVersion: number | null;
 }
 
+/** Una versión guardada con su documento (los datos de pago, solo como referencias). */
+export interface VersionDocument {
+  version: VersionInfo;
+  document: BusinessDocument;
+}
+
 /** Lo que el servidor opina de la versión que se está editando. */
 export interface ReviewReport {
   version: number | null;
@@ -38,6 +44,8 @@ export interface ConfigRepository {
   save(request: SaveRequest): Promise<StoredConfig>;
   review(): Promise<ReviewReport>;
   history(): Promise<VersionInfo[]>;
+  /** Una versión concreta con su documento: sirve para comparar lo que se edita con lo publicado. */
+  versionDocument(version: number): Promise<VersionDocument>;
   publish(version: number): Promise<StoredConfig>;
   rollback(): Promise<StoredConfig>;
   restore(version: number): Promise<StoredConfig>;

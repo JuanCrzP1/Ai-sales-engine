@@ -23,16 +23,38 @@ async function open(path: string, integrations = createMemoryIntegrations()) {
 }
 
 describe("Integraciones", () => {
-  it("tiene su lugar en el menú, entre Canales y Configuración, con la API, las IAs y las claves", async () => {
+  it("tiene su lugar en el menú y es un catálogo: lo activo arriba, lo disponible y lo que llega pronto", async () => {
     await open("integraciones");
     const nav = screen.getByRole("navigation", { name: "Menú del negocio" });
     expect(within(nav).getByRole("link", { name: /^Integraciones/ })).toHaveAttribute("aria-current", "page");
     expect(screen.getByRole("heading", { level: 1, name: "Integraciones" })).toBeInTheDocument();
-    const names = screen.getAllByRole("heading", { level: 2 }).map((heading) => heading.textContent);
-    expect(names).toEqual(["API del asistente", "IAs conectadas (MCP)", "Claves de API"]);
-    expect(screen.getByText("Próximamente")).toBeInTheDocument();
-    expect(screen.getByText("Sin conectar")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Conectar" })).toHaveAttribute("href", `/negocios/${CAFE}/integraciones/api`);
+    const groups = screen.getAllByRole("heading", { level: 2 }).map((heading) => heading.textContent);
+    expect(groups).toEqual(["Disponibles 3", "Próximamente 4"]);
+    const names = (group: string) =>
+      within(screen.getByRole("region", { name: new RegExp(`^${group}`) })).getAllByRole("heading", { level: 3 }).map((heading) => heading.textContent);
+    expect(names("Disponibles")).toEqual(["OpenRouter", "API del asistente", "Claves de API"]);
+    expect(names("Próximamente")).toEqual(["Agentes de IA (MCP)", "OpenAI", "Anthropic", "Google Gemini"]);
+    expect(screen.getByRole("link", { name: "Configurar API del asistente" })).toHaveAttribute("href", `/negocios/${CAFE}/integraciones/api`);
+    expect(screen.getByRole("link", { name: "Configurar OpenRouter" })).toHaveAttribute("href", `/negocios/${CAFE}/configuracion/inteligencia-artificial`);
+    expect(screen.queryByRole("link", { name: /OpenAI/ })).not.toBeInTheDocument();
+  });
+
+  it("filtra por categoría (y lo recuerda en la dirección) y busca sin importar las tildes", async () => {
+    const integrations = createMemoryIntegrations();
+    await integrations.createKey("Mi web", ["assistant:chat"]);
+    integrations.state.keys[0]!.lastUsedAt = new Date(Date.now() - 5 * 60_000).toISOString();
+    const { user } = await open("integraciones", integrations);
+    expect(screen.getByText("En uso · usada hace 5 min")).toBeInTheDocument();
+    expect(screen.getByText("1 clave activa")).toBeInTheDocument();
+    await user.click(screen.getByRole("tab", { name: "Seguridad" }));
+    expect(window.location.search).toBe("?categoria=security");
+    expect(screen.getAllByRole("heading", { level: 3 }).map((heading) => heading.textContent)).toEqual(["Claves de API"]);
+    await user.click(screen.getByRole("tab", { name: "Todas" }));
+    await user.type(screen.getByRole("searchbox", { name: "Buscar integración" }), "inteligencia");
+    expect(screen.getAllByRole("heading", { level: 3 }).map((heading) => heading.textContent)).toEqual(["OpenRouter", "OpenAI", "Anthropic", "Google Gemini"]);
+    await user.clear(screen.getByRole("searchbox", { name: "Buscar integración" }));
+    await user.type(screen.getByRole("searchbox", { name: "Buscar integración" }), "zapier");
+    expect(screen.getByText("Ninguna integración coincide")).toBeInTheDocument();
   });
 
   it("crea la clave, la muestra una sola vez y queda activa", async () => {

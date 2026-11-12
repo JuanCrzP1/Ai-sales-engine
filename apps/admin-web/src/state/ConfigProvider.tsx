@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { pathLabel } from "../domain/config/contractSchema";
 import { paymentValuesToSend, sameDocument } from "../domain/config/document";
 import { createEmptyDocument } from "../domain/config/factories";
+import { differsFromPublished } from "../domain/config/publishChanges";
 import * as operations from "../domain/config/operations";
 import type { BusinessDocument, PaymentFields, WorkingCopy } from "../domain/config/types";
 import { sectionForPath } from "../domain/sections";
@@ -11,9 +12,12 @@ import { validateDocument, validatePaymentValues } from "../domain/validation/ru
 import type { ValidationIssue } from "../domain/validation/types";
 import type { ConfigRepository, StoredConfig } from "../repositories/configRepository";
 import { PersistenceError, persistenceErrorMessage } from "../repositories/persistenceError";
-import { ConfigContext, type ActionResult, type ConfigActions, type ConfigContextValue, type ConfigMeta, type OfferingDraft, type SaveState } from "./configContext";
+import { ConfigContext, type ActionResult, type ConfigActions, type ConfigContextValue, type ConfigMeta, type OfferingDraft, type PublicationState, type SaveState } from "./configContext";
 
 type LoadState = { status: "loading" } | { status: "error"; message: string; notFound: boolean } | { status: "ready" };
+
+/** El documento publicado, para compararlo con lo guardado. Las versiones no cambian: se cargan una sola vez. */
+type PublishedState = { version: number | null; status: "none" | "loading" | "ready" | "error"; document: BusinessDocument | null };
 
 export interface ConfigLoadErrorProps {
   message: string;
@@ -63,6 +67,8 @@ export function ConfigProvider({ slug, repository, children, renderLoading, rend
   const [meta, setMeta] = useState<ConfigMeta>({ slug, version: null, latestVersion: null, publishedVersion: null });
   const [save, setSave] = useState<SaveState>(INITIAL_SAVE);
   const [attempt, setAttempt] = useState(0);
+  const [published, setPublished] = useState<PublishedState>({ version: null, status: "none", document: null });
+  const versionCache = useRef(new Map<number, BusinessDocument>());
   /** Valores vigentes para guardar sin depender del render. */
   const latest = useRef({ working, meta, offeringDraft });
   latest.current = { working, meta, offeringDraft };
@@ -97,6 +103,41 @@ export function ConfigProvider({ slug, repository, children, renderLoading, rend
       active = false;
     };
   }, [repository, attempt, applyStored]);
+
+  // Lo publicado: si es la misma versión que se edita, es lo guardado; si no, se pide una vez al servidor.
+  const editingVersion = meta.version?.version ?? null;
+  useEffect(() => {
+    const target = meta.publishedVersion;
+    if (target === null) {
+      setPublished({ version: null, status: "none", document: null });
+      return;
+    }
+    if (target === editingVersion) {
+      // Se guarda para después: al guardar la siguiente versión, lo publicado ya se conoce y no hay que pedirlo.
+      versionCache.current.set(target, baseline);
+      setPublished({ version: target, status: "ready", document: baseline });
+      return;
+    }
+    const cached = versionCache.current.get(target);
+    if (cached) {
+      setPublished({ version: target, status: "ready", document: cached });
+      return;
+    }
+    let active = true;
+    setPublished({ version: target, status: "loading", document: null });
+    repository.versionDocument(target).then(
+      ({ document }) => {
+        versionCache.current.set(target, document);
+        if (active) setPublished({ version: target, status: "ready", document });
+      },
+      () => {
+        if (active) setPublished({ version: target, status: "error", document: null });
+      },
+    );
+    return () => {
+      active = false;
+    };
+  }, [repository, meta.publishedVersion, editingVersion, baseline]);
 
   const actions = useMemo<ConfigActions>(() => {
     /** Un cambio deja atrás los errores del último intento de guardar. */
@@ -190,11 +231,32 @@ export function ConfigProvider({ slug, repository, children, renderLoading, rend
     () => !sameDocument(working.document, baseline) || Object.keys(paymentValuesToSend(working)).length > 0 || Boolean(offeringDraft?.touched),
     [working, baseline, offeringDraft],
   );
+  const publication = useMemo<PublicationState>(() => {
+    if (meta.publishedVersion === null) return "never";
+    if (published.status === "ready" && published.document) return differsFromPublished(published.document, baseline) ? "pending" : "published";
+    // Si no se pudo leer lo publicado, lo dice el número de versión: hay algo guardado después de lo publicado.
+    if (published.status === "error") return meta.latestVersion !== meta.publishedVersion ? "pending" : "published";
+    return "checking";
+  }, [meta.publishedVersion, meta.latestVersion, published, baseline]);
   const issues = useMemo(() => mergeIssues(validateDocument(working), save.problems), [working, save.problems]);
   const progress = useMemo(() => computeProgress(issues), [issues]);
   const value = useMemo<ConfigContextValue>(
-    () => ({ document: working.document, paymentValues: working.paymentValues, paymentFields, offeringDraft, meta, dirty, issues, progress, save, actions }),
-    [working, paymentFields, offeringDraft, meta, dirty, issues, progress, save, actions],
+    () => ({
+      document: working.document,
+      paymentValues: working.paymentValues,
+      paymentFields,
+      offeringDraft,
+      meta,
+      dirty,
+      publication,
+      publishedDocument: published.status === "ready" ? published.document : null,
+      savedDocument: baseline,
+      issues,
+      progress,
+      save,
+      actions,
+    }),
+    [working, paymentFields, offeringDraft, meta, dirty, publication, published, baseline, issues, progress, save, actions],
   );
 
   if (load.status === "loading") return <>{renderLoading()}</>;

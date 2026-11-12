@@ -889,6 +889,28 @@ def test_a_business_cannot_reach_the_payment_data_of_another(api):
     assert api.client.post("/api/businesses/negocio_b/publish", json={"version": version}).status_code == 409
 
 
+def test_a_version_can_be_read_to_compare_it_and_never_carries_payment_values(api):
+    _create_with_document(api)
+    assert api.client.post("/api/businesses/cafe_aroma/publish", json={"version": 1}).status_code == 200
+    assert _edit(api, lambda document: document["identity"].update(name="Nombre nuevo")).status_code == 200
+    published = api.client.get("/api/businesses/cafe_aroma/versions/1")
+    assert published.status_code == 200
+    body = published.json()
+    assert body["version"]["version"] == 1 and body["version"]["status"] == "published"
+    assert body["document"]["identity"]["name"] != "Nombre nuevo"
+    # Los datos de pago van como referencias, igual que en el borrador: nunca el valor.
+    assert _method(body, "nequi")["number"]["secret_ref"].startswith("secret_store:")
+    assert all(value not in published.text for value in ALL_VALUES.values())
+    assert api.client.get("/api/businesses/cafe_aroma/versions/9").status_code == 404
+
+
+def test_a_version_of_another_business_cannot_be_read(api):
+    _create_with_document(api, "negocio_a")
+    _create_with_document(api, "negocio_b")
+    assert _edit(api, lambda document: document["identity"].update(name="Segunda versión de B"), "negocio_b").status_code == 200
+    assert api.client.get("/api/businesses/negocio_a/versions/2").status_code == 404
+
+
 def test_a_version_of_another_business_cannot_be_published_or_restored(api):
     _create_with_document(api, "negocio_a")
     _create_with_document(api, "negocio_b")
@@ -1095,6 +1117,7 @@ def test_the_api_only_has_the_routes_of_the_panel(api):
         ("POST", f"{business}/validate"),
         ("GET", f"{business}/review"),
         ("GET", f"{business}/versions"),
+        ("GET", f"{business}/versions/{{version}}"),
         ("POST", f"{business}/versions/{{version}}/restore"),
         ("POST", f"{business}/publish"),
         ("POST", f"{business}/rollback"),

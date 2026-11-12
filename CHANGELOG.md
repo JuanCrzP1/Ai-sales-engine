@@ -5,6 +5,17 @@ está en el historial de git y en `docs/plan-v1.md`.
 
 ## 12 de noviembre de 2026
 
+**Siempre sabes si falta publicar**
+- Arriba del editor del asistente: «Cambios sin publicar» en ámbar con el botón **Revisar y publicar**, o «Publicado · es lo que
+  responde a tus clientes». Un punto ámbar en «Asistente IA» mientras haya cambios guardados sin publicar.
+- Antes de publicar ves **lo que cambia**, sección por sección y con cómo estaba y cómo queda. Los datos de pago nunca se muestran.
+- Compara lo que de verdad cambió: guardar sin tocar nada no deja cambios pendientes.
+- «Probar» avisa cuando pruebas cambios que tus clientes todavía no ven.
+
+**Integraciones, un catálogo como el de las plataformas grandes**
+- Pestañas por categoría, buscador y tarjetas en Activas, Disponibles y Próximamente.
+- Los logos reales de cada servicio (OpenRouter, OpenAI, Anthropic, Gemini, MCP), también en Configuración → Inteligencia artificial.
+
 **La API del asistente, más clara**
 - Una sola página para cualquier plataforma: arriba dice si alguna ya la está usando, cómo funciona y tus datos de conexión.
 - Guías en pestañas: **Leona** (probada con un flujo real que conversa), **Otra plataforma** y **Desarrolladores** (cURL, JavaScript y

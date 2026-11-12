@@ -29,7 +29,7 @@ from app.business_config_application.access import BusinessAccess
 from app.business_config_application.service import BusinessConfigService
 from app.business_config_application.templates import BusinessTemplateCatalog
 from app.domain.business_config.access import LOCAL_OPERATOR, Principal
-from app.domain.business_config.errors import BusinessNotFoundError
+from app.domain.business_config.errors import BusinessNotFoundError, VersionNotFoundError
 from app.domain.business_config.templates import TemplateNotFoundError
 from app.domain.business_config.validation import is_valid_slug
 
@@ -187,6 +187,17 @@ def review_config(slug: BusinessSlug, service: Service) -> dict[str, Any]:
 @router.get("/businesses/{slug}/versions")
 def list_versions(slug: BusinessSlug, service: Service) -> list[dict[str, Any]]:
     return [version_payload(version) for version in service.history(slug)]
+
+
+@router.get("/businesses/{slug}/versions/{version}")
+def get_version(slug: BusinessSlug, version: int, service: Service) -> dict[str, Any]:
+    """Una versión con su documento, para comparar lo que se edita con lo publicado. Como el borrador, los datos de pago van
+    solo como referencias: nunca su valor."""
+    try:
+        stored = service.get_version(slug, version)
+    except VersionNotFoundError as exc:
+        raise ApiError(status.HTTP_404_NOT_FOUND, "Esa versión no existe.", code="not_found") from exc
+    return {"version": version_payload(stored.version), "document": stored.config.model_dump(mode="json", exclude_none=True)}
 
 
 @router.post("/businesses/{slug}/versions/{version}/restore")

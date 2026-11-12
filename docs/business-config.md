@@ -533,6 +533,7 @@ con más rutas (conversaciones, clientes, ventas, reportes, canales, avisos): ve
 | `POST /api/businesses/{slug}/validate` | Valida sin guardar |
 | `GET /api/businesses/{slug}/review` | Diagnóstico y si la versión se puede compilar. Nunca devuelve lo compilado |
 | `GET /api/businesses/{slug}/versions` | Historial |
+| `GET /api/businesses/{slug}/versions/{version}` | Una versión con su documento, para comparar lo que se edita con lo publicado. Los datos de pago, solo como referencias. 404 si no existe en ese negocio |
 | `POST /api/businesses/{slug}/versions/{version}/restore` | Crea un borrador con esa versión; no publica |
 | `POST /api/businesses/{slug}/publish` | Publica una versión; si no compila, lo publicado no cambia |
 | `POST /api/businesses/{slug}/rollback` | Vuelve a publicar la versión publicada anterior |

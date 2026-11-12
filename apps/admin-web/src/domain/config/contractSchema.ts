@@ -241,6 +241,37 @@ const FIELD_LABELS: Record<string, string> = {
   disallowed_actions: "Acciones que no realiza",
 };
 
+/** Nombres cortos de secciones y campos que en el contrato solo tienen una descripción larga (para «Lo que cambia al publicar»). */
+const SHORT_LABELS: Record<string, string> = {
+  identity: "Negocio",
+  faqs: "Preguntas frecuentes",
+  welcome: "Bienvenida",
+  differentiators: "Por qué elegirte",
+  credibility: "Pruebas de confianza",
+  location: "Ubicación",
+  opening_hours: "Horario",
+  service_modes: "Dónde atiendes",
+  target_customer: "Cliente ideal",
+  promotions: "Promociones",
+  policies: "Políticas",
+  conditions: "Condiciones",
+  payments: "Pagos",
+  link: "Enlace de pago",
+  transfer_methods: "Transferencias",
+  number: "Número",
+  account_number: "Número de cuenta",
+  reference: "Referencia",
+  human_handoff: "Paso a una persona",
+  after_hours: "Fuera del horario",
+  ai_resumed: "La IA retoma el chat",
+  fallback: "Mensaje de respaldo",
+  instructions: "Instrucciones",
+  benefits: "Beneficios",
+  arguments: "Argumentos de venta",
+  price: "Precio",
+  includes: "Qué incluye",
+};
+
 /** Etiquetas de los valores de las listas cerradas del contrato. */
 const VALUE_LABELS: Record<string, string> = {
   direct_sale: "Confirmar la compra",
@@ -267,6 +298,31 @@ const VALUE_LABELS: Record<string, string> = {
 
 export function fieldLabel(key: string, node: SchemaNode): string {
   return FIELD_LABELS[key] ?? node.description?.replace(/\.$/, "") ?? key.replace(/_/g, " ");
+}
+
+/** La descripción del contrato como nombre: la primera frase, sin el punto final. */
+function describedLabel(node: SchemaNode | undefined, key: string): string {
+  const text = node?.description?.split(/(?<=[.:;])\s/)[0]?.replace(/[.:;]$/, "").trim();
+  return text || key.replace(/_/g, " ");
+}
+
+/**
+ * Nombre de un campo por su ruta de claves (`["identity", "brand_name"]` → «Marca»), recorriendo el esquema del contrato. Sirve
+ * para nombrar los cambios antes de publicar. Usa la etiqueta propia, un nombre corto o la descripción del contrato.
+ */
+export function schemaFieldNamer(root: ContractSchema): (keys: string[]) => string {
+  return (keys) => {
+    let node: SchemaNode | undefined = root;
+    for (const key of keys) {
+      if (!node) break;
+      let shape: SchemaNode = fieldShape(root, node).node;
+      if (shape.type === "array" && shape.items) shape = fieldShape(root, shape.items).node;
+      const extra: SchemaNode | undefined = typeof shape.additionalProperties === "object" ? shape.additionalProperties : undefined;
+      node = shape.properties?.[key] ?? extra;
+    }
+    const key = keys[keys.length - 1] ?? "";
+    return FIELD_LABELS[key] ?? SHORT_LABELS[key] ?? describedLabel(node, key);
+  };
 }
 
 /** Nombre del campo de una ruta del documento (`knowledge.faqs.0.answer` → Respuesta), si tiene uno en lenguaje del negocio. */

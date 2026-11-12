@@ -255,7 +255,11 @@ buscador como `combobox` y opciones como `listbox`), que se maneja con flechas, 
 Sección propia del menú (entre Canales y Configuración), porque se muestra y se vende: «conéctalo con lo que ya usas». Canales queda
 para donde escriben los clientes; Integraciones, para otras herramientas.
 - `repositories/integrations.ts` (`createIntegrations(slug)`): resumen, claves (crear, listar, revocar) y la prueba de la API.
-- Tres pantallas: el resumen con tarjetas (API del asistente, IAs por MCP «Próximamente», Claves de API), la API (estado de conexión, cómo
+- El resumen es un catálogo (`domain/integrations/catalog.ts`, puro): categorías en pestañas (la elegida queda en `?categoria=`),
+  buscador sin tildes y grupos Activas / Disponibles / Próximamente. Solo es «Disponible» lo que funciona hoy. Cada tarjeta lleva el
+  logo del servicio sobre una ficha neutra (`components/brand/IntegrationMark.tsx`, logos de Simple Icons, CC0), igual que en
+  Configuración → Inteligencia artificial. OpenRouter aparece activa cuando el negocio tiene su clave de IA.
+- Tres pantallas: el catálogo, la API (estado de conexión, cómo
   funciona, datos de conexión, guías por plataforma en pestañas —`PlatformGuides.tsx` con `components/ui/Tabs.tsx`—, qué se envía
   y qué se recibe, y la prueba) y la tabla de claves. Solo la guía de Leona dice «Probado»: se probó con un flujo real; otras
   plataformas tendrán su pestaña cuando se prueben.
@@ -263,6 +267,19 @@ para donde escriben los clientes; Integraciones, para otras herramientas.
   solo su comienzo.
 - Los chats del canal `api` se reconocen en la bandeja (ícono y nombre «API»). No se responden desde aquí, porque se atienden en
   la plataforma conectada, pero sí se pausa y se reanuda la IA.
+
+### D8m — Guardado no es publicado
+
+El dueño no sabía que tenía que publicar: el asistente seguía con la versión 1 mientras editaba la 4. Ahora siempre se ve:
+- `ConfigProvider` carga el documento publicado (`GET /versions/{n}`, una sola vez por versión; si es la que se edita, no lo pide) y
+  calcula `publication`: `never`, `pending`, `published` o `checking`. Compara **contenido** (`domain/config/publishChanges.ts`), no
+  números de versión: guardar sin cambiar nada no deja nada pendiente. Si no puede leer lo publicado, cae al número de versión.
+- Arriba del editor (`layout/SaveStatus.tsx`): «Guardado · hh:mm · Cambios sin publicar» en ámbar con «Revisar y publicar», o
+  «Publicado · es lo que responde a tus clientes». En el menú, un punto ámbar en «Asistente IA». El Inicio y «Probar» usan el mismo
+  estado.
+- En Revisión (`features/review/PublishChanges.tsx`): «Lo que cambia al publicar», por sección, con cómo estaba y cómo queda. Los
+  campos se nombran con el contrato (`schemaFieldNamer`) y los elementos de una lista por su título. Los datos de pago cambian de
+  referencia cuando cambia su valor: se informan como «actualizado (protegido)», nunca su valor.
 
 ### D9 — API separada del motor y limitada a este equipo
 

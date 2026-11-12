@@ -19,7 +19,7 @@ const MAX_MESSAGE_CHARS = 1000;
 /** Conversación de prueba con el asistente de este negocio: responde la IA real con su configuración y su clave. */
 export function PlaygroundPage() {
   const playground = usePlayground();
-  const { dirty } = useConfig();
+  const { dirty, publication } = useConfig();
   const pathTo = useWorkspacePath();
   const [message, setMessage] = useState("");
   const end = useRef<HTMLDivElement>(null);
@@ -60,6 +60,11 @@ export function PlaygroundPage() {
         <Alert tone="warning" title="Este negocio todavía no tiene su clave de IA">
           <p>Agrégala para que su asistente pueda responder, aquí y con tus clientes.</p>
           <LinkButton to={pathTo(AI_ITEM.path)}>Agregar la clave</LinkButton>
+        </Alert>
+      )}
+      {!dirty && playground.source === "draft" && (publication === "pending" || publication === "never") && (
+        <Alert tone="warning" title="Estás probando cambios que tus clientes todavía no ven">
+          <p>Si te gusta cómo responde, publícalos con «Revisar y publicar» (arriba) para que el asistente los use con tus clientes.</p>
         </Alert>
       )}
       {dirty && playground.source === "draft" && (

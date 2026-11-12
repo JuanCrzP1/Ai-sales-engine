@@ -26,6 +26,16 @@ En **Asistente IA** hay cinco secciones. Lo esencial está primero en cada una; 
 Cada cambio se **guarda** como borrador. Tus clientes no ven nada hasta que lo **publicas** (botón **Publicar**). Si publicaste
 algo por error, en **Publicar** puedes volver a la versión anterior.
 
+**Siempre sabes si falta publicar.** Arriba del editor ves el estado:
+
+- **Guardado · 12:42 · Cambios sin publicar** (en ámbar, con el botón **Revisar y publicar**): guardaste cambios que tus clientes
+  todavía no ven. «Asistente IA» lleva un punto ámbar en el menú mientras tanto.
+- **Publicado · es lo que responde a tus clientes**: todo lo guardado ya está publicado.
+
+Antes de publicar, **Revisar y publicar** te muestra **lo que cambia**, sección por sección (por ejemplo, «Mi negocio · Marca:
+Asesor Comercial → Ai sales engine»). Los datos de pago aparecen como «actualizado», nunca su valor. Y en **Probar** te avisa cuando
+estás probando cambios que tus clientes aún no ven.
+
 **Tus datos de pago están protegidos:** se guardan cifrados y en el panel solo ves una parte para reconocerlos (`••••4567`). La
 IA nunca los ve: cuando el cliente elige cómo pagar, el sistema le envía el dato correcto.
 
@@ -94,6 +104,10 @@ Lo que dice el asistente en esos momentos lo escribes en **Asistente IA → Mens
 retoma el chat». Si los dejas vacíos, usa los suyos.
 
 ## 8. Integraciones: conecta tu asistente a otras plataformas
+
+**Integraciones** es un catálogo, como en las plataformas grandes: pestañas por categoría (Inteligencia artificial, Plataformas,
+Agentes de IA y Seguridad), un buscador, y las tarjetas agrupadas en **Activas**, **Disponibles** y **Próximamente**, cada una con el
+logo del servicio. Desde ahí llegas a la IA de tu asistente (OpenRouter), la API y tus claves.
 
 En **Integraciones → API del asistente** conectas tu asistente a cualquier plataforma que haga peticiones HTTP: la plataforma le
 manda el mensaje de tu cliente y le envía la respuesta. Es el mismo asistente de WhatsApp. Arriba ves si alguna plataforma ya la está

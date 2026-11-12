@@ -77,6 +77,16 @@ export interface ConfigActions {
   restore: (version: number) => Promise<ActionResult>;
 }
 
+/**
+ * Si lo que responde a los clientes está al día con lo guardado. Compara contenido, no números de versión:
+ * - `never`: todavía no se ha publicado nada.
+ * - `pending`: lo guardado es distinto de lo publicado (hay que publicar para que los clientes lo vean).
+ * - `published`: lo guardado es lo publicado.
+ * - `checking`: comparando (el primer instante).
+ * Los cambios que aún no se guardan los dice `dirty`.
+ */
+export type PublicationState = "never" | "pending" | "published" | "checking";
+
 export interface ConfigContextValue {
   document: BusinessDocument;
   paymentValues: PaymentValues;
@@ -86,6 +96,12 @@ export interface ConfigContextValue {
   meta: ConfigMeta;
   /** Hay cambios sin guardar. */
   dirty: boolean;
+  /** Lo guardado frente a lo publicado. */
+  publication: PublicationState;
+  /** El documento publicado (lo que responde hoy), o null si no hay o aún no se cargó. Para «Lo que cambia al publicar». */
+  publishedDocument: BusinessDocument | null;
+  /** Lo último guardado (sin los cambios que aún no se guardan): lo que se publicaría. */
+  savedDocument: BusinessDocument;
   issues: ValidationIssue[];
   progress: ConfigProgress;
   save: SaveState;
