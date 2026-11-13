@@ -26,6 +26,7 @@ from app.domain.business_config.access import Principal
 from app.domain.business_config.api_keys import ApiKeyIdentity, validated_key_name
 from app.domain.business_config.errors import FieldIssue, InvalidFieldsError
 from app.domain.business_config.key_permissions import SCOPE_ASSISTANT_CHAT, validated_permissions, validated_reach
+from app.domain.business_config.team import CONFIGURE
 from app.domain.business_config.oauth import (
     ACCESS_TOKEN_PREFIX,
     ACCESS_TTL,
@@ -138,7 +139,7 @@ class McpOAuthService:
         chosen = businesses if isinstance(businesses, list) else []
         key_reach = validated_reach(reach, chosen, current=str(chosen[0]) if reach in (None, "one") and chosen else None)
         for slug in key_reach.businesses:
-            self._access.require(principal, slug)
+            self._access.require(principal, slug, CONFIGURE)
         scopes = validated_permissions(permissions, key_reach.kind)
         if SCOPE_ASSISTANT_CHAT in scopes:
             raise InvalidFieldsError("Revisa los permisos.", [FieldIssue("permissions.chat", "Conversar con el asistente se hace con la API del asistente, no con un agente.")])

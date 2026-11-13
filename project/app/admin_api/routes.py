@@ -32,6 +32,7 @@ from app.domain.business_config.access import LOCAL_OPERATOR, Principal
 from app.domain.business_config.errors import BusinessNotFoundError, VersionNotFoundError
 from app.domain.business_config.templates import TemplateNotFoundError
 from app.domain.business_config.validation import is_valid_slug
+from app.domain.business_config.team import CONFIGURE
 
 router = APIRouter(prefix="/api")
 
@@ -83,6 +84,17 @@ def _business_slug(slug: str, user: CurrentUser, access: Access) -> str:
 
 
 BusinessSlug = Annotated[str, Depends(_business_slug)]
+
+
+def _configurable_slug(slug: BusinessSlug, user: CurrentUser, access: Access) -> str:
+    """Como `BusinessSlug`, y además su rol debe poder configurar el negocio (dueño o administrador): un asesor recibe 403 con el
+    motivo."""
+    access.require(user, slug, CONFIGURE)
+    return slug
+
+
+# Cambiar lo que el asistente sabe y publica, su IA, sus canales y sus integraciones.
+ConfigurableSlug = Annotated[str, Depends(_configurable_slug)]
 
 
 # --------------------------------------------------------------------------- contrato
@@ -162,19 +174,19 @@ def get_config(slug: BusinessSlug, service: Service) -> dict[str, Any]:
 
 
 @router.put("/businesses/{slug}/config")
-def save_config(slug: BusinessSlug, payload: SaveConfig, service: Service, user: CurrentUser) -> dict[str, Any]:
+def save_config(slug: ConfigurableSlug, payload: SaveConfig, service: Service, user: CurrentUser) -> dict[str, Any]:
     service.save_changes(slug, payload.document, payment_values=payload.payment_values, created_by=user.label, expected_version=payload.base_version)
     return config_payload(service.get_editable(slug))
 
 
 @router.post("/businesses/{slug}/validate")
-def validate_config(slug: BusinessSlug, payload: ValidateConfig, service: Service) -> dict[str, Any]:
+def validate_config(slug: ConfigurableSlug, payload: ValidateConfig, service: Service) -> dict[str, Any]:
     """Valida un documento sin guardarlo."""
     return {"valid": True, "diagnostics": [asdict(item) for item in service.validate(slug, payload.document)]}
 
 
 @router.get("/businesses/{slug}/review")
-def review_config(slug: BusinessSlug, service: Service) -> dict[str, Any]:
+def review_config(slug: ConfigurableSlug, service: Service) -> dict[str, Any]:
     """Diagnóstico de lo que se está editando y si se puede compilar. Nunca devuelve lo compilado: lleva datos de pago."""
     return review_payload(service.review(slug))
 
@@ -183,7 +195,7 @@ def review_config(slug: BusinessSlug, service: Service) -> dict[str, Any]:
 
 
 @router.get("/businesses/{slug}/versions")
-def list_versions(slug: BusinessSlug, service: Service) -> list[dict[str, Any]]:
+def list_versions(slug: ConfigurableSlug, service: Service) -> list[dict[str, Any]]:
     return [version_payload(version) for version in service.history(slug)]
 
 
@@ -199,21 +211,21 @@ def get_version(slug: BusinessSlug, version: int, service: Service) -> dict[str,
 
 
 @router.post("/businesses/{slug}/versions/{version}/restore")
-def restore_version(slug: BusinessSlug, version: int, service: Service, user: CurrentUser) -> dict[str, Any]:
+def restore_version(slug: ConfigurableSlug, version: int, service: Service, user: CurrentUser) -> dict[str, Any]:
     """Crea un borrador con el contenido de una versión anterior; no publica nada."""
     service.restore_version(slug, version, created_by=user.label)
     return config_payload(service.get_editable(slug))
 
 
 @router.post("/businesses/{slug}/publish")
-def publish(slug: BusinessSlug, payload: PublishVersion, service: Service) -> dict[str, Any]:
+def publish(slug: ConfigurableSlug, payload: PublishVersion, service: Service) -> dict[str, Any]:
     """Publica una versión; si no compila o le faltan datos de pago, lo publicado no cambia."""
     service.publish(slug, payload.version)
     return config_payload(service.get_editable(slug))
 
 
 @router.post("/businesses/{slug}/rollback")
-def rollback(slug: BusinessSlug, service: Service) -> dict[str, Any]:
+def rollback(slug: ConfigurableSlug, service: Service) -> dict[str, Any]:
     """Vuelve a publicar la versión publicada anterior."""
     service.rollback(slug)
     return config_payload(service.get_editable(slug))

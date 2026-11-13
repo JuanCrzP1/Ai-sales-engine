@@ -22,7 +22,7 @@ Depende del modelo que elijas. En [Configuración → Inteligencia artificial](p
 
 ## ¿Otras personas ven mis negocios?
 
-No. Cada cuenta solo ve los negocios que creó.
+No. Cada cuenta solo ve los negocios que creó y aquellos a los que la invitaron. Tú decides quién está en tu equipo y con qué rol: ver [Los roles del equipo](roles-del-equipo).
 
 ## ¿Y si no estoy pendiente del panel?
 

@@ -35,6 +35,7 @@ from app.domain.business_config.attention import (
 )
 from app.domain.business_config.errors import BusinessConfigError, FieldIssue, InvalidFieldsError
 from app.domain.business_config.push import PushMessage, validated_subscription
+from app.domain.business_config.team import CONFIGURE
 
 logger = logging.getLogger("attention")
 
@@ -90,7 +91,7 @@ class AttentionService:
         self._lock = threading.Lock()
 
     def view(self, principal: Principal, business: str, *, now: datetime | None = None) -> AttentionView:
-        self._access.require(principal, business)
+        self._access.require(principal, business, CONFIGURE)
         settings = self._storage.attention_settings(business)
         hours = business_hours(self._configs, business)
         now = now or datetime.now(timezone.utc)
@@ -106,7 +107,7 @@ class AttentionService:
         )
 
     def save(self, principal: Principal, business: str, payload: dict[str, Any], *, now: datetime | None = None) -> AttentionView:
-        self._access.require(principal, business)
+        self._access.require(principal, business, CONFIGURE)
         settings = validated(
             hours_mode=payload.get("hours_mode"),
             team_hours=payload.get("team_hours"),
@@ -122,7 +123,7 @@ class AttentionService:
 
     def send_test_email(self, principal: Principal, business: str) -> list[str]:
         """Envía un correo de prueba adonde llegarían los avisos de este negocio y dice a quién."""
-        self._access.require(principal, business)
+        self._access.require(principal, business, CONFIGURE)
         if self._email is None or not self._email.configured:
             raise EmailNotSent("El correo de avisos aún no está activado en la plataforma.")
         settings = self._storage.attention_settings(business)

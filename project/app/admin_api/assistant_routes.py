@@ -9,7 +9,7 @@ from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, Request, status
 
-from app.admin_api.routes import BusinessSlug, CurrentUser
+from app.admin_api.routes import ConfigurableSlug, CurrentUser
 from app.admin_api.schemas import (
     PlaygroundMessage,
     SaveAISettings,
@@ -43,37 +43,37 @@ Usage = Annotated[UsageGuard, Depends(_usage)]
 
 
 @router.get("/ai")
-def get_ai_settings(slug: BusinessSlug, lab: Lab) -> dict[str, Any]:
+def get_ai_settings(slug: ConfigurableSlug, lab: Lab) -> dict[str, Any]:
     return ai_settings_payload(lab.ai_settings(slug))
 
 
 @router.put("/ai")
-def save_ai_settings(slug: BusinessSlug, body: SaveAISettings, lab: Lab) -> dict[str, Any]:
+def save_ai_settings(slug: ConfigurableSlug, body: SaveAISettings, lab: Lab) -> dict[str, Any]:
     return ai_settings_payload(lab.save_ai_settings(slug, model=body.model, api_key=body.api_key, clear_key=body.clear_key))
 
 
 @router.get("/ai/models")
-def get_ai_models(slug: BusinessSlug, lab: Lab) -> dict[str, Any]:
+def get_ai_models(slug: ConfigurableSlug, lab: Lab) -> dict[str, Any]:
     return ai_models_payload(lab.ai_models(slug))
 
 
 @router.get("/ai/usage")
-def get_ai_usage(slug: BusinessSlug, lab: Lab) -> dict[str, Any]:
+def get_ai_usage(slug: ConfigurableSlug, lab: Lab) -> dict[str, Any]:
     return ai_usage_payload(lab.ai_usage(slug))
 
 
 @router.post("/ai/verify")
-def verify_ai_key(slug: BusinessSlug, lab: Lab, user: CurrentUser, usage: Usage) -> dict[str, Any]:
+def verify_ai_key(slug: ConfigurableSlug, lab: Lab, user: CurrentUser, usage: Usage) -> dict[str, Any]:
     usage.ai_key_check(user)
     return key_check_payload(lab.verify_ai_key(slug))
 
 
 @router.post("/playground")
-def talk(slug: BusinessSlug, body: PlaygroundMessage, lab: Lab, user: CurrentUser, usage: Usage) -> dict[str, Any]:
+def talk(slug: ConfigurableSlug, body: PlaygroundMessage, lab: Lab, user: CurrentUser, usage: Usage) -> dict[str, Any]:
     usage.playground_message(user, slug)
     return playground_payload(lab.talk(slug, message=body.message, source=body.source, session_id=body.session_id))
 
 
 @router.delete("/playground/{session_id}", status_code=status.HTTP_204_NO_CONTENT)
-def reset_conversation(slug: BusinessSlug, session_id: str, lab: Lab) -> None:
+def reset_conversation(slug: ConfigurableSlug, session_id: str, lab: Lab) -> None:
     lab.reset(slug, session_id)

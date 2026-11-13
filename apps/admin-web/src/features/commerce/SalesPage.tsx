@@ -12,6 +12,7 @@ import { ContactAvatar } from "../../layout/ContactAvatar";
 import { persistenceErrorMessage } from "../../state/directoryContext";
 import { useCommerceData } from "../../state/useCommerceData";
 import { RecordSaleDialog } from "./RecordSaleDialog";
+import { useCan } from "../../state/roleContext";
 
 const PERIOD_DAYS = 30;
 
@@ -179,6 +180,8 @@ function PendingPayment({ customer, onConfirm }: { customer: Customer; onConfirm
 
 function SaleRow({ sale, onCancel }: { sale: Sale; onCancel: () => Promise<void> }) {
   const cancelled = sale.status === "cancelled";
+  // Anular una venta es del dueño o de un administrador: un asesor solo registra.
+  const canCancel = useCan("reports");
   return (
     <tr className={cancelled ? "data-table__row--muted" : undefined}>
       <td>
@@ -191,7 +194,7 @@ function SaleRow({ sale, onCancel }: { sale: Sale; onCancel: () => Promise<void>
         {cancelled && <span className="cell-sub">Anulada</span>}
       </td>
       <td className="cell-muted">{sale.createdBy ?? "—"}</td>
-      <td className="row-actions">{!cancelled && <ConfirmButton confirmLabel="Sí, anular" onConfirm={onCancel}>Anular</ConfirmButton>}</td>
+      <td className="row-actions">{!cancelled && canCancel && <ConfirmButton confirmLabel="Sí, anular" onConfirm={onCancel}>Anular</ConfirmButton>}</td>
     </tr>
   );
 }

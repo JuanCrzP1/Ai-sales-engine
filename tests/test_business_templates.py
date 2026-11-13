@@ -113,7 +113,7 @@ def test_the_panel_lists_the_templates_without_their_documents(api):
 def test_a_business_created_from_a_template_starts_as_an_unpublished_draft(api):
     response = api.client.post("/api/businesses", json={"slug": "sabor_casero", "name": "Sabor Casero", "template": "restaurante"})
     assert response.status_code == 201
-    assert response.json() | {"latest_version": 1} == {"slug": "sabor_casero", "name": "Sabor Casero", "latest_version": 1, "draft_version": 1, "published_version": None}
+    assert response.json() | {"latest_version": 1} == {"slug": "sabor_casero", "name": "Sabor Casero", "latest_version": 1, "draft_version": 1, "published_version": None, "role": "owner"}
     stored = _load(api, "sabor_casero")
     expected = CATALOG.get("restaurante").instantiate("sabor_casero", "Sabor Casero")
     assert BusinessConfig.model_validate(stored["document"]) == BusinessConfig.model_validate(expected)

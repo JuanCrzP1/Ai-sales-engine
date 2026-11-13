@@ -1,8 +1,7 @@
 """Respuestas rápidas del panel (Configuración → Respuestas rápidas y el chat de Conversaciones).
 
-Quien llega al negocio las ve y las usa en el chat. Crearlas, editarlas y borrarlas es de quien organiza el negocio: hoy su dueño
-(es el único rol que existe). Cuando haya asesores, ellos solo las usarán, como en Intercom o Zendesk. El panel y los agentes de IA
-(MCP) usan este mismo servicio.
+Todo el equipo las ve y las usa en el chat. Crearlas, editarlas y borrarlas es del dueño o de un administrador; los asesores solo
+las usan, como en Intercom o Zendesk. El panel y los agentes de IA (MCP) usan este mismo servicio.
 """
 from __future__ import annotations
 
@@ -13,8 +12,8 @@ from typing import Any
 from app.business_config_application.access import BusinessAccess
 from app.business_config_application.ports import QuickReplyStorage
 from app.domain.business_config.access import Principal
-from app.domain.business_config.errors import NotOwnerError
 from app.domain.business_config.quick_replies import QuickReply, validated
+from app.domain.business_config.team import CONFIGURE, can
 
 logger = logging.getLogger("quick_replies")
 
@@ -31,33 +30,26 @@ class QuickRepliesService:
         self._storage = storage
         self._access = access
 
-    def _can_manage(self, principal: Principal, business: str) -> bool:
-        try:
-            self._access.require_owner(principal, business)
-        except NotOwnerError:
-            return False
-        return True
-
     def view(self, principal: Principal, business: str) -> QuickRepliesView:
-        self._access.require(principal, business)
-        return QuickRepliesView(replies=self._storage.list(business), can_manage=self._can_manage(principal, business))
+        role = self._access.require(principal, business)
+        return QuickRepliesView(replies=self._storage.list(business), can_manage=can(role, CONFIGURE))
 
     def create(self, principal: Principal, business: str, payload: dict[str, Any]) -> QuickReply:
-        self._access.require_owner(principal, business)
+        self._access.require(principal, business, CONFIGURE)
         draft = validated(shortcut=payload.get("shortcut"), category=payload.get("category"), pieces=payload.get("pieces"))
         reply = self._storage.create(business, draft, created_by=principal.label)
         logger.info("respuesta_rapida_creada", extra={"tenant": business, "pieces": len(draft.pieces)})
         return reply
 
     def update(self, principal: Principal, business: str, reply_id: str, payload: dict[str, Any]) -> QuickReply:
-        self._access.require_owner(principal, business)
+        self._access.require(principal, business, CONFIGURE)
         draft = validated(shortcut=payload.get("shortcut"), category=payload.get("category"), pieces=payload.get("pieces"))
         reply = self._storage.update(business, reply_id, draft)
         logger.info("respuesta_rapida_editada", extra={"tenant": business, "pieces": len(draft.pieces)})
         return reply
 
     def delete(self, principal: Principal, business: str, reply_id: str) -> None:
-        self._access.require_owner(principal, business)
+        self._access.require(principal, business, CONFIGURE)
         self._storage.delete(business, reply_id)
         logger.info("respuesta_rapida_borrada", extra={"tenant": business})
 

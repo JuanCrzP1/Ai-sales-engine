@@ -11,11 +11,13 @@ import { ContactAvatar } from "../../layout/ContactAvatar";
 import { DeleteChatDialog } from "../../layout/DeleteChatDialog";
 import { useConversations, useMediaUrl } from "../../state/useConversations";
 import { Composer } from "./Composer";
+import { useCan } from "../../state/roleContext";
 
 const AUTHOR_LABELS: Record<ChatMessage["author"], string> = { customer: "Cliente", assistant: "Asistente IA", agent: "Equipo" };
 
 /** Bandeja de conversaciones en vivo: los chats de tus clientes, quién los atiende y la respuesta del equipo, sin recargar. */
 export function ConversationsPage() {
+  const canConfigure = useCan("configure");
   const { slug = "" } = useParams();
   // Desde un aviso se llega con `?c=` y la conversación se abre directo.
   const [params] = useSearchParams();
@@ -74,7 +76,8 @@ export function ConversationsPage() {
               </select>
             </label>
             </div>
-            {testChats > 0 && (
+            {/* Las pruebas son de quien configura el asistente: un asesor no las borra. */}
+            {testChats > 0 && canConfigure && (
               <div className="inbox__cleanup">
                 <span>
                   {testChats === 1 ? "1 chat de prueba" : `${testChats} chats de prueba`} de «Probar asistente»

@@ -20,7 +20,7 @@ from app.business_config_application.access import BusinessAccess
 from app.business_config_application.quick_replies import QuickRepliesService
 from app.domain.business_config import quick_replies as domain
 from app.domain.business_config.access import Principal
-from app.domain.business_config.errors import InvalidFieldsError, NotOwnerError
+from app.domain.business_config.errors import InvalidFieldsError, NotAllowedError
 from app.infrastructure.business_config.database import build_business_config_service, create_business_config_engine, create_local_schema
 from app.infrastructure.business_config.example_businesses import import_example, load_example
 from app.infrastructure.business_config.members_store import BusinessMembersStore
@@ -192,6 +192,12 @@ def test_only_whoever_organizes_the_business_creates_edits_and_deletes(cloud):
         def slugs_of(self, user_id):
             return {"restaurant"}
 
+        def role_of(self, tenant_slug, user_id):
+            return "agent"
+
+        def roles_of(self, user_id):
+            return {"restaurant": "agent"}
+
     advisor_access = BusinessAccess(access._configs, Advisor())  # noqa: SLF001 - los mismos negocios con otro rol
     as_advisor = QuickRepliesService(QuickReplyStore(engine), advisor_access)
     view = as_advisor.view(BETO, "restaurant")
@@ -202,7 +208,7 @@ def test_only_whoever_organizes_the_business_creates_edits_and_deletes(cloud):
         lambda: as_advisor.update(BETO, "restaurant", reply.id, PRICES),
         lambda: as_advisor.delete(BETO, "restaurant", reply.id),
     ):
-        with pytest.raises(NotOwnerError):
+        with pytest.raises(NotAllowedError):
             action()
 
 

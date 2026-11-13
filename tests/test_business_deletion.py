@@ -218,6 +218,12 @@ def test_only_the_owner_can_delete():
         def slugs_of(self, user_id):
             return {"restaurant"}
 
+        def role_of(self, slug, user_id):
+            return "admin"
+
+        def roles_of(self, user_id):
+            return {"restaurant": "admin"}
+
     class Configs:
         def get_business(self, slug):
             raise AssertionError("no debe llegar aquí")

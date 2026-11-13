@@ -7,6 +7,7 @@ import { LoadingScreen } from "../../layout/StatusScreen";
 import { HELP_ITEM, helpArticlePath, helpModulePath } from "../../navigation/navItems";
 import { useWorkspacePath } from "../../navigation/useWorkspacePath";
 import { useHelpIndex, useHelpSearch } from "../../state/useHelp";
+import { useCan } from "../../state/roleContext";
 import { GettingStarted } from "./GettingStarted";
 
 /**
@@ -20,6 +21,8 @@ export function HelpCenterPage() {
   const index = useHelpIndex();
   const results = useHelpSearch(query);
   const pathTo = useWorkspacePath();
+  // «Empieza aquí» es de quien configura el negocio; un asesor va directo a los temas.
+  const configures = useCan("configure");
 
   const setQuery = (value: string) => {
     const next = new URLSearchParams();
@@ -84,7 +87,7 @@ export function HelpCenterPage() {
         <ArticleList articles={module.articles} />
       ) : (
         <>
-          <GettingStarted />
+          {configures && <GettingStarted />}
           <section aria-labelledby="temas" className="help-topics">
             <h2 id="temas" className="section-heading">
               Temas

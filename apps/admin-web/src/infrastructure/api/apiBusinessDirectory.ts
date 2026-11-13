@@ -1,5 +1,6 @@
 import type { ContractSchema } from "../../domain/config/contractSchema";
 import type { BusinessSummary, BusinessTemplate } from "../../domain/config/types";
+import { toRole } from "../../domain/team/team";
 import type { BusinessDirectory } from "../../repositories/businessDirectory";
 import type { HttpClient } from "./httpClient";
 
@@ -9,6 +10,7 @@ export interface ApiSummary {
   latest_version: number | null;
   draft_version: number | null;
   published_version: number | null;
+  role?: string | null;
 }
 
 export function toSummary(payload: ApiSummary): BusinessSummary {
@@ -18,6 +20,8 @@ export function toSummary(payload: ApiSummary): BusinessSummary {
     latestVersion: payload.latest_version,
     draftVersion: payload.draft_version,
     publishedVersion: payload.published_version,
+    // Sin rol (el resumen dentro de la configuración) se toma el de quien lo creó; los permisos los decide el servidor.
+    role: payload.role ? toRole(payload.role) : "owner",
   };
 }
 

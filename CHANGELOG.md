@@ -5,6 +5,15 @@ está en el historial de git y en `docs/plan-v1.md`.
 
 ## 12 de noviembre de 2026
 
+**Tu equipo, con roles**
+- Nuevo **Configuración → Equipo**: invitas a las personas que atienden o administran tu negocio con un **enlace** que se copia o
+  se envía por WhatsApp. Vence en 7 días, se puede renovar o retirar, y solo funciona con la cuenta del correo invitado.
+- Tres roles: **Dueño** (todo), **Administrador** (todo menos eliminar el negocio y tocar a los dueños) y **Asesor** (atiende chats,
+  clientes y ventas y usa las respuestas rápidas). El negocio siempre conserva al menos un dueño.
+- El asesor ve un panel a su medida: su inicio con lo del día y un menú sin la configuración ni los reportes. Si abre una pantalla
+  que su rol no permite, el panel le dice por qué.
+- Un agente de IA solo trabaja en los negocios donde quien lo conectó es dueño o administrador.
+
 **Centro de ayuda**
 - Nuevo **Ayuda** en el menú, junto a Configuración: un buscador, **Empieza aquí** con los cinco pasos para dejar al asistente
   vendiendo (se marcan solos cuando los haces) y 41 artículos en 10 temas que siguen el menú del panel.

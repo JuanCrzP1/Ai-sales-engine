@@ -11,6 +11,7 @@ import "./styles/workspace.css";
 import "./styles/settings.css";
 import "./styles/commerce.css";
 import "./styles/help.css";
+import "./styles/team.css";
 
 const root = document.getElementById("root");
 if (!root) throw new Error("No se encontró el elemento #root.");

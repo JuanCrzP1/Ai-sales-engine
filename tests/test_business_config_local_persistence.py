@@ -1083,7 +1083,9 @@ def test_postgres_schema_comes_from_the_reviewed_migration():
             # Migración 0013: claves de la cuenta (agentes de IA por MCP) y los negocios de cada una.
             "api_key_businesses", "mcp_oauth_clients", "mcp_oauth_codes", "mcp_oauth_tokens",
             # Migración 0015: respuestas rápidas.
-            "quick_replies"} == set(metadata.tables)
+            "quick_replies",
+            # Migración 0016: las invitaciones al equipo.
+            "team_invitations"} == set(metadata.tables)
 
 
 @pytest.mark.parametrize("scheme", ["postgresql", "postgres"])

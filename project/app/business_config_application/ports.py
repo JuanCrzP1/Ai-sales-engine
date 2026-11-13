@@ -20,6 +20,7 @@ from app.domain.business_config.key_permissions import KeyReach
 from app.domain.business_config.oauth import AuthorizationCode, OAuthClient, TokenGrant
 from app.domain.business_config.attention import AttentionSettings
 from app.domain.business_config.quick_replies import QuickReply, QuickReplyDraft
+from app.domain.business_config.team import Invitation, Member
 from app.domain.business_config.ai_usage import AIUsageSummary
 from app.domain.business_config.commerce import Customer, NewSale, ReportDay, ReportTotals, Sale
 from app.domain.business_config.channels import ConnectionStatus, ProviderStatus, WhatsAppConnection, WhatsAppSecrets
@@ -149,6 +150,12 @@ class BusinessMembers(Protocol):
     def is_member(self, tenant_slug: str, user_id: str) -> bool: ...
 
     def is_owner(self, tenant_slug: str, user_id: str) -> bool: ...
+
+    def role_of(self, tenant_slug: str, user_id: str) -> str | None: ...
+
+    def roles_of(self, user_id: str) -> dict[str, str]:
+        """Sus negocios (por slug) con su rol en cada uno."""
+        ...
 
 
 @runtime_checkable
@@ -342,6 +349,36 @@ class QuickReplyStorage(Protocol):
     def delete(self, tenant_slug: str, reply_id: str) -> None: ...
 
     def mark_used(self, tenant_slug: str, reply_id: str) -> QuickReply: ...
+
+
+class TeamStorage(Protocol):
+    """El equipo de cada negocio y sus invitaciones (`team_store.py`). Cambiar un rol, quitar a alguien y aceptar una invitación
+    se deciden y se aplican en una sola transacción: `decide` recibe lo que hay en la base en ese momento (el rol de la persona y
+    cuántos dueños quedan) y falla si la regla no se cumple."""
+
+    def members(self, tenant_slug: str) -> list[Member]: ...
+
+    def change_role(self, tenant_slug: str, user_id: str, decide: Callable[[str, int], str]) -> Member: ...
+
+    def remove(self, tenant_slug: str, user_id: str, decide: Callable[[str, int], None]) -> None: ...
+
+    def invitations(self, tenant_slug: str) -> list[Invitation]:
+        """Las que no se aceptaron ni se retiraron (las vencidas también: se pueden renovar)."""
+        ...
+
+    def invite(self, tenant_slug: str, *, email: str, role: str, token_hash: str, invited_by: str, now: datetime, expires_at: datetime) -> Invitation:
+        """La crea; si ese correo ya tenía una pendiente, la reemplaza."""
+        ...
+
+    def renew(self, tenant_slug: str, invitation_id: str, *, token_hash: str, now: datetime, expires_at: datetime) -> Invitation: ...
+
+    def revoke(self, tenant_slug: str, invitation_id: str, *, now: datetime) -> None: ...
+
+    def invitation_by_token(self, token_hash: str) -> Invitation | None: ...
+
+    def accept(self, token_hash: str, *, user_id: str, email: str | None, now: datetime, check: Callable[[Invitation | None], Invitation]) -> str:
+        """Lo pone en el equipo con el rol de la invitación (si ya estaba, conserva el suyo) y devuelve el negocio."""
+        ...
 
 
 class AttentionStorage(Protocol):

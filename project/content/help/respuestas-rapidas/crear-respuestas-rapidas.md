@@ -26,6 +26,6 @@ Escribe `{nombre}` (o toca **+ {nombre}**) y se cambia por el primer nombre del 
 
 Toca **Agregar otro mensaje** para que salgan uno tras otro, como si los escribieras tú (hasta 10). Cámbialos de orden con ↑ y ↓.
 
-> **Importante:** solo quien administra el negocio crea, edita y borra respuestas rápidas. Todo el equipo las usa en el chat.
+> **Importante:** las crean, editan y borran el dueño y los administradores. Los asesores las usan en el chat. Ver [Los roles del equipo](roles-del-equipo).
 
 Por ahora son textos: las fotos y los documentos llegarán cuando el chat del panel pueda enviarlos.

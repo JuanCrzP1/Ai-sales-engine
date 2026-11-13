@@ -19,7 +19,7 @@ from app.domain.business_config.errors import (
     ConversationNotFoundError,
     InvalidDocumentError,
     InvalidFieldsError,
-    NotOwnerError,
+    NotAllowedError,
     QuickReplyNotFoundError,
     PaymentDataUnavailableError,
     PublicationError,
@@ -29,6 +29,7 @@ from app.domain.business_config.errors import (
 )
 from app.domain.business_config.validation_messages import validation_issues
 from app.domain.business_config.help import HelpArticleNotFoundError
+from app.domain.business_config.team import InvitationError, TeamRuleError
 
 logger = logging.getLogger("admin-api")
 
@@ -86,11 +87,15 @@ def _api_error(request: Request, exc: BusinessConfigError) -> ApiError:
         return ApiError(status.HTTP_503_SERVICE_UNAVAILABLE, _reason(request, exc), code="unavailable")
     if isinstance(exc, ConversationNotFoundError):
         return ApiError(status.HTTP_404_NOT_FOUND, "Esa conversación no existe.", code="not_found")
+    if isinstance(exc, InvitationError):
+        return ApiError(status.HTTP_404_NOT_FOUND, str(exc), code="invitation")
+    if isinstance(exc, TeamRuleError):
+        return ApiError(status.HTTP_409_CONFLICT, str(exc), code="conflict")
     if isinstance(exc, HelpArticleNotFoundError):
         return ApiError(status.HTTP_404_NOT_FOUND, "Ese artículo de ayuda no existe.", code="not_found")
     if isinstance(exc, QuickReplyNotFoundError):
         return ApiError(status.HTTP_404_NOT_FOUND, "Esa respuesta rápida no existe.", code="not_found")
-    if isinstance(exc, NotOwnerError):
+    if isinstance(exc, NotAllowedError):
         return ApiError(status.HTTP_403_FORBIDDEN, str(exc), code="forbidden")
     if isinstance(exc, BusinessDeletionBlockedError):
         return ApiError(status.HTTP_409_CONFLICT, str(exc), code="conflict")

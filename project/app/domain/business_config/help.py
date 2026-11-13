@@ -45,7 +45,7 @@ HELP_MODULES: tuple[HelpModule, ...] = (
     HelpModule("canales", "Canales", "Conectar tu WhatsApp y mantenerlo conectado"),
     HelpModule("integraciones", "Integraciones y agentes", "La API del asistente, las claves y los agentes de IA"),
     HelpModule("inteligencia-artificial", "Inteligencia artificial", "Tu clave de OpenRouter, el modelo y lo que gastas"),
-    HelpModule("cuenta", "Tu cuenta y tu negocio", "Perfil, seguridad, notificaciones y eliminar"),
+    HelpModule("cuenta", "Tu equipo y tu cuenta", "Invitar a tu equipo, los roles, tu perfil, la seguridad y eliminar"),
 )
 MODULE_IDS = frozenset(module.id for module in HELP_MODULES)
 

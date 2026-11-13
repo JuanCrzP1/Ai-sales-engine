@@ -52,6 +52,9 @@ En este equipo la dirección es `http://127.0.0.1:8010/api/mcp`, porque la API d
 Marcadas destructivas (`destructiveHint`), con confirmación de la persona: `publish_business_config`, `rollback_business_config`,
 `reply_to_customer` (le escribe a un cliente real), `cancel_sale` y `set_ai_model` (se aplica al instante y cambia el costo).
 
+Un agente trabaja **como quien lo conectó** y solo en los negocios donde esa persona es **dueño o administrador**: si pasa a
+asesor, su agente deja de entrar a ese negocio (ver «Equipo y roles» en `architecture.md`).
+
 Lo que **no** está, a propósito:
 - **Conectar WhatsApp:** exige escanear el código QR con el teléfono.
 - **La clave de IA del negocio:** es un secreto de la persona. El agente solo sabe si está puesta.

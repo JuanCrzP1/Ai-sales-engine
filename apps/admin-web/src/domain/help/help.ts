@@ -45,6 +45,7 @@ const SCREENS: [prefix: string, help: ScreenHelp][] = [
   ["configuracion/atencion-humana", { module: "atencion-humana", article: "cuando-pasa-a-una-persona" }],
   ["configuracion/inteligencia-artificial", { module: "inteligencia-artificial", article: "clave-de-openrouter" }],
   ["configuracion/eliminar-negocio", { module: "cuenta", article: "eliminar-un-negocio" }],
+  ["configuracion/equipo", { module: "cuenta", article: "invitar-a-tu-equipo" }],
   ["configuracion", { module: "cuenta", article: "configuracion-y-mi-cuenta" }],
   ["cuenta/seguridad", { module: "cuenta", article: "seguridad-y-sesiones" }],
   ["cuenta/notificaciones", { module: "cuenta", article: "activar-notificaciones" }],

@@ -11,7 +11,7 @@ from typing import Annotated, Any
 from fastapi import APIRouter, Depends, Request, status
 
 from app.admin_api.errors import ApiError
-from app.admin_api.routes import BusinessSlug, CurrentUser
+from app.admin_api.routes import BusinessSlug, ConfigurableSlug, CurrentUser
 from app.admin_api.schemas import whatsapp_payload
 from app.business_config_application.channels import WhatsAppChannelService, WhatsAppView
 from app.business_config_application.usage_limits import UsageGuard
@@ -51,23 +51,23 @@ def get_whatsapp(slug: BusinessSlug, whatsapp: WhatsApp) -> dict[str, Any]:
 
 
 @router.post("/whatsapp/connect")
-def connect_whatsapp(slug: BusinessSlug, user: CurrentUser, whatsapp: WhatsApp, usage: Usage) -> dict[str, Any]:
+def connect_whatsapp(slug: ConfigurableSlug, user: CurrentUser, whatsapp: WhatsApp, usage: Usage) -> dict[str, Any]:
     usage.channel_setup(user)
     return _answer(lambda: whatsapp.connect(slug))
 
 
 @router.post("/whatsapp/new-code")
-def new_whatsapp_code(slug: BusinessSlug, user: CurrentUser, whatsapp: WhatsApp, usage: Usage) -> dict[str, Any]:
+def new_whatsapp_code(slug: ConfigurableSlug, user: CurrentUser, whatsapp: WhatsApp, usage: Usage) -> dict[str, Any]:
     usage.channel_setup(user)
     return _answer(lambda: whatsapp.new_code(slug))
 
 
 @router.get("/whatsapp/status")
-def whatsapp_status(slug: BusinessSlug, whatsapp: WhatsApp, usage: Usage) -> dict[str, Any]:
+def whatsapp_status(slug: ConfigurableSlug, whatsapp: WhatsApp, usage: Usage) -> dict[str, Any]:
     usage.channel_status(slug)
     return _answer(lambda: whatsapp.refresh(slug))
 
 
 @router.post("/whatsapp/disconnect")
-def disconnect_whatsapp(slug: BusinessSlug, whatsapp: WhatsApp) -> dict[str, Any]:
+def disconnect_whatsapp(slug: ConfigurableSlug, whatsapp: WhatsApp) -> dict[str, Any]:
     return _answer(lambda: whatsapp.disconnect(slug))

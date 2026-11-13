@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-# Quien crea un negocio es su dueño. Es el único papel de esta versión.
+# Quien crea un negocio es su dueño. Los demás roles y lo que puede cada uno están en `team.py`.
 OWNER = "owner"
 
 

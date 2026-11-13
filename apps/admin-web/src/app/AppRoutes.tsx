@@ -33,6 +33,10 @@ import { OAuthConsentPage } from "../features/integrations/OAuthConsentPage";
 import { ReviewPage } from "../features/review/ReviewPage";
 import { AppShell } from "../layout/AppShell";
 import { AccountLayout, SettingsLayout } from "../layout/SettingsLayout";
+import { RequireCapability, SettingsIndex } from "../layout/RequireCapability";
+import { TeamPage } from "../features/team/TeamPage";
+import { InvitationPage } from "../features/team/InvitationPage";
+import { INVITATION_BASE } from "../domain/team/team";
 import { ACCOUNT_PATHS } from "../navigation/accountPaths";
 import {
   AI_ITEM,
@@ -61,6 +65,7 @@ import {
   REVIEW_ITEM,
   SALES_ITEM,
   SETTINGS_BASE,
+  TEAM_ITEM,
   sectionPath,
 } from "../navigation/navItems";
 import { BusinessWorkspace } from "./BusinessWorkspace";
@@ -76,6 +81,10 @@ import { RequireAuth } from "./RequireAuth";
  */
 export const appRoutes = (
   <>
+    {/* Una invitación al equipo se abre con o sin sesión: quien la recibe quizá aún no tiene cuenta. */}
+    <Route element={<AuthLayout wide />}>
+      <Route path={`${INVITATION_BASE}/:token`} element={<InvitationPage />} />
+    </Route>
     <Route element={<GuestOnly />}>
       <Route element={<AuthLayout />}>
         <Route path={ACCOUNT_PATHS.signIn} element={<SignInPage />} />
@@ -98,39 +107,51 @@ export const appRoutes = (
           <Route path={CONVERSATIONS_ITEM.path} element={<ConversationsPage />} />
           <Route path={CUSTOMERS_ITEM.path} element={<CustomersPage />} />
           <Route path={SALES_ITEM.path} element={<SalesPage />} />
-          <Route path={REPORTS_ITEM.path} element={<ReportsPage />} />
-          <Route path={CHANNELS_ITEM.path} element={<ChannelsPage />} />
-          <Route path={INTEGRATIONS_ITEM.path} element={<IntegrationsPage />} />
-          <Route path={ASSISTANT_API_ITEM.path} element={<AssistantApiPage />} />
-          <Route path={API_KEYS_ITEM.path} element={<ApiKeysPage />} />
-          <Route path={AGENTS_ITEM.path} element={<AgentsPage />} />
-          <Route path={OVERVIEW_ITEM.path} element={<AssistantOverviewPage />} />
-          <Route path={sectionPath("business")} element={<BusinessPage />} />
-          <Route path={sectionPath("catalog")} element={<CatalogPage />} />
-          <Route path={sectionPath("payments")} element={<PaymentsPage />} />
-          <Route path={sectionPath("assistant")} element={<AssistantPage />} />
-          <Route path={sectionPath("messages")} element={<MessagesPage />} />
-          <Route path={REVIEW_ITEM.path} element={<ReviewPage />} />
+          {/* Lo que el rol no permite se ve con su motivo (ver `layout/RequireCapability.tsx`); el servidor lo rechaza igual. */}
+          <Route element={<RequireCapability need="reports" />}>
+            <Route path={REPORTS_ITEM.path} element={<ReportsPage />} />
+          </Route>
+          <Route element={<RequireCapability need="configure" />}>
+            <Route path={CHANNELS_ITEM.path} element={<ChannelsPage />} />
+            <Route path={INTEGRATIONS_ITEM.path} element={<IntegrationsPage />} />
+            <Route path={ASSISTANT_API_ITEM.path} element={<AssistantApiPage />} />
+            <Route path={API_KEYS_ITEM.path} element={<ApiKeysPage />} />
+            <Route path={AGENTS_ITEM.path} element={<AgentsPage />} />
+            <Route path={OVERVIEW_ITEM.path} element={<AssistantOverviewPage />} />
+            <Route path={sectionPath("business")} element={<BusinessPage />} />
+            <Route path={sectionPath("catalog")} element={<CatalogPage />} />
+            <Route path={sectionPath("payments")} element={<PaymentsPage />} />
+            <Route path={sectionPath("assistant")} element={<AssistantPage />} />
+            <Route path={sectionPath("messages")} element={<MessagesPage />} />
+            <Route path={REVIEW_ITEM.path} element={<ReviewPage />} />
+            <Route path={PLAYGROUND_ITEM.path} element={<PlaygroundPage />} />
+          </Route>
           <Route element={<SettingsLayout />}>
-            <Route path={AI_ITEM.path} element={<AISettingsPage />} />
-            <Route path={ATTENTION_ITEM.path} element={<AttentionSettingsPage />} />
+            <Route element={<RequireCapability need="configure" />}>
+              <Route path={AI_ITEM.path} element={<AISettingsPage />} />
+              <Route path={ATTENTION_ITEM.path} element={<AttentionSettingsPage />} />
+            </Route>
             <Route path={QUICK_REPLIES_ITEM.path} element={<QuickRepliesPage />} />
-            <Route path={BILLING_ITEM.path} element={<BillingPage />} />
-            <Route path={DELETE_BUSINESS_ITEM.path} element={<DeleteBusinessPage />} />
+            <Route element={<RequireCapability need="team" />}>
+              <Route path={TEAM_ITEM.path} element={<TeamPage />} />
+            </Route>
+            <Route element={<RequireCapability need="deleteBusiness" />}>
+              <Route path={BILLING_ITEM.path} element={<BillingPage />} />
+              <Route path={DELETE_BUSINESS_ITEM.path} element={<DeleteBusinessPage />} />
+            </Route>
           </Route>
           <Route element={<AccountLayout />}>
             <Route path={ACCOUNT_PROFILE_ITEM.path} element={<AccountProfilePage />} />
             <Route path={SECURITY_ITEM.path} element={<SecurityPage />} />
             <Route path={NOTIFICATIONS_ITEM.path} element={<NotificationsPage />} />
           </Route>
-          <Route path={SETTINGS_BASE} element={<Navigate to={AI_ITEM.path.split("/").pop()!} replace />} />
+          <Route path={SETTINGS_BASE} element={<SettingsIndex />} />
           <Route path={ACCOUNT_BASE} element={<Navigate to={ACCOUNT_PROFILE_ITEM.path.split("/").pop()!} replace />} />
           {/* Mi perfil vivía dentro de Configuración: ahora es de Mi cuenta. */}
           <Route path={`${SETTINGS_BASE}/perfil`} element={<Navigate to={`../${ACCOUNT_PROFILE_ITEM.path}`} replace />} />
           {/* Las direcciones de antes de Configuración siguen funcionando. */}
           <Route path="ia" element={<Navigate to={`../${AI_ITEM.path}`} replace />} />
           <Route path="atencion-humana" element={<Navigate to={`../${ATTENTION_ITEM.path}`} replace />} />
-          <Route path={PLAYGROUND_ITEM.path} element={<PlaygroundPage />} />
           <Route path={HELP_ITEM.path} element={<HelpCenterPage />} />
           <Route path={`${HELP_ITEM.path}/:article`} element={<HelpArticlePage />} />
           <Route path="*" element={<NotFoundPage />} />

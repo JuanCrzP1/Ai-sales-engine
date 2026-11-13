@@ -12,9 +12,11 @@ import { ChannelsContext } from "../state/channelsContext";
 import { CommerceContext } from "../state/commerceContext";
 import { ConfigProvider } from "../state/ConfigProvider";
 import { ContractSchemaContext } from "../state/directoryContext";
+import { BusinessRoleContext } from "../state/roleContext";
+import type { Role } from "../domain/team/team";
 import { useApplicationServices } from "./servicesContext";
 
-type SchemaState = { status: "loading" } | { status: "error"; message: string } | { status: "ready"; schema: ContractSchema };
+type SchemaState = { status: "loading" } | { status: "error"; message: string } | { status: "ready"; schema: ContractSchema; role: Role };
 
 /** Espacio de trabajo del negocio de la ruta: cada negocio tiene su propia configuración, y la ruta decide cuál se edita. */
 export function BusinessWorkspace() {
@@ -32,9 +34,10 @@ export function BusinessWorkspace() {
   useEffect(() => {
     let active = true;
     setSchema({ status: "loading" });
-    directory.contractSchema().then(
-      (loaded) => {
-        if (active) setSchema({ status: "ready", schema: loaded });
+    // El rol de quien entra viene con su lista de negocios: decide lo que el panel le muestra (el servidor lo vuelve a revisar).
+    Promise.all([directory.contractSchema(), directory.list()]).then(
+      ([loaded, businesses]) => {
+        if (active) setSchema({ status: "ready", schema: loaded, role: businesses.find((business) => business.slug === slug)?.role ?? "owner" });
       },
       (error: unknown) => {
         if (active) setSchema({ status: "error", message: persistenceErrorMessage(error) });
@@ -43,7 +46,7 @@ export function BusinessWorkspace() {
     return () => {
       active = false;
     };
-  }, [directory, attempt]);
+  }, [directory, slug, attempt]);
 
   if (schema.status === "loading") return <LoadingScreen label="Cargando tu configuración…" />;
   if (schema.status === "error") {
@@ -55,6 +58,7 @@ export function BusinessWorkspace() {
   }
 
   return (
+    <BusinessRoleContext.Provider value={schema.role}>
     <ContractSchemaContext.Provider value={schema.schema}>
       <ConfigProvider
         key={slug}
@@ -81,5 +85,6 @@ export function BusinessWorkspace() {
         </AssistantLabContext.Provider>
       </ConfigProvider>
     </ContractSchemaContext.Provider>
+    </BusinessRoleContext.Provider>
   );
 }

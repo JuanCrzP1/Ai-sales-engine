@@ -13,11 +13,13 @@ import {
   isSettingsPath,
   MAIN_ITEMS,
   SETTINGS_ITEM,
+  allowed,
   type NavItem,
 } from "../navigation/navItems";
 import { useWorkspacePath } from "../navigation/useWorkspacePath";
 import { useAuth } from "../state/auth/useAuth";
 import { useConfig } from "../state/useConfig";
+import { useBusinessRole } from "../state/roleContext";
 import { BusinessSwitcher } from "./BusinessSwitcher";
 import { HelpButton } from "./HelpPanel";
 import { NAV_ICONS } from "./navIcons";
@@ -45,6 +47,7 @@ export function Sidebar({ id, open, compact = false, onClose, onOpenHelp }: Side
   const { progress, publication } = useConfig();
   const { verifiesCredentials } = useAuth();
   const { pathname } = useLocation();
+  const role = useBusinessRole();
   const pending = progress.total - progress.completed;
   const unpublished = publication === "pending";
   const touchStart = useRef<number | null>(null);
@@ -90,22 +93,27 @@ export function Sidebar({ id, open, compact = false, onClose, onOpenHelp }: Side
       <BusinessSwitcher />
 
       <nav className="nav" aria-label="Menú del negocio">
-        {MAIN_ITEMS.map((item) => (
+        {MAIN_ITEMS.filter((item) => allowed(item, role)).map((item) => (
           <NavEntry key={item.key} item={item} end={item.key === "home"} />
         ))}
-        <p className="nav__heading" aria-hidden="true">
-          Tu negocio
-        </p>
-        <NavEntry item={ASSISTANT_HUB_ITEM} active={isAssistantPath(pathname)}>
-          {unpublished && <span className="nav__dot" role="img" aria-label="Cambios sin publicar" title="Tienes cambios guardados que tus clientes todavía no ven" />}
-          {pending > 0 && (
-            <span className="nav__count" title={`${pending} ${pending === 1 ? "sección pendiente" : "secciones pendientes"}`}>
-              {pending}
-            </span>
-          )}
-        </NavEntry>
-        <NavEntry item={CHANNELS_ITEM} />
-        <NavEntry item={INTEGRATIONS_ITEM} active={isIntegrationsPath(pathname)} />
+        {/* Un asesor solo atiende: «Tu negocio» (asistente, canales e integraciones) es de quien lo configura. */}
+        {allowed(ASSISTANT_HUB_ITEM, role) && (
+          <>
+            <p className="nav__heading" aria-hidden="true">
+              Tu negocio
+            </p>
+            <NavEntry item={ASSISTANT_HUB_ITEM} active={isAssistantPath(pathname)}>
+              {unpublished && <span className="nav__dot" role="img" aria-label="Cambios sin publicar" title="Tienes cambios guardados que tus clientes todavía no ven" />}
+              {pending > 0 && (
+                <span className="nav__count" title={`${pending} ${pending === 1 ? "sección pendiente" : "secciones pendientes"}`}>
+                  {pending}
+                </span>
+              )}
+            </NavEntry>
+            <NavEntry item={CHANNELS_ITEM} />
+            <NavEntry item={INTEGRATIONS_ITEM} active={isIntegrationsPath(pathname)} />
+          </>
+        )}
         {/* Como en las plataformas serias: la configuración del negocio va sola, fija abajo. Lo personal está en el menú de la foto. */}
         <div className="nav__bottom">
           <NavEntry item={HELP_ITEM} active={isHelpCenterPath(pathname)} />

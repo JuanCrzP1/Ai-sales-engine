@@ -90,7 +90,11 @@ class QuickReplyNotFoundError(BusinessConfigError):
     """La respuesta rápida no existe o es de otro negocio."""
 
 
-class NotOwnerError(BusinessConfigError):
+class NotAllowedError(BusinessConfigError):
+    """Es miembro del negocio, pero su rol no le deja hacer esto (ver `team.py`). El mensaje es para la persona."""
+
+
+class NotOwnerError(NotAllowedError):
     """Es miembro del negocio, pero eso solo lo puede hacer su dueño (por ejemplo, eliminarlo). El mensaje es para el negocio."""
 
 

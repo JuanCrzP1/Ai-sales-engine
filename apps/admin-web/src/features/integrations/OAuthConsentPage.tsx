@@ -7,6 +7,7 @@ import { SelectField } from "../../components/ui/FormFields";
 import type { AccessLevel, KeyReach } from "../../domain/integrations/types";
 import { useAgentAuthorization } from "../../state/useAgentAuthorization";
 import { useMyBusinesses } from "../../state/useMyBusinesses";
+import { can } from "../../domain/team/team";
 import { PermissionMatrix } from "./PermissionMatrix";
 
 const REACH_OPTIONS: { value: KeyReach; label: string; hint: string }[] = [
@@ -27,7 +28,8 @@ export function OAuthConsentPage() {
   const [search] = useSearchParams();
   const params = useMemo(() => Object.fromEntries(search.entries()), [search]);
   const { state, decide } = useAgentAuthorization(params);
-  const businesses = useMyBusinesses();
+  // Un agente solo trabaja en los negocios que quien lo conecta puede configurar (dueño o administrador).
+  const businesses = useMyBusinesses().filter((business) => can(business.role, "configure"));
   const [reach, setReach] = useState<KeyReach>("all");
   const [chosen, setChosen] = useState<string[]>([]);
   const [single, setSingle] = useState("");

@@ -10,6 +10,7 @@ import { createApiInbox } from "../infrastructure/api/apiInbox";
 import { createApiIntegrations } from "../infrastructure/api/apiIntegrations";
 import { createApiQuickReplies } from "../infrastructure/api/apiQuickReplies";
 import { createApiHelp } from "../infrastructure/api/apiHelp";
+import { createApiTeam } from "../infrastructure/api/apiTeam";
 import { createHttpClient } from "../infrastructure/api/httpClient";
 import { createBrowserPush } from "../infrastructure/browser/browserPush";
 import { createLocalOperatorAuthService } from "../infrastructure/local/localOperatorAuthService";
@@ -26,6 +27,7 @@ import type { Inbox } from "../repositories/inbox";
 import type { Integrations } from "../repositories/integrations";
 import type { QuickReplies } from "../repositories/quickReplies";
 import type { Help } from "../repositories/help";
+import type { Team } from "../repositories/team";
 
 /**
  * Servicios de la aplicación. Es el ÚNICO punto donde se eligen las implementaciones: pantallas, estado y reglas solo
@@ -48,6 +50,8 @@ export interface ApplicationServices {
   createQuickReplies: (slug: string) => QuickReplies;
   /** El Centro de ayuda: el mismo en todos los negocios. */
   help: Help;
+  /** El equipo de cada negocio y las invitaciones (solo con cuentas, en la nube). */
+  team: Team;
   /** Las notificaciones en este navegador o celular (de la persona, no de un negocio). */
   devicePush: DevicePush;
   /** Las integraciones de un negocio: claves de API y la API del asistente. */
@@ -70,6 +74,7 @@ export function createLocalServices(apiBaseUrl?: string): ApplicationServices {
     createAttention: (slug) => createApiAttention(http, slug),
     createQuickReplies: (slug) => createApiQuickReplies(http, slug),
     help: createApiHelp(http),
+    team: createApiTeam(http),
     devicePush: createBrowserPush(http),
     createIntegrations: (slug) => createApiIntegrations(http, slug),
     agentAuthorization: createApiAgentAuthorization(http),
@@ -91,6 +96,7 @@ export function createCloudServices(authUrl: string, apiBaseUrl?: string): Appli
     createAttention: (slug) => createApiAttention(http, slug),
     createQuickReplies: (slug) => createApiQuickReplies(http, slug),
     help: createApiHelp(http),
+    team: createApiTeam(http),
     devicePush: createBrowserPush(http),
     createIntegrations: (slug) => createApiIntegrations(http, slug),
     agentAuthorization: createApiAgentAuthorization(http),

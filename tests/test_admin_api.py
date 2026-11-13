@@ -180,7 +180,7 @@ def _edit(api: Local, change, slug: str = "cafe_aroma", *, values: dict | None =
 
 def test_create_list_and_recover_a_business(api):
     created = _create(api).json()
-    assert created == {"slug": "cafe_aroma", "name": "Café Aroma", "latest_version": None, "draft_version": None, "published_version": None}
+    assert created == {"slug": "cafe_aroma", "name": "Café Aroma", "latest_version": None, "draft_version": None, "published_version": None, "role": "owner"}
     assert [item["slug"] for item in api.client.get("/api/businesses").json()] == ["cafe_aroma"]
     recovered = _load(api)
     assert recovered["document"] is None
@@ -1175,6 +1175,15 @@ def test_the_api_only_has_the_routes_of_the_panel(api):
         ("PUT", f"{business}/quick-replies/{{reply_id}}"),
         ("DELETE", f"{business}/quick-replies/{{reply_id}}"),
         ("POST", f"{business}/quick-replies/{{reply_id}}/use"),
+        # El equipo y las invitaciones (`team_routes.py`).
+        ("GET", f"{business}/team"),
+        ("POST", f"{business}/team/invitations"),
+        ("POST", f"{business}/team/invitations/{{invitation_id}}/renew"),
+        ("DELETE", f"{business}/team/invitations/{{invitation_id}}"),
+        ("PUT", f"{business}/team/members/{{user_id}}"),
+        ("DELETE", f"{business}/team/members/{{user_id}}"),
+        ("GET", "/invitations/{token}"),
+        ("POST", "/invitations/{token}/accept"),
         # El Centro de ayuda (`help_routes.py`).
         ("GET", "/help"),
         ("GET", "/help/search"),

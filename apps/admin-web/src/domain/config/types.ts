@@ -1,4 +1,5 @@
 import type { BusinessConfig, Offer, TransferMethod } from "../../contracts/businessConfig.v1";
+import type { Role } from "../team/team";
 
 /**
  * El panel edita directamente el documento del contrato global (BusinessConfig v1): no tiene un modelo propio.
@@ -60,6 +61,8 @@ export interface BusinessSummary {
   latestVersion: number | null;
   draftVersion: number | null;
   publishedVersion: number | null;
+  /** El rol de quien mira (dueño, administrador o asesor). */
+  role: Role;
 }
 
 export type VersionStatus = "draft" | "published" | "archived";

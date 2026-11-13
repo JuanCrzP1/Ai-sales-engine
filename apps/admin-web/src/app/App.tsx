@@ -9,6 +9,7 @@ import { DirectoryContext } from "../state/directoryContext";
 import { InboxContext } from "../state/inboxContext";
 import { AgentAuthorizationContext } from "../state/integrationsContext";
 import { HelpContext } from "../state/helpContext";
+import { TeamContext } from "../state/teamContext";
 import { QuickRepliesContext } from "../state/quickRepliesContext";
 import { appRoutes } from "./AppRoutes";
 import { createServices, type ApplicationServices } from "./compositionRoot";
@@ -28,6 +29,7 @@ export function App({ services }: { services?: ApplicationServices }) {
           <AgentAuthorizationContext.Provider value={resolved.agentAuthorization}>
           <QuickRepliesContext.Provider value={resolved.createQuickReplies}>
           <HelpContext.Provider value={resolved.help}>
+          <TeamContext.Provider value={resolved.team}>
           <AuthProvider
             service={resolved.auth}
             renderLoading={() => <LoadingScreen label="Abriendo tu panel…" />}
@@ -39,6 +41,7 @@ export function App({ services }: { services?: ApplicationServices }) {
           >
             <RouterProvider router={router} />
           </AuthProvider>
+          </TeamContext.Provider>
           </HelpContext.Provider>
           </QuickRepliesContext.Provider>
           </AgentAuthorizationContext.Provider>

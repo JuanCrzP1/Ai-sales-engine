@@ -306,6 +306,34 @@ def quick_replies_payload(view) -> dict[str, Any]:
     return {"quick_replies": [quick_reply_payload(reply) for reply in view.replies], "can_manage": view.can_manage}
 
 
+def team_member_payload(member, me: str | None = None) -> dict[str, Any]:
+    return {"user_id": member.user_id, "email": member.email, "role": member.role, "joined_at": member.joined_at.isoformat(), "me": member.user_id == me}
+
+
+def invitation_payload(invitation, now: datetime | None = None) -> dict[str, Any]:
+    """Una invitación sin su enlace: el enlace solo viaja al crearla o renovarla (`token`)."""
+    moment = now or datetime.now(timezone.utc)
+    return {
+        "id": invitation.id,
+        "business": invitation.tenant_slug,
+        "business_name": invitation.business_name,
+        "email": invitation.email,
+        "role": invitation.role,
+        "invited_by": invitation.invited_by,
+        "created_at": invitation.created_at.isoformat(),
+        "expires_at": invitation.expires_at.isoformat(),
+        "status": invitation.status(moment),
+    }
+
+
+def team_payload(view) -> dict[str, Any]:
+    return {
+        "members": [team_member_payload(member, view.me) for member in view.members],
+        "invitations": [invitation_payload(invitation) for invitation in view.invitations],
+        "my_role": view.my_role,
+    }
+
+
 def api_key_payload(key, now: datetime | None = None) -> dict[str, Any]:
     """Una clave de API sin su valor: solo su comienzo para reconocerla, lo que puede por área, a qué negocios entra y si vence."""
     moment = now or datetime.now(timezone.utc)

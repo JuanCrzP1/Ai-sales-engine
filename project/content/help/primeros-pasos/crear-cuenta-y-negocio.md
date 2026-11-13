@@ -5,7 +5,7 @@ summary: Crear la cuenta, crear tu negocio de cero o con una plantilla, y cambia
 order: 3
 updated: 2026-11-12
 keywords: registrarse, crear cuenta, plantilla, nuevo negocio, varios negocios, cambiar de negocio
-related: empieza-aqui, como-aprende-tu-asistente
+related: empieza-aqui, como-aprende-tu-asistente, invitar-a-tu-equipo
 ---
 
 ## Crea tu cuenta
@@ -13,7 +13,7 @@ related: empieza-aqui, como-aprende-tu-asistente
 1. Entra al panel y toca **Crear cuenta**.
 2. Escribe tu nombre, tu correo y una contraseña.
 
-Cada cuenta solo ve los negocios que creó: nadie más ve los tuyos.
+Cada cuenta solo ve los negocios que creó y aquellos a los que la invitaron. Nadie más ve los tuyos, salvo quien invites a tu equipo: ver [Invita a tu equipo](invitar-a-tu-equipo).
 
 ## Crea tu negocio
 

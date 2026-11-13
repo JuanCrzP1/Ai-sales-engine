@@ -18,7 +18,7 @@ En [Integraciones → Agentes de IA (MCP)](panel:integraciones/agentes) conectas
 
 ## Con qué permisos
 
-Al conectarlo eliges qué puede hacer por área (Negocios, Asistente IA, Datos de pago, Conversaciones, Clientes y ventas, Atención humana), a qué negocios entra y cuándo vence.
+Solo trabaja en los negocios donde quien lo conecta es dueño o administrador ([Los roles del equipo](roles-del-equipo)). Al conectarlo eliges qué puede hacer por área (Negocios, Asistente IA, Datos de pago, Conversaciones, Clientes y ventas, Atención humana), a qué negocios entra y cuándo vence.
 
 ## Lo que nunca puede
 

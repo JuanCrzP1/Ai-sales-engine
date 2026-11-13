@@ -9,6 +9,7 @@ from app.business_config_application.ports import AIUsageStorage, CommerceStorag
 from app.domain.business_config.access import Principal
 from app.domain.business_config.commerce import MAX_REPORT_DAYS, STAGES, Customer, NewSale, Report, Sale
 from app.domain.business_config.errors import FieldIssue, InvalidFieldsError
+from app.domain.business_config.team import REPORTS
 
 try:
     from zoneinfo import ZoneInfo
@@ -51,12 +52,12 @@ class CommerceService:
         return self._storage.record_sale(business, sale, created_by=created_by or principal.label)
 
     def cancel_sale(self, principal: Principal, business: str, sale_id: str) -> Sale:
-        self._access.require(principal, business)
+        self._access.require(principal, business, REPORTS)
         return self._storage.cancel_sale(business, sale_id)
 
     def report(self, principal: Principal, business: str, *, days: int = 30) -> Report:
         """Los últimos `days` días (hoy incluido), comparados con los `days` anteriores."""
-        self._access.require(principal, business)
+        self._access.require(principal, business, REPORTS)
         span = self._days(days)
         until = self._today()
         since = until - timedelta(days=span - 1)

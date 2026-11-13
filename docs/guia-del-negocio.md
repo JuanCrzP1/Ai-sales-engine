@@ -70,9 +70,12 @@ este índice.
 - [Elige el modelo y mira lo que gastas](../project/content/help/inteligencia-artificial/elegir-el-modelo.md): Qué modelo de IA usa tu asistente, cuánto cuesta más o menos, y el consumo de los últimos 30 días.
 - [Si la IA falla o te quedas sin saldo](../project/content/help/inteligencia-artificial/si-la-ia-falla.md): Qué recibe el cliente cuando la IA no puede responder y cómo lo resuelves.
 
-## Tu cuenta y tu negocio
+## Tu equipo y tu cuenta
 
 - [Configuración y Mi cuenta, qué va en cada una](../project/content/help/cuenta/configuracion-y-mi-cuenta.md): Configuración es del negocio; Mi cuenta es tuya, igual en todos tus negocios.
+- [Invita a tu equipo](../project/content/help/cuenta/invitar-a-tu-equipo.md): Invita a las personas que atienden o administran tu negocio con un enlace, cada una con su rol.
+- [Los roles del equipo](../project/content/help/cuenta/roles-del-equipo.md): Qué puede hacer el Dueño, el Administrador y el Asesor en el negocio.
+- [Te invitaron a un negocio](../project/content/help/cuenta/te-invitaron-a-un-negocio.md): Cómo entras al equipo de un negocio con el enlace que te enviaron.
 - [Contraseña y sesiones](../project/content/help/cuenta/seguridad-y-sesiones.md): Cambiar tu contraseña y cerrar la sesión en los demás equipos, por ejemplo si la dejaste abierta en un computador ajeno.
 - [Activa las notificaciones en tu celular o computador](../project/content/help/cuenta/activar-notificaciones.md): Recibir un aviso como un mensaje de WhatsApp cuando un cliente necesita a una persona, aunque el panel esté cerrado.
 - [Elimina un negocio](../project/content/help/cuenta/eliminar-un-negocio.md): Qué se borra para siempre al eliminar un negocio, quién puede hacerlo y cómo pausarlo sin perder nada.

@@ -17,10 +17,11 @@ Abajo en el menú de la izquierda. Si tienes dos negocios, cada uno tiene la suy
 - **Inteligencia artificial:** la clave y el modelo de su asistente.
 - **Atención humana:** el horario del equipo y los avisos.
 - **Respuestas rápidas:** los mensajes guardados del equipo.
+- **Equipo:** invitar personas y darles su rol. Ver [Invita a tu equipo](invitar-a-tu-equipo).
 - **Eliminar negocio.**
 - **Pagos y suscripciones:** tu plan, pagos y facturas (próximamente).
 
-Se aplica al instante: no hace falta publicar.
+Se aplica al instante: no hace falta publicar. Cada persona ve lo que su rol permite; un asesor solo ve las respuestas rápidas.
 
 ## Mi cuenta: tuya
 

@@ -113,7 +113,8 @@ business_ai_settings = Table(
 
 # Quién es miembro de cada negocio (ver `project/db/migrations/0003_business_members.sql`). `user_id` es el identificador del
 # usuario en Neon Auth (`neon_auth.user`): cada persona solo llega a los negocios donde figura aquí.
-MEMBER_ROLES = ("owner",)
+# Migración 0016: el administrador y el asesor (ver `domain/business_config/team.py`).
+MEMBER_ROLES = ("owner", "admin", "agent")
 business_members = Table(
     "business_members",
     metadata,
@@ -123,7 +124,7 @@ business_members = Table(
     Column("created_at", DateTime(timezone=True), nullable=False, default=_now),
     # Migración 0011: el correo de la cuenta, tomado de su sesión, para los avisos por correo.
     Column("email", Text),
-    CheckConstraint("role IN ('owner')", name="business_members_role_check"),
+    CheckConstraint("role IN ('owner', 'admin', 'agent')", name="business_members_role_check"),
     Index("business_members_user_idx", "user_id"),
 )
 
@@ -484,4 +485,24 @@ quick_replies = Table(
     CheckConstraint("category IS NULL OR length(category) BETWEEN 1 AND 40", name="quick_replies_category_check"),
     CheckConstraint("use_count >= 0", name="quick_replies_use_count_check"),
     Index("quick_replies_tenant_idx", "tenant_id", "category", "shortcut"),
+)
+
+# Las invitaciones al equipo de un negocio (ver `project/db/migrations/0016_team.sql`): solo la huella del enlace.
+team_invitations = Table(
+    "team_invitations",
+    metadata,
+    Column("id", Uuid, primary_key=True, default=uuid.uuid4),
+    Column("tenant_id", Uuid, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False),
+    Column("email", Text, nullable=False),
+    Column("role", Text, nullable=False),
+    Column("token_hash", Text, nullable=False),
+    Column("invited_by", Text, nullable=False),
+    Column("created_at", DateTime(timezone=True), nullable=False, default=_now),
+    Column("expires_at", DateTime(timezone=True), nullable=False),
+    Column("accepted_at", DateTime(timezone=True)),
+    Column("accepted_by", Text),
+    Column("revoked_at", DateTime(timezone=True)),
+    UniqueConstraint("token_hash", name="team_invitations_token_unique"),
+    CheckConstraint("role IN ('owner', 'admin', 'agent')", name="team_invitations_role_check"),
+    Index("team_invitations_tenant_idx", "tenant_id", "created_at"),
 )

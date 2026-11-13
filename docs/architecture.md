@@ -402,6 +402,31 @@ por el prompt: el panel los pone en el cuadro de texto y salen como cualquier re
 Lo prueban `tests/test_quick_replies.py`, `tests/test_business_deletion.py` y `apps/admin-web/src/app/QuickReplies.test.tsx`. El
 laboratorio `exp_20261112_respuestas_rapidas` dio motor sin diferencias.
 
+## Equipo Y Roles
+
+Cada negocio tiene un equipo: **Dueño**, **Administrador** y **Asesor**. El rol decide lo que cada persona puede hacer, en el servidor
+(que es quien decide) y en el panel (que solo muestra lo que el rol permite y explica por qué no).
+
+- **Reglas** (`domain/business_config/team.py`, puro): qué puede cada rol (`ATTEND`, `REPORTS`, `CONFIGURE`, `TEAM`,
+  `DELETE_BUSINESS`), quién puede tocar a quién (siempre queda un dueño; nadie se toca a sí mismo; solo un dueño nombra o toca
+  dueños) y la invitación (correo, rol, vence en 7 días, enlace de 32 bytes del que solo se guarda la huella SHA-256).
+- **Acceso** (`business_config_application/access.py`): `require(principal, negocio, need)` devuelve el rol; si no es miembro, el
+  negocio «no existe» (404); si su rol no alcanza, `NotAllowedError` (403) con el motivo. Las rutas que cambian el negocio usan
+  `ConfigurableSlug` (`admin_api/routes.py`); los servicios piden lo suyo (reportes y anular ventas: `REPORTS`; integraciones,
+  atención humana y crear respuestas rápidas: `CONFIGURE`). Leer la configuración sigue siendo de todo el equipo: el panel la
+  necesita para abrir el negocio.
+- **Servicio** (`business_config_application/team.py`) y **almacén** (`infrastructure/business_config/team_store.py`, migración
+  0016): cambiar un rol, quitar a alguien y aceptar una invitación se deciden y se aplican en la misma transacción, con las filas
+  bloqueadas en PostgreSQL.
+- **API** (`admin_api/team_routes.py`): `GET /businesses/{slug}/team`, invitar, renovar, retirar, cambiar rol y quitar; `GET
+  /invitations/{token}` sin sesión y `POST /invitations/{token}/accept` con la cuenta del correo invitado. Solo en la nube.
+- **MCP:** un agente solo trabaja en los negocios que quien lo conectó puede configurar (`mcp/access.py`, `mcp/oauth.py`).
+- **Panel:** `domain/team/team.ts` (la misma tabla), `state/roleContext.ts` (el rol del negocio abierto, que llega con la lista de
+  negocios), el menú y Configuración filtran por `need` (`navigation/navItems.ts`), `layout/RequireCapability.tsx` para quien llega
+  con un enlace guardado, `features/team/TeamPage.tsx` (Configuración → Equipo) e `InvitationPage.tsx` (`/invitacion/<token>`).
+
+Lo prueban `tests/test_team.py` y `apps/admin-web/src/app/Team.test.tsx`.
+
 ## Centro De Ayuda
 
 La ayuda de la plataforma: artículos en Markdown que leen las personas en el panel y los agentes por MCP. No toca datos de ningún

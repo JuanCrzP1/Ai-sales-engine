@@ -9,8 +9,9 @@ from dataclasses import dataclass
 
 from app.business_config_application.access import BusinessAccess
 from app.domain.business_config.access import Principal
-from app.domain.business_config.errors import BusinessNotFoundError
+from app.domain.business_config.errors import BusinessNotFoundError, NotAllowedError
 from app.domain.business_config.key_permissions import KeyReach
+from app.domain.business_config.team import CONFIGURE, can
 from app.domain.business_config.validation import is_valid_slug
 
 
@@ -41,8 +42,17 @@ class McpBusinesses:
         slug = str(business or "").strip()
         if not is_valid_slug(slug) or not caller.reach.allows(slug):
             raise BusinessNotFoundError(f"{slug}: esta clave no entra a ese negocio o no existe")
-        self._access.require(caller.principal, slug)
+        # Un agente trabaja como quien lo conectó, y solo en los negocios que esa persona puede configurar (dueño o administrador):
+        # un asesor atiende desde el panel, no conecta agentes.
+        try:
+            self._access.require(caller.principal, slug, CONFIGURE)
+        except NotAllowedError as exc:
+            raise BusinessNotFoundError(f"{slug}: el rol de quien conectó la clave no permite que un agente trabaje en este negocio") from exc
         return slug
 
     def visible(self, caller: McpAccess):
-        return [business for business in self._access.list_for(caller.principal) if caller.reach.allows(business.slug)]
+        return [
+            business
+            for business in self._access.list_for(caller.principal)
+            if caller.reach.allows(business.slug) and can(business.role, CONFIGURE)
+        ]

@@ -1,9 +1,10 @@
 import { useEffect, useRef } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { Icon } from "../components/ui/Icon";
-import { ACCOUNT_GROUPS, SETTINGS_GROUPS, type SettingsGroup } from "../navigation/navItems";
+import { ACCOUNT_GROUPS, SETTINGS_GROUPS, allowed, type SettingsGroup } from "../navigation/navItems";
 import { useWorkspacePath } from "../navigation/useWorkspacePath";
 import { useAuth } from "../state/auth/useAuth";
+import { useBusinessRole } from "../state/roleContext";
 import { NAV_ICONS } from "./navIcons";
 
 /**
@@ -13,6 +14,7 @@ import { NAV_ICONS } from "./navIcons";
 function SectionMenuLayout({ label, title, subtitle, groups }: { label: string; title: string; subtitle: string; groups: SettingsGroup[] }) {
   const pathTo = useWorkspacePath();
   const { verifiesCredentials } = useAuth();
+  const role = useBusinessRole();
   const { pathname } = useLocation();
   const nav = useRef<HTMLElement>(null);
 
@@ -30,7 +32,7 @@ function SectionMenuLayout({ label, title, subtitle, groups }: { label: string; 
         <p className="settings-nav__title">{title}</p>
         <p className="settings-nav__subtitle">{subtitle}</p>
         {groups.map((group) => {
-          const entries = group.entries.filter((entry) => !entry.account || verifiesCredentials);
+          const entries = group.entries.filter((entry) => (!entry.account || verifiesCredentials) && allowed(entry.item, role));
           if (entries.length === 0) return null;
           return (
             <div className="settings-nav__group" key={group.title}>

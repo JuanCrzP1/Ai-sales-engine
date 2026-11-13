@@ -35,6 +35,8 @@ class BusinessSummary:
     latest_version: int | None
     draft_version: int | None
     published_version: int | None
+    # El rol de quien lo mira (dueño, administrador o asesor); None cuando no se pregunta por una persona.
+    role: str | None = None
 
 
 @dataclass(frozen=True)

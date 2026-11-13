@@ -10,6 +10,8 @@ import type { AIModelOption, AISettings, AIUsage, AssistantLab, ConfigSource, Mo
 import type { Attention, AttentionSettings, AttentionView, DevicePush, PushPermission, PushSupport } from "../repositories/attention";
 import type { QuickReplies, QuickReply, QuickReplyInput } from "../repositories/quickReplies";
 import type { Help, HelpArticle, HelpModule } from "../repositories/help";
+import { assignableRoles, type Invitation, type Role, type TeamMember } from "../domain/team/team";
+import type { Team } from "../repositories/team";
 import { normalizeShortcut, SHORTCUT_PATTERN } from "../domain/quickReplies/quickReplies";
 import type { AuthService } from "../repositories/authService";
 import type { BusinessDirectory } from "../repositories/businessDirectory";
@@ -58,6 +60,8 @@ export interface MemoryBackend {
   review: { diagnostics: Diagnostic[]; compileError: string | null };
   /** Fuerza el estado que el servidor informa de un dato de pago, por su referencia guardada. */
   paymentFieldStates: Map<string, PaymentFieldState>;
+  /** El rol de quien mira en cada negocio (por defecto, dueño). */
+  roles: Map<string, Role>;
 }
 
 /** Las referencias de un documento ya guardado llevan `~versión`, como las que devuelve el servidor. */
@@ -94,6 +98,7 @@ export function createMemoryBackend(seed: BusinessDocument[] = []): MemoryBacken
   const paymentFieldStates: MemoryBackend["paymentFieldStates"] = new Map();
   /** La parte visible de cada dato recibido; lo que viene sembrado se muestra con una máscara fija. */
   const masks = new Map<string, string>();
+  const roles: MemoryBackend["roles"] = new Map();
   let clock = Date.UTC(2026, 0, 1, 9, 0, 0);
   const now = () => new Date((clock += 60_000)).toISOString();
 
@@ -121,6 +126,7 @@ export function createMemoryBackend(seed: BusinessDocument[] = []): MemoryBacken
     latestVersion: latest(business)?.version ?? null,
     draftVersion: draftOf(business)?.version ?? null,
     publishedVersion: publishedVersion(business),
+    role: roles.get(business.slug) ?? "owner",
   });
 
   const toInfo = ({ version, status, createdAt, publishedAt }: MemoryVersion): VersionInfo => ({ version, status, createdAt, publishedAt });
@@ -273,6 +279,7 @@ export function createMemoryBackend(seed: BusinessDocument[] = []): MemoryBacken
     paymentValuesReceived,
     failNext: (operation, error) => failures.set(operation, error),
     review,
+    roles,
     paymentFieldStates,
   };
 }
@@ -744,6 +751,102 @@ export function createMemoryHelp(seed = HELP_SEED) {
   return service;
 }
 
+/**
+ * El equipo en memoria, con las reglas del servidor: siempre queda un dueño, nadie se toca a sí mismo, solo un dueño toca dueños.
+ * `me` es quien mira; `acceptAs` es el correo con el que se acepta una invitación.
+ */
+export function createMemoryTeam(options: { myRole?: Role; members?: TeamMember[] } = {}) {
+  const myRole = options.myRole ?? "owner";
+  const state = {
+    members: structuredClone(
+      options.members ?? [
+        { userId: "yo", email: "operador@example.com", role: myRole, joinedAt: "2026-11-01T10:00:00Z", me: true },
+        { userId: "laura", email: "laura@example.com", role: "agent" as Role, joinedAt: "2026-11-05T10:00:00Z", me: false },
+      ],
+    ),
+    invitations: [] as (Invitation & { token: string })[],
+    acceptAs: "nuevo@example.com",
+    accepted: [] as string[],
+  };
+  let next = 1;
+  const owners = () => state.members.filter((member) => member.role === "owner").length;
+  const rule = (message: string) => new PersistenceError("conflict", { message });
+  const issue = (invitation: Invitation & { token: string }) => {
+    const token = `inv_prueba_${next++}`;
+    invitation.token = token;
+    return structuredClone(invitation);
+  };
+  const service: Team & typeof state = Object.assign(state, {
+    view: async () => ({ members: structuredClone(state.members), invitations: state.invitations.map(({ token: _token, ...rest }) => structuredClone(rest)), myRole }),
+    invite: async (slug: string, input: { email: string; role: Role }) => {
+      const email = input.email.trim().toLowerCase();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        throw new PersistenceError("invalid", { message: "Escribe el correo de la persona.", problems: [{ path: "email", message: "Escribe el correo de la persona, por ejemplo ana@tunegocio.com." }] });
+      }
+      if (state.members.some((member) => member.email === email)) {
+        throw new PersistenceError("invalid", { message: "Esa persona ya está en el equipo.", problems: [{ path: "email", message: "Esa persona ya está en el equipo." }] });
+      }
+      if (!assignableRoles(myRole).includes(input.role)) throw new PersistenceError("invalid", { message: "Solo un dueño puede invitar a otro dueño.", problems: [{ path: "role", message: "Solo un dueño puede invitar a otro dueño." }] });
+      state.invitations = state.invitations.filter((item) => item.email !== email);
+      const invitation = {
+        id: `invitacion-${next}`,
+        business: slug,
+        businessName: "Café Aroma",
+        email,
+        role: input.role,
+        invitedBy: "operador@example.com",
+        createdAt: new Date().toISOString(),
+        expiresAt: new Date(Date.now() + 7 * 86_400_000).toISOString(),
+        status: "pending" as const,
+        token: "",
+      };
+      state.invitations.unshift(invitation);
+      return issue(invitation);
+    },
+    renew: async (_slug: string, id: string) => {
+      const invitation = state.invitations.find((item) => item.id === id);
+      if (!invitation) throw new PersistenceError("not_found", { message: "Esa invitación ya no existe." });
+      invitation.expiresAt = new Date(Date.now() + 7 * 86_400_000).toISOString();
+      invitation.status = "pending";
+      return issue(invitation);
+    },
+    revoke: async (_slug: string, id: string) => {
+      state.invitations = state.invitations.filter((item) => item.id !== id);
+    },
+    changeRole: async (_slug: string, userId: string, role: Role) => {
+      const member = state.members.find((item) => item.userId === userId);
+      if (!member) throw rule("Esa persona ya no está en el equipo.");
+      if (member.me) throw rule("No puedes cambiar tu propio rol. Pídeselo a otro dueño.");
+      if ((member.role === "owner" || role === "owner") && myRole !== "owner") throw rule("Solo un dueño puede nombrar dueños o cambiarles el rol.");
+      if (member.role === "owner" && role !== "owner" && owners() <= 1) throw rule("El negocio debe tener al menos un dueño.");
+      member.role = role;
+      return structuredClone(member);
+    },
+    remove: async (_slug: string, userId: string) => {
+      const member = state.members.find((item) => item.userId === userId);
+      if (!member) throw rule("Esa persona ya no está en el equipo.");
+      if (member.me) throw rule("No puedes quitarte a ti mismo del equipo.");
+      if (member.role === "owner" && (myRole !== "owner" || owners() <= 1)) throw rule("Solo un dueño puede quitar a otro dueño.");
+      state.members = state.members.filter((item) => item.userId !== userId);
+    },
+    preview: async (token: string) => {
+      const invitation = state.invitations.find((item) => item.token === token);
+      if (!invitation) throw new PersistenceError("not_found", { message: "Este enlace de invitación no existe. Pídele a quien te invitó uno nuevo." });
+      const { token: _token, ...rest } = invitation;
+      return structuredClone(rest);
+    },
+    accept: async (token: string) => {
+      const invitation = state.invitations.find((item) => item.token === token);
+      if (!invitation) throw new PersistenceError("not_found", { message: "Esta invitación ya se usó." });
+      if (state.acceptAs !== invitation.email) throw new PersistenceError("not_found", { message: `Esta invitación es para ${invitation.email}. Entra con esa cuenta para aceptarla.` });
+      state.invitations = state.invitations.filter((item) => item !== invitation);
+      state.accepted.push(invitation.email);
+      return invitation.business;
+    },
+  });
+  return service;
+}
+
 /** Servicios como los de la aplicación, sobre el backend en memoria. */
 export function createTestServices(backend: MemoryBackend = createMemoryBackend(), overrides: Partial<ApplicationServices> = {}): ApplicationServices {
   const whatsapp = createMemoryWhatsApp();
@@ -765,6 +868,7 @@ export function createTestServices(backend: MemoryBackend = createMemoryBackend(
     createIntegrations: () => integrations,
     agentAuthorization: createMemoryAgentAuthorization(),
     help: createMemoryHelp(),
+    team: createMemoryTeam(),
     ...overrides,
   };
 }

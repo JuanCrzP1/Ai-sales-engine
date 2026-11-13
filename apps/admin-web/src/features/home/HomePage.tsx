@@ -11,11 +11,19 @@ import { SectionPager } from "../../layout/SectionPager";
 import { REVIEW_ITEM, sectionPath } from "../../navigation/navItems";
 import { useWorkspacePath } from "../../navigation/useWorkspacePath";
 import { useConfig } from "../../state/useConfig";
+import { useCan } from "../../state/roleContext";
 import { ActivityOverview } from "./ActivityOverview";
 import { AssistantSummary } from "./AssistantSummary";
 import { AssistantReady, HomeHeader, HomeHero } from "./HomeHero";
+import { AgentHome } from "./AgentHome";
 
 export function HomePage() {
+  // Un asesor atiende: su inicio es lo del día, sin el estado de la configuración (que no puede cambiar).
+  if (!useCan("configure")) return <AgentHome />;
+  return <OwnerHome />;
+}
+
+function OwnerHome() {
   const { progress, issues, meta } = useConfig();
   const pathTo = useWorkspacePath();
   const { errors, warnings } = splitBySeverity(issues);

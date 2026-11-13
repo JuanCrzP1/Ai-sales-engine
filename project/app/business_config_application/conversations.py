@@ -29,6 +29,7 @@ from app.domain.business_config.conversations import (
 )
 from app.domain.business_config.errors import BusinessNotFoundError, ConversationNotFoundError, FieldIssue, InvalidFieldsError
 from app.domain.business_config.payment_data import redact_payment_values
+from app.domain.business_config.team import CONFIGURE
 
 logger = logging.getLogger("conversations")
 
@@ -159,7 +160,7 @@ class ConversationsService:
 
     def delete_test_chats(self, principal: Principal, business: str) -> int:
         """Borra de una vez los chats de «Probar asistente» del negocio. Las pruebas no tienen memoria en el motor."""
-        self._access.require(principal, business)
+        self._access.require(principal, business, CONFIGURE)
         deleted = self._storage.delete_channel(business, PLAYGROUND_CHANNEL)
         logger.info("chats_de_prueba_eliminados", extra={"tenant": business, "count": deleted})
         return deleted

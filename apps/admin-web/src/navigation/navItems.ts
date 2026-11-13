@@ -1,4 +1,5 @@
 import { CONFIG_SECTIONS, type ConfigSectionId } from "../domain/sections";
+import { can, type Capability, type Role } from "../domain/team/team";
 
 export type NavKey =
   | "home"
@@ -25,7 +26,8 @@ export type NavKey =
   | "apiKeys"
   | "deleteBusiness"
   | "agents"
-  | "help";
+  | "help"
+  | "team";
 
 export interface NavItem {
   key: NavKey;
@@ -33,6 +35,13 @@ export interface NavItem {
   path: string;
   title: string;
   section?: ConfigSectionId;
+  /** Lo que el rol debe poder hacer para verla (ver `domain/team/team.ts`). Sin esto, todo el equipo la ve. */
+  need?: Capability;
+}
+
+/** Si alguien con este rol ve esta entrada del menú. */
+export function allowed(item: NavItem, role: Role): boolean {
+  return !item.need || can(role, item.need);
 }
 
 const SECTION_PATHS: Record<ConfigSectionId, string> = {
@@ -51,24 +60,24 @@ export const BUSINESSES_PATH = "/negocios";
 export const NEW_BUSINESS_PATH = "/nuevo-negocio";
 
 export const HOME_ITEM: NavItem = { key: "home", path: "", title: "Inicio" };
-export const REVIEW_ITEM: NavItem = { key: "review", path: "revision", title: "Revisión y publicación" };
+export const REVIEW_ITEM: NavItem = { key: "review", path: "revision", title: "Revisión y publicación", need: "configure" };
 /** Lo que recibe el resumen del negocio al abrirse recién creado con una plantilla: para recordar cambiar los ejemplos. */
 export interface CreatedFromTemplate {
   template: string;
 }
 
 /** Resumen del Asistente IA: cada sección en una tarjeta, con su estado. Es la entrada desde el menú. */
-export const OVERVIEW_ITEM: NavItem = { key: "overview", path: "asistente", title: "Resumen" };
+export const OVERVIEW_ITEM: NavItem = { key: "overview", path: "asistente", title: "Resumen", need: "configure" };
 /** Herramientas del asistente: fuera del recorrido guiado de configuración. */
-export const AI_ITEM: NavItem = { key: "ai", path: "configuracion/inteligencia-artificial", title: "Inteligencia artificial" };
-export const PLAYGROUND_ITEM: NavItem = { key: "playground", path: "probar", title: "Probar asistente" };
+export const AI_ITEM: NavItem = { key: "ai", path: "configuracion/inteligencia-artificial", title: "Inteligencia artificial", need: "configure" };
+export const PLAYGROUND_ITEM: NavItem = { key: "playground", path: "probar", title: "Probar asistente", need: "configure" };
 
 /** Menú principal: atender y vender. */
 export const CONVERSATIONS_ITEM: NavItem = { key: "conversations", path: "conversaciones", title: "Conversaciones" };
 export const CUSTOMERS_ITEM: NavItem = { key: "customers", path: "clientes", title: "Clientes" };
 export const SALES_ITEM: NavItem = { key: "sales", path: "ventas", title: "Ventas" };
-export const REPORTS_ITEM: NavItem = { key: "reports", path: "reportes", title: "Reportes" };
-export const CHANNELS_ITEM: NavItem = { key: "channels", path: "canales", title: "Canales" };
+export const REPORTS_ITEM: NavItem = { key: "reports", path: "reportes", title: "Reportes", need: "reports" };
+export const CHANNELS_ITEM: NavItem = { key: "channels", path: "canales", title: "Canales", need: "configure" };
 /**
  * Configuración: solo lo del NEGOCIO abierto (la IA de su asistente, la atención humana, las respuestas rápidas y la facturación).
  * Se aplica al instante, sin publicar. Lo que aún no existe se muestra con «Próximamente». Lo personal va en «Mi cuenta».
@@ -84,10 +93,12 @@ export const ACCOUNT_BASE = "cuenta";
 export const ACCOUNT_PROFILE_ITEM: NavItem = { key: "accountProfile", path: `${ACCOUNT_BASE}/perfil`, title: "Mi perfil" };
 export const SECURITY_ITEM: NavItem = { key: "security", path: `${ACCOUNT_BASE}/seguridad`, title: "Seguridad" };
 export const NOTIFICATIONS_ITEM: NavItem = { key: "notifications", path: `${ACCOUNT_BASE}/notificaciones`, title: "Notificaciones" };
-export const ATTENTION_ITEM: NavItem = { key: "attention", path: `${SETTINGS_BASE}/atencion-humana`, title: "Atención humana" };
+export const ATTENTION_ITEM: NavItem = { key: "attention", path: `${SETTINGS_BASE}/atencion-humana`, title: "Atención humana", need: "configure" };
 export const QUICK_REPLIES_ITEM: NavItem = { key: "quickReplies", path: `${SETTINGS_BASE}/respuestas-rapidas`, title: "Respuestas rápidas" };
-export const BILLING_ITEM: NavItem = { key: "billing", path: `${SETTINGS_BASE}/facturacion`, title: "Pagos y suscripciones" };
-export const DELETE_BUSINESS_ITEM: NavItem = { key: "deleteBusiness", path: `${SETTINGS_BASE}/eliminar-negocio`, title: "Eliminar negocio" };
+export const BILLING_ITEM: NavItem = { key: "billing", path: `${SETTINGS_BASE}/facturacion`, title: "Pagos y suscripciones", need: "deleteBusiness" };
+/** El equipo del negocio: invitar con un enlace y dar a cada persona su rol. Solo con cuentas (la nube). */
+export const TEAM_ITEM: NavItem = { key: "team", path: `${SETTINGS_BASE}/equipo`, title: "Equipo", need: "team" };
+export const DELETE_BUSINESS_ITEM: NavItem = { key: "deleteBusiness", path: `${SETTINGS_BASE}/eliminar-negocio`, title: "Eliminar negocio", need: "deleteBusiness" };
 
 export interface SettingsEntry {
   item: NavItem;
@@ -125,15 +136,16 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
       { item: QUICK_REPLIES_ITEM, description: "Mensajes guardados para responder rápido" },
     ],
   },
+  { title: "Equipo", entries: [{ item: TEAM_ITEM, description: "Invitar personas y darles su rol", account: true }] },
   { title: "Facturación", entries: [{ item: BILLING_ITEM, description: "Tu plan, pagos y facturas", soon: true }] },
   { title: "Zona de peligro", entries: [{ item: DELETE_BUSINESS_ITEM, description: "Borrarlo con todo lo suyo" }] },
 ];
 
 /** Integraciones: conectar el asistente con otras herramientas (la API del asistente, sus claves y, pronto, las IAs por MCP). */
-export const INTEGRATIONS_ITEM: NavItem = { key: "integrations", path: "integraciones", title: "Integraciones" };
-export const ASSISTANT_API_ITEM: NavItem = { key: "assistantApi", path: "integraciones/api", title: "API del asistente" };
-export const API_KEYS_ITEM: NavItem = { key: "apiKeys", path: "integraciones/claves", title: "Claves de API" };
-export const AGENTS_ITEM: NavItem = { key: "agents", path: "integraciones/agentes", title: "Agentes de IA (MCP)" };
+export const INTEGRATIONS_ITEM: NavItem = { key: "integrations", path: "integraciones", title: "Integraciones", need: "configure" };
+export const ASSISTANT_API_ITEM: NavItem = { key: "assistantApi", path: "integraciones/api", title: "API del asistente", need: "configure" };
+export const API_KEYS_ITEM: NavItem = { key: "apiKeys", path: "integraciones/claves", title: "Claves de API", need: "configure" };
+export const AGENTS_ITEM: NavItem = { key: "agents", path: "integraciones/agentes", title: "Agentes de IA (MCP)", need: "configure" };
 
 /** El Centro de ayuda: abajo en el menú, junto a Configuración. Cada artículo es `ayuda/<slug>`; un tema, `ayuda?tema=<id>`. */
 export const HELP_ITEM: NavItem = { key: "help", path: "ayuda", title: "Ayuda" };
@@ -171,6 +183,7 @@ export const SECTION_ITEMS: NavItem[] = CONFIG_SECTIONS.map((section) => ({
   path: SECTION_PATHS[section.id],
   title: section.title,
   section: section.id,
+  need: "configure",
 }));
 
 /** Orden del recorrido guiado: inicio, secciones y revisión. */
@@ -212,7 +225,7 @@ export const ASSISTANT_TABS: { item: NavItem; label: string; short?: string }[] 
 ];
 
 /** Entrada del menú hacia el Asistente IA: abre su resumen. */
-export const ASSISTANT_HUB_ITEM: NavItem = { key: "assistantHub", path: OVERVIEW_ITEM.path, title: "Asistente IA" };
+export const ASSISTANT_HUB_ITEM: NavItem = { key: "assistantHub", path: OVERVIEW_ITEM.path, title: "Asistente IA", need: "configure" };
 
 /** Si la ruta es una pestaña del Asistente IA (`/negocios/x/pagos`). */
 export function isAssistantPath(pathname: string): boolean {

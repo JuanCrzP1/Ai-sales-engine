@@ -2,7 +2,7 @@
 title: Contraseña y sesiones
 module: cuenta
 summary: Cambiar tu contraseña y cerrar la sesión en los demás equipos, por ejemplo si la dejaste abierta en un computador ajeno.
-order: 2
+order: 5
 updated: 2026-11-12
 keywords: contraseña, cambiar contraseña, sesión, cerrar sesión, seguridad, equipo ajeno
 related: configuracion-y-mi-cuenta

@@ -2,7 +2,7 @@
 title: Activa las notificaciones en tu celular o computador
 module: cuenta
 summary: Recibir un aviso como un mensaje de WhatsApp cuando un cliente necesita a una persona, aunque el panel esté cerrado.
-order: 3
+order: 6
 updated: 2026-11-12
 keywords: notificaciones, avisos, push, celular, computador, iphone, android, bloqueadas, activar
 related: avisos-a-tu-equipo, desde-el-celular, cuando-pasa-a-una-persona
