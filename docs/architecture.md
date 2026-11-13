@@ -402,6 +402,21 @@ por el prompt: el panel los pone en el cuadro de texto y salen como cualquier re
 Lo prueban `tests/test_quick_replies.py`, `tests/test_business_deletion.py` y `apps/admin-web/src/app/QuickReplies.test.tsx`. El
 laboratorio `exp_20261112_respuestas_rapidas` dio motor sin diferencias.
 
+## Archivos Desde El Chat
+
+El equipo envía fotos, documentos, videos y audios desde Conversaciones. Como una respuesta de texto: se guarda enseguida con su
+archivo («enviando», en `conversation_media`, igual que lo que llega), sale por el canal y la IA se pausa en ese chat.
+
+- **Reglas** (`domain/business_config/conversations.py`, `validated_attachment`): los tipos permitidos, hasta 4 MB (en Vercel una
+  petición no puede pasar de 4,5 MB), que el archivo empiece como dice ser (una foto con nombre de PDF no sale), el nombre limpio y
+  el texto de hasta 1.024 caracteres.
+- **API** (`POST /conversations/{id}/attachments`): el cuerpo es el archivo tal cual con su `Content-Type`; el nombre y el texto van
+  en `X-File-Name` y `X-Caption`, codificados como en una URL (así no hace falta una librería de formularios).
+- **Canal:** `ChannelMessenger.send_media` → uazapi `/send/media` con el archivo en base64 (`docName` para los documentos).
+- **Panel:** el clip y pegar una imagen en `features/conversations/Composer.tsx`; las reglas en `domain/inbox/attachments.ts`.
+
+Lo prueban `tests/test_conversations_inbox.py`, `tests/test_whatsapp_qr_channel.py` y `apps/admin-web/src/app/Conversations.test.tsx`.
+
 ## Equipo Y Roles
 
 Cada negocio tiene un equipo: **Dueño**, **Administrador** y **Asesor**. El rol decide lo que cada persona puede hacer, en el servidor

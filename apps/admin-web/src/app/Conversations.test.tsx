@@ -233,6 +233,53 @@ describe("Conversaciones en vivo", () => {
     expect(within(thread).getByLabelText("Tu respuesta")).toHaveValue("¿Sigues ahí?");
   });
 
+  it("el equipo adjunta un PDF con un texto y sale como documento en el chat", async () => {
+    const { user, inbox, thread } = await openChat([whatsappThread()]);
+    const pdf = new File(["%PDF-1.7 catálogo"], "Catálogo noviembre.pdf", { type: "application/pdf" });
+    await user.upload(within(thread).getByLabelText("Elegir un archivo para enviar"), pdf);
+    const attached = within(thread).getByRole("group", { name: "Archivo adjunto" });
+    expect(attached).toHaveTextContent("Catálogo noviembre.pdf");
+    expect(within(thread).getByLabelText("Tu respuesta")).toHaveAttribute("placeholder", "Escribe un texto para acompañar el archivo (opcional)");
+    await user.type(within(thread).getByLabelText("Tu respuesta"), "Aquí va el catálogo, Laura{Enter}");
+
+    await waitFor(() => expect(inbox.attachments).toEqual([{ conversationId: "c1", name: "Catálogo noviembre.pdf", type: "application/pdf", size: pdf.size, caption: "Aquí va el catálogo, Laura" }]));
+    const log = within(thread).getByRole("log");
+    expect(await within(log).findByText("Catálogo noviembre.pdf")).toBeInTheDocument();
+    expect(within(log).getByText("Aquí va el catálogo, Laura")).toBeInTheDocument();
+    expect(inbox.replies).toEqual([]);
+    expect(within(thread).queryByRole("group", { name: "Archivo adjunto" })).not.toBeInTheDocument();
+    expect(await within(thread).findByText("Atiende tu equipo")).toBeInTheDocument();
+  });
+
+  it("una foto pegada se adjunta, y lo que no se puede enviar se explica antes de subirlo", async () => {
+    const { user, inbox, thread } = await openChat([whatsappThread()]);
+    const exe = new File(["MZ"], "virus.exe", { type: "application/x-msdownload" });
+    await user.upload(within(thread).getByLabelText("Elegir un archivo para enviar"), exe);
+    expect(within(thread).getByRole("alert")).toHaveTextContent("Ese tipo de archivo no se puede enviar");
+    const huge = new File([new Uint8Array(4 * 1024 * 1024 + 1)], "video.mp4", { type: "video/mp4" });
+    await user.upload(within(thread).getByLabelText("Elegir un archivo para enviar"), huge);
+    expect(within(thread).getByRole("alert")).toHaveTextContent("pesa más de 4 MB");
+    expect(within(thread).queryByRole("group", { name: "Archivo adjunto" })).not.toBeInTheDocument();
+
+    within(thread).getByLabelText("Tu respuesta").focus();
+    await user.paste({ files: [new File(["png"], "captura.png", { type: "image/png" })], getData: () => "" } as unknown as DataTransfer);
+    expect(within(thread).getByRole("group", { name: "Archivo adjunto" })).toHaveTextContent("captura.png");
+    await user.click(within(thread).getByRole("button", { name: "Enviar respuesta" }));
+    await waitFor(() => expect(inbox.attachments.map((item) => [item.name, item.caption])).toEqual([["captura.png", ""]]));
+  });
+
+  it("si el archivo no sale, vuelve con su texto para intentarlo otra vez", async () => {
+    const { user, inbox, thread } = await openChat([whatsappThread()]);
+    inbox.failNextReply("WhatsApp no está conectado en este negocio. Conéctalo en Canales para responder desde aquí.");
+    await user.upload(within(thread).getByLabelText("Elegir un archivo para enviar"), new File(["%PDF"], "menu.pdf", { type: "application/pdf" }));
+    await user.type(within(thread).getByLabelText("Tu respuesta"), "El menú");
+    await user.click(within(thread).getByRole("button", { name: "Enviar respuesta" }));
+    expect(await within(thread).findByRole("alert")).toHaveTextContent("Conéctalo en Canales");
+    expect(within(thread).getByRole("group", { name: "Archivo adjunto" })).toHaveTextContent("menu.pdf");
+    expect(within(thread).getByLabelText("Tu respuesta")).toHaveValue("El menú");
+    expect(within(within(thread).getByRole("log")).queryByText("menu.pdf")).not.toBeInTheDocument();
+  });
+
   it("los no leídos se ven en la lista y se marcan al abrir el chat", async () => {
     const opened = await openAt(`/negocios/${CAFE}/conversaciones`, [whatsappThread({ unreadCount: 3 })]);
     const list = await screen.findByRole("region", { name: "Lista de conversaciones" });

@@ -11,8 +11,10 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from typing import Annotated, Any
+from urllib.parse import unquote
 
 from fastapi import APIRouter, Depends, Query, Request, Response, status
+from fastapi.concurrency import run_in_threadpool
 
 from app.admin_api.errors import ApiError
 from app.admin_api.routes import BusinessSlug, CurrentUser
@@ -27,6 +29,7 @@ from app.admin_api.schemas import (
 )
 from app.business_config_application.conversations import ConversationsService, NotificationsService, ReplyNotSentError
 from app.business_config_application.usage_limits import UsageGuard
+from app.domain.business_config.conversations import MAX_MEDIA_BYTES, validated_attachment
 from app.domain.business_config.errors import AssistantUnavailableError
 
 router = APIRouter(prefix="/api")
@@ -109,6 +112,28 @@ def reply(conversation_id: str, body: SendReply, user: CurrentUser, conversation
         return chat_message_payload(conversations.reply(user, conversation_id, body.text))
     except ReplyNotSentError as exc:
         raise ApiError(status.HTTP_502_BAD_GATEWAY, str(exc), code="reply_not_sent") from None
+
+
+@router.post("/conversations/{conversation_id}/attachments", status_code=status.HTTP_201_CREATED)
+async def send_attachment(conversation_id: str, request: Request, user: CurrentUser, conversations: Conversations, usage: Usage) -> dict[str, Any]:
+    """El equipo envía un archivo: el cuerpo es el archivo tal cual (con su `Content-Type`); su nombre y el texto que lo acompaña
+    van en los encabezados `X-File-Name` y `X-Caption` (codificados como en una URL). Sale por el canal del cliente y la IA se pausa."""
+    usage.conversation_reply(user)
+    declared = request.headers.get("content-length", "")
+    if declared.isdigit() and int(declared) > MAX_MEDIA_BYTES:
+        raise ApiError(status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, "El archivo pesa más de 4 MB. Envía uno más liviano.", code="too_large")
+    content = await request.body()
+    attachment = validated_attachment(
+        mime_type=request.headers.get("content-type"),
+        content=content,
+        file_name=unquote(request.headers.get("x-file-name", "")),
+        caption=unquote(request.headers.get("x-caption", "")),
+    )
+    try:
+        sent = await run_in_threadpool(conversations.send_attachment, user, conversation_id, attachment)
+    except ReplyNotSentError as exc:
+        raise ApiError(status.HTTP_502_BAD_GATEWAY, str(exc), code="reply_not_sent") from None
+    return chat_message_payload(sent)
 
 
 @router.post("/conversations/{conversation_id}/assistant")

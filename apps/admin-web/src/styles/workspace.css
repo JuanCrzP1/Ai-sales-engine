@@ -2063,6 +2063,61 @@
   cursor: pointer;
 }
 
+/* El archivo adjunto, antes de enviarlo */
+.composer__file {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-muted);
+}
+
+.composer__file-thumb {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+}
+
+.composer__file-icon {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  border-radius: var(--radius-sm);
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+}
+
+.composer__file-text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  font-size: var(--text-sm);
+}
+
+.composer__file-text strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.composer__file-text span {
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+}
+
+.composer__quick:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
 .quick-picker {
   position: absolute;
   right: var(--space-5);

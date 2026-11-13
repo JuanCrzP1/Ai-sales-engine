@@ -5,6 +5,12 @@ está en el historial de git y en `docs/plan-v1.md`.
 
 ## 12 de noviembre de 2026
 
+**Fotos y documentos desde el chat**
+- En Conversaciones, el **clip** junto al cuadro de texto adjunta un archivo: fotos, PDF, Word, Excel, PowerPoint, texto, videos MP4 y
+  audios, de hasta 4 MB. También se puede pegar una imagen. Lo que escribas sale como su texto.
+- El archivo queda en el chat como los que mandan los clientes, y la IA se pausa como cuando respondes tú. Si no sale, vuelve al
+  cuadro para intentarlo de nuevo. Lo que no se puede enviar se explica antes de subirlo.
+
 **Tu equipo, con roles**
 - Nuevo **Configuración → Equipo**: invitas a las personas que atienden o administran tu negocio con un **enlace** que se copia o
   se envía por WhatsApp. Vence en 7 días, se puede renovar o retirar, y solo funciona con la cuenta del correo invitado.

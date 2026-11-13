@@ -17,6 +17,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime
 
+from app.domain.business_config.errors import FieldIssue, InvalidFieldsError
+
 # `api`: llegó por la API del asistente (Integraciones → API / HTTP), desde otro sistema como Leona.
 CHANNELS = ("whatsapp", "instagram", "telegram", "web", "api", "prueba")
 # Los canales a los que el equipo puede responder desde el panel (el mensaje sale por el canal).
@@ -32,6 +34,9 @@ HANDOFF_REASONS = ("human_request", "complaint", "payment_review", "assistant")
 # Lo más grande que se guarda de un archivo: el panel lo sirve en una sola respuesta.
 MAX_MEDIA_BYTES = 4 * 1024 * 1024
 MAX_REPLY_CHARS = 4000
+# El texto que acompaña un archivo (WhatsApp corta las leyendas largas).
+MAX_CAPTION_CHARS = 1024
+MAX_FILE_NAME_CHARS = 120
 # Mientras el asistente responde, la conversación dice «escribiendo…» como mucho este tiempo.
 TYPING_SECONDS = 90
 # Lo que se muestra de la última línea en la lista de conversaciones.
@@ -224,3 +229,80 @@ def advances(current: str, new: str) -> bool:
     if new == "failed":
         return current in ("sending", "failed")
     return DELIVERY_ORDER.get(new, -1) > DELIVERY_ORDER.get(current, -1)
+
+
+# ------------------------------------------------------------------------------------------- archivos que envía el equipo
+
+# Lo que el equipo puede enviar desde el chat del panel, por tipo de archivo, y cómo lo ve el cliente.
+ATTACHMENT_KINDS: dict[str, str] = {
+    "image/jpeg": "image",
+    "image/png": "image",
+    "image/webp": "image",
+    "video/mp4": "video",
+    "audio/mpeg": "audio",
+    "audio/ogg": "audio",
+    "audio/mp4": "audio",
+    "application/pdf": "document",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "document",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "document",
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation": "document",
+    "application/msword": "document",
+    "application/vnd.ms-excel": "document",
+    "text/plain": "document",
+    "text/csv": "document",
+}
+# Cómo empiezan los archivos que se pueden reconocer: una foto que dice ser PDF no se envía.
+_SIGNATURES: dict[str, tuple[bytes, ...]] = {
+    "image/jpeg": (b"\xff\xd8\xff",),
+    "image/png": (b"\x89PNG\r\n\x1a\n",),
+    "application/pdf": (b"%PDF",),
+    "audio/ogg": (b"OggS",),
+}
+_ZIP_BASED = ("application/vnd.openxmlformats-officedocument.",)
+ATTACHMENT_HINT = "Fotos (JPG, PNG, WebP), PDF, Word, Excel, PowerPoint, texto, videos MP4 y audios (MP3, OGG, M4A), de hasta 4 MB."
+
+
+def _looks_like(mime_type: str, content: bytes) -> bool:
+    if mime_type in _SIGNATURES:
+        return content.startswith(_SIGNATURES[mime_type])
+    if mime_type == "image/webp":
+        return content[:4] == b"RIFF" and content[8:12] == b"WEBP"
+    if mime_type.startswith(_ZIP_BASED):
+        return content.startswith(b"PK\x03\x04")
+    if mime_type == "video/mp4" or mime_type == "audio/mp4":
+        return content[4:8] == b"ftyp"
+    return True
+
+
+def clean_file_name(raw: object, mime_type: str) -> str | None:
+    """El nombre con el que lo recibe el cliente (los documentos lo muestran), sin rutas ni caracteres raros."""
+    name = str(raw or "").replace("\\", "/").rsplit("/", 1)[-1]
+    name = "".join(char for char in name if char.isprintable() and char not in '<>:"|?*').strip(" .")
+    return name[:MAX_FILE_NAME_CHARS] or None
+
+
+@dataclass(frozen=True)
+class Attachment:
+    kind: str
+    media: MediaFile
+    caption: str
+
+
+def validated_attachment(*, mime_type: object, content: bytes, file_name: object = None, caption: object = None) -> Attachment:
+    """Un archivo que el equipo quiere enviar, o `InvalidFieldsError` con el motivo en `file` o `caption`."""
+    mime = str(mime_type or "").split(";")[0].strip().lower()
+    text = str(caption or "").strip()
+    problem: FieldIssue | None = None
+    if not content:
+        problem = FieldIssue("file", "El archivo está vacío.")
+    elif len(content) > MAX_MEDIA_BYTES:
+        problem = FieldIssue("file", "El archivo pesa más de 4 MB. Envía uno más liviano (o comprime la foto).")
+    elif mime not in ATTACHMENT_KINDS:
+        problem = FieldIssue("file", f"Ese tipo de archivo no se puede enviar. Se pueden: {ATTACHMENT_HINT}")
+    elif not _looks_like(mime, content):
+        problem = FieldIssue("file", "El archivo no es lo que dice ser (por ejemplo, una foto con nombre de PDF). Vuelve a elegirlo.")
+    elif len(text) > MAX_CAPTION_CHARS:
+        problem = FieldIssue("caption", f"El texto que acompaña el archivo puede tener hasta {MAX_CAPTION_CHARS} caracteres.")
+    if problem is not None:
+        raise InvalidFieldsError(problem.message, [problem])
+    return Attachment(kind=ATTACHMENT_KINDS[mime], media=MediaFile(mime, content, clean_file_name(file_name, mime)), caption=text)

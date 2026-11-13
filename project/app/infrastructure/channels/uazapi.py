@@ -163,6 +163,20 @@ class UazapiClient:
         payload = self._call("POST", "/send/text", token=token, body={"number": phone_digits(phone), "text": text})
         return str(payload.get("messageid") or payload.get("id") or "").strip() or None
 
+    def send_media(self, token: str, phone: str, kind: str, media: MediaFile, caption: str = "") -> str | None:
+        """Envía un archivo en base64 (foto, video, audio o documento, con su nombre) y devuelve el id que le dio WhatsApp."""
+        body: dict[str, Any] = {
+            "number": phone_digits(phone),
+            "type": kind if kind in ("image", "video", "audio") else "document",
+            "file": base64.b64encode(media.content).decode("ascii"),
+        }
+        if caption:
+            body["text"] = caption
+        if body["type"] == "document":
+            body["docName"] = media.file_name or "documento"
+        payload = self._call("POST", "/send/media", token=token, body=body)
+        return str(payload.get("messageid") or payload.get("id") or "").strip() or None
+
     def presence(self, token: str, phone: str, presence: str = "composing", delay_ms: int = 30_000) -> None:
         """Muestra «escribiendo…» (o «grabando…») en el chat del cliente; se quita sola al enviar el mensaje."""
         self._call(

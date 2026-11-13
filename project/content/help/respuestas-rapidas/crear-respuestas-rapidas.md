@@ -28,4 +28,4 @@ Toca **Agregar otro mensaje** para que salgan uno tras otro, como si los escribi
 
 > **Importante:** las crean, editan y borran el dueño y los administradores. Los asesores las usan en el chat. Ver [Los roles del equipo](roles-del-equipo).
 
-Por ahora son textos: las fotos y los documentos llegarán cuando el chat del panel pueda enviarlos.
+Por ahora son textos. Para enviar una foto o un PDF, usa el clip del chat: ver [Responde tú y pausa la IA](responder-y-pausar-la-ia).

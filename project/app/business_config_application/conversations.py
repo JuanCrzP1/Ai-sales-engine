@@ -20,6 +20,7 @@ from app.domain.business_config.conversations import (
     MAX_PAGE,
     MAX_REPLY_CHARS,
     REPLYABLE_CHANNELS,
+    Attachment,
     BusinessActivity,
     ChatMessage,
     ConversationSummary,
@@ -143,6 +144,33 @@ class ConversationsService:
             self._storage.update_entry(saved.entry_id, status="failed")
             raise ReplyNotSentError(str(exc)) from exc
         self._storage.update_entry(saved.entry_id, status="sent", provider_message_id=provider_id)
+        return next(message for message in self._storage.thread(conversation_id)[1] if message.id == saved.entry_id)
+
+    def send_attachment(self, principal: Principal, conversation_id: str, attachment: Attachment) -> ChatMessage:
+        """El equipo envía un archivo (foto, PDF, documento, video o audio) con un texto opcional. Como una respuesta: se guarda
+        enseguida con su archivo («enviando»), sale por el canal del cliente y la IA se pausa en ese chat. Si el canal no lo
+        entrega, queda «no enviado» y se informa."""
+        self._require(principal, conversation_id)
+        target = self._storage.target(conversation_id)
+        if target.channel not in REPLYABLE_CHANNELS or self._messenger is None:
+            raise InvalidFieldsError(
+                "Desde aquí todavía no se pueden enviar archivos por este canal.", [FieldIssue("file", "Este canal no permite enviar archivos desde el panel.")]
+            )
+        saved = self._storage.append(
+            target.business_slug, channel=target.channel, contact_ref=target.contact_ref, contact_name=None,
+            message=NewMessage("agent", attachment.caption, kind=attachment.kind, status="sending"), media=attachment.media,
+        )
+        self._storage.set_ai_paused(conversation_id, True)
+        self._storage.resolve_handoff(conversation_id)
+        try:
+            provider_id = self._messenger.send_media(
+                target.business_slug, target.channel, target.contact_ref, attachment.kind, attachment.media, attachment.caption
+            )
+        except ChannelError as exc:
+            self._storage.update_entry(saved.entry_id, status="failed")
+            raise ReplyNotSentError(str(exc)) from exc
+        self._storage.update_entry(saved.entry_id, status="sent", provider_message_id=provider_id)
+        logger.info("archivo_enviado", extra={"tenant": target.business_slug, "kind": attachment.kind, "bytes": len(attachment.media.content)})
         return next(message for message in self._storage.thread(conversation_id)[1] if message.id == saved.entry_id)
 
     def delete(self, principal: Principal, conversation_id: str) -> None:

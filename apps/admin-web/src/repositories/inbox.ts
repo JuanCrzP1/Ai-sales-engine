@@ -8,6 +8,8 @@ export interface Inbox {
   live(conversationId: string, since?: string): Promise<ConversationChanges>;
   /** El equipo responde: el mensaje sale por el canal del cliente y la IA se pausa en ese chat. */
   reply(conversationId: string, text: string): Promise<ChatMessage>;
+  /** Envía un archivo con un texto opcional; sale por el canal del cliente y la IA se pausa. */
+  sendAttachment(conversationId: string, file: File, caption: string): Promise<ChatMessage>;
   /** Reanuda la IA en la conversación (`true`) o la pausa para atenderla el equipo (`false`). */
   setAssistant(conversationId: string, active: boolean): Promise<ConversationSummary>;
   /** Alguien del equipo abrió la conversación: no quedan mensajes sin leer. */

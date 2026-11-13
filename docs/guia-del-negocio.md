@@ -17,7 +17,7 @@ este índice.
 ## Conversaciones
 
 - [Tus chats en vivo](../project/content/help/conversaciones/bandeja-en-vivo.md): Cómo ves cada conversación en tiempo real, las fotos y audios, los filtros y los chats de todos tus negocios juntos.
-- [Responde tú y pausa la IA](../project/content/help/conversaciones/responder-y-pausar-la-ia.md): Escribirle a un cliente desde el panel o desde el celular del negocio, pausar y reanudar la IA en un chat y marcarlo como atendido.
+- [Responde tú y pausa la IA](../project/content/help/conversaciones/responder-y-pausar-la-ia.md): Escribirle a un cliente desde el panel, enviarle fotos y documentos, pausar y reanudar la IA en un chat y marcarlo como atendido.
 - [Elimina un chat o un cliente](../project/content/help/conversaciones/eliminar-un-chat.md): Qué se borra y qué se conserva al eliminar una conversación o un cliente.
 
 ## Respuestas rápidas

@@ -21,7 +21,7 @@ export function ConversationsPage() {
   const { slug = "" } = useParams();
   // Desde un aviso se llega con `?c=` y la conversación se abre directo.
   const [params] = useSearchParams();
-  const { filter, setFilter, list, selectedId, select, thread, reload, resolveHandoff, setAssistant, reply, forget, removeTestChats } = useConversations(
+  const { filter, setFilter, list, selectedId, select, thread, reload, resolveHandoff, setAssistant, reply, sendAttachment, forget, removeTestChats } = useConversations(
     { business: slug },
     params.get("c"),
   );
@@ -153,6 +153,7 @@ export function ConversationsPage() {
               onResolve={resolveHandoff}
               onAssistant={setAssistant}
               onReply={reply}
+              onSendFile={sendAttachment}
             />
           )}
         </section>
@@ -213,6 +214,7 @@ function ThreadView({
   onResolve,
   onAssistant,
   onReply,
+  onSendFile,
 }: {
   thread: ConversationThread;
   onBack: () => void;
@@ -220,6 +222,7 @@ function ThreadView({
   onResolve: (id: string) => Promise<void>;
   onAssistant: (id: string, active: boolean) => Promise<void>;
   onReply: (id: string, text: string) => Promise<void>;
+  onSendFile: (id: string, file: File, caption: string) => Promise<void>;
 }) {
   const { conversation, messages } = thread;
   const name = contactLabel(conversation);
@@ -351,7 +354,7 @@ function ThreadView({
       )}
 
       {canReply ? (
-        <Composer businessSlug={conversation.business.slug} contactName={conversation.contactName} aiActive={!conversation.aiPaused} onSend={(text) => onReply(conversation.id, text)} />
+        <Composer businessSlug={conversation.business.slug} contactName={conversation.contactName} aiActive={!conversation.aiPaused} onSend={(text) => onReply(conversation.id, text)} onSendFile={(file, caption) => onSendFile(conversation.id, file, caption)} />
       ) : (
         <footer className="thread__footer">
           {isTest

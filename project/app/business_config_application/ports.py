@@ -255,6 +255,10 @@ class OutboundMessenger(Protocol):
 
     def send_text(self, business_slug: str, channel: str, contact_ref: str, text: str) -> str | None: ...
 
+    def send_media(self, business_slug: str, channel: str, contact_ref: str, kind: str, media: MediaFile, caption: str) -> str | None:
+        """Un archivo (foto, video, audio o documento) con su texto opcional."""
+        ...
+
 
 @runtime_checkable
 class UsageCounter(Protocol):
@@ -291,6 +295,8 @@ class WhatsAppProvider(Protocol):
     def set_webhook(self, token: str, url: str) -> None: ...
 
     def send_text(self, token: str, phone: str, text: str) -> str | None: ...
+
+    def send_media(self, token: str, phone: str, kind: str, media: MediaFile, caption: str = "") -> str | None: ...
 
 
 class ChannelStorage(Protocol):

@@ -3,6 +3,7 @@ import { hasNews, liveTiming, mergeMessages, pollDelay } from "../domain/inbox/l
 import type { BusinessActivity, ChatMessage, ConversationSummary, ConversationThread, InboxFilter, MediaInfo } from "../domain/inbox/types";
 import { persistenceErrorMessage } from "../repositories/persistenceError";
 import { useInbox } from "./inboxContext";
+import { attachmentKind } from "../domain/inbox/attachments";
 
 export type Loadable<T> = { status: "loading" } | { status: "error"; message: string } | { status: "ready"; data: T };
 
@@ -171,6 +172,24 @@ export function useConversations(initialFilter: InboxFilter, initialSelected: st
     [inbox, patchMessages],
   );
 
+  /** El equipo envía un archivo: aparece enseguida («enviando») con su texto, y la IA queda pausada. Si no sale, se quita y se informa. */
+  const sendAttachment = useCallback(
+    async (conversationId: string, file: File, caption: string) => {
+      const localId = `local-archivo-${Date.now()}`;
+      const kind = attachmentKind(file.type) ?? "document";
+      const pending: ChatMessage = { id: localId, author: "agent", body: caption, intent: null, createdAt: new Date().toISOString(), kind, status: "sending" };
+      patchMessages((messages) => [...messages, pending], { aiPaused: true, needsHuman: false });
+      try {
+        const saved = await inbox.sendAttachment(conversationId, file, caption);
+        patchMessages((messages) => mergeMessages(messages.filter((message) => message.id !== localId), [saved]));
+      } catch (error) {
+        patchMessages((messages) => messages.filter((message) => message.id !== localId));
+        throw error;
+      }
+    },
+    [inbox, patchMessages],
+  );
+
   /** Un chat ya eliminado en el servidor: sale de la lista y, si estaba abierto, se cierra. */
   const forget = useCallback((conversationId: string) => {
     setList((previous) => (previous.status === "ready" ? { status: "ready", data: previous.data.filter((item) => item.id !== conversationId) } : previous));
@@ -192,7 +211,7 @@ export function useConversations(initialFilter: InboxFilter, initialSelected: st
     [inbox, selectedId],
   );
 
-  return { filter, setFilter, list, selectedId, select: setSelectedId, thread, reload, resolveHandoff, setAssistant, reply, forget, removeTestChats };
+  return { filter, setFilter, list, selectedId, select: setSelectedId, thread, reload, resolveHandoff, setAssistant, reply, sendAttachment, forget, removeTestChats };
 }
 
 /** Una URL local para mostrar un archivo de la conversación (se descarga con la sesión del usuario y se libera al salir). */

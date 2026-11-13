@@ -935,6 +935,8 @@ export interface MemoryInboxControls {
   removed: string[];
   notificationList: Notification[];
   replies: { conversationId: string; text: string }[];
+  /** Los archivos que envió el equipo, en orden. */
+  attachments: { conversationId: string; name: string; type: string; size: number; caption: string }[];
   readMarks: string[];
   /** Un mensaje nuevo en un hilo (como si llegara por el canal): aparece en vivo. */
   receive(conversationId: string, message: ChatMessage, conversation?: Partial<ConversationSummary>): void;
@@ -954,6 +956,7 @@ export function createMemoryInbox(seededThreads: ConversationThread[] = [], seed
   const resolved: string[] = [];
   const removed: string[] = [];
   const replies: { conversationId: string; text: string }[] = [];
+  const attachments: MemoryInboxControls["attachments"] = [];
   const readMarks: string[] = [];
   const files = new Map<string, Blob>();
   let replyFailure: string | null = null;
@@ -978,6 +981,7 @@ export function createMemoryInbox(seededThreads: ConversationThread[] = [], seed
     removed,
     notificationList,
     replies,
+    attachments,
     readMarks,
     files,
     receive: (conversationId, message, conversation = {}) => {
@@ -1021,6 +1025,26 @@ export function createMemoryInbox(seededThreads: ConversationThread[] = [], seed
       thread.messages = [...thread.messages, sent];
       touch(sent);
       thread.conversation = { ...thread.conversation, aiPaused: true, needsHuman: false, lastMessagePreview: text, messageCount: thread.messages.length };
+      return sent;
+    },
+    sendAttachment: async (id, file, caption) => {
+      const thread = find(id);
+      if (replyFailure) {
+        const message = replyFailure;
+        replyFailure = null;
+        throw new PersistenceError("unknown", { message });
+      }
+      attachments.push({ conversationId: id, name: file.name, type: file.type, size: file.size, caption });
+      const mediaId = `archivo-${attachments.length}`;
+      files.set(mediaId, file);
+      const kind = file.type.startsWith("image/") ? "image" : file.type.startsWith("video/") ? "video" : file.type.startsWith("audio/") ? "audio" : "document";
+      const sent: ChatMessage = {
+        id: `agente-archivo-${attachments.length}`, author: "agent", body: caption, intent: null, createdAt: new Date().toISOString(), kind, status: "sent",
+        media: { id: mediaId, mimeType: file.type, sizeBytes: file.size, fileName: file.name },
+      };
+      thread.messages = [...thread.messages, sent];
+      touch(sent);
+      thread.conversation = { ...thread.conversation, aiPaused: true, needsHuman: false, messageCount: thread.messages.length };
       return sent;
     },
     setAssistant: async (id, active) => {

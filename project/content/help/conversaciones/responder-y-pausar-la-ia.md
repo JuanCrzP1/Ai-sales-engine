@@ -1,10 +1,10 @@
 ---
 title: Responde tú y pausa la IA
 module: conversaciones
-summary: Escribirle a un cliente desde el panel o desde el celular del negocio, pausar y reanudar la IA en un chat y marcarlo como atendido.
+summary: Escribirle a un cliente desde el panel, enviarle fotos y documentos, pausar y reanudar la IA en un chat y marcarlo como atendido.
 order: 2
 updated: 2026-11-12
-keywords: responder, escribir, pausar ia, reanudar ia, ya lo atendí, humano, tomar el chat, celular del negocio
+keywords: responder, escribir, pausar ia, reanudar ia, ya lo atendí, humano, tomar el chat, celular del negocio, enviar foto, enviar pdf, adjuntar, archivo, documento
 related: bandeja-en-vivo, usar-respuestas-rapidas, cuando-pasa-a-una-persona
 ---
 
@@ -13,6 +13,16 @@ related: bandeja-en-vivo, usar-respuestas-rapidas, cuando-pasa-a-una-persona
 Escribe en el chat y toca **Enviar**. El mensaje le llega al cliente por su canal y **la IA se pausa en ese chat** para no hablar encima de ti.
 
 > **Consejo:** con las [respuestas rápidas](usar-respuestas-rapidas) escribes «/» y pones en segundos los mensajes que envías todos los días.
+
+## Enviar fotos y documentos
+
+1. Toca el **clip** junto al cuadro de texto y elige el archivo. También puedes **pegar una imagen** (Ctrl+V o Cmd+V) en el cuadro.
+2. Si quieres, escribe un texto: sale junto con el archivo.
+3. Toca **Enviar**.
+
+Puedes enviar fotos (JPG, PNG, WebP), PDF, Word, Excel, PowerPoint, texto, videos MP4 y audios (MP3, OGG, M4A), de **hasta 4 MB**. Si el archivo no se puede enviar, el panel te dice por qué antes de subirlo. Si no sale por WhatsApp, vuelve al cuadro con su texto para intentarlo de nuevo.
+
+El archivo queda en el chat, como los que te mandan tus clientes, y la IA se pausa igual que cuando escribes tú.
 
 ## Responder desde el celular del negocio
 

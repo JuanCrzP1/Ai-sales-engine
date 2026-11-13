@@ -138,6 +138,9 @@ class FakeUazapi:
                 return httpx.Response(500, json={"error": "Failed to send message"})
             self.sent.append((token, body))
             return httpx.Response(200, json={"id": "r1a2b3c4", "messageid": f"WA-OUT-{len(self.sent)}", "response": {"status": "success"}})
+        if path == "/send/media":
+            self.sent.append((token, body))
+            return httpx.Response(200, json={"messageid": f"WA-MEDIA-{len(self.sent)}"})
         if path == "/message/presence":
             self.presences.append(body)
             return httpx.Response(200, json={"response": "Chat presence sent successfully"})
@@ -150,6 +153,22 @@ class FakeUazapi:
 
     def client(self, server_url: str) -> UazapiClient:
         return UazapiClient(server_url, transport=httpx.MockTransport(self.handler), resolver=PUBLIC)
+
+
+def test_the_client_sends_a_file_in_base64_with_its_name_and_text():
+    from app.domain.business_config.conversations import MediaFile
+
+    server = FakeUazapi()
+    client = server.client("https://free.uazapi.com")
+    pdf = MediaFile("application/pdf", b"%PDF-1.7", "Catálogo.pdf")
+    assert client.send_media(INSTANCE_TOKEN, "+57 300 111 2233", "document", pdf, "El catálogo") == "WA-MEDIA-1"
+    photo = MediaFile("image/jpeg", b"\xff\xd8\xff", "foto.jpg")
+    client.send_media(INSTANCE_TOKEN, "573001112233", "image", photo)
+    assert [body for _token, body in server.sent] == [
+        {"number": "573001112233", "type": "document", "file": base64.b64encode(b"%PDF-1.7").decode(), "text": "El catálogo", "docName": "Catálogo.pdf"},
+        # Una foto no lleva nombre, y sin texto no se manda leyenda.
+        {"number": "573001112233", "type": "image", "file": base64.b64encode(b"\xff\xd8\xff").decode()},
+    ]
 
 
 def test_the_client_reads_the_qr_and_the_connected_number():

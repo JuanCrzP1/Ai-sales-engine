@@ -72,6 +72,7 @@ class FakeMessenger:
 
     def __init__(self) -> None:
         self.sent: list[tuple[str, str, str, str]] = []
+        self.files: list[tuple] = []
         self.fail = False
 
     def send_text(self, business_slug, channel, contact_ref, text):
@@ -81,6 +82,14 @@ class FakeMessenger:
             raise ChannelError("WhatsApp no está conectado en este negocio. Conéctalo en Canales para responder desde aquí.")
         self.sent.append((business_slug, channel, contact_ref, text))
         return f"WA-AGENTE-{len(self.sent)}"
+
+    def send_media(self, business_slug, channel, contact_ref, kind, media, caption):
+        from app.domain.business_config.channels import ChannelError
+
+        if self.fail:
+            raise ChannelError("WhatsApp no está conectado en este negocio. Conéctalo en Canales para responder desde aquí.")
+        self.files.append((business_slug, contact_ref, kind, media.mime_type, media.file_name, media.content, caption))
+        return f"WA-ARCHIVO-{len(self.files)}"
 
 
 MESSENGER = FakeMessenger()
@@ -113,6 +122,7 @@ def platform(tmp_path):
         ai_usage=AIUsageStore(engine),
     )
     MESSENGER.sent.clear()
+    MESSENGER.files.clear()
     MESSENGER.fail = False
     yield engine, store, lab, TestClient(app)
     engine.dispose()
@@ -447,6 +457,72 @@ def test_test_chats_and_empty_replies_cannot_be_sent(platform):
     chat = _whatsapp_chat(store)
     assert client.post(f"/api/conversations/{chat.conversation_id}/messages", json={"text": ""}, headers=_as("ana")).status_code == 422
     assert MESSENGER.sent == []
+
+
+PDF = b"%PDF-1.7\n catalogo"
+
+
+def _send_file(client, conversation_id, content, mime, *, name="", caption="", user="ana"):
+    from urllib.parse import quote
+
+    headers = {**_as(user), "Content-Type": mime, "X-File-Name": quote(name), "X-Caption": quote(caption)}
+    return client.post(f"/api/conversations/{conversation_id}/attachments", content=content, headers=headers)
+
+
+def test_the_team_sends_a_file_with_its_text_and_the_assistant_steps_aside(platform):
+    _engine, store, _lab, client = platform
+    chat = _whatsapp_chat(store)
+    response = _send_file(client, chat.conversation_id, PDF, "application/pdf", name="../Catálogo noviembre.pdf", caption="Aquí está el catálogo, Ana 👇")
+    assert response.status_code == 201, response.text
+    sent = response.json()
+    assert (sent["author"], sent["status"], sent["kind"], sent["body"]) == ("agent", "sent", "document", "Aquí está el catálogo, Ana 👇")
+    assert MESSENGER.files == [("restaurant", "573009998877", "document", "application/pdf", "Catálogo noviembre.pdf", PDF, "Aquí está el catálogo, Ana 👇")]
+    # El archivo queda en el chat, como los que llegan, y se puede abrir desde el panel.
+    media = store.thread(chat.conversation_id)[1][-1].media
+    assert (media.mime_type, media.file_name) == ("application/pdf", "Catálogo noviembre.pdf")
+    assert client.get(f"/api/conversations/{chat.conversation_id}/media/{media.id}", headers=_as("ana")).content == PDF
+    assert client.get(f"/api/conversations/{chat.conversation_id}/live", headers=_as("ana")).json()["conversation"]["ai_paused"] is True
+    # Una foto sin texto también sale.
+    photo = _send_file(client, chat.conversation_id, b"\xff\xd8\xff\xe0foto", "image/jpeg", name="foto.jpg")
+    assert photo.status_code == 201 and photo.json()["kind"] == "image" and MESSENGER.files[-1][2] == "image"
+
+
+@pytest.mark.parametrize(
+    "content, mime, caption, reason",
+    [
+        (b"", "application/pdf", "", "vacío"),
+        (b"MZ ejecutable", "application/x-msdownload", "", "no se puede enviar"),
+        (b"\xff\xd8\xff foto", "application/pdf", "", "no es lo que dice ser"),
+        (PDF, "application/pdf", "x" * 1025, "hasta 1024"),
+    ],
+)
+def test_a_file_that_cannot_go_is_refused_with_the_reason(platform, content, mime, caption, reason):
+    _engine, store, _lab, client = platform
+    chat = _whatsapp_chat(store)
+    response = _send_file(client, chat.conversation_id, content, mime, caption=caption)
+    assert response.status_code == 422 and reason in response.json()["message"]
+    assert MESSENGER.files == []
+
+
+def test_a_file_over_4_mb_or_to_someone_else_or_to_a_test_chat_is_refused(platform):
+    _engine, store, _lab, client = platform
+    chat = _whatsapp_chat(store)
+    too_big = _send_file(client, chat.conversation_id, b"%PDF" + b"0" * (4 * 1024 * 1024), "application/pdf")
+    assert too_big.status_code == 413 and "4 MB" in too_big.json()["message"]
+    assert _send_file(client, chat.conversation_id, PDF, "application/pdf", user="beto").status_code == 404
+    test_chat = store.record("restaurant", channel="prueba", contact_ref="s1", contact_name="Prueba", messages=[NewMessage("customer", "Hola")])
+    assert _send_file(client, test_chat, PDF, "application/pdf").status_code == 422
+    assert MESSENGER.files == []
+
+
+def test_a_file_the_channel_does_not_deliver_is_kept_as_not_sent(platform):
+    _engine, store, _lab, client = platform
+    chat = _whatsapp_chat(store)
+    MESSENGER.fail = True
+    response = _send_file(client, chat.conversation_id, PDF, "application/pdf", name="catalogo.pdf")
+    assert response.status_code == 502 and "Conéctalo en Canales" in response.json()["message"]
+    last = store.thread(chat.conversation_id)[1][-1]
+    assert (last.status, last.media.file_name) == ("failed", "catalogo.pdf")
 
 
 def test_opening_a_chat_marks_it_read_and_its_files_are_served_safely(platform):

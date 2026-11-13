@@ -10,6 +10,8 @@ export interface HttpClient {
   post<T>(path: string, body?: unknown): Promise<T>;
   put<T>(path: string, body: unknown): Promise<T>;
   delete(path: string): Promise<void>;
+  /** Sube un archivo tal cual (su tipo en `Content-Type`), con encabezados propios. */
+  upload<T>(path: string, file: Blob, headers: Record<string, string>): Promise<T>;
   /** Un archivo (foto, audio, documento) en lugar de JSON. */
   blob(path: string): Promise<Blob>;
 }
@@ -46,18 +48,18 @@ export interface HttpClientOptions {
 }
 
 export function createHttpClient(baseUrl = "/api", options: HttpClientOptions = {}): HttpClient {
-  const send = async (method: string, path: string, body?: unknown): Promise<Response> => {
+  const send = async (method: string, path: string, body?: unknown, raw?: { file: Blob; headers: Record<string, string> }): Promise<Response> => {
     let response: Response;
     try {
       const token = options.token ? await options.token() : null;
       const headers: Record<string, string> = {
-        ...(body !== undefined ? { "Content-Type": "application/json" } : {}),
+        ...(raw ? { "Content-Type": raw.file.type || "application/octet-stream", ...raw.headers } : body !== undefined ? { "Content-Type": "application/json" } : {}),
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       };
       response = await fetch(`${baseUrl}${path}`, {
         method,
         ...(Object.keys(headers).length > 0 ? { headers } : {}),
-        ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
+        ...(raw ? { body: raw.file } : body !== undefined ? { body: JSON.stringify(body) } : {}),
       });
     } catch (error) {
       throw new PersistenceError("unavailable", { cause: error });
@@ -75,5 +77,6 @@ export function createHttpClient(baseUrl = "/api", options: HttpClientOptions = 
     put: (path, body) => request("PUT", path, body),
     delete: (path) => request<void>("DELETE", path),
     blob: async (path) => (await send("GET", path)).blob(),
+    upload: async <T,>(path: string, file: Blob, headers: Record<string, string>) => (await (await send("POST", path, undefined, { file, headers })).json()) as T,
   };
 }
