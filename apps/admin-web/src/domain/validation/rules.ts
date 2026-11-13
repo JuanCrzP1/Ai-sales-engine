@@ -13,12 +13,13 @@ import {
   TEXT_LIMITS,
 } from "../config/engineLimits";
 import { labelFor, RESPONSE_LENGTHS } from "../config/options";
+import { methodKind } from "../config/paymentCatalog";
 import { paymentTemplateProblem } from "../config/paymentMessage";
 import type { BusinessDocument, PaymentValues, WorkingCopy } from "../config/types";
 import type { ConfigSectionId } from "../sections";
 import { localIsoDate } from "../../lib/format";
 import { cleanList } from "../../lib/text";
-import { isAccountNumber, isBlank, isColombianMobile, isHttpsUrl, isHttpUrl, isPositiveAmount } from "./fieldChecks";
+import { isAccountNumber, isBlank, isClabe, isColombianMobile, isEmail, isHttpsUrl, isHttpUrl, isIban, isPhone, isPositiveAmount } from "./fieldChecks";
 import type { ValidationIssue } from "./types";
 
 /**
@@ -142,11 +143,23 @@ export function validatePaymentValues({ document, paymentValues }: WorkingCopy):
       case "mobile":
         if (!isColombianMobile(value)) add("error", "Escribe un celular de 10 dígitos que empiece por 3.");
         break;
+      case "phone":
+        if (!isPhone(value)) add("error", "Escribe el número de celular: solo dígitos, con o sin el código del país.");
+        break;
       case "account":
         if (!isAccountNumber(value)) add("error", "Escribe un número de cuenta válido (solo dígitos).");
         break;
+      case "clabe":
+        if (!isClabe(value)) add("error", "Revisa la CLABE: son 18 dígitos y el último debe coincidir (cópiala de tu banco).");
+        break;
+      case "iban":
+        if (!isIban(value)) add("error", "Revisa el IBAN: empieza por el país (ES, DE…) y debe copiarse completo de tu banco.");
+        break;
+      case "email":
+        if (!isEmail(value)) add("error", "Escribe un correo válido, por ejemplo pagos@tunegocio.com.");
+        break;
       case "reference":
-        if (isBlank(value)) add("error", "Escribe tu llave o referencia Bre-B.");
+        if (isBlank(value)) add("error", "Escribe el dato para pagar (tu llave, alias o número).");
         break;
     }
   }
@@ -169,6 +182,7 @@ function validatePayments(document: BusinessDocument, paymentValues: PaymentValu
     }
     methods.forEach((method, position) => {
       if (method.type === "bank" && isBlank(method.bank ?? "")) add(`payments.${index}.transfer_methods.${position}.bank`, "error", "Escribe el nombre del banco.");
+      if (methodKind(method.type)?.custom && isBlank(method.name ?? "")) add(`payments.${index}.transfer_methods.${position}.name`, "error", "Escribe el nombre del medio, como lo verá el cliente.");
     });
     // Varias cuentas del mismo tipo están bien: si el cliente nombra el banco, recibe esa; si no, todas las de ese tipo juntas.
   });

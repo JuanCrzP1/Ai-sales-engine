@@ -1,5 +1,6 @@
 import type { CatalogItem, PaymentProfile, Plan, SecretRef, TransferMethod } from "../../contracts/businessConfig.v1";
 import { cleanList } from "../../lib/text";
+import { formatOf, type PaymentDataFormat } from "./paymentCatalog";
 import type { BusinessDocument, PaymentValues, WorkingCopy } from "./types";
 
 /** Lecturas puras del documento. */
@@ -51,16 +52,24 @@ export function sameDocument(a: BusinessDocument, b: BusinessDocument): boolean 
 /** Un dato de pago dentro del documento, con la ruta y el tipo que determinan cómo se escribe. */
 export interface PaymentHolder {
   path: string;
-  kind: "link" | "mobile" | "account" | "reference";
+  /** `link`, o el formato del dato según su medio (`paymentCatalog.ts`): celular, cuenta, CLABE, IBAN, correo… */
+  kind: "link" | PaymentDataFormat;
   ref: SecretRef;
 }
 
 function transferHolders(path: string, method: TransferMethod): PaymentHolder[] {
-  const holders: PaymentHolder[] = [];
-  if (method.number) holders.push({ path: `${path}.number`, kind: "mobile", ref: method.number });
-  if (method.account_number) holders.push({ path: `${path}.account_number`, kind: "account", ref: method.account_number });
-  if (method.reference) holders.push({ path: `${path}.reference`, kind: "reference", ref: method.reference });
-  return holders;
+  return (["number", "account_number", "reference"] as const).flatMap((slot) => {
+    const ref = method[slot];
+    return ref ? [{ path: `${path}.${slot}`, kind: formatOf(method.type, slot), ref }] : [];
+  });
+}
+
+/** El dato como lo guarda el servidor (`payment_data.normalize_payment_value`): los números sin separadores y el IBAN en mayúsculas. */
+export function normalizedPaymentValue(kind: PaymentHolder["kind"], value: string): string {
+  const text = value.trim();
+  if (kind === "mobile" || kind === "phone" || kind === "account" || kind === "clabe") return text.replace(/[\s.-]+/g, "");
+  if (kind === "iban") return text.replace(/\s+/g, "").toUpperCase();
+  return text;
 }
 
 export function paymentHolders(payments: PaymentProfile[]): PaymentHolder[] {
@@ -82,7 +91,7 @@ export function paymentValuesToSend({ document, paymentValues }: WorkingCopy): P
   for (const holder of paymentHolders(document.payments)) {
     const value = paymentValues[holder.ref.secret_ref];
     if (value === undefined || (isStoredRef(holder.ref.secret_ref) && !value.trim())) continue;
-    values[holder.ref.secret_ref] = holder.kind === "mobile" ? value.replace(/\s+/g, "") : holder.kind === "account" ? value.replace(/[\s-]+/g, "") : value.trim();
+    values[holder.ref.secret_ref] = normalizedPaymentValue(holder.kind, value);
   }
   return values;
 }

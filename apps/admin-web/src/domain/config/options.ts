@@ -1,8 +1,10 @@
 import type { Identity, Location } from "../../contracts/businessConfig.v1";
-import { RESPONSE_LENGTH_MAX_WORDS } from "../../contracts/businessConfig.v1";
+import { PAYMENT_METHOD_CATALOG, PAYMENT_METHOD_GROUPS, RESPONSE_LENGTH_MAX_WORDS } from "../../contracts/businessConfig.v1";
 import type { OfferModel, TransferMethodType } from "./types";
 
 export interface Option<T extends string = string> {
+  /** Para agrupar las opciones en una lista (por ejemplo, por país). */
+  group?: string;
   value: T;
   label: string;
   hint?: string;
@@ -76,12 +78,10 @@ export const CUSTOMER_DATA_FIELDS: Option[] = [
   { value: "detalles", label: "Detalles del pedido o caso" },
 ];
 
-export const TRANSFER_METHOD_TYPES: Option<TransferMethodType>[] = [
-  { value: "nequi", label: "Nequi" },
-  { value: "daviplata", label: "Daviplata" },
-  { value: "bank", label: "Cuenta bancaria" },
-  { value: "breb", label: "Bre-B" },
-];
+/** Los medios de pago del catálogo (de cualquier país), juntos por país y en el orden de los países, para elegirlos. */
+export const TRANSFER_METHOD_TYPES: Option<TransferMethodType>[] = PAYMENT_METHOD_GROUPS.flatMap((group) =>
+  PAYMENT_METHOD_CATALOG.filter((kind) => kind.group === group).map((kind) => ({ value: kind.id, label: kind.name, group })),
+);
 
 export const LOCATION_TYPES: Option<"" | Location["type"]>[] = [
   { value: "", label: "No indicar", hint: "El asistente no hablará de ubicación." },

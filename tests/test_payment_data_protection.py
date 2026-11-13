@@ -309,3 +309,55 @@ def test_with_two_banks_the_question_names_both(monkeypatch, tmp_path):
     turns = [("¿A qué cuenta pago?", reply(f"Paga a {REDACTED_PAYMENT_VALUE}.", "info"))]
     (_prompts, answer), = run_with_document(monkeypatch, tmp_path / "pregunta", "saas", _two_banks, turns)
     assert "transferencia a Bancolombia o Davivienda" in answer and answer.startswith("¿Con qué medio prefieres pagar")
+
+
+def test_a_resend_works_even_after_talking_about_something_else():
+    """Laboratorio de calidad, 13 nov 2026 (Asesor Comercial): después de los datos, la IA habló de activar el servicio y el paso de
+    pago dejó de estar activo; «se me borró el número, ¿me lo envías otra vez?» no sabía de qué medio era. Se recuerda el elegido."""
+    number = _nequi()
+    turns = [
+        ("Quiero pagar por nequi", reply("Listo.", "buy", payment_method="nequi")),
+        ("¿Y después qué sigue?", reply("Cuando pagues, para activar tu servicio te pido unos datos de arranque.", "info")),
+        ("Se me borró el número, ¿me lo envías otra vez?", reply("Lo siento, no puedo enviar el número nuevamente.", "info")),
+    ]
+    *_before, (_prompts, again) = run_conversation("saas", turns, user_id="reenvio-tras-activacion")
+    assert again.startswith("💳 *Datos para pagar*") and number in again
+
+
+# ---------------------------------------------------------------------------
+# Con la IA real, un negocio de Perú (13 nov 2026): «¿Y si te pago por Nu?» → «los datos de pago son los mismos, solo cambia el
+# medio» (falso, y sin los datos de Nu); y el efectivo pedía «la captura del comprobante».
+# ---------------------------------------------------------------------------
+
+def _peru(document):
+    profile = document["payments"][0]
+    number = next(method["number"] for method in profile["transfer_methods"] if method.get("number"))
+    reference = next(method["reference"] for method in profile["transfer_methods"] if method.get("reference"))
+    profile["transfer_methods"] = [
+        {"type": "yape", "number": number, "holder": "Asesor Comercial S.A.C."},
+        {"type": "custom", "name": "Nu", "data_label": "Cuenta", "reference": reference},
+        {"type": "cash", "instructions": "Pagas al asesor cuando te visite."},
+    ]
+
+
+def test_when_the_customer_switches_method_its_details_arrive_even_if_the_assistant_says_they_are_the_same(monkeypatch, tmp_path):
+    from pipeline_harness import run_with_document
+
+    turns = [
+        ("Por Yape", reply("Listo.", "buy", payment_method="yape")),
+        ("¿Y si te pago por Nu?", reply("Los datos de pago son los mismos, solo cambia el medio.", "info")),
+        ("Mejor en efectivo", reply("Perfecto.", "info")),
+    ]
+    (_a, yape), (_b, nu), (_c, cash) = run_with_document(monkeypatch, tmp_path / "peru", "saas", _peru, turns)
+    assert "*Yape*" in yape and "A nombre de: Asesor Comercial S.A.C." in yape
+    assert "*Nu*\nCuenta: " in nu and "son los mismos" not in nu
+    # El efectivo no pide comprobante.
+    assert cash.startswith("💵 *Cómo pagar*\n\n*Efectivo o contraentrega*\nPagas al asesor cuando te visite.") and "comprobante" not in cash
+
+
+@pytest.mark.parametrize("message", ["¿Tienen Nu?", "¿Aceptan Yape?", "No puedo pagar por Yape", "¿Nu o Yape?"])
+def test_asking_about_a_method_or_refusing_it_is_not_choosing_it(monkeypatch, tmp_path, message):
+    from pipeline_harness import run_with_document
+
+    (_prompts, answer), = run_with_document(monkeypatch, tmp_path / f"no-elige-{abs(hash(message))}", "saas", _peru, [(message, reply("Respuesta del asistente.", "info"))])
+    assert answer == "Respuesta del asistente."

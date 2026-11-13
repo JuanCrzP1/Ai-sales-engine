@@ -3,6 +3,7 @@ datos que se piden (con el mensaje del negocio para pedirlos), a quién se pasa 
 Los datos de pago nunca están aquí: el motor los entrega cuando el cliente elige el medio."""
 from __future__ import annotations
 
+from app.domain.business_config.payment_catalog import method_kind
 from app.infrastructure.ai.prompting.text import as_dict, as_list, as_text, dedupe, one_line, readable, section, sentence, texts
 from app.infrastructure.ai.prompting.view import PromptView
 from app.infrastructure.ai.prompting.vocabulary import DATA, said_all
@@ -18,7 +19,8 @@ def _payment_blocks(pricing: dict) -> list[dict]:
 
 
 def payment_methods(view: PromptView) -> list[str]:
-    """Los medios de pago por su nombre: «Nequi», «transferencia a Bancolombia (ahorros)», «link de pago»."""
+    """Los medios de pago por su nombre: «Nequi», «transferencia a Bancolombia (ahorros)», «Yape», «Nu», «link de pago». Solo los
+    nombres: los datos los envía el sistema."""
     names: list[str] = []
     blocks = _payment_blocks(view.pricing)
     for block in blocks:
@@ -28,11 +30,17 @@ def payment_methods(view: PromptView) -> list[str]:
         for method in as_list(transfer.get("methods")):
             method = as_dict(method)
             kind = as_text(method.get("type")).lower()
+            catalog = method_kind(kind)
             if kind == "bank":
                 bank, account = as_text(method.get("bank")), as_text(method.get("account_type"))
                 names.append(f"transferencia a {bank} ({account})" if bank and account else "transferencia bancaria")
             elif kind in _TRANSFERS:
                 names.append(_TRANSFERS[kind])
+            elif catalog is not None and catalog.custom:
+                if as_text(method.get("name")):
+                    names.append(as_text(method.get("name")))
+            elif catalog is not None:
+                names.append(catalog.name)
     if any(as_text(block.get("link")) for block in blocks):
         names.append("link de pago")
     return dedupe(names)

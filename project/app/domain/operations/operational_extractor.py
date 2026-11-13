@@ -8,6 +8,7 @@ from __future__ import annotations
 import re
 from datetime import datetime, timedelta, timezone
 
+from app.domain.business_config.payment_catalog import method_kind
 from app.domain.operations.operational_state import OperationalState
 
 # Static signal vocabulary: what the AI naturally writes for each known method type.
@@ -49,6 +50,14 @@ _HANDOFF = re.compile(
     r"|te comunica(?:mos)? con",
 )
 
+def _signal(method: str) -> str:
+    """Cómo se nombra un medio: los de siempre con sus señales; los demás medios del catálogo, con las suyas (Yape, SPEI…)."""
+    if method in _METHOD_SIGNALS:
+        return _METHOD_SIGNALS[method]
+    kind = method_kind(method)
+    return kind.aliases if kind is not None and not kind.custom else re.escape(method)
+
+
 def _expiry(hours: int = 6) -> datetime:
     return datetime.now(timezone.utc) + timedelta(hours=hours)
 
@@ -76,7 +85,7 @@ def extract_op_state(
     if payment_methods:
         matched = [
             m for m in payment_methods
-            if re.search(_METHOD_SIGNALS.get(m, re.escape(m)), normalized)
+            if re.search(_signal(m), normalized)
         ]
         if len(matched) == 1:
             return OperationalState(

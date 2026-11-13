@@ -23,7 +23,8 @@ OUTPUT_PATH = REPO_ROOT / "apps" / "admin-web" / "src" / "contracts" / "business
 if str(PROJECT_DIR) not in sys.path:
     sys.path.insert(0, str(PROJECT_DIR))
 
-from app.domain.business_config import engine_policy  # noqa: E402
+from app.domain.business_config import engine_policy, payment_catalog  # noqa: E402
+from app.domain.business_config.contract.payments import MAX_PAYMENT_INSTRUCTIONS_CHARS  # noqa: E402
 from app.domain.business_config.contract import SCHEMA_VERSION  # noqa: E402
 
 
@@ -108,11 +109,15 @@ def render_types() -> str:
         f"export const MAX_OFFER_DESCRIPTION_CHARS = {engine_policy.MAX_OFFER_DESCRIPTION_CHARS};",
         f"export const MAX_CATEGORIES = {engine_policy.MAX_CATEGORIES};",
         f"export const MAX_CUSTOMER_PROBLEMS = {engine_policy.MAX_CUSTOMER_PROBLEMS};",
+        f"export const MAX_PAYMENT_INSTRUCTIONS_CHARS = {MAX_PAYMENT_INSTRUCTIONS_CHARS};",
+        "/** Los medios de pago que un negocio puede configurar, de cualquier país (`project/app/domain/business_config/payment_catalog.py`). */",
+        f"export const PAYMENT_METHOD_GROUPS = {json.dumps(list(payment_catalog.GROUPS), ensure_ascii=False)} as const;",
+        f"export const PAYMENT_METHOD_CATALOG = {json.dumps(payment_catalog.catalog_for_panel(), ensure_ascii=False)} as const;",
     ]
     header = (
         "// ARCHIVO GENERADO por scripts/generate_business_config_types.py. No editar a mano.\n"
         "// Fuente: project/config/contracts/v1/business-config.schema.json y\n"
-        "// project/app/domain/business_config/engine_policy.py.\n"
+        "// project/app/domain/business_config/engine_policy.py y payment_catalog.py.\n"
         "// Marcas: `audiencia` (cliente, avanzado, sistema) y `motor` (conectado, pendiente); un campo sin\n"
         "// marca toma la de su sección. Ver docs/business-config.md.\n"
     )

@@ -6,11 +6,20 @@ no va aquí: viaja como mensajes (`history.py`).
 """
 from __future__ import annotations
 
+from app.domain.business_config.payment_catalog import method_kind
 from app.infrastructure.ai.prompting import instructions
 from app.infrastructure.ai.prompting.text import as_dict, as_text, bullets, one_line, section
 from app.infrastructure.ai.prompting.view import PromptView
 
 _METHODS = {"nequi": "Nequi", "daviplata": "Daviplata", "bank": "transferencia bancaria", "breb": "Bre-B", "link": "link de pago"}
+
+
+def _method_name(method: str) -> str:
+    """Cómo se nombra el medio que eligió: los de siempre como antes; los demás, por su nombre en el catálogo."""
+    if method in _METHODS:
+        return _METHODS[method]
+    kind = method_kind(method.split(":", 1)[0])
+    return kind.name if kind is not None and not kind.custom else method
 
 
 def _moment(view: PromptView) -> str:
@@ -45,7 +54,7 @@ def render(view: PromptView) -> str:
         if after_sale:
             facts.append(instructions.AFTER_SALE.format(message=after_sale))
     elif method:
-        facts.append(instructions.PAYMENT_CHOSEN.format(method=_METHODS.get(method, method)))
+        facts.append(instructions.PAYMENT_CHOSEN.format(method=_method_name(method)))
     anchor, rule = one_line(memory.get("operational_anchor")), one_line(memory.get("operational_rule"))
     if anchor:
         facts.append(f"{anchor} {rule}".strip())

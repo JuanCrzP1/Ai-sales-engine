@@ -39,6 +39,7 @@ from app.domain.business_config.payment_data import (
     iter_payment_fields,
     iter_secret_refs,
     mask_payment_value,
+    normalize_payment_value,
     payment_value_problem,
     redact_values,
 )
@@ -289,6 +290,9 @@ class BusinessConfigService:
         unknown = set(values) - {holder["secret_ref"] for holder in holders}
         if unknown:
             raise BusinessConfigError(f"{tenant_slug}: {len(unknown)} datos de pago sin referencia en el documento")
+        # Cada dato se guarda limpio según su formato (sin espacios ni guiones en los números, el IBAN en mayúsculas), venga de donde venga.
+        kinds = {item.ref: item.kind for item in iter_payment_fields(document)}
+        values = {ref: normalize_payment_value(kinds.get(ref, "reference"), str(value)) for ref, value in values.items()}
         plain_values = [str(value) for value in values.values()]
         if any(not value.strip() for value in plain_values):
             raise BusinessConfigError(f"{tenant_slug}: hay datos de pago vacíos")

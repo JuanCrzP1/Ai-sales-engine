@@ -117,9 +117,12 @@ Finalidad comercial, sin origen en los YAML. No se compilan salvo los marcados `
 | offer | `offer.plans[].prices[].first_payment` | Valor del primer pago, si difiere de los siguientes. | número | cliente | conectado | pantalla |
 | offer | `offer.plans[].prices[].price` | Precio de pago único. | número | cliente | conectado | pantalla |
 | payments | `payments[].link_enabled` | Si es false, el enlace se conserva pero no se ofrece. | interruptor true/false | cliente | conectado | pantalla |
+| payments | `payments[].transfer_methods[].data_label` | «Otro medio»: cómo se llama su dato (por ejemplo, «Alias» o «Número»). | texto | cliente | conectado | pantalla |
 | payments | `payments[].transfer_methods[].enabled` | Si es false, la cuenta se conserva pero no se ofrece. | interruptor true/false | cliente | conectado | pantalla |
 | payments | `payments[].transfer_methods[].holder` | A nombre de quién está la cuenta. Se le muestra al cliente con los datos de pago, para que sepa que paga al negocio correcto. | texto | cliente | conectado | pantalla |
+| payments | `payments[].transfer_methods[].instructions` | Lo que el cliente debe saber al pagar por este medio (por ejemplo, «envía el comprobante con tu nombre»). Sale con los datos; la IA no lo ve. | texto | cliente | conectado | pantalla |
 | payments | `payments[].transfer_methods[].label` | Etiqueta para reconocer la cuenta en el panel. No se comparte con el cliente. | texto | cliente | solo panel | pantalla |
+| payments | `payments[].transfer_methods[].name` | «Otro medio»: su nombre, como lo verá el cliente (por ejemplo, «Nu»). | texto | cliente | conectado | pantalla |
 | response_style | `response_style.emojis` | Si el asistente puede usar emojis. | interruptor true/false | cliente | conectado | pantalla |
 | response_style | `response_style.formality` | informal (tutea), neutral o formal (usted). | informal \| neutral \| formal | cliente | conectado | pantalla |
 | response_style | `response_style.instructions` | Cómo debe expresarse el asistente en este negocio. | lista de texto | cliente | conectado | pantalla |
@@ -354,10 +357,10 @@ si el motor actual lo usa y de dónde viene.
 
 | Audiencia | Conectados | Programados | Solo panel | Pendientes |
 |---|---|---|---|---|
-| cliente | 135 | 2 | 2 | 0 |
+| cliente | 138 | 2 | 2 | 0 |
 | avanzado | 50 | 0 | 0 | 0 |
 | sistema | 2 | 0 | 0 | 0 |
-| **Total** | 187 | 2 | 2 | 0 |
+| **Total** | 190 | 2 | 2 | 0 |
 
 | Campo | Audiencia | Motor | Origen | Interfaz | Descripción |
 |---|---|---|---|---|---|
@@ -468,12 +471,15 @@ si el motor actual lo usa y de dónde viene.
 | `payments[].transfer_methods[].account_number` | cliente | conectado | `pricing.catalog.payment.transfer.methods[].account_number`, `pricing.plans[].payment.transfer.methods[].account_number` | pantalla | Número de cuenta |
 | `payments[].transfer_methods[].account_type` | cliente | conectado | `pricing.catalog.payment.transfer.methods[].account_type`, `pricing.plans[].payment.transfer.methods[].account_type` | pantalla | Tipo de cuenta |
 | `payments[].transfer_methods[].bank` | cliente | conectado | `pricing.catalog.payment.transfer.methods[].bank`, `pricing.plans[].payment.transfer.methods[].bank` | pantalla | Banco |
+| `payments[].transfer_methods[].data_label` | cliente | conectado | nuevo | pantalla | «Otro medio»: cómo se llama su dato (por ejemplo, «Alias» o «Número»). |
 | `payments[].transfer_methods[].enabled` | cliente | conectado | nuevo | pantalla | Si es false, la cuenta se conserva pero no se ofrece. |
 | `payments[].transfer_methods[].holder` | cliente | conectado | nuevo | pantalla | A nombre de quién está la cuenta. Se le muestra al cliente con los datos de pago, para que sepa que paga al negocio correcto. |
+| `payments[].transfer_methods[].instructions` | cliente | conectado | nuevo | pantalla | Lo que el cliente debe saber al pagar por este medio (por ejemplo, «envía el comprobante con tu nombre»). Sale con los datos; la IA no lo ve. |
 | `payments[].transfer_methods[].label` | cliente | solo panel | nuevo | pantalla | Etiqueta para reconocer la cuenta en el panel. No se comparte con el cliente. |
+| `payments[].transfer_methods[].name` | cliente | conectado | nuevo | pantalla | «Otro medio»: su nombre, como lo verá el cliente (por ejemplo, «Nu»). |
 | `payments[].transfer_methods[].number` | cliente | conectado | `pricing.catalog.payment.transfer.methods[].number`, `pricing.plans[].payment.transfer.methods[].number` | pantalla | Celular Nequi o Daviplata |
 | `payments[].transfer_methods[].reference` | cliente | conectado | `pricing.catalog.payment.transfer.methods[].reference`, `pricing.plans[].payment.transfer.methods[].reference` | pantalla | Llave o referencia Bre-B |
-| `payments[].transfer_methods[].type` | cliente | conectado | `pricing.catalog.payment.transfer.methods[].type`, `pricing.plans[].payment.transfer.methods[].type` | pantalla | Método de transferencia |
+| `payments[].transfer_methods[].type` | cliente | conectado | `pricing.catalog.payment.transfer.methods[].type`, `pricing.plans[].payment.transfer.methods[].type` | pantalla | El medio, del catálogo de medios de pago (`payment_catalog.py`). |
 | `response_style.emojis` | cliente | conectado | nuevo | pantalla | Si el asistente puede usar emojis. |
 | `response_style.formality` | cliente | conectado | nuevo | pantalla | informal (tutea), neutral o formal (usted). |
 | `response_style.instructions` | cliente | conectado | nuevo | pantalla | Cómo debe expresarse el asistente en este negocio. |

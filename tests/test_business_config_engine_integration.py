@@ -356,6 +356,37 @@ def test_the_payment_details_follow_the_business_template(monkeypatch, tmp_path)
     assert custom == f"Paga por Nequi:\n{number}\nTitular: Sabor Casero S.A.S.\nY mándame el comprobante 🙌"
 
 
+def test_payment_methods_of_any_country_reach_the_customer(monkeypatch, tmp_path):
+    """Un negocio de otro país configura sus medios (Yape, SPEI, PayPal, efectivo u «otro medio» con su nombre) y el cliente los
+    recibe ordenados, con la instrucción del negocio. Los datos van en las mismas casillas cifradas de siempre."""
+    from app.domain.business_config.payment_data import iter_payment_fields
+
+    def _world(document):
+        profile = document["payments"][0]
+        number = next(method["number"] for method in profile["transfer_methods"] if method.get("number"))
+        reference = next(method["reference"] for method in profile["transfer_methods"] if method.get("reference"))
+        profile["transfer_methods"] = [
+            {"type": "yape", "number": number, "holder": "Panadería Lima S.A.C.", "instructions": "Envía la captura con tu nombre."},
+            {"type": "custom", "name": "Nu", "data_label": "Cuenta", "reference": reference},
+            {"type": "cash", "instructions": "Pagas al domiciliario cuando recibes."},
+        ]
+
+    turns = [
+        ("Te pago por Yape", reply("Listo.", "buy", payment_method="yape")),
+        ("Mejor por Nu", reply("Listo.", "buy", send_payment="Nu")),
+        ("Mejor en efectivo", reply("Listo.", "buy", send_payment="efectivo")),
+    ]
+    (_a, yape), (_b, nu), (_c, cash) = run_with_document(monkeypatch, tmp_path / "mundo", "saas", _world, turns)
+    assert yape.startswith("💳 *Datos para pagar*\n\n*Yape*\n") and "A nombre de: Panadería Lima S.A.C.\nEnvía la captura con tu nombre." in yape
+    assert "*Nu*\nCuenta: " in nu
+    assert "*Efectivo o contraentrega*\nPagas al domiciliario cuando recibes." in cash
+    document = stored_document("saas")
+    _world(document)
+    kinds = [item.kind for item in iter_payment_fields(document) if ".transfer_methods." in item.path]
+    # Yape se valida como un celular de cualquier país; el dato de «otro medio», como un dato libre.
+    assert kinds == ["phone", "reference"]
+
+
 def test_without_a_holder_the_line_is_left_out(monkeypatch, tmp_path):
     turns = [("Quiero pagar por nequi", reply("Listo.", "buy", payment_method="nequi"))]
     (_, response), = run_with_document(monkeypatch, tmp_path / "sin_titular", "saas", lambda d: None, turns)
@@ -902,6 +933,9 @@ CONNECTED_EVIDENCE: dict[str, str] = {
     "payments[].transfer_methods[].account_number": "test_payment_methods_reach_the_customer",
     "payments[].transfer_methods[].reference": "test_payment_methods_reach_the_customer",
     "payments[].transfer_methods[].holder": "test_the_payment_details_follow_the_business_template",
+    "payments[].transfer_methods[].name": "test_payment_methods_of_any_country_reach_the_customer",
+    "payments[].transfer_methods[].data_label": "test_payment_methods_of_any_country_reach_the_customer",
+    "payments[].transfer_methods[].instructions": "test_payment_methods_of_any_country_reach_the_customer",
     "sales.buying_motivation.primary": "test_connected_fields_change_the_prompt",
     "sales.buying_motivation.secondary": "test_connected_fields_change_the_prompt",
     "sales.customer_problems[].id": "test_connected_fields_change_the_prompt",

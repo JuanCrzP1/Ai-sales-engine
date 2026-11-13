@@ -673,7 +673,7 @@ OPTION_SETTERS = {
     "identity.opening_hours[].days": lambda d, v: d["identity"]["opening_hours"][0].update(days=[v]),
     "identity.service_modes": lambda d, v: d["identity"].update(service_modes=[v]),
     "payments[].transfer_methods[].type": lambda d, v: d["payments"][0].update(
-        transfer_methods=[{"type": v, "number": _SECRET, "bank": "Banco", "account_type": "ahorros", "account_number": _SECRET, "reference": _SECRET}]
+        transfer_methods=[{"type": v, "number": _SECRET, "bank": "Banco", "account_type": "ahorros", "account_number": _SECRET, "reference": _SECRET, "name": "Nu"}]
     ),
     "response_style.formality": lambda d, v: d["response_style"].update(formality=v),
     "response_style.length": lambda d, v: d["response_style"].update(length=v),

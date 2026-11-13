@@ -3,6 +3,8 @@ import { countWords } from "../../lib/text";
 import type { FieldFeedback } from "./fieldFeedback";
 
 export interface SelectOption<T extends string = string> {
+  /** Las opciones con el mismo grupo se muestran juntas bajo su título (por ejemplo, el país). */
+  group?: string;
   value: T;
   label: string;
 }
@@ -127,6 +129,18 @@ interface SelectFieldProps<T extends string> extends Omit<FieldProps, "children"
   onChange: (value: T) => void;
 }
 
+/** Las opciones en el orden en que llegan, juntas por grupo (las que no tienen grupo, sueltas). */
+function groupsOf<T extends string>(options: SelectOption<T>[]): [string, SelectOption<T>[]][] {
+  const groups: [string, SelectOption<T>[]][] = [];
+  for (const option of options) {
+    const group = option.group ?? "";
+    const last = groups[groups.length - 1];
+    if (last && last[0] === group) last[1].push(option);
+    else groups.push([group, [option]]);
+  }
+  return groups;
+}
+
 export function SelectField<T extends string>({ value, options, onChange, ...field }: SelectFieldProps<T>) {
   return (
     <Field {...field}>
@@ -139,11 +153,23 @@ export function SelectField<T extends string>({ value, options, onChange, ...fie
           aria-describedby={describedBy}
           onChange={(event) => onChange(event.target.value as T)}
         >
-          {options.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
+          {groupsOf(options).map(([group, items]) =>
+            group ? (
+              <optgroup key={group} label={group}>
+                {items.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </optgroup>
+            ) : (
+              items.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))
+            ),
+          )}
         </select>
       )}
     </Field>

@@ -126,6 +126,17 @@ def _current_op_state(memory_service: MemoryDomainService | None, *, tenant_slug
         return None
 
 
+def _remembered_payment_method(memory_service: MemoryDomainService | None, *, tenant_slug: str, user_id: str) -> str:
+    """El medio que el cliente ya eligió en esta conversación (lo guarda la memoria), o ""."""
+    get_method = getattr(memory_service, "get_payment_method", None)
+    if not callable(get_method):
+        return ""
+    try:
+        return str(get_method(tenant_slug=tenant_slug, user_id=user_id) or "").strip()
+    except Exception:
+        return ""
+
+
 def _build_memory_context(memory_service: MemoryDomainService | None, *, tenant_slug: str, user_id: str) -> dict:
     if memory_service is None:
         return {}
@@ -549,6 +560,7 @@ class AIExecution:
                     intent=intent,
                     user_message=str(user_message or ""),
                     state=op_before,
+                    remembered=_remembered_payment_method(memory_service, tenant_slug=tenant_slug_value, user_id=user_key),
                     tenant=tenant_slug_value,
                 )
                 if delivery.method:

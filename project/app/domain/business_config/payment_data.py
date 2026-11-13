@@ -15,17 +15,24 @@ from dataclasses import dataclass
 from typing import Any, Literal
 from urllib.parse import urlsplit
 
-PaymentKind = Literal["link", "mobile", "account", "reference"]
+from app.domain.business_config.payment_catalog import SLOTS, data_format
+
+# `link` es el enlace de pago; los demás, los formatos de los medios (`payment_catalog.FORMATS`).
+PaymentKind = Literal["link", "mobile", "phone", "account", "clabe", "iban", "email", "reference"]
 
 SECRET_STORE_SOURCE = "secret_store"
-_TRANSFER_FIELD_KINDS: dict[str, PaymentKind] = {"number": "mobile", "account_number": "account", "reference": "reference"}
-SENSITIVE_TRANSFER_FIELDS = tuple(_TRANSFER_FIELD_KINDS)
+SENSITIVE_TRANSFER_FIELDS = SLOTS
 REDACTED_PAYMENT_VALUE = "[dato de pago]"
 # Valores más cortos no se redactan para no alterar palabras comunes del texto.
 MIN_REDACTABLE_CHARS = 4
 
 _MOBILE = re.compile(r"3[0-9]{9}")
 _ACCOUNT = re.compile(r"[0-9]{6,20}")
+_PHONE = re.compile(r"\+?[0-9]{7,15}")
+_EMAIL = re.compile(r"[^\s@]+@[^\s@]+\.[^\s@]+")
+_IBAN = re.compile(r"[A-Z]{2}[0-9]{2}[A-Z0-9]{11,30}")
+# Lo que se ignora al validar y guardar un número: espacios, guiones y puntos.
+_SEPARATORS = re.compile(r"[\s.-]+")
 
 MASK = "••••"
 # Un valor más corto se oculta entero: unos pocos caracteres ya dirían demasiado.
@@ -59,9 +66,10 @@ def iter_payment_fields(document: dict) -> Iterator[PaymentField]:
         if profile.get("link"):
             yield PaymentField(f"payments.{index}.link", "link", profile["link"]["secret_ref"])
         for position, method in enumerate(profile.get("transfer_methods") or []):
-            for name, kind in _TRANSFER_FIELD_KINDS.items():
-                if method.get(name):
-                    yield PaymentField(f"payments.{index}.transfer_methods.{position}.{name}", kind, method[name]["secret_ref"])
+            for slot in SLOTS:
+                if method.get(slot):
+                    kind = data_format(str(method.get("type") or ""), slot)
+                    yield PaymentField(f"payments.{index}.transfer_methods.{position}.{slot}", kind, method[slot]["secret_ref"])  # type: ignore[arg-type]
 
 
 def _is_web_address(value: str) -> bool:
@@ -72,15 +80,50 @@ def _is_web_address(value: str) -> bool:
     return parts.scheme in {"http", "https"} and bool(parts.netloc) and not re.search(r"\s", parts.netloc)
 
 
+def _clabe_ok(digits: str) -> bool:
+    """La CLABE mexicana: 18 dígitos y el último es su dígito de control."""
+    if not re.fullmatch(r"[0-9]{18}", digits):
+        return False
+    total = sum((int(digit) * weight) % 10 for digit, weight in zip(digits[:17], [3, 7, 1] * 6))
+    return (10 - total % 10) % 10 == int(digits[17])
+
+
+def _iban_ok(compact: str) -> bool:
+    """El IBAN: país, dígitos de control y cuenta; se comprueba con el módulo 97, como lo hacen los bancos."""
+    if not _IBAN.fullmatch(compact):
+        return False
+    rearranged = compact[4:] + compact[:4]
+    return int("".join(str(int(char, 36)) for char in rearranged)) % 97 == 1
+
+
+def normalize_payment_value(kind: str, value: str) -> str:
+    """El dato como se guarda: sin espacios sobrantes; los números sin separadores y el IBAN en mayúsculas."""
+    text = str(value or "").strip()
+    if kind in ("mobile", "phone", "account", "clabe"):
+        return _SEPARATORS.sub("", text)
+    if kind == "iban":
+        return re.sub(r"\s+", "", text).upper()
+    return text
+
+
 def payment_value_problem(kind: PaymentKind, value: str) -> str | None:
     """El motivo por el que un valor no sirve para ese tipo de dato; None si sirve. El mensaje no repite el valor."""
     if kind == "link":
         return None if _is_web_address(value) else "El enlace debe ser una dirección web válida (https://…)."
+    clean = normalize_payment_value(kind, value)
     if kind == "mobile":
-        return None if _MOBILE.fullmatch(re.sub(r"\s+", "", value)) else "Escribe un celular de 10 dígitos que empiece por 3."
+        return None if _MOBILE.fullmatch(clean) else "Escribe un celular de 10 dígitos que empiece por 3."
+    if kind == "phone":
+        return None if _PHONE.fullmatch(clean) else "Escribe el número de celular: solo dígitos, con o sin el código del país."
     if kind == "account":
-        return None if _ACCOUNT.fullmatch(re.sub(r"[\s-]+", "", value)) else "Escribe un número de cuenta válido (solo dígitos)."
-    return None if value.strip() else "Escribe tu llave o referencia Bre-B."
+        return None if _ACCOUNT.fullmatch(clean) else "Escribe un número de cuenta válido (solo dígitos)."
+    if kind == "clabe":
+        return None if _clabe_ok(clean) else "Revisa la CLABE: son 18 dígitos y el último debe coincidir (cópiala de tu banco)."
+    if kind == "iban":
+        return None if _iban_ok(clean) else "Revisa el IBAN: empieza por el país (ES, DE…) y debe copiarse completo de tu banco."
+    if kind == "email":
+        return None if _EMAIL.fullmatch(clean) and len(clean) <= 200 else "Escribe un correo válido, por ejemplo pagos@tunegocio.com."
+    return None if clean else "Escribe el dato para pagar (tu llave, alias o número)."
 
 
 def _masked_end(value: str, visible: int) -> str:
@@ -111,7 +154,7 @@ def mask_payment_value(kind: PaymentKind, value: str) -> str:
     text = value.strip()
     if kind == "link":
         return _masked_link(text)
-    if kind == "reference":
+    if kind in ("reference", "email"):
         return _masked_end(text, 3)
     return _masked_end(re.sub(r"[\s-]+", "", text), 4)
 

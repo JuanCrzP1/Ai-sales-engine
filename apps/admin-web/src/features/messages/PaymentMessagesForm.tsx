@@ -4,24 +4,28 @@ import { ChatPreview } from "../../components/ui/ChatPreview";
 import { TextAreaField } from "../../components/ui/FormFields";
 import { Card } from "../../components/ui/Layout";
 import { isMethodActive, optionalText } from "../../domain/config/document";
-import { labelFor, TRANSFER_METHOD_TYPES } from "../../domain/config/options";
+import { dataFieldOf, methodKind, methodName } from "../../domain/config/paymentCatalog";
 import { ACCOUNT_TYPE_TEXT, DEFAULT_PAYMENT_DETAILS, renderPaymentDetails } from "../../domain/config/paymentMessage";
 import type { BusinessDocument } from "../../domain/config/types";
 import { useConfig, useFieldIssue, useSection } from "../../state/useConfig";
 
-/** Datos de ejemplo para la vista previa: los reales están cifrados y nunca llegan al panel. */
-function sampleFor(document: BusinessDocument): { medio: string; datos: string; titular: string } {
+/** Datos de ejemplo para la vista previa, con el primer medio activo del negocio: los reales están cifrados y nunca llegan al panel. */
+function sampleFor(document: BusinessDocument): { medio: string; datos: string; titular: string; instrucciones: string } {
   for (const profile of document.payments ?? []) {
     const method = (profile.transfer_methods ?? []).find((item) => profile.transfer_enabled && isMethodActive(profile, item));
     if (!method) continue;
-    const titular = method.holder ?? "";
-    if (method.type === "bank") {
-      return { medio: method.bank || "Tu banco", datos: `${ACCOUNT_TYPE_TEXT[method.account_type ?? "ahorros"] ?? "Cuenta"}\n1234567890`, titular };
-    }
-    if (method.type === "breb") return { medio: "Bre-B", datos: "Llave: @tunegocio", titular };
-    return { medio: labelFor(TRANSFER_METHOD_TYPES, method.type), datos: "3001234567", titular };
+    const data = dataFieldOf(method.type);
+    const instrucciones = method.instructions?.trim() ?? "";
+    if (!data) return { medio: methodName(method), datos: instrucciones || "Pagas en efectivo al recibir tu pedido.", titular: "", instrucciones: "" };
+    const example = data.placeholder || "1234567890";
+    const datos = methodKind(method.type)?.needsBank
+      ? `${ACCOUNT_TYPE_TEXT[method.account_type ?? "ahorros"] ?? "Cuenta"}\n${example}`
+      : methodKind(method.type)?.custom
+        ? [method.data_label?.trim(), example || "Tu dato para pagar"].filter(Boolean).join(": ")
+        : data.shownAs.replace("{value}", example);
+    return { medio: methodName(method), datos, titular: method.holder ?? "", instrucciones };
   }
-  return { medio: "Nequi", datos: "3001234567", titular: document.identity.name };
+  return { medio: "Nequi", datos: "3001234567", titular: document.identity.name, instrucciones: "" };
 }
 
 export function PaymentMessagesForm() {
@@ -48,7 +52,7 @@ export function PaymentMessagesForm() {
             rows={8}
             onChange={changeDetails}
             issue={detailsIssue}
-            hint="Lo envía el sistema cuando el cliente elige cómo pagar, con los datos reales: la IA nunca los ve. Usa {medio} (Nequi, tu banco…), {datos} (el número o la cuenta, obligatorio) y {titular} (a nombre de quién está). Una línea con un dato vacío no se envía. Si lo dejas vacío, se usa el recomendado."
+            hint="Lo envía el sistema cuando el cliente elige cómo pagar, con los datos reales: la IA nunca los ve. Usa {medio} (Nequi, Yape, tu banco…), {datos} (el número o la cuenta, obligatorio), {titular} (a nombre de quién está) e {instrucciones} (la instrucción del medio, si la escribiste). Una línea con un dato vacío no se envía. Si lo dejas vacío, se usa el recomendado."
           />
           {(custom || details !== DEFAULT_PAYMENT_DETAILS) && (
             <div>

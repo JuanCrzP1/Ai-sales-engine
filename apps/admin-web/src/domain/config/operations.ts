@@ -1,6 +1,7 @@
 import type { CatalogItem, Plan, PlanPrice, TransferMethod } from "../../contracts/businessConfig.v1";
 import { categoryId, newSecretRef } from "./factories";
 import { isCatalog, isStoredRef, paymentHolders } from "./document";
+import { dataFieldOf, methodKind } from "./paymentCatalog";
 import type { BusinessDocument, EditableSection, OfferModel, PaymentValues, TransferMethodType, WorkingCopy } from "./types";
 
 /**
@@ -215,29 +216,24 @@ export function setTransferEnabled(working: WorkingCopy, profileId: string, enab
   };
 }
 
-function newTransferMethod(profileId: string, type: TransferMethodType): { method: TransferMethod; ref: string } {
-  switch (type) {
-    case "nequi":
-    case "daviplata": {
-      const ref = newSecretRef(profileId, `${type}.number`);
-      return { method: { type, number: { secret_ref: ref } }, ref };
-    }
-    case "bank": {
-      const ref = newSecretRef(profileId, "bank.account_number");
-      return { method: { type, bank: "", account_type: "ahorros", account_number: { secret_ref: ref } }, ref };
-    }
-    case "breb": {
-      const ref = newSecretRef(profileId, "breb.reference");
-      return { method: { type, reference: { secret_ref: ref } }, ref };
-    }
-  }
+/** Una cuenta nueva de ese medio, con la casilla cifrada de su dato (`paymentCatalog.ts`). El efectivo no pide datos. */
+function newTransferMethod(profileId: string, type: TransferMethodType): { method: TransferMethod; ref: string | null } {
+  const kind = methodKind(type);
+  const data = dataFieldOf(type);
+  const method: TransferMethod = { type };
+  if (kind?.needsBank) Object.assign(method, { bank: "", account_type: "ahorros" });
+  if (kind?.custom) method.name = "";
+  if (!data) return { method, ref: null };
+  const ref = newSecretRef(profileId, `${type}.${data.slot}`);
+  method[data.slot] = { secret_ref: ref };
+  return { method, ref };
 }
 
 export function addTransferMethod(working: WorkingCopy, profileId: string): WorkingCopy {
   const { method, ref } = newTransferMethod(profileId, "nequi");
   return {
     document: mapProfile(working, profileId, (profile) => ({ ...profile, transfer_methods: [...(profile.transfer_methods ?? []), method] })),
-    paymentValues: { ...working.paymentValues, [ref]: "" },
+    paymentValues: ref ? { ...working.paymentValues, [ref]: "" } : working.paymentValues,
   };
 }
 
@@ -250,8 +246,13 @@ export function removeTransferMethod(working: WorkingCopy, profileId: string, in
   };
 }
 
-/** Datos que no son sensibles de una cuenta (banco, tipo de cuenta y titular o etiqueta). El dato cifrado no se toca. */
-export function updateTransferMethod(working: WorkingCopy, profileId: string, index: number, patch: Pick<TransferMethod, "bank" | "account_type" | "label" | "holder">): WorkingCopy {
+/** Datos que no son sensibles de una cuenta (banco, tipo de cuenta, titular, etiqueta, nombre de «otro medio», instrucción). El dato cifrado no se toca. */
+export function updateTransferMethod(
+  working: WorkingCopy,
+  profileId: string,
+  index: number,
+  patch: Partial<Pick<TransferMethod, "bank" | "account_type" | "label" | "holder" | "name" | "data_label" | "instructions">>,
+): WorkingCopy {
   return updateMethod(working, profileId, index, patch);
 }
 
@@ -277,9 +278,12 @@ export function changeTransferMethodType(working: WorkingCopy, profileId: string
   if (!current || current.type === type) return working;
   const created = newTransferMethod(profileId, type);
   const { ref } = created;
-  const method: TransferMethod = { ...created.method, label: current.label ?? null, enabled: current.enabled ?? null };
+  // Se conservan la etiqueta, el titular, la instrucción y el estado: siguen siendo del negocio aunque cambie el medio.
+  const kept = Object.fromEntries((["label", "holder", "instructions", "enabled"] as const).flatMap((field) => (current[field] != null ? [[field, current[field]]] : [])));
+  const method: TransferMethod = { ...created.method, ...kept };
+  const remaining = withoutValues(working.paymentValues, refsOfMethod(current));
   return {
     document: mapProfile(working, profileId, (profile) => ({ ...profile, transfer_methods: methods.map((item, position) => (position === index ? method : item)) })),
-    paymentValues: { ...withoutValues(working.paymentValues, refsOfMethod(current)), [ref]: "" },
+    paymentValues: ref ? { ...remaining, [ref]: "" } : remaining,
   };
 }

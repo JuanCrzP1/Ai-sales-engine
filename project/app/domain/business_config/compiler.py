@@ -59,6 +59,9 @@ def _payment_block(profile: PaymentProfile | None, resolve_secret: SecretResolve
         _put(entry, "account_number", resolve_secret(method.account_number) if method.account_number else None)
         _put(entry, "reference", resolve_secret(method.reference) if method.reference else None)
         _put(entry, "holder", method.holder)
+        _put(entry, "name", method.name)
+        _put(entry, "data_label", method.data_label)
+        _put(entry, "instructions", method.instructions)
         methods.append(entry)
     return {
         "link": resolve_secret(profile.link) if profile.link and profile.link_enabled is not False else "",

@@ -812,7 +812,7 @@ describe("Datos de pago", () => {
   it("al cambiar el tipo de una cuenta descarta los datos del tipo anterior", async () => {
     const { user, backend } = await renderWorkspace("/pagos");
     const account = screen.getByRole("group", { name: "Cuenta 1" });
-    await user.selectOptions(within(account).getByLabelText("Tipo"), "bank");
+    await user.selectOptions(within(account).getByLabelText(/^Medio de pago/), "bank");
     expect(within(account).queryByLabelText(/^Número de celular/)).not.toBeInTheDocument();
     expect(within(account).getByText("Escribe el nombre del banco.")).toBeInTheDocument();
 
@@ -824,6 +824,49 @@ describe("Datos de pago", () => {
     expect(method).toMatchObject({ type: "bank", bank: "Banco Ejemplo", account_type: "ahorros" });
     expect(method?.number).toBeUndefined();
     expect(Object.values(backend.paymentValuesReceived[0] ?? {})).toEqual(["123456789"]);
+  });
+
+  it("ofrece medios de cualquier país, agrupados por país, y cada uno pide y valida su propio dato", async () => {
+    const { user, backend } = await renderWorkspace("/pagos");
+    const account = screen.getByRole("group", { name: "Cuenta 1" });
+    const select = within(account).getByLabelText(/^Medio de pago/);
+    expect([...select.querySelectorAll("optgroup")].map((group) => group.label)).toEqual(["Colombia", "México", "Perú", "Argentina", "España", "Estados Unidos", "Todos los países"]);
+
+    await user.selectOptions(select, "iban");
+    await user.type(within(account).getByLabelText(/^IBAN/), "ES91 2100 0418 4502 0005 1333");
+    expect(await within(account).findByText(/Revisa el IBAN/)).toBeInTheDocument();
+    await user.clear(within(account).getByLabelText(/^IBAN/));
+    await user.type(within(account).getByLabelText(/^IBAN/), "es91 2100 0418 4502 0005 1332");
+    await user.type(within(account).getByLabelText(/^Instrucción para el cliente/), "Pon tu nombre en el concepto.");
+    await saveAndWait(user);
+
+    const [method] = storedOf(backend).payments[0]?.transfer_methods ?? [];
+    expect(method).toMatchObject({ type: "iban", instructions: "Pon tu nombre en el concepto." });
+    expect(method?.account_number?.secret_ref).toMatch(/^secret_store:principal\.iban\.account_number\./);
+    // El IBAN se guarda como lo usan los bancos: sin espacios y en mayúsculas.
+    expect(Object.values(backend.paymentValuesReceived[0] ?? {})).toEqual(["ES9121000418450200051332"]);
+  });
+
+  it("«Otro medio» pide su nombre, y el efectivo no pide datos sino lo que el cliente debe saber", async () => {
+    const { user, backend } = await renderWorkspace("/pagos");
+    const account = screen.getByRole("group", { name: "Cuenta 1" });
+    await user.selectOptions(within(account).getByLabelText(/^Medio de pago/), "custom");
+    expect(within(account).getByText("Escribe el nombre del medio, como lo verá el cliente.")).toBeInTheDocument();
+    await user.type(within(account).getByLabelText(/^Nombre del medio/), "Nu");
+    await user.type(within(account).getByLabelText(/^Cómo se llama el dato/), "Número de cuenta");
+    await user.type(within(account).getByLabelText(/^Número de cuenta/), "12345678");
+    expect(within(account).getByRole("heading", { name: /Cuenta 1: Nu/ })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Agregar cuenta" }));
+    const cash = screen.getByRole("group", { name: "Cuenta 2" });
+    await user.selectOptions(within(cash).getByLabelText(/^Medio de pago/), "cash");
+    expect(within(cash).queryByLabelText(/^A nombre de/)).not.toBeInTheDocument();
+    await user.type(within(cash).getByLabelText(/^Qué debe saber el cliente/), "Pagas al domiciliario.");
+    await saveAndWait(user);
+
+    const methods = storedOf(backend).payments[0]?.transfer_methods ?? [];
+    expect(methods[0]).toMatchObject({ type: "custom", name: "Nu", data_label: "Número de cuenta" });
+    expect(methods[1]).toEqual({ type: "cash", instructions: "Pagas al domiciliario." });
   });
 
   it("la revisión nunca muestra referencias ni valores de pago", async () => {

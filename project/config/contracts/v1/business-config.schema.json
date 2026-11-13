@@ -3109,13 +3109,26 @@
     },
     "TransferMethod": {
       "additionalProperties": false,
+      "description": "Un medio para pagar: Nequi, una cuenta bancaria, Yape, PayPal, efectivo u «otro medio» (`payment_catalog.py`). Lo que se paga\nva cifrado en `number`, `account_number` o `reference`, según el medio.",
       "properties": {
         "type": {
+          "description": "El medio, del catálogo de medios de pago (`payment_catalog.py`).",
           "enum": [
             "nequi",
             "daviplata",
             "bank",
-            "breb"
+            "breb",
+            "spei",
+            "oxxo",
+            "yape",
+            "plin",
+            "mercadopago",
+            "bizum",
+            "iban",
+            "zelle",
+            "paypal",
+            "cash",
+            "custom"
           ],
           "title": "Type",
           "type": "string"
@@ -3176,6 +3189,48 @@
             }
           ],
           "default": null
+        },
+        "name": {
+          "anyOf": [
+            {
+              "maxLength": 300,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "«Otro medio»: su nombre, como lo verá el cliente (por ejemplo, «Nu»).",
+          "title": "Name"
+        },
+        "data_label": {
+          "anyOf": [
+            {
+              "maxLength": 300,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "«Otro medio»: cómo se llama su dato (por ejemplo, «Alias» o «Número»).",
+          "title": "Data Label"
+        },
+        "instructions": {
+          "anyOf": [
+            {
+              "maxLength": 300,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Lo que el cliente debe saber al pagar por este medio (por ejemplo, «envía el comprobante con tu nombre»). Sale con los datos; la IA no lo ve.",
+          "title": "Instructions"
         },
         "label": {
           "anyOf": [

@@ -5,6 +5,7 @@ No side effects. No external dependencies beyond the dataclass.
 """
 from __future__ import annotations
 
+from app.domain.business_config.payment_catalog import method_kind
 from app.domain.operations.operational_state import OperationalState
 
 _OPTION_LABELS: dict[str, str] = {
@@ -26,13 +27,16 @@ def render_op_anchor(state: OperationalState | None) -> str:
         return ""
 
     option = str(state.active_option or "").strip().lower()
-    # Una cuenta concreta («bank:davivienda»): se nombra por su tipo.
-    opt_label = _OPTION_LABELS.get(option.split(":", 1)[0], "")
+    # Una cuenta concreta («bank:davivienda»): se nombra por su tipo; un medio de otro país, por su nombre en el catálogo.
+    kind = option.split(":", 1)[0]
+    catalog = method_kind(kind)
+    opt_label = _OPTION_LABELS.get(kind, "") or (catalog.name if catalog is not None and not catalog.custom else "")
     p = str(state.active_process or "").strip().lower()
 
     if p == "payment":
-        if state.pending_action == "report_payment" and opt_label:
-            return f"Ya le enviaste los datos para pagar por {opt_label}: falta que pague y te envíe el comprobante."
+        if state.pending_action == "report_payment":
+            by = f" por {opt_label}" if opt_label else ""
+            return f"Ya le enviaste los datos para pagar{by}: falta que pague y te envíe el comprobante."
         if opt_label:
             return f"Venían avanzando por {opt_label}."
         return "Venían avanzando con el pago."

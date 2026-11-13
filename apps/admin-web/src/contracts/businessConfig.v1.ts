@@ -1,6 +1,6 @@
 // ARCHIVO GENERADO por scripts/generate_business_config_types.py. No editar a mano.
 // Fuente: project/config/contracts/v1/business-config.schema.json y
-// project/app/domain/business_config/engine_policy.py.
+// project/app/domain/business_config/engine_policy.py y payment_catalog.py.
 // Marcas: `audiencia` (cliente, avanzado, sistema) y `motor` (conectado, pendiente); un campo sin
 // marca toma la de su sección. Ver docs/business-config.md.
 
@@ -23,6 +23,10 @@ export const MAX_VALUE_PROPOSITION_CHARS = 300;
 export const MAX_OFFER_DESCRIPTION_CHARS = 300;
 export const MAX_CATEGORIES = 20;
 export const MAX_CUSTOMER_PROBLEMS = 10;
+export const MAX_PAYMENT_INSTRUCTIONS_CHARS = 300;
+/** Los medios de pago que un negocio puede configurar, de cualquier país (`project/app/domain/business_config/payment_catalog.py`). */
+export const PAYMENT_METHOD_GROUPS = ["Colombia", "México", "Perú", "Argentina", "España", "Estados Unidos", "Todos los países"] as const;
+export const PAYMENT_METHOD_CATALOG = [{"id": "nequi", "name": "Nequi", "group": "Colombia", "data": {"slot": "number", "label": "Número de celular", "format": "mobile", "placeholder": "3001234567", "shownAs": "{value}"}, "needsBank": false, "custom": false}, {"id": "daviplata", "name": "Daviplata", "group": "Colombia", "data": {"slot": "number", "label": "Número de celular", "format": "mobile", "placeholder": "3001234567", "shownAs": "{value}"}, "needsBank": false, "custom": false}, {"id": "bank", "name": "Cuenta bancaria", "group": "Todos los países", "data": {"slot": "account_number", "label": "Número de cuenta", "format": "account", "placeholder": "1234567890", "shownAs": "{value}"}, "needsBank": true, "custom": false}, {"id": "breb", "name": "Bre-B", "group": "Colombia", "data": {"slot": "reference", "label": "Llave o referencia Bre-B", "format": "reference", "placeholder": "@tunegocio", "shownAs": "Llave: {value}"}, "needsBank": false, "custom": false}, {"id": "spei", "name": "Transferencia SPEI", "group": "México", "data": {"slot": "reference", "label": "CLABE interbancaria", "format": "clabe", "placeholder": "032180000118359719", "shownAs": "CLABE: {value}"}, "needsBank": false, "custom": false}, {"id": "oxxo", "name": "Depósito en OXXO", "group": "México", "data": {"slot": "reference", "label": "Número de tarjeta para depositar", "format": "account", "placeholder": "4152313412345678", "shownAs": "Tarjeta: {value}"}, "needsBank": false, "custom": false}, {"id": "yape", "name": "Yape", "group": "Perú", "data": {"slot": "number", "label": "Número de celular", "format": "phone", "placeholder": "987654321", "shownAs": "{value}"}, "needsBank": false, "custom": false}, {"id": "plin", "name": "Plin", "group": "Perú", "data": {"slot": "number", "label": "Número de celular", "format": "phone", "placeholder": "987654321", "shownAs": "{value}"}, "needsBank": false, "custom": false}, {"id": "mercadopago", "name": "Mercado Pago", "group": "Argentina", "data": {"slot": "reference", "label": "Alias o CVU", "format": "reference", "placeholder": "tunegocio.mp", "shownAs": "Alias/CVU: {value}"}, "needsBank": false, "custom": false}, {"id": "bizum", "name": "Bizum", "group": "España", "data": {"slot": "number", "label": "Número de móvil", "format": "phone", "placeholder": "612345678", "shownAs": "{value}"}, "needsBank": false, "custom": false}, {"id": "iban", "name": "Transferencia (IBAN)", "group": "España", "data": {"slot": "account_number", "label": "IBAN", "format": "iban", "placeholder": "ES91 2100 0418 4502 0005 1332", "shownAs": "IBAN: {value}"}, "needsBank": false, "custom": false}, {"id": "zelle", "name": "Zelle", "group": "Estados Unidos", "data": {"slot": "reference", "label": "Correo o celular de Zelle", "format": "reference", "placeholder": "pagos@tunegocio.com", "shownAs": "{value}"}, "needsBank": false, "custom": false}, {"id": "paypal", "name": "PayPal", "group": "Todos los países", "data": {"slot": "reference", "label": "Correo de PayPal", "format": "email", "placeholder": "pagos@tunegocio.com", "shownAs": "{value}"}, "needsBank": false, "custom": false}, {"id": "cash", "name": "Efectivo o contraentrega", "group": "Todos los países", "data": null, "needsBank": false, "custom": false}, {"id": "custom", "name": "Otro medio", "group": "Todos los países", "data": {"slot": "reference", "label": "Dato para pagar", "format": "reference", "placeholder": "", "shownAs": "{value}"}, "needsBank": false, "custom": true}] as const;
 
 export interface BuyingMotivation {
   primary: string;
@@ -574,13 +578,21 @@ export interface TimeWindow {
   max?: string;
 }
 
+/** Un medio para pagar: Nequi, una cuenta bancaria, Yape, PayPal, efectivo u «otro medio» (`payment_catalog.py`). Lo que se paga va cifrado en `number`, `account_number` o `reference`, según el medio. */
 export interface TransferMethod {
-  type: "nequi" | "daviplata" | "bank" | "breb";
+  /** El medio, del catálogo de medios de pago (`payment_catalog.py`). */
+  type: "nequi" | "daviplata" | "bank" | "breb" | "spei" | "oxxo" | "yape" | "plin" | "mercadopago" | "bizum" | "iban" | "zelle" | "paypal" | "cash" | "custom";
   number?: SecretRef | null;
   bank?: string | null;
   account_type?: string | null;
   account_number?: SecretRef | null;
   reference?: SecretRef | null;
+  /** «Otro medio»: su nombre, como lo verá el cliente (por ejemplo, «Nu»). */
+  name?: string | null;
+  /** «Otro medio»: cómo se llama su dato (por ejemplo, «Alias» o «Número»). */
+  data_label?: string | null;
+  /** Lo que el cliente debe saber al pagar por este medio (por ejemplo, «envía el comprobante con tu nombre»). Sale con los datos; la IA no lo ve. */
+  instructions?: string | null;
   /** Etiqueta para reconocer la cuenta en el panel. No se comparte con el cliente. [motor: solo panel] */
   label?: string | null;
   /** A nombre de quién está la cuenta. Se le muestra al cliente con los datos de pago, para que sepa que paga al negocio correcto. [motor: conectado] */
