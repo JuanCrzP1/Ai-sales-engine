@@ -314,6 +314,29 @@ def test_each_conversation_has_its_own_memory(store):
     assert start in say("a" * 32), "reiniciada, empieza de cero"
 
 
+def test_with_a_shared_memory_a_test_conversation_survives_another_instance(store):
+    """En Vercel cada mensaje puede caer en otra instancia: con la memoria del motor compartida (en la nube, la de la base), la
+    conversación de «Probar» sigue donde iba. Cada sesión es su propio contacto, «prueba-<sesión>», nunca un cliente real."""
+    from app.infrastructure.persistence.memory_repository import MemoryRepository
+
+    shared = MemoryRepository()
+    recorder = _Recorder()
+    first, second = (EngineAssistantRunner(pipeline_factory=recorder, memory=shared) for _ in range(2))
+    credentials = AICredentials("openrouter", None, KEY_A)
+    start = instructions.STATE_RULES["start"]
+
+    def say(runner, session):
+        runner.reply(tenant_slug="restaurant", sections=_sections(store), credentials=credentials, session_id=session, message="¿Qué venden?")
+        return recorder.prompts[-1]
+
+    assert start in say(first, "a" * 32)
+    assert start not in say(second, "a" * 32), "otra instancia continúa la misma conversación"
+    assert start in say(second, "b" * 32), "otra sesión empieza de cero"
+    assert shared.get_history(tenant_slug="restaurant", user_id="prueba-" + "a" * 32)
+    second.reset(tenant_slug="restaurant", session_id="a" * 32)
+    assert start in say(first, "a" * 32), "reiniciada en una instancia, empieza de cero en todas"
+
+
 def test_idle_and_excess_conversations_are_forgotten():
     now = [0.0]
     runner = EngineAssistantRunner(max_sessions=2, idle_seconds=10, clock=lambda: now[0])

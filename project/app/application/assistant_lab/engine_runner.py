@@ -2,7 +2,8 @@
 
 - Usa la configuración que se le entrega (la versión que se está probando) y la clave de IA de ese negocio, por el mismo camino
   que un mensaje real.
-- Cada conversación tiene su propia memoria en RAM: no toca la base de los clientes reales ni sus conversaciones.
+- Cada conversación tiene su propia memoria, con el contacto «prueba-<sesión>»: nunca se cruza con un cliente real. Con `memory`
+  (la memoria del motor en la base, en la nube) sobrevive entre instancias de Vercel; sin ella, vive en RAM (pruebas y local).
 - Las conversaciones se identifican por negocio y sesión: una sesión de un negocio no sirve en otro.
 - Se olvidan tras un tiempo sin uso y hay un máximo; en ese caso, se descarta la usada hace más tiempo.
 """
@@ -24,6 +25,12 @@ from app.infrastructure.persistence.memory_repository import MemoryRepository
 
 MAX_SESSIONS = 200
 IDLE_SECONDS = 60 * 60
+# El contacto de una conversación de prueba en la memoria del motor: así se olvidan todas de una vez.
+PLAYGROUND_CONTACT_PREFIX = "prueba-"
+
+
+def playground_contact(session_id: str) -> str:
+    return f"{PLAYGROUND_CONTACT_PREFIX}{session_id}"
 
 
 @dataclass
@@ -40,7 +47,10 @@ class EngineAssistantRunner:
         idle_seconds: float = IDLE_SECONDS,
         clock: Callable[[], float] = time.monotonic,
         pipeline_factory: Callable[..., AIPipeline] = AIPipeline,
+        memory: MemoryRepository | None = None,
     ) -> None:
+        # Con la memoria del motor en la base, todas las sesiones la comparten (cada una con su contacto); sin ella, una en RAM por sesión.
+        self._shared = memory
         self._max_sessions = max_sessions
         self._idle_seconds = idle_seconds
         self._clock = clock
@@ -58,7 +68,7 @@ class EngineAssistantRunner:
         answer, ai_used, metadata = pipeline.run(
             tenant=SimpleNamespace(slug=tenant_slug, name=tenant_slug, id=tenant_slug),
             user_message=message,
-            user_id=f"prueba-{session_id}",
+            user_id=playground_contact(session_id),
             bot_config=None,
             conversation_history=[],
             faq_results=[],
@@ -69,10 +79,14 @@ class EngineAssistantRunner:
         return AssistantTurn(reply=str(answer or ""), intent=intent, ai_answered=bool(ai_used), handoff=bool((metadata or {}).get("handoff")), handoff_reason=(metadata or {}).get("handoff_reason") or None)
 
     def reset(self, *, tenant_slug: str, session_id: str) -> None:
+        if self._shared is not None:
+            self._shared.reset_conversation(tenant_slug=tenant_slug, user_id=playground_contact(session_id))
         with self._lock:
             self._sessions.pop((tenant_slug, session_id), None)
 
     def _memory(self, tenant_slug: str, session_id: str) -> MemoryDomainService:
+        if self._shared is not None:
+            return MemoryDomainService(self._shared)
         now = self._clock()
         key = (tenant_slug, session_id)
         with self._lock:

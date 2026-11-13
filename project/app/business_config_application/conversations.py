@@ -185,14 +185,19 @@ class ConversationsService:
         un chat borrado con un asistente que todavía recuerda al cliente."""
         self._require(principal, conversation_id)
         target = self._storage.target(conversation_id)
-        if target.channel != PLAYGROUND_CHANNEL and self._memory is not None:
-            self._memory.forget(target.business_slug, target.contact_ref)
+        if self._memory is not None:
+            if target.channel == PLAYGROUND_CHANNEL:
+                self._memory.forget_playground(target.business_slug, target.contact_ref)
+            else:
+                self._memory.forget(target.business_slug, target.contact_ref)
         self._storage.delete(conversation_id)
         logger.info("conversacion_eliminada", extra={"tenant": target.business_slug, "channel": target.channel})
 
     def delete_test_chats(self, principal: Principal, business: str) -> int:
-        """Borra de una vez los chats de «Probar asistente» del negocio. Las pruebas no tienen memoria en el motor."""
+        """Borra de una vez los chats de «Probar asistente» del negocio, y antes lo que el motor recuerda de ellos."""
         self._access.require(principal, business, CONFIGURE)
+        if self._memory is not None:
+            self._memory.forget_playground(business)
         deleted = self._storage.delete_channel(business, PLAYGROUND_CHANNEL)
         logger.info("chats_de_prueba_eliminados", extra={"tenant": business, "count": deleted})
         return deleted

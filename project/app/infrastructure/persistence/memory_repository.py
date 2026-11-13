@@ -834,6 +834,32 @@ class SQLMemoryRepository(MemoryRepository):
             conn.execute(sa_text(f"DELETE FROM conversation_memory WHERE tenant_id = :tid AND client_id IN ({client})"), params)
             conn.execute(sa_text("DELETE FROM clients WHERE tenant_id = :tid AND external_id = :ext"), params)
 
+    def forget_contacts_with_prefix(self, *, tenant_slug: str, prefix: str) -> None:
+        """Borra a todos los contactos del negocio cuyo identificador empieza por `prefix` (las conversaciones de «Probar», que son
+        «prueba-<sesión>»), en la base y en RAM. No se traga los errores."""
+        normalized_slug = str(tenant_slug or "").strip().lower()
+        start = str(prefix or "").strip().lower()
+        if not normalized_slug or not start:
+            return
+        for store in vars(self).values():
+            if isinstance(store, dict):
+                for key in [key for key in store if isinstance(key, tuple) and len(key) == 2 and key[0] == normalized_slug and str(key[1]).startswith(start)]:
+                    store.pop(key, None)
+        from sqlalchemy import text as sa_text
+
+        from app.infrastructure.db.repository import DBRepository
+
+        tenant = DBRepository().get_tenant_by_key(normalized_slug)
+        if not tenant:
+            return
+        escaped = start.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+        params = {"tid": str(tenant.get("id") or ""), "pattern": f"{escaped}%"}
+        clients = "SELECT id FROM clients WHERE tenant_id = :tid AND external_id LIKE :pattern ESCAPE '\\'"
+        with self._engine().begin() as conn:
+            conn.execute(sa_text(f"DELETE FROM conversation_messages WHERE tenant_id = :tid AND client_id IN ({clients})"), params)
+            conn.execute(sa_text(f"DELETE FROM conversation_memory WHERE tenant_id = :tid AND client_id IN ({clients})"), params)
+            conn.execute(sa_text("DELETE FROM clients WHERE tenant_id = :tid AND external_id LIKE :pattern ESCAPE '\\'"), params)
+
     # reset_conversation — clears both DB tables and RAM
     def reset_conversation(self, *, tenant_slug: str, user_id: str) -> None:
         super().reset_conversation(tenant_slug=tenant_slug, user_id=user_id)

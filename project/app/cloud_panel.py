@@ -28,6 +28,7 @@ from app.infrastructure.business_config.notification_store import NotificationSt
 from app.infrastructure.business_config.push_store import PushStore
 from app.infrastructure.business_config.secrets_key import find_secrets_key
 from app.infrastructure.business_config.usage_store import UsageCounterStore
+from app.services.ai_service import GLOBAL_MEMORY_REPOSITORY
 
 
 def build_cloud_panel_api(auth_url: str) -> FastAPI:
@@ -56,7 +57,8 @@ def build_cloud_panel_api(auth_url: str) -> FastAPI:
         service,
         secrets_key=key,
         verifier=OpenRouterKeyVerifier(),
-        runner=EngineAssistantRunner(),
+        # «Probar» guarda su memoria en la base: en Vercel cada mensaje puede caer en otra instancia (A6).
+        runner=EngineAssistantRunner(memory=GLOBAL_MEMORY_REPOSITORY),
         catalog=OpenRouterModelCatalog(),
         default_model=settings.openrouter_model,
     )

@@ -69,6 +69,13 @@ class FakeMemory:
             raise AssistantUnavailableError("No se pudo borrar lo que el asistente recuerda de este cliente, así que el chat no se eliminó")
         self.forgotten.append((business_slug, contact_ref))
 
+    def forget_playground(self, business_slug: str, session_id: str | None = None) -> None:
+        from app.domain.business_config.errors import AssistantUnavailableError
+
+        if self.fail:
+            raise AssistantUnavailableError("No se pudo borrar lo que el asistente recuerda de las pruebas, así que no se borraron")
+        self.forgotten.append((business_slug, f"prueba:{session_id or '*'}"))
+
 
 def _as(user: str) -> dict[str, str]:
     return {"Authorization": f"Bearer token-de-{user}"}
@@ -169,12 +176,13 @@ def test_nobody_deletes_the_chats_of_another_business(platform):
     assert client.delete("/api/conversations/no-existe", headers=_as("ana")).status_code == 404
 
 
-def test_a_test_chat_is_deleted_without_touching_the_assistant_memory(platform):
+def test_a_test_chat_is_deleted_with_the_memory_of_its_session(platform):
     engine, store, memory, client = platform
     test_chat = store.record("restaurant", channel="prueba", contact_ref="sesion-1", contact_name="Prueba en el panel", messages=[NewMessage("customer", "Hola")])
 
     assert client.delete(f"/api/conversations/{test_chat}", headers=_as("ana")).status_code == 204
-    assert memory.forgotten == [] and _count(engine, conversations) == 0
+    # «Probar» guarda su memoria en la base (para que no se pierda en Vercel): se borra la de esa sesión, nunca la de un cliente.
+    assert memory.forgotten == [("restaurant", "prueba:sesion-1")] and _count(engine, conversations) == 0
 
 
 # ---------------------------------------------------------------------------
@@ -191,13 +199,19 @@ def test_the_test_chats_are_deleted_at_once_and_real_customers_stay(platform):
     response = client.delete("/api/businesses/restaurant/conversations/tests", headers=_as("ana"))
 
     assert (response.status_code, response.json()) == (200, {"deleted": 3})
-    assert memory.forgotten == []
+    assert memory.forgotten == [("restaurant", "prueba:*")]
     with engine.connect() as conn:
         left = {str(row.id) for row in conn.execute(select(conversations.c.id))}
     assert left == {real, other_business}
+    # Si la memoria de las pruebas no se puede borrar, no se borra nada.
+    store.record("restaurant", channel="prueba", contact_ref="sesion-4", contact_name="Prueba en el panel", messages=[NewMessage("customer", "Hola")])
+    memory.fail = True
+    assert client.delete("/api/businesses/restaurant/conversations/tests", headers=_as("ana")).status_code == 503
+    assert _count(engine, conversations) == 3
+    memory.fail = False
     # Otro usuario no puede borrar las pruebas de un negocio ajeno.
     assert client.delete("/api/businesses/saas/conversations/tests", headers=_as("ana")).status_code == 404
-    assert _count(engine, conversations) == 2
+    assert _count(engine, conversations) == 3
 
 
 # ---------------------------------------------------------------------------
@@ -238,6 +252,23 @@ def test_forgetting_a_contact_erases_their_history_memory_and_record_in_the_engi
         for table in ("conversation_messages", "conversation_memory"):
             assert conn.execute(text(f"SELECT client_id FROM {table}")).scalars().all() == ["cliente-pedro"], table
     assert super(SQLMemoryRepository, repository).get_history(tenant_slug="restaurant", user_id=PHONE) == [], "tampoco queda en RAM"
+
+
+def test_forgetting_the_test_conversations_erases_only_the_prueba_contacts(engine_memory):
+    """«Probar» guarda su memoria con contactos «prueba-<sesión>»: borrar las pruebas borra solo esos, nunca a un cliente."""
+    with engine_memory.begin() as conn:
+        for client_id, ext in (("prueba-1", "prueba-aaaa"), ("prueba-2", "prueba-bbbb"), ("parecido", "pruebaxcliente")):
+            conn.execute(text("INSERT INTO clients VALUES (:id, :tid, :ext, 'x')"), {"id": client_id, "tid": ENGINE_TENANT, "ext": ext})
+            conn.execute(text("INSERT INTO conversation_messages (tenant_id, client_id, role, content) VALUES (:tid, :cid, 'user', 'hola')"), {"tid": ENGINE_TENANT, "cid": client_id})
+    repository = SQLMemoryRepository()
+    super(SQLMemoryRepository, repository).save_message(tenant_slug="restaurant", user_id="prueba-aaaa", message_text="hola", role="user")
+
+    repository.forget_contacts_with_prefix(tenant_slug="restaurant", prefix="prueba-")
+
+    with engine_memory.connect() as conn:
+        assert sorted(conn.execute(text("SELECT external_id FROM clients")).scalars().all()) == sorted([PHONE, "573009998877", "pruebaxcliente"])
+        assert sorted(conn.execute(text("SELECT client_id FROM conversation_messages")).scalars().all()) == ["cliente-laura", "cliente-pedro", "parecido"]
+    assert super(SQLMemoryRepository, repository).get_history(tenant_slug="restaurant", user_id="prueba-aaaa") == [], "tampoco queda en RAM"
 
 
 def test_forgetting_reports_a_failure_instead_of_hiding_it(engine_memory, monkeypatch):

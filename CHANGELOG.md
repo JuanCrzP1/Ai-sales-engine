@@ -5,6 +5,11 @@ está en el historial de git y en `docs/plan-v1.md`.
 
 ## 12 de noviembre de 2026
 
+**«Probar asistente» ya no olvida la conversación**
+- La conversación de prueba se guarda en la base, como las de WhatsApp: en la nube, un mensaje puede atenderlo otro servidor y antes
+  el asistente a veces empezaba de cero. Cada prueba es su propio contacto y nunca se mezcla con un cliente real.
+- Al borrar las pruebas (o un chat de prueba) también se borra lo que el asistente recordaba de ellas. Si no se puede, no se borra nada.
+
 **Respuestas rápidas con fotos y PDF**
 - Una respuesta rápida ahora puede llevar **archivos**: fotos, PDF, documentos, videos o audios de hasta 4 MB, cada uno con un texto
   opcional (también con `{nombre}`). Por ejemplo, `/catalogo` envía un saludo y después el PDF del catálogo.

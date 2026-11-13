@@ -234,6 +234,10 @@ class ContactMemory(Protocol):
         """Al eliminar el negocio: lo que el motor tenga en memoria de sus clientes (lo guardado se borra con el negocio)."""
         ...
 
+    def forget_playground(self, business_slug: str, session_id: str | None = None) -> None:
+        """Lo que el motor recuerda de «Probar»: de una sesión, o de todas las del negocio. Si no puede, lanza la excepción."""
+        ...
+
 
 class CommerceStorage(Protocol):
     """Clientes (las conversaciones de canales reales con su etapa), ventas y los datos de los reportes de cada negocio."""

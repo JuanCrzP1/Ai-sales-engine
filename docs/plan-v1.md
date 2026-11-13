@@ -159,7 +159,7 @@ como parámetro (`route_response(preamble=...)`) y una prueba con dos mensajes s
 | A3 | Dos almacenes de conversaciones: el del motor (`clients`, `conversation_messages`, `conversation_memory`) y la bandeja (`conversations`, `conversation_entries`) | persistencia | alto |
 | A4 | Sistema anterior todavía en el código: modelos con ids enteros (`app/models`), la API de administración vieja (`/auth`, `/clients`, `/conversations`...), autenticación con `python-jose`, tablas `admin_users`, `tenant_secrets`, `tenant_settings`, `tenant_channels`, Telegram por *polling* y `asesor_ai_prod` como negocio por defecto | varios | medio |
 | A5 | Módulos demasiado grandes: `prompt_builder.py` (973 líneas), `memory_repository.py` (818), `ai_execution.py` (741, con errores silenciados por `except Exception: pass`), `config_service.py` (667) | motor | medio |
-| A6 | La memoria de «Probar» vive en el servidor: en Vercel a veces se pierde entre mensajes | `assistant_lab/engine_runner.py` | medio |
+| A6 | ~~La memoria de «Probar» vive en el servidor: en Vercel a veces se pierde entre mensajes~~ Hecho (12 nov): en la base, con el contacto «prueba-<sesión>»; laboratorio `exp_20261112_memoria_probar` sin diferencias | `assistant_lab/engine_runner.py` | medio |
 
 ### 3.6 Operación del SaaS
 
@@ -328,7 +328,7 @@ IA no responde mientras alguien atiende.
   agregar un conector, no tocar el motor.
 - Un solo almacén de conversaciones: los canales escriben en la bandeja y la memoria del motor cuelga de cada hilo (A3).
 - Responder desde el panel: los mensajes del equipo salen por el canal.
-- Memoria de «Probar» en la base (A6).
+- ~~Memoria de «Probar» en la base (A6).~~ Hecho (12 nov).
 
 **Terminada cuando:** un cliente escribe por Telegram y por WhatsApp, la IA responde con la configuración publicada, el chat
 aparece en la bandeja y el equipo puede responder desde el panel.
