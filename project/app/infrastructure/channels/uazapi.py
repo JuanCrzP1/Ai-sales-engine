@@ -28,6 +28,7 @@ from app.domain.business_config.channels import (
     phone_digits,
 )
 from app.domain.business_config.conversations import MAX_MEDIA_BYTES, MediaFile
+from app.infrastructure.channels.platform import is_simulator
 from app.utils.logger import logger
 
 TIMEOUT = httpx.Timeout(20.0, connect=8.0)
@@ -70,13 +71,18 @@ def _resolve(host: str) -> list[str]:
 
 class UazapiClient:
     def __init__(self, server_url: str, *, transport: httpx.BaseTransport | None = None, resolver: Resolver | None = None) -> None:
-        self._server = normalize_server_url(server_url)
+        # El WhatsApp simulado de este equipo es el único servidor local permitido (`platform.is_simulator`); cualquier otro debe
+        # ser público y con https.
+        self._local = is_simulator(server_url)
+        self._server = str(server_url).rstrip("/") if self._local else normalize_server_url(server_url)
         self._transport = transport
         self._resolver = resolver or _resolve
 
     # ------------------------------------------------------------------ llamadas
 
     def _check_public(self) -> None:
+        if self._local:
+            return
         host = urlsplit(self._server).hostname or ""
         try:
             addresses = self._resolver(host)

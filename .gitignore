@@ -26,3 +26,6 @@ tmp/
 
 # Base local de BusinessConfig
 project/data/*.sqlite3*
+
+# WhatsApp simulado (apps/wa-sim): su estado, los archivos del «cliente» y el informe de los recorridos
+/.wa-sim/

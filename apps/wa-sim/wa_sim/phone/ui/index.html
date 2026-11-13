@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>WhatsApp simulado</title>
+    <link rel="stylesheet" href="/ui/styles.css" />
+  </head>
+  <body>
+    <header class="top">
+      <div>
+        <strong>WhatsApp simulado</strong>
+        <span class="muted">Solo para pruebas en este equipo: nada sale a WhatsApp.</span>
+      </div>
+      <div class="top__actions">
+        <button type="button" id="show-log" class="ghost">Ver lo que pasó</button>
+        <button type="button" id="reset" class="danger">Empezar de cero</button>
+      </div>
+    </header>
+
+    <main class="layout">
+      <aside class="side">
+        <section aria-labelledby="numbers-title">
+          <h2 id="numbers-title">Números del negocio</h2>
+          <p class="muted small">Aparecen cuando tocas «Conectar WhatsApp» en el panel.</p>
+          <ul id="numbers" class="list"></ul>
+        </section>
+
+        <section aria-labelledby="clients-title">
+          <h2 id="clients-title">Clientes de prueba</h2>
+          <form id="client-form" class="inline-form">
+            <input id="client-name" placeholder="Nombre (Ana)" aria-label="Nombre del cliente" />
+            <input id="client-phone" placeholder="Número con país (573001112233)" aria-label="Número del cliente" inputmode="tel" required />
+            <button type="submit">Agregar</button>
+          </form>
+          <ul id="clients" class="list"></ul>
+        </section>
+      </aside>
+
+      <section class="chat" aria-label="Chat">
+        <div id="chat-empty" class="chat__empty">
+          <p>Conecta un número desde el panel, agrega un cliente y ábrele el chat para escribir como cliente.</p>
+        </div>
+        <div id="chat" class="chat__box" hidden>
+          <header class="chat__header">
+            <div>
+              <strong id="chat-title"></strong>
+              <span id="chat-typing" class="typing" hidden>escribiendo…</span>
+            </div>
+            <span id="chat-subtitle" class="muted small"></span>
+          </header>
+          <ol id="messages" class="messages" aria-live="polite"></ol>
+          <form id="composer" class="composer">
+            <label class="as-business"><input type="checkbox" id="as-business" /> Escribir como el negocio (desde su celular)</label>
+            <div class="composer__row">
+              <label class="attach" title="Adjuntar foto, nota de voz o documento">
+                📎<input type="file" id="file" accept="image/*,audio/*,video/*,application/pdf" hidden />
+              </label>
+              <input id="text" placeholder="Escribe un mensaje" aria-label="Mensaje" autocomplete="off" />
+              <button type="submit">Enviar</button>
+            </div>
+            <p id="file-chip" class="muted small" hidden></p>
+          </form>
+        </div>
+      </section>
+    </main>
+
+    <dialog id="log-dialog">
+      <header class="top"><strong>Lo que pasó</strong><button type="button" id="close-log" class="ghost">Cerrar</button></header>
+      <ol id="log" class="log"></ol>
+    </dialog>
+
+    <p id="toast" class="toast" role="status" hidden></p>
+    <script src="/ui/app.js" type="module"></script>
+  </body>
+</html>
