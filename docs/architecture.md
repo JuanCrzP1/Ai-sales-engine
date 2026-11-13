@@ -180,10 +180,15 @@ adivinen qué quiso decir el cliente ni que cambien lo que dijo el asesor.
   en algo falso.
 - En su historial la IA ve lo que dijo ella y el marcador donde fueron los datos, nunca el mensaje con los datos.
 
-Todo cambio al prompt se mide en dos laboratorios:
+Todo cambio al prompt se mide en dos laboratorios y pasa por una puerta:
 - `experiments/pricing_lab/run_regression_experiment.py`: la mecánica del motor (rutas, webhook, entrega de pagos), sin IA.
 - `experiments/quality_lab/run_quality_eval.py`: la calidad con la IA real, con escenarios por tipo de negocio, revisiones exactas
   (precios inventados, datos de pago, formato) y un juez IA con rúbrica que califica a ciegas. Usa la clave del `.env` y cuesta centavos.
+- `experiments/quality_lab/run_standard_gate.py`: **la puerta**. El estándar del asesor (`standard.py`) como pruebas de pasa o no
+  pasa con la IA real: el chat real de producción y frases sueltas de clientes, varias veces. Las reglas exactas se comprueban sin
+  opinión (el asesor habla, los datos llegan cuando se necesitan, no llegan sin pedirlos, no se repiten, un pago avisado pasa al
+  equipo); las demás las señala un juez IA con la frase textual del asesor y las confirma un segundo revisor. Un cambio al asesor se
+  publica solo si pasan todas. La nota promedio del otro laboratorio no sirve de puerta: premiaba la plantilla sola.
 
 ### AI
 

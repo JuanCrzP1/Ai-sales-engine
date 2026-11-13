@@ -76,6 +76,35 @@ def _prepare_store(api_key: str) -> list[str]:
     return sorted(report.created)
 
 
+def _converse(service, slug: str, customer: str, name: str, script: list[dict], calls: list[dict], secrets: list[str]) -> list[dict]:
+    """Una conversación completa de un cliente con el asesor: cada turno con su respuesta (sin datos de pago), lo que decidió el motor
+    y las llamadas al modelo que costó."""
+    from app.application.runtime import load_tenant_runtime_yaml
+
+    tenant = SimpleNamespace(slug=slug, name=slug, id=slug)
+    turns = []
+    for step in script:
+        calls.clear()
+        reply, ai_used, metadata = service.generate_business_reply(
+            tenant=tenant, bot_config=None, user_message=step["message"], conversation_history=[], faq_results=[],
+            yaml_config=load_tenant_runtime_yaml(slug, channel="whatsapp"), user_id=customer, include_metadata=True,
+        )
+        metadata = metadata if isinstance(metadata, dict) else {}
+        ai_metadata = metadata.get("ai_metadata") if isinstance(metadata.get("ai_metadata"), dict) else {}
+        shown = str(reply or "")
+        delivered = any(secret in shown for secret in secrets)
+        for secret in secrets:
+            shown = shown.replace(secret, "[dato entregado por el motor]")
+        turns.append({
+            **step, "conversation": name, "reply": shown, "engine_delivered_payment": delivered, "ai_used": bool(ai_used),
+            "handoff": bool(metadata.get("handoff")),
+            "intent": metadata.get("intent"), "source": metadata.get("source"), "format_error": str(ai_metadata.get("format_error") or ""),
+            "calls": [{key: value for key, value in call.items() if key != "system"} for call in calls],
+            "system_prompt": calls[-1]["system"] if calls else "",
+        })
+    return turns
+
+
 def main(settings_path: str) -> int:
     settings = json.loads(Path(settings_path).read_text(encoding="utf-8"))
     if (TREE / ".env").exists() or (PROJECT / ".env").exists():
@@ -89,6 +118,7 @@ def main(settings_path: str) -> int:
 
     from facts import business_facts
     from scenarios import turns_for
+    from standard import conversations_for
 
     calls: list[dict] = []
     real_post = requests.post
@@ -118,27 +148,12 @@ def main(settings_path: str) -> int:
         secrets = sorted(payment_values(runtime), key=len, reverse=True)
         samples = []
         for sample in range(int(settings.get("samples", 1))):
-            tenant = SimpleNamespace(slug=slug, name=slug, id=slug)
-            turns = []
-            for step in turns_for(facts):
-                calls.clear()
-                reply, ai_used, metadata = service.generate_business_reply(
-                    tenant=tenant, bot_config=None, user_message=step["message"], conversation_history=[], faq_results=[],
-                    yaml_config=load_tenant_runtime_yaml(slug, channel="whatsapp"), user_id=f"calidad-{slug}-{sample}", include_metadata=True,
-                )
-                metadata = metadata if isinstance(metadata, dict) else {}
-                ai_metadata = metadata.get("ai_metadata") if isinstance(metadata.get("ai_metadata"), dict) else {}
-                shown = str(reply or "")
-                delivered = any(secret in shown for secret in secrets)
-                for secret in secrets:
-                    shown = shown.replace(secret, "[dato entregado por el motor]")
-                turns.append({
-                    **step, "reply": shown, "engine_delivered_payment": delivered, "ai_used": bool(ai_used),
-                    "intent": metadata.get("intent"), "source": metadata.get("source"), "format_error": str(ai_metadata.get("format_error") or ""),
-                    "calls": [{key: value for key, value in call.items() if key != "system"} for call in calls],
-                    "system_prompt": calls[-1]["system"] if calls else "",
-                })
-            samples.append(turns)
+            # El guion del negocio (una conversación por muestra) o, con `standard`, las conversaciones del estándar del asesor: cada
+            # una es un cliente distinto y queda como una muestra más.
+            scripts = conversations_for(facts) if settings.get("standard") else [("guion", turns_for(facts))]
+            for position, (name, script) in enumerate(scripts):
+                customer = f"calidad-{slug}-{sample}" + (f"-{position}" if settings.get("standard") else "")
+                samples.append(_converse(service, slug, customer, name, script, calls, secrets))
         results[slug] = {"facts": facts, "samples": samples}
 
     Path(settings["output"]).write_text(json.dumps({"label": settings["label"], "commit": settings["commit"], "model": os.environ.get("OPENROUTER_MODEL"),
