@@ -1308,6 +1308,21 @@
           "description": "Saludo de cada conversación nueva: mensaje fijo o respuesta de la IA.",
           "x-engine": "conectado"
         },
+        "payment_details": {
+          "anyOf": [
+            {
+              "maxLength": 800,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Plantilla del mensaje con los datos de pago que el sistema (nunca la IA) envía cuando el cliente elige cómo pagar. Marcadores: {medio}, {datos} (obligatorio) y {titular}. Si falta, la de la plataforma.",
+          "title": "Payment Details",
+          "x-engine": "conectado"
+        },
         "payment_reported": {
           "anyOf": [
             {
@@ -3173,9 +3188,24 @@
             }
           ],
           "default": null,
-          "description": "Titular o etiqueta para reconocer la cuenta en el panel. No se comparte con el cliente.",
+          "description": "Etiqueta para reconocer la cuenta en el panel. No se comparte con el cliente.",
           "title": "Label",
           "x-engine": "solo panel"
+        },
+        "holder": {
+          "anyOf": [
+            {
+              "maxLength": 300,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "A nombre de quién está la cuenta. Se le muestra al cliente con los datos de pago, para que sepa que paga al negocio correcto.",
+          "title": "Holder",
+          "x-engine": "conectado"
         },
         "enabled": {
           "anyOf": [

@@ -43,6 +43,7 @@ function TransferMethodFields({ method, position, profile, base }: { method: Tra
   const path = `${base}.${position}`;
   const bankIssue = useFieldIssue(`${path}.bank`);
   const labelIssue = useFieldIssue(`${path}.label`);
+  const holderIssue = useFieldIssue(`${path}.holder`);
   const active = isMethodActive(profile, method);
 
   return (
@@ -71,11 +72,19 @@ function TransferMethodFields({ method, position, profile, base }: { method: Tra
           hint="Al cambiar el tipo se descartan los datos del tipo anterior."
         />
         <TextField
-          label="Titular o etiqueta"
+          label="A nombre de"
+          value={method.holder ?? ""}
+          placeholder="Ej.: Café Aroma S.A.S."
+          onChange={(holder) => actions.updateTransferMethod(profileId, position, { holder: optionalText(holder) })}
+          issue={holderIssue}
+          hint="El cliente lo ve con los datos de pago, para que sepa que le paga a tu negocio."
+        />
+        <TextField
+          label="Etiqueta (solo para ti)"
           value={method.label ?? ""}
           onChange={(label) => actions.updateTransferMethod(profileId, position, { label: optionalText(label) })}
           issue={labelIssue}
-          hint="Para reconocerla aquí. No se comparte con el cliente."
+          hint="Para reconocer la cuenta aquí. No se comparte con el cliente."
         />
         {method.number && <SecretField label="Número de celular" secretRef={method.number.secret_ref} path={`${path}.number`} type="tel" inputMode="tel" placeholder="3001234567" />}
         {method.type === "bank" && (

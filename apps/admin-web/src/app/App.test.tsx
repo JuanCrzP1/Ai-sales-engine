@@ -684,6 +684,29 @@ describe("Secciones del negocio", () => {
     expect(storedOf(backend).messages).toMatchObject({ welcome: { enabled: true, text: "Hola, soy tu asistente" }, after_sale: "¡Gracias por tu compra!" });
   });
 
+  it("los datos de pago salen ordenados, con la plantilla recomendada o la del negocio, y una plantilla sin {datos} no se guarda", async () => {
+    const { user, backend } = await renderWorkspace("/mensajes");
+    const card = screen.getByRole("heading", { name: "Mensajes de pago" }).closest("section") as HTMLElement;
+    const preview = within(card).getAllByRole("figure", { name: "Vista previa de la conversación" })[0]!;
+    expect(preview.textContent).toContain("Datos para pagar");
+    expect(within(preview).getByText("Nequi")).toBeInTheDocument();
+    expect(preview.textContent).toContain("3001234567");
+    expect(preview.textContent).not.toContain("A nombre de");
+
+    const template = within(card).getByLabelText(/^Cómo le llegan los datos de pago/);
+    await user.clear(template);
+    await user.type(template, "Paga por {{medio} y avísame");
+    expect(await within(card).findByText(/La plantilla debe tener \{datos\}/)).toBeInTheDocument();
+    await user.clear(template);
+    await user.type(template, "Paga por {{medio}: {{datos}");
+    expect(preview.textContent).toContain("Paga por Nequi: 3001234567");
+    await saveAndWait(user);
+    expect(storedOf(backend).messages.payment_details).toBe("Paga por {medio}: {datos}");
+
+    await user.click(within(card).getByRole("button", { name: "Volver al mensaje recomendado" }));
+    expect(preview.textContent).toContain("Datos para pagar");
+  });
+
   it("el mensaje para cuando la IA no puede responder se ve en la vista previa y se guarda", async () => {
     const { user, backend } = await renderWorkspace("/mensajes");
     const card = screen.getByRole("heading", { name: "Si el asistente no puede responder" }).closest("section") as HTMLElement;
@@ -832,7 +855,8 @@ describe("Datos de pago", () => {
   it("edita los datos descriptivos, desactiva y activa una cuenta sin enviar ningún dato de pago", async () => {
     const { user, backend } = await renderWorkspace("/pagos");
     const account = within(screen.getByRole("group", { name: "Cuenta 1" }));
-    await user.type(account.getByLabelText(/^Titular o etiqueta/), "Cuenta de la tienda");
+    await user.type(account.getByLabelText(/^Etiqueta \(solo para ti\)/), "Cuenta de la tienda");
+    await user.type(account.getByLabelText(/^A nombre de/), "Café Aroma S.A.S.");
     await user.click(account.getByRole("switch", { name: /^Cuenta activa/ }));
     expect(account.getByText("Inactiva")).toBeInTheDocument();
     expect(overview().getByText("Inactivo")).toBeInTheDocument();
@@ -840,7 +864,7 @@ describe("Datos de pago", () => {
     await saveAndWait(user);
 
     expect(backend.paymentValuesReceived).toEqual([{}]);
-    expect(storedOf(backend).payments[0]?.transfer_methods?.[0]).toEqual({ type: "nequi", number: { secret_ref: NUMBER_REF }, label: "Cuenta de la tienda", enabled: false });
+    expect(storedOf(backend).payments[0]?.transfer_methods?.[0]).toEqual({ type: "nequi", number: { secret_ref: NUMBER_REF }, label: "Cuenta de la tienda", holder: "Café Aroma S.A.S.", enabled: false });
 
     await user.click(within(screen.getByRole("group", { name: "Cuenta 1" })).getByRole("switch", { name: /^Cuenta activa/ }));
     await saveAndWait(user);

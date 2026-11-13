@@ -251,7 +251,7 @@ export function removeTransferMethod(working: WorkingCopy, profileId: string, in
 }
 
 /** Datos que no son sensibles de una cuenta (banco, tipo de cuenta y titular o etiqueta). El dato cifrado no se toca. */
-export function updateTransferMethod(working: WorkingCopy, profileId: string, index: number, patch: Pick<TransferMethod, "bank" | "account_type" | "label">): WorkingCopy {
+export function updateTransferMethod(working: WorkingCopy, profileId: string, index: number, patch: Pick<TransferMethod, "bank" | "account_type" | "label" | "holder">): WorkingCopy {
   return updateMethod(working, profileId, index, patch);
 }
 

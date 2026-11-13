@@ -307,8 +307,8 @@ def test_disabled_transfers_are_not_delivered(monkeypatch, tmp_path):
     turns = [("Quiero pagar por nequi", reply("Listo.", "buy", payment_method="nequi"))]
     (_, enabled), = run_with_document(monkeypatch, tmp_path / "activas", "saas", lambda d: None, turns)
     (_, disabled), = run_with_document(monkeypatch, tmp_path / "inactivas", "saas", _disable, turns)
-    assert "nequi usando el número" in enabled
-    assert "nequi usando el número" not in disabled
+    assert "*Nequi*" in enabled
+    assert "*Nequi*" not in disabled
 
 
 def test_inactive_payment_methods_are_not_delivered(monkeypatch, tmp_path):
@@ -325,14 +325,52 @@ def test_inactive_payment_methods_are_not_delivered(monkeypatch, tmp_path):
     by_nequi = [("Quiero pagar por nequi", reply("Listo.", "buy", payment_method="nequi"))]
     (_, active), = run_with_document(monkeypatch, tmp_path / "activa", "saas", lambda d: None, by_nequi)
     (_, paused), = run_with_document(monkeypatch, tmp_path / "pausada", "saas", _pause_nequi, by_nequi)
-    assert "nequi usando el número" in active
-    assert "nequi usando el número" not in paused
+    assert "*Nequi*" in active
+    assert "*Nequi*" not in paused
 
     by_link = [("Quiero pagar por link", reply("Listo.", "buy", payment_method="link"))]
     (_, active), = run_with_document(monkeypatch, tmp_path / "enlace_activo", "saas", lambda d: None, by_link)
     (_, paused), = run_with_document(monkeypatch, tmp_path / "enlace_pausado", "saas", _pause_link, by_link)
-    assert "Puedes pagar aquí" in active
-    assert "Puedes pagar aquí" not in paused
+    assert "*Pago en línea*" in active
+    assert "*Pago en línea*" not in paused
+
+
+def test_the_payment_details_follow_the_business_template(monkeypatch, tmp_path):
+    """Los datos de pago salen ordenados (cada dato en su línea, con el titular) y con la plantilla del negocio si la escribió."""
+
+    def _holder(document):
+        for profile in document["payments"]:
+            for method in profile["transfer_methods"]:
+                method["holder"] = "Sabor Casero S.A.S."
+
+    def _template(document):
+        _holder(document)
+        document["messages"]["payment_details"] = "Paga por {medio}:\n{datos}\nTitular: {titular}\nY mándame el comprobante 🙌"
+
+    turns = [("Quiero pagar por nequi", reply("Listo.", "buy", payment_method="nequi"))]
+    (_, default), = run_with_document(monkeypatch, tmp_path / "plataforma", "saas", _holder, turns)
+    number = dict(_payment_choices(load_tenant_runtime_yaml("saas")))["nequi"][0]
+    assert default.startswith("💳 *Datos para pagar*\n\n*Nequi*\n") and f"\n{number}\n" in default
+    assert "A nombre de: Sabor Casero S.A.S." in default and "comprobante" in default
+    (_, custom), = run_with_document(monkeypatch, tmp_path / "propia", "saas", _template, turns)
+    assert custom == f"Paga por Nequi:\n{number}\nTitular: Sabor Casero S.A.S.\nY mándame el comprobante 🙌"
+
+
+def test_without_a_holder_the_line_is_left_out(monkeypatch, tmp_path):
+    turns = [("Quiero pagar por nequi", reply("Listo.", "buy", payment_method="nequi"))]
+    (_, response), = run_with_document(monkeypatch, tmp_path / "sin_titular", "saas", lambda d: None, turns)
+    assert "A nombre de" not in response and "{titular}" not in response
+
+
+def test_the_payment_details_are_not_repeated_when_the_customer_keeps_talking(monkeypatch, tmp_path):
+    """Si el cliente pregunta otra cosa del mismo pago, la IA le responde: el sistema no vuelve a pegar los datos encima."""
+    turns = [
+        ("Quiero pagar por nequi", reply("Listo.", "buy", payment_method="nequi")),
+        ("¿Y cuando lo haga qué necesito hacer?", reply("Cuando pagues, envíame aquí la captura del comprobante y te confirmamos.", "buy", payment_method="nequi")),
+    ]
+    (_, first), (_, second) = run_with_document(monkeypatch, tmp_path / "seguir", "saas", lambda d: None, turns)
+    assert first.startswith("💳 *Datos para pagar*")
+    assert second == "Cuando pagues, envíame aquí la captura del comprobante y te confirmamos."
 
 
 # ---------------------------------------------------------------------------
@@ -828,6 +866,7 @@ CONNECTED_EVIDENCE: dict[str, str] = {
     "schema_version": "test_a_corrupt_published_document_is_never_served",
     "tenant_slug": "test_a_corrupt_published_document_is_never_served",
     "messages.fallback": "test_the_fallback_message_is_the_one_written_in_the_panel",
+    "messages.payment_details": "test_the_payment_details_follow_the_business_template",
     "identity.industry": "test_the_assistant_uses_the_whole_text_up_to_the_contract_limit",
     "identity.value_proposition": "test_the_assistant_uses_the_whole_text_up_to_the_contract_limit",
     "offer.model": "test_tenants_stay_isolated",
@@ -862,6 +901,7 @@ CONNECTED_EVIDENCE: dict[str, str] = {
     "payments[].transfer_methods[].account_type": "test_payment_methods_reach_the_customer",
     "payments[].transfer_methods[].account_number": "test_payment_methods_reach_the_customer",
     "payments[].transfer_methods[].reference": "test_payment_methods_reach_the_customer",
+    "payments[].transfer_methods[].holder": "test_the_payment_details_follow_the_business_template",
     "sales.buying_motivation.primary": "test_connected_fields_change_the_prompt",
     "sales.buying_motivation.secondary": "test_connected_fields_change_the_prompt",
     "sales.customer_problems[].id": "test_connected_fields_change_the_prompt",

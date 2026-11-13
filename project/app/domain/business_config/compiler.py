@@ -58,6 +58,7 @@ def _payment_block(profile: PaymentProfile | None, resolve_secret: SecretResolve
         _put(entry, "account_type", method.account_type)
         _put(entry, "account_number", resolve_secret(method.account_number) if method.account_number else None)
         _put(entry, "reference", resolve_secret(method.reference) if method.reference else None)
+        _put(entry, "holder", method.holder)
         methods.append(entry)
     return {
         "link": resolve_secret(profile.link) if profile.link and profile.link_enabled is not False else "",
@@ -289,6 +290,9 @@ def _config(config: BusinessConfig) -> dict:
     section["initial_message"] = {"enabled": config.messages.welcome.enabled, "text": config.messages.welcome.text}
     if config.messages.fallback is not None:
         section["fallback_message"] = config.messages.fallback
+    # La plantilla de los datos de pago: la llena el sistema con los valores reales, la IA nunca los ve.
+    if config.messages.payment_details is not None:
+        section["payment_details_message"] = config.messages.payment_details
     # Lo que dice la plataforma (no la IA) cuando un chat pasa a una persona fuera del horario o cuando la IA retoma un chat.
     attention = {key: text.strip() for key in ATTENTION_MESSAGES if (text := getattr(config.messages, key)) and text.strip()}
     if attention:

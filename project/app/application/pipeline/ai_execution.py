@@ -73,11 +73,13 @@
 from __future__ import annotations
 
 import re
+from datetime import datetime, timedelta, timezone
 
 from app.application.pipeline.fallback import build_fallback_response
 from app.application.pipeline.response_postprocessor import enforce_max_words
 from app.application.pipeline.response_router import route_response
 from app.domain.business_config.payment_data import REDACTED_PAYMENT_VALUE
+from app.domain.business_config.payment_message import method_parts, render_payment_details
 from app.domain.conversation.memory import ConversationState, MemoryDomainService
 from app.domain.memory.observability.audit import emit_memory_audit
 from app.domain.memory.salience.selector import select as select_commercial_memory
@@ -164,40 +166,26 @@ def ejecutar_pago(runtime_yaml: dict, payment_method: str) -> str:
             if item_type and item_type not in transfer_methods:
                 transfer_methods[item_type] = dict(item)
 
+    template = _payment_details_template(runtime_yaml)
     if method == "link":
         if payment_links:
-            return f"Avanzamos con el siguiente paso. Puedes pagar aquí: {payment_links[0]}"
+            medio, datos = method_parts("link", {"link": payment_links[0]})
+            return render_payment_details(template, medio=medio, datos=datos)
         return ""
 
     selected = transfer_methods.get(method) if isinstance(transfer_methods.get(method), dict) else {}
     if not selected:
         return ""
-
-    if method in {"nequi", "daviplata"}:
-        number = str(selected.get("number") or "").strip()
-        if number:
-            return f"Avanzamos con el siguiente paso. Puedes hacer la transferencia a {method} usando el número {number}. Cuando lo hagas, avísame para continuar."
+    medio, datos = method_parts(method, selected)
+    if not datos:
         return ""
+    return render_payment_details(template, medio=medio, datos=datos, titular=str(selected.get("holder") or ""))
 
-    if method == "bank":
-        bank = str(selected.get("bank") or "").strip()
-        account_type = str(selected.get("account_type") or "").strip()
-        account_number = str(selected.get("account_number") or "").strip()
-        if bank and account_type and account_number:
-            return (
-                "Avanzamos con el siguiente paso. "
-                f"Puedes hacer la transferencia a {bank}, cuenta {account_type} {account_number}. "
-                "Cuando lo hagas, avísame para continuar."
-            )
-        return ""
 
-    if method == "breb":
-        reference = str(selected.get("reference") or "").strip()
-        if reference:
-            return f"Avanzamos con el siguiente paso. Puedes hacer la transferencia Bre-B con la referencia {reference}. Cuando lo hagas, avísame para continuar."
-        return ""
-
-    return ""
+def _payment_details_template(runtime_yaml: dict) -> str | None:
+    """La plantilla del negocio para los datos de pago (Mensajes → «Mensaje con los datos de pago»), o None: la de la plataforma."""
+    config = runtime_yaml.get("config") if isinstance(runtime_yaml.get("config"), dict) else {}
+    return str(config.get("payment_details_message") or "").strip() or None
 
 
 def without_payment_placeholder(response_text: str, runtime_yaml: dict, payment_method: str) -> str:
@@ -213,6 +201,21 @@ def without_payment_placeholder(response_text: str, runtime_yaml: dict, payment_
         return " ".join(kept)
     methods = _get_configured_payment_methods(runtime_yaml)
     return f"¿Con qué medio prefieres pagar: {', '.join(methods)}?" if methods else "¿Con qué medio prefieres pagar?"
+
+
+def _previous_response(memory_service: MemoryDomainService | None, *, tenant_slug: str, user_id: str) -> str:
+    """Lo último que le respondió el asistente a este cliente (antes de este turno), o ""."""
+    get_last_response = getattr(memory_service, "get_last_response", None)
+    if not callable(get_last_response):
+        return ""
+    try:
+        return str(get_last_response(tenant_slug=tenant_slug, user_id=user_id) or "").strip()
+    except Exception:
+        return ""
+
+
+def _payment_expiry() -> datetime:
+    return datetime.now(timezone.utc) + timedelta(hours=6)
 
 
 def _build_memory_context(memory_service: MemoryDomainService | None, *, tenant_slug: str, user_id: str) -> dict:
@@ -626,14 +629,20 @@ class AIExecution:
                 )
                 response_text = _resolve_post_payment_message(runtime_yaml_with_memory) or response_text
             elif payment_method and intent == "buy":
-                _log_payment_override(
-                    tenant_slug=tenant_slug_value,
-                    user_id=user_key,
-                    payment_method=payment_method,
-                    payment_status=payment_status,
-                )
-                response_text = ejecutar_pago(runtime_yaml_with_memory, payment_method) or response_text
+                # Los datos de pago salen una vez: si el cliente sigue hablando del mismo pago («¿y cuando lo haga qué hago?»), la IA
+                # le responde. Si pide los datos otra vez, la IA los nombra con su marcador y el sistema los vuelve a enviar (abajo).
+                delivered = ejecutar_pago(runtime_yaml_with_memory, payment_method)
+                if delivered and delivered != _previous_response(memory_service, tenant_slug=tenant_slug_value, user_id=user_key):
+                    _log_payment_override(
+                        tenant_slug=tenant_slug_value,
+                        user_id=user_key,
+                        payment_method=payment_method,
+                        payment_status=payment_status,
+                    )
+                    response_text = delivered
             response_text = without_payment_placeholder(response_text, runtime_yaml_with_memory, payment_method)
+            # El mensaje con los datos de pago es del sistema: nunca se recorta (perdería el número o sus saltos de línea).
+            payment_details_sent = bool(payment_method) and response_text == ejecutar_pago(runtime_yaml_with_memory, payment_method)
 
             raw_response = response_text
             persisted_response = raw_response
@@ -642,6 +651,11 @@ class AIExecution:
             _route_source = str(route_context.get("source") if isinstance(route_context, dict) else "").strip()
             _configured_methods = _get_configured_payment_methods(runtime_yaml_with_memory)
             _new_op_state = extract_op_state(raw_response, route_source=_route_source, payment_methods=_configured_methods)
+            if payment_details_sent:
+                # El sistema entregó los datos de ese medio: el pago con esa opción queda activo, sin depender del texto de la plantilla.
+                _new_op_state = OperationalState(
+                    active_process="payment", active_option=payment_method, pending_action="confirm_method", expires_at=_new_op_state.expires_at or _payment_expiry()
+                )
             _set_op = getattr(memory_service, "set_op_state", None)
             if callable(_set_op) and _new_op_state.active_process:
                 try:
@@ -649,7 +663,7 @@ class AIExecution:
                 except Exception:
                     pass
 
-            final_response = enforce_max_words(
+            final_response = raw_response if payment_details_sent else enforce_max_words(
                 raw_response,
                 _max_words,
                 tenant=tenant_slug_value,

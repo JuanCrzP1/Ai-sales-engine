@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Annotated, Literal
 
-from pydantic import Field, model_validator
+from pydantic import Field, field_validator, model_validator
 
 from app.domain.business_config.engine_policy import (
     DEFAULT_RESPONSE_LENGTH,
@@ -17,6 +17,7 @@ from app.domain.business_config.engine_policy import (
     RESPONSE_LENGTH_WORD_RANGES,
     ResponseLength,
 )
+from app.domain.business_config.payment_message import template_problem
 from app.domain.business_config.primitives import ADVANCED, CONNECTED, SCHEDULED, ContractModel, MessageText, Phrases, Text, ensure_unique
 
 
@@ -96,6 +97,14 @@ class WelcomeMessage(ContractModel):
 
 class Messages(ContractModel):
     welcome: WelcomeMessage = Field(description="Saludo de cada conversación nueva: mensaje fijo o respuesta de la IA.", json_schema_extra=CONNECTED)
+    payment_details: MessageText | None = Field(
+        default=None,
+        description=(
+            "Plantilla del mensaje con los datos de pago que el sistema (nunca la IA) envía cuando el cliente elige cómo pagar. "
+            "Marcadores: {medio}, {datos} (obligatorio) y {titular}. Si falta, la de la plataforma."
+        ),
+        json_schema_extra=CONNECTED,
+    )
     payment_reported: MessageText | None = Field(default=None, description="Respuesta exacta cuando el cliente reporta un pago.", json_schema_extra=CONNECTED)
     payment_confirmed: MessageText | None = Field(
         default=None,
@@ -127,6 +136,14 @@ class Messages(ContractModel):
         description="Mensaje exacto cuando la IA no puede responder (sin clave, sin saldo o con el proveedor caído). Si falta, uno neutro de la plataforma.",
         json_schema_extra=CONNECTED,
     )
+
+
+    @field_validator("payment_details")
+    @classmethod
+    def _payment_details_template(cls, value: str | None) -> str | None:
+        if value is not None and (problem := template_problem(value)):
+            raise ValueError(problem)
+        return value
 
 
 class ResponseStyle(ContractModel):

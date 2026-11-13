@@ -939,3 +939,30 @@ def test_the_texts_the_assistant_uses_have_a_maximum_length():
     )
     assert schema["$defs"]["Catalog"]["properties"]["categories"]["maxItems"] == MAX_CATEGORIES
     assert MAX_OFFER_DESCRIPTION_CHARS >= 200
+
+
+@pytest.mark.parametrize(
+    ("template", "reason"),
+    [
+        ("Paga por {medio} y avísame", "{datos}"),
+        ("Paga aquí: {datos} con {monto}", "{monto}"),
+    ],
+)
+def test_a_payment_template_without_the_data_or_with_unknown_markers_is_rejected(template, reason):
+    from app.domain.business_config.contract.assistant import Messages, WelcomeMessage
+
+    with pytest.raises(ValidationError) as rejected:
+        Messages(welcome=WelcomeMessage(enabled=False), payment_details=template)
+    assert reason in str(rejected.value)
+    assert Messages(welcome=WelcomeMessage(enabled=False), payment_details="*{medio}*\n{datos}\n{titular}").payment_details
+
+
+def test_the_payment_message_drops_lines_left_empty_and_never_uses_a_broken_template():
+    from app.domain.business_config.payment_message import DEFAULT_PAYMENT_DETAILS, method_parts, render_payment_details
+
+    medio, datos = method_parts("bank", {"bank": "Bancolombia", "account_type": "ahorros", "account_number": "1234567890"})
+    assert (medio, datos) == ("Bancolombia", "Cuenta de ahorros\n1234567890")
+    message = render_payment_details(None, medio=medio, datos=datos)
+    assert "*Bancolombia*\nCuenta de ahorros\n1234567890\n\nCuando pagues" in message and "A nombre de" not in message
+    assert render_payment_details("Sin datos", medio="Nequi", datos="300") == render_payment_details(DEFAULT_PAYMENT_DETAILS, medio="Nequi", datos="300")
+    assert method_parts("breb", {"reference": "@cafe"}) == ("Bre-B", "Llave: @cafe") and method_parts("nequi", {}) == ("", "")

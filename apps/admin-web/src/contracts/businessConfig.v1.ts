@@ -262,6 +262,8 @@ export interface Location {
 export interface Messages {
   /** Saludo de cada conversación nueva: mensaje fijo o respuesta de la IA. [motor: conectado] */
   welcome: WelcomeMessage;
+  /** Plantilla del mensaje con los datos de pago que el sistema (nunca la IA) envía cuando el cliente elige cómo pagar. Marcadores: {medio}, {datos} (obligatorio) y {titular}. Si falta, la de la plataforma. [motor: conectado] */
+  payment_details?: string | null;
   /** Respuesta exacta cuando el cliente reporta un pago. [motor: conectado] */
   payment_reported?: string | null;
   /** Mensaje cuando el equipo confirma el pago. Se guarda; lo enviará la plataforma cuando el equipo pueda confirmar pagos desde el panel. [motor: programado] */
@@ -579,8 +581,10 @@ export interface TransferMethod {
   account_type?: string | null;
   account_number?: SecretRef | null;
   reference?: SecretRef | null;
-  /** Titular o etiqueta para reconocer la cuenta en el panel. No se comparte con el cliente. [motor: solo panel] */
+  /** Etiqueta para reconocer la cuenta en el panel. No se comparte con el cliente. [motor: solo panel] */
   label?: string | null;
+  /** A nombre de quién está la cuenta. Se le muestra al cliente con los datos de pago, para que sepa que paga al negocio correcto. [motor: conectado] */
+  holder?: string | null;
   /** Si es false, la cuenta se conserva pero no se ofrece. */
   enabled?: boolean | null;
 }

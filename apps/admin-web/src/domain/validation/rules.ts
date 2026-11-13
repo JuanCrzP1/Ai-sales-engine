@@ -13,6 +13,7 @@ import {
   TEXT_LIMITS,
 } from "../config/engineLimits";
 import { labelFor, RESPONSE_LENGTHS } from "../config/options";
+import { paymentTemplateProblem } from "../config/paymentMessage";
 import type { BusinessDocument, PaymentValues, WorkingCopy } from "../config/types";
 import type { ConfigSectionId } from "../sections";
 import { localIsoDate } from "../../lib/format";
@@ -258,6 +259,8 @@ function validateMessages({ messages, capabilities }: BusinessDocument): Validat
   if (messages.welcome.enabled && isBlank(messages.welcome.text ?? "")) {
     issues.push({ section: "messages", field: "messages.welcome.text", severity: "error", message: "Escribe el mensaje de bienvenida o desactívalo." });
   }
+  const paymentTemplate = messages.payment_details ? paymentTemplateProblem(messages.payment_details) : null;
+  if (paymentTemplate) issues.push({ section: "messages", field: "messages.payment_details", severity: "error", message: paymentTemplate });
   if (isBlank(messages.payment_reported ?? "")) {
     issues.push({
       section: "messages",

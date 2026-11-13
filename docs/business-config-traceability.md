@@ -109,6 +109,7 @@ Finalidad comercial, sin origen en los YAML. No se compilan salvo los marcados `
 | messages | `messages.fallback` | Mensaje exacto cuando la IA no puede responder (sin clave, sin saldo o con el proveedor caído). Si falta, uno neutro de la plataforma. | texto | cliente | conectado | pantalla |
 | messages | `messages.follow_up` | Mensaje de seguimiento a un cliente que no respondió. Se guarda; lo enviará la plataforma cuando los canales puedan escribir primero. | texto | cliente | programado | pantalla |
 | messages | `messages.human_handoff` | Mensaje al pasar la conversación a una persona. | texto | cliente | conectado | pantalla |
+| messages | `messages.payment_details` | Plantilla del mensaje con los datos de pago que el sistema (nunca la IA) envía cuando el cliente elige cómo pagar. Marcadores: {medio}, {datos} (obligatorio) y {titular}. Si falta, la de la plataforma. | texto | cliente | conectado | pantalla |
 | offer | `offer.catalog.items[].available` | Si es false, el producto se conserva pero no se ofrece (ni su categoría, si se queda sin productos). | interruptor true/false | cliente | conectado | pantalla |
 | offer | `offer.catalog.items[].features` | Características del producto. | lista de texto | cliente | conectado | pantalla |
 | offer | `offer.plans[].available` | Si es false, el plan se conserva pero no se ofrece. | interruptor true/false | cliente | conectado | pantalla |
@@ -117,7 +118,8 @@ Finalidad comercial, sin origen en los YAML. No se compilan salvo los marcados `
 | offer | `offer.plans[].prices[].price` | Precio de pago único. | número | cliente | conectado | pantalla |
 | payments | `payments[].link_enabled` | Si es false, el enlace se conserva pero no se ofrece. | interruptor true/false | cliente | conectado | pantalla |
 | payments | `payments[].transfer_methods[].enabled` | Si es false, la cuenta se conserva pero no se ofrece. | interruptor true/false | cliente | conectado | pantalla |
-| payments | `payments[].transfer_methods[].label` | Titular o etiqueta para reconocer la cuenta en el panel. No se comparte con el cliente. | texto | cliente | solo panel | pantalla |
+| payments | `payments[].transfer_methods[].holder` | A nombre de quién está la cuenta. Se le muestra al cliente con los datos de pago, para que sepa que paga al negocio correcto. | texto | cliente | conectado | pantalla |
+| payments | `payments[].transfer_methods[].label` | Etiqueta para reconocer la cuenta en el panel. No se comparte con el cliente. | texto | cliente | solo panel | pantalla |
 | response_style | `response_style.emojis` | Si el asistente puede usar emojis. | interruptor true/false | cliente | conectado | pantalla |
 | response_style | `response_style.formality` | informal (tutea), neutral o formal (usted). | informal \| neutral \| formal | cliente | conectado | pantalla |
 | response_style | `response_style.instructions` | Cómo debe expresarse el asistente en este negocio. | lista de texto | cliente | conectado | pantalla |
@@ -352,10 +354,10 @@ si el motor actual lo usa y de dónde viene.
 
 | Audiencia | Conectados | Programados | Solo panel | Pendientes |
 |---|---|---|---|---|
-| cliente | 133 | 2 | 2 | 0 |
+| cliente | 135 | 2 | 2 | 0 |
 | avanzado | 50 | 0 | 0 | 0 |
 | sistema | 2 | 0 | 0 | 0 |
-| **Total** | 185 | 2 | 2 | 0 |
+| **Total** | 187 | 2 | 2 | 0 |
 
 | Campo | Audiencia | Motor | Origen | Interfaz | Descripción |
 |---|---|---|---|---|---|
@@ -429,6 +431,7 @@ si el motor actual lo usa y de dónde viene.
 | `messages.follow_up` | cliente | programado | nuevo | pantalla | Mensaje de seguimiento a un cliente que no respondió. Se guarda; lo enviará la plataforma cuando los canales puedan escribir primero. |
 | `messages.human_handoff` | cliente | conectado | nuevo | pantalla | Mensaje al pasar la conversación a una persona. |
 | `messages.payment_confirmed` | cliente | programado | `config.post_payment.on_payment_confirmed.message` | pantalla | Mensaje cuando el equipo confirma el pago. Se guarda; lo enviará la plataforma cuando el equipo pueda confirmar pagos desde el panel. |
+| `messages.payment_details` | cliente | conectado | nuevo | pantalla | Plantilla del mensaje con los datos de pago que el sistema (nunca la IA) envía cuando el cliente elige cómo pagar. Marcadores: {medio}, {datos} (obligatorio) y {titular}. Si falta, la de la plataforma. |
 | `messages.payment_reported` | cliente | conectado | `config.post_payment.on_user_report.message` | pantalla | Respuesta exacta cuando el cliente reporta un pago. |
 | `messages.welcome.enabled` | cliente | conectado | `config.initial_message.enabled` | pantalla | true: envía el mensaje inicial fijo, sin IA. false: no lo envía y responde la IA. |
 | `messages.welcome.text` | cliente | conectado | `config.initial_message.text` | pantalla | Mensaje de apertura que recibe el cliente. |
@@ -466,7 +469,8 @@ si el motor actual lo usa y de dónde viene.
 | `payments[].transfer_methods[].account_type` | cliente | conectado | `pricing.catalog.payment.transfer.methods[].account_type`, `pricing.plans[].payment.transfer.methods[].account_type` | pantalla | Tipo de cuenta |
 | `payments[].transfer_methods[].bank` | cliente | conectado | `pricing.catalog.payment.transfer.methods[].bank`, `pricing.plans[].payment.transfer.methods[].bank` | pantalla | Banco |
 | `payments[].transfer_methods[].enabled` | cliente | conectado | nuevo | pantalla | Si es false, la cuenta se conserva pero no se ofrece. |
-| `payments[].transfer_methods[].label` | cliente | solo panel | nuevo | pantalla | Titular o etiqueta para reconocer la cuenta en el panel. No se comparte con el cliente. |
+| `payments[].transfer_methods[].holder` | cliente | conectado | nuevo | pantalla | A nombre de quién está la cuenta. Se le muestra al cliente con los datos de pago, para que sepa que paga al negocio correcto. |
+| `payments[].transfer_methods[].label` | cliente | solo panel | nuevo | pantalla | Etiqueta para reconocer la cuenta en el panel. No se comparte con el cliente. |
 | `payments[].transfer_methods[].number` | cliente | conectado | `pricing.catalog.payment.transfer.methods[].number`, `pricing.plans[].payment.transfer.methods[].number` | pantalla | Celular Nequi o Daviplata |
 | `payments[].transfer_methods[].reference` | cliente | conectado | `pricing.catalog.payment.transfer.methods[].reference`, `pricing.plans[].payment.transfer.methods[].reference` | pantalla | Llave o referencia Bre-B |
 | `payments[].transfer_methods[].type` | cliente | conectado | `pricing.catalog.payment.transfer.methods[].type`, `pricing.plans[].payment.transfer.methods[].type` | pantalla | Método de transferencia |

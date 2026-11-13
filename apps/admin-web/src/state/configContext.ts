@@ -63,7 +63,7 @@ export interface ConfigActions {
   setTransferEnabled: (profileId: string, enabled: boolean) => void;
   addTransferMethod: (profileId: string) => void;
   removeTransferMethod: (profileId: string, index: number) => void;
-  updateTransferMethod: (profileId: string, index: number, patch: Pick<TransferMethod, "bank" | "account_type" | "label">) => void;
+  updateTransferMethod: (profileId: string, index: number, patch: Pick<TransferMethod, "bank" | "account_type" | "label" | "holder">) => void;
   setTransferMethodEnabled: (profileId: string, index: number, enabled: boolean) => void;
   changeTransferMethodType: (profileId: string, index: number, type: TransferMethodType) => void;
   /** Envía los cambios al servidor. Resuelve true solo si los aceptó y guardó. */

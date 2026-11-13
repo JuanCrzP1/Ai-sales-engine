@@ -3,8 +3,8 @@ title: "Pagos y cierre: cómo te pagan, con tus datos protegidos"
 module: asistente
 summary: Los medios de pago que ofrece el asistente, por qué tus datos de pago están protegidos, promociones, políticas y cómo cierra una venta.
 order: 4
-updated: 2026-11-12
-keywords: pagos, nequi, daviplata, bre-b, transferencia, cuenta bancaria, enlace de pago, promociones, garantía, devoluciones, políticas, cerrar venta
+updated: 2026-11-13
+keywords: pagos, datos de pago, plantilla, titular, a nombre de, nequi, daviplata, bre-b, transferencia, cuenta bancaria, enlace de pago, promociones, garantía, devoluciones, políticas, cerrar venta
 related: productos-y-servicios, como-atiende, registrar-una-venta
 ---
 
@@ -14,6 +14,25 @@ En [Pagos y cierre](panel:pagos) decides cómo te pagan y qué hace el asistente
 
 - **Enlace de pago:** activa **Ofrecer pago por enlace** y pega tu enlace.
 - **Transferencias:** activa **Aceptar transferencias** y agrega tus cuentas Nequi, Daviplata, bancarias o tu llave Bre-B.
+- **A nombre de:** en cada cuenta, escribe a nombre de quién está. El cliente lo ve con los datos de pago y sabe que le paga a tu negocio. La **Etiqueta** es solo para ti.
+
+## Cómo le llegan los datos al cliente
+
+Cuando el cliente elige cómo pagar, recibe un mensaje ordenado, por ejemplo:
+
+```
+💳 *Datos para pagar*
+
+*Nequi*
+3001234567
+A nombre de: Café Aroma S.A.S.
+
+Cuando pagues, envíame aquí la captura del comprobante y te confirmamos. ✅
+```
+
+Los datos salen **una sola vez**: si el cliente sigue preguntando («¿y cuando pague qué hago?»), el asistente le responde en vez de repetirlos. Si los pide de nuevo, se los vuelve a enviar.
+
+Puedes cambiar este mensaje en [Mensajes y canales](panel:mensajes), en **Cómo le llegan los datos de pago**.
 
 ## Tus datos de pago están protegidos
 

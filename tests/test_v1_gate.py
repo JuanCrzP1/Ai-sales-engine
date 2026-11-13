@@ -143,8 +143,8 @@ def test_business_payment_method_is_delivered_by_the_engine():
     response, ai_used, _meta = _run(pipeline, message="Quiero pagar por Nequi")
 
     assert ai_used is True
-    assert response.startswith("Avanzamos con el siguiente paso.")
-    assert nequi_number in response
+    assert response.startswith("💳 *Datos para pagar*") and "*Nequi*" in response
+    assert f"\n{nequi_number}\n" in response
 
 
 def test_business_payment_report_returns_configured_message():

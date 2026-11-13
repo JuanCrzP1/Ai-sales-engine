@@ -16,7 +16,12 @@ class TransferMethod(ContractModel):
     account_number: SecretRef | None = None
     reference: SecretRef | None = None
     label: Phrase | None = Field(
-        default=None, description="Titular o etiqueta para reconocer la cuenta en el panel. No se comparte con el cliente.", json_schema_extra=PANEL_ONLY
+        default=None, description="Etiqueta para reconocer la cuenta en el panel. No se comparte con el cliente.", json_schema_extra=PANEL_ONLY
+    )
+    holder: Phrase | None = Field(
+        default=None,
+        description="A nombre de quién está la cuenta. Se le muestra al cliente con los datos de pago, para que sepa que paga al negocio correcto.",
+        json_schema_extra=CONNECTED,
     )
     # Sin indicar equivale a activa: los documentos que no lo usan no cambian.
     enabled: bool | None = Field(default=None, description="Si es false, la cuenta se conserva pero no se ofrece.")
