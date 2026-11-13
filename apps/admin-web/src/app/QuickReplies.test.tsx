@@ -61,7 +61,7 @@ describe("Reglas de las respuestas rápidas", () => {
 
 async function openSettings(quick = createMemoryQuickReplies()) {
   window.history.pushState({}, "", `/negocios/${CAFE}/configuracion/respuestas-rapidas`);
-  const user = userEvent.setup();
+  const user = userEvent.setup({ applyAccept: false });
   render(<App services={createTestServices(createMemoryBackend([SAMPLE_DOCUMENT]), { createQuickReplies: () => quick })} />);
   await screen.findByRole("heading", { level: 1, name: "Respuestas rápidas" });
   return { user, quick };
@@ -250,5 +250,57 @@ describe("Respuestas rápidas en el chat", () => {
       "href",
       `/negocios/${CAFE}/configuracion/respuestas-rapidas`,
     );
+  });
+});
+
+describe("Respuestas rápidas con archivos", () => {
+  it("en Configuración se agrega un PDF con su texto y la vista previa lo muestra", async () => {
+    const { user, quick } = await openSettings();
+    await user.click(await screen.findByRole("button", { name: "Crear la primera" }));
+    const dialog = screen.getByRole("dialog", { name: "Nueva respuesta rápida" });
+    await user.type(within(dialog).getByLabelText(/^Atajo/), "catalogo");
+    await user.type(within(dialog).getByLabelText(/^Mensaje/), "Hola {{nombre}");
+    // Lo que no se puede enviar se explica antes de subirlo.
+    await user.upload(within(dialog).getByLabelText("Elegir un archivo para la respuesta"), new File(["MZ"], "virus.exe", { type: "application/x-msdownload" }));
+    expect(within(dialog).getByRole("alert")).toHaveTextContent("Ese tipo de archivo no se puede enviar");
+
+    const pdf = new File(["%PDF-1.7"], "Catálogo.pdf", { type: "application/pdf" });
+    await user.upload(within(dialog).getByLabelText("Elegir un archivo para la respuesta"), pdf);
+    expect(await within(dialog).findByRole("group", { name: "Archivo del mensaje 2" })).toHaveTextContent("Catálogo.pdf");
+    await user.type(within(dialog).getByLabelText(/^Texto del archivo 2/), "Aquí está, {{nombre}");
+    expect(within(dialog).getByText(/📎 Catálogo\.pdf/)).toBeInTheDocument();
+    await user.click(within(dialog).getByRole("button", { name: "Crear respuesta" }));
+
+    await waitFor(() => expect(quick.replies).toHaveLength(1));
+    expect(quick.replies[0]!.pieces).toEqual([
+      { kind: "text", text: "Hola {nombre}" },
+      { kind: "file", text: "Aquí está, {nombre}", fileId: "archivo-1", fileName: "Catálogo.pdf", mimeType: "application/pdf", sizeBytes: pdf.size },
+    ]);
+    expect(await screen.findByText("Hola {nombre} · 📎 Catálogo.pdf Aquí está, {nombre}")).toBeInTheDocument();
+  });
+
+  it("si la subida falla, lo dice y no agrega el archivo", async () => {
+    const quick = createMemoryQuickReplies();
+    quick.failUpload = "Llegaste al máximo de 200 archivos en tus respuestas rápidas. Quita los que ya no uses.";
+    const { user } = await openSettings(quick);
+    await user.click(await screen.findByRole("button", { name: "Crear la primera" }));
+    const dialog = screen.getByRole("dialog", { name: "Nueva respuesta rápida" });
+    await user.upload(within(dialog).getByLabelText("Elegir un archivo para la respuesta"), new File(["%PDF"], "a.pdf", { type: "application/pdf" }));
+    expect(await within(dialog).findByRole("alert")).toHaveTextContent("máximo de 200 archivos");
+    expect(within(dialog).queryByRole("group", { name: /Archivo del mensaje/ })).not.toBeInTheDocument();
+  });
+
+  it("en el chat, el texto y el archivo quedan en espera y salen en orden, con el nombre del cliente", async () => {
+    const quick = createMemoryQuickReplies();
+    const file = await quick.uploadFile(new File(["%PDF"], "Catálogo.pdf", { type: "application/pdf" }));
+    quick.replies.push(quickReply("catalogo", [], { pieces: [{ kind: "text", text: "Hola {nombre}" }, { kind: "file", text: "Aquí está, {nombre}", ...file }] }));
+    const { user, inbox, thread } = await openChat(quick);
+    await user.type(within(thread).getByLabelText("Tu respuesta"), "/catalogo{Enter}");
+    const waiting = within(thread).getByRole("group", { name: "Mensajes en espera" });
+    expect(within(waiting).getByText("📎 Catálogo.pdf — Aquí está, Laura")).toBeInTheDocument();
+    await user.click(within(thread).getByRole("button", { name: "Enviar respuesta" }));
+    await waitFor(() => expect(inbox.attachments.map((item) => [item.fileId, item.caption])).toEqual([[file.fileId, "Aquí está, Laura"]]));
+    expect(inbox.replies.map((reply) => reply.text)).toEqual(["Hola Laura"]);
+    expect(within(thread).queryByRole("group", { name: "Mensajes en espera" })).not.toBeInTheDocument();
   });
 });

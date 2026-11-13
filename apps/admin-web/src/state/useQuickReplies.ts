@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { QuickReply, QuickReplyInput } from "../repositories/quickReplies";
+import type { QuickReply, QuickReplyFile, QuickReplyInput } from "../repositories/quickReplies";
 import { PersistenceError, persistenceErrorMessage } from "../repositories/persistenceError";
 import { useQuickRepliesService } from "./quickRepliesContext";
 
@@ -15,6 +15,10 @@ export interface QuickRepliesState {
   remove: (id: string) => Promise<void>;
   /** Se usó en un chat: cuenta para que las más usadas salgan primero. Nunca falla hacia afuera: no puede frenar una respuesta. */
   markUsed: (id: string) => void;
+  /** Sube un archivo para una respuesta. Rechaza con `PersistenceError` (el motivo va en `file`). */
+  uploadFile: (file: File) => Promise<QuickReplyFile>;
+  /** Un archivo guardado, para verlo. */
+  fileBlob: (fileId: string) => Promise<Blob>;
 }
 
 /** Por qué no se guardó: el mensaje y los problemas por campo (`shortcut`, `pieces[1].text`) para mostrarlos donde van. */
@@ -90,5 +94,8 @@ export function useQuickReplies(slug: string, { enabled = true }: { enabled?: bo
 
   const reload = useCallback(() => setAttempt((count) => count + 1), []);
 
-  return { status, replies, canManage, error, reload, save, remove, markUsed };
+  const uploadFile = useCallback<QuickRepliesState["uploadFile"]>((file) => service.uploadFile(file), [service]);
+  const fileBlob = useCallback<QuickRepliesState["fileBlob"]>((fileId) => service.file(fileId), [service]);
+
+  return { status, replies, canManage, error, reload, save, remove, markUsed, uploadFile, fileBlob };
 }

@@ -1136,6 +1136,7 @@ def test_the_api_only_has_the_routes_of_the_panel(api):
         ("GET", "/conversations/{conversation_id}/live"),
         ("POST", "/conversations/{conversation_id}/messages"),
         ("POST", "/conversations/{conversation_id}/attachments"),
+        ("POST", "/conversations/{conversation_id}/quick-reply-file"),
         ("POST", "/conversations/{conversation_id}/assistant"),
         ("POST", "/conversations/{conversation_id}/read"),
         ("DELETE", "/conversations/{conversation_id}"),
@@ -1176,6 +1177,8 @@ def test_the_api_only_has_the_routes_of_the_panel(api):
         ("PUT", f"{business}/quick-replies/{{reply_id}}"),
         ("DELETE", f"{business}/quick-replies/{{reply_id}}"),
         ("POST", f"{business}/quick-replies/{{reply_id}}/use"),
+        ("POST", f"{business}/quick-replies/files"),
+        ("GET", f"{business}/quick-replies/files/{{file_id}}"),
         # El equipo y las invitaciones (`team_routes.py`).
         ("GET", f"{business}/team"),
         ("POST", f"{business}/team/invitations"),

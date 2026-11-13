@@ -399,6 +399,11 @@ por el prompt: el panel los pone en el cuadro de texto y salen como cualquier re
 - **Panel:** la página `features/quickReplies/` y, en el chat, `features/conversations/Composer.tsx` con `QuickReplyPicker.tsx`
   («/» o ⚡). Las respuestas de varios mensajes quedan en espera y salen en orden; si uno no sale, lo que falta vuelve a la espera.
 
+- **Archivos** (migración 0017, `quick_reply_files`): se suben una vez (`POST /businesses/{slug}/quick-replies/files`, el cuerpo es
+  el archivo como en el chat) y cada respuesta los nombra en sus mensajes (`{"kind": "file", "file_id", "text"}`). El almacén revisa
+  que cada archivo sea del negocio, y borra los que ninguna respuesta usa pasada una hora. En el chat, el archivo sale desde el
+  servidor (`POST /conversations/{id}/quick-reply-file`, sin bajarlo y volverlo a subir) por el mismo camino que un archivo adjunto.
+
 Lo prueban `tests/test_quick_replies.py`, `tests/test_business_deletion.py` y `apps/admin-web/src/app/QuickReplies.test.tsx`. El
 laboratorio `exp_20261112_respuestas_rapidas` dio motor sin diferencias.
 

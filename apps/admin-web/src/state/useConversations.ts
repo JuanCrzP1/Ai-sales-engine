@@ -190,6 +190,23 @@ export function useConversations(initialFilter: InboxFilter, initialSelected: st
     [inbox, patchMessages],
   );
 
+  /** El archivo de una respuesta rápida sale desde el servidor: aparece enseguida («enviando») con su texto, como un archivo adjunto. */
+  const sendQuickReplyFile = useCallback(
+    async (conversationId: string, fileId: string, caption: string, label: string) => {
+      const localId = `local-rapida-${Date.now()}`;
+      const pending: ChatMessage = { id: localId, author: "agent", body: [label, caption].filter(Boolean).join(" "), intent: null, createdAt: new Date().toISOString(), kind: "text", status: "sending" };
+      patchMessages((messages) => [...messages, pending], { aiPaused: true, needsHuman: false });
+      try {
+        const saved = await inbox.sendQuickReplyFile(conversationId, fileId, caption);
+        patchMessages((messages) => mergeMessages(messages.filter((message) => message.id !== localId), [saved]));
+      } catch (error) {
+        patchMessages((messages) => messages.filter((message) => message.id !== localId));
+        throw error;
+      }
+    },
+    [inbox, patchMessages],
+  );
+
   /** Un chat ya eliminado en el servidor: sale de la lista y, si estaba abierto, se cierra. */
   const forget = useCallback((conversationId: string) => {
     setList((previous) => (previous.status === "ready" ? { status: "ready", data: previous.data.filter((item) => item.id !== conversationId) } : previous));
@@ -211,7 +228,7 @@ export function useConversations(initialFilter: InboxFilter, initialSelected: st
     [inbox, selectedId],
   );
 
-  return { filter, setFilter, list, selectedId, select: setSelectedId, thread, reload, resolveHandoff, setAssistant, reply, sendAttachment, forget, removeTestChats };
+  return { filter, setFilter, list, selectedId, select: setSelectedId, thread, reload, resolveHandoff, setAssistant, reply, sendAttachment, sendQuickReplyFile, forget, removeTestChats };
 }
 
 /** Una URL local para mostrar un archivo de la conversación (se descarga con la sesión del usuario y se libera al salir). */

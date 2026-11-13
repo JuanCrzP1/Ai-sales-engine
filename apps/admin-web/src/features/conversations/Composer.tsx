@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState, type ClipboardEvent, type Key
 import { Button } from "../../components/ui/Button";
 import { Icon } from "../../components/ui/Icon";
 import { ATTACHMENT_ACCEPT, ATTACHMENT_HINT, MAX_CAPTION, attachmentKind, attachmentProblem, formatBytes } from "../../domain/inbox/attachments";
-import { fillName, slashQuery, type QuickReply } from "../../domain/quickReplies/quickReplies";
+import { fileLabel, fillName, slashQuery, type QuickReply } from "../../domain/quickReplies/quickReplies";
 import { QUICK_REPLIES_ITEM } from "../../navigation/navItems";
 import { persistenceErrorMessage } from "../../state/directoryContext";
 import { useQuickReplies } from "../../state/useQuickReplies";
@@ -19,19 +19,24 @@ interface ComposerProps {
   onSend: (text: string) => Promise<void>;
   /** Envía un archivo con el texto escrito como leyenda. */
   onSendFile: (file: File, caption: string) => Promise<void>;
+  /** Envía el archivo guardado de una respuesta rápida (sale desde el servidor). */
+  onSendQuickFile: (fileId: string, caption: string, label: string) => Promise<void>;
 }
+
+/** Lo que espera para salir, en orden: textos y archivos de respuestas rápidas. */
+type Pending = { kind: "text"; text: string } | { kind: "file"; fileId: string; label: string; text: string };
 
 /**
  * Responder al cliente desde el panel. Con ⚡ o escribiendo «/» se busca una respuesta rápida: si es un solo mensaje va al cuadro de
  * texto para retocarlo; si son varios, quedan en espera y salen en orden al enviar, antes de lo que se escriba. Con el clip (o
  * pegando una imagen) se adjunta un archivo: sale con lo escrito como su texto.
  */
-export function Composer({ businessSlug, contactName, aiActive, onSend, onSendFile }: ComposerProps) {
+export function Composer({ businessSlug, contactName, aiActive, onSend, onSendFile, onSendQuickFile }: ComposerProps) {
   const [text, setText] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const picker_ = useRef<HTMLInputElement>(null);
-  const [pending, setPending] = useState<string[]>([]);
+  const [pending, setPending] = useState<Pending[]>([]);
   const [sending, setSending] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
   // Abierto con ⚡ (se busca dentro) o con «/» (se busca desde el cuadro de texto). Escape cierra la búsqueda con «/» hasta que cambie.
@@ -84,11 +89,17 @@ export function Composer({ businessSlug, contactName, aiActive, onSend, onSendFi
   }, []);
 
   const pick = (reply: QuickReply) => {
-    const messages = reply.pieces.map((piece) => fillName(piece.text, contactName).trim()).filter(Boolean);
-    if (messages.length === 1) {
-      setText(messages[0]!);
+    const items: Pending[] = reply.pieces
+      .map((piece): Pending => {
+        const filled = fillName(piece.text, contactName).trim();
+        return piece.kind === "file" ? { kind: "file", fileId: piece.fileId, label: fileLabel(piece), text: filled } : { kind: "text", text: filled };
+      })
+      .filter((item) => item.kind === "file" || item.text);
+    // Un solo texto va al cuadro para retocarlo; varios mensajes, o archivos, quedan en espera y salen en orden.
+    if (items.length === 1 && items[0]!.kind === "text") {
+      setText(items[0]!.text);
     } else {
-      setPending((current) => [...current, ...messages]);
+      setPending((current) => [...current, ...items]);
       if (slash !== null) setText("");
     }
     setSearching(false);
@@ -107,15 +118,17 @@ export function Composer({ businessSlug, contactName, aiActive, onSend, onSendFi
     setSending(true);
     setProblem(null);
     // Con un archivo, lo escrito es su texto: sale con él, después de los mensajes en espera.
-    const queue = [...pending, ...(trimmed && !file ? [trimmed] : [])];
+    const typed: Pending | null = trimmed && !file ? { kind: "text", text: trimmed } : null;
+    const queue = [...pending, ...(typed ? [typed] : [])];
     const attachment = file;
     setPending([]);
     setText("");
     setFile(null);
     let sent = 0;
     try {
-      for (const message of queue) {
-        await onSend(message);
+      for (const item of queue) {
+        if (item.kind === "file") await onSendQuickFile(item.fileId, item.text, item.label);
+        else await onSend(item.text);
         sent += 1;
       }
       if (attachment) await onSendFile(attachment, trimmed);
@@ -133,7 +146,7 @@ export function Composer({ businessSlug, contactName, aiActive, onSend, onSendFi
       }
       // Lo que no salió vuelve a su lugar para intentarlo de nuevo, sin repetir lo que ya llegó.
       const rest = queue.slice(sent);
-      if (trimmed && rest.at(-1) === trimmed) {
+      if (typed && rest.at(-1) === typed) {
         setPending(rest.slice(0, -1));
         setText(trimmed);
       } else {
@@ -184,9 +197,9 @@ export function Composer({ businessSlug, contactName, aiActive, onSend, onSendFi
             {pending.length === 1 ? "1 mensaje en espera" : `${pending.length} mensajes en espera`}: salen en orden al enviar.
           </p>
           <ol className="composer__pending-list">
-            {pending.map((message, index) => (
-              <li key={`${index}-${message}`} className="composer__pending-item">
-                <span>{message}</span>
+            {pending.map((item, index) => (
+              <li key={`${index}-${item.kind === "file" ? item.fileId : item.text}`} className="composer__pending-item">
+                <span>{item.kind === "file" ? [item.label, item.text].filter(Boolean).join(" — ") : item.text}</span>
                 <button
                   type="button"
                   className="composer__pending-remove"

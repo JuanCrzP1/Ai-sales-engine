@@ -1,8 +1,8 @@
 """Respuestas rápidas: mensajes guardados del negocio que el equipo pone en un chat sin copiar y pegar.
 
 Cada una tiene un **atajo** («precios», se busca escribiendo «/precios»), una **categoría** opcional («Precios», «Pagos»…) y de uno a
-diez **mensajes** que salen en orden. En los textos, `{nombre}` se cambia por el primer nombre del cliente al usarla. Por ahora cada
-mensaje es un texto: los archivos llegarán cuando el chat del panel pueda enviarlos.
+diez **mensajes** que salen en orden: textos o archivos (una foto, un PDF, un video...) con un texto opcional que los acompaña. En los
+textos, `{nombre}` se cambia por el primer nombre del cliente al usarla. Los archivos se suben una vez y se guardan con el negocio.
 
 Se organizan en Configuración → Respuestas rápidas y en el chat solo se buscan y se envían (como en Intercom o Zendesk).
 
@@ -22,18 +22,48 @@ MAX_QUICK_REPLIES = 500
 MAX_PIECES = 10
 MAX_TEXT_CHARS = 4000  # lo mismo que admite una respuesta del equipo (`conversations.MAX_REPLY_CHARS`)
 MAX_CATEGORY_CHARS = 40
+# El texto que acompaña un archivo: el mismo tope que al enviarlo desde el chat (`conversations.MAX_CAPTION_CHARS`).
+MAX_FILE_CAPTION_CHARS = 1024
+# Los archivos guardados por negocio (cada uno de hasta 4 MB, como al enviarlo desde el chat).
+MAX_QUICK_REPLY_FILES = 200
+_FILE_ID = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
 # Minúsculas sin tildes, números, espacios, guiones y guiones bajos; hasta 40.
 SHORTCUT = re.compile(r"^[a-z0-9_-][a-z0-9 _-]{0,39}$")
 NAME_PLACEHOLDER = "{nombre}"
 
 
 @dataclass(frozen=True)
+class QuickReplyFile:
+    """Un archivo guardado para las respuestas rápidas (sin su contenido)."""
+
+    id: str
+    mime_type: str
+    size_bytes: int
+    file_name: str | None
+
+
+@dataclass(frozen=True)
+class Piece:
+    """Un mensaje de la respuesta: un texto, o un archivo con su texto opcional (`text`)."""
+
+    kind: str  # "text" o "file"
+    text: str
+    file_id: str | None = None
+    # Lo que se sabe del archivo, al leerlo de la base (para mostrarlo sin descargarlo).
+    file: QuickReplyFile | None = None
+
+
+@dataclass(frozen=True)
 class QuickReplyDraft:
-    """Lo que escribe el negocio, ya validado."""
+    """Lo que escribe el negocio, ya validado. Que cada archivo exista y sea del negocio lo revisa el almacén."""
 
     shortcut: str
     category: str | None
-    pieces: tuple[str, ...]
+    pieces: tuple[Piece, ...]
+
+    @property
+    def file_ids(self) -> tuple[str, ...]:
+        return tuple(piece.file_id for piece in self.pieces if piece.file_id)
 
 
 @dataclass(frozen=True)
@@ -41,7 +71,7 @@ class QuickReply:
     id: str
     shortcut: str
     category: str | None
-    pieces: tuple[str, ...]
+    pieces: tuple[Piece, ...]
     use_count: int
     last_used_at: datetime | None
     created_at: datetime
@@ -80,21 +110,32 @@ def validated(*, shortcut: Any, category: Any = None, pieces: Any) -> QuickReply
         if clean_category and len(clean_category) > MAX_CATEGORY_CHARS:
             issues.append(FieldIssue("category", f"La categoría admite hasta {MAX_CATEGORY_CHARS} caracteres."))
 
-    clean_pieces: list[str] = []
+    clean_pieces: list[Piece] = []
     if not isinstance(pieces, list) or not pieces:
         issues.append(FieldIssue("pieces", "Escribe al menos un mensaje."))
     elif len(pieces) > MAX_PIECES:
         issues.append(FieldIssue("pieces", f"Una respuesta rápida admite hasta {MAX_PIECES} mensajes."))
     else:
         for index, piece in enumerate(pieces):
-            text = piece.get("text") if isinstance(piece, dict) and piece.get("kind", "text") == "text" else piece if isinstance(piece, str) else None
-            text = text.strip() if isinstance(text, str) else ""
-            if not text:
+            kind = piece.get("kind", "text") if isinstance(piece, dict) else "text"
+            raw = piece.get("text") if isinstance(piece, dict) else piece if isinstance(piece, str) else None
+            text = raw.strip() if isinstance(raw, str) else ""
+            if kind == "file":
+                file_id = str(piece.get("file_id") or "").strip().lower()
+                if not _FILE_ID.match(file_id):
+                    issues.append(FieldIssue(f"pieces[{index}].file", f"El archivo del mensaje {index + 1} no es válido: vuelve a subirlo."))
+                elif len(text) > MAX_FILE_CAPTION_CHARS:
+                    issues.append(FieldIssue(f"pieces[{index}].text", f"El texto del archivo {index + 1} admite hasta {MAX_FILE_CAPTION_CHARS} caracteres."))
+                else:
+                    clean_pieces.append(Piece("file", text, file_id))
+            elif kind != "text":
+                issues.append(FieldIssue(f"pieces[{index}]", f"El mensaje {index + 1} no es válido."))
+            elif not text:
                 issues.append(FieldIssue(f"pieces[{index}].text", f"El mensaje {index + 1} está vacío: escríbelo o quítalo."))
             elif len(text) > MAX_TEXT_CHARS:
                 issues.append(FieldIssue(f"pieces[{index}].text", f"El mensaje {index + 1} admite hasta {MAX_TEXT_CHARS} caracteres."))
             else:
-                clean_pieces.append(text)
+                clean_pieces.append(Piece("text", text))
 
     if issues:
         raise InvalidFieldsError("Revisa la respuesta rápida.", issues)

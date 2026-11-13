@@ -22,7 +22,7 @@ este índice.
 
 ## Respuestas rápidas
 
-- [Crea tus respuestas rápidas](../project/content/help/respuestas-rapidas/crear-respuestas-rapidas.md): Guardar los mensajes que tu equipo envía todos los días, con un atajo, el nombre del cliente y varios mensajes en orden.
+- [Crea tus respuestas rápidas](../project/content/help/respuestas-rapidas/crear-respuestas-rapidas.md): Guardar los mensajes que tu equipo envía todos los días, con un atajo, el nombre del cliente, fotos o PDF y varios mensajes en orden.
 - [Usa una respuesta rápida en el chat](../project/content/help/respuestas-rapidas/usar-respuestas-rapidas.md): Buscarlas escribiendo «/» o con el rayo, elegirlas con el teclado y enviar varios mensajes en orden.
 - [Organiza tus respuestas rápidas](../project/content/help/respuestas-rapidas/organizar-respuestas-rapidas.md): Categorías, buscar, duplicar, editar, borrar y ver cuántas veces las usa tu equipo.
 

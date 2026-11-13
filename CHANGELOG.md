@@ -5,6 +5,12 @@ está en el historial de git y en `docs/plan-v1.md`.
 
 ## 12 de noviembre de 2026
 
+**Respuestas rápidas con fotos y PDF**
+- Una respuesta rápida ahora puede llevar **archivos**: fotos, PDF, documentos, videos o audios de hasta 4 MB, cada uno con un texto
+  opcional (también con `{nombre}`). Por ejemplo, `/catalogo` envía un saludo y después el PDF del catálogo.
+- El archivo se sube una vez en el editor (**Agregar archivo**) y queda guardado con el negocio. En el chat sale desde el servidor,
+  sin volver a subirlo, en orden con los textos.
+
 **Fotos y documentos desde el chat**
 - En Conversaciones, el **clip** junto al cuadro de texto adjunta un archivo: fotos, PDF, Word, Excel, PowerPoint, texto, videos MP4 y
   audios, de hasta 4 MB. También se puede pegar una imagen. Lo que escribas sale como su texto.

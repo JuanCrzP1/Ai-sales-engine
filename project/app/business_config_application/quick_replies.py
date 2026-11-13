@@ -12,7 +12,8 @@ from typing import Any
 from app.business_config_application.access import BusinessAccess
 from app.business_config_application.ports import QuickReplyStorage
 from app.domain.business_config.access import Principal
-from app.domain.business_config.quick_replies import QuickReply, validated
+from app.domain.business_config.conversations import Attachment, MediaFile, validated_attachment
+from app.domain.business_config.quick_replies import QuickReply, QuickReplyFile, validated
 from app.domain.business_config.team import CONFIGURE, can
 
 logger = logging.getLogger("quick_replies")
@@ -52,6 +53,26 @@ class QuickRepliesService:
         self._access.require(principal, business, CONFIGURE)
         self._storage.delete(business, reply_id)
         logger.info("respuesta_rapida_borrada", extra={"tenant": business})
+
+    def upload_file(self, principal: Principal, business: str, attachment: Attachment) -> QuickReplyFile:
+        """Guarda un archivo para usarlo en una respuesta (lo sube quien organiza el negocio). Queda suelto hasta que una respuesta
+        lo nombre; si ninguna lo usa, se borra solo."""
+        self._access.require(principal, business, CONFIGURE)
+        saved = self._storage.save_file(business, attachment.media, created_by=principal.label)
+        logger.info("archivo_de_respuesta_guardado", extra={"tenant": business, "kind": attachment.kind, "bytes": saved.size_bytes})
+        return saved
+
+    def file(self, principal: Principal, business: str, file_id: str) -> MediaFile:
+        """Un archivo de las respuestas, para verlo en el panel (todo el equipo)."""
+        self._access.require(principal, business)
+        return self._storage.file(business, file_id)
+
+    def attachment(self, principal: Principal, business: str, file_id: str, caption: object) -> Attachment:
+        """Lo que sale al chat cuando se usa una respuesta con un archivo: el archivo guardado con su texto (ya con el nombre del
+        cliente). Se revisa como cualquier archivo enviado desde el chat."""
+        self._access.require(principal, business)
+        media = self._storage.file(business, file_id)
+        return validated_attachment(mime_type=media.mime_type, content=media.content, file_name=media.file_name, caption=caption)
 
     def mark_used(self, principal: Principal, business: str, reply_id: str) -> QuickReply:
         """Se usó en un chat: cuenta para que las más usadas salgan primero. Lo puede marcar cualquiera que llegue al negocio."""

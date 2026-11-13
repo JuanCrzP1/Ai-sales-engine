@@ -19,7 +19,7 @@ from app.domain.business_config.api_keys import ApiKey, ApiKeyIdentity, CreatedA
 from app.domain.business_config.key_permissions import KeyReach
 from app.domain.business_config.oauth import AuthorizationCode, OAuthClient, TokenGrant
 from app.domain.business_config.attention import AttentionSettings
-from app.domain.business_config.quick_replies import QuickReply, QuickReplyDraft
+from app.domain.business_config.quick_replies import QuickReply, QuickReplyDraft, QuickReplyFile
 from app.domain.business_config.team import Invitation, Member
 from app.domain.business_config.ai_usage import AIUsageSummary
 from app.domain.business_config.commerce import Customer, NewSale, ReportDay, ReportTotals, Sale
@@ -355,6 +355,10 @@ class QuickReplyStorage(Protocol):
     def delete(self, tenant_slug: str, reply_id: str) -> None: ...
 
     def mark_used(self, tenant_slug: str, reply_id: str) -> QuickReply: ...
+
+    def save_file(self, tenant_slug: str, media: MediaFile, *, created_by: str | None) -> QuickReplyFile: ...
+
+    def file(self, tenant_slug: str, file_id: str) -> MediaFile: ...
 
 
 class TeamStorage(Protocol):

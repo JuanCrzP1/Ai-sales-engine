@@ -132,6 +132,8 @@ export function createApiInbox(http: HttpClient): Inbox {
       return { conversation: toConversation(payload.conversation), messages: payload.messages.map(toMessage), cursor: payload.cursor };
     },
     reply: async (conversationId, text) => toMessage(await http.post<ApiMessage>(`${path(conversationId)}/messages`, { text })),
+    sendQuickReplyFile: async (conversationId, fileId, caption) =>
+      toMessage(await http.post<ApiMessage>(`${path(conversationId)}/quick-reply-file`, { file_id: fileId, caption })),
     // El nombre y el texto van en encabezados (codificados como en una URL): el cuerpo es el archivo tal cual.
     sendAttachment: async (conversationId, file, caption) =>
       toMessage(await http.upload<ApiMessage>(`${path(conversationId)}/attachments`, file, { "X-File-Name": encodeURIComponent(file.name), "X-Caption": encodeURIComponent(caption) })),

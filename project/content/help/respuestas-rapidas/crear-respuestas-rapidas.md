@@ -1,10 +1,10 @@
 ---
 title: Crea tus respuestas rápidas
 module: respuestas-rapidas
-summary: Guardar los mensajes que tu equipo envía todos los días, con un atajo, el nombre del cliente y varios mensajes en orden.
+summary: Guardar los mensajes que tu equipo envía todos los días, con un atajo, el nombre del cliente, fotos o PDF y varios mensajes en orden.
 order: 1
 updated: 2026-11-12
-keywords: respuestas rápidas, atajo, plantillas, mensajes guardados, nombre del cliente, crear, varios mensajes
+keywords: respuestas rápidas, atajo, plantillas, mensajes guardados, nombre del cliente, crear, varios mensajes, archivo, foto, pdf, catálogo
 related: usar-respuestas-rapidas, organizar-respuestas-rapidas
 ---
 
@@ -26,6 +26,14 @@ Escribe `{nombre}` (o toca **+ {nombre}**) y se cambia por el primer nombre del 
 
 Toca **Agregar otro mensaje** para que salgan uno tras otro, como si los escribieras tú (hasta 10). Cámbialos de orden con ↑ y ↓.
 
+## Fotos, PDF y otros archivos
+
+Toca **Agregar archivo** y elige una foto, un PDF (el catálogo, el menú, una cotización), un documento, un video o un audio, de hasta 4 MB. Se sube una sola vez y queda guardado con la respuesta.
+
+- Cada archivo puede llevar un **texto** que sale con él, también con `{nombre}`.
+- Puedes mezclar textos y archivos en el orden que quieras; por ejemplo, un saludo y después el PDF del catálogo.
+- La vista previa lo muestra como «📎 Catálogo.pdf».
+
 > **Importante:** las crean, editan y borran el dueño y los administradores. Los asesores las usan en el chat. Ver [Los roles del equipo](roles-del-equipo).
 
-Por ahora son textos. Para enviar una foto o un PDF, usa el clip del chat: ver [Responde tú y pausa la IA](responder-y-pausar-la-ia).
+Para enviar un archivo una sola vez, sin guardarlo, usa el clip del chat: ver [Responde tú y pausa la IA](responder-y-pausar-la-ia).

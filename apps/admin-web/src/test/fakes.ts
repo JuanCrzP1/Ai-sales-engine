@@ -8,7 +8,7 @@ import type { BusinessDocument, BusinessSummary, BusinessTemplate, Diagnostic, P
 import { createLocalOperatorAuthService } from "../infrastructure/local/localOperatorAuthService";
 import type { AIModelOption, AISettings, AIUsage, AssistantLab, ConfigSource, ModelCatalog } from "../repositories/assistantLab";
 import type { Attention, AttentionSettings, AttentionView, DevicePush, PushPermission, PushSupport } from "../repositories/attention";
-import type { QuickReplies, QuickReply, QuickReplyInput } from "../repositories/quickReplies";
+import type { QuickReplies, QuickReply, QuickReplyFile, QuickReplyInput, QuickReplyPiece } from "../repositories/quickReplies";
 import type { Help, HelpArticle, HelpModule } from "../repositories/help";
 import { assignableRoles, type Invitation, type Role, type TeamMember } from "../domain/team/team";
 import type { Team } from "../repositories/team";
@@ -645,7 +645,15 @@ export function createMemoryAgentAuthorization() {
 
 /** Las respuestas rápidas en memoria, con las mismas reglas que el servidor (atajo único y normalizado, de 1 a 10 mensajes). */
 export function createMemoryQuickReplies(seed: QuickReply[] = [], options: { canManage?: boolean } = {}) {
-  const state = { replies: structuredClone(seed), canManage: options.canManage ?? true, used: [] as string[], failList: false };
+  const state = {
+    replies: structuredClone(seed),
+    canManage: options.canManage ?? true,
+    used: [] as string[],
+    failList: false,
+    /** Los archivos subidos, por su id. */
+    files: new Map<string, { file: File; meta: QuickReplyFile }>(),
+    failUpload: null as string | null,
+  };
   let next = seed.length + 1;
   const check = (input: QuickReplyInput, id?: string): QuickReplyInput => {
     const shortcut = normalizeShortcut(input.shortcut);
@@ -655,11 +663,17 @@ export function createMemoryQuickReplies(seed: QuickReply[] = [], options: { can
     else if (state.replies.some((reply) => reply.shortcut === shortcut && reply.id !== id)) problems.push({ path: "shortcut", message: "Ya tienes una respuesta rápida con ese atajo. Usa otro." });
     if (input.pieces.length === 0) problems.push({ path: "pieces", message: "Escribe al menos un mensaje." });
     input.pieces.forEach((piece, index) => {
-      if (!piece.text.trim()) problems.push({ path: `pieces[${index}].text`, message: `El mensaje ${index + 1} está vacío: escríbelo o quítalo.` });
+      if (piece.kind === "file") {
+        if (!state.files.has(piece.fileId)) problems.push({ path: `pieces[${index}].file`, message: "Ese archivo ya no está guardado: vuelve a subirlo." });
+      } else if (!piece.text.trim()) problems.push({ path: `pieces[${index}].text`, message: `El mensaje ${index + 1} está vacío: escríbelo o quítalo.` });
     });
     if (problems.length) throw new PersistenceError("invalid", { message: problems.length === 1 ? problems[0]!.message : "Revisa la respuesta rápida.", problems });
     const category = input.category?.replace(/\s+/g, " ").trim() ?? "";
-    return { shortcut, category: category ? category.charAt(0).toUpperCase() + category.slice(1) : null, pieces: input.pieces.map((piece) => ({ kind: "text", text: piece.text.trim() })) };
+    return {
+      shortcut,
+      category: category ? category.charAt(0).toUpperCase() + category.slice(1) : null,
+      pieces: input.pieces.map((piece): QuickReplyPiece => (piece.kind === "file" ? { ...state.files.get(piece.fileId)!.meta, kind: "file", text: piece.text.trim() } : { kind: "text", text: piece.text.trim() })),
+    };
   };
   const find = (id: string) => {
     const reply = state.replies.find((item) => item.id === id);
@@ -687,6 +701,21 @@ export function createMemoryQuickReplies(seed: QuickReply[] = [], options: { can
     remove: async (id: string) => {
       find(id);
       state.replies = state.replies.filter((reply) => reply.id !== id);
+    },
+    uploadFile: async (file: File) => {
+      if (state.failUpload) {
+        const message = state.failUpload;
+        state.failUpload = null;
+        throw new PersistenceError("invalid", { message, problems: [{ path: "file", message }] });
+      }
+      const meta: QuickReplyFile = { fileId: `archivo-${state.files.size + 1}`, fileName: file.name, mimeType: file.type, sizeBytes: file.size };
+      state.files.set(meta.fileId, { file, meta });
+      return meta;
+    },
+    file: async (fileId: string) => {
+      const found = state.files.get(fileId);
+      if (!found) throw new PersistenceError("not_found", { message: "El archivo no existe." });
+      return found.file;
     },
     markUsed: async (id: string) => {
       const reply = find(id);
@@ -935,8 +964,8 @@ export interface MemoryInboxControls {
   removed: string[];
   notificationList: Notification[];
   replies: { conversationId: string; text: string }[];
-  /** Los archivos que envió el equipo, en orden. */
-  attachments: { conversationId: string; name: string; type: string; size: number; caption: string }[];
+  /** Los archivos que envió el equipo, en orden (los de respuestas rápidas, con su `fileId`). */
+  attachments: { conversationId: string; name: string; type: string; size: number; caption: string; fileId?: string }[];
   readMarks: string[];
   /** Un mensaje nuevo en un hilo (como si llegara por el canal): aparece en vivo. */
   receive(conversationId: string, message: ChatMessage, conversation?: Partial<ConversationSummary>): void;
@@ -1041,6 +1070,23 @@ export function createMemoryInbox(seededThreads: ConversationThread[] = [], seed
       const sent: ChatMessage = {
         id: `agente-archivo-${attachments.length}`, author: "agent", body: caption, intent: null, createdAt: new Date().toISOString(), kind, status: "sent",
         media: { id: mediaId, mimeType: file.type, sizeBytes: file.size, fileName: file.name },
+      };
+      thread.messages = [...thread.messages, sent];
+      touch(sent);
+      thread.conversation = { ...thread.conversation, aiPaused: true, needsHuman: false, messageCount: thread.messages.length };
+      return sent;
+    },
+    sendQuickReplyFile: async (id, fileId, caption) => {
+      const thread = find(id);
+      if (replyFailure) {
+        const message = replyFailure;
+        replyFailure = null;
+        throw new PersistenceError("unknown", { message });
+      }
+      attachments.push({ conversationId: id, name: fileId, type: "application/pdf", size: 0, caption, fileId });
+      const sent: ChatMessage = {
+        id: `agente-archivo-${attachments.length}`, author: "agent", body: caption, intent: null, createdAt: new Date().toISOString(), kind: "document", status: "sent",
+        media: { id: `media-${fileId}`, mimeType: "application/pdf", sizeBytes: 10, fileName: fileId },
       };
       thread.messages = [...thread.messages, sent];
       touch(sent);

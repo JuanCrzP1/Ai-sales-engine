@@ -1085,7 +1085,9 @@ def test_postgres_schema_comes_from_the_reviewed_migration():
             # Migración 0015: respuestas rápidas.
             "quick_replies",
             # Migración 0016: las invitaciones al equipo.
-            "team_invitations"} == set(metadata.tables)
+            "team_invitations",
+            # Migración 0017: los archivos de las respuestas rápidas.
+            "quick_reply_files"} == set(metadata.tables)
 
 
 @pytest.mark.parametrize("scheme", ["postgresql", "postgres"])

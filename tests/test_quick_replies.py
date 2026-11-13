@@ -230,3 +230,85 @@ def test_without_the_store_the_panel_says_it_is_not_available(tmp_path):
     response = client.get(_base())
     assert response.status_code == 503
     engine.dispose()
+
+
+# ---------------------------------------------------------------------------------------------------- archivos en las respuestas
+
+PDF = b"%PDF-1.7 catalogo"
+
+
+def _upload(client, content=PDF, mime="application/pdf", name="Catálogo.pdf", user="ana", slug="restaurant"):
+    from urllib.parse import quote
+
+    headers = {**_as(user), "Content-Type": mime, "X-File-Name": quote(name)}
+    return client.post(f"{_base(slug)}/files", content=content, headers=headers)
+
+
+def test_a_reply_mixes_texts_and_files_and_the_file_is_kept_with_the_business(cloud):
+    client, _engine, _access = cloud
+    uploaded = _upload(client)
+    assert uploaded.status_code == 201, uploaded.text
+    file = uploaded.json()
+    assert (file["file_name"], file["mime_type"], file["size_bytes"]) == ("Catálogo.pdf", "application/pdf", len(PDF))
+    payload = {"shortcut": "catalogo", "pieces": [{"kind": "text", "text": "Hola {nombre} 👋"}, {"kind": "file", "file_id": file["file_id"], "text": "Nuestro catálogo"}]}
+    created = client.post(_base(), headers=_as("ana"), json=payload)
+    assert created.status_code == 201, created.text
+    assert created.json()["pieces"] == [
+        {"kind": "text", "text": "Hola {nombre} 👋"},
+        {"kind": "file", "text": "Nuestro catálogo", "file_id": file["file_id"], "file_name": "Catálogo.pdf", "mime_type": "application/pdf", "size_bytes": len(PDF)},
+    ]
+    shown = client.get(f"{_base()}/files/{file['file_id']}", headers=_as("ana"))
+    assert (shown.status_code, shown.content, shown.headers["x-content-type-options"]) == (200, PDF, "nosniff")
+    # Otro negocio no lo ve ni lo puede usar.
+    assert client.get(f"{_base('restaurant')}/files/{file['file_id']}", headers=_as("beto")).status_code == 404
+    foreign = client.post(_base("saas"), headers=_as("beto"), json={**payload, "shortcut": "robado"})
+    assert foreign.status_code == 422 and foreign.json()["issues"] == [{"path": "pieces[1].file", "message": "Ese archivo ya no está guardado: vuelve a subirlo."}]
+
+
+def test_a_file_that_cannot_be_sent_is_not_kept(cloud):
+    client, _engine, _access = cloud
+    assert _upload(client, b"MZ", "application/x-msdownload", "virus.exe").status_code == 422
+    assert _upload(client, b"\xff\xd8\xff foto", "application/pdf").json()["message"].startswith("El archivo no es lo que dice ser")
+    assert _upload(client, user="beto").status_code == 404
+
+
+@pytest.mark.parametrize(
+    "piece, path",
+    [({"kind": "file", "file_id": "no-es-un-id"}, "pieces[0].file"), ({"kind": "file", "file_id": "0" * 8 + "-0000-0000-0000-" + "0" * 12, "text": "x" * 1025}, "pieces[0].text"), ({"kind": "video"}, "pieces[0]")],
+)
+def test_a_bad_file_piece_comes_back_on_its_field(piece, path):
+    with pytest.raises(InvalidFieldsError) as error:
+        domain.validated(shortcut="a", pieces=[piece])
+    assert [issue.path for issue in error.value.issues] == [path]
+
+
+def test_files_nobody_uses_are_cleaned_after_an_hour(cloud):
+    from datetime import timedelta
+
+    from sqlalchemy import update
+
+    from app.infrastructure.business_config.tables import quick_reply_files
+
+    client, engine, _access = cloud
+    kept = _upload(client, name="usado.pdf").json()["file_id"]
+    loose = _upload(client, name="suelto.pdf").json()["file_id"]
+    reply = client.post(_base(), headers=_as("ana"), json={"shortcut": "c", "pieces": [{"kind": "file", "file_id": kept}]}).json()
+    with engine.begin() as conn:
+        conn.execute(update(quick_reply_files).values(created_at=datetime.now(timezone.utc) - timedelta(hours=2)))
+    fresh = _upload(client, name="nuevo.pdf").json()["file_id"]
+    status = lambda file_id: client.get(f"{_base()}/files/{file_id}", headers=_as("ana")).status_code  # noqa: E731
+    assert (status(kept), status(loose), status(fresh)) == (200, 404, 200)
+    # Al borrar la respuesta, su archivo queda suelto y también se limpia (pasada la hora).
+    assert client.delete(f"{_base()}/{reply['id']}", headers=_as("ana")).status_code == 204
+    with engine.begin() as conn:
+        conn.execute(update(quick_reply_files).values(created_at=datetime.now(timezone.utc) - timedelta(hours=2)))
+    _upload(client, name="otro.pdf")
+    assert status(kept) == 404
+
+
+def test_a_business_keeps_at_most_200_files(cloud, monkeypatch):
+    client, _engine, _access = cloud
+    monkeypatch.setattr("app.infrastructure.business_config.quick_reply_store.MAX_QUICK_REPLY_FILES", 1)
+    assert _upload(client).status_code == 201
+    full = _upload(client)
+    assert full.status_code == 422 and "máximo de 1 archivos" in full.json()["message"]

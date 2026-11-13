@@ -15,7 +15,7 @@ from app.domain.business_config.ai_settings import AISettings, KeyCheck
 from app.domain.business_config.attention import REPLY_MINUTES, RESUME_MINUTES, TIMEZONES
 from app.domain.business_config.ai_models import ModelCatalog
 from app.domain.business_config.ai_usage import AIUsageSummary
-from app.domain.business_config.conversations import MAX_REPLY_CHARS, REPLYABLE_CHANNELS, BusinessActivity, ChatMessage, ConversationSummary, Notification
+from app.domain.business_config.conversations import MAX_CAPTION_CHARS, MAX_REPLY_CHARS, REPLYABLE_CHANNELS, BusinessActivity, ChatMessage, ConversationSummary, Notification
 from app.domain.business_config.key_permissions import KEY_AREAS, permissions_of
 from app.domain.business_config.records import BusinessSummary, ConfigVersion
 from app.domain.business_config.templates import BusinessTemplate
@@ -214,6 +214,13 @@ def chat_message_payload(message: ChatMessage) -> dict[str, Any]:
     }
 
 
+class SendQuickReplyFile(_Request):
+    """Un archivo de una respuesta rápida que sale a un chat, con su texto ya con el nombre del cliente."""
+
+    file_id: str = Field(min_length=1, max_length=64)
+    caption: str = Field(default="", max_length=MAX_CAPTION_CHARS)
+
+
 class SendReply(_Request):
     """Lo que el equipo responde desde la bandeja: sale por el canal del cliente."""
 
@@ -288,13 +295,23 @@ def attention_payload(view) -> dict[str, Any]:
     }
 
 
+def quick_reply_file_payload(file) -> dict[str, Any]:
+    return {"file_id": file.id, "file_name": file.file_name, "mime_type": file.mime_type, "size_bytes": file.size_bytes}
+
+
+def _piece_payload(piece) -> dict[str, Any]:
+    if piece.kind == "file" and piece.file is not None:
+        return {"kind": "file", "text": piece.text, **quick_reply_file_payload(piece.file)}
+    return {"kind": "text", "text": piece.text}
+
+
 def quick_reply_payload(reply) -> dict[str, Any]:
-    """Una respuesta rápida: cada mensaje va como pieza de texto (así caben los archivos el día que el chat pueda enviarlos)."""
+    """Una respuesta rápida: sus mensajes en orden, cada uno un texto o un archivo (con lo que se sabe de él y su texto)."""
     return {
         "id": reply.id,
         "shortcut": reply.shortcut,
         "category": reply.category,
-        "pieces": [{"kind": "text", "text": text} for text in reply.pieces],
+        "pieces": [_piece_payload(piece) for piece in reply.pieces],
         "use_count": reply.use_count,
         "last_used_at": _iso(reply.last_used_at),
         "created_at": _iso(reply.created_at),

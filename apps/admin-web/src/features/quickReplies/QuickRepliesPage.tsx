@@ -187,6 +187,7 @@ export function QuickRepliesPage() {
           initial={editing.initial}
           categories={categories}
           onSave={(input) => catalog.save(input, editing.reply?.id)}
+          onUpload={catalog.uploadFile}
           onClose={() => setEditing(null)}
         />
       )}

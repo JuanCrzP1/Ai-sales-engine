@@ -1,14 +1,19 @@
 /**
  * Respuestas rápidas: mensajes guardados del negocio que el equipo pone en un chat sin copiar y pegar. Cada una tiene un atajo
- * («precios», se busca escribiendo «/precios»), una categoría opcional y de uno a diez mensajes que salen en orden. En los textos,
- * `{nombre}` se cambia por el primer nombre del cliente. Las reglas del servidor están en `domain/business_config/quick_replies.py`.
+ * («precios», se busca escribiendo «/precios»), una categoría opcional y de uno a diez mensajes que salen en orden: textos o archivos
+ * (una foto, un PDF...) con un texto opcional. En los textos, `{nombre}` se cambia por el primer nombre del cliente. Las reglas del
+ * servidor están en `domain/business_config/quick_replies.py`.
  */
 
-/** Por ahora cada mensaje es un texto; los archivos llegarán cuando el chat pueda enviarlos. */
-export interface QuickReplyPiece {
-  kind: "text";
-  text: string;
+export interface QuickReplyFile {
+  fileId: string;
+  fileName: string | null;
+  mimeType: string;
+  sizeBytes: number;
 }
+
+/** Un mensaje: un texto, o un archivo guardado con su texto opcional (`text`). */
+export type QuickReplyPiece = { kind: "text"; text: string } | ({ kind: "file"; text: string } & QuickReplyFile);
 
 export interface QuickReply {
   id: string;
@@ -38,6 +43,8 @@ export interface QuickReplyList {
 
 export const MAX_PIECES = 10;
 export const MAX_TEXT = 4000;
+/** El texto que acompaña un archivo (el mismo tope que al enviarlo desde el chat). */
+export const MAX_FILE_CAPTION = 1024;
 export const MAX_SHORTCUT = 40;
 export const MAX_CATEGORY = 40;
 export const UNCATEGORIZED = "Sin categoría";
@@ -57,9 +64,25 @@ export function normalizeShortcut(value: string): string {
     .trim();
 }
 
-/** Lo que tiene cada respuesta, en una línea: los mensajes separados por «·». */
+/** Cómo se nombra un archivo en una línea: «📎 Catálogo.pdf». */
+export function fileLabel(file: Pick<QuickReplyFile, "fileName" | "mimeType">): string {
+  const name = file.fileName ?? (file.mimeType.startsWith("image/") ? "Foto" : file.mimeType.startsWith("video/") ? "Video" : file.mimeType.startsWith("audio/") ? "Audio" : "Documento");
+  return `📎 ${name}`;
+}
+
+/** Lo que tiene cada respuesta, en una línea: los mensajes separados por «·» (los archivos, con su nombre). */
 export function replySummary(reply: Pick<QuickReply, "pieces">): string {
-  return reply.pieces.map((piece) => piece.text.replace(/\s+/g, " ").trim()).join(" · ");
+  return reply.pieces
+    .map((piece) => {
+      const text = piece.text.replace(/\s+/g, " ").trim();
+      return piece.kind === "file" ? [fileLabel(piece), text].filter(Boolean).join(" ") : text;
+    })
+    .join(" · ");
+}
+
+/** Si la respuesta lleva algún archivo (en el chat, todo queda en espera y sale en orden). */
+export function hasFiles(reply: Pick<QuickReply, "pieces">): boolean {
+  return reply.pieces.some((piece) => piece.kind === "file");
 }
 
 /** Las que coinciden con lo buscado: primero las que empiezan por el atajo, luego por categoría o texto. Sin tildes ni mayúsculas. */

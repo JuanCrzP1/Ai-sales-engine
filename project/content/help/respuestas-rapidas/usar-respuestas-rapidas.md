@@ -15,8 +15,8 @@ En cualquier chat de [Conversaciones](panel:conversaciones):
 
 ## Qué pasa al elegirla
 
-- **Si es un solo mensaje**, queda en el cuadro de texto para que lo retoques antes de enviarlo.
-- **Si son varios**, quedan en espera y salen en orden al tocar **Enviar**. Si alguno no se puede enviar, los que faltan vuelven a quedar en espera.
+- **Si es un solo texto**, queda en el cuadro para que lo retoques antes de enviarlo.
+- **Si son varios mensajes, o lleva archivos**, quedan en espera y salen en orden al tocar **Enviar**; los archivos se ven como «📎 Catálogo.pdf». Si alguno no se puede enviar, los que faltan vuelven a quedar en espera.
 
 El nombre del cliente ya va puesto donde escribiste `{nombre}`.
 

@@ -21,7 +21,7 @@ export function ConversationsPage() {
   const { slug = "" } = useParams();
   // Desde un aviso se llega con `?c=` y la conversación se abre directo.
   const [params] = useSearchParams();
-  const { filter, setFilter, list, selectedId, select, thread, reload, resolveHandoff, setAssistant, reply, sendAttachment, forget, removeTestChats } = useConversations(
+  const { filter, setFilter, list, selectedId, select, thread, reload, resolveHandoff, setAssistant, reply, sendAttachment, sendQuickReplyFile, forget, removeTestChats } = useConversations(
     { business: slug },
     params.get("c"),
   );
@@ -154,6 +154,7 @@ export function ConversationsPage() {
               onAssistant={setAssistant}
               onReply={reply}
               onSendFile={sendAttachment}
+              onSendQuickFile={sendQuickReplyFile}
             />
           )}
         </section>
@@ -215,6 +216,7 @@ function ThreadView({
   onAssistant,
   onReply,
   onSendFile,
+  onSendQuickFile,
 }: {
   thread: ConversationThread;
   onBack: () => void;
@@ -223,6 +225,7 @@ function ThreadView({
   onAssistant: (id: string, active: boolean) => Promise<void>;
   onReply: (id: string, text: string) => Promise<void>;
   onSendFile: (id: string, file: File, caption: string) => Promise<void>;
+  onSendQuickFile: (id: string, fileId: string, caption: string, label: string) => Promise<void>;
 }) {
   const { conversation, messages } = thread;
   const name = contactLabel(conversation);
@@ -354,7 +357,7 @@ function ThreadView({
       )}
 
       {canReply ? (
-        <Composer businessSlug={conversation.business.slug} contactName={conversation.contactName} aiActive={!conversation.aiPaused} onSend={(text) => onReply(conversation.id, text)} onSendFile={(file, caption) => onSendFile(conversation.id, file, caption)} />
+        <Composer businessSlug={conversation.business.slug} contactName={conversation.contactName} aiActive={!conversation.aiPaused} onSend={(text) => onReply(conversation.id, text)} onSendFile={(file, caption) => onSendFile(conversation.id, file, caption)} onSendQuickFile={(fileId, caption, label) => onSendQuickFile(conversation.id, fileId, caption, label)} />
       ) : (
         <footer className="thread__footer">
           {isTest

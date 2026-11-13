@@ -11,15 +11,17 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from typing import Annotated, Any
-from urllib.parse import unquote
 
 from fastapi import APIRouter, Depends, Query, Request, Response, status
 from fastapi.concurrency import run_in_threadpool
 
 from app.admin_api.errors import ApiError
+from app.admin_api.files import file_response, read_upload
+from app.admin_api.quick_reply_routes import QuickReplies
 from app.admin_api.routes import BusinessSlug, CurrentUser
 from app.admin_api.schemas import (
     MarkNotificationsRead,
+    SendQuickReplyFile,
     SendReply,
     SetAssistant,
     activity_payload,
@@ -29,7 +31,6 @@ from app.admin_api.schemas import (
 )
 from app.business_config_application.conversations import ConversationsService, NotificationsService, ReplyNotSentError
 from app.business_config_application.usage_limits import UsageGuard
-from app.domain.business_config.conversations import MAX_MEDIA_BYTES, validated_attachment
 from app.domain.business_config.errors import AssistantUnavailableError
 
 router = APIRouter(prefix="/api")
@@ -56,9 +57,6 @@ def _usage(request: Request) -> UsageGuard:
 Conversations = Annotated[ConversationsService, Depends(_conversations)]
 Notifications = Annotated[NotificationsService, Depends(_notifications)]
 Usage = Annotated[UsageGuard, Depends(_usage)]
-
-_INLINE_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif", "application/pdf"}
-
 
 def _since(value: str | None) -> datetime | None:
     if not value:
@@ -119,21 +117,27 @@ async def send_attachment(conversation_id: str, request: Request, user: CurrentU
     """El equipo envía un archivo: el cuerpo es el archivo tal cual (con su `Content-Type`); su nombre y el texto que lo acompaña
     van en los encabezados `X-File-Name` y `X-Caption` (codificados como en una URL). Sale por el canal del cliente y la IA se pausa."""
     usage.conversation_reply(user)
-    declared = request.headers.get("content-length", "")
-    if declared.isdigit() and int(declared) > MAX_MEDIA_BYTES:
-        raise ApiError(status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, "El archivo pesa más de 4 MB. Envía uno más liviano.", code="too_large")
-    content = await request.body()
-    attachment = validated_attachment(
-        mime_type=request.headers.get("content-type"),
-        content=content,
-        file_name=unquote(request.headers.get("x-file-name", "")),
-        caption=unquote(request.headers.get("x-caption", "")),
-    )
+    attachment = await read_upload(request)
     try:
         sent = await run_in_threadpool(conversations.send_attachment, user, conversation_id, attachment)
     except ReplyNotSentError as exc:
         raise ApiError(status.HTTP_502_BAD_GATEWAY, str(exc), code="reply_not_sent") from None
     return chat_message_payload(sent)
+
+
+@router.post("/conversations/{conversation_id}/quick-reply-file", status_code=status.HTTP_201_CREATED)
+def send_quick_reply_file(
+    conversation_id: str, body: SendQuickReplyFile, user: CurrentUser, conversations: Conversations, quick_replies: QuickReplies, usage: Usage
+) -> dict[str, Any]:
+    """Un archivo de una respuesta rápida sale al chat directo desde el servidor (sin bajarlo y volverlo a subir), con su texto ya
+    con el nombre del cliente. Solo archivos del negocio de esa conversación."""
+    usage.conversation_reply(user)
+    business = conversations.business_of(user, conversation_id)
+    attachment = quick_replies.attachment(user, business, body.file_id, body.caption)
+    try:
+        return chat_message_payload(conversations.send_attachment(user, conversation_id, attachment))
+    except ReplyNotSentError as exc:
+        raise ApiError(status.HTTP_502_BAD_GATEWAY, str(exc), code="reply_not_sent") from None
 
 
 @router.post("/conversations/{conversation_id}/assistant")
@@ -162,15 +166,8 @@ def mark_read(conversation_id: str, user: CurrentUser, conversations: Conversati
 @router.get("/conversations/{conversation_id}/media/{media_id}")
 def media(conversation_id: str, media_id: str, user: CurrentUser, conversations: Conversations) -> Response:
     """Una foto, un audio o un documento de la conversación."""
-    file = conversations.media(user, conversation_id, media_id)
-    # Lo que manda un cliente nunca se ejecuta en el panel: solo se muestran en línea tipos seguros, sin scripts (ni SVG ni HTML).
-    safe = file.mime_type in _INLINE_TYPES or file.mime_type.startswith(("audio/", "video/"))
-    headers = {
-        "X-Content-Type-Options": "nosniff",
-        "Content-Security-Policy": "default-src 'none'; sandbox",
-        "Content-Disposition": "inline" if safe else "attachment",
-    }
-    return Response(content=file.content, media_type=file.mime_type if safe else "application/octet-stream", headers=headers)
+    # Lo que manda un cliente nunca se ejecuta en el panel (ver `files.py`).
+    return file_response(conversations.media(user, conversation_id, media_id))
 
 
 @router.get("/businesses/{slug}/activity")

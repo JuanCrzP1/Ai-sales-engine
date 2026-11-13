@@ -506,3 +506,19 @@ team_invitations = Table(
     CheckConstraint("role IN ('owner', 'admin', 'agent')", name="team_invitations_role_check"),
     Index("team_invitations_tenant_idx", "tenant_id", "created_at"),
 )
+
+# Los archivos de las respuestas rápidas (ver `project/db/migrations/0017_quick_reply_files.sql`).
+quick_reply_files = Table(
+    "quick_reply_files",
+    metadata,
+    Column("id", Uuid, primary_key=True, default=uuid.uuid4),
+    Column("tenant_id", Uuid, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False),
+    Column("mime_type", Text, nullable=False),
+    Column("size_bytes", Integer, nullable=False),
+    Column("file_name", Text),
+    Column("content", LargeBinary, nullable=False),
+    Column("created_by", Text),
+    Column("created_at", DateTime(timezone=True), nullable=False, default=_now),
+    CheckConstraint("size_bytes BETWEEN 1 AND 4194304", name="quick_reply_files_size_check"),
+    Index("quick_reply_files_tenant_idx", "tenant_id", "created_at"),
+)

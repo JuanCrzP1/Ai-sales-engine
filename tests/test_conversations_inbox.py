@@ -33,6 +33,7 @@ from app.infrastructure.business_config.notification_store import NotificationSt
 from app.infrastructure.business_config.tables import business_members, conversation_entries, conversations, tenants
 from app.infrastructure.business_config.usage_store import UsageCounterStore
 from app.infrastructure.business_config.example_businesses import import_example, load_example
+from app.infrastructure.business_config.quick_reply_store import QuickReplyStore
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
 MIGRATION = ROOT_DIR / "project" / "db" / "migrations" / "0004_conversations.sql"
@@ -120,6 +121,7 @@ def platform(tmp_path):
         messenger=MESSENGER,
         commerce=CommerceStore(engine),
         ai_usage=AIUsageStore(engine),
+        quick_replies=QuickReplyStore(engine),
     )
     MESSENGER.sent.clear()
     MESSENGER.files.clear()
@@ -513,6 +515,26 @@ def test_a_file_over_4_mb_or_to_someone_else_or_to_a_test_chat_is_refused(platfo
     test_chat = store.record("restaurant", channel="prueba", contact_ref="s1", contact_name="Prueba", messages=[NewMessage("customer", "Hola")])
     assert _send_file(client, test_chat, PDF, "application/pdf").status_code == 422
     assert MESSENGER.files == []
+
+
+def test_the_file_of_a_quick_reply_goes_to_the_chat_from_the_server(platform):
+    from urllib.parse import quote
+
+    _engine, store, _lab, client = platform
+    chat = _whatsapp_chat(store)
+    upload = client.post(
+        "/api/businesses/restaurant/quick-replies/files", content=PDF, headers={**_as("ana"), "Content-Type": "application/pdf", "X-File-Name": quote("Menú.pdf")}
+    ).json()
+    sent = client.post(f"/api/conversations/{chat.conversation_id}/quick-reply-file", json={"file_id": upload["file_id"], "caption": "El menú, Ana"}, headers=_as("ana"))
+    assert sent.status_code == 201, sent.text
+    assert (sent.json()["kind"], sent.json()["body"], sent.json()["media"]["file_name"]) == ("document", "El menú, Ana", "Menú.pdf")
+    assert MESSENGER.files == [("restaurant", "573009998877", "document", "application/pdf", "Menú.pdf", PDF, "El menú, Ana")]
+    # Solo archivos del negocio de esa conversación.
+    foreign = client.post(
+        "/api/businesses/clinic/quick-replies/files", content=PDF, headers={**_as("ana"), "Content-Type": "application/pdf"}
+    ).json()
+    refused = client.post(f"/api/conversations/{chat.conversation_id}/quick-reply-file", json={"file_id": foreign["file_id"]}, headers=_as("ana"))
+    assert refused.status_code == 404 and len(MESSENGER.files) == 1
 
 
 def test_a_file_the_channel_does_not_deliver_is_kept_as_not_sent(platform):

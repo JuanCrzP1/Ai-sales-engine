@@ -146,6 +146,10 @@ class ConversationsService:
         self._storage.update_entry(saved.entry_id, status="sent", provider_message_id=provider_id)
         return next(message for message in self._storage.thread(conversation_id)[1] if message.id == saved.entry_id)
 
+    def business_of(self, principal: Principal, conversation_id: str) -> str:
+        """El negocio de una conversación a la que llega quien pregunta (si no llega, «no existe»)."""
+        return self._require(principal, conversation_id)
+
     def send_attachment(self, principal: Principal, conversation_id: str, attachment: Attachment) -> ChatMessage:
         """El equipo envía un archivo (foto, PDF, documento, video o audio) con un texto opcional. Como una respuesta: se guarda
         enseguida con su archivo («enviando»), sale por el canal del cliente y la IA se pausa en ese chat. Si el canal no lo
