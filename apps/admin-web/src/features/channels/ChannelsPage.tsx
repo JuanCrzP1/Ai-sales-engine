@@ -6,7 +6,6 @@ import { WhatsAppChannelCard } from "./WhatsAppChannelCard";
 /** Los canales que vienen después de WhatsApp. */
 const UPCOMING: { id: string; name: string; description: string; icon: IconName }[] = [
   { id: "telegram", name: "Telegram", description: "Conecta el bot de Telegram de tu negocio.", icon: "send" },
-  { id: "web", name: "Chat web", description: "Una burbuja de chat para tu página web, con tu asistente detrás. Para conectarlo hoy a otra plataforma, usa Integraciones → API del asistente.", icon: "chat" },
 ];
 
 /** Por dónde le escriben los clientes al negocio. Cada canal se conecta aparte y sus chats llegan a Conversaciones. */
