@@ -27,7 +27,14 @@ def _amounts(text: str) -> set[int]:
     return found
 
 
-def check_turn(reply: str, *, facts: dict, previous_reply: str, ai_used: bool, format_error: str) -> dict:
+# Un dato de pago real en la respuesta: un número largo (celular o cuenta), un enlace, una llave o la marca con la que el laboratorio
+# oculta el dato que entregó el motor.
+_PAYMENT_DATA = re.compile(r"\d{8,}|https?://|llave|\[dato entregado por el motor\]", re.IGNORECASE)
+# Los turnos en los que el cliente necesita los datos de pago: los eligió o los pidió otra vez.
+PAYMENT_DATA_TURNS = ("metodo", "reenvio_pago")
+
+
+def check_turn(reply: str, *, facts: dict, previous_reply: str, ai_used: bool, format_error: str, kind: str = "") -> dict:
     known = known_amounts(facts)
     # Válido: un precio publicado, la suma de dos (implementación más el primer mes) o un precio por una cantidad de hasta 10.
     allowed = known | {a + b for a in known for b in known} | {a * quantity for a in known for quantity in range(2, 11)}
@@ -41,6 +48,8 @@ def check_turn(reply: str, *, facts: dict, previous_reply: str, ai_used: bool, f
         "demasiado_larga": len(reply.split()) > max_words + 5,
         "varias_preguntas": reply.count("?") > 2,
         "repite_respuesta_anterior": bool(previous_reply) and reply.strip() == previous_reply.strip(),
+        # Pidió los datos para pagar y no le llegaron (como «Cuando lo hagas, avísame» sin el número).
+        "datos_de_pago_faltantes": kind in PAYMENT_DATA_TURNS and not _PAYMENT_DATA.search(reply),
     }
 
 

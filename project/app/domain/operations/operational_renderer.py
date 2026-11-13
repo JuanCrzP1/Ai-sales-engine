@@ -29,6 +29,8 @@ def render_op_anchor(state: OperationalState | None) -> str:
     p = str(state.active_process or "").strip().lower()
 
     if p == "payment":
+        if state.pending_action == "report_payment" and opt_label:
+            return f"Ya le enviaste los datos para pagar por {opt_label}: falta que pague y te envíe el comprobante."
         if opt_label:
             return f"Venían avanzando por {opt_label}."
         return "Venían avanzando con el pago."
@@ -49,6 +51,8 @@ def render_op_rule(state: OperationalState | None) -> str:
     """
     if state is None or not state.is_active():
         return ""
+    if state.active_process == "payment" and state.pending_action == "report_payment":
+        return "Si pide los datos otra vez, envíaselos con metadata.send_payment; si pregunta qué sigue, dile que envíe aquí el comprobante."
     if str(state.active_option or "").strip():
         return "Si el usuario responde brevemente, continúa naturalmente desde ahí sin reabrir la opción."
     return "Si el usuario responde brevemente, continúa desde el paso activo sin reiniciarlo."

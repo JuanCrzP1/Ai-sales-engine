@@ -247,6 +247,7 @@ def normalize_metadata(raw_metadata: dict | None) -> dict:
         "objection_count": max(0, _as_int(metadata.get("objection_count"), 0)),
         "mode": str(metadata.get("mode") or "").strip().lower(),
         "payment_method": str(metadata.get("payment_method") or "").strip().lower(),
+        "send_payment": str(metadata.get("send_payment") or "").strip().lower(),
         "payment_status": str(metadata.get("payment_status") or "").strip().lower(),
         "handoff": _handoff(metadata.get("handoff")),
     }
@@ -305,6 +306,7 @@ def parse_structured_output(raw_text: str) -> StructuredOutputResult:
         "objection_count": parsed.get("objection_count"),
         "mode": parsed.get("mode"),
         "payment_method": parsed.get("payment_method"),
+        "send_payment": parsed.get("send_payment"),
         "payment_status": parsed.get("payment_status"),
         "handoff": parsed.get("handoff"),
     }

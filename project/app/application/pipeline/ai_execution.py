@@ -72,14 +72,10 @@
 ################################
 from __future__ import annotations
 
-import re
-from datetime import datetime, timedelta, timezone
-
 from app.application.pipeline.fallback import build_fallback_response
 from app.application.pipeline.response_postprocessor import enforce_max_words
 from app.application.pipeline.response_router import route_response
-from app.domain.business_config.payment_data import REDACTED_PAYMENT_VALUE
-from app.domain.business_config.payment_message import method_parts, render_payment_details
+from app.application.pipeline.payment_delivery import already_sent, deliver, ejecutar_pago, sent_state, without_payment_placeholder  # noqa: F401 - las pruebas usan ejecutar_pago y without_payment_placeholder desde aquí
 from app.domain.conversation.memory import ConversationState, MemoryDomainService
 from app.domain.memory.observability.audit import emit_memory_audit
 from app.domain.memory.salience.selector import select as select_commercial_memory
@@ -111,28 +107,6 @@ def _safe_history(memory_service: MemoryDomainService | None, *, tenant_slug: st
     return history if isinstance(history, list) else []
 
 
-def _iter_payment_blocks(pricing: dict) -> list[dict]:
-    blocks: list[dict] = []
-    plans = pricing.get("plans") if isinstance(pricing.get("plans"), list) else []
-    for plan in plans:
-        if not isinstance(plan, dict):
-            continue
-        payment = plan.get("payment") if isinstance(plan.get("payment"), dict) else {}
-        if payment:
-            blocks.append(payment)
-
-    catalog = pricing.get("catalog") if isinstance(pricing.get("catalog"), dict) else {}
-    catalog_payment = catalog.get("payment") if isinstance(catalog.get("payment"), dict) else {}
-    if catalog_payment:
-        blocks.append(catalog_payment)
-
-    root_payment = pricing.get("payment") if isinstance(pricing.get("payment"), dict) else {}
-    if root_payment:
-        blocks.append(root_payment)
-
-    return blocks
-
-
 def _resolve_post_payment_message(runtime_yaml: dict) -> str:
     config = runtime_yaml.get("config") if isinstance(runtime_yaml.get("config"), dict) else {}
     post_payment = config.get("post_payment") if isinstance(config.get("post_payment"), dict) else {}
@@ -140,82 +114,16 @@ def _resolve_post_payment_message(runtime_yaml: dict) -> str:
     return str(on_user_report.get("message") or "").strip()
 
 
-def ejecutar_pago(runtime_yaml: dict, payment_method: str) -> str:
-    method = str(payment_method or "").strip().lower()
-    if not method:
-        return ""
-
-    pricing = runtime_yaml.get("pricing") if isinstance(runtime_yaml.get("pricing"), dict) else {}
-    payment_blocks = _iter_payment_blocks(pricing)
-    payment_links: list[str] = []
-    transfer_methods: dict[str, dict] = {}
-
-    for payment in payment_blocks:
-        link = str(payment.get("link") or "").strip()
-        if link and link not in payment_links:
-            payment_links.append(link)
-
-        transfer = payment.get("transfer") if isinstance(payment.get("transfer"), dict) else {}
-        if not bool(transfer.get("enabled", False)):
-            continue
-        methods = transfer.get("methods") if isinstance(transfer.get("methods"), list) else []
-        for item in methods:
-            if not isinstance(item, dict):
-                continue
-            item_type = str(item.get("type") or "").strip().lower()
-            if item_type and item_type not in transfer_methods:
-                transfer_methods[item_type] = dict(item)
-
-    template = _payment_details_template(runtime_yaml)
-    if method == "link":
-        if payment_links:
-            medio, datos = method_parts("link", {"link": payment_links[0]})
-            return render_payment_details(template, medio=medio, datos=datos)
-        return ""
-
-    selected = transfer_methods.get(method) if isinstance(transfer_methods.get(method), dict) else {}
-    if not selected:
-        return ""
-    medio, datos = method_parts(method, selected)
-    if not datos:
-        return ""
-    return render_payment_details(template, medio=medio, datos=datos, titular=str(selected.get("holder") or ""))
-
-
-def _payment_details_template(runtime_yaml: dict) -> str | None:
-    """La plantilla del negocio para los datos de pago (Mensajes → «Mensaje con los datos de pago»), o None: la de la plataforma."""
-    config = runtime_yaml.get("config") if isinstance(runtime_yaml.get("config"), dict) else {}
-    return str(config.get("payment_details_message") or "").strip() or None
-
-
-def without_payment_placeholder(response_text: str, runtime_yaml: dict, payment_method: str) -> str:
-    """La IA no recibe los datos de pago, solo su marcador. Si lo repite, el cliente nunca lo ve: recibe el dato real si la IA
-    identificó el método; si no, la respuesta sin esas frases o, si no queda nada, la pregunta por el medio de pago."""
-    if REDACTED_PAYMENT_VALUE not in response_text:
-        return response_text
-    delivered = ejecutar_pago(runtime_yaml, payment_method)
-    if delivered:
-        return delivered
-    kept = [sentence for sentence in re.split(r"(?<=[.!?])\s+", response_text) if REDACTED_PAYMENT_VALUE not in sentence]
-    if kept:
-        return " ".join(kept)
-    methods = _get_configured_payment_methods(runtime_yaml)
-    return f"¿Con qué medio prefieres pagar: {', '.join(methods)}?" if methods else "¿Con qué medio prefieres pagar?"
-
-
-def _previous_response(memory_service: MemoryDomainService | None, *, tenant_slug: str, user_id: str) -> str:
-    """Lo último que le respondió el asistente a este cliente (antes de este turno), o ""."""
-    get_last_response = getattr(memory_service, "get_last_response", None)
-    if not callable(get_last_response):
-        return ""
+def _current_op_state(memory_service: MemoryDomainService | None, *, tenant_slug: str, user_id: str) -> OperationalState | None:
+    """El paso de la conversación guardado antes de este turno (por ejemplo, «ya se le enviaron los datos de Nequi»), o None."""
+    get_op = getattr(memory_service, "get_op_state", None)
+    if not callable(get_op):
+        return None
     try:
-        return str(get_last_response(tenant_slug=tenant_slug, user_id=user_id) or "").strip()
+        stored = get_op(tenant_slug=tenant_slug, user_id=user_id)
+        return OperationalState.from_dict(stored) if stored else None
     except Exception:
-        return ""
-
-
-def _payment_expiry() -> datetime:
-    return datetime.now(timezone.utc) + timedelta(hours=6)
+        return None
 
 
 def _build_memory_context(memory_service: MemoryDomainService | None, *, tenant_slug: str, user_id: str) -> dict:
@@ -620,6 +528,8 @@ class AIExecution:
             # Pasa a una persona si el cliente la pidió o reclama; un pago reportado también: solo el equipo puede verificarlo.
             handoff_reason = str(ai_metadata.get("handoff") or "").strip() or ("payment_review" if payment_status == "reportado" else "")
 
+            delivery = None
+            op_before = _current_op_state(memory_service, tenant_slug=tenant_slug_value, user_id=user_key)
             if payment_status == "reportado":
                 _log_payment_override(
                     tenant_slug=tenant_slug_value,
@@ -628,21 +538,28 @@ class AIExecution:
                     payment_status=payment_status,
                 )
                 response_text = _resolve_post_payment_message(runtime_yaml_with_memory) or response_text
-            elif payment_method and intent == "buy":
-                # Los datos de pago salen una vez: si el cliente sigue hablando del mismo pago («¿y cuando lo haga qué hago?»), la IA
-                # le responde. Si pide los datos otra vez, la IA los nombra con su marcador y el sistema los vuelve a enviar (abajo).
-                delivered = ejecutar_pago(runtime_yaml_with_memory, payment_method)
-                if delivered and delivered != _previous_response(memory_service, tenant_slug=tenant_slug_value, user_id=user_key):
+            else:
+                # Los datos de pago: la IA decide (su acción o el medio elegido), el sistema los envía con los datos reales y la red
+                # de seguridad cubre lo que la IA olvide (`payment_delivery.py`).
+                delivery = deliver(
+                    response_text,
+                    runtime_yaml_with_memory,
+                    send_payment=str(ai_metadata.get("send_payment") or "").strip().lower(),
+                    payment_method=payment_method,
+                    intent=intent,
+                    user_message=str(user_message or ""),
+                    state=op_before,
+                    tenant=tenant_slug_value,
+                )
+                if delivery.method:
                     _log_payment_override(
                         tenant_slug=tenant_slug_value,
                         user_id=user_key,
-                        payment_method=payment_method,
+                        payment_method=delivery.method,
                         payment_status=payment_status,
                     )
-                    response_text = delivered
-            response_text = without_payment_placeholder(response_text, runtime_yaml_with_memory, payment_method)
-            # El mensaje con los datos de pago es del sistema: nunca se recorta (perdería el número o sus saltos de línea).
-            payment_details_sent = bool(payment_method) and response_text == ejecutar_pago(runtime_yaml_with_memory, payment_method)
+                response_text = delivery.text
+            payment_details_sent = delivery is not None and bool(delivery.method)
 
             raw_response = response_text
             persisted_response = raw_response
@@ -652,10 +569,11 @@ class AIExecution:
             _configured_methods = _get_configured_payment_methods(runtime_yaml_with_memory)
             _new_op_state = extract_op_state(raw_response, route_source=_route_source, payment_methods=_configured_methods)
             if payment_details_sent:
-                # El sistema entregó los datos de ese medio: el pago con esa opción queda activo, sin depender del texto de la plantilla.
-                _new_op_state = OperationalState(
-                    active_process="payment", active_option=payment_method, pending_action="confirm_method", expires_at=_new_op_state.expires_at or _payment_expiry()
-                )
+                # El sistema entregó los datos de ese medio: falta que el cliente pague y envíe el comprobante (no se repiten solos).
+                _new_op_state = sent_state(delivery.method)
+            elif op_before and already_sent(op_before, op_before.active_option) and _new_op_state.active_process == "payment" and _new_op_state.active_option in ("", op_before.active_option):
+                # Se sigue hablando del mismo pago: se conserva que los datos ya salieron (si no, se repetirían solos).
+                _new_op_state = sent_state(op_before.active_option)
             _set_op = getattr(memory_service, "set_op_state", None)
             if callable(_set_op) and _new_op_state.active_process:
                 try:
