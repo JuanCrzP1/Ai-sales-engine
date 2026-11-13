@@ -26,7 +26,7 @@ Las tres usan el mismo pipeline y la misma fuente: la versión publicada del neg
 uazapi (aviso de la instancia del negocio)
 -> project/app/api/controllers/whatsapp_qr_webhook.py      POST /api/v1/channels/whatsapp/{webhook_id}: identifica el negocio
                                                             por el id secreto y el token de su instancia, y contesta enseguida
--> project/app/application/channels/whatsapp_inbound.py    guarda el mensaje en la bandeja (sin duplicados), y después:
+-> project/app/application/channels/inbound.py    guarda el mensaje en la bandeja (sin duplicados), y después:
                                                             «escribiendo…», entiende fotos y audios, responde o pasa a una persona
 -> project/app/infrastructure/ai/media_interpreter.py      describe la foto o transcribe la nota de voz, con la clave del negocio
 -> project/app/services/ai_service.py -> mismo pipeline (abajo)
@@ -358,7 +358,7 @@ hora como argumento), con los ajustes de Configuración → Atención humana (`b
 publicado del negocio (el horario de «Mi negocio» y los mensajes `after_hours` y `ai_resumed`, compilados en
 `config.attention_messages`).
 
-1. **El traspaso** (`application/channels/whatsapp_inbound.py`, `_hand_off`). Si el asistente marca `handoff`:
+1. **El traspaso** (`application/channels/inbound.py`, `_hand_off`). Si el asistente marca `handoff`:
    - dentro del horario del equipo, la IA se pausa, el cliente empieza a esperar (`conversations.customer_waiting_since`) y recibe
      «Una persona de nuestro equipo te responderá en unos 10 minutos» (o nada, si el negocio lo eligió);
    - fuera del horario, el chat también espera a una persona, pero la IA no se pausa: le dice el horario y cuándo lo atienden (o el

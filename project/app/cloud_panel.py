@@ -37,12 +37,13 @@ def build_cloud_panel_api(auth_url: str) -> FastAPI:
     from app.config import settings
     from app.infrastructure.ai.openrouter_key_verifier import OpenRouterKeyVerifier
     from app.infrastructure.ai.openrouter_models import OpenRouterModelCatalog
-    from app.infrastructure.business_config.database import build_channel_messenger, build_whatsapp_channel_service
+    from app.infrastructure.business_config.database import build_channel_messenger, build_telegram_channel_service, build_whatsapp_channel_service
     from app.infrastructure.business_config.ai_usage_store import AIUsageStore
     from app.infrastructure.business_config.commerce_store import CommerceStore
     from app.infrastructure.business_config.oauth_store import OAuthStore
     from app.infrastructure.channels.platform import uazapi_platform
-    from app.infrastructure.channels.public_url import assistant_api_url, mcp_url, webhook_base
+    from app.infrastructure.channels.public_url import assistant_api_url, mcp_url, telegram_webhook_base, webhook_base
+    from app.infrastructure.channels.telegram import TelegramClient
     from app.infrastructure.channels.uazapi import UazapiClient
     from app.infrastructure.notifications.resend_email import ResendEmailSender
     from app.infrastructure.notifications.web_push import WebPushSender
@@ -75,7 +76,8 @@ def build_cloud_panel_api(auth_url: str) -> FastAPI:
         whatsapp=build_whatsapp_channel_service(
             engine, UazapiClient, platform=uazapi_platform(), webhook_base=webhook_base(settings.api_prefix), secrets_key=key
         ),
-        messenger=build_channel_messenger(engine, UazapiClient, secrets_key=key),
+        telegram=build_telegram_channel_service(engine, TelegramClient(), webhook_base=telegram_webhook_base(settings.api_prefix), secrets_key=key),
+        messenger=build_channel_messenger(engine, UazapiClient, telegram=TelegramClient, secrets_key=key),
         commerce=CommerceStore(engine),
         ai_usage=AIUsageStore(engine),
         contact_memory=EngineContactMemory(),

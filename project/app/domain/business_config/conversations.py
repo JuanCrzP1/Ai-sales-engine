@@ -22,7 +22,7 @@ from app.domain.business_config.errors import FieldIssue, InvalidFieldsError
 # `api`: llegó por la API del asistente (Integraciones → API / HTTP), desde otro sistema como Leona.
 CHANNELS = ("whatsapp", "instagram", "telegram", "web", "api", "prueba")
 # Los canales a los que el equipo puede responder desde el panel (el mensaje sale por el canal).
-REPLYABLE_CHANNELS = ("whatsapp",)
+REPLYABLE_CHANNELS = ("whatsapp", "telegram")
 AUTHORS = ("customer", "assistant", "agent")
 KINDS = ("text", "image", "audio", "video", "document", "sticker", "location", "contact", "other")
 MEDIA_KINDS = ("image", "audio", "video", "document", "sticker")

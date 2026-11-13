@@ -21,13 +21,14 @@ from typing import Any
 
 from app.domain.business_config.attention import RESUME_MINUTES, AttentionSettings, resume_due
 from app.domain.business_config.assistant_api import API_CHANNEL
-from app.domain.business_config.channels import WHATSAPP, WhatsAppSecrets
+from app.domain.business_config.channels import TELEGRAM, WHATSAPP, ChannelSecrets
 from app.domain.business_config.conversations import WaitingChat
 from app.utils.logger import logger
 
-# Los canales en los que la IA retoma: por WhatsApp pide disculpas y responde lo pendiente; por la API (Leona, una web) no hay por
-# dónde escribirle al cliente, así que solo vuelve a atender y responde su próximo mensaje.
-RESUMABLE_CHANNELS = (WHATSAPP, API_CHANNEL)
+# Los canales en los que la IA retoma: por WhatsApp y Telegram pide disculpas y responde lo pendiente; por la API (Leona, una web)
+# no hay por dónde escribirle al cliente, así que solo vuelve a atender y responde su próximo mensaje.
+MESSAGING_CHANNELS = (WHATSAPP, TELEGRAM)
+RESUMABLE_CHANNELS = (*MESSAGING_CHANNELS, API_CHANNEL)
 # Ningún negocio puede elegir menos que esto: los chats que esperan menos ni se consultan.
 SHORTEST_WAIT = timedelta(minutes=min(RESUME_MINUTES))
 
@@ -46,8 +47,8 @@ class ResumeSweep:
         settings: Callable[[str], AttentionSettings],
         resume: Callable[..., str | None],
         pending: Callable[..., str],
-        secrets: Callable[[str], WhatsAppSecrets | None],
-        continue_chat: Callable[[WhatsAppSecrets, str, str, str], Any],
+        secrets: Callable[[str, str], ChannelSecrets | None],
+        continue_chat: Callable[[ChannelSecrets, str, str, str], Any],
         alerts: Callable[[str | None], Any],
         clock: Callable[[], datetime] | None = None,
     ) -> None:
@@ -94,10 +95,10 @@ class ResumeSweep:
         if notification is None:
             return False  # Otra revisión lo tomó, o alguien del equipo respondió justo antes.
         try:
-            if chat.channel != WHATSAPP:
+            if chat.channel not in MESSAGING_CHANNELS:
                 pass  # Por la API no hay por dónde escribirle: la IA responde su próximo mensaje.
-            elif (secrets := self._secrets(chat.business_slug)) is None:
-                logger.warning("ia_retomo_sin_whatsapp", extra={"tenant": chat.business_slug})
+            elif (secrets := self._secrets(chat.business_slug, chat.channel)) is None:
+                logger.warning("ia_retomo_sin_canal", extra={"tenant": chat.business_slug, "channel": chat.channel})
             else:
                 self._continue(secrets, chat.id, chat.contact_ref, pending)
         except Exception as exc:  # noqa: BLE001 - el chat ya es de la IA: el siguiente mensaje del cliente lo responde

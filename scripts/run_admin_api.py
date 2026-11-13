@@ -122,13 +122,14 @@ def main() -> int:
     from app.infrastructure.business_config.notification_store import NotificationStore
     from app.infrastructure.business_config.usage_store import UsageCounterStore
     from app.config import settings
-    from app.infrastructure.business_config.database import build_channel_messenger, build_whatsapp_channel_service
+    from app.infrastructure.business_config.database import build_channel_messenger, build_telegram_channel_service, build_whatsapp_channel_service
     from app.infrastructure.business_config.ai_usage_store import AIUsageStore
     from app.infrastructure.business_config.commerce_store import CommerceStore
     from app.infrastructure.business_config.example_businesses import import_examples
     from app.infrastructure.channels.platform import uazapi_platform
     from app.infrastructure.business_config.api_key_store import ApiKeyStore
-    from app.infrastructure.channels.public_url import assistant_api_url, engine_public_url, local_mcp_url, webhook_base
+    from app.infrastructure.channels.public_url import assistant_api_url, engine_public_url, local_mcp_url, telegram_webhook_base, webhook_base
+    from app.infrastructure.channels.telegram import TelegramClient
     from app.infrastructure.channels.uazapi import UazapiClient
     from app.infrastructure.business_config.attention_store import AttentionStore
     from app.infrastructure.business_config.quick_reply_store import QuickReplyStore
@@ -149,7 +150,8 @@ def main() -> int:
         notifications=NotificationStore(engine),
         usage=UsageCounterStore(engine),
         whatsapp=build_whatsapp_channel_service(engine, UazapiClient, platform=platform, webhook_base=webhook_base(settings.api_prefix)),
-        messenger=build_channel_messenger(engine, UazapiClient),
+        telegram=build_telegram_channel_service(engine, TelegramClient(), webhook_base=telegram_webhook_base(settings.api_prefix)),
+        messenger=build_channel_messenger(engine, UazapiClient, telegram=TelegramClient),
         commerce=CommerceStore(engine),
         ai_usage=AIUsageStore(engine),
         examples=import_examples,

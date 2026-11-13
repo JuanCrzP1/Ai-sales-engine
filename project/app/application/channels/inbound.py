@@ -1,18 +1,22 @@
-"""Un mensaje de un cliente por WhatsApp (código QR, uazapi), de punta a punta, como lo haría un equipo de atención.
+"""Un mensaje de un cliente por WhatsApp (código QR, uazapi) o por Telegram (el bot del negocio), de punta a punta, como lo haría un
+equipo de atención. Los dos canales siguen el mismo camino; solo cambian quién lee los avisos (`parse`) y el cliente del canal
+(`server`, que recibe la conexión del negocio: `ChannelSecrets`).
 
 En el webhook, enseguida (`receive`):
-1. El estado de la conexión y los recibos de entregado y leído se anotan y listo. Lo que el negocio escribe desde su celular en el
-   chat de un cliente queda en la bandeja como respuesta del equipo y pausa la IA en ese chat, como si respondiera desde el panel.
-2. El mensaje del cliente se guarda en la bandeja apenas llega, con su tipo y el id de WhatsApp: si el aviso se repite, no se guarda
+1. El estado de la conexión y los recibos de entregado y leído se anotan y listo (Telegram no los manda). Lo que el negocio escribe
+   desde su celular en el chat de un cliente de WhatsApp queda en la bandeja como respuesta del equipo y pausa la IA en ese chat, como
+   si respondiera desde el panel.
+2. El mensaje del cliente se guarda en la bandeja apenas llega, con su tipo y el id del canal: si el aviso se repite, no se guarda
    ni se responde dos veces (lo garantiza la base, no la memoria de un proceso: en la nube hay muchos).
 3. Si la IA está pausada en ese chat (la atiende una persona), no se responde: el equipo lo ve en vivo.
 
-Después de contestarle a uazapi (`process`), porque responder toma unos segundos:
-4. La bandeja y el WhatsApp del cliente dicen «escribiendo…».
-5. Si es una foto o un audio, se descarga y se guarda (el enlace de WhatsApp vence), y la IA lo entiende con la clave del negocio:
+Después de contestarle al canal (`process`), porque responder toma unos segundos:
+4. La bandeja y el chat del cliente dicen «escribiendo…».
+5. Si es una foto o un audio, se descarga y se guarda (el enlace del canal vence), y la IA lo entiende con la clave del negocio:
    describe la foto (y si es un comprobante de pago) o transcribe la nota de voz. Eso es lo que lee el asistente.
 6. El asistente responde con lo publicado del negocio. Si en ese momento alguien del equipo tomó el chat, no se envía nada.
-7. La respuesta sale por WhatsApp y queda en la bandeja con su id, para sus recibos. Si no sale, queda «no enviada».
+7. La respuesta sale por el canal y queda en la bandeja con su id, para sus recibos. Si no sale, queda «no enviada»; si el canal dice
+   que la conexión ya no sirve (Telegram rechazó el código del bot), se avisa con `on_lost`.
 8. Si el cliente pidió una persona, reclamó o reportó un pago, la conversación pasa al equipo y le llega un aviso (en la campana, por
    correo y como notificación). Dentro del horario del equipo la IA se pausa y el cliente sabe cuánto suele tardar; fuera del horario
    la IA sigue ayudándole y le dice cuándo lo atienden (`domain/business_config/attention.py`).
@@ -31,14 +35,14 @@ from typing import Any, Protocol
 
 from app.application.channels.handoff_plan import plan_handoff
 from app.domain.business_config.attention import DEFAULT_RESUMED_NOTICE, AttentionSettings, HandoffPlan, published_attention
-from app.domain.business_config.channels import WHATSAPP, ChannelError, IncomingMessage, WhatsAppSecrets
+from app.domain.business_config.channels import ChannelError, ChannelSecrets, IncomingMessage
 from app.domain.business_config.conversations import MEDIA_KINDS, TYPING_SECONDS, AppendResult, MediaFile, NewMessage
 from app.domain.business_config.payment_data import redact_payment_values
 from app.utils.logger import logger
 
 
-class WhatsAppServer(Protocol):
-    """La instancia de WhatsApp del negocio en uazapi."""
+class ChannelClient(Protocol):
+    """El canal del negocio: su instancia de WhatsApp en uazapi o su bot de Telegram. `phone` es el contacto en el canal."""
 
     def send_text(self, token: str, phone: str, text: str) -> str | None: ...
 
@@ -97,6 +101,9 @@ def _now() -> datetime:
     return datetime.now(timezone.utc)
 
 
+_CHANNEL_NAMES = {"whatsapp": "WhatsApp", "telegram": "Telegram"}
+
+
 def assistant_text(message: IncomingMessage, *, note: str | None = None, payment_proof: bool = False, payment_details: str = "") -> str | None:
     """Lo que lee el asistente de un mensaje: el texto, o lo que se entendió de un archivo. None: no se responde (un sticker)."""
     caption = message.text.strip()
@@ -123,12 +130,12 @@ def assistant_text(message: IncomingMessage, *, note: str | None = None, payment
     return caption or None
 
 
-class WhatsAppInbound:
+class ChannelInbound:
     def __init__(
         self,
         *,
         conversations: ConversationGateway,
-        server: Callable[[str], WhatsAppServer],
+        server: Callable[[ChannelSecrets], ChannelClient],
         responder: Responder,
         media: MediaUnderstanding,
         api_key: KeyLoader,
@@ -139,6 +146,7 @@ class WhatsAppInbound:
         attention: AttentionLoader | None = None,
         alerts: AlertSender | None = None,
         clock: Callable[[], datetime] | None = None,
+        on_lost: Callable[[ChannelSecrets], None] | None = None,
     ) -> None:
         self._conversations = conversations
         self._server = server
@@ -152,11 +160,13 @@ class WhatsAppInbound:
         self._attention = attention or (lambda _slug: AttentionSettings())
         self._alerts = alerts or (lambda _notification: None)
         self._clock = clock or _now
+        self._on_lost = on_lost or (lambda _secrets: None)
 
     # ------------------------------------------------------------------ en el webhook
 
-    def receive(self, secrets: WhatsAppSecrets, payload: dict, *, parse: Any) -> Received:
-        """Lo que se hace antes de contestarle a uazapi. `parse` trae los lectores de uazapi (conexión, recibos, mensajes)."""
+    def receive(self, secrets: ChannelSecrets, payload: dict, *, parse: Any) -> Received:
+        """Lo que se hace antes de contestarle al canal. `parse` trae los lectores de sus avisos (conexión, recibos, mensajes propios y
+        del cliente)."""
         slug = secrets.tenant_slug
         connection = parse.connection_event(payload)
         if connection is not None:
@@ -169,7 +179,7 @@ class WhatsAppInbound:
         own = parse.parse_own_message(payload)
         if own is not None:
             saved = self._conversations.append(
-                slug, channel=WHATSAPP, contact_ref=own.phone, contact_name=None,
+                slug, channel=secrets.channel, contact_ref=own.phone, contact_name=None,
                 message=NewMessage("agent", self._hide_payments(slug, own.text), kind=own.kind, provider_message_id=own.message_id, status="sent"),
             )
             if saved.created:
@@ -181,7 +191,7 @@ class WhatsAppInbound:
         if message is None:
             return Received("ignored")
         stored = self._conversations.append(
-            slug, channel=WHATSAPP, contact_ref=message.phone, contact_name=message.contact_name,
+            slug, channel=secrets.channel, contact_ref=message.phone, contact_name=message.contact_name,
             message=NewMessage("customer", self._hide_payments(slug, message.text), kind=message.kind, provider_message_id=message.message_id),
         )
         if not stored.created:
@@ -190,7 +200,7 @@ class WhatsAppInbound:
 
     # ------------------------------------------------------------------ después de contestar
 
-    def process(self, secrets: WhatsAppSecrets, message: IncomingMessage, stored: AppendResult) -> None:
+    def process(self, secrets: ChannelSecrets, message: IncomingMessage, stored: AppendResult) -> None:
         """Entiende el mensaje, responde con el asistente y pasa la conversación a una persona si hace falta. Nunca lanza."""
         answering = not stored.ai_paused
         try:
@@ -205,10 +215,10 @@ class WhatsAppInbound:
             if answering:
                 self._quiet(stored.conversation_id)
 
-    def _typing(self, secrets: WhatsAppSecrets, message: IncomingMessage, stored: AppendResult) -> None:
+    def _typing(self, secrets: ChannelSecrets, message: IncomingMessage, stored: AppendResult) -> None:
         self._conversations.set_typing(stored.conversation_id, _now() + timedelta(seconds=TYPING_SECONDS))
         try:
-            self._server(secrets.server_url).presence(secrets.instance_token, message.phone, "composing", 30_000)
+            self._server(secrets).presence(secrets.instance_token, message.phone, "composing", 30_000)
         except ChannelError:
             pass  # El «escribiendo…» en el teléfono del cliente es un detalle: la respuesta sale igual.
 
@@ -218,15 +228,15 @@ class WhatsAppInbound:
         except Exception as exc:  # noqa: BLE001
             logger.warning("whatsapp_qr_escribiendo_no_apagado", extra={"error": type(exc).__name__})
 
-    def _understand(self, secrets: WhatsAppSecrets, message: IncomingMessage, stored: AppendResult) -> dict:
+    def _understand(self, secrets: ChannelSecrets, message: IncomingMessage, stored: AppendResult) -> dict:
         """Descarga y guarda el archivo, y lo que la IA entendió de él (foto o audio)."""
         try:
-            media = self._server(secrets.server_url).download(secrets.instance_token, message.message_id)
+            media = self._server(secrets).download(secrets.instance_token, message.media_ref or message.message_id)
         except ChannelError as exc:
             logger.warning("whatsapp_qr_archivo_no_descargado", extra={"tenant": secrets.tenant_slug, "error": str(exc)})
             media = None
         if media is None:
-            self._conversations.update_entry(stored.entry_id, media_note="El archivo no se pudo descargar o es muy grande: míralo en el WhatsApp del negocio.")
+            self._conversations.update_entry(stored.entry_id, media_note=f"El archivo no se pudo descargar o es muy grande: míralo en el {_CHANNEL_NAMES.get(secrets.channel, 'canal')} del negocio.")
             return {}
         if message.file_name and not media.file_name:
             media = MediaFile(media.mime_type, media.content, message.file_name)
@@ -244,7 +254,7 @@ class WhatsAppInbound:
         self._conversations.update_entry(stored.entry_id, media=media, media_note=self._hide_payments(secrets.tenant_slug, note) if note else None)
         return result
 
-    def _answer(self, secrets: WhatsAppSecrets, message: IncomingMessage, stored: AppendResult, understanding: dict) -> None:
+    def _answer(self, secrets: ChannelSecrets, message: IncomingMessage, stored: AppendResult, understanding: dict) -> None:
         slug = secrets.tenant_slug
         text = assistant_text(
             message, note=understanding.get("note"), payment_proof=bool(understanding.get("payment_proof")),
@@ -268,25 +278,33 @@ class WhatsAppInbound:
             detail = message.text or understanding.get("note") or None
             self._hand_off(secrets, message.phone, stored.conversation_id, str(metadata.get("handoff_reason") or "assistant"), detail)
 
-    def _say(self, secrets: WhatsAppSecrets, phone: str, text: str, intent: str | None = None) -> bool:
+    def _say(self, secrets: ChannelSecrets, phone: str, text: str, intent: str | None = None) -> bool:
         """Envía un mensaje del asistente por WhatsApp y lo deja en la bandeja (o «no enviado» si no salió). Dice si salió."""
         slug = secrets.tenant_slug
         hidden = self._hide_payments(slug, text)
         try:
-            provider_id = self._server(secrets.server_url).send_text(secrets.instance_token, phone, text)
+            provider_id = self._server(secrets).send_text(secrets.instance_token, phone, text)
         except ChannelError as exc:
-            logger.error("whatsapp_qr_envio_fallido", extra={"tenant": slug, "error": str(exc)})
+            logger.error("whatsapp_qr_envio_fallido", extra={"tenant": slug, "channel": secrets.channel, "error": str(exc)})
+            if exc.gone:
+                self._lost(secrets)
             self._conversations.append(
-                slug, channel=WHATSAPP, contact_ref=phone, contact_name=None, message=NewMessage("assistant", hidden, intent, status="failed")
+                slug, channel=secrets.channel, contact_ref=phone, contact_name=None, message=NewMessage("assistant", hidden, intent, status="failed")
             )
             return False
         self._conversations.append(
-            slug, channel=WHATSAPP, contact_ref=phone, contact_name=None,
+            slug, channel=secrets.channel, contact_ref=phone, contact_name=None,
             message=NewMessage("assistant", hidden, intent, provider_message_id=provider_id, status="sent"),
         )
         return True
 
-    def _hand_off(self, secrets: WhatsAppSecrets, phone: str, conversation_id: str, reason: str, detail: str | None) -> None:
+    def _lost(self, secrets: ChannelSecrets) -> None:
+        try:
+            self._on_lost(secrets)
+        except Exception as exc:  # noqa: BLE001 - anotar el estado es un extra: el mensaje ya quedó como no enviado
+            logger.warning("canal_estado_no_anotado", extra={"tenant": secrets.tenant_slug, "error": type(exc).__name__})
+
+    def _hand_off(self, secrets: ChannelSecrets, phone: str, conversation_id: str, reason: str, detail: str | None) -> None:
         """El chat pasa a una persona: según el horario del equipo, la IA se pausa o sigue; el cliente sabe qué esperar y el equipo
         recibe el aviso (campana, correo y notificación)."""
         slug = secrets.tenant_slug
@@ -305,7 +323,7 @@ class WhatsAppInbound:
 
     # ------------------------------------------------------------------ la IA retoma un chat que nadie atendió
 
-    def continue_after_resume(self, secrets: WhatsAppSecrets, conversation_id: str, phone: str, pending_text: str) -> None:
+    def continue_after_resume(self, secrets: ChannelSecrets, conversation_id: str, phone: str, pending_text: str) -> None:
         """La IA retomó el chat porque nadie del equipo respondió a tiempo: pide disculpas (con el mensaje del negocio, si lo escribió)
         y responde lo que el cliente escribió mientras esperaba. Nunca lanza."""
         slug = secrets.tenant_slug

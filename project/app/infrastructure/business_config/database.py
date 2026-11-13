@@ -13,9 +13,9 @@ from sqlalchemy import create_engine, event, inspect
 from sqlalchemy.engine import Engine, make_url
 
 from app.business_config_application.assistant_lab import AssistantLabService
-from app.business_config_application.channels import ProviderFactory, WhatsAppChannelService
+from app.business_config_application.channels import ProviderFactory, TelegramChannelService, WhatsAppChannelService
 from app.domain.business_config.channels import UazapiPlatform
-from app.business_config_application.ports import AIKeyVerifier, AIModelCatalog, AssistantRunner
+from app.business_config_application.ports import AIKeyVerifier, AIModelCatalog, AssistantRunner, TelegramApi
 from app.business_config_application.service import BusinessConfigService
 from app.business_config_application.conversations import PlaygroundRecorder
 from app.infrastructure.business_config.conversation_store import ConversationStore
@@ -89,6 +89,10 @@ _ADDED_COLUMNS = {
     },
     "business_members": {
         "email": "TEXT",
+    },
+    "business_channels": {
+        "account_id": "TEXT",
+        "account_username": "TEXT",
     },
     "api_keys": {
         "owner_user_id": "TEXT",
@@ -209,6 +213,13 @@ def build_whatsapp_channel_service(
     return WhatsAppChannelService(ChannelStore(engine, secrets_key), providers, platform=platform, webhook_base=webhook_base)
 
 
-def build_channel_messenger(engine: Engine, providers: ProviderFactory, *, secrets_key: str | None = None) -> ChannelMessenger:
-    """Lo que el equipo responde desde el panel sale por el canal del cliente (WhatsApp por código QR)."""
-    return ChannelMessenger(ChannelStore(engine, secrets_key), providers)
+def build_channel_messenger(
+    engine: Engine, providers: ProviderFactory, *, telegram: ProviderFactory | None = None, secrets_key: str | None = None
+) -> ChannelMessenger:
+    """Lo que el equipo responde desde el panel sale por el canal del cliente (WhatsApp por código QR o Telegram)."""
+    return ChannelMessenger(ChannelStore(engine, secrets_key), providers, telegram)
+
+
+def build_telegram_channel_service(engine: Engine, api: TelegramApi, *, webhook_base: str | None, secrets_key: str | None = None) -> TelegramChannelService:
+    """Telegram con la persistencia real. El cliente de Telegram y la dirección del webhook los pone la raíz de composición."""
+    return TelegramChannelService(ChannelStore(engine, secrets_key), api, webhook_base=webhook_base)

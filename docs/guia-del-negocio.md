@@ -55,6 +55,7 @@ este índice.
 - [Conecta tu WhatsApp con el código QR](../project/content/help/canales/conectar-whatsapp.md): Vincular el número de WhatsApp de tu negocio en un minuto, escaneando un código desde el celular.
 - [Cuida tu número de WhatsApp](../project/content/help/canales/cuidar-tu-numero.md): Por qué la conexión por código QR no es oficial y qué hacer para que WhatsApp no bloquee tu número.
 - [Desconecta o cambia tu número](../project/content/help/canales/desconectar-whatsapp.md): Pausar a tu asistente en WhatsApp sin perder nada, o conectar otro número.
+- [Conecta Telegram con el bot de tu negocio](../project/content/help/canales/conectar-telegram.md): Crear el bot de tu negocio con @BotFather, pegar su código en Canales y compartir su enlace para que tus clientes te escriban.
 
 ## Integraciones y agentes
 

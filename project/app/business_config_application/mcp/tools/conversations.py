@@ -188,7 +188,7 @@ def conversation_tools(
         McpTool(
             "reply_to_customer",
             "Responderle a un cliente",
-            "Le manda un mensaje a un CLIENTE REAL por su canal (hoy, WhatsApp), a nombre del negocio, y pausa la IA en ese chat. No se puede deshacer: muéstrale a la persona el texto exacto y pide su confirmación antes. Nunca prometas precios, descuentos ni datos que la persona no te dio.",
+            "Le manda un mensaje a un CLIENTE REAL por su canal (WhatsApp o Telegram), a nombre del negocio, y pausa la IA en ese chat. No se puede deshacer: muéstrale a la persona el texto exacto y pide su confirmación antes. Nunca prometas precios, descuentos ni datos que la persona no te dio.",
             SCOPE_CONVERSATIONS_WRITE,
             obj({**CONVERSATION, "text": text(f"El mensaje, tal cual lo recibirá el cliente (hasta {MAX_REPLY_CHARS} caracteres).")}, ("conversation_id", "text")),
             reply,

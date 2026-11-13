@@ -4,8 +4,11 @@ Cada negocio tiene su propia ruta, `/channels/whatsapp/{webhook_id}`, con un ide
 Además, solo cuenta lo que trae el token de la instancia del negocio (uazapi lo incluye en cada aviso).
 
 La ruta solo recibe y contesta enseguida; lo que pasa con cada mensaje (guardarlo en vivo, entenderlo, responder o pasarlo a una
-persona) está en `app/application/channels/whatsapp_inbound.py`. Lo lento (entender un archivo y responder) se hace después de
-contestarle a uazapi.
+persona) está en `app/application/channels/inbound.py`. Lo lento (entender un archivo y responder) se hace después de contestarle
+a uazapi.
+
+Aquí también se arma ese flujo para Telegram (`build_inbound` sirve a los dos canales; su ruta está en `telegram_webhook.py`) y la
+revisión que retoma los chats que nadie atendió.
 """
 from __future__ import annotations
 
@@ -19,14 +22,15 @@ from fastapi import APIRouter, BackgroundTasks, HTTPException, Request, status
 
 from app.application.attention.resume_sweep import ResumeSweep, SweepResult, Throttle
 from app.api.controllers.team_alerts import deliver_alert
-from app.application.channels.whatsapp_inbound import WhatsAppInbound
+from app.application.channels.inbound import ChannelInbound
 from app.application.runtime import published_sections
 from app.application.runtime.business_ai import business_usage_recorder, load_business_ai
-from app.domain.business_config.channels import WhatsAppSecrets
+from app.domain.business_config.channels import TELEGRAM, ChannelSecrets
 from app.domain.business_config.errors import BusinessConfigError
 from app.infrastructure.ai.media_interpreter import OpenRouterMediaInterpreter
 from app.infrastructure.business_config import runtime_access
 from app.infrastructure.channels import uazapi
+from app.infrastructure.channels.telegram import TelegramClient
 from app.infrastructure.channels.uazapi import UazapiClient
 from app.models import Tenant
 from app.services.ai_service import AIService
@@ -73,10 +77,22 @@ class _Conversations:
     team_replied = staticmethod(runtime_access.conversation_team_replied)
 
 
-def build_inbound() -> WhatsAppInbound:
-    return WhatsAppInbound(
+def channel_client(secrets: ChannelSecrets):
+    """El cliente del canal de esa conexión: el bot de Telegram o la instancia de uazapi del negocio."""
+    return TelegramClient() if secrets.channel == TELEGRAM else UazapiClient(secrets.server_url)
+
+
+def channel_lost(secrets: ChannelSecrets) -> None:
+    """El canal dijo que la conexión ya no sirve. En Telegram, el código del bot cambió: Canales le pide al negocio el nuevo. (En
+    WhatsApp lo avisa el propio servidor con su evento de conexión.)"""
+    if secrets.channel == TELEGRAM:
+        runtime_access.set_channel_status(secrets.tenant_slug, TELEGRAM, "disconnected")
+
+
+def build_inbound() -> ChannelInbound:
+    return ChannelInbound(
         conversations=_Conversations(),
-        server=UazapiClient,
+        server=channel_client,
         responder=answer_with_assistant,
         media=OpenRouterMediaInterpreter(),
         api_key=_business_key,
@@ -87,6 +103,7 @@ def build_inbound() -> WhatsAppInbound:
         attention=runtime_access.attention_settings,
         alerts=deliver_alert,
         clock=lambda: now(),
+        on_lost=channel_lost,
     )
 
 
@@ -100,7 +117,7 @@ def build_sweep() -> ResumeSweep:
         settings=runtime_access.attention_settings,
         resume=runtime_access.resume_waiting_chat,
         pending=runtime_access.pending_customer_text,
-        secrets=runtime_access.whatsapp_secrets,
+        secrets=runtime_access.channel_secrets,
         continue_chat=inbound.continue_after_resume,
         alerts=deliver_alert,
         clock=lambda: now(),
@@ -150,7 +167,7 @@ _UAZAPI = SimpleNamespace(
 )
 
 
-def _connection(webhook_id: str) -> WhatsAppSecrets:
+def _connection(webhook_id: str) -> ChannelSecrets:
     if len(webhook_id) < MIN_WEBHOOK_ID:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No encontrado")
     try:

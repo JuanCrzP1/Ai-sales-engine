@@ -98,7 +98,7 @@ documenta.
 - El webhook solo acepta avisos con el token de la instancia guardada e ignora grupos, canales y lo que envía la API. Lo que el
   negocio escribe desde su celular en el chat de un cliente sí llega: queda como respuesta del equipo y pausa la IA en ese chat. Las
   instancias conectadas antes del 11 de noviembre de 2026 lo reciben después de volver a conectar (así se registra el webhook nuevo). Recibe mensajes, recibos de entregado y leído (`messages_update`) y cambios de conexión. El flujo completo está en
-  `app/application/channels/whatsapp_inbound.py`:
+  `app/application/channels/inbound.py`:
   1. El mensaje del cliente se guarda en la bandeja apenas llega. El mismo aviso repetido no se guarda ni se responde dos veces (lo
      garantiza un índice único en la base).
   2. Mientras el asistente responde, la bandeja y el WhatsApp del cliente dicen «escribiendo…».

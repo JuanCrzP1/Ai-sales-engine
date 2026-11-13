@@ -99,10 +99,11 @@ describe("Conversaciones", () => {
 });
 
 describe("Canales y secciones que se llenan con ellos", () => {
-  it("los canales no se presentan como conectados: WhatsApp por conectar y los demás, próximamente", async () => {
+  it("los canales no se presentan como conectados: WhatsApp y Telegram por conectar, y la API oficial de Meta, próximamente", async () => {
     await openAt(`/negocios/${CAFE}/canales`);
-    expect(await screen.findByText("No conectado")).toBeInTheDocument();
-    expect(screen.getAllByText("Próximamente").length).toBeGreaterThanOrEqual(2);
+    await screen.findByRole("button", { name: /Conectar Telegram/ });
+    expect(screen.getAllByText("No conectado")).toHaveLength(2);
+    expect(screen.getByRole("radio", { name: /API oficial de Meta.*Próximamente/ })).toBeDisabled();
     expect(screen.queryByText("Conectado")).not.toBeInTheDocument();
   });
 

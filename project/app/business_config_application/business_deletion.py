@@ -4,6 +4,7 @@ En este orden, para no dejar nada a medias:
 1. **Quién y qué:** solo el dueño (`BusinessAccess.require_owner`), y escribiendo el nombre del negocio (o su identificador).
 2. **Lo que vive fuera de la base:** se cierra la sesión de WhatsApp y se borra su instancia en el servidor de WhatsApp. Si no se
    puede (el servidor no responde), no se borra NADA y se puede intentar de nuevo. Si la instancia ya no existía, se sigue.
+   El bot de Telegram deja de enviar mensajes aquí (sin bloquear: si Telegram no responde, sus avisos ya no encuentran negocio).
 3. **La base, en una transacción:** el negocio y todo lo que depende de él (versiones, datos de pago, conversaciones con sus fotos
    y audios, clientes, ventas, avisos, claves de API de ese negocio, ajustes, uso de la IA, miembros y, en la nube, la memoria del
    motor) se borran en cascada. Si algo falla, no se borra nada.
@@ -18,7 +19,7 @@ import logging
 from dataclasses import dataclass
 
 from app.business_config_application.access import BusinessAccess
-from app.business_config_application.channels import WhatsAppChannelService
+from app.business_config_application.channels import TelegramChannelService, WhatsAppChannelService
 from app.business_config_application.ports import ContactMemory
 from app.business_config_application.service import BusinessConfigService
 from app.domain.business_config.access import Principal
@@ -47,10 +48,12 @@ class BusinessDeletionService:
         *,
         whatsapp: WhatsAppChannelService | None = None,
         memory: ContactMemory | None = None,
+        telegram: TelegramChannelService | None = None,
     ) -> None:
         self._configs = configs
         self._access = access
         self._whatsapp = whatsapp
+        self._telegram = telegram
         self._memory = memory
 
     def delete(self, principal: Principal, business: str, confirmation: object) -> DeletedBusiness:
@@ -62,6 +65,9 @@ class BusinessDeletionService:
             raise InvalidFieldsError(message, [FieldIssue("confirm", message)])
 
         disconnected = self._close_whatsapp(business)
+        if self._telegram is not None:
+            # El bot deja de enviar mensajes aquí. Nunca bloquea: si Telegram no responde, sus avisos ya no encuentran negocio.
+            self._telegram.disconnect(business)
         self._configs.delete_business(business)
         self._forget_memory(business)
         logger.info("negocio_eliminado", extra={"tenant": business, "whatsapp": disconnected})

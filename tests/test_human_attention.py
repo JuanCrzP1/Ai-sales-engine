@@ -31,7 +31,7 @@ from sqlalchemy import select, update
 from app.admin_api.main import create_app
 from app.api.controllers import attention_tasks, whatsapp_qr_webhook
 from app.application.attention.resume_sweep import ResumeSweep, Throttle
-from app.application.channels.whatsapp_inbound import WhatsAppInbound
+from app.application.channels.inbound import ChannelInbound
 from app.business_config_application.access import BusinessAccess
 from app.business_config_application.attention import TeamAlerts, alert_email
 from app.business_config_application.ports import EmailNotSent, PushOutcome
@@ -49,7 +49,7 @@ from app.domain.business_config.attention import (
     wait_text,
     when_text,
 )
-from app.domain.business_config.channels import WhatsAppSecrets
+from app.domain.business_config.channels import ChannelSecrets
 from app.domain.business_config.conversations import AppendResult, NewMessage
 from app.domain.business_config.errors import InvalidFieldsError
 from app.domain.business_config.push import PushMessage, PushSubscription, validated_subscription
@@ -328,7 +328,7 @@ def test_an_old_local_database_accepts_the_new_alerts(tmp_path):
 # El motor: WhatsApp al pasar a una persona y al retomar
 # ---------------------------------------------------------------------------
 
-SECRETS = WhatsAppSecrets(tenant_slug="restaurant", server_url="https://free.uazapi.com", instance_token="token-de-instancia", webhook_id="w" * 32)
+SECRETS = ChannelSecrets(tenant_slug="restaurant", server_url="https://free.uazapi.com", instance_token="token-de-instancia", webhook_id="w" * 32)
 
 
 class FakeServer:
@@ -384,7 +384,7 @@ SECTIONS = {
 
 def _inbound(server, gateway, *, reply=("Te paso con alguien del equipo.", {"intent": "info", "handoff": True, "handoff_reason": "human_request"}),
              attention=None, clock=None, alerts=None, sections=SECTIONS):
-    return WhatsAppInbound(
+    return ChannelInbound(
         conversations=gateway,
         server=lambda _url: server,
         responder=lambda slug, phone, text: reply,
@@ -466,7 +466,7 @@ def test_the_sweep_resumes_only_due_chats_and_each_one_once(platform):
     continued, alerted = [], []
     sweep = ResumeSweep(
         waiting=store.waiting_chats, settings=attention.attention_settings, resume=store.resume_waiting, pending=store.pending_customer_text,
-        secrets=lambda _slug: SECRETS, continue_chat=lambda secrets, chat, phone, text: continued.append((chat, phone)), alerts=alerted.append,
+        secrets=lambda _slug, _channel: SECRETS, continue_chat=lambda secrets, chat, phone, text: continued.append((chat, phone)), alerts=alerted.append,
     )
     result = sweep.run()
     assert (result.checked, result.resumed) == (3, 1) and continued == [(due, "1")] and len(alerted) == 1

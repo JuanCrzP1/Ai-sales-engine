@@ -15,7 +15,7 @@ import type { Team } from "../repositories/team";
 import { normalizeShortcut, SHORTCUT_PATTERN } from "../domain/quickReplies/quickReplies";
 import type { AuthService } from "../repositories/authService";
 import type { BusinessDirectory } from "../repositories/businessDirectory";
-import type { Channels, WhatsAppChannel } from "../repositories/channels";
+import type { Channels, TelegramChannel, WhatsAppChannel } from "../repositories/channels";
 import type { Commerce } from "../repositories/commerce";
 import type { Customer, Report, Sale } from "../domain/commerce/types";
 import type { ConfigRepository, StoredConfig } from "../repositories/configRepository";
@@ -369,16 +369,27 @@ export function createMemoryAssistantLabs(): MemoryAssistantLabs {
 /** Token que el WhatsApp en memoria acepta como el de una instancia (cualquier otro se rechaza en su campo). */
 export const TEST_QR = "data:image/png;base64,iVBORw0KGgo=";
 
+/** El código de bot que el Telegram en memoria reconoce (cualquier otro con la forma correcta, Telegram no lo reconoce). */
+export const TEST_BOT_TOKEN = "7123456789:AAHprueba-del-bot-de-cafe-aroma-123456";
+
 export interface MemoryWhatsApp {
   channels: Channels;
   /** Simula que el negocio escaneó el código desde su teléfono. */
   scan(): void;
   /** Cuántas veces se pidió un código nuevo. */
   newCodes: () => number;
+  /** Simula que el negocio cambió el código del bot en @BotFather: Telegram rechaza el guardado. */
+  revokeTelegram(): void;
+  /** Los códigos que llegaron a «Telegram» (para comprobar que el panel no los guarda ni los muestra). */
+  telegramTokens: string[];
 }
 
-/** WhatsApp por código QR en memoria. `available: false` simula una plataforma sin el servidor configurado. */
+/** Los canales en memoria: WhatsApp por código QR y Telegram. `available: false` simula una plataforma sin los canales configurados. */
 export function createMemoryWhatsApp({ available = true }: { available?: boolean } = {}): MemoryWhatsApp {
+  const noBot: TelegramChannel = { available, status: "disconnected", botUsername: null, botName: null, link: null, problem: null };
+  let bot: TelegramChannel = { ...noBot };
+  let revoked = false;
+  const telegramTokens: string[] = [];
   const empty: WhatsAppChannel = { available, status: "disconnected", phone: null, profileName: null, qrcode: null, paircode: null };
   let state: WhatsAppChannel = { ...empty };
   let scanned = false;
@@ -405,8 +416,37 @@ export function createMemoryWhatsApp({ available = true }: { available?: boolean
       state = { ...empty };
       return view();
     },
+    telegram: async () => ({ ...bot }),
+    connectTelegram: async (token: string) => {
+      telegramTokens.push(token);
+      if (!available) throw new PersistenceError("unavailable", { message: "Telegram todavía no está activo en esta plataforma. Intenta más tarde." });
+      if (!/^\d{5,16}:[A-Za-z0-9_-]{30,60}$/.test(token)) {
+        const message = "Ese no parece el código de un bot. Cópialo completo desde @BotFather: se ve así, 7123456789:AAH…";
+        throw new PersistenceError("invalid", { message, problems: [{ path: "token", message }] });
+      }
+      if (token !== TEST_BOT_TOKEN) {
+        const message = "Telegram no reconoce ese código. Cópialo completo desde @BotFather (si lo cambiaste, pídele el nuevo con /token).";
+        throw new PersistenceError("invalid", { message, problems: [{ path: "token", message }] });
+      }
+      revoked = false;
+      bot = { available, status: "connected", botUsername: "CafeAromaBot", botName: "Café Aroma", link: "https://t.me/CafeAromaBot", problem: null };
+      return { ...bot };
+    },
+    reconnectTelegram: async () => {
+      if (revoked) throw new PersistenceError("unavailable", { message: "Telegram rechazó el código del bot: puede que lo hayas cambiado en @BotFather. Pega el código nuevo en Canales." });
+      bot = { ...bot, status: "connected", problem: null };
+      return { ...bot };
+    },
+    checkTelegram: async () => {
+      if (revoked && bot.botUsername) bot = { ...bot, status: "disconnected", problem: "Tu bot dejó de recibir los mensajes aquí. Toca «Volver a conectar» o pega el código nuevo de @BotFather." };
+      return { ...bot };
+    },
+    disconnectTelegram: async () => {
+      bot = { ...noBot };
+      return { ...bot };
+    },
   };
-  return { channels, scan: () => (scanned = true), newCodes: () => codes };
+  return { channels, scan: () => (scanned = true), newCodes: () => codes, revokeTelegram: () => (revoked = true), telegramTokens };
 }
 
 /** Un reporte vacío de `days` días que terminan hoy, para sembrar lo que la prueba necesite. */

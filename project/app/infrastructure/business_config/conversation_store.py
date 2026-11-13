@@ -49,7 +49,7 @@ from app.infrastructure.business_config.tables import conversation_entries, conv
 from app.infrastructure.business_config.tenancy import tenant_of
 
 # Los canales en los que la IA retoma un chat que nadie atendió (las pruebas nunca esperan).
-RESUMABLE_CHANNELS = ("whatsapp", "api")
+RESUMABLE_CHANNELS = ("whatsapp", "telegram", "api")
 # El panel pide lo que cambió desde su última marca, con este margen: un cambio que se guardó justo en ese instante no se pierde.
 LIVE_OVERLAP = timedelta(seconds=3)
 

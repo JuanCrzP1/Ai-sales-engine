@@ -1,7 +1,7 @@
 """Acceso del motor al almacén de BusinessConfig: lee lo publicado, anota el consumo de IA y atiende los canales.
 
 El motor lee la misma base que escribe el panel (`database_url()`: `BUSINESS_CONFIG_DATABASE_URL` o el SQLite local) con la misma
-clave de cifrado (`find_secrets_key()`): lo publicado, los datos de pago, la clave de IA y la conexión de WhatsApp de cada negocio.
+clave de cifrado (`find_secrets_key()`): lo publicado, los datos de pago, la clave de IA y la conexión de WhatsApp y de Telegram de cada negocio.
 Lo único que escribe es el consumo de cada respuesta (`record_ai_usage`), el estado de la conexión de WhatsApp que avisa su servidor y
 la bandeja de conversaciones: cada mensaje de un canal apenas llega o sale, sus archivos y recibos, el «escribiendo…» y el paso a una
 persona. Nunca crea la base, las tablas ni la clave: si algo falta, lo informa con
@@ -20,7 +20,7 @@ from sqlalchemy.engine import Engine
 
 from app.domain.business_config.ai_settings import AICredentials
 from app.domain.business_config.ai_usage import AIUsage
-from app.domain.business_config.channels import ConnectionStatus, WhatsAppSecrets
+from app.domain.business_config.channels import ConnectionStatus, ChannelSecrets
 from app.domain.business_config.contract import BusinessConfig, SecretRef
 from app.business_config_application.usage_limits import UsageGuard
 from app.domain.business_config.api_keys import ApiKeyIdentity
@@ -63,6 +63,9 @@ __all__ = [
     "resume_waiting_chat",
     "waiting_chats",
     "whatsapp_secrets",
+    "channel_secrets",
+    "channel_for_webhook",
+    "set_channel_status",
     "set_conversation_typing",
     "set_whatsapp_status",
     "update_conversation_entry",
@@ -126,7 +129,7 @@ def record_ai_usage(tenant_slug: str, usage: AIUsage, *, day: date | None = None
     AIUsageStore(_store_engine()).add(tenant_slug, day or datetime.now(timezone.utc).date(), usage)
 
 
-def whatsapp_for_webhook(webhook_id: str) -> WhatsAppSecrets | None:
+def whatsapp_for_webhook(webhook_id: str) -> ChannelSecrets | None:
     """La conexión de WhatsApp (negocio, servidor y token) del webhook con ese identificador secreto, o None si no existe."""
     return ChannelStore(_store_engine(), find_secrets_key()).secrets_for_webhook(webhook_id)
 
@@ -187,9 +190,24 @@ def pending_customer_text(conversation_id: str, *, since: datetime) -> str:
     return ConversationStore(_store_engine()).pending_customer_text(conversation_id, since=since)
 
 
-def whatsapp_secrets(tenant_slug: str) -> WhatsAppSecrets | None:
+def whatsapp_secrets(tenant_slug: str) -> ChannelSecrets | None:
     """La conexión de WhatsApp del negocio (servidor y token), o None si no está conectado."""
     return ChannelStore(_store_engine(), find_secrets_key()).whatsapp_secrets(tenant_slug)
+
+
+def channel_secrets(tenant_slug: str, channel: str) -> ChannelSecrets | None:
+    """La conexión de ese canal del negocio (WhatsApp o Telegram), o None si no lo tiene."""
+    return ChannelStore(_store_engine(), find_secrets_key()).channel_secrets(tenant_slug, channel)
+
+
+def channel_for_webhook(webhook_id: str, channel: str) -> ChannelSecrets | None:
+    """La conexión de ese canal con ese identificador secreto de webhook, o None si no existe."""
+    return ChannelStore(_store_engine(), find_secrets_key()).secrets_for_webhook(webhook_id, channel)
+
+
+def set_channel_status(tenant_slug: str, channel: str, status: ConnectionStatus) -> None:
+    """El estado de un canal que descubre el motor (en Telegram: que el código del bot ya no sirve)."""
+    ChannelStore(_store_engine(), find_secrets_key()).set_channel_status(tenant_slug, channel, status)
 
 
 def alert_stores() -> tuple[AttentionStore, PushStore]:

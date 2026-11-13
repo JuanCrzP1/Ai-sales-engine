@@ -70,7 +70,10 @@ const SCREENS: [prefix: string, help: ScreenHelp][] = [
 ];
 
 /** Los artículos que el panel nombra (cada pantalla y «Empieza aquí»): una prueba revisa que existan. */
-export const REFERENCED_ARTICLES: string[] = [...new Set([...SCREENS.flatMap(([, help]) => (help.article ? [help.article] : [])), "empieza-aqui"])];
+/** Los pasos de @BotFather: los enlaza la ventana para conectar Telegram. */
+export const TELEGRAM_ARTICLE = "conectar-telegram";
+
+export const REFERENCED_ARTICLES: string[] = [...new Set([...SCREENS.flatMap(([, help]) => (help.article ? [help.article] : [])), "empieza-aqui", TELEGRAM_ARTICLE])];
 
 /** La ruta dentro del negocio: `/negocios/panaderia/canales/` → `canales`. */
 export function screenOf(pathname: string): string {

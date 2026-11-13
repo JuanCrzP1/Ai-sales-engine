@@ -9,7 +9,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from app.admin_api.errors import PAYMENT_PROBLEM
 from app.business_config_application.assistant_lab import PlaygroundReply
-from app.business_config_application.channels import WhatsAppView
+from app.business_config_application.channels import TelegramView, WhatsAppView
 from app.business_config_application.service import ConfigReview, EditableConfig
 from app.domain.business_config.ai_settings import AISettings, KeyCheck
 from app.domain.business_config.attention import REPLY_MINUTES, RESUME_MINUTES, TIMEZONES
@@ -81,6 +81,28 @@ def whatsapp_payload(view: WhatsAppView) -> dict[str, Any]:
         "profile_name": connection.profile_name if connection else None,
         "qrcode": view.qrcode,
         "paircode": view.paircode,
+    }
+
+
+class TelegramConnectRequest(BaseModel):
+    """El código que @BotFather le dio al negocio para su bot."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    token: str = Field(max_length=200)
+
+
+def telegram_payload(view: TelegramView) -> dict[str, Any]:
+    """El bot de Telegram para el panel: su usuario, su nombre y su enlace, nunca el código (token)."""
+    connection = view.connection
+    username = connection.bot_username if connection else None
+    return {
+        "available": view.available,
+        "status": connection.status if connection else "disconnected",
+        "bot_username": username,
+        "bot_name": connection.bot_name if connection else None,
+        "link": f"https://t.me/{username}" if username else None,
+        "problem": view.problem,
     }
 
 

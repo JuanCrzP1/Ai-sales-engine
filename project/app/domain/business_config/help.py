@@ -42,7 +42,7 @@ HELP_MODULES: tuple[HelpModule, ...] = (
     HelpModule("atencion-humana", "Atención humana", "Cuándo pasa un chat a tu equipo, el horario y los avisos"),
     HelpModule("clientes-y-ventas", "Clientes, ventas y reportes", "Las etapas de tus clientes, registrar ventas y ver resultados"),
     HelpModule("asistente", "Asistente IA", "Enseñarle lo que vendes, probarlo y publicarlo"),
-    HelpModule("canales", "Canales", "Conectar tu WhatsApp y mantenerlo conectado"),
+    HelpModule("canales", "Canales", "Conectar tu WhatsApp y tu bot de Telegram, y mantenerlos conectados"),
     HelpModule("integraciones", "Integraciones y agentes", "La API del asistente, las claves y los agentes de IA"),
     HelpModule("inteligencia-artificial", "Inteligencia artificial", "Tu clave de OpenRouter, el modelo y lo que gastas"),
     HelpModule("cuenta", "Tu equipo y tu cuenta", "Invitar a tu equipo, los roles, tu perfil, la seguridad y eliminar"),

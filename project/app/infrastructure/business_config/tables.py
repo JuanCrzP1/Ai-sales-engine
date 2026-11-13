@@ -284,7 +284,7 @@ ai_usage = Table(
     Column("cost_usd", Numeric(14, 6, asdecimal=False)),
 )
 
-# Canales de cada negocio (migración 0008): por ahora WhatsApp por código QR con uazapi. Los tokens van cifrados con la clave de los
+# Canales de cada negocio (migración 0008): WhatsApp por código QR con uazapi y, desde la 0018, Telegram con el bot del negocio. Los tokens van cifrados con la clave de los
 # datos de pago; `webhook_id` es el identificador secreto de la ruta del webhook del negocio.
 business_channels = Table(
     "business_channels",
@@ -299,6 +299,13 @@ business_channels = Table(
     Column("phone", Text),
     Column("profile_name", Text),
     Column("updated_at", DateTime(timezone=True), nullable=False, default=_now),
+    # Migración 0018: la cuenta del canal (en Telegram, el id y el usuario del bot). Un bot nunca queda en dos negocios.
+    Column("account_id", Text),
+    Column("account_username", Text),
+    Index(
+        "business_channels_account_key", "channel", "account_id", unique=True,
+        postgresql_where=text("account_id IS NOT NULL"), sqlite_where=text("account_id IS NOT NULL"),
+    ),
 )
 
 # Atención humana (migración 0011): el horario del equipo, lo que se le dice al cliente, cuándo retoma la IA y a qué correo llegan los

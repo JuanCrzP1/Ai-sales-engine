@@ -2,7 +2,7 @@ import { cleanup, render, screen, waitFor, within } from "@testing-library/react
 import userEvent from "@testing-library/user-event";
 import type { BusinessDocument } from "../domain/config/types";
 import { PersistenceError } from "../repositories/persistenceError";
-import { createMemoryBackend, createMemoryWhatsApp, createTestServices, createVerifyingAuthService, TEST_ACCOUNT, type MemoryBackend } from "../test/fakes";
+import { createMemoryBackend, createMemoryWhatsApp, createTestServices, createVerifyingAuthService, TEST_ACCOUNT, TEST_BOT_TOKEN, type MemoryBackend } from "../test/fakes";
 import { SAMPLE_DOCUMENT, SAMPLE_PLANS_DOCUMENT } from "../test/fixtures/sampleDocument";
 import { App } from "./App";
 import type { ApplicationServices } from "./compositionRoot";
@@ -1329,6 +1329,79 @@ describe("Canales: WhatsApp por código QR", () => {
     await renderChannels({ available: false });
     expect(await screen.findByText(/todavía no está activa/)).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Conectar WhatsApp/ })).not.toBeInTheDocument();
+  });
+});
+
+describe("Canales: Telegram con el bot del negocio", () => {
+  async function renderTelegram(options: { available?: boolean } = {}) {
+    const channels = createMemoryWhatsApp(options);
+    const user = await renderAt(`${CAFE}/canales`, createTestServices(createMemoryBackend([SAMPLE_DOCUMENT]), { createChannels: () => channels.channels }));
+    const card = (await screen.findByRole("heading", { name: /^Telegram/ })).closest("section") as HTMLElement;
+    return { user, channels, card };
+  }
+
+  it("ya no hay «Próximamente»: Telegram se conecta con los pasos de @BotFather ahí mismo", async () => {
+    const { user, card } = await renderTelegram();
+    expect(screen.queryByRole("region", { name: "Próximos canales" })).not.toBeInTheDocument();
+    expect(screen.queryByText("Chat web")).not.toBeInTheDocument();
+    expect(within(card).getByText("No conectado")).toBeInTheDocument();
+    await user.click(within(card).getByRole("button", { name: /Conectar Telegram/ }));
+    const dialog = screen.getByRole("dialog", { name: "Conectar Telegram" });
+    expect(within(dialog).getByRole("link", { name: /Abrir @BotFather/ })).toHaveAttribute("href", "https://t.me/BotFather");
+    expect(within(dialog).getByText("/newbot")).toBeInTheDocument();
+    expect(within(dialog).getByRole("link", { name: "Ver la guía paso a paso" })).toHaveAttribute("href", `${CAFE}/ayuda/conectar-telegram`);
+  });
+
+  it("explica en su campo un código que no sirve y conecta con el bueno sin volver a mostrarlo", async () => {
+    const { user, channels, card } = await renderTelegram();
+    await user.click(within(card).getByRole("button", { name: /Conectar Telegram/ }));
+    const dialog = screen.getByRole("dialog", { name: "Conectar Telegram" });
+    await user.click(within(dialog).getByRole("button", { name: "Conectar" }));
+    expect(await within(dialog).findByText("Pega el código que te dio @BotFather.")).toBeInTheDocument();
+    await user.type(within(dialog).getByLabelText(/Código del bot/), "hola");
+    await user.click(within(dialog).getByRole("button", { name: "Conectar" }));
+    expect(await within(dialog).findByText(/Ese no parece el código de un bot/)).toBeInTheDocument();
+    await user.clear(within(dialog).getByLabelText(/Código del bot/));
+    await user.type(within(dialog).getByLabelText(/Código del bot/), ` ${TEST_BOT_TOKEN} `);
+    await user.click(within(dialog).getByRole("button", { name: "Conectar" }));
+
+    expect(await within(card).findByText(/Conectado como @CafeAromaBot/)).toBeInTheDocument();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(within(card).getByRole("link", { name: "t.me/CafeAromaBot" })).toHaveAttribute("href", "https://t.me/CafeAromaBot");
+    expect(within(card).getByRole("button", { name: /Copiar enlace/ })).toBeInTheDocument();
+    expect(channels.telegramTokens.at(-1)).toBe(TEST_BOT_TOKEN);
+    expect(document.body.textContent).not.toContain(TEST_BOT_TOKEN);
+  });
+
+  it("si cambiaron el código en @BotFather, lo dice y deja pegar el nuevo o desconectar", async () => {
+    const { user, channels, card } = await renderTelegram();
+    await user.click(within(card).getByRole("button", { name: /Conectar Telegram/ }));
+    await user.type(screen.getByLabelText(/Código del bot/), TEST_BOT_TOKEN);
+    await user.click(screen.getByRole("button", { name: "Conectar" }));
+    await within(card).findByText(/Conectado como @CafeAromaBot/);
+
+    channels.revokeTelegram();
+    await user.click(within(card).getByRole("button", { name: "Revisar conexión" }));
+    expect(await within(card).findByText("@CafeAromaBot no está recibiendo mensajes")).toBeInTheDocument();
+    expect(within(card).getByText("No recibe mensajes")).toBeInTheDocument();
+    await user.click(within(card).getByRole("button", { name: "Volver a conectar" }));
+    expect(await within(card).findByText(/Telegram rechazó el código del bot/)).toBeInTheDocument();
+
+    await user.click(within(card).getByRole("button", { name: "Pegar un código nuevo" }));
+    const dialog = screen.getByRole("dialog", { name: "Cambiar el bot de Telegram" });
+    await user.type(within(dialog).getByLabelText(/Código del bot/), TEST_BOT_TOKEN);
+    await user.click(within(dialog).getByRole("button", { name: "Conectar" }));
+    expect(await within(card).findByText(/Conectado como @CafeAromaBot/)).toBeInTheDocument();
+
+    await user.click(within(card).getByRole("button", { name: "Desconectar" }));
+    await user.click(within(card).getByRole("button", { name: "Sí, desconectar" }));
+    expect(await within(card).findByRole("button", { name: /Conectar Telegram/ })).toBeInTheDocument();
+  });
+
+  it("si la plataforma todavía no activó Telegram, lo dice sin detalles técnicos", async () => {
+    const { card } = await renderTelegram({ available: false });
+    expect(await within(card).findByText(/Telegram todavía no está activo/)).toBeInTheDocument();
+    expect(within(card).queryByRole("button", { name: /Conectar Telegram/ })).not.toBeInTheDocument();
   });
 });
 

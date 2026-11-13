@@ -1,4 +1,4 @@
-"""La dirección a la que uazapi envía los mensajes de cada negocio: la dirección pública del motor más la ruta de los canales.
+"""La dirección a la que uazapi (y Telegram) envían los mensajes de cada negocio: la dirección pública del motor más la ruta de los canales.
 
 Es `ENGINE_PUBLIC_URL` (en este equipo, la de ngrok, que `run_local.sh` toma sola) o, en Vercel, el dominio de producción del
 proyecto. Sin ella la conexión funciona, pero los mensajes no llegan al motor, y el panel lo avisa.
@@ -30,6 +30,15 @@ def engine_public_url() -> str | None:
 def webhook_base(api_prefix: str) -> str | None:
     public = engine_public_url()
     return f"{public}{api_prefix}{WEBHOOK_PATH}" if public else None
+
+
+# El webhook de Telegram en el motor (`app/api/controllers/telegram_webhook.py`): Telegram exige https, y lo da la misma dirección.
+TELEGRAM_WEBHOOK_PATH = "/channels/telegram"
+
+
+def telegram_webhook_base(api_prefix: str) -> str | None:
+    public = engine_public_url()
+    return f"{public}{api_prefix}{TELEGRAM_WEBHOOK_PATH}" if public else None
 
 
 # La API del asistente (`app/api/controllers/assistant_api.py`), sin el prefijo de la API.
