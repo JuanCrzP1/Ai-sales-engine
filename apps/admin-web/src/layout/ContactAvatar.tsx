@@ -1,3 +1,4 @@
+import { TelegramLogo } from "../components/brand/TelegramLogo";
 import { WhatsAppLogo } from "../components/brand/WhatsAppLogo";
 import { Icon, type IconName } from "../components/ui/Icon";
 import { CHANNEL_LABELS, type Channel } from "../domain/inbox/types";
@@ -32,7 +33,7 @@ export function ContactAvatar({ name, channel, size = "md" }: { name: string; ch
         {initials(name)}
       </span>
       <span className={`contact-avatar__channel channel-color--${channel}`} role="img" aria-label={CHANNEL_LABELS[channel]} title={CHANNEL_LABELS[channel]}>
-        {channel === "whatsapp" ? <WhatsAppLogo size={10} /> : <Icon name={CHANNEL_ICONS[channel]} size={9} />}
+        {channel === "whatsapp" ? <WhatsAppLogo size={10} /> : channel === "telegram" ? <TelegramLogo size={11} /> : <Icon name={CHANNEL_ICONS[channel]} size={9} />}
       </span>
     </span>
   );

@@ -844,17 +844,70 @@
   flex-direction: column;
   gap: var(--space-2);
   margin: 0;
-  padding-left: var(--space-5);
+  padding: 0;
+  list-style: none;
+  counter-reset: telegram-paso;
   font-size: var(--text-sm);
   line-height: 1.5;
 }
 
+.telegram-steps li {
+  counter-increment: telegram-paso;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-3);
+  padding: var(--space-3);
+  padding-left: calc(var(--space-3) + 30px);
+  position: relative;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-muted, var(--color-surface));
+}
+
+.telegram-steps li::before {
+  content: counter(telegram-paso);
+  position: absolute;
+  left: var(--space-3);
+  top: var(--space-3);
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #229ed9;
+  color: #fff;
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.telegram-steps li > span:first-child {
+  flex: 1 1 220px;
+}
+
+.telegram-steps code {
+  font-weight: 600;
+}
+
 .telegram-steps__open {
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+.telegram-steps__command {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  font-weight: 600;
-  white-space: nowrap;
+  gap: var(--space-2);
+}
+
+.telegram-steps__command code {
+  padding: 4px 12px;
+  border-radius: var(--radius-sm, 6px);
+  background: #eaf6fd;
+  border: 1px solid #bfe3f6;
+  color: #0b6a99;
+  font-size: var(--text-base, 15px);
+  font-weight: 700;
 }
 
 .whatsapp-card__connected-title {

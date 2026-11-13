@@ -60,7 +60,7 @@ export function TelegramChannelCard() {
       {channel?.available && !hasBot && (
         <div className="whatsapp-card__start">
           <ol className="whatsapp-card__how telegram-card__how">
-            <li>Crea el bot de tu negocio en Telegram con @BotFather.</li>
+            <li>En Telegram, abre @BotFather y envíale /newbot para crear el bot de tu negocio.</li>
             <li>Copia el código que te da y pégalo aquí.</li>
             <li>Listo: comparte el enlace del bot y tu asistente responde.</li>
           </ol>
@@ -160,15 +160,35 @@ function ConnectTelegramDialog({ telegram, changing, onClose }: { telegram: Tele
       <form id="telegram-form" className="form-stack" onSubmit={(event) => void submit(event)} noValidate>
         <ol className="telegram-steps">
           <li>
-            En Telegram abre <strong>@BotFather</strong>.{" "}
-            <a className="telegram-steps__open" href={BOTFATHER_URL} target="_blank" rel="noreferrer">
+            <span>
+              En Telegram abre <strong>@BotFather</strong> (el de la insignia azul) y toca <strong>Iniciar</strong>.
+            </span>
+            <a className="button button--secondary button--small telegram-steps__open" href={BOTFATHER_URL} target="_blank" rel="noreferrer">
               Abrir @BotFather <Icon name="link" size={14} />
             </a>
           </li>
           <li>
-            Escríbele <code>/newbot</code>, ponle el nombre de tu negocio y un usuario que termine en «bot» (por ejemplo, <code>CafeAromaBot</code>).
+            <span>Envíale este mensaje:</span>
+            <span className="telegram-steps__command">
+              <code>/newbot</code>
+              <CopyButton text="/newbot" label="Copiar" />
+            </span>
           </li>
-          <li>Copia el código que te da (se ve así: 7123456789:AAH…) y pégalo aquí.</li>
+          <li>
+            <span>
+              Te pide el <strong>nombre</strong>: escribe el de tu negocio. Por ejemplo: <code>Café Aroma</code>
+            </span>
+          </li>
+          <li>
+            <span>
+              Te pide el <strong>usuario</strong>: debe terminar en «bot». Por ejemplo: <code>CafeAromaBot</code>
+            </span>
+          </li>
+          <li>
+            <span>
+              Te responde con un <strong>código</strong> que se ve así: <code>7123456789:AAH…</code> Cópialo completo y pégalo aquí abajo.
+            </span>
+          </li>
         </ol>
         <TextField label="Código del bot" value={token} placeholder="7123456789:AAH..." required error={tokenError ?? undefined} onChange={setToken} />
         {error && <Alert tone="danger">{error}</Alert>}

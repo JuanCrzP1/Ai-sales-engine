@@ -709,6 +709,10 @@
   background: #4f46e5;
 }
 
+.channel-color--api {
+  background: #0f172a;
+}
+
 .channel-color--prueba {
   background: #64748b;
 }

@@ -1349,6 +1349,8 @@ describe("Canales: Telegram con el bot del negocio", () => {
     const dialog = screen.getByRole("dialog", { name: "Conectar Telegram" });
     expect(within(dialog).getByRole("link", { name: /Abrir @BotFather/ })).toHaveAttribute("href", "https://t.me/BotFather");
     expect(within(dialog).getByText("/newbot")).toBeInTheDocument();
+    expect(within(dialog).getByRole("button", { name: /Copiar/ })).toBeInTheDocument();
+    expect(within(dialog).getAllByRole("listitem")).toHaveLength(5);
     expect(within(dialog).getByRole("link", { name: "Ver la guía paso a paso" })).toHaveAttribute("href", `${CAFE}/ayuda/conectar-telegram`);
   });
 
