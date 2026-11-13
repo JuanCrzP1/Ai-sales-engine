@@ -13,14 +13,12 @@ export function TransferMethodsForm({ profile, profileIndex }: { profile: Paymen
   const { actions } = useConfig();
   const base = `payments.${profileIndex}.transfer_methods`;
   const listIssue = useFieldIssue(base);
-  const duplicatesIssue = useFieldIssue(`${base}.duplicates`);
   const methods = profile.transfer_methods ?? [];
 
   return (
     <>
       <Toggle label="Aceptar transferencias" checked={profile.transfer_enabled} onChange={(enabled) => actions.setTransferEnabled(profile.id, enabled)} />
       {profile.transfer_enabled && listIssue && <Alert tone="warning">{listIssue.message}</Alert>}
-      {profile.transfer_enabled && duplicatesIssue && <Alert tone="warning">{duplicatesIssue.message}</Alert>}
       {!profile.transfer_enabled && methods.length > 0 && <p className="field__hint">Las transferencias están desactivadas: estas cuentas se conservan, pero el asistente no las ofrece.</p>}
       {profile.transfer_enabled && methods.length === 0 && <EmptyState title="No hay cuentas registradas" description="Agrega una cuenta Nequi, Daviplata, bancaria o Bre-B." />}
       {methods.map((method, index) => (

@@ -170,10 +170,7 @@ function validatePayments(document: BusinessDocument, paymentValues: PaymentValu
     methods.forEach((method, position) => {
       if (method.type === "bank" && isBlank(method.bank ?? "")) add(`payments.${index}.transfer_methods.${position}.bank`, "error", "Escribe el nombre del banco.");
     });
-    const types = methods.filter((method) => isMethodActive(profile, method)).map((method) => method.type);
-    if (new Set(types).size !== types.length) {
-      add(`payments.${index}.transfer_methods.duplicates`, "warning", "Hay dos cuentas del mismo tipo: el asistente solo comparte la primera de cada tipo.");
-    }
+    // Varias cuentas del mismo tipo están bien: si el cliente nombra el banco, recibe esa; si no, todas las de ese tipo juntas.
   });
   if (!hasLink && !hasTransfer) add("payments", "warning", "No hay ningún medio de pago: el asistente no podrá indicar cómo pagar.");
 

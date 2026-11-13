@@ -8,23 +8,6 @@
       "message": "Sin dirección, el asistente no podrá decir dónde queda tu local."
     },
     {
-      "code": "cuentas_repetidas",
-      "changes": {
-        "payments": [
-          {
-            "id": "principal",
-            "transfer_enabled": true,
-            "transfer_methods": [
-              { "type": "nequi", "number": { "secret_ref": "secret_store:principal.nequi.number.a" } },
-              { "type": "nequi", "number": { "secret_ref": "secret_store:principal.nequi.number.b" } }
-            ]
-          }
-        ]
-      },
-      "field": "payments.0.transfer_methods.duplicates",
-      "message": "Hay dos cuentas del mismo tipo: el asistente solo comparte la primera de cada tipo."
-    },
-    {
       "code": "sin_medios_de_pago",
       "changes": { "payments": [{ "id": "principal", "transfer_enabled": false, "transfer_methods": [] }], "capabilities": { "closing_methods": { "payment_link": false, "human_handoff": true } } },
       "field": "payments",

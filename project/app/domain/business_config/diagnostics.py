@@ -114,7 +114,7 @@ def review(config: BusinessConfig, *, today: date | None = None) -> list[Diagnos
 # Avisos que el panel calcula en vivo mientras se edita (`apps/admin-web/src/domain/validation/rules.ts`), con el mismo campo y el
 # mismo texto: así el agente que trabaja por MCP ve lo mismo que la persona en la pantalla. Los casos compartidos están en
 # `project/config/contracts/v1/advisory-cases.json` y los prueban los dos lados.
-LIVE_ADVISORY_CODES = ("sin_direccion", "cuentas_repetidas", "sin_medios_de_pago", "sin_problemas_del_cliente", "sin_mensaje_de_pago_reportado")
+LIVE_ADVISORY_CODES = ("sin_direccion", "sin_medios_de_pago", "sin_problemas_del_cliente", "sin_mensaje_de_pago_reportado")
 
 
 def _live_advisories(config: BusinessConfig) -> list[Diagnostic]:
@@ -125,12 +125,10 @@ def _live_advisories(config: BusinessConfig) -> list[Diagnostic]:
 
     has_link = any(profile.link and profile.link_enabled is not False for profile in config.payments)
     has_transfer = False
-    for index, profile in enumerate(config.payments):
+    # Varias cuentas del mismo tipo están bien: el cliente recibe la del banco que nombra, o todas las de ese tipo juntas.
+    for profile in config.payments:
         active = [method.type for method in profile.transfer_methods if profile.transfer_enabled and method.enabled is not False]
         has_transfer = has_transfer or bool(active)
-        if len(set(active)) != len(active):
-            found.append(Diagnostic("cuentas_repetidas", "incoherencia", f"payments.{index}.transfer_methods.duplicates",
-                                    "Hay dos cuentas del mismo tipo: el asistente solo comparte la primera de cada tipo."))
     if not has_link and not has_transfer:
         found.append(Diagnostic("sin_medios_de_pago", "incompleto", "payments", "No hay ningún medio de pago: el asistente no podrá indicar cómo pagar."))
 

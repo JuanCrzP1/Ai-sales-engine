@@ -75,7 +75,7 @@ from __future__ import annotations
 from app.application.pipeline.fallback import build_fallback_response
 from app.application.pipeline.response_postprocessor import enforce_max_words
 from app.application.pipeline.response_router import route_response
-from app.application.pipeline.payment_delivery import already_sent, deliver, ejecutar_pago, sent_state, without_payment_placeholder  # noqa: F401 - las pruebas usan ejecutar_pago y without_payment_placeholder desde aquí
+from app.application.pipeline.payment_delivery import already_sent, deliver, ejecutar_pago, keeps_handoff, same_payment, sent_state, without_payment_placeholder  # noqa: F401 - las pruebas usan ejecutar_pago y without_payment_placeholder desde aquí
 from app.domain.conversation.memory import ConversationState, MemoryDomainService
 from app.domain.memory.observability.audit import emit_memory_audit
 from app.domain.memory.salience.selector import select as select_commercial_memory
@@ -559,6 +559,8 @@ class AIExecution:
                         payment_status=payment_status,
                     )
                 response_text = delivery.text
+                if handoff_reason and not keeps_handoff(delivery, str(user_message or "")):
+                    handoff_reason = ""
             payment_details_sent = delivery is not None and bool(delivery.method)
 
             raw_response = response_text
@@ -571,7 +573,9 @@ class AIExecution:
             if payment_details_sent:
                 # El sistema entregó los datos de ese medio: falta que el cliente pague y envíe el comprobante (no se repiten solos).
                 _new_op_state = sent_state(delivery.method)
-            elif op_before and already_sent(op_before, op_before.active_option) and _new_op_state.active_process == "payment" and _new_op_state.active_option in ("", op_before.active_option):
+            elif op_before and already_sent(op_before, op_before.active_option) and _new_op_state.active_process == "payment" and (
+                not _new_op_state.active_option or same_payment(_new_op_state.active_option, op_before.active_option)
+            ):
                 # Se sigue hablando del mismo pago: se conserva que los datos ya salieron (si no, se repetirían solos).
                 _new_op_state = sent_state(op_before.active_option)
             _set_op = getattr(memory_service, "set_op_state", None)

@@ -25,7 +25,9 @@ def render_op_anchor(state: OperationalState | None) -> str:
     if state is None or not state.is_active():
         return ""
 
-    opt_label = _OPTION_LABELS.get(str(state.active_option or "").strip().lower(), "")
+    option = str(state.active_option or "").strip().lower()
+    # Una cuenta concreta («bank:davivienda»): se nombra por su tipo.
+    opt_label = _OPTION_LABELS.get(option.split(":", 1)[0], "")
     p = str(state.active_process or "").strip().lower()
 
     if p == "payment":

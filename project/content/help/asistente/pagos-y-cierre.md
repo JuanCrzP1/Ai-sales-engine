@@ -14,6 +14,7 @@ En [Pagos y cierre](panel:pagos) decides cómo te pagan y qué hace el asistente
 
 - **Enlace de pago:** activa **Ofrecer pago por enlace** y pega tu enlace.
 - **Transferencias:** activa **Aceptar transferencias** y agrega tus cuentas Nequi, Daviplata, bancarias o tu llave Bre-B.
+- **Varias cuentas:** puedes tener varias del mismo tipo (por ejemplo, Bancolombia y Davivienda). Si el cliente nombra el banco, recibe esa cuenta; si pide «transferencia bancaria», recibe todas juntas en un solo mensaje.
 - **A nombre de:** en cada cuenta, escribe a nombre de quién está. El cliente lo ve con los datos de pago y sabe que le paga a tu negocio. La **Etiqueta** es solo para ti.
 
 ## Cómo le llegan los datos al cliente
@@ -30,7 +31,7 @@ A nombre de: Café Aroma S.A.S.
 Cuando pagues, envíame aquí la captura del comprobante y te confirmamos. ✅
 ```
 
-Los datos salen **una sola vez**: si el cliente sigue preguntando («¿y cuando pague qué hago?»), el asistente le responde en vez de repetirlos. Si los pide de nuevo, se los vuelve a enviar.
+Los datos salen **una sola vez**: si el cliente sigue preguntando («¿y cuando pague qué hago?»), el asistente le responde en vez de repetirlos. Si los pide («envíame el Nequi», «se me borró el número, ¿me lo envías?»), siempre le llegan, con cualquier medio que tengas activo.
 
 Puedes cambiar este mensaje en [Mensajes y canales](panel:mensajes), en **Cómo le llegan los datos de pago**.
 

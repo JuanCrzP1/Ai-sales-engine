@@ -133,22 +133,13 @@ describe("validateDocument", () => {
     expect(warningFields(document)).toEqual(expect.arrayContaining(["payments", "payments.0.transfer_methods", "capabilities.closing_methods.payment_link"]));
   });
 
-  it("una cuenta inactiva repetida no provoca el aviso de duplicados", () => {
+  it("varias cuentas del mismo tipo no son un problema: el asistente las comparte todas", () => {
     const document = clone(SAMPLE_DOCUMENT);
     document.payments[0]!.transfer_methods = [
-      { type: "nequi", number: ref("a") },
-      { type: "nequi", number: ref("b"), enabled: false },
+      { type: "bank", bank: "Bancolombia", account_type: "ahorros", account_number: ref("a") },
+      { type: "bank", bank: "Davivienda", account_type: "corriente", account_number: ref("b") },
     ];
-    expect(warningFields(document)).not.toContain("payments.0.transfer_methods.duplicates");
-  });
-
-  it("avisa de cuentas repetidas por tipo, porque el motor solo usa la primera", () => {
-    const document = clone(SAMPLE_DOCUMENT);
-    document.payments[0]!.transfer_methods = [
-      { type: "nequi", number: ref("a") },
-      { type: "nequi", number: ref("b") },
-    ];
-    expect(warningFields(document)).toContain("payments.0.transfer_methods.duplicates");
+    expect(warningFields(document).filter((field) => field.startsWith("payments.0.transfer_methods"))).toEqual([]);
   });
 
   it("avisa cuando no hay ningún medio de pago", () => {

@@ -202,3 +202,110 @@ def test_the_details_never_repeat_while_the_customer_keeps_talking_about_the_sam
     assert follow_up == "Nuestro equipo lo revisa en unos minutos."
     # Cambiar de medio sí envía los datos del nuevo.
     assert by_link.startswith("💳 *Datos para pagar*") and "*Pago en línea*" in by_link
+
+
+def _run_with_context(slug: str, turns: list[tuple[str, str]], *, user_id: str) -> list[tuple[str, dict]]:
+    """Como `run_conversation`, pero devuelve también lo que el motor decide del chat (por ejemplo, pasarlo a una persona)."""
+    from app.application.ai_pipeline import AIPipeline
+    from app.domain.conversation.memory import MemoryDomainService
+    from app.infrastructure.persistence.memory_repository import MemoryRepository
+
+    pipeline = AIPipeline(memory_service=MemoryDomainService(MemoryRepository()))
+    results = []
+    for message, llm_reply in turns:
+        pipeline.runtime.generate = lambda prompt, *, user_message, bot_config=None, _reply=llm_reply, **_kwargs: _reply
+        response, _ai_used, context = pipeline.run(
+            tenant=type("T", (), {"slug": slug, "name": slug, "id": slug})(), user_message=message, user_id=user_id, bot_config=None,
+            conversation_history=[], faq_results=[], yaml_config=None, include_metadata=True,
+        )
+        results.append((response, context if isinstance(context, dict) else {}))
+    return results
+
+
+def test_when_the_customer_asks_for_the_details_they_arrive_even_if_the_assistant_says_it_cannot():
+    """El chat real (13 nov 2026, 07:58): «Pero envíame el Nequi» → «No puedo enviarte el número de Nequi directamente. Te paso con
+    alguien del equipo». El modelo copiaba su propia respuesta vieja. Ahora salen los datos y el chat no pasa a una persona por eso."""
+    number = _nequi()
+    refusal = reply("No puedo enviarte el número de Nequi directamente. Te paso con alguien del equipo por este mismo chat.", "info", handoff="persona")
+    turns = [
+        ("Quiero pagar por nequi", reply("Listo.", "buy", payment_method="nequi")),
+        ("Pero envíame el Nequi", refusal),
+        ("Me lo envías de nuevo porfa", reply("No puedo enviarlo directamente.", "info")),
+    ]
+    (_first, _), (sent, context), (again, _ctx) = _run_with_context("saas", turns, user_id="pide-los-datos")
+    assert sent.startswith("💳 *Datos para pagar*") and number in sent and "No puedo" not in sent
+    assert not context.get("handoff")
+    assert again == sent
+
+
+def test_if_the_customer_also_asks_for_a_person_the_chat_still_goes_to_the_team():
+    turns = [
+        ("Quiero pagar por nequi", reply("Listo.", "buy", payment_method="nequi")),
+        ("Envíame el Nequi y quiero hablar con una persona", reply("Te paso con alguien del equipo.", "info", handoff="persona")),
+    ]
+    _first, (sent, context) = _run_with_context("saas", turns, user_id="datos-y-persona")
+    assert sent.startswith("💳 *Datos para pagar*") and context.get("handoff") is True
+
+
+@pytest.mark.parametrize(
+    "message",
+    ["Dime este sistema cómo se llama", "Quisiera saber algo más", "¿Aceptan Nequi?", "Envíame la información del plan otra vez",
+     "Dame el número de la tienda", "Envíame el número de WhatsApp", "¿Me mandas una foto del producto?"],
+)
+def test_other_requests_are_answered_by_the_assistant_not_with_payment_details(message):
+    turns = [
+        ("Quiero pagar por nequi", reply("Listo.", "buy", payment_method="nequi")),
+        (message, reply("Respuesta del asistente.", "info")),
+    ]
+    _first, (_prompts, answer) = run_conversation("saas", turns, user_id=f"otra-cosa-{abs(hash(message))}")
+    assert answer == "Respuesta del asistente."
+
+
+# ---------------------------------------------------------------------------
+# Cualquier medio que tenga el negocio, y varias cuentas del mismo tipo
+# ---------------------------------------------------------------------------
+
+_SAID = {"link": "el link de pago", "nequi": "el Nequi", "daviplata": "el Daviplata", "bank": "la cuenta de Bancolombia", "breb": "la llave Bre-B"}
+
+
+@pytest.mark.parametrize("method", ["link", "nequi", "daviplata", "bank", "breb"])
+def test_every_configured_method_reaches_the_customer_when_asked_even_if_the_assistant_refuses(method):
+    runtime = load_tenant_runtime_yaml("saas")
+    expected = ejecutar_pago(runtime, method)
+    assert expected, f"saas tiene {method}"
+    refusal = reply("No puedo enviarte esos datos directamente.", "info")
+    (_prompts, answer), = run_conversation("saas", [(f"Envíame {_SAID[method]} para pagar", refusal)], user_id=f"cualquier-medio-{method}")
+    assert answer == expected and REDACTED_PAYMENT_VALUE not in answer
+
+
+def _two_banks(document):
+    for profile in document["payments"]:
+        banks = [method for method in profile["transfer_methods"] if method["type"] == "bank"]
+        if banks:
+            second = {**banks[0], "bank": "Davivienda", "account_type": "corriente", "holder": "Software Norte S.A.S."}
+            banks[0]["holder"] = "Software Norte S.A.S."
+            profile["transfer_methods"].append(second)
+
+
+def test_with_two_banks_the_customer_gets_the_one_he_names_or_both(monkeypatch, tmp_path):
+    from pipeline_harness import run_with_document
+
+    turns = [
+        ("Envíame la cuenta de Davivienda", reply("No puedo enviarla.", "info")),
+        ("Mejor por Bancolombia", reply("Listo.", "buy", payment_method="bank")),
+        ("¿Cuáles cuentas bancarias tienen? Pásame los datos para pagar por transferencia bancaria", reply("Claro.", "buy", send_payment="bank")),
+    ]
+    (_a, davivienda), (_b, bancolombia), (_c, both) = run_with_document(monkeypatch, tmp_path / "dos-bancos", "saas", _two_banks, turns)
+    assert "*Davivienda*\nCuenta corriente\n" in davivienda and "Bancolombia" not in davivienda
+    assert "A nombre de: Software Norte S.A.S." in davivienda
+    assert "*Bancolombia*\nCuenta de ahorros\n" in bancolombia and "Davivienda" not in bancolombia
+    assert both.startswith("💳 *Datos para pagar*\n\n*Transferencia bancaria*\n")
+    assert "*Bancolombia*\nCuenta de ahorros\n" in both and "*Davivienda*\nCuenta corriente\n" in both and both.count("A nombre de:") == 2
+
+
+def test_with_two_banks_the_question_names_both(monkeypatch, tmp_path):
+    from pipeline_harness import run_with_document
+
+    turns = [("¿A qué cuenta pago?", reply(f"Paga a {REDACTED_PAYMENT_VALUE}.", "info"))]
+    (_prompts, answer), = run_with_document(monkeypatch, tmp_path / "pregunta", "saas", _two_banks, turns)
+    assert "transferencia a Bancolombia o Davivienda" in answer and answer.startswith("¿Con qué medio prefieres pagar")
