@@ -53,11 +53,12 @@ GROUPS: tuple[str, ...] = (COLOMBIA, MEXICO, PERU, ARGENTINA, SPAIN, USA, ANYWHE
 _MOBILE_CO = DataField("number", "Número de celular", "mobile", "3001234567")
 
 PAYMENT_METHODS: tuple[PaymentMethodKind, ...] = (
-    PaymentMethodKind("nequi", "Nequi", COLOMBIA, _MOBILE_CO, r"\bnequi\b"),
-    PaymentMethodKind("daviplata", "Daviplata", COLOMBIA, _MOBILE_CO, r"\bdaviplata\b"),
+    # Como lo escribe la gente: «nekui», «nequy», «davi plata».
+    PaymentMethodKind("nequi", "Nequi", COLOMBIA, _MOBILE_CO, r"\bn[eiy]k?qu?[iyí]\b|\bnekui\b"),
+    PaymentMethodKind("daviplata", "Daviplata", COLOMBIA, _MOBILE_CO, r"\bdavi ?plata\b"),
     PaymentMethodKind(
         "bank", "Cuenta bancaria", ANYWHERE, DataField("account_number", "Número de cuenta", "account", "1234567890"),
-        r"\bbanco\b|\bbancaria\b|\bcuenta de ahorros\b|\bcuenta corriente\b|\bbancolombia\b", needs_bank=True,
+        r"\bbanco\b|\bbancaria\b|\bcuenta de ahorros\b|\bcuenta corriente\b|\bbanco ?colombia\b", needs_bank=True,
     ),
     PaymentMethodKind("breb", "Bre-B", COLOMBIA, DataField("reference", "Llave o referencia Bre-B", "reference", "@tunegocio", "Llave: {value}"), r"\bbre-?b\b|\bllave\b"),
     PaymentMethodKind("spei", "Transferencia SPEI", MEXICO, DataField("reference", "CLABE interbancaria", "clabe", "032180000118359719", "CLABE: {value}"), r"\bspei\b|\bclabe\b"),

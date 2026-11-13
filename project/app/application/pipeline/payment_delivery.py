@@ -12,18 +12,28 @@ el mensaje con los datos reales y la plantilla del negocio. Las piezas:
      cliente sigue hablando del mismo pago, responde la IA: los datos no se repiten encima de su respuesta.
   3. **El cliente los pidió o eligió el medio con todas las letras** («envíame el Nequi», «¿y si te pago por Nu?»): salen, diga lo
      que diga la IA (un modelo pequeño a veces responde «no puedo enviarlo», o que «los datos son los mismos»).
-  4. **La red de seguridad**: si la IA nombró los datos (su marcador) sin decir el medio, el sistema lo deduce o pregunta con cuál.
-     Nunca envía una frase cortada ni el marcador.
+  4. **La red de seguridad**: si la IA dice que no puede dar los datos (es falso), los envía o pregunta con cuál medio; si dice que
+     los envía y no los marcó, los envía; si nombró los datos (su marcador) sin decir el medio, lo deduce o pregunta. Nunca envía una
+     frase cortada, una negativa falsa ni el marcador. Lo que el cliente pide con todas las letras le gana a lo que marcó la IA.
 
 Cada vez que actúa una red (3 o 4) queda registrado (`pago_red_de_seguridad`), para ver si la IA falla antes de que un cliente se queje.
 """
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 
-from app.application.pipeline.payment_requests import asked_for_payment_details, asks_for_person, chose_payment_method, named_option, refine, resolve
-from app.domain.business_config.payment_accounts import option_of, options, payment_message, same_payment, which_method_question
+from app.application.pipeline.payment_requests import (
+    asked_for_payment_details,
+    asks_about_another_method,
+    asks_for_person,
+    chose_payment_method,
+    named_option,
+    refine,
+    resolve,
+)
+from app.domain.business_config.payment_accounts import inline_details, option_of, options, payment_message, same_payment, which_method_question
 from app.domain.business_config.payment_data import REDACTED_PAYMENT_VALUE
 from app.domain.operations.operational_state import OperationalState
 from app.utils.logger import logger
@@ -95,19 +105,37 @@ def deliver(
     # La IA dice el medio («bank», «Nequi»); si el cliente nombró uno de los bancos del negocio, va esa cuenta.
     action = refine(resolve(send_payment, runtime_yaml), *texts, runtime_yaml=runtime_yaml)
     chosen = refine(resolve(payment_method, runtime_yaml), *texts, runtime_yaml=runtime_yaml)
+    in_payment = state.active_option if state and state.is_active() and state.active_process == "payment" else ""
+    current = in_payment or resolve(remembered, runtime_yaml)
+    asked = asked_for_payment_details(user_message, runtime_yaml, current=current)
+    # Lo que el cliente pide con todas las letras le gana a lo que marcó la IA («me regalas la cuenta de Bancolombia» → no el link).
+    if asked:
+        action = asked if action and option_of(action) != option_of(asked) else action
+        chosen = asked if chosen and option_of(chosen) != option_of(asked) else chosen
+    if action and already_sent(state, action) and not asked and not _offers_them(response_text):
+        # La IA pidió reenviar datos que ya salieron sin que el cliente los pidiera («ya voy a pagar»): se respeta su respuesta.
+        return _with_inline_details(response_text, runtime_yaml, action)
     if action:
         return _send(runtime_yaml, action)
     if chosen and intent == "buy" and not already_sent(state, chosen):
         return _send(runtime_yaml, chosen)
-    in_payment = state.active_option if state and state.is_active() and state.active_process == "payment" else ""
-    current = in_payment or resolve(remembered, runtime_yaml)
-    asked = asked_for_payment_details(user_message, runtime_yaml, current=current)
     if asked:
         return _send(runtime_yaml, asked, "cliente_pidio_los_datos", tenant)
-    # El cliente eligió otro medio («¿y si te pago por Nu?»): salen sus datos, aunque la IA no lo haya marcado.
-    switched = chose_payment_method(user_message, runtime_yaml)
+    # El cliente eligió otro medio («¿y si te pago por Nu?», «¿y Nequi no?»): salen sus datos, aunque la IA no lo haya marcado.
+    switched = chose_payment_method(user_message, runtime_yaml) or asks_about_another_method(user_message, runtime_yaml, current=current)
     if switched and not already_sent(state, switched):
         return _send(runtime_yaml, switched, "cliente_eligio_el_medio", tenant)
+    # La IA dice que no puede dar los datos (es falso: los envía el sistema). Con el medio, salen; sin él, se pregunta con cuál.
+    if _refuses(response_text, paying=bool(current)):
+        known = chosen or current or (offered[0] if len(offered) == 1 else "")
+        if known:
+            return _send(runtime_yaml, known, "la_ia_dijo_que_no_podia", tenant)
+        logger.warning("pago_red_de_seguridad", extra={"tenant": tenant, "how": "la_ia_dijo_que_no_podia", "method": ""})
+        return PaymentDelivery(which_method_question(runtime_yaml), "", "la_ia_dijo_que_no_podia")
+    # La IA dice que los envía («te envío nuevamente los datos…») pero no marcó bien su acción: se cumple lo que dijo.
+    promised = chosen or current
+    if promised and REDACTED_PAYMENT_VALUE not in response_text and _offers_them(response_text):
+        return _send(runtime_yaml, promised, "la_ia_dijo_que_los_enviaba", tenant)
     if REDACTED_PAYMENT_VALUE not in response_text:
         return PaymentDelivery(response_text)
 
@@ -120,10 +148,47 @@ def deliver(
         ("unico_medio", offered[0] if len(offered) == 1 else ""),
     )
     how, method = next(((how, method) for how, method in candidates if method), ("pregunta", ""))
+    if method and already_sent(state, method):
+        # Ya tiene los datos y la IA los nombra al explicar («te envié el Nequi [dato]…»): el dato real va dentro de su frase.
+        return _with_inline_details(response_text, runtime_yaml, method, how, tenant)
     if method:
         return _send(runtime_yaml, method, how, tenant)
     logger.warning("pago_red_de_seguridad", extra={"tenant": tenant, "how": how, "method": ""})
     return PaymentDelivery(which_method_question(runtime_yaml), "", how)
+
+
+# La IA dice que los envía («aquí los tienes de nuevo», «te los reenvío»): entonces salen, aunque ya se hubieran enviado.
+_OFFERS_THEM = re.compile(
+    r"\b(aqu[ií] (los |lo |te los )?tienes|te (los |lo )?(env[ií]o|reenv[ií]o|paso|comparto|dejo)( (nuevamente|de nuevo|otra vez))? (los datos|el n[uú]mero|la cuenta|el link|el enlace)|"
+    r"de nuevo los datos|nuevamente los datos)\b"
+)
+
+
+# «No puedo darte el número de cuenta», «no puedo enviarte el Nequi directamente»: lo que un modelo pequeño a veces dice, y es falso.
+_REFUSES_DATA = re.compile(
+    r"\bno (puedo|podemos|me es posible|est[aá] permitido)( \w+)? (darte|enviarte|compartirte|pasarte|mandarte|dar|enviar|compartir|pasar)"
+    r"( \w+)? (el |los |la |tu |ese |esos )?(n[uú]mero|datos|cuenta|dato|link|enlace|llave|nequi|daviplata|informaci[oó]n de pago)"
+)
+# «No puedo enviarlo de nuevo»: sin decir qué, solo es una negativa de pago si ya están pagando (podría ser un domicilio).
+_REFUSES_IT = re.compile(r"\bno (puedo|podemos) (envi[aá]rtelo|d[aá]rtelo|pas[aá]rtelo|enviarlo|darlo|reenviarlo)\b")
+
+
+def _refuses(response_text: str, *, paying: bool) -> bool:
+    text = str(response_text or "").lower()
+    return bool(_REFUSES_DATA.search(text)) or (paying and bool(_REFUSES_IT.search(text)))
+
+
+def _offers_them(response_text: str) -> bool:
+    return bool(_OFFERS_THEM.search(str(response_text or "").lower()))
+
+
+def _with_inline_details(response_text: str, runtime_yaml: dict, key: str, how: str = "", tenant: str = "") -> PaymentDelivery:
+    """La respuesta de la IA tal cual, con su marcador cambiado por el dato real en una línea. El mensaje de datos no se repite."""
+    if how:
+        logger.warning("pago_red_de_seguridad", extra={"tenant": tenant, "how": f"{how}_en_la_frase", "method": key})
+    if REDACTED_PAYMENT_VALUE not in response_text:
+        return PaymentDelivery(response_text)
+    return PaymentDelivery(response_text.replace(REDACTED_PAYMENT_VALUE, inline_details(runtime_yaml, key)), key, how)
 
 
 def without_payment_placeholder(response_text: str, runtime_yaml: dict, payment_method: str) -> str:

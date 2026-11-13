@@ -114,6 +114,20 @@ def payment_message(runtime_yaml: dict, key: str, template: str | None = None) -
     return render_payment_details(template, medio=medio, datos="\n\n".join(blocks))
 
 
+def inline_details(runtime_yaml: dict, key: str) -> str:
+    """Los datos de un medio o cuenta en una sola línea, para ponerlos dentro de una frase, o "": una cuenta, solo su dato
+    («3001234567»); un banco, con su nombre («Bancolombia, cuenta de ahorros 123…»); varias, cada una con su nombre."""
+    wanted = str(key or "").strip().lower()
+    chosen = [account for account in accounts(runtime_yaml) if wanted and wanted in (account.key, account.option)]
+
+    def one_line(account: Account) -> str:
+        return account.datos.replace("\n", " ").replace("Cuenta de", "cuenta de").replace("Cuenta corriente", "cuenta corriente")
+
+    if len(chosen) == 1 and chosen[0].kind != "bank":
+        return one_line(chosen[0])
+    return " · ".join(f"{account.medio}, {one_line(account)}" for account in chosen)
+
+
 def option_label(runtime_yaml: dict, option: str) -> str:
     """Cómo se nombra un medio en una frase: «Nequi», «pago en línea», «transferencia a Bancolombia o Davivienda», «Nu»."""
     if option == "link":

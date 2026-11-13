@@ -69,7 +69,11 @@ WHATSAPP_SIMULATOR_URL=http://127.0.0.1:3300 ENGINE_PUBLIC_URL=http://127.0.0.1:
   - un día por WhatsApp: conectar por QR, saludo, ✓✓ y leído, pregunta, pago por Nequi, «se me borró el número», comprobante en
     foto, respuesta y PDF del equipo, el negocio escribiendo desde su celular y desconectar;
   - un negocio de Perú: Yape, «otro medio» y efectivo;
-  - dos negocios a la vez: nada se cruza (chats ni datos de pago).
+  - dos negocios a la vez: nada se cruza (chats ni datos de pago);
+  - pagos con los 15 medios a la vez: cada uno llega solo (y solo el suyo) al elegirlo o pedirlo de nuevo, dos bancos, una cuenta
+    desactivada, un medio que no existe, preguntar sin elegir y la IA que nunca ve los datos;
+  - pagos como habla la gente: «pásame el nekui», «me regalas la cuenta de bancolombia», «¿a dónde te consigno?», «¿y Daviplata
+    no?», «ya te consigné», «te mando el pantallazo»…
 - Dejan un informe en español en `.wa-sim/informe-e2e.md`, sin datos de pago.
 
 Para sumar un escenario: una función `test_…` en `tests/test_whatsapp_e2e.py` con sus pasos (`_run(Report(...), pasos)`).

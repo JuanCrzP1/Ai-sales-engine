@@ -361,3 +361,73 @@ def test_asking_about_a_method_or_refusing_it_is_not_choosing_it(monkeypatch, tm
 
     (_prompts, answer), = run_with_document(monkeypatch, tmp_path / f"no-elige-{abs(hash(message))}", "saas", _peru, [(message, reply("Respuesta del asistente.", "info"))])
     assert answer == "Respuesta del asistente."
+
+
+def test_when_the_system_sends_the_details_the_method_is_remembered_even_if_the_ai_did_not_mark_it():
+    """Si la IA no marcó el medio y el sistema envió los datos porque el cliente lo eligió, queda anotado: así, más adelante, «me lo
+    envías de nuevo» sabe de cuál medio es aunque el paso de la conversación ya no esté."""
+    from app.application.ai_pipeline import AIPipeline
+    from app.domain.conversation.memory import MemoryDomainService
+    from app.infrastructure.persistence.memory_repository import MemoryRepository
+
+    memory = MemoryDomainService(MemoryRepository())
+    pipeline = AIPipeline(memory_service=memory)
+    pipeline.runtime.generate = lambda prompt, *, user_message, bot_config=None, **_kwargs: reply("Perfecto.", "info")
+    pipeline.run(tenant=type("T", (), {"slug": "saas", "name": "saas", "id": "saas"})(), user_message="Te pago por Daviplata", user_id="recuerda-medio",
+                 bot_config=None, conversation_history=[], faq_results=[], yaml_config=None, include_metadata=True)
+    assert memory.get_payment_method(tenant_slug="saas", user_id="recuerda-medio") == "daviplata"
+
+
+def test_details_already_sent_are_not_repeated_unless_asked_and_the_ai_can_name_them_in_its_own_words():
+    """Con la IA real (13 nov 2026): «Ya voy a pagar» → la IA pidió reenviar el bloque que ya tenía. Si nadie los pidió, se respeta su
+    respuesta; si la IA dice «aquí los tienes de nuevo», salen; y si los nombra al explicar, el dato real va dentro de su frase."""
+    number = _nequi()
+    turns = [
+        ("Te pago por Nequi", reply("Listo.", "buy", payment_method="nequi")),
+        ("Ya voy a pagar", reply("¡Perfecto! Cuando pagues, envíame aquí la captura del comprobante.", "buy", payment_method="nequi", send_payment="nequi")),
+        ("Cómo así", reply(f"Te envié los datos de Nequi: {REDACTED_PAYMENT_VALUE}. Paga ahí y me mandas el comprobante.", "info", send_payment="nequi")),
+        ("Ok", reply("Claro, aquí los tienes de nuevo.", "info", send_payment="nequi")),
+    ]
+    (_a, first), (_b, going), (_c, explained), (_d, again) = run_conversation("saas", turns, user_id="sin-repetir-accion")
+    assert first.startswith("💳 *Datos para pagar*")
+    assert going == "¡Perfecto! Cuando pagues, envíame aquí la captura del comprobante."
+    assert explained == f"Te envié los datos de Nequi: {number}. Paga ahí y me mandas el comprobante."
+    assert again == first
+
+
+def test_when_the_ai_says_it_sends_the_details_they_really_arrive():
+    """Con la IA real (13 nov 2026): «Cómo así» → «Te envío nuevamente los datos para pagar por Nequi…» sin enviarlos (marcó mal su
+    acción). Si la IA dice que los envía y se sabe el medio, salen de verdad; si dice otra cosa, no."""
+    number = _nequi()
+    turns = [
+        ("Te pago por Nequi", reply("Listo.", "buy", payment_method="nequi")),
+        ("Cómo así", reply("Te envío nuevamente los datos para pagar por Nequi. Cuando pagues, me mandas el comprobante.", "info", send_payment="[dato de pago]")),
+        ("Ok", reply("Perfecto, cuando pagues envíame el comprobante.", "info")),
+    ]
+    (_a, first), (_b, promised), (_c, plain) = run_conversation("saas", turns, user_id="promesa-cumplida")
+    assert promised == first and number in promised
+    assert plain == "Perfecto, cuando pagues envíame el comprobante."
+
+
+def test_a_false_refusal_never_reaches_the_customer_and_the_customer_request_wins():
+    """Con la IA real (13 nov 2026): «¿A qué número te consigno?» → «No puedo darte el número de cuenta…» (falso), y «me regalas la
+    cuenta de bancolombia» → le llegó el link (la IA marcó otro medio). La negativa nunca sale y lo que pide el cliente gana."""
+    runtime = load_tenant_runtime_yaml("saas")
+    bank = next(value for value in payment_values(runtime) if value.isdigit() and len(value) == 10 and not value.startswith("3"))
+    fresh = [("¿A qué número te consigno?", reply("No puedo darte el número de cuenta, pero puedo enviarte el link de pago.", "info"))]
+    (_p, question), = run_conversation("saas", fresh, user_id="negativa-sin-medio")
+    assert question.startswith("¿Con qué medio prefieres pagar") and "No puedo" not in question
+    paying = [
+        ("Te pago por Nequi", reply("Listo.", "buy", payment_method="nequi")),
+        ("¿A qué número te consigno?", reply("No puedo darte el número de cuenta.", "info")),
+        ("me regalas la cuenta de bancolombia", reply("Claro.", "buy", send_payment="link")),
+    ]
+    (_a, nequi), (_b, again), (_c, bancolombia) = run_conversation("saas", paying, user_id="negativa-con-medio")
+    assert again == nequi
+    assert "*Bancolombia*" in bancolombia and bank in bancolombia and "Pago en línea" not in bancolombia
+
+
+def test_a_refusal_about_something_else_is_left_alone():
+    turns = [("¿Me lo pueden llevar a Medellín?", reply("No puedo enviarlo a Medellín, solo hacemos entregas en Bogotá.", "info"))]
+    (_p, answer), = run_conversation("restaurant", turns, user_id="negativa-de-envio")
+    assert answer == "No puedo enviarlo a Medellín, solo hacemos entregas en Bogotá."

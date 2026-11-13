@@ -17,13 +17,15 @@ _LINK = r"\blink\b|\benlace\b|\bpago en l[ií]nea\b|\bpse\b|\btarjeta de cr[eé]
 # Pedir algo: «envíame», «pásame», «dame», «¿cuál es…?», «se me borró», «no me llegó», «otra vez»…
 _REQUEST = re.compile(
     r"\b(env[ií]a(me|melo|mela|los)?|m[aá]nda(me|melo|mela)?|p[aá]sa(me|melo|mela)?|da(me|melo|mela)|reenv[ií]a(me|melo)?|"
-    r"rep[ií]te(me|melo)?|comp[aá]rte(me|melo)?|cu[aá]l es|me (das|pasas|env[ií]as|mandas|compartes|repites)|necesito|"
+    r"rep[ií]te(me|melo)?|comp[aá]rte(me|melo)?|cu[aá]l es|me (das|pasas|env[ií]as|mandas|compartes|repites|regalas)|necesito|"
+    r"reg[aá]la(me|melo|mela)?|a d[oó]nde (te |le )?(consigno|transfiero|pago|mando|env[ií]o|deposito)|a qu[eé] (n[uú]mero|cuenta)|"
+    r"c[oó]mo (te |le )?(pago|consigno|transfiero)|"
     r"me lo (env[ií]as|mandas|pasas|das|repites)|se me borr[oó]|no me lleg[oó]|no lo (tengo|encuentro|veo)|otra vez|de nuevo)\b"
 )
 # Lo que pide son los datos de pago, sin nombrar el medio: «el número», «la cuenta», «los datos para pagar», «el link de pago».
 _PAYMENT_DATA = re.compile(
-    r"\b(datos (de|para) pag\w*|n[uú]mero (de|para) (pag\w*|la cuenta|cuenta)|n[uú]mero|la cuenta|cuenta (de|para) pag\w*|"
-    r"link (de|para) pag\w*|enlace (de|para) pag\w*|la llave|el alias|la clabe|el iban)\b"
+    r"\b(datos (de|para) pag\w*|los datos|n[uú]mero (de|para) (pag\w*|la cuenta|cuenta)|n[uú]mero|la cuenta|cuenta (de|para) pag\w*|"
+    r"link (de|para) pag\w*|enlace (de|para) pag\w*|la llave|el alias|la clabe|el iban|a d[oó]nde|a qu[eé] (n[uú]mero|cuenta))\b"
 )
 # Lo que no es un pedido de datos de pago aunque lo parezca: el número o la cuenta de otra cosa.
 _NOT_PAYMENT = re.compile(
@@ -32,9 +34,13 @@ _NOT_PAYMENT = re.compile(
 )
 # «Me lo envías de nuevo», «se me borró»: un pedido corto que solo puede ser lo último que se le envió.
 _AGAIN = re.compile(r"\b(otra vez|de nuevo|se me borr[oó]|no me lleg[oó]|me lo (env[ií]as|mandas|pasas|das|repites))\b")
-_SHORT_REQUEST_WORDS = 7
+# Hasta aquí es un pedido corto («Pero se me borró, ¿me lo envías de nuevo porfa?»); uno más largo habla de otra cosa.
+_SHORT_REQUEST_WORDS = 12
 # Elegir un medio: «te pago por Nu», «¿y si pago con PayPal?», «mejor en efectivo», «prefiero Yape».
-_CHOICE = re.compile(r"\b((te |le )?pag(o|ar[ée]?|amos|aría)|prefiero|mejor|quiero pagar|voy a pagar|ser[aá])\b")
+_CHOICE = re.compile(
+    r"\b((te |le )?(pag(o|ar[ée]?|amos|aría)|consign(o|ar[ée]?|amos)|transfier(o|e)|transferir[ée]?|deposit(o|ar[ée]?))|prefiero|mejor|"
+    r"quiero pagar|voy a pagar|ser[aá])\b"
+)
 # «No puedo pagar por Nequi», «no tengo Yape»: no es elegirlo.
 _REFUSAL = re.compile(r"\bno (puedo|tengo|quiero|uso|me sirve|me funciona|acepto)\b")
 # Pedir una persona con todas las letras.
@@ -126,3 +132,33 @@ def chose_payment_method(message: str, runtime_yaml: dict) -> str:
     if not (_CHOICE.search(text) or short_answer) or _REFUSAL.search(text):
         return ""
     return named_option(text, runtime_yaml)
+
+
+# Preguntar por otro medio cuando ya están pagando: «¿Y Nequi no?», «¿y por Daviplata?», «¿o con PayPal?».
+_OTHER_METHOD = re.compile(r"^(y|o|pero)\b")
+_OTHER_METHOD_WORDS = 6
+
+
+def asks_about_another_method(message: str, runtime_yaml: dict, *, current: str = "") -> str:
+    """Si ya venían pagando por un medio y el cliente pregunta corto por otro de los del negocio («¿Y Nequi no?»), ese otro, o ""."""
+    text = str(message or "").lower().strip(" ¿?¡!.")
+    if not current or len(text.split()) > _OTHER_METHOD_WORDS or not _OTHER_METHOD.match(text) or _REFUSAL.search(text):
+        return ""
+    named = named_option(text, runtime_yaml)
+    return named if named and option_of(named) != option_of(current) else ""
+
+
+# Avisar que ya pagó, como lo dice la gente: «ya te consigné», «ya hice la transferencia», «te mando el pantallazo».
+_REPORTED = re.compile(
+    r"\bya (te |le )?(pagu[eé]|consign[eé]|transfer[ií]|deposit[eé]|envi[eé] (la plata|el dinero|el pago|la transferencia))\b|"
+    r"\bya (hice|realic[eé]|mand[eé]) (el pago|la transferencia|la consignaci[oó]n|la plata|el dep[oó]sito)\b|"
+    r"\bya (est[aá]|qued[oó]) (pago|pagado)\b|\b(te |le )?(mando|env[ií]o|paso|adjunto) (el|la) (comprobante|pantallazo|soporte|captura)\b|"
+    r"\bah[ií] (te )?va el (comprobante|pantallazo|soporte)\b"
+)
+_NOT_YET = re.compile(r"\b(no|todav[ií]a no|a[uú]n no) (he |te |le )?(pagad|pagu|consign|transfer|hecho)")
+
+
+def reported_payment(message: str) -> bool:
+    """Si el cliente dice que ya pagó (o envía el soporte), con sus palabras. «Ya voy a pagar» o «todavía no he pagado» no cuentan."""
+    text = str(message or "").lower()
+    return bool(_REPORTED.search(text)) and not _NOT_YET.search(text)

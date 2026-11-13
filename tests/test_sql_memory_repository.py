@@ -511,3 +511,24 @@ def test_identity_cache_is_isolated_per_user_pair():
         f"got {mock_cr_instance.get_or_create.call_count}"
     )
 
+
+
+def test_the_conversation_step_is_kept_in_the_database_for_the_next_server():
+    """En la nube cada mensaje puede llegar a otro servidor: el paso de la conversación (p. ej. «ya se le enviaron los datos de
+    Nequi») se guarda en la base y lo lee el siguiente. Antes solo vivía en la RAM de un servidor (13 nov 2026)."""
+    shared: dict = {}
+
+    def set_mem(self, tenant_slug, user_id, key, value):
+        shared[(tenant_slug, user_id, key)] = json.loads(json.dumps(value))
+
+    def get_mem(self, tenant_slug, user_id, key, default=None):
+        return shared.get((tenant_slug, user_id, key), default)
+
+    sent = {"active_process": "payment", "active_option": "nequi", "pending_action": "report_payment", "expires_at": "2026-11-13T23:00:00+00:00"}
+    with patch.object(SQLMemoryRepository, "_set_mem", set_mem), patch.object(SQLMemoryRepository, "_get_mem", get_mem):
+        first, second = SQLMemoryRepository(), SQLMemoryRepository()
+        first.set_op_state(tenant_slug=_TENANT_SLUG, user_id=_USER_ID, state_dict=sent)
+        assert second.get_op_state(tenant_slug=_TENANT_SLUG, user_id=_USER_ID) == sent
+        # Lo más reciente de otro servidor gana sobre la RAM vieja de este.
+        second.set_op_state(tenant_slug=_TENANT_SLUG, user_id=_USER_ID, state_dict={**sent, "active_process": "activation"})
+        assert first.get_op_state(tenant_slug=_TENANT_SLUG, user_id=_USER_ID)["active_process"] == "activation"

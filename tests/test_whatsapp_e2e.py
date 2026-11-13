@@ -42,6 +42,8 @@ MODEL = [
     (r"pago por nu", {"response": "Los datos de pago son los mismos, solo cambia el medio.", "intent": "info", "metadata": {}}),
     (r"por yape", {"response": "Listo.", "intent": "buy", "metadata": {"payment_method": "Yape"}}),
     (r"efectivo", {"response": "Perfecto.", "intent": "info", "metadata": {}}),
+    # En el recorrido de todos los medios la IA no marca nada: los datos deben salir porque el cliente eligió o pidió el medio.
+    (r"te pago por|aceptan|western", {"response": "Perfecto.", "intent": "info", "metadata": {}}),
 ]
 
 
@@ -66,14 +68,15 @@ def _peru(document: dict) -> None:
 
 
 def _publish(monkeypatch, tmp_path, slugs: list[str], mutate) -> str:
+    """Publica esos negocios. `mutate` cambia el documento y puede devolver datos de pago nuevos (referencia → valor)."""
     tenants = []
     for slug in slugs:
         tenant = prepared_tenant(slug)
         document = copy.deepcopy(tenant.document)
-        if mutate is not None:
-            mutate(document)
+        extra = (mutate(document) if mutate is not None else None) or {}
         refs = {holder["secret_ref"] for holder in iter_secret_refs(document)}
-        tenants.append(dataclasses.replace(tenant, document=document, payment_values={ref: value for ref, value in tenant.payment_values.items() if ref in refs}))
+        values = {ref: value for ref, value in {**tenant.payment_values, **extra}.items() if ref in refs}
+        tenants.append(dataclasses.replace(tenant, document=document, payment_values=values))
     return publish_store(monkeypatch, tmp_path, tenants)
 
 
@@ -361,3 +364,199 @@ def test_two_businesses_never_cross(monkeypatch, tmp_path):
             ("Cada panel ve solo lo suyo", each_panel_sees_only_its_chat),
             ("Los datos de pago no se cruzan", payment_data_never_cross),
         ))
+
+
+# ---------------------------------------------------------------------------------------------------------- pagos: todos los medios
+
+# Cada medio del catálogo con un dato válido (y distinto), y cómo lo nombra el cliente.
+_EVERY_METHOD = [
+    ("nequi", {"number": "3001112222"}, "Nequi"),
+    ("daviplata", {"number": "3003334444"}, "Daviplata"),
+    ("bank", {"bank": "Bancolombia", "account_type": "ahorros", "account_number": "12345678901"}, "Bancolombia"),
+    ("bank", {"bank": "Davivienda", "account_type": "corriente", "account_number": "99988877766"}, "Davivienda"),
+    ("breb", {"reference": "@cafe-aroma"}, "Bre-B"),
+    ("spei", {"reference": "032180000118359719"}, "SPEI"),
+    ("oxxo", {"reference": "4152313412345678"}, "OXXO"),
+    ("yape", {"number": "987654321"}, "Yape"),
+    ("mercadopago", {"reference": "cafe.aroma.mp"}, "Mercado Pago"),
+    ("bizum", {"number": "612345678"}, "Bizum"),
+    ("iban", {"account_number": "ES9121000418450200051332"}, "IBAN"),
+    ("zelle", {"reference": "zelle@cafe-aroma.com"}, "Zelle"),
+    ("paypal", {"reference": "paypal@cafe-aroma.com"}, "PayPal"),
+    ("custom", {"name": "Nu", "data_label": "Cuenta", "reference": "NU-55667788"}, "Nu"),
+    ("cash", {"instructions": "Pagas al domiciliario cuando recibes."}, "efectivo"),
+]
+_SLOTS = ("number", "account_number", "reference")
+
+
+def _every_method(document: dict) -> dict:
+    """Un negocio con todos los medios del catálogo a la vez (y Plin desactivado), cada uno con su dato cifrado."""
+    profile = document["payments"][0]
+    values: dict[str, str] = {}
+    methods = []
+    for position, (kind, fields, _said) in enumerate(_EVERY_METHOD):
+        method: dict = {"type": kind}
+        for name, value in fields.items():
+            if name in _SLOTS:
+                ref = f"secret_store:{profile['id']}.e2e{position}.{name}"
+                method[name] = {"secret_ref": ref}
+                values[ref] = value
+            else:
+                method[name] = value
+        methods.append(method)
+    ref = f"secret_store:{profile['id']}.e2e-plin.number"
+    methods.append({"type": "plin", "number": {"secret_ref": ref}, "enabled": False})
+    values[ref] = "912345678"
+    profile.update(transfer_enabled=True, transfer_methods=methods)
+    return values
+
+
+def test_payments_with_every_method(monkeypatch, tmp_path):
+    with running_stack(monkeypatch, tmp_path, ["saas"], mutate=_every_method) as stack:
+        phone = stack.phone
+        token = _connect(stack, "saas", "573110000000")
+        all_values = [value for _kind, fields, _said in _EVERY_METHOD for name, value in fields.items() if name in _SLOTS]
+
+        def customer(position: int) -> str:
+            number = f"5730000{position:05d}"
+            phone.add_client(number, f"Cliente {position}")
+            phone.write(token, number, "Hola")
+            phone.wait_reply(token, number, 0, what="el saludo")
+            return number
+
+        def say(number: str, text: str, *, what: str) -> str:
+            before = len(phone.from_business(token, number))
+            phone.write(token, number, text)
+            return phone.wait_reply(token, number, before, what=what)["text"]
+
+        def method_check(position: int, kind: str, fields: dict, said: str):
+            def check() -> str:
+                number = customer(position)
+                value = next((value for name, value in fields.items() if name in _SLOTS), fields.get("instructions"))
+                chosen = say(number, f"Te pago por {said}", what=f"los datos de {said}")
+                assert value in chosen and "Perfecto." not in chosen, chosen
+                others = [other for other in all_values if other != value and other not in value]
+                assert not any(other in chosen for other in others), f"llegaron datos de otro medio: {chosen}"
+                again = say(number, "Se me borró, me lo envías de nuevo", what=f"el reenvío de {said}")
+                assert again == chosen, again
+                return f"«Te pago por {said}» → le llegó su dato (y solo el suyo); al pedirlo de nuevo, otra vez"
+            return check
+
+        def bank_transfer() -> str:
+            number = customer(90)
+            text = say(number, "Te pago por transferencia bancaria", what="las dos cuentas bancarias")
+            assert "12345678901" in text and "99988877766" in text and text.startswith("💳 *Datos para pagar*\n\n*Transferencia bancaria*")
+            return "«transferencia bancaria» → le llegaron las dos cuentas (Bancolombia y Davivienda) juntas"
+
+        def disabled_plin() -> str:
+            number = customer(91)
+            text = say(number, "Te pago por Plin", what="la respuesta sin datos de Plin")
+            assert "912345678" not in text and text == "Perfecto.", text
+            return "Plin está desactivado: no se envió su dato"
+
+        def unknown_method() -> str:
+            number = customer(92)
+            text = say(number, "Te pago por Western Union", what="la respuesta a un medio que no existe")
+            assert not any(value in text for value in all_values), text
+            return "un medio que el negocio no tiene no envía ningún dato"
+
+        def asking_is_not_choosing() -> str:
+            number = customer(93)
+            text = say(number, "¿Aceptan Bizum?", what="la respuesta a la pregunta")
+            assert "612345678" not in text, text
+            return "«¿Aceptan Bizum?» lo responde la IA: preguntar no es elegir"
+
+        def never_to_the_ai() -> str:
+            leaked = [value for value in all_values if any(value in prompt for prompt in stack.model.prompts)]
+            assert not leaked, "un dato de pago llegó a la IA"
+            return f"revisé {len(stack.model.prompts)} prompts: ningún dato de pago llegó nunca a la IA"
+
+        steps = [(f"{said} ({kind})", method_check(position, kind, fields, said)) for position, (kind, fields, said) in enumerate(_EVERY_METHOD)]
+        steps += [
+            ("Transferencia bancaria con dos bancos", bank_transfer),
+            ("Una cuenta desactivada", disabled_plin),
+            ("Un medio que no existe", unknown_method),
+            ("Preguntar no es elegir", asking_is_not_choosing),
+            ("La IA nunca ve los datos", never_to_the_ai),
+        ]
+        _run(Report("Pagos con todos los medios"), steps)
+
+
+# ---------------------------------------------------------------------------------------------------------- pagos: como habla la gente
+
+# (lo que escribe el cliente, el medio cuyos datos le deben llegar o None si no le debe llegar ningún dato). La IA no marca nada.
+_FRESH = [
+    ("Pásame el Nequi porfa", "nequi"),
+    ("mandame el nekui", "nequi"),
+    ("me regalas la cuenta de bancolombia", "bank"),
+    ("te consigno a daviplata", "daviplata"),
+    ("dame los datos del davi plata", "daviplata"),
+    ("cual es el numero de nequi", "nequi"),
+    ("te pago por pse", "link"),
+    ("¿Tienen Nequi?", None),
+    ("No tengo Nequi", None),
+    ("¿A qué número te consigno?", None),
+]
+# Después de elegir Nequi y recibir sus datos.
+_AFTER_NEQUI = [
+    ("a donde te consigno?", "nequi"),
+    ("me lo pasas otra vez", "nequi"),
+    ("¿Y Daviplata no?", "daviplata"),
+    ("¿y por bancolombia?", "bank"),
+    ("y ahora que hago", None),
+    ("todavía no he pagado", None),
+    ("Gracias", None),
+]
+_REPORTED = ["ya te consigné", "Ya hice la transferencia", "te mando el pantallazo"]
+
+
+def test_common_ways_people_talk_about_paying(monkeypatch, tmp_path):
+    with running_stack(monkeypatch, tmp_path, ["saas"]) as stack:
+        phone = stack.phone
+        token = _connect(stack, "saas", "573110000000")
+        choices = dict(_payment_choices(_runtime("saas")))
+        value_of = {"link": choices["link"][0], "nequi": choices["nequi"][0], "daviplata": choices["daviplata"][0], "bank": choices["bank"][2], "breb": choices["breb"][0]}
+        counter = iter(range(100, 999))
+
+        names = {"link": "pago en línea", "nequi": "Nequi", "daviplata": "Daviplata", "bank": "Bancolombia", "breb": "Bre-B"}
+
+        def customer(*, after_nequi: bool) -> str:
+            number = f"5731{next(counter):08d}"
+            phone.add_client(number, f"Cliente {number[-4:]}")
+            phone.write(token, number, "Hola")
+            phone.wait_reply(token, number, 0, what="el saludo")
+            if after_nequi:
+                before = len(phone.from_business(token, number))
+                phone.write(token, number, "Te pago por Nequi")
+                assert value_of["nequi"] in phone.wait_reply(token, number, before, what="los datos de Nequi")["text"]
+            return number
+
+        def case(message: str, expected: str | None, *, after_nequi: bool):
+            def check() -> str:
+                number = customer(after_nequi=after_nequi)
+                before = len(phone.from_business(token, number))
+                phone.write(token, number, message)
+                text = phone.wait_reply(token, number, before, what=f"la respuesta a «{message}»")["text"]
+                others = [value for method, value in value_of.items() if method != expected]
+                assert not any(value in text for value in others), f"llegó un dato que no era: {text}"
+                if expected:
+                    assert value_of[expected] in text, text
+                    return f"le llegaron los datos de {names[expected]}"
+                return "respondió la IA, sin datos de pago"
+            return check
+
+        def reported(message: str):
+            def check() -> str:
+                number = customer(after_nequi=True)
+                assert not any(item["contact_name"] == f"Cliente {number[-4:]}" and item["needs_human"] for item in stack.panel.get("/api/conversations").json())
+                phone.write(token, number, message)
+                wait_for(lambda: any(
+                    item["contact_name"] == f"Cliente {number[-4:]}" and item["needs_human"] for item in stack.panel.get("/api/conversations").json()
+                ), what=f"que «{message}» pase el chat al equipo")
+                return "el chat pasó al equipo para verificar el pago"
+            return check
+
+        steps = [(f"«{message}»", case(message, expected, after_nequi=False)) for message, expected in _FRESH]
+        steps += [(f"Ya con Nequi: «{message}»", case(message, expected, after_nequi=True)) for message, expected in _AFTER_NEQUI]
+        steps += [(f"Avisa que pagó: «{message}»", reported(message)) for message in _REPORTED]
+        _run(Report("Pagos: como habla la gente"), steps)

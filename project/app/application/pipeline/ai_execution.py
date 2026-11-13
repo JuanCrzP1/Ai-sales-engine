@@ -75,6 +75,7 @@ from __future__ import annotations
 from app.application.pipeline.fallback import build_fallback_response
 from app.application.pipeline.response_postprocessor import enforce_max_words
 from app.application.pipeline.response_router import route_response
+from app.application.pipeline.payment_requests import reported_payment
 from app.application.pipeline.payment_delivery import already_sent, deliver, ejecutar_pago, keeps_handoff, same_payment, sent_state, without_payment_placeholder  # noqa: F401 - las pruebas usan ejecutar_pago y without_payment_placeholder desde aquí
 from app.domain.conversation.memory import ConversationState, MemoryDomainService
 from app.domain.memory.observability.audit import emit_memory_audit
@@ -535,6 +536,12 @@ class AIExecution:
             response_text = str(response or "").strip()
             payment_method = str(ai_metadata.get("payment_method") or "").strip().lower()
             payment_status = str(ai_metadata.get("payment_status") or "").strip().lower()
+            if payment_status != "reportado" and reported_payment(str(user_message or "")):
+                # «Ya te consigné», «te mando el pantallazo»: un pago avisado siempre lo verifica el equipo, aunque la IA no lo marque.
+                payment_status = "reportado"
+                set_status = getattr(memory_service, "set_payment_status", None)
+                if callable(set_status):
+                    set_status(tenant_slug=tenant_slug_value, user_id=user_key, status=payment_status)
             intent = str(ai_metadata.get("intent") or "").strip().lower()
             # Pasa a una persona si el cliente la pidió o reclama; un pago reportado también: solo el equipo puede verificarlo.
             handoff_reason = str(ai_metadata.get("handoff") or "").strip() or ("payment_review" if payment_status == "reportado" else "")
@@ -564,6 +571,10 @@ class AIExecution:
                     tenant=tenant_slug_value,
                 )
                 if delivery.method:
+                    # El medio queda anotado aunque la IA no lo haya marcado: así se sabe de cuál reenviar los datos más adelante.
+                    set_method = getattr(memory_service, "set_payment_method", None)
+                    if callable(set_method):
+                        set_method(tenant_slug=tenant_slug_value, user_id=user_key, method=delivery.method)
                     _log_payment_override(
                         tenant_slug=tenant_slug_value,
                         user_id=user_key,

@@ -668,6 +668,20 @@ class SQLMemoryRepository(MemoryRepository):
             return ram
         return str(self._get_mem(tenant_slug, user_id, "metodo_pago_elegido") or "")
 
+    # El paso de la conversación (`OperationalState`, p. ej. «ya se le enviaron los datos de Nequi»): en la base, porque en la nube
+    # cada mensaje puede llegar a otro servidor y la RAM de uno no la ve el siguiente. Se lee primero de la base (la RAM de este
+    # servidor puede estar vieja); sin base, de la RAM.
+    def set_op_state(self, *, tenant_slug: str, user_id: str, state_dict: dict) -> None:
+        super().set_op_state(tenant_slug=tenant_slug, user_id=user_id, state_dict=state_dict)
+        if isinstance(state_dict, dict) and state_dict.get("active_process"):
+            self._set_mem(tenant_slug, user_id, "estado_operativo", dict(state_dict))
+
+    def get_op_state(self, *, tenant_slug: str, user_id: str) -> dict:
+        stored = self._get_mem(tenant_slug, user_id, "estado_operativo")
+        if isinstance(stored, dict) and stored.get("active_process"):
+            return dict(stored)
+        return super().get_op_state(tenant_slug=tenant_slug, user_id=user_id)
+
     # payment_status
     def set_payment_status(self, *, tenant_slug: str, user_id: str, status: str) -> None:
         super().set_payment_status(tenant_slug=tenant_slug, user_id=user_id, status=status)
