@@ -158,8 +158,27 @@ En la práctica:
   - `relevance.py`: cuando las preguntas frecuentes o el catálogo no caben, elige lo más relacionado con lo que busca el cliente.
   - `history.py`: los últimos mensajes van al modelo como conversación (cliente y asistente), sin datos de pago.
   - `builder/prompt_builder.py`: la entrada pública (`PromptBuilderService.build`), delgada.
-- `ai_orchestrator.py` hace una sola llamada al modelo (instrucciones, conversación reciente y mensaje del cliente), parsea la salida
-  estructurada y marca cada respuesta con la versión del prompt.
+- `ai_orchestrator.py` hace una sola llamada al asesor (instrucciones, conversación reciente y mensaje del cliente), parsea la salida
+  estructurada y marca cada respuesta con la versión del prompt. El formato pide **primero decidir y después hablar**: la intención y
+  las acciones van antes del mensaje.
+
+**Pagos: el asesor habla, el lector entiende y el código cuida el dato.** El sistema es AI-first: no hay reglas de palabras que
+adivinen qué quiso decir el cliente ni que cambien lo que dijo el asesor.
+- **El lector de pagos** (`application/pipeline/payment_reading.py`, texto en `prompting/payment_reader.py`): antes del asesor, una
+  llamada corta al modelo del negocio (unos 500 tokens) dice si con este mensaje el cliente debe recibir los datos de pago (los pide,
+  dice con qué medio paga o acepta que se los envíen), de qué medio, y si dice que ya pagó. Una pregunta enfocada acierta donde el
+  asesor, que atiende muchas cosas a la vez, se confunde (medido con la IA real: 98 % a 100 % con cuatro modelos). Sin lectura (un
+  error del proveedor), decide el asesor solo con su acción.
+- **El asesor** recibe lo que entendió el lector y escribe su mensaje sabiéndolo. Su acción `metadata.send_payment` solo envía por su
+  cuenta cuando el negocio tiene un solo medio.
+- **La entrega** (`application/pipeline/payment_delivery.py`): los datos reales (la plantilla del negocio) van debajo de lo que dijo
+  el asesor, o donde él puso el marcador del dato. Lo que ya salió no se repite si el cliente no lo pidió.
+- **Los cuidados**: el marcador del dato (o uno que invente la IA) nunca le llega al cliente; un número largo que la IA escribió sin
+  haberlo leído en ninguna parte es inventado y se cambia por el real (`payment_data.mask_invented_numbers`); y si la respuesta dice
+  algo falso sobre los pagos («no puedo enviarte el número», «no recibimos Nequi») o iba a enviar datos que el cliente no pidió, se
+  le pide al asesor **otra respuesta**, sabiendo por qué (`payment_problem`). El código no le escribe la respuesta, salvo que insista
+  en algo falso.
+- En su historial la IA ve lo que dijo ella y el marcador donde fueron los datos, nunca el mensaje con los datos.
 
 Todo cambio al prompt se mide en dos laboratorios:
 - `experiments/pricing_lab/run_regression_experiment.py`: la mecánica del motor (rutas, webhook, entrega de pagos), sin IA.

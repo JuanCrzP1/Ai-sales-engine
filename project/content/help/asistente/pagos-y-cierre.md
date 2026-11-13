@@ -35,14 +35,16 @@ En [Pagos y cierre](panel:pagos) decides cómo te pagan y qué hace el asistente
 ## Tus datos de pago están protegidos
 
 - Se guardan **cifrados**. En el panel solo ves una parte para reconocerlos (`••••4567`).
-- **La IA nunca los ve**: solo conoce el nombre de cada medio. Cuando el cliente elige cómo pagar, el sistema le envía el dato correcto.
+- **La IA nunca los ve**: solo conoce el nombre de cada medio. Cuando el cliente los necesita, el sistema pone el dato correcto debajo del mensaje del asistente. Si la IA llegara a escribir un número por su cuenta, no sale: se cambia por el real.
 - Al publicar, el resumen de cambios dice «Dato de pago actualizado (protegido)», nunca su valor.
 
 ## Cómo le llegan los datos al cliente
 
-Cuando el cliente elige cómo pagar, recibe un mensaje ordenado, por ejemplo:
+Tu asistente le habla al cliente como un asesor y **debajo de su mensaje** van los datos, ordenados. Por ejemplo, si el cliente escribe «te pago por Nequi»:
 
 ```
+¡Perfecto, Laura! Ahí abajo te dejo los datos de Nequi.
+
 💳 *Datos para pagar*
 
 *Nequi*
@@ -52,7 +54,10 @@ A nombre de: Café Aroma S.A.S.
 Cuando pagues, envíame aquí la captura del comprobante y te confirmamos. ✅
 ```
 
-Los datos salen **una sola vez**: si el cliente sigue preguntando («¿y cuando pague qué hago?»), el asistente le responde en vez de repetirlos. Si los pide («envíame el Nequi», «se me borró el número, ¿me lo envías?»), siempre le llegan, con cualquier medio que tengas activo.
+- **Le llegan cuando los necesita:** cuando los pide («pásame el número», «¿a qué cuenta te consigno?») o cuando dice con qué medio va a pagar. Funciona con cualquier medio que tengas activo.
+- **Preguntar no es pedirlos:** si solo pregunta «¿puedo transferir?» o «¿y Nequi no?», el asistente le responde que sí y lo sigue guiando, sin soltarle la cuenta.
+- **No se repiten solos:** si el cliente sigue hablando («¿y cuando pague qué hago?», «¿cómo así?»), el asistente le responde y le explica. Si los pide otra vez («se me borró el número»), le llegan otra vez.
+- **Cuando dice que ya pagó,** el chat pasa a tu equipo para verificar el pago.
 
 Puedes cambiar este mensaje en [Mensajes y canales](panel:mensajes), en **Cómo le llegan los datos de pago**.
 

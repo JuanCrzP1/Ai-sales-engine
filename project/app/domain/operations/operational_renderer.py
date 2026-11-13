@@ -58,7 +58,10 @@ def render_op_rule(state: OperationalState | None) -> str:
     if state is None or not state.is_active():
         return ""
     if state.active_process == "payment" and state.pending_action == "report_payment":
-        return "Si pide los datos otra vez, envíaselos con metadata.send_payment; si pregunta qué sigue, dile que envíe aquí el comprobante."
+        return (
+            "Solo si te pide los datos otra vez, envíaselos con metadata.send_payment; si pregunta qué sigue o no entiende algo, "
+            "explícaselo con tus palabras."
+        )
     if str(state.active_option or "").strip():
         return "Si el usuario responde brevemente, continúa naturalmente desde ahí sin reabrir la opción."
     return "Si el usuario responde brevemente, continúa desde el paso activo sin reiniciarlo."

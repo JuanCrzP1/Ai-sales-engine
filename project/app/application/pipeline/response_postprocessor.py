@@ -33,3 +33,15 @@ def enforce_max_words(text: str, max_words: int, *, tenant: str = "", user_id: s
         return trimmed
 
     return " ".join(result).strip()
+
+
+# Lo que algunos modelos escriben dentro de su mensaje cuando intentan «llamar una función»: un bloque de etiquetas que no es para el
+# cliente («<function_calls>[{"name": …}]</function_calls>»).
+_TOOL_BLOCK = re.compile(r"<(function_calls|tool_call|tool_use|invoke|antml:[a-z_]+)\b[^>]*>.*?</\1>", re.DOTALL | re.IGNORECASE)
+
+
+def without_model_artifacts(text: str) -> str:
+    """El mensaje del asesor sin los bloques de «llamada a función» que algunos modelos dejan dentro del texto."""
+    if "<" not in str(text or ""):
+        return str(text or "")
+    return re.sub(r"\n{3,}", "\n\n", _TOOL_BLOCK.sub("", str(text))).strip()

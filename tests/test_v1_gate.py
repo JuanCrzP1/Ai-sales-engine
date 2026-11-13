@@ -139,11 +139,11 @@ def test_business_payment_method_is_delivered_by_the_engine():
     nequi_number = next(str(m["number"]) for m in methods if m.get("type") == "nequi")
 
     pipeline = _build_pipeline()
-    _stub_ai(pipeline, response="Listo.", ai_used=True, metadata={"intent": "buy", "payment_method": "nequi"})
+    _stub_ai(pipeline, response="Listo.", ai_used=True, metadata={"intent": "buy", "send_payment": "nequi"})
     response, ai_used, _meta = _run(pipeline, message="Quiero pagar por Nequi")
 
     assert ai_used is True
-    assert response.startswith("💳 *Datos para pagar*") and "*Nequi*" in response
+    assert response.startswith("Listo.\n\n💳 *Datos para pagar*") and "*Nequi*" in response
     assert f"\n{nequi_number}\n" in response
 
 

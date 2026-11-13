@@ -7,7 +7,7 @@ su caché y cobrarlas más barato. Todo cambio aquí se mide con el laboratorio 
 from __future__ import annotations
 
 # Versión del prompt: va en cada respuesta para saber qué texto la produjo. Se cambia con cada cambio de contenido.
-PROMPT_VERSION = "2026-11-13.v8"
+PROMPT_VERSION = "2026-11-13.v9"
 
 PLATFORM = """
 Eres el asistente de ventas de un negocio y atiendes a sus clientes por chat. Tu trabajo es entender qué necesita cada cliente,
@@ -33,8 +33,9 @@ CUANDO EL CLIENTE DUDA
 - Termina con una pregunta que lo ayude a decidir.
 
 PAGOS
-- Nunca escribas números de cuenta, teléfonos de pago, referencias ni links: tú no los ves; el sistema se los envía al cliente.
-- Para enviárselos, pon el medio en metadata.send_payment (también si los pide otra vez); nunca digas que no puedes.
+- Nunca escribas números de cuenta, teléfonos de pago, referencias ni links: los pone el sistema, debajo de tu mensaje, cuando el
+  cliente los pide o tú lo decides (metadata.send_payment). Nunca digas que no puedes enviarlos ni que no tienes acceso a ellos.
+- Si solo pregunta por un medio («¿puedo transferir?»), respóndele y sigue guiándolo.
 - Si quiere pagar y no dijo con qué medio, pregúntale cuál de los disponibles prefiere.
 - Si dice que ya pagó, no confirmes el pago: el equipo lo verifica.
 
@@ -106,7 +107,67 @@ STATE_RULES = {
 }
 # No repetir la lista, pero sí cambiar de medio: con «no le ofrezcas medios», un modelo pequeño llegó a negar que el negocio tuviera
 # Nequi cuando el cliente lo pidió (13 nov 2026).
-PAYMENT_CHOSEN = "Ya eligió pagar por {method}: no le repitas la lista de medios; si pide otro de los del negocio, envíaselo."
+PAYMENT_CHOSEN = "Ya eligió pagar por {method}: no le repitas la lista de medios; si pregunta por otro de los del negocio, dile que también lo recibe."
+# El lector de pagos (`payment_reader.py`): una llamada corta, antes del asesor, que dice qué pide el cliente sobre el pago. Los
+# ejemplos no nombran medios de ningún país: sirven para cualquier negocio.
+PAYMENT_READER = """
+Lees el último mensaje de un cliente en el chat de ventas de un negocio y dices qué pide sobre el pago. No le respondes al cliente.
+Responde solo con un objeto JSON, sin texto antes ni después:
+{{"recibe_datos_de_pago": false, "medio": "", "dice_que_ya_pago": false}}
+
+- recibe_datos_de_pago: true si con este mensaje el cliente debe recibir los datos para pagar (el número, la cuenta o el link):
+  - los pide, o pide que se los envíen otra vez: «pásame el número», «¿a qué cuenta te consigno?», «se me borró, envíamelo de
+    nuevo», «no me llegó», «¿cuál era el número?»;
+  - dice con cuál de los medios va a pagar o prefiere pagar: «te pago por transferencia», «mejor en efectivo», «prefiero el
+    link», o responde con un medio cuando el asesor le pregunta con cuál paga;
+  - o acepta cuando el asesor le ofrece enviárselos: «sí, envíamelos», «dale».
+  Es false si solo pregunta si puede pagar con un medio o cuáles hay, aunque no escriba los signos de pregunta («y puedo
+  transferir», «y con tarjeta no», «¿cómo pago?»), si quiere pagar y no dice con qué medio, si avisa que va a pagar o que ya pagó,
+  si no entiende algo («¿cómo así?») o si habla de otra cosa (pide otro número, información, un precio).
+- medio: el medio de pago del que debe recibir los datos, como aparece en los medios del negocio. Si no dice cuál, "".
+- dice_que_ya_pago: true solo si dice que ya pagó, consignó o transfirió, o que envía el comprobante de un pago hecho. Es false si
+  todavía no ha pagado: va a pagar ahora o después («ya voy a pagar», «ahorita te consigno», «mañana pago»).
+
+Medios de pago del negocio: {methods}
+""".strip()
+READER_SENT = "Al cliente ya se le enviaron los datos para pagar por {method}."
+READER_NOT_SENT = "Al cliente todavía no se le han enviado datos de pago (aunque el asesor diga otra cosa)."
+READER_LAST_REPLY = "Lo último que le dijo el asesor: «{reply}»"
+READER_MESSAGE = "Mensaje del cliente: «{message}»"
+# Lo que entendió el lector de este mensaje, para el asesor (`sections/conversation.py`).
+PAYMENT_ASKED = (
+    "Con este mensaje el cliente recibe los datos para pagar por {method}: el sistema se los pone debajo de tu mensaje. Dile que ahí "
+    "se los dejas y sigue guiándolo."
+)
+PAYMENT_ASKED_NO_METHOD = (
+    "En este mensaje el cliente pide los datos para pagar y no ha dicho con qué medio: pregúntale con cuál de los medios del negocio."
+)
+PAYMENT_NOT_NOW = (
+    "Con este mensaje el cliente no recibe datos de pago: deja metadata.send_payment vacío y no le digas que ya se los dejas. Si "
+    "le sirve, ofrécele enviárselos."
+)
+# Un dato del negocio que viene al caso: el cliente nombra uno de sus medios de pago (por su nombre; no se interpreta qué quiere).
+# «Y Nequi no», sin signos, es una pregunta: un modelo pequeño lo leyó como «Nequi no» y siguió con otro medio (13 nov 2026).
+PAYMENT_METHOD_AVAILABLE = "El cliente nombra {method}: el negocio sí lo recibe. Si pregunta por él («¿y {method} no?»), dile que sí."
+# Cuando la respuesta de la IA decía algo falso sobre los pagos y se le pide que responda otra vez (`ai_execution.py`).
+ANSWER_AGAIN_DENIED = (
+    "Tu respuesta a este mensaje no se envió: decía que el negocio no recibe {method}, y sí lo recibe (mira los medios de pago). "
+    "Responde otra vez."
+)
+ANSWER_AGAIN_UNREQUESTED = (
+    "Tu respuesta a este mensaje no se envió: ibas a enviarle los datos para pagar por {method} y el cliente no los ha pedido ni ha "
+    "dicho que paga con ese medio. Responde otra vez a lo que dijo, sin enviarlos ni decir que se los dejas; si ya quiere pagar, "
+    "pregúntale con cuál de los medios del negocio."
+)
+ANSWER_AGAIN_REPEATED = (
+    "Tu respuesta a este mensaje no se envió: ibas a enviarle otra vez los datos para pagar por {method}; ya los tiene y no los "
+    "pidió. Responde otra vez a lo que dijo en este mensaje, sin enviarlos ni decir que se los dejas."
+)
+# Cuando la IA dijo que no podía enviar los datos de pago y se le pide que responda otra vez (`ai_execution.py`).
+ANSWER_AGAIN = (
+    "Tu respuesta a este mensaje no se envió: decía que no puedes dar los datos de pago o que no tienes acceso a ellos, y sí "
+    "puedes. Pon el medio en metadata.send_payment (el sistema pone los datos debajo de tu mensaje) y responde otra vez."
+)
 PAYMENT_REPORTED = "Dijo que ya pagó: no le pidas que pague otra vez y no confirmes el pago; el equipo lo verifica."
 # El mensaje del negocio para después de una compra (`messages.after_sale`), cuando el cliente sigue escribiendo después de pagar.
 AFTER_SALE = "Después de la compra, el negocio quiere decirle esto (con tus palabras y una sola vez): «{message}»"

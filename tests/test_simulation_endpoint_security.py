@@ -456,7 +456,7 @@ def test_payment_data_reaches_neither_the_response_nor_the_model(api, llm, slug)
     placeholders = 0
     for method in PAYMENT_METHODS:
         llm.prompts.clear()
-        llm.reply = reply("Perfecto, seguimos.", intent="buy", payment_method=method, payment_status="pending")
+        llm.reply = reply("Perfecto, seguimos.", intent="buy", send_payment=method, payment_status="pending")
         response = api.client.post(URL, headers=headers, json={"user_message": "quiero pagar", "user_id": method})
         assert response.status_code == 200
         assert _leaked(values, response.text) == 0
@@ -723,7 +723,7 @@ def test_the_real_flow_still_delivers_payment_data_and_its_full_metadata(llm, sl
     delivered = 0
     metadata = {}
     for method in PAYMENT_METHODS:
-        llm.reply = reply("Perfecto, seguimos.", intent="buy", payment_method=method, payment_status="pending")
+        llm.reply = reply("Perfecto, seguimos.", intent="buy", send_payment=method, payment_status="pending")
         real_reply, _ai_used, metadata = _real_flow(slug, "quiero pagar")
         delivered += _leaked(values, real_reply)
     assert delivered > 0

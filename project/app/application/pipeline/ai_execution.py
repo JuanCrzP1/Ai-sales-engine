@@ -72,11 +72,29 @@
 ################################
 from __future__ import annotations
 
+import json
+
 from app.application.pipeline.fallback import build_fallback_response
-from app.application.pipeline.response_postprocessor import enforce_max_words
+from app.application.pipeline.payment_names import named_option
+from app.application.pipeline.payment_reading import read_customer_message
+from app.application.pipeline.response_postprocessor import enforce_max_words, without_model_artifacts
 from app.application.pipeline.response_router import route_response
-from app.application.pipeline.payment_requests import reported_payment
-from app.application.pipeline.payment_delivery import already_sent, deliver, ejecutar_pago, keeps_handoff, same_payment, sent_state, without_payment_placeholder  # noqa: F401 - las pruebas usan ejecutar_pago y without_payment_placeholder desde aquí
+from app.application.pipeline.payment_delivery import (  # noqa: F401 - las pruebas usan ejecutar_pago y without_payment_placeholder desde aquí
+    already_sent,
+    compose,
+    deliver,
+    ejecutar_pago,
+    keeps_handoff,
+    METHOD_AVAILABLE,
+    OFFER_DETAILS,
+    payment_problem,
+    remembered_message,
+    same_payment,
+    sent_label,
+    sent_state,
+    without_payment_placeholder,
+)
+from app.domain.business_config.payment_data import mask_invented_numbers, mask_own_markers
 from app.domain.conversation.memory import ConversationState, MemoryDomainService
 from app.domain.memory.observability.audit import emit_memory_audit
 from app.domain.memory.salience.selector import select as select_commercial_memory
@@ -125,6 +143,15 @@ def _current_op_state(memory_service: MemoryDomainService | None, *, tenant_slug
         return OperationalState.from_dict(stored) if stored else None
     except Exception:
         return None
+
+
+def _known_to_the_ai(runtime_yaml: dict, user_message: str) -> str:
+    """Todo lo que la IA leyó para responder (el negocio, la memoria y la conversación), en un solo texto: sirve para saber si un
+    número que escribió lo leyó en alguna parte o lo inventó."""
+    try:
+        return f"{json.dumps(runtime_yaml, ensure_ascii=False, default=str)} {user_message}"
+    except (TypeError, ValueError):
+        return user_message
 
 
 def _remembered_payment_method(memory_service: MemoryDomainService | None, *, tenant_slug: str, user_id: str) -> str:
@@ -493,18 +520,65 @@ class AIExecution:
 
         runtime_yaml_with_memory["response_length"] = _response_length
         runtime_yaml_with_memory["response_max_words"] = _max_words
+        # El paso de la conversación y el medio elegido antes de este mensaje (por ejemplo, «ya se le enviaron los datos de Nequi»).
+        op_before = _current_op_state(memory_service, tenant_slug=tenant_slug_value, user_id=user_key)
+        remembered_method = _remembered_payment_method(memory_service, tenant_slug=tenant_slug_value, user_id=user_key)
+
+        # El lector de pagos: qué pide el cliente sobre el pago en este mensaje, entendido por la IA en una llamada corta. El asesor
+        # lo sabe antes de responder.
+        reading = read_customer_message(
+            runtime,
+            bot_config=bot_config,
+            runtime_yaml=runtime_yaml_with_memory,
+            user_message=str(user_message or ""),
+            state=op_before,
+            remembered=remembered_method,
+            tenant=tenant_slug_value,
+        )
+        if reading is not None:
+            runtime_yaml_with_memory["payment_reading"] = reading.for_prompt(runtime_yaml_with_memory)
+        named_method = named_option(str(user_message or ""), runtime_yaml_with_memory)
+        if named_method:
+            # Un dato del negocio que viene al caso (no se interpreta qué quiere el cliente): ese medio sí lo recibe el negocio.
+            runtime_yaml_with_memory["named_payment_method"] = sent_label(runtime_yaml_with_memory, named_method)
 
         validate_runtime_yaml(runtime_yaml_with_memory)
 
-        response, ai_used, route_context = route_response(
-            runtime=runtime,
-            tenant=tenant,
-            bot_config=bot_config,
-            user_message=user_message,
-            conversation_history=conversation_history,
-            faq_results=faq_results,
-            runtime_yaml=runtime_yaml_with_memory,
-        )
+        def _ask_ai(runtime_yaml: dict):
+            return route_response(
+                runtime=runtime,
+                tenant=tenant,
+                bot_config=bot_config,
+                user_message=user_message,
+                conversation_history=conversation_history,
+                faq_results=faq_results,
+                runtime_yaml=runtime_yaml,
+            )
+
+        def _problem(answer: str, context) -> dict:
+            """Por qué esa respuesta del asesor no puede salir así (algo falso sobre los pagos, o datos que el cliente no pidió)."""
+            metadata = context.get("ai_metadata") if isinstance(context, dict) and isinstance(context.get("ai_metadata"), dict) else {}
+            return payment_problem(
+                str(answer or ""),
+                runtime_yaml_with_memory,
+                send_payment=str(metadata.get("send_payment") or ""),
+                asked=reading.wants_details if reading is not None else None,
+                state=op_before,
+                remembered=remembered_method,
+            )
+
+        response, ai_used, route_context = _ask_ai(runtime_yaml_with_memory)
+        problem = _problem(response, route_context) if ai_used else {}
+        if problem:
+            # La respuesta decía algo falso sobre los pagos («no puedo enviarte el número», «no recibimos Nequi») o iba a enviar unos
+            # datos que el cliente no pidió (los de un medio que no ha elegido, o los que ya tiene). Se le pide a la IA que responda
+            # otra vez, sabiendo por qué. Lo decide ella de nuevo (su mensaje, su acción, si pasa el chat a una persona); el código
+            # no le escribe la respuesta.
+            logger.warning("pago_segunda_respuesta", extra={"tenant": tenant_slug_value, "why": next(iter(problem))})
+            second = _ask_ai({**runtime_yaml_with_memory, "answer_again": problem})
+            if second[1]:
+                response, ai_used, route_context = second
+                problem = _problem(response, route_context)
 
         try:
             route_meta = route_context if isinstance(route_context, dict) else {}
@@ -533,21 +607,39 @@ class AIExecution:
                 metadata=ai_metadata,
             )
 
-            response_text = str(response or "").strip()
+            response_text = without_model_artifacts(str(response or "")).strip()
+            # La IA no ve los datos de pago: un celular o una cuenta que escribe sin haberlo leído es inventado, y a veces escribe su
+            # propio marcador («[número de Nequi]»). Se cambian por el marcador del dato y el sistema pone el real.
+            checked_text = mask_invented_numbers(mask_own_markers(response_text), _known_to_the_ai(runtime_yaml_with_memory, str(user_message or "")))
+            if checked_text != response_text:
+                logger.warning("pago_numero_inventado", extra={"tenant": tenant_slug_value})
+                response_text = checked_text
+            if problem.get("denied"):
+                # Insistió en que el negocio no recibe un medio que sí tiene: esa respuesta falsa no sale; sale la verdad.
+                logger.error("pago_medio_negado", extra={"tenant": tenant_slug_value})
+                offer = "" if reading is not None and reading.wants_details else OFFER_DETAILS
+                response_text = f"{METHOD_AVAILABLE.format(method=problem['denied'])} {offer}".strip()
             payment_method = str(ai_metadata.get("payment_method") or "").strip().lower()
             payment_status = str(ai_metadata.get("payment_status") or "").strip().lower()
-            if payment_status != "reportado" and reported_payment(str(user_message or "")):
-                # «Ya te consigné», «te mando el pantallazo»: un pago avisado siempre lo verifica el equipo, aunque la IA no lo marque.
-                payment_status = "reportado"
+            # Si el cliente avisó en este mensaje que ya pagó lo dice el lector de pagos: una pregunta enfocada acierta más que el
+            # asesor, que a veces lo marca sin que el cliente lo diga o se le pasa. Un pago avisado siempre lo verifica el equipo.
+            # Un pago avisado antes sigue avisado.
+            already_reported = str(memory_context.get("estado_pago") or "").strip().lower() == "reportado"
+            corrected = None
+            if reading is not None and reading.says_paid and payment_status != "reportado":
+                corrected = "reportado"
+            elif reading is not None and not reading.says_paid and payment_status == "reportado" and not already_reported:
+                corrected = ""
+            if corrected is not None:
+                payment_status = corrected
                 set_status = getattr(memory_service, "set_payment_status", None)
                 if callable(set_status):
-                    set_status(tenant_slug=tenant_slug_value, user_id=user_key, status=payment_status)
+                    set_status(tenant_slug=tenant_slug_value, user_id=user_key, status=payment_status or "none")
             intent = str(ai_metadata.get("intent") or "").strip().lower()
             # Pasa a una persona si el cliente la pidió o reclama; un pago reportado también: solo el equipo puede verificarlo.
             handoff_reason = str(ai_metadata.get("handoff") or "").strip() or ("payment_review" if payment_status == "reportado" else "")
 
             delivery = None
-            op_before = _current_op_state(memory_service, tenant_slug=tenant_slug_value, user_id=user_key)
             if payment_status == "reportado":
                 _log_payment_override(
                     tenant_slug=tenant_slug_value,
@@ -557,21 +649,24 @@ class AIExecution:
                 )
                 response_text = _resolve_post_payment_message(runtime_yaml_with_memory) or response_text
             else:
-                # Los datos de pago: la IA decide (su acción o el medio elegido), el sistema los envía con los datos reales y la red
-                # de seguridad cubre lo que la IA olvide (`payment_delivery.py`).
+                # Los datos de pago: el asesor (la IA) decide con su acción y habla; el sistema pone los datos reales debajo de su
+                # mensaje (`payment_delivery.py`).
                 delivery = deliver(
                     response_text,
                     runtime_yaml_with_memory,
                     send_payment=str(ai_metadata.get("send_payment") or "").strip().lower(),
+                    # Si después de pedirle otra respuesta el asesor insiste en enviar unos datos que el cliente no pidió, no salen: con
+                    # varios medios, los datos salen cuando el lector entiende que el cliente debe recibirlos.
+                    hold=bool(problem.get("unrequested") or problem.get("repeated")),
                     payment_method=payment_method,
-                    intent=intent,
-                    user_message=str(user_message or ""),
+                    asked=reading.wants_details if reading is not None else None,
+                    asked_method=reading.method if reading is not None else "",
                     state=op_before,
-                    remembered=_remembered_payment_method(memory_service, tenant_slug=tenant_slug_value, user_id=user_key),
+                    remembered=remembered_method,
                     tenant=tenant_slug_value,
                 )
                 if delivery.method:
-                    # El medio queda anotado aunque la IA no lo haya marcado: así se sabe de cuál reenviar los datos más adelante.
+                    # El medio cuyos datos salieron queda anotado: así la IA sabe de cuál habla el cliente más adelante.
                     set_method = getattr(memory_service, "set_payment_method", None)
                     if callable(set_method):
                         set_method(tenant_slug=tenant_slug_value, user_id=user_key, method=delivery.method)
@@ -582,24 +677,27 @@ class AIExecution:
                         payment_status=payment_status,
                     )
                 response_text = delivery.text
-                if handoff_reason and not keeps_handoff(delivery, str(user_message or "")):
+                if handoff_reason and not keeps_handoff(delivery):
                     handoff_reason = ""
             payment_details_sent = delivery is not None and bool(delivery.method)
 
             raw_response = response_text
             persisted_response = raw_response
+            if delivery is not None and delivery.details:
+                # En su historial la IA ve lo que dijo ella y el marcador de los datos, no el mensaje con los datos.
+                persisted_response = remembered_message(delivery, runtime_yaml_with_memory)
 
             # Operational continuity — persist state extracted from response text.
             _route_source = str(route_context.get("source") if isinstance(route_context, dict) else "").strip()
             _configured_methods = _get_configured_payment_methods(runtime_yaml_with_memory)
             _new_op_state = extract_op_state(raw_response, route_source=_route_source, payment_methods=_configured_methods)
             if payment_details_sent:
-                # El sistema entregó los datos de ese medio: falta que el cliente pague y envíe el comprobante (no se repiten solos).
+                # El sistema entregó los datos de ese medio: falta que el cliente pague y envíe el comprobante.
                 _new_op_state = sent_state(delivery.method)
             elif op_before and already_sent(op_before, op_before.active_option) and _new_op_state.active_process == "payment" and (
                 not _new_op_state.active_option or same_payment(_new_op_state.active_option, op_before.active_option)
             ):
-                # Se sigue hablando del mismo pago: se conserva que los datos ya salieron (si no, se repetirían solos).
+                # Se sigue hablando del mismo pago: se conserva que los datos ya salieron (la IA lo sabe y no los repite sola).
                 _new_op_state = sent_state(op_before.active_option)
             _set_op = getattr(memory_service, "set_op_state", None)
             if callable(_set_op) and _new_op_state.active_process:
@@ -608,12 +706,17 @@ class AIExecution:
                 except Exception:
                     pass
 
-            final_response = raw_response if payment_details_sent else enforce_max_words(
-                raw_response,
-                _max_words,
-                tenant=tenant_slug_value,
-                user_id=user_key,
-            )
+            if payment_details_sent:
+                # El largo máximo es para lo que dice el asesor; los datos de pago van completos debajo.
+                lead = enforce_max_words(delivery.lead, _max_words, tenant=tenant_slug_value, user_id=user_key) if delivery.lead.strip() else ""
+                final_response = compose(lead, delivery.details, delivery.tail) if delivery.details else raw_response
+            else:
+                final_response = enforce_max_words(
+                    raw_response,
+                    _max_words,
+                    tenant=tenant_slug_value,
+                    user_id=user_key,
+                )
             logger.info(
                 {
                     "tenant": tenant_slug_value,

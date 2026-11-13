@@ -200,6 +200,48 @@ def redact_payment_values(text: str, runtime_yaml: dict) -> str:
     return redact_values(text, payment_values(runtime_yaml))
 
 
+# Un número largo en un mensaje: un celular, una cuenta o una referencia (7 cifras o más, con espacios o guiones entre ellas). Los
+# precios no entran: llevan puntos o comas («1.320.000») o una moneda al lado.
+_LONG_NUMBER = re.compile(r"(?<![\d.,$])\+?\d(?:[ -]?\d){6,}(?![.,]?\d)")
+_DIGIT_RUN = re.compile(r"\d(?:[ .\-]?\d)+")
+_MONEY_BEFORE = re.compile(r"(\$|\b(cop|usd|mxn|pen|eur|clp|ars|s/)\.?)\s*$", re.IGNORECASE)
+_MONEY_AFTER = re.compile(r"^\s*(pesos|d[oó]lares|soles|euros|cop|usd|mxn|pen|eur|clp|ars)\b", re.IGNORECASE)
+_SHORTEST_LONG_NUMBER = 7
+# Un número conocido puede ir con el indicativo del país delante («+57 300…»).
+_LONGEST_PREFIX = 3
+
+
+def mask_invented_numbers(text: str, known: str) -> str:
+    """Cambia por «[dato de pago]» cada número largo que la IA escribió sin haberlo leído en ninguna parte (`known`: el negocio y la
+    conversación). La IA no ve los datos de pago; un celular o una cuenta que aparece en su mensaje y no estaba en lo que leyó es
+    inventado, y un cliente podría pagar ahí. Con el marcador, el sistema pone el dato real (`payment_delivery.py`)."""
+    message = str(text or "")
+    if not _LONG_NUMBER.search(message):
+        return message
+    known_runs = {digits for run in _DIGIT_RUN.findall(str(known or "")) if len(digits := re.sub(r"\D", "", run)) >= _SHORTEST_LONG_NUMBER}
+
+    def _is_known(digits: str) -> bool:
+        return any(digits in run or (run in digits and len(digits) - len(run) <= _LONGEST_PREFIX) for run in known_runs)
+
+    def _replace(match: re.Match) -> str:
+        before, after = message[max(0, match.start() - 8):match.start()], message[match.end():match.end() + 12]
+        if _is_known(re.sub(r"\D", "", match.group(0))) or _MONEY_BEFORE.search(before) or _MONEY_AFTER.search(after):
+            return match.group(0)
+        return REDACTED_PAYMENT_VALUE
+
+    return _LONG_NUMBER.sub(_replace, message)
+
+
+# Un marcador que escribe la IA por su cuenta para un dato que no ve: «[número de Nequi]», «[link de pago]», «[datos de la cuenta]».
+_OWN_MARKER = re.compile(r"\[[^\[\]\n]{0,40}\b(n[uú]mero|datos?|cuenta|link|enlace|llave|clabe|iban)\b[^\[\]\n]{0,40}\]", re.IGNORECASE)
+
+
+def mask_own_markers(text: str) -> str:
+    """Cambia por «[dato de pago]» los marcadores que la IA escribe por su cuenta («[número de Nequi]»): son el mismo aviso de que ahí
+    va un dato que ella no ve, y nunca deben llegarle al cliente."""
+    return _OWN_MARKER.sub(REDACTED_PAYMENT_VALUE, str(text or ""))
+
+
 def redact_values(text: str, values: list[str] | tuple[str, ...]) -> str:
     """Cambia cada valor (de los que tienen al menos `MIN_REDACTABLE_CHARS`) por «[dato de pago]», del más largo al más corto
     para que uno que contiene a otro se oculte entero."""

@@ -70,10 +70,14 @@ WHATSAPP_SIMULATOR_URL=http://127.0.0.1:3300 ENGINE_PUBLIC_URL=http://127.0.0.1:
     foto, respuesta y PDF del equipo, el negocio escribiendo desde su celular y desconectar;
   - un negocio de Perú: Yape, «otro medio» y efectivo;
   - dos negocios a la vez: nada se cruza (chats ni datos de pago);
-  - pagos con los 15 medios a la vez: cada uno llega solo (y solo el suyo) al elegirlo o pedirlo de nuevo, dos bancos, una cuenta
-    desactivada, un medio que no existe, preguntar sin elegir y la IA que nunca ve los datos;
-  - pagos como habla la gente: «pásame el nekui», «me regalas la cuenta de bancolombia», «¿a dónde te consigno?», «¿y Daviplata
-    no?», «ya te consigné», «te mando el pantallazo»…
+  - pagos con los 15 medios a la vez: el asesor le habla al cliente y debajo le llega cada medio (y solo el suyo), también al
+    pedirlo de nuevo; dos bancos, una cuenta desactivada, un medio que no existe, preguntar sin pedir los datos y la IA que nunca
+    ve los datos;
+  - el asesor habla y los datos van debajo: «y puedo trasferir» lo responde el asesor sin soltar la cuenta, «te pago por Nequi»,
+    «cómo así» (no se repiten), «ya voy a pagar» y «ya te consigné» (pasa al equipo).
+- La IA tiene dos papeles con respuestas fijas: el **asesor** (la llamada grande) y el **lector de pagos** (la llamada corta que
+  entiende qué pide el cliente). Qué tan bien entiende la IA lo que escribe la gente no se prueba aquí: se mide con la IA real
+  (`experiments/quality_lab`).
 - Dejan un informe en español en `.wa-sim/informe-e2e.md`, sin datos de pago.
 
 Para sumar un escenario: una función `test_…` en `tests/test_whatsapp_e2e.py` con sus pasos (`_run(Report(...), pasos)`).

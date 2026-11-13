@@ -32,18 +32,30 @@ REPORT_PATH = REPO_ROOT / ".wa-sim" / "informe-e2e.md"
 REPORTS: dict[str, Report] = {}
 _EXAMPLE_PAYMENT_VALUES = {value for slug in ("saas", "restaurant") for value in prepared_tenant(slug).payment_values.values()}
 
+# El asesor (la llamada grande a la IA), con respuestas fijas.
 MODEL = [
     (r"qu[eé] venden", {"response": "Tenemos planes para que tu WhatsApp venda solo. ¿Quieres saber precios?", "intent": "info", "metadata": {}}),
-    (r"pagar por nequi", {"response": "¡Listo! Te envío los datos.", "intent": "buy", "metadata": {"payment_method": "nequi"}}),
-    # Lo que pasó en producción el 13 nov 2026: el modelo dice que no puede reenviar el número. El sistema debe enviarlo igual.
+    (r"pagar por nequi", {"response": "¡Listo! Ahí abajo te dejo los datos de Nequi.", "intent": "buy", "metadata": {"send_payment": "Nequi"}}),
+    # Lo que pasó en producción el 13 nov 2026: el modelo dice que no puede reenviar el número (dos veces: el motor le pide otra
+    # respuesta). El cliente debe recibirlo igual.
     (r"se me borr", {"response": "Lo siento, no puedo enviarlo de nuevo.", "intent": "info", "metadata": {}}),
     (r"ya pagu", {"response": "Gracias, lo paso al equipo para verificarlo.", "intent": "buy", "metadata": {"payment_status": "reportado"}}),
-    # Con la IA real, un negocio de Perú (13 nov 2026): «los datos de pago son los mismos, solo cambia el medio».
-    (r"pago por nu", {"response": "Los datos de pago son los mismos, solo cambia el medio.", "intent": "info", "metadata": {}}),
-    (r"por yape", {"response": "Listo.", "intent": "buy", "metadata": {"payment_method": "Yape"}}),
-    (r"efectivo", {"response": "Perfecto.", "intent": "info", "metadata": {}}),
-    # En el recorrido de todos los medios la IA no marca nada: los datos deben salir porque el cliente eligió o pidió el medio.
-    (r"te pago por|aceptan|western", {"response": "Perfecto.", "intent": "info", "metadata": {}}),
+    (r"pago por nu", {"response": "¡Claro! También recibimos Nu. Ahí abajo te dejo los datos.", "intent": "buy", "metadata": {}}),
+    (r"por yape", {"response": "¡Perfecto! Ahí abajo te dejo los datos de Yape.", "intent": "buy", "metadata": {}}),
+    (r"efectivo", {"response": "Perfecto, así puedes pagar en efectivo:", "intent": "info", "metadata": {}}),
+    (r"te pago por|western", {"response": "¡Perfecto! Ahí abajo te dejo los datos.", "intent": "buy", "metadata": {}}),
+    (r"aceptan|puedo|tienen", {"response": "Sí, claro. ¿Con cuál medio prefieres pagar?", "intent": "info", "metadata": {}}),
+]
+# El lector de pagos (la llamada corta a la IA), con respuestas fijas: qué entiende de cada mensaje del cliente.
+READINGS = [
+    (r"aceptan|puedo|tienen|western", {}),
+    (r"pagar por (nequi)", {"recibe_datos_de_pago": True, "medio": "$1"}),
+    (r"se me borr", {"recibe_datos_de_pago": True}),
+    (r"ya pagu", {"dice_que_ya_pago": True}),
+    (r"pago por (nu)\b", {"recibe_datos_de_pago": True, "medio": "$1"}),
+    (r"por (yape)", {"recibe_datos_de_pago": True, "medio": "$1"}),
+    (r"(efectivo)", {"recibe_datos_de_pago": True, "medio": "$1"}),
+    (r"te pago por (.+)", {"recibe_datos_de_pago": True, "medio": "$1"}),
 ]
 
 
@@ -100,8 +112,9 @@ def running_stack(monkeypatch, tmp_path, slugs: list[str], mutate=None):
     for slug in slugs:
         keys.save_ai_settings(slug, model=None, api_key="sk-or-v1-clave-de-prueba-e2e", clear_key=False)
 
-    model = ScriptedModel(rules=list(MODEL))
+    model = ScriptedModel(rules=list(MODEL), readings=list(READINGS))
     monkeypatch.setattr(RuntimeLLMImplementation, "generate", lambda self, prompt, **kwargs: model.generate(prompt, **kwargs))
+    monkeypatch.setattr(RuntimeLLMImplementation, "classify", lambda self, prompt, **kwargs: model.classify(prompt, **kwargs))
     monkeypatch.setattr(whatsapp_qr_webhook, "OpenRouterMediaInterpreter", FakeMedia)
     alerts: list = []
     monkeypatch.setattr(whatsapp_qr_webhook, "deliver_alert", alerts.append)
@@ -213,16 +226,17 @@ def test_a_business_day_on_whatsapp(monkeypatch, tmp_path):
             before = len(phone.from_business(state["token"], ANA))
             phone.write(state["token"], ANA, "Quiero pagar por Nequi")
             reply = phone.wait_reply(state["token"], ANA, before, what="los datos de Nequi")
-            assert reply["text"].startswith("💳 *Datos para pagar*") and "*Nequi*" in reply["text"] and nequi in reply["text"], reply["text"]
+            assert reply["text"].startswith("¡Listo! Ahí abajo te dejo los datos de Nequi.\n\n💳 *Datos para pagar*"), reply["text"]
+            assert "*Nequi*" in reply["text"] and nequi in reply["text"], reply["text"]
             assert all(nequi not in prompt for prompt in stack.model.prompts), "el número de pago llegó a la IA"
-            return "le llegaron los datos de Nequi ordenados, con el número real; la IA nunca vio el número"
+            return "el asesor le dijo que le dejaba los datos y debajo le llegaron los de Nequi, con el número real; la IA nunca vio el número"
 
         def resend() -> str:
             before = len(phone.from_business(state["token"], ANA))
             phone.write(state["token"], ANA, "Se me borró el número, ¿me lo envías otra vez?")
             reply = phone.wait_reply(state["token"], ANA, before, what="el reenvío de los datos")
             assert nequi in reply["text"] and "no puedo" not in reply["text"].lower(), reply["text"]
-            return "la IA dijo «no puedo enviarlo» y aun así le llegaron los datos (la red de seguridad)"
+            return "la IA dijo dos veces «no puedo enviarlo» (es falso) y aun así le llegaron los datos: el cliente los pidió"
 
         def receipt_photo() -> str:
             before = len(phone.from_business(state["token"], ANA))
@@ -434,24 +448,26 @@ def test_payments_with_every_method(monkeypatch, tmp_path):
                 number = customer(position)
                 value = next((value for name, value in fields.items() if name in _SLOTS), fields.get("instructions"))
                 chosen = say(number, f"Te pago por {said}", what=f"los datos de {said}")
-                assert value in chosen and "Perfecto." not in chosen, chosen
+                said_by_advisor, details = chosen.split("\n\n", 1)
+                assert value in details and details[0] in "💳💵" and said_by_advisor[0] not in "💳💵", chosen
                 others = [other for other in all_values if other != value and other not in value]
                 assert not any(other in chosen for other in others), f"llegaron datos de otro medio: {chosen}"
                 again = say(number, "Se me borró, me lo envías de nuevo", what=f"el reenvío de {said}")
-                assert again == chosen, again
-                return f"«Te pago por {said}» → le llegó su dato (y solo el suyo); al pedirlo de nuevo, otra vez"
+                # El asesor simulado dice «no puedo enviarlo» (dos veces): los datos salen igual, sin esa frase.
+                assert again == details, again
+                return f"«Te pago por {said}» → el asesor le habló y debajo le llegó su dato (y solo el suyo); al pedirlo de nuevo, otra vez"
             return check
 
         def bank_transfer() -> str:
             number = customer(90)
             text = say(number, "Te pago por transferencia bancaria", what="las dos cuentas bancarias")
-            assert "12345678901" in text and "99988877766" in text and text.startswith("💳 *Datos para pagar*\n\n*Transferencia bancaria*")
+            assert "12345678901" in text and "99988877766" in text and "💳 *Datos para pagar*\n\n*Transferencia bancaria*" in text
             return "«transferencia bancaria» → le llegaron las dos cuentas (Bancolombia y Davivienda) juntas"
 
         def disabled_plin() -> str:
             number = customer(91)
             text = say(number, "Te pago por Plin", what="la respuesta sin datos de Plin")
-            assert "912345678" not in text and text == "Perfecto.", text
+            assert "912345678" not in text and "Datos para pagar" not in text, text
             return "Plin está desactivado: no se envió su dato"
 
         def unknown_method() -> str:
@@ -464,7 +480,8 @@ def test_payments_with_every_method(monkeypatch, tmp_path):
             number = customer(93)
             text = say(number, "¿Aceptan Bizum?", what="la respuesta a la pregunta")
             assert "612345678" not in text, text
-            return "«¿Aceptan Bizum?» lo responde la IA: preguntar no es elegir"
+            assert text == "Sí, claro. ¿Con cuál medio prefieres pagar?", text
+            return "«¿Aceptan Bizum?» lo responde el asesor: preguntar no es pedir los datos"
 
         def never_to_the_ai() -> str:
             leaked = [value for value in all_values if any(value in prompt for prompt in stack.model.prompts)]
@@ -482,81 +499,60 @@ def test_payments_with_every_method(monkeypatch, tmp_path):
         _run(Report("Pagos con todos los medios"), steps)
 
 
-# ---------------------------------------------------------------------------------------------------------- pagos: como habla la gente
+# ------------------------------------------------------------------------------------------------- pagos: el asesor y el lector
 
-# (lo que escribe el cliente, el medio cuyos datos le deben llegar o None si no le debe llegar ningún dato). La IA no marca nada.
-_FRESH = [
-    ("Pásame el Nequi porfa", "nequi"),
-    ("mandame el nekui", "nequi"),
-    ("me regalas la cuenta de bancolombia", "bank"),
-    ("te consigno a daviplata", "daviplata"),
-    ("dame los datos del davi plata", "daviplata"),
-    ("cual es el numero de nequi", "nequi"),
-    ("te pago por pse", "link"),
-    ("¿Tienen Nequi?", None),
-    ("No tengo Nequi", None),
-    ("¿A qué número te consigno?", None),
-]
-# Después de elegir Nequi y recibir sus datos.
-_AFTER_NEQUI = [
-    ("a donde te consigno?", "nequi"),
-    ("me lo pasas otra vez", "nequi"),
-    ("¿Y Daviplata no?", "daviplata"),
-    ("¿y por bancolombia?", "bank"),
-    ("y ahora que hago", None),
-    ("todavía no he pagado", None),
-    ("Gracias", None),
-]
-_REPORTED = ["ya te consigné", "Ya hice la transferencia", "te mando el pantallazo"]
-
-
-def test_common_ways_people_talk_about_paying(monkeypatch, tmp_path):
+# Cómo entiende la IA lo que escribe la gente («pásame el nekui», «¿a dónde te consigno?») no se prueba con respuestas fijas: se mide
+# con la IA real (`experiments/quality_lab`). Aquí se prueba el camino completo por WhatsApp con el asesor y el lector simulados.
+def test_the_advisor_keeps_talking_around_the_payment(monkeypatch, tmp_path):
     with running_stack(monkeypatch, tmp_path, ["saas"]) as stack:
         phone = stack.phone
         token = _connect(stack, "saas", "573110000000")
-        choices = dict(_payment_choices(_runtime("saas")))
-        value_of = {"link": choices["link"][0], "nequi": choices["nequi"][0], "daviplata": choices["daviplata"][0], "bank": choices["bank"][2], "breb": choices["breb"][0]}
-        counter = iter(range(100, 999))
+        nequi = dict(_payment_choices(_runtime("saas")))["nequi"][0]
+        number = "573150000001"
+        phone.add_client(number, "Juan Camilo")
+        stack.model.rules[:0] = [
+            (r"c[oó]mo as[ií]", {"response": "Te explico: arriba tienes el número de Nequi. Pagas ahí y me envías la captura.", "intent": "info", "metadata": {"send_payment": "Nequi"}}),
+            (r"ya voy a pagar", {"response": "¡Perfecto! Quedo atento a tu comprobante.", "intent": "buy", "metadata": {}}),
+            (r"ya te consign", {"response": "Gracias, lo paso al equipo.", "intent": "buy", "metadata": {}}),
+        ]
+        stack.model.readings[:0] = [(r"ya te consign", {"dice_que_ya_pago": True})]
 
-        names = {"link": "pago en línea", "nequi": "Nequi", "daviplata": "Daviplata", "bank": "Bancolombia", "breb": "Bre-B"}
+        def say(text: str, *, what: str) -> str:
+            before = len(phone.from_business(token, number))
+            phone.write(token, number, text)
+            return phone.wait_reply(token, number, before, what=what)["text"]
 
-        def customer(*, after_nequi: bool) -> str:
-            number = f"5731{next(counter):08d}"
-            phone.add_client(number, f"Cliente {number[-4:]}")
+        def question() -> str:
             phone.write(token, number, "Hola")
             phone.wait_reply(token, number, 0, what="el saludo")
-            if after_nequi:
-                before = len(phone.from_business(token, number))
-                phone.write(token, number, "Te pago por Nequi")
-                assert value_of["nequi"] in phone.wait_reply(token, number, before, what="los datos de Nequi")["text"]
-            return number
+            text = say("Y puedo trasferir", what="la respuesta del asesor")
+            assert text == "Sí, claro. ¿Con cuál medio prefieres pagar?" and nequi not in text, text
+            return "«Y puedo trasferir» lo responde el asesor y sigue guiando: no le llega ninguna cuenta"
 
-        def case(message: str, expected: str | None, *, after_nequi: bool):
-            def check() -> str:
-                number = customer(after_nequi=after_nequi)
-                before = len(phone.from_business(token, number))
-                phone.write(token, number, message)
-                text = phone.wait_reply(token, number, before, what=f"la respuesta a «{message}»")["text"]
-                others = [value for method, value in value_of.items() if method != expected]
-                assert not any(value in text for value in others), f"llegó un dato que no era: {text}"
-                if expected:
-                    assert value_of[expected] in text, text
-                    return f"le llegaron los datos de {names[expected]}"
-                return "respondió la IA, sin datos de pago"
-            return check
+        def chooses() -> str:
+            text = say("Te pago por Nequi", what="los datos de Nequi")
+            assert text.startswith("¡Perfecto! Ahí abajo te dejo los datos.\n\n💳 *Datos para pagar*") and nequi in text, text
+            return "«Te pago por Nequi» → el asesor le habla y debajo le llegan los datos de Nequi"
 
-        def reported(message: str):
-            def check() -> str:
-                number = customer(after_nequi=True)
-                assert not any(item["contact_name"] == f"Cliente {number[-4:]}" and item["needs_human"] for item in stack.panel.get("/api/conversations").json())
-                phone.write(token, number, message)
-                wait_for(lambda: any(
-                    item["contact_name"] == f"Cliente {number[-4:]}" and item["needs_human"] for item in stack.panel.get("/api/conversations").json()
-                ), what=f"que «{message}» pase el chat al equipo")
-                return "el chat pasó al equipo para verificar el pago"
-            return check
+        def explains() -> str:
+            text = say("Cómo así", what="la explicación del asesor")
+            assert text == "Te explico: arriba tienes el número de Nequi. Pagas ahí y me envías la captura.", text
+            return "«Cómo así» → el asesor explica; los datos no se repiten aunque la IA quiera reenviarlos"
 
-        steps = [(f"«{message}»", case(message, expected, after_nequi=False)) for message, expected in _FRESH]
-        steps += [(f"Ya con Nequi: «{message}»", case(message, expected, after_nequi=True)) for message, expected in _AFTER_NEQUI]
-        steps += [(f"Avisa que pagó: «{message}»", reported(message)) for message in _REPORTED]
-        _run(Report("Pagos: como habla la gente"), steps)
+        def going_to_pay() -> str:
+            text = say("Ya voy a pagar", what="la respuesta del asesor")
+            assert text == "¡Perfecto! Quedo atento a tu comprobante.", text
+            return "«Ya voy a pagar» → responde el asesor, sin datos"
+
+        def paid() -> str:
+            phone.write(token, number, "ya te consigné")
+            wait_for(lambda: any(item["contact_name"] == "Juan Camilo" and item["needs_human"] for item in stack.panel.get("/api/conversations").json()), what="que el chat pase al equipo")
+            return "«ya te consigné» → lo entiende el lector (el asesor no lo marcó) y el chat pasa al equipo para verificar el pago"
+
+        _run(Report("Pagos: el asesor habla y los datos van debajo"), [
+            ("Preguntar no es pedir los datos", question),
+            ("Elige el medio", chooses),
+            ("No entiende algo", explains),
+            ("Avisa que va a pagar", going_to_pay),
+            ("Avisa que ya pagó", paid),
+        ])

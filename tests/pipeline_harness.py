@@ -57,19 +57,38 @@ def reply(text: str, intent: str = "info", **metadata) -> str:
     return json.dumps({"response": text, "intent": intent, "metadata": metadata}, ensure_ascii=False)
 
 
-def run_conversation(slug: str, turns: list[tuple[str, str]], *, user_id: str) -> list[tuple[list[str], str]]:
-    """Ejecuta el pipeline real turno a turno; devuelve (prompts enviados al LLM, respuesta final) por turno."""
+def reads(wants: bool = False, method: str = "", paid: bool = False) -> dict:
+    """Lo que entiende el lector de pagos simulado del mensaje del cliente (`payment_reading.py`): si debe recibir los datos de pago,
+    de qué medio y si dice que ya pagó."""
+    return {"recibe_datos_de_pago": wants, "medio": method, "dice_que_ya_pago": paid}
+
+
+def run_conversation(slug: str, turns: list[tuple], *, user_id: str, with_context: bool = False) -> list[tuple]:
+    """Ejecuta el pipeline real turno a turno; devuelve (prompts enviados al asesor, respuesta final) por turno, o con `with_context`
+    (respuesta final, lo que el motor decide del chat).
+
+    Cada turno es (mensaje del cliente, respuesta del asesor simulado) y, opcional, lo que entiende el lector de pagos simulado
+    (`reads(...)`). Sin lector, el motor confía en la acción del asesor, como cuando la llamada del lector falla. La respuesta del
+    asesor puede ser una lista: la primera respuesta y la que da cuando el motor le pide otra."""
     pipeline = AIPipeline(memory_service=MemoryDomainService(MemoryRepository()))
     results = []
-    for message, llm_reply in turns:
+    for message, llm_reply, *rest in turns:
         prompts: list[str] = []
+        replies = list(llm_reply) if isinstance(llm_reply, (list, tuple)) else [llm_reply]
+        reading = rest[0] if rest else None
 
-        def _generate(prompt, *, user_message, bot_config=None, _reply_text=llm_reply, _prompts=prompts, **_kwargs):
+        def _generate(prompt, *, user_message, bot_config=None, _replies=replies, _prompts=prompts, **_kwargs):
             _prompts.append(str(prompt))
-            return _reply_text
+            return _replies[min(len(_prompts), len(_replies)) - 1]
+
+        def _classify(prompt, *, user_message, bot_config=None, _reading=reading, **_kwargs):
+            if _reading is None:
+                raise RuntimeError("sin lector de pagos")
+            return json.dumps(_reading, ensure_ascii=False)
 
         pipeline.runtime.generate = _generate
-        response, _ai_used, _meta = pipeline.run(
+        pipeline.runtime.classify = _classify
+        response, _ai_used, meta = pipeline.run(
             tenant=type("T", (), {"slug": slug, "name": slug, "id": slug})(),
             user_message=message,
             user_id=user_id,
@@ -79,7 +98,7 @@ def run_conversation(slug: str, turns: list[tuple[str, str]], *, user_id: str) -
             yaml_config=None,
             include_metadata=True,
         )
-        results.append((prompts, response))
+        results.append((response, meta if isinstance(meta, dict) else {}) if with_context else (prompts, response))
     return results
 
 

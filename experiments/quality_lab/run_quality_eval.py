@@ -250,7 +250,7 @@ def build_report(data: dict) -> str:
         lines.append(f"| {criterion} (0-2) | {values['baseline']} | {values['candidate']} |")
     totals = {label: _mean(_turn_score(turn) for row in rows for turn in row[label]["scores"]) for label in ("baseline", "candidate")}
     lines.append(f"| **puntaje por respuesta (0-10)** | **{totals['baseline']}** | **{totals['candidate']}** |")
-    for name in ("precios_inventados", "marcador_de_pago_visible", "datos_de_pago_faltantes", "sin_ia", "formato_imperfecto", "demasiado_larga", "varias_preguntas", "repite_respuesta_anterior"):
+    for name in ("precios_inventados", "marcador_de_pago_visible", "datos_de_pago_faltantes", "datos_de_pago_sin_pedir", "asesor_callado", "sin_ia", "formato_imperfecto", "demasiado_larga", "varias_preguntas", "repite_respuesta_anterior"):
         counts = {label: sum(1 for row in rows for check in row[label]["checks"] if check[name]) for label in ("baseline", "candidate")}
         lines.append(f"| {name.replace('_', ' ')} | {counts['baseline']} | {counts['candidate']} |")
     for key in ("tokens_entrada_promedio", "tokens_en_cache_promedio", "tokens_salida_promedio", "ms_promedio", "costo_usd_sin_cache"):

@@ -40,6 +40,33 @@ def commercial_memory(view: PromptView) -> list[str]:
     return [text for name in ("continuity_brief", "commercial_anchor_active", "episodic_hook") if (text := one_line(getattr(signal, name, "")))]
 
 
+def _this_message(view: PromptView, status: str) -> list[str]:
+    """Lo que se sabe de este mensaje antes de responder: lo que entendió el lector de pagos (`payment_reading.py`) y, si la primera
+    respuesta decía algo falso sobre los pagos, por qué se pide otra (`ai_execution.py`)."""
+    facts = []
+    reading = as_dict(view.runtime.get("payment_reading"))
+    named = one_line(view.runtime.get("named_payment_method"))
+    if named:
+        facts.append(instructions.PAYMENT_METHOD_AVAILABLE.format(method=named))
+    if reading.get("wants_details"):
+        method = one_line(reading.get("method"))
+        facts.append(instructions.PAYMENT_ASKED.format(method=method) if method else instructions.PAYMENT_ASKED_NO_METHOD)
+    elif reading.get("no_details_now"):
+        facts.append(instructions.PAYMENT_NOT_NOW)
+    if reading.get("says_paid") and status != "reportado":
+        facts.append(instructions.PAYMENT_REPORTED)
+    again = as_dict(view.runtime.get("answer_again"))
+    if again.get("denied"):
+        facts.append(instructions.ANSWER_AGAIN_DENIED.format(method=one_line(again.get("denied"))))
+    elif again.get("unrequested"):
+        facts.append(instructions.ANSWER_AGAIN_UNREQUESTED.format(method=one_line(again.get("unrequested"))))
+    elif again.get("repeated"):
+        facts.append(instructions.ANSWER_AGAIN_REPEATED.format(method=one_line(again.get("repeated"))))
+    elif again:
+        facts.append(instructions.ANSWER_AGAIN)
+    return facts
+
+
 def render(view: PromptView) -> str:
     memory = view.memory
     facts = []
@@ -55,6 +82,7 @@ def render(view: PromptView) -> str:
             facts.append(instructions.AFTER_SALE.format(message=after_sale))
     elif method:
         facts.append(instructions.PAYMENT_CHOSEN.format(method=_method_name(method)))
+    facts += _this_message(view, status)
     anchor, rule = one_line(memory.get("operational_anchor")), one_line(memory.get("operational_rule"))
     if anchor:
         facts.append(f"{anchor} {rule}".strip())

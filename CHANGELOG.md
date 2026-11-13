@@ -3,6 +3,19 @@
 Lo que cambió en AI Sales Engine, de lo más reciente a lo más antiguo. Cada entrada dice qué gana el negocio; el detalle técnico
 está en el historial de git y en `docs/plan-v1.md`.
 
+## 13 de noviembre de 2026
+
+**Pagos: tu asistente habla como un asesor, no como un contestador**
+- Cuando el cliente necesita los datos para pagar, el asistente **le habla y debajo van los datos**. Antes llegaba solo la plantilla,
+  sin una palabra.
+- **Preguntar no es pedir la cuenta:** «¿puedo transferir?» o «¿y Nequi no?» se responden y el asistente sigue guiando. Los datos
+  llegan cuando el cliente los pide, dice con qué medio paga o acepta que se los envíen.
+- **No se repiten solos:** si el cliente no entendió algo («¿cómo así?»), el asistente le explica en vez de mandar el bloque otra vez.
+- Qué pide el cliente ahora **lo entiende la IA** con una segunda mirada corta por mensaje (antes eran reglas de palabras que se
+  equivocaban). Suma al consumo de tu clave cerca de un 30 % (medido con la IA real).
+- Más cuidados: si la IA escribe un número de pago por su cuenta, no sale (va el real); si dice que no puede enviar los datos o que
+  no recibes un medio que sí tienes, se le pide otra respuesta antes de contestarle al cliente.
+
 ## 12 de noviembre de 2026
 
 **«Probar asistente» ya no olvida la conversación**

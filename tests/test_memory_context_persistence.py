@@ -496,7 +496,7 @@ def test_the_last_reply_is_not_repeated_inside_the_prompt() -> None:
 ## ----------------------------------------
 def test_a_chosen_payment_is_said_once_and_never_restarted() -> None:
     prompt = _build_prompt_with_memory({"last_intent": "price", "metodo_pago_elegido": "nequi", "estado_pago": "pendiente", "last_ai_response": "ok"})
-    assert prompt.count("Ya eligió pagar por Nequi: no le repitas la lista de medios; si pide otro de los del negocio, envíaselo.") == 1
+    assert prompt.count("Ya eligió pagar por Nequi: no le repitas la lista de medios; si pregunta por otro de los del negocio, dile que también lo recibe.") == 1
     reported = _build_prompt_with_memory({"metodo_pago_elegido": "nequi", "estado_pago": "reportado", "last_ai_response": "ok"})
     assert reported.count("Dijo que ya pagó: no le pidas que pague otra vez y no confirmes el pago; el equipo lo verifica.") == 1
     assert "Ya eligió pagar" not in reported

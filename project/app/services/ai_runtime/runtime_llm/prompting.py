@@ -166,6 +166,31 @@ class RuntimeLLMImplementation:
 
     def generate(self, prompt: str, *, user_message: str, bot_config: BotConfig | None = None, history: list[dict] | None = None) -> str:
         """Una llamada al modelo: las instrucciones del negocio, la conversación reciente (`history`) y el mensaje del cliente."""
+        configured_max_tokens = getattr(bot_config, "max_tokens", None)
+        try:
+            resolved_max_tokens = int(configured_max_tokens) if configured_max_tokens is not None else 400
+        except Exception:
+            resolved_max_tokens = 400
+        messages = [
+            {"role": "system", "content": str(prompt or "")},
+            *[{"role": item["role"], "content": item["content"]} for item in (history or []) if item.get("role") in ("user", "assistant")],
+            {"role": "user", "content": str(user_message or "")},
+        ]
+        return self._complete(
+            messages,
+            bot_config=bot_config,
+            temperature=float(getattr(bot_config, "temperature", None) or 0.6),
+            max_tokens=max(300, min(500, resolved_max_tokens)),
+            top_p=getattr(bot_config, "top_p", None),
+        )
+
+    def classify(self, prompt: str, *, user_message: str, bot_config: BotConfig | None = None, max_tokens: int = 120) -> str:
+        """Una llamada corta y exacta (sin creatividad) para entender un mensaje, con la clave y el modelo del negocio. La usa el
+        lector de pagos (`application/pipeline/payment_reading.py`); también responde en JSON."""
+        messages = [{"role": "system", "content": str(prompt or "")}, {"role": "user", "content": str(user_message or "")}]
+        return self._complete(messages, bot_config=bot_config, temperature=0.0, max_tokens=max_tokens)
+
+    def _complete(self, messages: list[dict], *, bot_config: BotConfig | None, temperature: float, max_tokens: int, top_p: float | None = None) -> str:
         if str(os.getenv("LLM_MODE") or "").strip().lower() == "mock_fail":
             raise RuntimeError("mock_fail provider simulation")
 
@@ -178,27 +203,9 @@ class RuntimeLLMImplementation:
         if not client_to_use:
             raise RuntimeError("business_ai_key_missing")
 
-        configured_max_tokens = getattr(bot_config, "max_tokens", None)
-        try:
-            resolved_max_tokens = int(configured_max_tokens) if configured_max_tokens is not None else 400
-        except Exception:
-            resolved_max_tokens = 400
-        resolved_max_tokens = max(300, min(500, resolved_max_tokens))
-
-        messages = [
-            {"role": "system", "content": str(prompt or "")},
-            *[{"role": item["role"], "content": item["content"]} for item in (history or []) if item.get("role") in ("user", "assistant")],
-            {"role": "user", "content": str(user_message or "")},
-        ]
-        response = self._call_client(
-            client_to_use,
-            model_to_use=str(getattr(bot_config, "model_name", None) or self._default_model()),
-            messages=messages,
-            temperature=float(getattr(bot_config, "temperature", None) or 0.6),
-            max_tokens=resolved_max_tokens,
-            top_p=getattr(bot_config, "top_p", None),
-        )
-        self._report_usage(response, bot_config=bot_config, model=str(getattr(bot_config, "model_name", None) or self._default_model()))
+        model = str(getattr(bot_config, "model_name", None) or self._default_model())
+        response = self._call_client(client_to_use, model_to_use=model, messages=messages, temperature=temperature, max_tokens=max_tokens, top_p=top_p)
+        self._report_usage(response, bot_config=bot_config, model=model)
         try:
             first_choice = response.choices[0]
         except Exception:

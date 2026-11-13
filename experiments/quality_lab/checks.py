@@ -32,6 +32,11 @@ def _amounts(text: str) -> set[int]:
 _PAYMENT_DATA = re.compile(r"\d{8,}|https?://|llave|\[dato entregado por el motor\]", re.IGNORECASE)
 # Los turnos en los que el cliente necesita los datos de pago: los eligió o los pidió otra vez.
 PAYMENT_DATA_TURNS = ("metodo", "reenvio_pago")
+# Los turnos en los que no debe llegarle ningún dato de pago: solo pregunta si puede pagar con un medio, o no entendió algo.
+NO_PAYMENT_DATA_TURNS = ("pregunta_medio", "aclaracion_pago")
+ENGINE_DATA = "[dato entregado por el motor]"
+# Así empieza el mensaje con los datos de pago (la plantilla de la plataforma).
+_DETAILS_START = ("💳", "💵")
 
 
 def check_turn(reply: str, *, facts: dict, previous_reply: str, ai_used: bool, format_error: str, kind: str = "") -> dict:
@@ -50,6 +55,10 @@ def check_turn(reply: str, *, facts: dict, previous_reply: str, ai_used: bool, f
         "repite_respuesta_anterior": bool(previous_reply) and reply.strip() == previous_reply.strip(),
         # Pidió los datos para pagar y no le llegaron (como «Cuando lo hagas, avísame» sin el número).
         "datos_de_pago_faltantes": kind in PAYMENT_DATA_TURNS and not _PAYMENT_DATA.search(reply),
+        # Preguntó si puede pagar con un medio, o no entendió algo, y le llegó una cuenta («¿puedo transferir?» → la cuenta).
+        "datos_de_pago_sin_pedir": kind in NO_PAYMENT_DATA_TURNS and ENGINE_DATA in reply,
+        # Le llegaron los datos de pago sin una palabra del asesor: el mensaje es solo la plantilla.
+        "asesor_callado": ENGINE_DATA in reply and reply.lstrip().startswith(_DETAILS_START),
     }
 
 

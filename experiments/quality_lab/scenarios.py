@@ -1,8 +1,9 @@
 """Conversaciones de prueba: un cliente con guion, según cómo vende el negocio.
 
 Cada guion prueba lo que un vendedor profesional debe hacer bien: saludar, explicar la oferta, dar precios reales, no inventar lo que
-no sabe, manejar una objeción, cerrar, llevar al pago, seguir guiando después de los datos de pago (sin repetirlos), volver a
-enviarlos si el cliente los pide («se me borró el número», el caso real del 13 nov 2026) y responder cuando dice que ya pagó. Las preguntas usan productos y
+no sabe, manejar una objeción, cerrar, responder si puede pagar con un medio sin soltarle la cuenta («¿y puedo transferir?»), llevar
+al pago, seguir guiando después de los datos de pago (sin repetirlos, tampoco si el cliente no entendió algo: «¿cómo así?»), volver a
+enviarlos si el cliente los pide («se me borró el número») y responder cuando dice que ya pagó. Son los casos reales del 13 nov 2026. Las preguntas usan productos y
 medios de pago reales del negocio; la pregunta «trampa» pide algo que la ficha no tiene, para ver si el asistente lo inventa.
 """
 from __future__ import annotations
@@ -21,10 +22,16 @@ def _payment_choice(facts: dict) -> tuple[str, str]:
     return ("el link de pago", "link") if kinds.get("link") else ("transferencia", "")
 
 
+def _asks_about(method: str) -> str:
+    """Cómo pregunta el cliente si puede pagar con ese medio, sin signos de pregunta (así escribe la gente)."""
+    return {"nequi": "Y Nequi no", "daviplata": "Y Daviplata no", "bank": "Y puedo transferir", "breb": "Y por Bre-B no"}.get(method, "Y puedo pagar con tarjeta")
+
+
 def turns_for(facts: dict) -> list[dict]:
     """Los turnos del cliente, cada uno con lo que se espera comprobar en la respuesta."""
     offer = _first_offer(facts)
-    said, _method = _payment_choice(facts)
+    said, method = _payment_choice(facts)
+    asks = _asks_about(method)
     model = facts["modelo"]
     if model == "catalog":
         script = [
@@ -34,9 +41,11 @@ def turns_for(facts: dict) -> list[dict]:
             ("¿Hacen envíos a España?", "trampa"),
             ("Mmm, está un poco caro", "objecion"),
             (f"Bueno, quiero pedir {offer}", "compra"),
+            (asks, "pregunta_medio"),
             ("¿Cómo te pago?", "pago"),
             (f"Por {said}", "metodo"),
             ("¿Y cuando lo haga qué necesito hacer?", "seguimiento_pago"),
+            ("Cómo así", "aclaracion_pago"),
             ("Se me borró el número, ¿me lo envías otra vez?", "reenvio_pago"),
             ("Listo, ya te pagué", "pago_reportado"),
         ]
@@ -50,8 +59,10 @@ def turns_for(facts: dict) -> list[dict]:
             ("¿Funciona también con TikTok y con mi página web en Shopify?", "trampa"),
             ("Está caro para mí", "objecion"),
             (f"Ok, quiero empezar con el {offer}", "compra"),
+            (asks, "pregunta_medio"),
             (f"Te pago por {said}", "metodo"),
             ("¿Y cuando lo haga qué necesito hacer?", "seguimiento_pago"),
+            ("Cómo así", "aclaracion_pago"),
             ("Se me borró el número, ¿me lo envías otra vez?", "reenvio_pago"),
             ("Listo, ya pagué", "pago_reportado"),
         ]
@@ -62,9 +73,11 @@ def turns_for(facts: dict) -> list[dict]:
             ("¿Cuánto cuesta?", "precio"),
             ("¿Atienden los domingos en la noche?", "trampa"),
             ("Quiero agendar", "compra"),
+            (asks, "pregunta_medio"),
             ("¿Cómo pago?", "pago"),
             (f"Por {said}", "metodo"),
             ("¿Y cuando lo haga qué necesito hacer?", "seguimiento_pago"),
+            ("Cómo así", "aclaracion_pago"),
             ("Se me borró el número, ¿me lo envías otra vez?", "reenvio_pago"),
             ("Ya pagué", "pago_reportado"),
         ]

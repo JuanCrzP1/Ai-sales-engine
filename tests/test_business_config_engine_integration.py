@@ -51,7 +51,7 @@ CONVERSATION = [
     ("Hola, necesito información", reply("Claro.")),
     ("¿Cuánto cuesta?", reply("Te cuento los precios.")),
     ("¿Y qué incluye? ¿Hacen envíos?", reply("Te explico lo que incluye.")),
-    ("Quiero pagar por Nequi", reply("Listo.", "buy", payment_method="nequi")),
+    ("Quiero pagar por Nequi", reply("Listo.", "buy", send_payment="nequi")),
 ]
 TWO_TURNS = [("Necesito información", reply("Claro.")), ("¿Cuál es el precio?", reply("Te cuento."))]
 
@@ -294,9 +294,12 @@ def test_payment_methods_reach_the_customer(monkeypatch, slug):
     choices = _payment_choices(load_tenant_runtime_yaml(slug))
     assert choices, "cada negocio tiene al menos un método de pago"
     for method, values in choices:
-        (_, response), = run_conversation(slug, [(f"Quiero pagar por {method}", reply("Listo.", "buy", payment_method=method))], user_id=f"pago-{method}")
+        turn = (f"Quiero pagar por {method}", reply("¡Perfecto! Te dejo los datos.", "buy", payment_method=method, send_payment=method))
+        (_, response), = run_conversation(slug, [turn], user_id=f"pago-{method}")
         delivered = all(value in response for value in values)
         assert delivered, f"{slug}: el motor no entregó los datos de {method}"
+        # Lo que dice el asesor va con los datos, encima.
+        assert response.startswith("¡Perfecto! Te dejo los datos.\n\n"), f"{slug}: {method}"
 
 
 def test_disabled_transfers_are_not_delivered(monkeypatch, tmp_path):
@@ -304,7 +307,7 @@ def test_disabled_transfers_are_not_delivered(monkeypatch, tmp_path):
         for profile in document["payments"]:
             profile["transfer_enabled"] = False
 
-    turns = [("Quiero pagar por nequi", reply("Listo.", "buy", payment_method="nequi"))]
+    turns = [("Quiero pagar por nequi", reply("Listo.", "buy", send_payment="nequi"))]
     (_, enabled), = run_with_document(monkeypatch, tmp_path / "activas", "saas", lambda d: None, turns)
     (_, disabled), = run_with_document(monkeypatch, tmp_path / "inactivas", "saas", _disable, turns)
     assert "*Nequi*" in enabled
@@ -322,13 +325,13 @@ def test_inactive_payment_methods_are_not_delivered(monkeypatch, tmp_path):
         for profile in document["payments"]:
             profile["link_enabled"] = False
 
-    by_nequi = [("Quiero pagar por nequi", reply("Listo.", "buy", payment_method="nequi"))]
+    by_nequi = [("Quiero pagar por nequi", reply("Listo.", "buy", send_payment="nequi"))]
     (_, active), = run_with_document(monkeypatch, tmp_path / "activa", "saas", lambda d: None, by_nequi)
     (_, paused), = run_with_document(monkeypatch, tmp_path / "pausada", "saas", _pause_nequi, by_nequi)
     assert "*Nequi*" in active
     assert "*Nequi*" not in paused
 
-    by_link = [("Quiero pagar por link", reply("Listo.", "buy", payment_method="link"))]
+    by_link = [("Quiero pagar por link", reply("Listo.", "buy", send_payment="link"))]
     (_, active), = run_with_document(monkeypatch, tmp_path / "enlace_activo", "saas", lambda d: None, by_link)
     (_, paused), = run_with_document(monkeypatch, tmp_path / "enlace_pausado", "saas", _pause_link, by_link)
     assert "*Pago en línea*" in active
@@ -347,13 +350,13 @@ def test_the_payment_details_follow_the_business_template(monkeypatch, tmp_path)
         _holder(document)
         document["messages"]["payment_details"] = "Paga por {medio}:\n{datos}\nTitular: {titular}\nY mándame el comprobante 🙌"
 
-    turns = [("Quiero pagar por nequi", reply("Listo.", "buy", payment_method="nequi"))]
+    turns = [("Quiero pagar por nequi", reply("Listo.", "buy", send_payment="nequi"))]
     (_, default), = run_with_document(monkeypatch, tmp_path / "plataforma", "saas", _holder, turns)
     number = dict(_payment_choices(load_tenant_runtime_yaml("saas")))["nequi"][0]
-    assert default.startswith("💳 *Datos para pagar*\n\n*Nequi*\n") and f"\n{number}\n" in default
+    assert default.startswith("Listo.\n\n💳 *Datos para pagar*\n\n*Nequi*\n") and f"\n{number}\n" in default
     assert "A nombre de: Sabor Casero S.A.S." in default and "comprobante" in default
     (_, custom), = run_with_document(monkeypatch, tmp_path / "propia", "saas", _template, turns)
-    assert custom == f"Paga por Nequi:\n{number}\nTitular: Sabor Casero S.A.S.\nY mándame el comprobante 🙌"
+    assert custom == f"Listo.\n\nPaga por Nequi:\n{number}\nTitular: Sabor Casero S.A.S.\nY mándame el comprobante 🙌"
 
 
 def test_payment_methods_of_any_country_reach_the_customer(monkeypatch, tmp_path):
@@ -372,12 +375,12 @@ def test_payment_methods_of_any_country_reach_the_customer(monkeypatch, tmp_path
         ]
 
     turns = [
-        ("Te pago por Yape", reply("Listo.", "buy", payment_method="yape")),
+        ("Te pago por Yape", reply("Listo.", "buy", send_payment="yape")),
         ("Mejor por Nu", reply("Listo.", "buy", send_payment="Nu")),
         ("Mejor en efectivo", reply("Listo.", "buy", send_payment="efectivo")),
     ]
     (_a, yape), (_b, nu), (_c, cash) = run_with_document(monkeypatch, tmp_path / "mundo", "saas", _world, turns)
-    assert yape.startswith("💳 *Datos para pagar*\n\n*Yape*\n") and "A nombre de: Panadería Lima S.A.C.\nEnvía la captura con tu nombre." in yape
+    assert yape.startswith("Listo.\n\n💳 *Datos para pagar*\n\n*Yape*\n") and "A nombre de: Panadería Lima S.A.C.\nEnvía la captura con tu nombre." in yape
     assert "*Nu*\nCuenta: " in nu
     assert "*Efectivo o contraentrega*\nPagas al domiciliario cuando recibes." in cash
     document = stored_document("saas")
@@ -388,7 +391,7 @@ def test_payment_methods_of_any_country_reach_the_customer(monkeypatch, tmp_path
 
 
 def test_without_a_holder_the_line_is_left_out(monkeypatch, tmp_path):
-    turns = [("Quiero pagar por nequi", reply("Listo.", "buy", payment_method="nequi"))]
+    turns = [("Quiero pagar por nequi", reply("Listo.", "buy", send_payment="nequi"))]
     (_, response), = run_with_document(monkeypatch, tmp_path / "sin_titular", "saas", lambda d: None, turns)
     assert "A nombre de" not in response and "{titular}" not in response
 
@@ -396,11 +399,11 @@ def test_without_a_holder_the_line_is_left_out(monkeypatch, tmp_path):
 def test_the_payment_details_are_not_repeated_when_the_customer_keeps_talking(monkeypatch, tmp_path):
     """Si el cliente pregunta otra cosa del mismo pago, la IA le responde: el sistema no vuelve a pegar los datos encima."""
     turns = [
-        ("Quiero pagar por nequi", reply("Listo.", "buy", payment_method="nequi")),
+        ("Quiero pagar por nequi", reply("Listo.", "buy", send_payment="nequi")),
         ("¿Y cuando lo haga qué necesito hacer?", reply("Cuando pagues, envíame aquí la captura del comprobante y te confirmamos.", "buy", payment_method="nequi")),
     ]
     (_, first), (_, second) = run_with_document(monkeypatch, tmp_path / "seguir", "saas", lambda d: None, turns)
-    assert first.startswith("💳 *Datos para pagar*")
+    assert first.startswith("Listo.\n\n💳 *Datos para pagar*")
     assert second == "Cuando pagues, envíame aquí la captura del comprobante y te confirmamos."
 
 
@@ -651,8 +654,9 @@ def test_active_prompt_stays_within_budget(monkeypatch):
     # Un negocio con poca estrategia avanzada sigue con un prompt corto.
     small = load_tenant_runtime_yaml("restaurant", extra_yaml={"conversation_state": "active", "memory_context": {"last_ai_response": "ok"}})
     small_prompt, _, _ = PromptBuilderService().build(client_config_id="restaurant", user_message="siguiente", yaml_config=small, faq_results=[], progression_rules=None)
-    # Las reglas fijas de pasar a una persona (prompt v4) suman unos 450 caracteres, iguales en cada mensaje y cobrados desde la caché.
-    assert len(small_prompt) < 7_000
+    # Las reglas fijas de pasar a una persona (prompt v4) suman unos 450 caracteres, y las de pagos del v9 (primero decide y después
+    # habla; cuándo recibe el cliente los datos de pago) unos 220: iguales en cada mensaje y cobrados desde la caché.
+    assert len(small_prompt) < 7_250
 
 
 def test_panel_document_is_valid_and_reaches_the_engine():

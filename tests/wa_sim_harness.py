@@ -127,6 +127,7 @@ class ScriptedModel:
     formato estructurado que pide el motor). Anota cada mensaje que «leyó» y el prompt que recibió."""
 
     rules: list[tuple[str, dict]] = field(default_factory=list)
+    readings: list[tuple[str, dict]] = field(default_factory=list)
     default: dict = field(default_factory=lambda: {"response": "Claro, te ayudo con eso.", "intent": "info", "metadata": {}})
     seen: list[str] = field(default_factory=list)
     prompts: list[str] = field(default_factory=list)
@@ -137,6 +138,18 @@ class ScriptedModel:
         lowered = user_message.lower()
         reply = next((reply for pattern, reply in self.rules if re.search(pattern, lowered)), self.default)
         return json.dumps(reply, ensure_ascii=False)
+
+    def classify(self, prompt: str, *, user_message: str, bot_config=None, max_tokens: int = 0) -> str:
+        """El lector de pagos con respuestas fijas (`readings`: patrón → lo que entiende). El mensaje del cliente es el último
+        renglón de lo que recibe («Mensaje del cliente: «…»»)."""
+        message = user_message.rsplit("Mensaje del cliente:", 1)[-1].strip(" «»\n").lower()
+        for pattern, reading in self.readings:
+            match = re.search(pattern, message)
+            if match:
+                # «$1» en el medio: lo que nombró el cliente en el mensaje (el primer grupo del patrón).
+                found = {**reading, "medio": match.group(1).strip(" ?¿.") if reading.get("medio") == "$1" else reading.get("medio", "")}
+                return json.dumps({"recibe_datos_de_pago": False, "dice_que_ya_pago": False, **found}, ensure_ascii=False)
+        return json.dumps({"recibe_datos_de_pago": False, "medio": "", "dice_que_ya_pago": False}, ensure_ascii=False)
 
 
 @dataclass

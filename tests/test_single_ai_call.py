@@ -1,8 +1,13 @@
-"""Una sola llamada al modelo por mensaje, y el consumo de cada negocio a la vista.
+"""Una sola llamada al asesor por mensaje, y el consumo de cada negocio a la vista.
 
 Antes el prompt no pedía el formato de respuesta: el modelo contestaba en texto, el motor lo rechazaba y repetía toda la llamada
 con el formato al final. Casi cada mensaje costaba dos llamadas a la clave del negocio. Ahora el formato va en la primera, se le
 pide JSON al proveedor y, si algo no viene perfecto, se aprovecha lo que escribió el modelo sin volver a llamarlo.
+
+Además del asesor, un negocio con medios de pago hace una llamada corta por mensaje: el lector de pagos, que entiende qué pide el
+cliente sobre el pago (`payment_reading.py`; unos 500 tokens frente a los 3.000 del asesor). Y al asesor solo se le pide otra respuesta
+si la primera decía algo falso sobre los pagos o iba a enviar datos que el cliente no pidió (`test_payment_data_protection.py`). Todas
+se suman al consumo del negocio.
 """
 from __future__ import annotations
 
@@ -190,7 +195,8 @@ def test_every_answer_of_the_engine_adds_to_its_business_usage(provider):
         usage_recorder=lambda slug: (lambda *usage: seen.append((slug, *usage))),
     )
     _say(pipeline)
-    assert seen == [("restaurant", "openai/gpt-4o-mini", 1200, 80, 0.0004)]
+    # La lectura corta del pago y la respuesta del asesor: las dos van al consumo del negocio.
+    assert seen == [("restaurant", "openai/gpt-4o-mini", 1200, 80, 0.0004)] * 2
 
 
 def test_the_openrouter_logs_never_carry_what_the_customer_wrote(monkeypatch):
