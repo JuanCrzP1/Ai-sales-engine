@@ -158,12 +158,15 @@ def conversations_for(facts: dict) -> list[tuple[str, list[dict]]]:
     if not paid:
         return []
     said = _SAID[paid]
+    # En el chat real el cliente le compraba a un negocio de software y contó qué negocio tenía. A un restaurante o a una clínica eso no
+    # se le dice: con esa frase el asesor de un restaurante no supo qué hacer y pasó el chat al equipo (13 nov 2026).
+    introduction = "Me llamo Juan Camilo y es una tienda de ropa" if facts.get("modelo") == "saas" else "Me llamo Juan Camilo"
     production = [
         ("Hola", ""),
         (f"Me interesa {offer}, quiero empezar", NO_DETAILS),
         *([(_ASKS[other], NO_DETAILS)] if other else []),
         (_ASKS[paid], NO_DETAILS),
-        ("Me llamo Juan Camilo y es una tienda de ropa", ""),
+        (introduction, ""),
         (f"Te pago por {said}", DETAILS_BY_NOW),
         ("Mi teléfono es 3157778899", ""),
         ("Cuando lo haga que nesesito hacer", NO_DETAILS),

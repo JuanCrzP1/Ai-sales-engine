@@ -59,6 +59,10 @@ python experiments/pricing_lab/run_regression_experiment.py --experiment exp_<fe
 
 El objetivo es «motor sin diferencias», o que las únicas diferencias sean las que buscabas.
 
+Si el cambio toca cómo responde el asesor (las instrucciones, lo que se le cuenta de la conversación o los pagos), además debe pasar
+la puerta de calidad con la IA real: `python experiments/quality_lab/run_standard_gate.py --experiment <id>`. Hazlo en una rama y
+pásalo a `main` solo cuando diga PASA. Ver [Calidad del asesor](docs/calidad-del-asesor.md).
+
 ## Reglas De Contribucion
 
 1. Haz cambios pequeños y enfocados: un commit por cambio lógico, nunca "todo lo de la fase" en uno.

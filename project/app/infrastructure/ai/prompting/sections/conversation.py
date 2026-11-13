@@ -52,7 +52,7 @@ def _this_message(view: PromptView, status: str) -> list[str]:
         method = one_line(reading.get("method"))
         facts.append(instructions.PAYMENT_ASKED.format(method=method) if method else instructions.PAYMENT_ASKED_NO_METHOD)
     elif reading.get("no_details_now"):
-        facts.append(instructions.PAYMENT_NOT_NOW)
+        facts.append(instructions.PAYMENT_HAS_DETAILS if reading.get("has_details") else instructions.PAYMENT_NOT_NOW)
     if reading.get("says_paid") and status != "reportado":
         facts.append(instructions.PAYMENT_REPORTED)
     again = as_dict(view.runtime.get("answer_again"))

@@ -1,0 +1,1198 @@
+{
+ "experiment": "estandar_20261113_final_otros_negocios",
+ "candidate": "20442e5 + cambios",
+ "model": "openai/gpt-4o-mini",
+ "judge_model": "google/gemini-2.5-flash",
+ "samples": 2,
+ "tenants": [
+  "clinic",
+  "restaurant"
+ ],
+ "rows": [
+  {
+   "tenant": "restaurant",
+   "conversation": "el chat de producción",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pago_avisado_al_equipo": [],
+    "no_repite_la_respuesta": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Hola",
+     "expect": "",
+     "reply": "Hola, ya estamos listos para ayudarte con tus pedidos. Cuentame, quieres tomar una orden ahora?",
+     "handoff": false
+    },
+    {
+     "turn": 2,
+     "message": "Me interesa Hamburguesa Sencilla, quiero empezar",
+     "expect": "sin_datos",
+     "reply": "Genial, la Hamburguesa Sencilla cuesta COP 18.000. ¿Te gustaría agregar una bebida, como una gaseosa por COP 5.000 o un jugo natural por COP 7.000?",
+     "handoff": false
+    },
+    {
+     "turn": 3,
+     "message": "Y puedo trasferir",
+     "expect": "sin_datos",
+     "reply": "Perfecto, ¿cuál de los medios de pago prefieres: Nequi, Daviplata, transferencia a Bancolombia o Bre-B?",
+     "handoff": false
+    },
+    {
+     "turn": 4,
+     "message": "Y Nequi no",
+     "expect": "sin_datos",
+     "reply": "Sí, también aceptamos Nequi. ¿Te gustaría que te envíe los datos para el pago?",
+     "handoff": false
+    },
+    {
+     "turn": 5,
+     "message": "Me llamo Juan Camilo",
+     "expect": "",
+     "reply": "Gracias, Juan Camilo. Para completar tu pedido, necesito tu número de teléfono y la dirección de entrega. ¿Me los puedes proporcionar?",
+     "handoff": false
+    },
+    {
+     "turn": 6,
+     "message": "Te pago por Nequi",
+     "expect": "datos_a_esta_altura",
+     "reply": "¡Listo! Ahí abajo te dejo los datos para pagar por Nequi. Por favor, también indícame tu número de teléfono y la dirección de entrega.\n\n💳 *Datos para pagar*\n\n*Nequi*\n[dato entregado por el motor]\n\nCuando pagues, envíame aquí la captura del comprobante y te confirmamos. ✅",
+     "handoff": false
+    },
+    {
+     "turn": 7,
+     "message": "Mi teléfono es 3157778899",
+     "expect": "",
+     "reply": "Gracias, Juan Camilo. Solo falta tu dirección de entrega para completar el pedido. ¿Cuál es?",
+     "handoff": false
+    },
+    {
+     "turn": 8,
+     "message": "Cuando lo haga que nesesito hacer",
+     "expect": "sin_datos",
+     "reply": "Una vez que hagas el pago, me envías aquí la captura del comprobante. Con eso, sigo con el pedido y lo envío a la cocina. ¿Listo para continuar?",
+     "handoff": false
+    },
+    {
+     "turn": 9,
+     "message": "Espérame un momento",
+     "expect": "sin_datos",
+     "reply": "Claro, tómate tu tiempo. Estoy aquí cuando estés listo.",
+     "handoff": false
+    },
+    {
+     "turn": 10,
+     "message": "Pero se me borró el Nequi me lo envías de nuevo",
+     "expect": "datos",
+     "reply": "¡Listo! Ahí abajo te dejo los datos para pagar por Nequi. Por favor, también indícame tu dirección de entrega.\n\n💳 *Datos para pagar*\n\n*Nequi*\n[dato entregado por el motor]\n\nCuando pagues, envíame aquí la captura del comprobante y te confirmamos. ✅",
+     "handoff": false
+    },
+    {
+     "turn": 11,
+     "message": "Cómo así",
+     "expect": "sin_datos",
+     "reply": "Te explico: arriba, en este chat, te dejé los datos para pagar por Nequi. Haces el pago con esos datos y me envías aquí la captura del comprobante; con eso seguimos.",
+     "handoff": false
+    },
+    {
+     "turn": 12,
+     "message": "Ya voy a pagar",
+     "expect": "sin_datos",
+     "reply": "Perfecto, avísame cuando hayas hecho el pago y me envías la captura del comprobante. Así seguimos con tu pedido.",
+     "handoff": false
+    },
+    {
+     "turn": 13,
+     "message": "ya te consigné",
+     "expect": "pago_avisado",
+     "reply": "Perfecto, ya lo reviso y te confirmo en un momento para continuar.",
+     "handoff": true
+    }
+   ]
+  },
+  {
+   "tenant": "restaurant",
+   "conversation": "pide el medio con un error de escritura",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pago_avisado_al_equipo": [],
+    "no_repite_la_respuesta": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Quiero Hamburguesa Sencilla",
+     "expect": "sin_datos",
+     "reply": "¡Genial! La Hamburguesa Sencilla cuesta COP 18.000. ¿Te gustaría agregar una bebida, como una gaseosa por COP 5.000 o un jugo natural por COP 7.000?",
+     "handoff": false
+    },
+    {
+     "turn": 2,
+     "message": "Pásame el nekui porfa",
+     "expect": "datos",
+     "reply": "¡Listo! Ahí abajo te dejo los datos para pagar por Nequi.\n\nAhora, necesito tu nombre, teléfono y dirección de entrega para completar el pedido.\n\n💳 *Datos para pagar*\n\n*Nequi*\n[dato entregado por el motor]\n\nCuando pagues, envíame aquí la captura del comprobante y te confirmamos. ✅",
+     "handoff": false
+    }
+   ]
+  },
+  {
+   "tenant": "restaurant",
+   "conversation": "pregunta a dónde consigna",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pago_avisado_al_equipo": [],
+    "no_repite_la_respuesta": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Quiero Hamburguesa Sencilla",
+     "expect": "sin_datos",
+     "reply": "Perfecto, una Hamburguesa Sencilla por COP 18.000. ¿Te gustaría agregar una gaseosa por COP 5.000 o un jugo natural por COP 7.000 para acompañarla?",
+     "handoff": false
+    },
+    {
+     "turn": 2,
+     "message": "¿A qué número te consigno?",
+     "expect": "",
+     "reply": "¿Con cuál de los siguientes medios prefieres pagar: Nequi, Daviplata, transferencia a Bancolombia (ahorros) o Bre-B?",
+     "handoff": false
+    }
+   ]
+  },
+  {
+   "tenant": "restaurant",
+   "conversation": "pregunta cómo paga",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pago_avisado_al_equipo": [],
+    "no_repite_la_respuesta": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Quiero Hamburguesa Sencilla",
+     "expect": "sin_datos",
+     "reply": "Perfecto, una Hamburguesa Sencilla por COP 18.000. ¿Te gustaría agregar una gaseosa por COP 5.000 o un jugo natural por COP 7.000 para acompañarla?",
+     "handoff": false
+    },
+    {
+     "turn": 2,
+     "message": "cómo te pago",
+     "expect": "sin_datos",
+     "reply": "Puedes pagar por Nequi, Daviplata, transferencia a Bancolombia (ahorros) o Bre-B. ¿Cuál método prefieres?",
+     "handoff": false
+    }
+   ]
+  },
+  {
+   "tenant": "restaurant",
+   "conversation": "pregunta si tienen un medio",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pago_avisado_al_equipo": [],
+    "no_repite_la_respuesta": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Quiero Hamburguesa Sencilla",
+     "expect": "sin_datos",
+     "reply": "Genial, una Hamburguesa Sencilla por COP 18.000. ¿Te gustaría agregar una gaseosa por COP 5.000 o un jugo natural por COP 7.000 para acompañar tu pedido?",
+     "handoff": false
+    },
+    {
+     "turn": 2,
+     "message": "¿Tienen Nequi?",
+     "expect": "sin_datos",
+     "reply": "Sí, aceptamos Nequi como medio de pago. ¿Te gustaría hacer tu pedido ahora?",
+     "handoff": false
+    }
+   ]
+  },
+  {
+   "tenant": "restaurant",
+   "conversation": "pide los datos de otro medio",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pago_avisado_al_equipo": [],
+    "no_repite_la_respuesta": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": [
+     {
+      "turn": 2,
+      "why": "Dice que enviará los datos después, pero ya los envió."
+     }
+    ]
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Quiero Hamburguesa Sencilla",
+     "expect": "sin_datos",
+     "reply": "Perfecto, una Hamburguesa Sencilla. ¿Quieres agregar una bebida, como una gaseosa a COP 5.000 o un jugo natural a COP 7.000?",
+     "handoff": false
+    },
+    {
+     "turn": 2,
+     "message": "listo, mándame los datos para pagar por transferencia",
+     "expect": "datos",
+     "reply": "Para confirmar tu pedido de una Hamburguesa Sencilla, necesito tu nombre, teléfono y dirección de entrega. Luego te mando los datos de pago.\n\n💳 *Datos para pagar*\n\n*Bancolombia*\nCuenta de ahorros\n[dato entregado por el motor]\n\nCuando pagues, envíame aquí la captura del comprobante y te confirmamos. ✅",
+     "handoff": false
+    }
+   ]
+  },
+  {
+   "tenant": "restaurant",
+   "conversation": "el chat de producción",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pago_avisado_al_equipo": [],
+    "no_repite_la_respuesta": [],
+    "responde_lo_que_preguntan": [
+     {
+      "turn": 3,
+      "why": "Ignora la pregunta del cliente sobre si puede transferir."
+     }
+    ],
+    "no_pide_lo_ya_dado": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [
+     {
+      "turn": 10,
+      "why": "No explica, solo repite la instrucción de pago."
+     }
+    ],
+    "coherente_con_los_datos": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Hola",
+     "expect": "",
+     "reply": "Hola, ya estamos listos para ayudarte con tus pedidos. Cuentame, quieres tomar una orden ahora?",
+     "handoff": false
+    },
+    {
+     "turn": 2,
+     "message": "Me interesa Hamburguesa Sencilla, quiero empezar",
+     "expect": "sin_datos",
+     "reply": "Perfecto, una Hamburguesa Sencilla por COP 18.000. ¿Te gustaría agregar una bebida, como una gaseosa por COP 5.000 o un jugo natural por COP 7.000?",
+     "handoff": false
+    },
+    {
+     "turn": 3,
+     "message": "Y puedo trasferir",
+     "expect": "sin_datos",
+     "reply": "Genial, entonces llevamos una Hamburguesa Sencilla por COP 18.000. ¿Qué bebida prefieres, gaseosa o jugo natural? Así confirmamos tu pedido y te paso los datos de pago.",
+     "handoff": false
+    },
+    {
+     "turn": 4,
+     "message": "Y Nequi no",
+     "expect": "sin_datos",
+     "reply": "Sí, también recibimos pagos por Nequi. ¿Prefieres pagar con Nequi o con transferencia? Y, ¿qué bebida te gustaría agregar a tu pedido?",
+     "handoff": false
+    },
+    {
+     "turn": 5,
+     "message": "Me llamo Juan Camilo",
+     "expect": "",
+     "reply": "Perfecto, Juan Camilo. Solo necesito saber qué bebida prefieres: ¿gaseosa o jugo natural? Así confirmamos tu pedido y te paso los datos de pago.",
+     "handoff": false
+    },
+    {
+     "turn": 6,
+     "message": "Te pago por Nequi",
+     "expect": "datos_a_esta_altura",
+     "reply": "Listo, entonces llevamos una Hamburguesa Sencilla por COP 18.000 y una bebida. ¿Prefieres gaseosa o jugo natural? Así confirmamos tu pedido.\n\n💳 *Datos para pagar*\n\n*Nequi*\n[dato entregado por el motor]\n\nCuando pagues, envíame aquí la captura del comprobante y te confirmamos. ✅",
+     "handoff": false
+    },
+    {
+     "turn": 7,
+     "message": "Mi teléfono es 3157778899",
+     "expect": "",
+     "reply": "Gracias, Juan Camilo. Solo necesito tu dirección de entrega y qué bebida prefieres: ¿gaseosa o jugo natural? Así confirmamos tu pedido.",
+     "handoff": false
+    },
+    {
+     "turn": 8,
+     "message": "Cuando lo haga que nesesito hacer",
+     "expect": "sin_datos",
+     "reply": "Te explico: arriba, en este chat, te dejé los datos para pagar. Haces el pago con esos datos y me envías aquí la captura del comprobante; con eso seguimos.",
+     "handoff": false
+    },
+    {
+     "turn": 9,
+     "message": "Espérame un momento",
+     "expect": "sin_datos",
+     "reply": "Claro, tómate tu tiempo. Estoy aquí para ayudarte cuando estés listo.",
+     "handoff": false
+    },
+    {
+     "turn": 10,
+     "message": "Pero se me borró el Nequi me lo envías de nuevo",
+     "expect": "datos",
+     "reply": "¡Claro! Haz el pago y envíame la captura del comprobante cuando puedas.\n\n💳 *Datos para pagar*\n\n*Nequi*\n[dato entregado por el motor]\n\nCuando pagues, envíame aquí la captura del comprobante y te confirmamos. ✅",
+     "handoff": false
+    },
+    {
+     "turn": 11,
+     "message": "Cómo así",
+     "expect": "sin_datos",
+     "reply": "Te explico: arriba, en este chat, te dejé los datos para pagar por Nequi. Haz el pago con esos datos y luego envíame la captura del comprobante aquí para continuar con tu pedido.",
+     "handoff": false
+    },
+    {
+     "turn": 12,
+     "message": "Ya voy a pagar",
+     "expect": "sin_datos",
+     "reply": "Perfecto, cuando termines, envíame la captura del comprobante para que podamos avanzar con tu pedido.",
+     "handoff": false
+    },
+    {
+     "turn": 13,
+     "message": "ya te consigné",
+     "expect": "pago_avisado",
+     "reply": "Perfecto, ya lo reviso y te confirmo en un momento para continuar.",
+     "handoff": true
+    }
+   ]
+  },
+  {
+   "tenant": "restaurant",
+   "conversation": "pide el medio con un error de escritura",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pago_avisado_al_equipo": [],
+    "no_repite_la_respuesta": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Quiero Hamburguesa Sencilla",
+     "expect": "sin_datos",
+     "reply": "Genial, una Hamburguesa Sencilla por COP 18.000. ¿Te gustaría agregar una bebida, como una gaseosa por COP 5.000 o un jugo natural por COP 7.000?",
+     "handoff": false
+    },
+    {
+     "turn": 2,
+     "message": "Pásame el nekui porfa",
+     "expect": "datos",
+     "reply": "¡Listo! Ahí abajo te dejo los datos para pagar por Nequi.\n\nPor favor, dime tu nombre, teléfono y dirección de entrega para continuar con tu pedido.\n\n💳 *Datos para pagar*\n\n*Nequi*\n[dato entregado por el motor]\n\nCuando pagues, envíame aquí la captura del comprobante y te confirmamos. ✅",
+     "handoff": false
+    }
+   ]
+  },
+  {
+   "tenant": "restaurant",
+   "conversation": "pregunta a dónde consigna",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pago_avisado_al_equipo": [],
+    "no_repite_la_respuesta": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Quiero Hamburguesa Sencilla",
+     "expect": "sin_datos",
+     "reply": "Genial, una Hamburguesa Sencilla por COP 18.000. ¿Te gustaría agregar una bebida, como una gaseosa por COP 5.000 o un jugo natural por COP 7.000?",
+     "handoff": false
+    },
+    {
+     "turn": 2,
+     "message": "¿A qué número te consigno?",
+     "expect": "",
+     "reply": "¿Con cuál de los medios de pago prefieres hacer la consignación: Nequi, Daviplata, transferencia a Bancolombia o Bre-B?",
+     "handoff": false
+    }
+   ]
+  },
+  {
+   "tenant": "restaurant",
+   "conversation": "pregunta cómo paga",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pago_avisado_al_equipo": [],
+    "no_repite_la_respuesta": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Quiero Hamburguesa Sencilla",
+     "expect": "sin_datos",
+     "reply": "Perfecto, una Hamburguesa Sencilla por COP 18.000. ¿Te gustaría agregar una gaseosa por COP 5.000 o un jugo natural por COP 7.000 para acompañar tu pedido?",
+     "handoff": false
+    },
+    {
+     "turn": 2,
+     "message": "cómo te pago",
+     "expect": "sin_datos",
+     "reply": "Puedes pagar por Nequi, Daviplata, transferencia a Bancolombia (ahorros) o Bre-B. ¿Con qué medio prefieres pagar?",
+     "handoff": false
+    }
+   ]
+  },
+  {
+   "tenant": "restaurant",
+   "conversation": "pregunta si tienen un medio",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pago_avisado_al_equipo": [],
+    "no_repite_la_respuesta": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Quiero Hamburguesa Sencilla",
+     "expect": "sin_datos",
+     "reply": "Perfecto, una Hamburguesa Sencilla por COP 18.000. ¿Te gustaría agregar una gaseosa por COP 5.000 o un jugo natural por COP 7.000 para acompañar?",
+     "handoff": false
+    },
+    {
+     "turn": 2,
+     "message": "¿Tienen Nequi?",
+     "expect": "sin_datos",
+     "reply": "Sí, aceptamos Nequi como medio de pago. ¿Quieres continuar con tu pedido de la Hamburguesa Sencilla?",
+     "handoff": false
+    }
+   ]
+  },
+  {
+   "tenant": "restaurant",
+   "conversation": "pide los datos de otro medio",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pago_avisado_al_equipo": [],
+    "no_repite_la_respuesta": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Quiero Hamburguesa Sencilla",
+     "expect": "sin_datos",
+     "reply": "Perfecto, una Hamburguesa Sencilla por COP 18.000. ¿Te gustaría agregar una bebida, como una gaseosa por COP 5.000 o un jugo natural por COP 7.000?",
+     "handoff": false
+    },
+    {
+     "turn": 2,
+     "message": "listo, mándame los datos para pagar por transferencia",
+     "expect": "datos",
+     "reply": "¡Genial! Para confirmar tu pedido de una Hamburguesa Sencilla por COP 18.000, necesito tus datos: nombre, teléfono y dirección de entrega.\n\n💳 *Datos para pagar*\n\n*Bancolombia*\nCuenta de ahorros\n[dato entregado por el motor]\n\nCuando pagues, envíame aquí la captura del comprobante y te confirmamos. ✅",
+     "handoff": false
+    }
+   ]
+  },
+  {
+   "tenant": "clinic",
+   "conversation": "el chat de producción",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pago_avisado_al_equipo": [],
+    "no_repite_la_respuesta": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Hola",
+     "expect": "",
+     "reply": "Hola, ya estamos listos para ayudarte con tu agenda. Cuentame, quieres coordinar una cita?",
+     "handoff": false
+    },
+    {
+     "turn": 2,
+     "message": "Me interesa Agenda Plus, quiero empezar",
+     "expect": "sin_datos",
+     "reply": "Genial, Agenda Plus incluye la gestión y confirmación de citas. Para proceder, necesito tu nombre, teléfono y los detalles de la cita: día y hora que prefieres.",
+     "handoff": false
+    },
+    {
+     "turn": 3,
+     "message": "Y puedo trasferir",
+     "expect": "sin_datos",
+     "reply": "Sí, puedes pagar por transferencia a Bancolombia. ¿Te gustaría que te enviara los datos de pago?",
+     "handoff": false
+    },
+    {
+     "turn": 4,
+     "message": "Y Nequi no",
+     "expect": "sin_datos",
+     "reply": "Sí, también puedes pagar con Nequi. ¿Te gustaría que te enviara los datos de pago para esa opción?",
+     "handoff": false
+    },
+    {
+     "turn": 5,
+     "message": "Me llamo Juan Camilo y es una tienda de ropa",
+     "expect": "",
+     "reply": "Entiendo, pero Agenda Plus está diseñado específicamente para clínicas y consultorios. Si necesitas agendar citas para tu tienda de ropa, puedo averiguar con el equipo si ofrecemos algo que se ajuste a tus necesidades.",
+     "handoff": false
+    },
+    {
+     "turn": 6,
+     "message": "Te pago por Nequi",
+     "expect": "datos_a_esta_altura",
+     "reply": "¡Listo! Ahí abajo te dejo los datos para pagar por Nequi. Necesito también tu número de teléfono y los detalles de la cita: día y hora que prefieres.\n\n💳 *Datos para pagar*\n\n*Nequi*\n[dato entregado por el motor]\n\nCuando pagues, envíame aquí la captura del comprobante y te confirmamos. ✅",
+     "handoff": false
+    },
+    {
+     "turn": 7,
+     "message": "Mi teléfono es 3157778899",
+     "expect": "",
+     "reply": "Perfecto, Juan Camilo. Solo necesito que me digas qué día y hora te gustaría agendar la cita.",
+     "handoff": false
+    },
+    {
+     "turn": 8,
+     "message": "Cuando lo haga que nesesito hacer",
+     "expect": "sin_datos",
+     "reply": "Cuando hagas el pago, me envías aquí la captura del comprobante. Con eso seguimos y confirmamos tu cita.",
+     "handoff": false
+    },
+    {
+     "turn": 9,
+     "message": "Espérame un momento",
+     "expect": "sin_datos",
+     "reply": "Claro, tómate tu tiempo. Estoy aquí cuando estés listo.",
+     "handoff": false
+    },
+    {
+     "turn": 10,
+     "message": "Pero se me borró el Nequi me lo envías de nuevo",
+     "expect": "datos",
+     "reply": "¡Listo! Ahí abajo te dejo los datos para pagar por Nequi. Necesito también tu número de teléfono y los detalles de la cita: día y hora que prefieres.\n\n💳 *Datos para pagar*\n\n*Nequi*\n[dato entregado por el motor]\n\nCuando pagues, envíame aquí la captura del comprobante y te confirmamos. ✅",
+     "handoff": false
+    },
+    {
+     "turn": 11,
+     "message": "Cómo así",
+     "expect": "sin_datos",
+     "reply": "Te explico: arriba, en este chat, te dejé los datos para pagar por Nequi. Haces el pago con esos datos y me envías aquí la captura del comprobante; con eso seguimos.",
+     "handoff": false
+    },
+    {
+     "turn": 12,
+     "message": "Ya voy a pagar",
+     "expect": "sin_datos",
+     "reply": "Perfecto, espero tu captura del comprobante cuando lo tengas. Así seguimos con la confirmación de tu cita.",
+     "handoff": false
+    },
+    {
+     "turn": 13,
+     "message": "ya te consigné",
+     "expect": "pago_avisado",
+     "reply": "Perfecto, ya lo reviso y te confirmo en un momento para continuar.",
+     "handoff": true
+    }
+   ]
+  },
+  {
+   "tenant": "clinic",
+   "conversation": "pide el medio con un error de escritura",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pago_avisado_al_equipo": [],
+    "no_repite_la_respuesta": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": []
+   },
+   "discarded": [
+    {
+     "turn": 2,
+     "why": "El asesor dice que deja los datos, pero no aparecen en el mensaje.",
+     "rule": "no_dice_nada_falso_del_pago"
+    }
+   ],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Quiero Agenda Plus",
+     "expect": "sin_datos",
+     "reply": "Perfecto, para agendar el servicio de Agenda Plus, necesito tu nombre, teléfono y los detalles de la cita: día y hora que prefieres. ¿Te gustaría que te enviara los datos de pago?",
+     "handoff": false
+    },
+    {
+     "turn": 2,
+     "message": "Pásame el nekui porfa",
+     "expect": "datos",
+     "reply": "¡Listo! Ahí abajo te dejo los datos para pagar por Nequi.\n\nDespués, por favor, compárteme tu nombre, teléfono y los detalles de la cita: día y hora que prefieres.\n\n💳 *Datos para pagar*\n\n*Nequi*\n[dato entregado por el motor]\n\nCuando pagues, envíame aquí la captura del comprobante y te confirmamos. ✅",
+     "handoff": false
+    }
+   ]
+  },
+  {
+   "tenant": "clinic",
+   "conversation": "pregunta a dónde consigna",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pago_avisado_al_equipo": [],
+    "no_repite_la_respuesta": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Quiero Agenda Plus",
+     "expect": "sin_datos",
+     "reply": "Genial, Agenda Plus incluye gestión de agenda y confirmación de citas. Cuesta COP 140.000 de implementación y COP 170.000 al mes. Para agendar, necesito tu nombre, teléfono y detalles de la cita. ¿Qué día y hora tienes en mente?",
+     "handoff": false
+    },
+    {
+     "turn": 2,
+     "message": "¿A qué número te consigno?",
+     "expect": "",
+     "reply": "¿Con cuál de los medios de pago prefieres realizar la consignación? Puedes elegir entre Nequi, Daviplata, transferencia a Bancolombia, Bre-B o link de pago.",
+     "handoff": false
+    }
+   ]
+  },
+  {
+   "tenant": "clinic",
+   "conversation": "pregunta cómo paga",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pago_avisado_al_equipo": [],
+    "no_repite_la_respuesta": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Quiero Agenda Plus",
+     "expect": "sin_datos",
+     "reply": "Genial, Agenda Plus incluye la gestión y confirmación de citas. Su costo es de COP 140.000 de implementación y COP 170.000 al mes. Para avanzar, necesito tu nombre, teléfono y los detalles de la cita que deseas agendar. ¿Cuál sería el día y la hora que prefieres?",
+     "handoff": false
+    },
+    {
+     "turn": 2,
+     "message": "cómo te pago",
+     "expect": "sin_datos",
+     "reply": "Puedes pagar a través de Nequi, Daviplata, transferencia a Bancolombia, Bre-B o un link de pago. ¿Cuál de estos métodos prefieres usar?",
+     "handoff": false
+    }
+   ]
+  },
+  {
+   "tenant": "clinic",
+   "conversation": "pregunta si tienen un medio",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pago_avisado_al_equipo": [],
+    "no_repite_la_respuesta": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Quiero Agenda Plus",
+     "expect": "sin_datos",
+     "reply": "Para agendar Agenda Plus, necesito algunos datos. ¿Cuál es tu nombre, teléfono y qué día y hora prefieres para la cita?",
+     "handoff": false
+    },
+    {
+     "turn": 2,
+     "message": "¿Tienen Nequi?",
+     "expect": "sin_datos",
+     "reply": "Sí, aceptamos Nequi como medio de pago. ¿Te gustaría avanzar con la cita para Agenda Plus?",
+     "handoff": false
+    }
+   ]
+  },
+  {
+   "tenant": "clinic",
+   "conversation": "pide los datos de otro medio",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pago_avisado_al_equipo": [],
+    "no_repite_la_respuesta": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": []
+   },
+   "discarded": [
+    {
+     "turn": 2,
+     "why": "El asesor pide datos que ya había pedido.",
+     "rule": "no_pide_lo_ya_dado"
+    }
+   ],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Quiero Agenda Plus",
+     "expect": "sin_datos",
+     "reply": "Perfecto, Agenda Plus cuesta COP 140.000 de implementación y COP 170.000 al mes. Para agendar, necesito tu nombre, teléfono y los detalles de la cita: día y hora que prefieres. ¿Cuál sería tu disponibilidad?",
+     "handoff": false
+    },
+    {
+     "turn": 2,
+     "message": "listo, mándame los datos para pagar por transferencia",
+     "expect": "datos",
+     "reply": "Genial, aquí tienes los datos para pagar por transferencia a Bancolombia (ahorros). Por favor, envíame tu nombre, teléfono y detalles de la cita para continuar.\n\n💳 *Datos para pagar*\n\n*Bancolombia*\nCuenta de ahorros\n[dato entregado por el motor]\n\nCuando pagues, envíame aquí la captura del comprobante y te confirmamos. ✅",
+     "handoff": false
+    }
+   ]
+  },
+  {
+   "tenant": "clinic",
+   "conversation": "el chat de producción",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pago_avisado_al_equipo": [],
+    "no_repite_la_respuesta": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Hola",
+     "expect": "",
+     "reply": "Hola, ya estamos listos para ayudarte con tu agenda. Cuentame, quieres coordinar una cita?",
+     "handoff": false
+    },
+    {
+     "turn": 2,
+     "message": "Me interesa Agenda Plus, quiero empezar",
+     "expect": "sin_datos",
+     "reply": "Genial, Agenda Plus es una excelente opción. Para comenzar, necesito tu nombre, número de teléfono y qué día y hora te gustaría agendar la cita.",
+     "handoff": false
+    },
+    {
+     "turn": 3,
+     "message": "Y puedo trasferir",
+     "expect": "sin_datos",
+     "reply": "Sí, puedes pagar por transferencia a Bancolombia. ¿Te gustaría que te envíe los datos de pago una vez agendemos la cita?",
+     "handoff": false
+    },
+    {
+     "turn": 4,
+     "message": "Y Nequi no",
+     "expect": "sin_datos",
+     "reply": "Sí, también aceptamos Nequi como método de pago. ¿Te gustaría coordinar la cita y luego te envío los datos de pago?",
+     "handoff": false
+    },
+    {
+     "turn": 5,
+     "message": "Me llamo Juan Camilo y es una tienda de ropa",
+     "expect": "",
+     "reply": "Entiendo, pero nosotros nos enfocamos en clínicas y consultorios. Si necesitas ayuda con la agenda para tus citas, puedo pasarte con el equipo para ver cómo podemos ayudarte.",
+     "handoff": false
+    },
+    {
+     "turn": 6,
+     "message": "Te pago por Nequi",
+     "expect": "datos_a_esta_altura",
+     "reply": "¡Listo! Ahí abajo te dejo los datos para pagar por Nequi. Ahora, necesito tu número de teléfono y qué día y hora te gustaría agendar la cita.\n\n💳 *Datos para pagar*\n\n*Nequi*\n[dato entregado por el motor]\n\nCuando pagues, envíame aquí la captura del comprobante y te confirmamos. ✅",
+     "handoff": false
+    },
+    {
+     "turn": 7,
+     "message": "Mi teléfono es 3157778899",
+     "expect": "",
+     "reply": "Gracias, Juan Camilo. Ahora, ¿qué día y hora te gustaría agendar la cita?",
+     "handoff": false
+    },
+    {
+     "turn": 8,
+     "message": "Cuando lo haga que nesesito hacer",
+     "expect": "sin_datos",
+     "reply": "Cuando hagas el pago, me envías aquí la captura del comprobante. Con eso, te confirmaremos la cita y te daremos los detalles de día y hora. ¿Tienes alguna otra duda?",
+     "handoff": false
+    },
+    {
+     "turn": 9,
+     "message": "Espérame un momento",
+     "expect": "sin_datos",
+     "reply": "Claro, aquí estaré. Tómate tu tiempo.",
+     "handoff": false
+    },
+    {
+     "turn": 10,
+     "message": "Pero se me borró el Nequi me lo envías de nuevo",
+     "expect": "datos",
+     "reply": "¡Listo! Ahí abajo te dejo los datos para pagar por Nequi. Cuando lo hagas, me envías aquí la captura del comprobante.\n\n💳 *Datos para pagar*\n\n*Nequi*\n[dato entregado por el motor]\n\nCuando pagues, envíame aquí la captura del comprobante y te confirmamos. ✅",
+     "handoff": false
+    },
+    {
+     "turn": 11,
+     "message": "Cómo así",
+     "expect": "sin_datos",
+     "reply": "Te explico: arriba, en este chat, te dejé los datos para pagar por Nequi. Haces el pago con esos datos y me envías aquí la captura del comprobante; con eso seguimos.",
+     "handoff": false
+    },
+    {
+     "turn": 12,
+     "message": "Ya voy a pagar",
+     "expect": "sin_datos",
+     "reply": "Perfecto, cuando lo hagas, no olvides enviarme la captura del comprobante. Así seguimos con la confirmación de tu cita.",
+     "handoff": false
+    },
+    {
+     "turn": 13,
+     "message": "ya te consigné",
+     "expect": "pago_avisado",
+     "reply": "Perfecto, ya lo reviso y te confirmo en un momento para continuar.",
+     "handoff": true
+    }
+   ]
+  },
+  {
+   "tenant": "clinic",
+   "conversation": "pide el medio con un error de escritura",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pago_avisado_al_equipo": [],
+    "no_repite_la_respuesta": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Quiero Agenda Plus",
+     "expect": "sin_datos",
+     "reply": "Genial, Agenda Plus incluye gestión y confirmación de citas. Cuesta COP 140.000 de implementación y COP 170.000 al mes. Para agendar, necesito tu nombre, teléfono y detalles sobre el día y la hora que prefieres.",
+     "handoff": false
+    },
+    {
+     "turn": 2,
+     "message": "Pásame el nekui porfa",
+     "expect": "datos",
+     "reply": "¡Listo! Ahí abajo te dejo los datos para pagar por Nequi.\n\nPor favor, indícame tu nombre, teléfono y detalles sobre el día y la hora que prefieres para agendar Agenda Plus.\n\n💳 *Datos para pagar*\n\n*Nequi*\n[dato entregado por el motor]\n\nCuando pagues, envíame aquí la captura del comprobante y te confirmamos. ✅",
+     "handoff": false
+    }
+   ]
+  },
+  {
+   "tenant": "clinic",
+   "conversation": "pregunta a dónde consigna",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pago_avisado_al_equipo": [],
+    "no_repite_la_respuesta": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Quiero Agenda Plus",
+     "expect": "sin_datos",
+     "reply": "¡Genial elección! Agenda Plus incluye gestión y confirmación de citas. Tiene un costo de COP 140.000 de implementación y COP 170.000 al mes. Para comenzar, necesito tu nombre, teléfono y qué día y hora te gustaría agendar la cita.",
+     "handoff": false
+    },
+    {
+     "turn": 2,
+     "message": "¿A qué número te consigno?",
+     "expect": "",
+     "reply": "¿Con cuál de los medios de pago te gustaría realizar la consignación? Puedes elegir entre Nequi, Daviplata, transferencia a Bancolombia, Bre-B o un link de pago.",
+     "handoff": false
+    }
+   ]
+  },
+  {
+   "tenant": "clinic",
+   "conversation": "pregunta cómo paga",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pago_avisado_al_equipo": [],
+    "no_repite_la_respuesta": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Quiero Agenda Plus",
+     "expect": "sin_datos",
+     "reply": "Perfecto, Agenda Plus incluye gestión y confirmación de citas. El costo de implementación es COP 140.000 y luego COP 170.000 al mes. Para continuar, necesito tu nombre, teléfono y los detalles de la cita que deseas agendar. ¿Qué día y hora te gustaría?",
+     "handoff": false
+    },
+    {
+     "turn": 2,
+     "message": "cómo te pago",
+     "expect": "sin_datos",
+     "reply": "Puedes pagar a través de Nequi, Daviplata, transferencia a Bancolombia, Bre-B o mediante un link de pago. ¿Cuál de estos medios prefieres usar?",
+     "handoff": false
+    }
+   ]
+  },
+  {
+   "tenant": "clinic",
+   "conversation": "pregunta si tienen un medio",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pago_avisado_al_equipo": [],
+    "no_repite_la_respuesta": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Quiero Agenda Plus",
+     "expect": "sin_datos",
+     "reply": "Genial, Agenda Plus es una excelente opción para gestionar y confirmar citas. El costo de implementación es de COP 140.000 y luego COP 170.000 al mes. ¿Podrías darme tu nombre, teléfono y qué día y hora te gustaría para agendar la cita?",
+     "handoff": false
+    },
+    {
+     "turn": 2,
+     "message": "¿Tienen Nequi?",
+     "expect": "sin_datos",
+     "reply": "Sí, aceptamos Nequi como medio de pago. ¿Te gustaría que te envíe los datos para realizar el pago?",
+     "handoff": false
+    }
+   ]
+  },
+  {
+   "tenant": "clinic",
+   "conversation": "pide los datos de otro medio",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pago_avisado_al_equipo": [],
+    "no_repite_la_respuesta": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": [
+     {
+      "turn": 2,
+      "why": "Condiciona el envío de datos de pago que ya están en el mensaje."
+     }
+    ]
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Quiero Agenda Plus",
+     "expect": "sin_datos",
+     "reply": "Perfecto, Agenda Plus te ayudará a gestionar y confirmar citas. Cuesta COP 140.000 de implementación y COP 170.000 al mes. Para agendar, necesito tu nombre, teléfono y preferencia de día y hora. ¿Cuál te gustaría?",
+     "handoff": false
+    },
+    {
+     "turn": 2,
+     "message": "listo, mándame los datos para pagar por transferencia",
+     "expect": "datos",
+     "reply": "Te enviaré los datos para la transferencia. Por favor, dame tu nombre y teléfono para completar el proceso.\n\n💳 *Datos para pagar*\n\n*Bancolombia*\nCuenta de ahorros\n[dato entregado por el motor]\n\nCuando pagues, envíame aquí la captura del comprobante y te confirmamos. ✅",
+     "handoff": false
+    }
+   ]
+  }
+ ],
+ "gasto": {
+  "asesor_usd": 0.038,
+  "juez_usd": 0.0089
+ },
+ "llamadas_por_mensaje": 1.92
+}

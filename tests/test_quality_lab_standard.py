@@ -28,7 +28,7 @@ from standard import (  # noqa: E402
 )
 
 BLOCK = f"💳 *Datos para pagar*\n\n*Nequi*\n{ENGINE_DATA}\n\nCuando pagues, envíame aquí la captura del comprobante y te confirmamos. ✅"
-FACTS = {"oferta": [{"name": "el Plan Básico"}], "pagos_disponibles": {"link": True, "nequi": True, "daviplata": True, "bank": True, "breb": True}}
+FACTS = {"modelo": "saas", "oferta": [{"name": "el Plan Básico"}], "pagos_disponibles": {"link": True, "nequi": True, "daviplata": True, "bank": True, "breb": True}}
 
 
 def _turns(*steps: tuple) -> list[dict]:
@@ -52,6 +52,9 @@ def test_the_conversations_use_the_business_methods_and_the_real_production_chat
     only = dict(conversations_for({**FACTS, "pagos_disponibles": {"daviplata": True}}))
     assert "pide los datos de otro medio" not in only and only["el chat de producción"][2]["message"] == "Y Daviplata no"
     assert conversations_for({**FACTS, "pagos_disponibles": {}}) == []
+    # Lo que cuenta el cliente de sí mismo va con el tipo de negocio: a un restaurante no le dice «es una tienda de ropa».
+    messages = lambda facts: [turn["message"] for turn in dict(conversations_for(facts))["el chat de producción"]]  # noqa: E731
+    assert "Me llamo Juan Camilo y es una tienda de ropa" in messages(FACTS) and "Me llamo Juan Camilo" in messages({**FACTS, "modelo": "catalog"})
 
 
 def test_the_production_chat_of_november_13_does_not_pass():

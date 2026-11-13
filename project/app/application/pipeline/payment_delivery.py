@@ -15,7 +15,8 @@ se cambia lo que dijo el asesor. El código hace solo tres cosas:
    medio, se le pregunta al cliente con cuál quiere pagar.
 3. **No deja salir algo falso sobre los pagos.** Se le pide a la IA que responda otra vez, sabiendo por qué (`payment_problem`, en
    `ai_execution.py`), si su respuesta:
-   - dice que no puede dar los datos (sí puede). Si insiste, salen los datos sin su mensaje;
+   - dice que no puede dar los datos (sí puede). Si insiste, su mensaje no sale: van los datos con una frase corta encima si el
+     cliente debía recibirlos; si no los pidió, se le recuerda que ya los tiene o se le ofrecen. El mensaje con los datos nunca va solo;
    - dice que el negocio no recibe un medio que sí tiene. Si insiste, sale la verdad («Sí, claro: también recibimos Nequi»);
    - iba a enviar por su cuenta unos datos que el cliente no pidió: los que ya tiene, o los de un medio cuando el negocio tiene
      varios (preguntar «¿puedo transferir?» no es pedirlos). Si insiste, no salen.
@@ -48,12 +49,17 @@ from app.utils.logger import logger
 # El paso de la conversación después de enviar los datos: el cliente paga y envía el comprobante.
 AWAITING_PAYMENT = "report_payment"
 PAYMENT_STATE_HOURS = 6
-# La IA dijo que no podía enviar los datos (dos veces): salieron sin su mensaje.
+# La IA dijo que no podía enviar los datos (dos veces): su mensaje no sale; sale una de estas frases, que sí es verdad.
 REFUSED = "la_ia_dijo_que_no_podia"
+# El cliente ya tiene los datos y no los pidió: no se repiten (un «cómo así» recibía el bloque otra vez, sin palabras; 13 nov 2026).
+ALREADY_HAS_DETAILS = "Arriba te dejé los datos para pagar por {method}. Si quieres, te los envío otra vez."
+# El cliente no los pidió y todavía no los tiene: se le ofrecen.
+OFFER_METHOD_DETAILS = "Claro, puedes pagar por {method}. ¿Quieres que te envíe los datos?"
 # Si la IA insiste (dos veces) en que el negocio no recibe un medio que sí tiene, esa respuesta falsa no sale: sale esta.
 METHOD_AVAILABLE = "Sí, claro: también recibimos {method}."
 OFFER_DETAILS = "¿Quieres que te envíe los datos para pagar?"
-# Lo que queda en la memoria de la conversación cuando los datos salieron sin palabras del asesor.
+# Lo que dice el asesor encima de los datos cuando su mensaje no puede salir (dijo que no podía enviarlos), y lo que queda en la
+# memoria de la conversación cuando los datos salieron sin palabras suyas. El mensaje con los datos nunca va solo.
 PAYMENT_SENT_MEMORY = "Te dejo aquí los datos para pagar por {method}."
 
 
@@ -163,13 +169,22 @@ def deliver(
     chosen = refine(resolve(payment_method, runtime_yaml), response_text, runtime_yaml=runtime_yaml)
     current = current_method(state, remembered, runtime_yaml)
 
-    # 3. Una negativa falsa no sale: los datos van solos; sin saber el medio, se pregunta con cuál.
+    # 3. Una negativa falsa no sale. En su lugar va una frase corta que sí es verdad, según lo que entendió el lector de pagos: si el
+    # cliente debe recibir los datos (o no hubo lectura), van debajo de esa frase; si no los pidió, no se le envían (se le recuerda que
+    # ya los tiene, o se le ofrecen). Sin saber el medio, se le pregunta con cuál quiere pagar.
     if says_it_cannot_send(response_text, paying=bool(current)):
-        known = (asked_method if asked else "") or action or chosen or current or (offered[0] if len(offered) == 1 else "")
-        if known:
-            return _send(runtime_yaml, known, "", REFUSED, tenant)
-        _log(REFUSED, "", tenant)
-        return PaymentDelivery(which_method_question(runtime_yaml), rescue=REFUSED)
+        # De qué medio: el que pide el cliente, el de la acción de la IA, el elegido, el del pago en curso, el que nombra la IA en su
+        # negativa («no puedo enviarte el número de Nequi») o el único que tiene el negocio.
+        known = ((asked_method if asked else "") or action or chosen or current or named_option(response_text, runtime_yaml)
+                 or (offered[0] if len(offered) == 1 else ""))
+        _log(REFUSED, known, tenant)
+        if not known:
+            return PaymentDelivery(which_method_question(runtime_yaml), rescue=REFUSED)
+        label = sent_label(runtime_yaml, known)
+        if asked is False:
+            line = ALREADY_HAS_DETAILS if already_sent(state, known) else OFFER_METHOD_DETAILS
+            return PaymentDelivery(line.format(method=label), rescue=REFUSED)
+        return _send(runtime_yaml, known, PAYMENT_SENT_MEMORY.format(method=label), REFUSED)
 
     if hold:
         return PaymentDelivery(_clean(response_text))
@@ -207,7 +222,8 @@ def deliver(
 
 # «No puedo darte el número de cuenta», «no puedo enviarte el Nequi directamente»: lo que un modelo pequeño a veces dice, y es falso.
 _REFUSES_DATA = re.compile(
-    r"\bno (puedo|podemos|me es posible|est[aá] permitido)( \w+)? (darte|enviarte|compartirte|pasarte|mandarte|dar|enviar|compartir|pasar)"
+    r"\bno (puedo|podemos|me es posible|est[aá] permitido)( \w+)? "
+    r"(darte|enviarte|reenviarte|compartirte|pasarte|mandarte|dar|enviar|reenviar|compartir|pasar|mandar)"
     r"( \w+)? (el |los |la |tu |ese |esos )?(n[uú]mero|datos|cuenta|dato|link|enlace|llave|nequi|daviplata|informaci[oó]n de pago)"
 )
 # «No tengo acceso a los datos», «no puedo ver el número»: otra forma de la misma negativa (medido con la IA real, 13 nov 2026).

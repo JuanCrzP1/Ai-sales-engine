@@ -453,8 +453,8 @@ def test_payments_with_every_method(monkeypatch, tmp_path):
                 others = [other for other in all_values if other != value and other not in value]
                 assert not any(other in chosen for other in others), f"llegaron datos de otro medio: {chosen}"
                 again = say(number, "Se me borró, me lo envías de nuevo", what=f"el reenvío de {said}")
-                # El asesor simulado dice «no puedo enviarlo» (dos veces): los datos salen igual, sin esa frase.
-                assert again == details, again
+                # El asesor simulado dice «no puedo enviarlo» (dos veces): los datos salen igual, sin esa frase y con una que sí es verdad.
+                assert again.startswith("Te dejo aquí los datos para pagar por ") and again.endswith(f"\n\n{details}"), again
                 return f"«Te pago por {said}» → el asesor le habló y debajo le llegó su dato (y solo el suyo); al pedirlo de nuevo, otra vez"
             return check
 

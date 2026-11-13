@@ -14,7 +14,9 @@ está en el historial de git y en `docs/plan-v1.md`.
 - Qué pide el cliente ahora **lo entiende la IA** con una segunda mirada corta por mensaje (antes eran reglas de palabras que se
   equivocaban). Suma al consumo de tu clave cerca de un 30 % (medido con la IA real).
 - Más cuidados: si la IA escribe un número de pago por su cuenta, no sale (va el real); si dice que no puede enviar los datos o que
-  no recibes un medio que sí tienes, se le pide otra respuesta antes de contestarle al cliente.
+  no recibes un medio que sí tienes, se le pide otra respuesta antes de contestarle al cliente. Los datos nunca llegan solos.
+- Antes de publicar un cambio al asistente, ahora debe pasar una prueba con la IA real: tu chat de producción y frases de
+  clientes, revisadas con 12 reglas de pasa o no pasa.
 
 ## 12 de noviembre de 2026
 

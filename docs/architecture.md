@@ -177,7 +177,8 @@ adivinen qué quiso decir el cliente ni que cambien lo que dijo el asesor.
   haberlo leído en ninguna parte es inventado y se cambia por el real (`payment_data.mask_invented_numbers`); y si la respuesta dice
   algo falso sobre los pagos («no puedo enviarte el número», «no recibimos Nequi») o iba a enviar datos que el cliente no pidió, se
   le pide al asesor **otra respuesta**, sabiendo por qué (`payment_problem`). El código no le escribe la respuesta, salvo que insista
-  en algo falso.
+  en algo falso: entonces sale una frase corta que sí es verdad (con los datos debajo si el cliente debía recibirlos). El mensaje
+  con los datos nunca va solo.
 - En su historial la IA ve lo que dijo ella y el marcador donde fueron los datos, nunca el mensaje con los datos.
 
 Todo cambio al prompt se mide en dos laboratorios y pasa por una puerta:

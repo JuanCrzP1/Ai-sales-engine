@@ -473,6 +473,21 @@ Esos eventos ayudan a detectar:
 - request al LLM sin credenciales
 - fallback por excepción
 
+### Avisos De Pagos
+
+El asesor (la IA) habla y el sistema pone los datos de pago debajo de su mensaje. Estos avisos dicen cuándo la IA falló y qué hizo el
+motor. Ninguno lleva lo que escribió el cliente ni datos de pago. Si uno se repite mucho en un negocio, revisa su modelo de IA y
+corre la puerta de calidad ([Calidad del asesor](calidad-del-asesor.md)).
+
+| Aviso | Qué pasó | Qué hizo el motor |
+|---|---|---|
+| `pago_lectura` | El lector de pagos entendió el mensaje (`wants_details`, `method`, `says_paid`). | Lo normal: va en cada mensaje de un negocio con medios de pago. |
+| `pago_lectura_fallida` | El lector no respondió o respondió algo que no se entiende (`error`). | Decidió el asesor solo, con su acción. |
+| `pago_segunda_respuesta` | La primera respuesta del asesor no podía salir (`why`): `refused` (dijo que no podía enviar los datos), `denied` (negó un medio que el negocio tiene), `repeated` (iba a repetir datos que el cliente ya tiene) o `unrequested` (iba a enviar un medio que el cliente no pidió). | Le pidió otra respuesta, diciéndole por qué. |
+| `pago_red_de_seguridad` | El asesor insistió en que no podía (`how: la_ia_dijo_que_no_podia`) o escribió el marcador del dato sin decir el medio. | Envió los datos con una frase corta, le recordó al cliente que ya los tiene, o le preguntó con cuál medio paga. |
+| `pago_numero_inventado` | El asesor escribió un celular o una cuenta que no leyó en ninguna parte. | Lo cambió por el dato real. Nunca le llegó al cliente. |
+| `pago_medio_negado` | El asesor insistió en que el negocio no recibe un medio que sí tiene. | Respondió «Sí, claro: también recibimos…». |
+
 ## 3. Qué Revisar Si El Sistema No Responde Como Esperas
 
 ### Si no responde nada

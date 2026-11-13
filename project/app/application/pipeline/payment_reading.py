@@ -35,12 +35,14 @@ class PaymentReading:
     method: str = ""
     says_paid: bool = False
 
-    def for_prompt(self, runtime_yaml: dict) -> dict:
-        """Lo que se le cuenta al asesor de este mensaje (`runtime["payment_reading"]`)."""
+    def for_prompt(self, runtime_yaml: dict, *, has_details: bool = False) -> dict:
+        """Lo que se le cuenta al asesor de este mensaje (`runtime["payment_reading"]`). `has_details`: si el cliente ya tiene en el
+        chat los datos del medio que venían usando."""
         return {
             "wants_details": self.wants_details,
             # Con varios medios, los datos solo salen cuando el cliente debe recibirlos: el asesor lo sabe antes de responder.
             "no_details_now": not self.wants_details and len(options(runtime_yaml)) > 1,
+            "has_details": has_details and not self.wants_details,
             "method": sent_label(runtime_yaml, self.method) if self.method else "",
             "says_paid": self.says_paid,
         }

@@ -82,6 +82,7 @@ from app.application.pipeline.response_router import route_response
 from app.application.pipeline.payment_delivery import (  # noqa: F401 - las pruebas usan ejecutar_pago y without_payment_placeholder desde aquí
     already_sent,
     compose,
+    current_method,
     deliver,
     ejecutar_pago,
     keeps_handoff,
@@ -536,7 +537,10 @@ class AIExecution:
             tenant=tenant_slug_value,
         )
         if reading is not None:
-            runtime_yaml_with_memory["payment_reading"] = reading.for_prompt(runtime_yaml_with_memory)
+            in_course = current_method(op_before, remembered_method, runtime_yaml_with_memory)
+            runtime_yaml_with_memory["payment_reading"] = reading.for_prompt(
+                runtime_yaml_with_memory, has_details=bool(in_course) and already_sent(op_before, in_course)
+            )
         named_method = named_option(str(user_message or ""), runtime_yaml_with_memory)
         if named_method:
             # Un dato del negocio que viene al caso (no se interpreta qué quiere el cliente): ese medio sí lo recibe el negocio.

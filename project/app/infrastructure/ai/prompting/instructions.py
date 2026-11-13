@@ -7,7 +7,7 @@ su caché y cobrarlas más barato. Todo cambio aquí se mide con el laboratorio 
 from __future__ import annotations
 
 # Versión del prompt: va en cada respuesta para saber qué texto la produjo. Se cambia con cada cambio de contenido.
-PROMPT_VERSION = "2026-11-13.v9"
+PROMPT_VERSION = "2026-11-13.v10"
 
 PLATFORM = """
 Eres el asistente de ventas de un negocio y atiendes a sus clientes por chat. Tu trabajo es entender qué necesita cada cliente,
@@ -135,9 +135,12 @@ READER_NOT_SENT = "Al cliente todavía no se le han enviado datos de pago (aunqu
 READER_LAST_REPLY = "Lo último que le dijo el asesor: «{reply}»"
 READER_MESSAGE = "Mensaje del cliente: «{message}»"
 # Lo que entendió el lector de este mensaje, para el asesor (`sections/conversation.py`).
+# Con un ejemplo y con el orden dicho: sin eso, un modelo pequeño a veces escribía «necesito tu nombre y luego te envío los datos» con
+# los datos ya debajo de su mensaje, sobre todo cuando el negocio pide datos para cerrar (medido con la IA real, 13 nov 2026).
 PAYMENT_ASKED = (
-    "Con este mensaje el cliente recibe los datos para pagar por {method}: el sistema se los pone debajo de tu mensaje. Dile que ahí "
-    "se los dejas y sigue guiándolo."
+    "Con este mensaje el cliente recibe los datos para pagar por {method}: van en este mismo mensaje, debajo de lo que escribas, "
+    "aunque todavía te falten datos suyos. Empieza diciéndole que ahí abajo se los dejas, por ejemplo: «¡Listo! Ahí abajo te dejo "
+    "los datos para pagar por {method}.» Lo que te falte de él, pídeselo después de esa frase."
 )
 PAYMENT_ASKED_NO_METHOD = (
     "En este mensaje el cliente pide los datos para pagar y no ha dicho con qué medio: pregúntale con cuál de los medios del negocio."
@@ -146,9 +149,18 @@ PAYMENT_NOT_NOW = (
     "Con este mensaje el cliente no recibe datos de pago: deja metadata.send_payment vacío y no le digas que ya se los dejas. Si "
     "le sirve, ofrécele enviárselos."
 )
+# Ya tiene los datos. Sin prohibiciones: con «no le ofrezcas reenviárselos», un modelo pequeño llegó a decirle al cliente «no puedo
+# reenviar los datos de pago» (medido con la IA real, 13 nov 2026).
+PAYMENT_HAS_DETAILS = (
+    "Con este mensaje el cliente no recibe datos de pago: ya los tiene arriba, en el chat. Deja metadata.send_payment vacío y "
+    "respóndele lo que dice."
+)
 # Un dato del negocio que viene al caso: el cliente nombra uno de sus medios de pago (por su nombre; no se interpreta qué quiere).
 # «Y Nequi no», sin signos, es una pregunta: un modelo pequeño lo leyó como «Nequi no» y siguió con otro medio (13 nov 2026).
-PAYMENT_METHOD_AVAILABLE = "El cliente nombra {method}: el negocio sí lo recibe. Si pregunta por él («¿y {method} no?»), dile que sí."
+PAYMENT_METHOD_AVAILABLE = (
+    "El cliente nombra {method}: el negocio sí lo recibe. Si pregunta si puede pagar con él («¿y {method} no?»), empieza tu mensaje "
+    "diciéndole que sí."
+)
 # Cuando la respuesta de la IA decía algo falso sobre los pagos y se le pide que responda otra vez (`ai_execution.py`).
 ANSWER_AGAIN_DENIED = (
     "Tu respuesta a este mensaje no se envió: decía que el negocio no recibe {method}, y sí lo recibe (mira los medios de pago). "

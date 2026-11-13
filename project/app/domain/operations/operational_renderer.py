@@ -18,6 +18,9 @@ _OPTION_LABELS: dict[str, str] = {
 }
 
 
+_CASH = "cash"
+
+
 def render_op_anchor(state: OperationalState | None) -> str:
     """Return one short natural sentence for active operational context.
 
@@ -35,6 +38,9 @@ def render_op_anchor(state: OperationalState | None) -> str:
 
     if p == "payment":
         if state.pending_action == "report_payment":
+            if kind == _CASH:
+                # El efectivo no tiene comprobante que enviar.
+                return "Ya le enviaste cómo pagar en efectivo."
             by = f" por {opt_label}" if opt_label else ""
             return f"Ya le enviaste los datos para pagar{by}: falta que pague y te envíe el comprobante."
         if opt_label:
@@ -58,9 +64,18 @@ def render_op_rule(state: OperationalState | None) -> str:
     if state is None or not state.is_active():
         return ""
     if state.active_process == "payment" and state.pending_action == "report_payment":
+        # Qué explicar, con todas las letras y con un ejemplo: con «explícaselo con tus palabras», un modelo pequeño respondía «¿te los
+        # envío de nuevo?» o repetía su mensaje anterior ante un «cómo así» (medido con la IA real, 13 nov 2026). Sin prohibiciones:
+        # con «no le ofrezcas reenviarlos» llegó a decir «no puedo reenviar los datos».
+        if str(state.active_option or "").strip().lower().split(":", 1)[0] == _CASH:
+            return (
+                "Si no entiende algo o pregunta qué sigue, explícale paso a paso cómo paga, con las indicaciones que ya tiene arriba "
+                "en el chat. Por ejemplo: «Te explico: arriba te dejé cómo pagar en efectivo. Sigues esos pasos y con eso continuamos.»"
+            )
         return (
-            "Solo si te pide los datos otra vez, envíaselos con metadata.send_payment; si pregunta qué sigue o no entiende algo, "
-            "explícaselo con tus palabras."
+            "Si no entiende algo o pregunta qué sigue, explícale paso a paso qué hacer. Por ejemplo: «Te explico: arriba, en este chat, "
+            "te dejé los datos para pagar. Haces el pago con esos datos y me envías aquí la captura del comprobante; con eso seguimos.» "
+            "Si te pide los datos otra vez, se le envían."
         )
     if str(state.active_option or "").strip():
         return "Si el usuario responde brevemente, continúa naturalmente desde ahí sin reabrir la opción."
