@@ -13,9 +13,8 @@ from __future__ import annotations
 import pytest
 
 import app.application.pipeline.common as pipeline_common
-from app.application.pipeline.ai_execution import ejecutar_pago, without_payment_placeholder
 from app.application.runtime import load_tenant_runtime_yaml
-from app.application.pipeline.payment_delivery import PaymentDelivery, payment_problem, remembered_message
+from app.application.pipeline.payment_delivery import PaymentDelivery, ejecutar_pago, payment_problem, remembered_message, without_payment_placeholder
 from app.application.pipeline.payment_reading import PaymentReading, read_customer_message
 from app.application.pipeline.response_postprocessor import without_model_artifacts
 from app.domain.business_config.payment_data import (

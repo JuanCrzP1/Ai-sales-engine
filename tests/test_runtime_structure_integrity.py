@@ -25,7 +25,7 @@ PROJECT_DIR = ROOT_DIR / "project"
 if str(PROJECT_DIR) not in sys.path:
     sys.path.insert(0, str(PROJECT_DIR))
 
-from app.application.pipeline.ai_execution import validate_runtime_yaml as validate_execution_runtime
+from app.application.pipeline.turn_context import validate_runtime_yaml as validate_execution_runtime
 from app.application.runtime import load_tenant_runtime_yaml
 from app.infrastructure.ai.prompting.builder.prompt_builder import PromptBuilderService
 from app.infrastructure.ai.prompting.view import validate_runtime_yaml as validate_prompt_runtime

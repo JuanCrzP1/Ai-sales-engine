@@ -80,12 +80,17 @@ Precarga las secciones YAML del tenant (`sales`, `business`, `pricing`, `feature
 
 ### `AIExecution` — `project/app/application/pipeline/ai_execution.py`
 
-Construye el contexto de memoria, ejecuta el prompt builder, llama al LLM vía `_generate_with_frame()`, interpreta el structured output, ejecuta la lógica de pago si corresponde, y persiste la respuesta y metadata en memoria.
+Dirige el turno del asesor. Cada paso vive en su propio módulo de `application/pipeline/`:
 
-Contiene:
-- `FRAME_BLOCK`: segundo wrapper de prompt que inyecta el contrato de metadata JSON (intent, payment_method, payment_status). No debe eliminarse sin auditar el contrato de structured output.
-- `ejecutar_pago()`: lógica de ejecución de pago real (link, nequi, daviplata, bank, breb)
-- `enforce_max_words()`: defensa de longitud post-LLM
+- `turn_context.py`: arma lo que el asesor sabe antes de responder (memoria, resumen, lector de pagos, largo de respuesta).
+- `answer_review.py`: pide la respuesta a la IA y, si dice algo que no puede salir así, le pide otra.
+- `turn_persistence.py`: guarda en la memoria lo que decidió el asesor.
+- `payment_outcome.py`: resuelve el pago avisado, pone los datos reales (`payment_delivery.py`, donde está `ejecutar_pago()`) y
+  aplica el largo máximo (`enforce_max_words()`).
+- `handoff_brief.py`: escribe la nota para el equipo cuando el chat pasa a una persona.
+
+El formato de la respuesta estructurada (intención, `send_payment`, `payment_status`, `handoff`) está en
+`services/ai/output_contract.py` y se interpreta en `services/ai/structured_output.py`.
 
 ---
 
@@ -140,7 +145,7 @@ Los siguientes archivos **no deben modificarse** sin completar una auditoría t�
 | Archivo | Razón del freeze |
 |---|---|
 | `prompting/` (`instructions.py`, `composer.py`, `sections/`) | Núcleo del sistema AI-first. Cambios aquí modifican el comportamiento de toda la IA para todos los tenants: se comprueban con el laboratorio de regresión (`experiments/pricing_lab/run_regression_experiment.py`). |
-| `ai_execution.py` | Orquestación de la llamada al LLM y contrato de structured output (FRAME_BLOCK). |
+| `ai_execution.py` y sus pasos (`turn_context.py`, `answer_review.py`, `turn_persistence.py`, `payment_outcome.py`) | El turno del asesor: qué sabe, qué responde, qué se guarda y qué sale con el pago. Se comprueban con el laboratorio de regresión. |
 | `conversation_flow.py` | Estado de la conversación y manejo del mensaje inicial. |
 | `memory_repository.py` | Contrato de persistencia. Su modificación afecta todos los flujos de memoria. |
 | `ai_pipeline.py` | Secuencia de orquestación principal. |

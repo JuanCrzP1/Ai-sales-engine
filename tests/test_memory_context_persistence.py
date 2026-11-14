@@ -275,7 +275,7 @@ def test_conversation_history_in_runtime_contains_both_roles() -> None:
 ## ========================================
 
 def _make_stub_memory_service(history_entries: list[dict]) -> object:
-    """Crea un stub mínimo de MemoryDomainService para probar _build_memory_context."""
+    """Crea un stub mínimo de MemoryDomainService para probar build_memory_context."""
     from types import SimpleNamespace
     from app.domain.conversation.memory import ConversationState
 
@@ -305,7 +305,7 @@ def _make_stub_memory_service(history_entries: list[dict]) -> object:
 ## Formato estructurado con roles del history_summary.
 ## ----------------------------------------
 def test_history_summary_includes_role_prefixes() -> None:
-    from app.application.pipeline.ai_execution import _build_memory_context
+    from app.application.pipeline.turn_context import build_memory_context
 
     entries = [
         {"role": "user",      "text": "tengo muchos mensajes"},
@@ -314,7 +314,7 @@ def test_history_summary_includes_role_prefixes() -> None:
         {"role": "user",      "text": "mensaje actual"},  # último → excluido (prior_history)
     ]
     stub = _make_stub_memory_service(entries)
-    result = _build_memory_context(stub, tenant_slug="asesor_ai_prod", user_id="5da-roles-1")
+    result = build_memory_context(stub, tenant_slug="asesor_ai_prod", user_id="5da-roles-1")
 
     summary = result["history_summary"]
     assert "user: tengo muchos mensajes" in summary
@@ -334,7 +334,7 @@ def test_history_summary_includes_role_prefixes() -> None:
 ## Orden temporal del historial en el prompt.
 ## ----------------------------------------
 def test_history_summary_preserves_chronological_order() -> None:
-    from app.application.pipeline.ai_execution import _build_memory_context
+    from app.application.pipeline.turn_context import build_memory_context
 
     entries = [
         {"role": "user",      "text": "primer mensaje"},
@@ -344,7 +344,7 @@ def test_history_summary_preserves_chronological_order() -> None:
         {"role": "user",      "text": "mensaje actual"},  # último → excluido
     ]
     stub = _make_stub_memory_service(entries)
-    result = _build_memory_context(stub, tenant_slug="asesor_ai_prod", user_id="5da-order-1")
+    result = build_memory_context(stub, tenant_slug="asesor_ai_prod", user_id="5da-order-1")
 
     summary = result["history_summary"]
     lines = [l for l in summary.splitlines() if l.strip()]
@@ -365,12 +365,12 @@ def test_history_summary_preserves_chronological_order() -> None:
 ## Control de tamaño del contexto de historial en el prompt.
 ## ----------------------------------------
 def test_history_summary_respects_ten_entry_limit() -> None:
-    from app.application.pipeline.ai_execution import _build_memory_context
+    from app.application.pipeline.turn_context import build_memory_context
 
     # 12 mensajes del usuario → prior_history = primeros 11 → history[-10:] → 10 líneas
     entries = [{"role": "user", "text": f"mensaje {i}"} for i in range(12)]
     stub = _make_stub_memory_service(entries)
-    result = _build_memory_context(stub, tenant_slug="asesor_ai_prod", user_id="5da-limit-1")
+    result = build_memory_context(stub, tenant_slug="asesor_ai_prod", user_id="5da-limit-1")
 
     summary = result["history_summary"]
     lines = [l for l in summary.splitlines() if l.strip()]
@@ -388,7 +388,7 @@ def test_history_summary_respects_ten_entry_limit() -> None:
 ## Backward compatibility del historial plano pre-5C.
 ## ----------------------------------------
 def test_history_summary_legacy_entries_default_to_user_role() -> None:
-    from app.application.pipeline.ai_execution import _build_memory_context
+    from app.application.pipeline.turn_context import build_memory_context
 
     entries = [
         {"text": "mensaje sin rol"},          # legacy: sin campo role
@@ -396,7 +396,7 @@ def test_history_summary_legacy_entries_default_to_user_role() -> None:
         {"role": "user", "text": "actual"},   # último → excluido
     ]
     stub = _make_stub_memory_service(entries)
-    result = _build_memory_context(stub, tenant_slug="asesor_ai_prod", user_id="5da-legacy-1")
+    result = build_memory_context(stub, tenant_slug="asesor_ai_prod", user_id="5da-legacy-1")
 
     summary = result["history_summary"]
     assert "user: mensaje sin rol" in summary
@@ -414,7 +414,7 @@ def test_history_summary_legacy_entries_default_to_user_role() -> None:
 ## Integridad de last_user_message tras Fase 5D-A.
 ## ----------------------------------------
 def test_last_user_message_unaffected_by_5da_change() -> None:
-    from app.application.pipeline.ai_execution import _build_memory_context
+    from app.application.pipeline.turn_context import build_memory_context
 
     entries = [
         {"role": "user",      "text": "primer dolor"},
@@ -423,7 +423,7 @@ def test_last_user_message_unaffected_by_5da_change() -> None:
         {"role": "user",      "text": "mensaje actual"},    # último → excluido de prior_history
     ]
     stub = _make_stub_memory_service(entries)
-    result = _build_memory_context(stub, tenant_slug="asesor_ai_prod", user_id="5da-last-msg-1")
+    result = build_memory_context(stub, tenant_slug="asesor_ai_prod", user_id="5da-last-msg-1")
 
     assert result["last_user_message"] == "segundo mensaje"
     assert result["last_message"] == "segundo mensaje"

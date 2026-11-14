@@ -20,7 +20,7 @@ from sqlalchemy import create_engine, select, update
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.pool import StaticPool
 
-from app.application.pipeline.ai_execution import ejecutar_pago
+from app.application.pipeline.payment_delivery import ejecutar_pago
 from app.application.runtime import BusinessUnavailableError, load_tenant_runtime_yaml
 from app.application.runtime import tenant_runtime_loader as loader
 from app.domain.business_config.compiler import compile_business_config

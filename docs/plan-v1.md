@@ -158,7 +158,7 @@ como parámetro (`route_response(preamble=...)`) y una prueba con dos mensajes s
 | A2 | Si la base falla, el motor responde con el YAML viejo sin avisar | `runtime/tenant_runtime_loader.py` | alto |
 | A3 | Dos almacenes de conversaciones: el del motor (`clients`, `conversation_messages`, `conversation_memory`) y la bandeja (`conversations`, `conversation_entries`) | persistencia | alto |
 | A4 | Sistema anterior todavía en el código: modelos con ids enteros (`app/models`), la API de administración vieja (`/auth`, `/clients`, `/conversations`...), autenticación con `python-jose`, tablas `admin_users`, `tenant_secrets`, `tenant_settings`, `tenant_channels`, Telegram por *polling* y `asesor_ai_prod` como negocio por defecto | varios | medio |
-| A5 | Módulos demasiado grandes: `prompt_builder.py` (973 líneas), `memory_repository.py` (818), `ai_execution.py` (741, con errores silenciados por `except Exception: pass`), `config_service.py` (667) | motor | medio |
+| A5 | Módulos demasiado grandes: `prompt_builder.py` (973 líneas), `memory_repository.py` (818), ~~`ai_execution.py` (741)~~ dividido el 14 nov 2026 en el director y cuatro pasos (`turn_context.py`, `answer_review.py`, `turn_persistence.py`, `payment_outcome.py`; el más grande, 292 líneas), `config_service.py` (667) | motor | medio |
 | A6 | ~~La memoria de «Probar» vive en el servidor: en Vercel a veces se pierde entre mensajes~~ Hecho (12 nov): en la base, con el contacto «prueba-<sesión>»; laboratorio `exp_20261112_memoria_probar` sin diferencias | `assistant_lab/engine_runner.py` | medio |
 
 ### 3.6 Operación del SaaS
@@ -357,7 +357,8 @@ importaciones (qué módulos alcanzan el motor, la API de la nube y la API local
 
 Falta: `AuthService`, `app/models` con ids enteros y lo que los usa (`/simulate`, el webhook de Meta, el resolvedor de canales),
 las tablas del sistema anterior en Neon (borrarlas necesita la aprobación de la persona dueña), el secreto por defecto
-(`jwt_secret`), dividir `memory_repository.py` y `ai_execution.py`, y quitar los errores silenciados.
+(`jwt_secret`), dividir `memory_repository.py` y quitar los errores silenciados. (`ai_execution.py` quedó dividido el 14 nov 2026:
+laboratorio `dividir_ai_execution_20261114`, motor sin diferencias en los 9 negocios.)
 
 **Terminada cuando:** no queda código ni tabla del sistema anterior y ningún módulo supera unas 400 líneas.
 
@@ -428,5 +429,5 @@ de las respuestas va con su máximo de palabras; Nequi pide número y no cuenta)
 
 Arquitectura: las capas se respetan (pruebas de arquitectura del motor y del panel). Siguen en el código piezas del sistema anterior
 (`app/models`, `app/database`, `app/repositories`), usadas todavía por la API del asistente y los webhooks de WhatsApp: es la fase 5.
-Módulos que conviene partir: `memory_repository.py` (860 líneas), `ai_execution.py` (700), `ConversationsPage.tsx` (540).
+Módulos que conviene partir: `memory_repository.py` (860 líneas), `ConversationsPage.tsx` (540).
 

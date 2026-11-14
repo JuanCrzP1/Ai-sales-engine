@@ -52,6 +52,8 @@ WhatsApp Cloud API
 -> project/app/application/pipeline/conversation_flow.py
 -> project/app/application/pipeline/sales_flow.py
 -> project/app/application/pipeline/ai_execution.py
+-> project/app/application/pipeline/turn_context.py
+-> project/app/application/pipeline/answer_review.py
 -> project/app/application/pipeline/response_router.py
 -> project/app/services/ai/ai_orchestrator.py
 -> project/app/infrastructure/ai/prompting/builder/prompt_builder.py
@@ -59,6 +61,8 @@ WhatsApp Cloud API
 -> project/app/services/ai_runtime/runtime_llm/client.py
 -> project/app/services/ai/structured_output.py
 -> project/app/application/pipeline/response_postprocessor.py
+-> project/app/application/pipeline/turn_persistence.py
+-> project/app/application/pipeline/payment_outcome.py
 -> project/app/application/response_guard.py
 -> project/app/connectors/whatsapp/transport_runtime.py
 -> project/app/connectors/whatsapp/transport/sender.py
@@ -129,6 +133,23 @@ No hay un módulo activo con ese nombre. La decisión efectiva se reparte entre:
 Qué hace cada uno:
 
 - `conversation_flow.py`: decide early responses, continuidad, memoria y contexto del turno.
+
+### El turno del asesor
+
+`application/pipeline/ai_execution.py` (`AIExecution.run`) dirige cada mensaje. Cada paso vive en su propio módulo y se ejecuta en
+este orden:
+
+1. `turn_context.py`: lo que el asesor sabe antes de responder. Es la memoria del cliente, el resumen de lo anterior, el lector de
+   pagos y el largo de respuesta del negocio.
+2. `answer_review.py`: le pide la respuesta a la IA (`response_router.py`). Si la respuesta dice algo que no puede salir así, le pide
+   otra. Los números que la IA no leyó en ninguna parte se cambian por el marcador del dato.
+3. `turn_persistence.py`: lo que decidió el asesor queda en la memoria del cliente.
+4. `payment_outcome.py`: el pago avisado, los datos reales debajo del mensaje (`payment_delivery.py`) y el largo máximo.
+5. `handoff_brief.py`: si el chat pasa a una persona, la nota para el equipo.
+
+Si algo falla después de que la IA respondió, sale la respuesta de respaldo (`fallback.py`). Hasta el 14 nov 2026 todo esto estaba
+en una sola función de unas 300 líneas. La división no cambió nada de lo que hace el motor (laboratorio
+`dividir_ai_execution_20261114`).
 
 ### La memoria del motor
 
