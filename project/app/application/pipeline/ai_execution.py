@@ -78,6 +78,7 @@ from app.application.pipeline.fallback import build_fallback_response
 from app.application.pipeline.handoff_review import UNMARKED, handoff_problem
 from app.application.pipeline.payment_names import named_option, payment_terms
 from app.application.pipeline.conversation_summary import refresh_summary
+from app.application.pipeline.handoff_brief import brief_for_team
 from app.application.pipeline.payment_reading import read_customer_message
 from app.application.pipeline.response_postprocessor import enforce_max_words, without_model_artifacts
 from app.application.pipeline.response_router import route_response
@@ -720,6 +721,11 @@ class AIExecution:
             # La conversación pasa a una persona: quien la guarda pausa la IA en ese chat y avisa al equipo del negocio.
             if handoff_reason:
                 safe_context.update(handoff=True, handoff_reason=handoff_reason)
+                # Para quien lo atiende: quién es el cliente y qué necesita, en dos o tres frases (`handoff_brief.py`).
+                safe_context["handoff_summary"] = brief_for_team(
+                    runtime, bot_config=bot_config, memory=memory_service, runtime_yaml=runtime_yaml_with_memory,
+                    tenant_slug=tenant_slug_value, user_id=user_key, reason=handoff_reason,
+                )
             return final_response, bool(ai_used), safe_context
         except Exception:
             fallback = build_fallback_response(user_message=user_message, tenant_config=tenant_config)

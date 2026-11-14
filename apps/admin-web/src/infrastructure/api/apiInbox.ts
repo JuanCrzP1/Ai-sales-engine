@@ -27,6 +27,7 @@ interface ApiConversation {
   needs_human: boolean;
   handoff_requested_at: string | null;
   handoff_reason?: HandoffReason | null;
+  handoff_summary?: string | null;
   ai_paused?: boolean;
   unread_count?: number;
   assistant_typing?: boolean;
@@ -90,6 +91,7 @@ const toConversation = (item: ApiConversation): ConversationSummary => ({
   needsHuman: item.needs_human,
   handoffRequestedAt: item.handoff_requested_at,
   handoffReason: item.handoff_reason ?? null,
+  handoffSummary: item.handoff_summary ?? null,
   aiPaused: item.ai_paused ?? false,
   unreadCount: item.unread_count ?? 0,
   assistantTyping: item.assistant_typing ?? false,

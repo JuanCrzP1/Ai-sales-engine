@@ -32,9 +32,17 @@ BLOCK = f"💳 *Datos para pagar*\n\n*Nequi*\n{ENGINE_DATA}\n\nCuando pagues, en
 FACTS = {"modelo": "saas", "oferta": [{"name": "el Plan Básico"}], "pagos_disponibles": {"link": True, "nequi": True, "daviplata": True, "bank": True, "breb": True}}
 
 
+NOTE = "El cliente pidió hablar con una persona."
+
+
 def _turns(*steps: tuple) -> list[dict]:
-    return [{"turn": number, "message": message, "expect": expect, "reply": reply, "handoff": handoff}
-            for number, (message, expect, reply, *rest) in enumerate(steps, start=1) for handoff in [bool(rest and rest[0])]]
+    """Turnos escritos a mano: (mensaje, qué se espera, respuesta[, pasó al equipo[, nota para el equipo]]). Si pasó al equipo y no
+    se dice la nota, lleva una nota normal."""
+    return [
+        {"turn": number, "message": message, "expect": expect, "reply": reply, "handoff": handoff,
+         "team_note": rest[1] if len(rest) > 1 else (NOTE if handoff else "")}
+        for number, (message, expect, reply, *rest) in enumerate(steps, start=1) for handoff in [bool(rest and rest[0])]
+    ]
 
 
 def _broken(turns: list[dict]) -> dict[str, list[int]]:
@@ -182,3 +190,22 @@ def test_the_escalation_expectations_are_checked_exactly():
 
 def test_the_judge_knows_the_business_escalation_rules():
     assert "sigue_las_reglas_para_pasar" in JUDGE_RULES and "reglas_para_pasar_a_una_persona" in JUDGE
+
+
+
+def test_the_team_always_gets_a_clean_note_when_the_chat_goes_to_a_person():
+    assert _broken(_turns(("Quiero una persona", HANDOFF, "Te paso con el equipo.", True, ""))) == {"nota_para_el_equipo": [1]}
+    leaked = f"Pagó por Nequi al {ENGINE_DATA} y quiere que lo verifiquen."
+    assert _broken(_turns(("ya te consigné", REPORTED, "¡Gracias! Lo verifica el equipo.", True, leaked))) == {"nota_para_el_equipo": [1]}
+    assert _broken(_turns(("ya te consigné", REPORTED, "¡Gracias! Lo verifica el equipo.", True, "Dice que ya pagó por Nequi."))) == {}
+
+
+def test_the_judge_reads_the_team_note_and_its_quote_counts_as_proof():
+    from standard import transcript
+
+    turns = _turns(("Quiero una persona", HANDOFF, "Te paso con el equipo.", True, "Juan quiere el Plan Pro para su restaurante."))
+    assert "[1] Nota para el equipo: Juan quiere el Plan Pro para su restaurante." in transcript(turns)
+    verdict = {"fallas": [{"regla": "nota_fiel", "turno": 1, "cita": "Juan quiere el Plan Pro", "razon": "el cliente no dijo su nombre"}]}
+    failures, discarded = judge_failures(verdict, turns)
+    assert failures["nota_fiel"] == [{"turn": 1, "why": "el cliente no dijo su nombre"}] and discarded == []
+    assert "Nota para el equipo" in JUDGE and "nota_fiel" in JUDGE

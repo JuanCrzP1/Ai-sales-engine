@@ -67,6 +67,7 @@ _SUMMARY = (
     conversations.c.needs_human,
     conversations.c.handoff_requested_at,
     conversations.c.handoff_reason,
+    conversations.c.handoff_summary,
     conversations.c.ai_paused,
     conversations.c.unread_count,
     conversations.c.assistant_typing_until,
@@ -121,6 +122,7 @@ def _summary(row: Any, now: datetime | None = None) -> ConversationSummary:
         needs_human=bool(row.needs_human),
         handoff_requested_at=_utc(row.handoff_requested_at),
         handoff_reason=row.handoff_reason,
+        handoff_summary=row.handoff_summary,
         ai_paused=bool(row.ai_paused),
         unread_count=int(row.unread_count or 0),
         assistant_typing=bool(typing_until and typing_until > (now or _now())),
@@ -172,6 +174,7 @@ class ConversationStore:
         messages: list[NewMessage],
         handoff: bool = False,
         handoff_reason: str | None = None,
+        handoff_summary: str | None = None,
     ) -> str:
         """Un intercambio completo (el área de pruebas): los mensajes en orden y, si trae el traspaso, el aviso al equipo."""
         if channel not in CHANNELS:
@@ -191,7 +194,7 @@ class ConversationStore:
                     self._touch(conn, conversation_id, messages, contact_name, now)
                     if handoff:
                         asked = next((message.body for message in messages if message.author == "customer"), None)
-                        self._handoff(conn, conversation_id, handoff_reason or "human_request", asked, now)
+                        self._handoff(conn, conversation_id, handoff_reason or "human_request", asked, now, summary=handoff_summary)
                 return str(conversation_id)
             except IntegrityError:
                 # Otro proceso creó el mismo hilo a la vez: se repite y esta vez se encuentra.
@@ -368,15 +371,27 @@ class ConversationStore:
         """El asistente está «escribiendo…» hasta `until`; None lo apaga."""
         self._update(conversation_id, assistant_typing_until=until)
 
-    def request_handoff(self, conversation_id: str, reason: str, detail: str | None = None, *, pause_ai: bool = True) -> str | None:
+    def request_handoff(
+        self, conversation_id: str, reason: str, detail: str | None = None, *, pause_ai: bool = True, summary: str | None = None
+    ) -> str | None:
         """La conversación pasa a una persona: espera al equipo y, si no estaba esperando ya, se avisa al equipo. Con `pause_ai`
         (hay alguien del equipo en su horario) la IA se pausa y el cliente empieza a esperar; sin él (fuera del horario) la IA sigue
-        ayudando mientras tanto. Devuelve el id del aviso nuevo, o None si ya estaba esperando."""
+        ayudando mientras tanto. `summary` es la nota de la IA para el equipo (`handoff_brief.py`): va en el aviso y en el chat; sin
+        ella, el aviso lleva lo último que escribió el cliente (`detail`). Devuelve el id del aviso nuevo, o None si ya estaba
+        esperando."""
         with self._engine.begin() as conn:
-            return self._handoff(conn, self._key(conversation_id), reason, detail, _now(), pause_ai=pause_ai)
+            return self._handoff(conn, self._key(conversation_id), reason, detail, _now(), pause_ai=pause_ai, summary=summary)
 
     def _handoff(
-        self, conn: Connection, conversation_id: uuid.UUID, reason: str, detail: str | None, now: datetime, *, pause_ai: bool = True
+        self,
+        conn: Connection,
+        conversation_id: uuid.UUID,
+        reason: str,
+        detail: str | None,
+        now: datetime,
+        *,
+        pause_ai: bool = True,
+        summary: str | None = None,
     ) -> str | None:
         reason = reason if reason in HANDOFF_REASONS else "assistant"
         row = conn.execute(
@@ -390,7 +405,9 @@ class ConversationStore:
         # El área de pruebas no tiene a nadie del otro lado: se marca, pero la IA sigue respondiendo. Después de que la IA retomó sola
         # un chat que nadie atendió, tampoco se vuelve a pausar hasta que alguien del equipo lo atienda.
         pause = pause_ai and row.channel != "prueba" and row.ai_resumed_at is None
-        changes: dict[str, Any] = {"handoff_reason": reason, "updated_at": now}
+        # La nota de este paso (o ninguna): nunca queda la de un paso anterior.
+        summary = " ".join(str(summary or "").split()) or None
+        changes: dict[str, Any] = {"handoff_reason": reason, "handoff_summary": summary, "updated_at": now}
         if pause:
             changes["ai_paused"] = True
             if row.customer_waiting_since is None:
@@ -404,7 +421,9 @@ class ConversationStore:
             conn.execute(
                 insert(notifications).values(
                     id=notification_id, tenant_id=row.tenant_id, conversation_id=conversation_id, kind="handoff",
-                    title=handoff_title(reason, row.channel, row.contact_name), body=preview(detail) if detail else None, created_at=now,
+                    title=handoff_title(reason, row.channel, row.contact_name),
+                    body=summary or (preview(detail) if detail else None),
+                    created_at=now,
                 )
             )
         conn.execute(update(conversations).where(conversations.c.id == conversation_id).values(**changes))
@@ -415,7 +434,7 @@ class ConversationStore:
         tomar el chat: la IA ya no lo considera retomado por ella."""
         changes: dict[str, Any] = {"ai_paused": paused, "ai_resumed_at": None}
         if not paused:
-            changes.update(needs_human=False, handoff_reason=None, customer_waiting_since=None)
+            changes.update(needs_human=False, handoff_reason=None, handoff_summary=None, customer_waiting_since=None)
         self._update(conversation_id, **changes)
 
     def team_replied(self, conversation_id: str) -> None:

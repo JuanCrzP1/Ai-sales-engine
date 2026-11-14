@@ -60,7 +60,9 @@ class ConversationGateway(Protocol):
 
     def set_typing(self, conversation_id: str, until: datetime | None) -> None: ...
 
-    def request_handoff(self, conversation_id: str, reason: str, detail: str | None = None, *, pause_ai: bool = True) -> str | None: ...
+    def request_handoff(
+        self, conversation_id: str, reason: str, detail: str | None = None, *, pause_ai: bool = True, summary: str | None = None
+    ) -> str | None: ...
 
     def ai_paused(self, conversation_id: str) -> bool: ...
 
@@ -276,7 +278,10 @@ class ChannelInbound:
         logger.info("whatsapp_qr_respuesta", extra={"tenant": slug})
         if metadata.get("handoff"):
             detail = message.text or understanding.get("note") or None
-            self._hand_off(secrets, message.phone, stored.conversation_id, str(metadata.get("handoff_reason") or "assistant"), detail)
+            self._hand_off(
+                secrets, message.phone, stored.conversation_id, str(metadata.get("handoff_reason") or "assistant"), detail,
+                summary=str(metadata.get("handoff_summary") or "") or None,
+            )
 
     def _say(self, secrets: ChannelSecrets, phone: str, text: str, intent: str | None = None) -> bool:
         """Envía un mensaje del asistente por WhatsApp y lo deja en la bandeja (o «no enviado» si no salió). Dice si salió."""
@@ -304,13 +309,16 @@ class ChannelInbound:
         except Exception as exc:  # noqa: BLE001 - anotar el estado es un extra: el mensaje ya quedó como no enviado
             logger.warning("canal_estado_no_anotado", extra={"tenant": secrets.tenant_slug, "error": type(exc).__name__})
 
-    def _hand_off(self, secrets: ChannelSecrets, phone: str, conversation_id: str, reason: str, detail: str | None) -> None:
+    def _hand_off(
+        self, secrets: ChannelSecrets, phone: str, conversation_id: str, reason: str, detail: str | None, *, summary: str | None = None
+    ) -> None:
         """El chat pasa a una persona: según el horario del equipo, la IA se pausa o sigue; el cliente sabe qué esperar y el equipo
         recibe el aviso (campana, correo y notificación)."""
         slug = secrets.tenant_slug
         plan = self._handoff_plan(slug)
         notification = self._conversations.request_handoff(
-            conversation_id, reason, self._hide_payments(slug, detail) if detail else None, pause_ai=plan.pause_ai
+            conversation_id, reason, self._hide_payments(slug, detail) if detail else None, pause_ai=plan.pause_ai,
+            summary=self._hide_payments(slug, summary) if summary else None,
         )
         if plan.notice:
             self._say(secrets, phone, plan.notice)

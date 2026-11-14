@@ -309,6 +309,7 @@ function ThreadView({
               {isTest ? "Prueba: " : ""}
               {conversation.handoffReason ? HANDOFF_LABELS[conversation.handoffReason] : "Este cliente pidió hablar con una persona"}
             </strong>
+            {conversation.handoffSummary && <span className="handoff-banner__summary">{conversation.handoffSummary}</span>}
             <span>
               {conversation.handoffRequestedAt ? `Desde ${relativeTime(conversation.handoffRequestedAt)}. ` : ""}
               {isTest

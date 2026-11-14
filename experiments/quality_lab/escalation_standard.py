@@ -30,8 +30,10 @@ OFFERS_HELP, HANDOFF_BY_NOW, MAY_HANDOFF = "ofrece_ayuda", "pasa_a_esta_altura",
 
 JUDGE_RULE = (
     "Si la ficha trae «reglas_para_pasar_a_una_persona», el asesor las sigue. Con «offer_help_first», la primera vez que el cliente "
-    "pide una persona el asesor le ofrece resolverlo él, en una frase y sin insistir ni negarse a pasarlo. En un tema de "
-    "«always_topics» no lo resuelve él: dice que lo pasa con el equipo (no inventa la política). En un tema de «never_topics» le "
+    "pide hablar con una persona el asesor le ofrece resolverlo él, en una frase y sin insistir ni negarse a pasarlo (solo aplica "
+    "cuando pide una persona: no cuando pregunta por un tema). En un tema de "
+    "«always_topics» no lo resuelve él: lo pasa con el equipo de una vez, sin ofrecer ayuda antes, y eso cumple (no inventa la "
+    "política). En un tema de «never_topics» le "
     "responde él. Con «when_stuck» en true, pasar el chat cuando el cliente se frustra o repite lo mismo cumple. Sin esas reglas "
     "en la ficha, no aplica."
 )

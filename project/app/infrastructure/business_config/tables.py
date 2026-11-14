@@ -151,6 +151,8 @@ conversations = Table(
     # cliente sin leer, hasta cuándo el asistente está «escribiendo…» y cuándo cambió algo.
     Column("ai_paused", Boolean, nullable=False, default=False),
     Column("handoff_reason", Text),
+    # Lo que la IA escribió para el equipo al pasar el chat (`handoff_brief.py`); se borra con «Ya lo atendí».
+    Column("handoff_summary", Text),
     Column("unread_count", Integer, nullable=False, default=0),
     Column("assistant_typing_until", DateTime(timezone=True)),
     Column("updated_at", DateTime(timezone=True), nullable=False, default=_now),

@@ -33,7 +33,7 @@ from app.api.controllers import attention_tasks, whatsapp_qr_webhook
 from app.application.attention.resume_sweep import ResumeSweep, Throttle
 from app.application.channels.inbound import ChannelInbound
 from app.business_config_application.access import BusinessAccess
-from app.business_config_application.attention import TeamAlerts, alert_email
+from app.business_config_application.attention import SUMMARY_LABEL, TeamAlerts, alert_email
 from app.business_config_application.ports import EmailNotSent, PushOutcome
 from app.domain.business_config.access import Principal
 from app.domain.business_config.attention import (
@@ -363,7 +363,7 @@ class FakeGateway:
     def set_typing(self, *args):
         return None
 
-    def request_handoff(self, conversation_id, reason, detail=None, *, pause_ai=True):
+    def request_handoff(self, conversation_id, reason, detail=None, *, pause_ai=True, summary=None):
         self.handoffs.append((conversation_id, reason, pause_ai))
         return "aviso-1"
 
@@ -606,6 +606,13 @@ def test_the_email_has_text_and_html_and_escapes_what_the_customer_wrote():
     assert subject == "Laura tiene un reclamo · Sabor & Casa"
     assert "«\"<b>frío</b>\"»" in text and "Abrir el chat: https://x/?c=1&d=2" in text
     assert "&lt;b&gt;frío&lt;/b&gt;" in body and "Sabor &amp; Casa" in body and 'href="https://x/?c=1&amp;d=2"' in body
+
+
+def test_the_email_shows_the_team_note_as_what_the_customer_needs_not_as_a_quote():
+    note = "Laura pidió 3 almuerzos <b>sin cebolla</b> y quiere confirmar la hora."
+    _subject, text, body = alert_email(title="Laura pidió hablar con una persona", business_name="Sabor", detail=None, link=None, footer_business="Sabor", summary=note)
+    assert f"{SUMMARY_LABEL}: {note}" in text and "«" not in text
+    assert SUMMARY_LABEL in body and "&lt;b&gt;sin cebolla&lt;/b&gt;" in body
 
 
 # ---------------------------------------------------------------------------

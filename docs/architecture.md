@@ -425,6 +425,13 @@ bandeja guarda como `human_request` («persona»), `complaint` («reclamo»), `b
 su decisión con una frase neutra (`ai_orchestrator.HANDOFF_WITHOUT_TEXT`, aviso `paso_sin_mensaje`). Que la IA siga estas reglas lo
 mide la puerta de calidad con `--escalation` ([Calidad del asesor](calidad-del-asesor.md)).
 
+**La nota para el equipo** (`application/pipeline/handoff_brief.py`). Cuando el motor decide pasar el chat, una llamada corta al modelo
+del negocio escribe para quien lo atiende quién es el cliente, qué le interesaba y qué pidió, solo con lo que dijo el cliente (lee los
+últimos mensajes y el resumen de lo anterior) y sin datos de pago. Va en los metadatos (`handoff_summary`), en el aviso (campana,
+correo y celular) y en `conversations.handoff_summary` (migración 0020), que el chat del panel muestra y «Reanudar IA» borra. Si falla,
+el aviso lleva el último mensaje del cliente (`resumen_para_el_equipo_fallido`). Lo mide la puerta de calidad (reglas
+`nota_para_el_equipo` y `nota_fiel`).
+
 1. **El traspaso** (`application/channels/inbound.py`, `_hand_off`). Si el asistente marca `handoff`:
    - dentro del horario del equipo, la IA se pausa, el cliente empieza a esperar (`conversations.customer_waiting_since`) y recibe
      «Una persona de nuestro equipo te responderá en unos 10 minutos» (o nada, si el negocio lo eligió);

@@ -31,7 +31,9 @@ class ApiConversationGateway(Protocol):
 
     def append(self, tenant_slug: str, *, channel: str, contact_ref: str, contact_name: str | None, message: NewMessage, media: Any = None) -> AppendResult: ...
 
-    def request_handoff(self, conversation_id: str, reason: str, detail: str | None = None, *, pause_ai: bool = True) -> str | None: ...
+    def request_handoff(
+        self, conversation_id: str, reason: str, detail: str | None = None, *, pause_ai: bool = True, summary: str | None = None
+    ) -> str | None: ...
 
     def ai_paused(self, conversation_id: str) -> bool: ...
 
@@ -116,7 +118,10 @@ class AssistantApi:
         if handoff:
             reason = str(metadata.get("handoff_reason") or "assistant")
             plan = plan_handoff(slug, attention=self._attention, sections=self._sections, now=self._clock())
-            notification = self._conversations.request_handoff(conversation, reason, self._hide(slug, message.text), pause_ai=plan.pause_ai)
+            summary = str(metadata.get("handoff_summary") or "")
+            notification = self._conversations.request_handoff(
+                conversation, reason, self._hide(slug, message.text), pause_ai=plan.pause_ai, summary=self._hide(slug, summary) if summary else None
+            )
             if plan.notice:
                 self._record(slug, message, plan.notice, None)
                 parts.append(plan.notice)

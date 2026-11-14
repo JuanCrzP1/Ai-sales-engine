@@ -206,6 +206,22 @@ Con `asesor_ai_prod` y `restaurant`, tres muestras (24 conversaciones), modelo `
 
 Los negocios que no cambian estas reglas no cambian: el laboratorio de regresión da prompts y respuestas idénticos en los 9 negocios.
 
+### La nota para el equipo (14 de noviembre de 2026)
+
+Rama `nota-para-el-equipo`. Cuando un chat pasa a una persona, la IA escribe una nota para el equipo
+([`handoff_brief.py`](../project/app/application/pipeline/handoff_brief.py)). La puerta suma dos reglas: la exacta
+`nota_para_el_equipo` (cada paso al equipo trae nota y sin datos de pago) y la del juez `nota_fiel` (dice qué necesita el cliente y no
+inventa un dato que no dijo; el juez cita la frase de la nota). El juez ve la nota debajo de la respuesta del asesor.
+
+| Corrida | Resultado | Qué se cambió después |
+|---|---|---|
+| `nota_equipo_pagos_20261114` | Nota en 24 de 24; fiel en 21. «Dueño de una tienda de ropa» (el cliente dijo «es una tienda de ropa») y «Cliente: No se menciona el nombre». | Usar las palabras del cliente, sin deducir. |
+| `…_b` | Fiel en 23; las notas copiaban al cliente en primera persona («Quiero Plan Basico»). | En tercera persona, sin cargos ni agregados. |
+| `…_c`, `…_d` | Seguía «dueño»: venía del resumen de conversaciones largas (`summary_writer.py`), que además escribía «No proporcionó su teléfono» cuando lo dio después. Dos fallas eran del juez («no lo dijo en este turno», cuando lo dijo antes). | El resumen ya no agrega cargos ni dice qué datos faltan. La regla del juez precisa qué es inventar. |
+| `…_e` | **Nota fiel 24 de 24.** Solo un «cómo así» flojo, la debilidad de `gpt-4o-mini` de siempre. | |
+| `nota_equipo_reglas_20261114` | Con reembolsos, la nota decía «debido a su reclamo»: el motivo que marcó el asesor se tomaba como hecho. | El motivo es una pista; la nota sale de los mensajes. El juez ya no pide «ofrecer ayuda» en un tema del equipo. |
+| `nota_equipo_reglas_20261114_b` | **Pasa: 24 de 24** (vuelto a juzgar con la regla precisada; las respuestas eran correctas). | |
+
 ## Lo que la puerta no cubre
 
 - Solo mira los momentos de pago. La oferta, los precios y las objeciones los mide

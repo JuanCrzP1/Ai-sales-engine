@@ -318,6 +318,13 @@ describe("Conversaciones en vivo", () => {
     expect(within(thread).getByText(/La IA está pausada en este chat/)).toBeInTheDocument();
   });
 
+  it("muestra lo que necesita el cliente, escrito por la IA para el equipo", async () => {
+    const note = "Laura quiere el Plan Básico para su tienda y pidió hablar con alguien para pagar por transferencia.";
+    await openChat([whatsappThread({ needsHuman: true, aiPaused: true, handoffReason: "human_request", handoffSummary: note, handoffRequestedAt: minutesAgo(1) })]);
+    const thread = screen.getByRole("region", { name: "Conversación abierta" });
+    expect(within(thread).getByRole("status")).toHaveTextContent(note);
+  });
+
   it("a una conversación de prueba no se le puede responder", async () => {
     const test: ConversationThread = {
       conversation: { ...LAURA.conversation, channel: "prueba", canReply: false },

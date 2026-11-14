@@ -41,8 +41,13 @@ Ver [El horario del equipo](horario-del-equipo).
 ## Cómo te enteras
 
 - La **campana** del panel.
-- Un **correo** con lo que pidió el cliente y un botón para abrir el chat.
+- Un **correo** con lo que necesita el cliente y un botón para abrir el chat.
 - Una **notificación** en tu celular o tu computador, como un mensaje de WhatsApp.
+
+En los tres, y arriba del chat en [Conversaciones](panel:conversaciones), el asistente te deja una **nota corta**: quién es el
+cliente, qué le interesaba y qué pidió, para que lo atiendas sin leer todo el chat. La nota sale solo de lo que dijo el cliente y
+nunca lleva datos de pago. Si no se pudo escribir, ves lo último que escribió el cliente. Escribirla usa tu clave de IA una vez cada
+vez que un chat pasa a tu equipo.
 
 Ver [Avisos a tu equipo](avisos-a-tu-equipo).
 

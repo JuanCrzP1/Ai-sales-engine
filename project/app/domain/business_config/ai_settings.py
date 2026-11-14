@@ -61,6 +61,8 @@ class AssistantTurn:
     # El asistente pasó la conversación a una persona del equipo, y por qué (`conversations.HANDOFF_REASONS`).
     handoff: bool = False
     handoff_reason: str | None = None
+    # La nota de la IA para el equipo (`handoff_brief.py`).
+    handoff_summary: str | None = None
 
 
 def key_hint(api_key: str) -> str:

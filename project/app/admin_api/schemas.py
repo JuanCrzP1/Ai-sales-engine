@@ -211,6 +211,7 @@ def conversation_payload(summary: ConversationSummary) -> dict[str, Any]:
         "needs_human": summary.needs_human,
         "handoff_requested_at": _iso(summary.handoff_requested_at),
         "handoff_reason": summary.handoff_reason,
+        "handoff_summary": summary.handoff_summary,
         "ai_paused": summary.ai_paused,
         "unread_count": summary.unread_count,
         "assistant_typing": summary.assistant_typing,

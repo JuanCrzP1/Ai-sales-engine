@@ -244,6 +244,7 @@ class PlaygroundRecorder:
         intent: str | None,
         handoff: bool = False,
         handoff_reason: str | None = None,
+        handoff_summary: str | None = None,
     ) -> None:
         try:
             self._storage.record(
@@ -257,6 +258,7 @@ class PlaygroundRecorder:
                 ],
                 handoff=handoff,
                 handoff_reason=handoff_reason,
+                handoff_summary=redact_payment_values(handoff_summary, sections) if handoff_summary else None,
             )
         except Exception:  # noqa: BLE001 - la bandeja no puede tumbar la prueba; se registra el tipo, nunca el contenido
             logger.exception("conversacion_de_prueba_no_guardada")

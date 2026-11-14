@@ -1269,6 +1269,13 @@
   color: var(--color-danger);
 }
 
+/* La nota de la IA para el equipo: qué necesita el cliente. */
+.handoff-banner__summary {
+  margin: 2px 0;
+  color: var(--color-text);
+  line-height: 1.45;
+}
+
 @media (max-width: 560px) {
   .handoff-banner {
     flex-wrap: wrap;

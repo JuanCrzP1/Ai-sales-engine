@@ -485,6 +485,7 @@ estos avisos lleva lo que escribió el cliente.
 | `memoria_en_ram` | El motor arrancó con una base que no es PostgreSQL, fuera de las pruebas. | Usa memoria en RAM: no se comparte entre servidores ni sobrevive a un reinicio. En la nube no debe aparecer nunca. |
 | `resumen_actualizado` | La IA resumió lo anterior de una conversación larga (`mensajes`: cuántos cubrió). | Lo normal en chats largos: una vez cada 10 mensajes. |
 | `resumen_fallido` | La llamada que resume falló o respondió algo que no se entiende. | Siguió con el resumen anterior; el asesor responde igual. |
+| `resumen_para_el_equipo_fallido` | La llamada que escribe la nota para el equipo al pasar un chat falló o respondió algo que no se entiende. | El chat pasó igual; el aviso lleva el último mensaje del cliente. |
 
 ### Avisos De Pagos
 

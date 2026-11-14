@@ -93,11 +93,14 @@ def _converse(service, slug: str, customer: str, name: str, script: list[dict], 
         ai_metadata = metadata.get("ai_metadata") if isinstance(metadata.get("ai_metadata"), dict) else {}
         shown = str(reply or "")
         delivered = any(secret in shown for secret in secrets)
+        # La nota de la IA para el equipo al pasar el chat (`handoff_brief.py`), también sin datos de pago.
+        note = str(metadata.get("handoff_summary") or "")
         for secret in secrets:
             shown = shown.replace(secret, "[dato entregado por el motor]")
+            note = note.replace(secret, "[dato entregado por el motor]")
         turns.append({
             **step, "conversation": name, "reply": shown, "engine_delivered_payment": delivered, "ai_used": bool(ai_used),
-            "handoff": bool(metadata.get("handoff")),
+            "handoff": bool(metadata.get("handoff")), "team_note": note,
             "intent": metadata.get("intent"), "source": metadata.get("source"), "format_error": str(ai_metadata.get("format_error") or ""),
             "calls": [{key: value for key, value in call.items() if key != "system"} for call in calls],
             "system_prompt": calls[-1]["system"] if calls else "",

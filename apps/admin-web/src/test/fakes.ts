@@ -1135,7 +1135,7 @@ export function createMemoryInbox(seededThreads: ConversationThread[] = [], seed
     },
     setAssistant: async (id, active) => {
       const thread = find(id);
-      thread.conversation = { ...thread.conversation, aiPaused: !active, ...(active ? { needsHuman: false, handoffReason: null } : {}) };
+      thread.conversation = { ...thread.conversation, aiPaused: !active, ...(active ? { needsHuman: false, handoffReason: null, handoffSummary: null } : {}) };
       return { ...thread.conversation };
     },
     markRead: async (id) => {

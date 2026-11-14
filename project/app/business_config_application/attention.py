@@ -195,16 +195,33 @@ class PushService:
 # ---------------------------------------------------------------------------------------------------------- avisos
 
 
-def alert_email(*, title: str, business_name: str, detail: str | None, link: str | None, footer_business: str) -> tuple[str, str, str]:
-    """El correo de un aviso: asunto, texto plano y HTML. Todo lo que viene del cliente se escapa."""
+# El largo del texto de una notificación en el celular: lo que cabe a la vista; la nota completa está en el chat.
+PUSH_BODY_CHARS = 180
+# Cómo se presenta en el correo la nota de la IA para el equipo (`application/pipeline/handoff_brief.py`).
+SUMMARY_LABEL = "Lo que necesita el cliente"
+
+
+def alert_email(
+    *, title: str, business_name: str, detail: str | None, link: str | None, footer_business: str, summary: str | None = None
+) -> tuple[str, str, str]:
+    """El correo de un aviso: asunto, texto plano y HTML. `summary` es la nota de la IA para el equipo (qué necesita el cliente);
+    `detail`, lo que escribió el cliente, entre comillas. Todo lo que viene del cliente o de la IA se escapa."""
     subject = f"{title} · {business_name}"
     text_lines = [title, "", f"Negocio: {business_name}"]
+    if summary:
+        text_lines += ["", f"{SUMMARY_LABEL}: {summary}"]
     if detail:
         text_lines += ["", f"«{detail}»"]
     if link:
         text_lines += ["", f"Abrir el chat: {link}"]
     text_lines += ["", f"Recibes este correo porque atiendes {footer_business}. Cámbialo en Configuración → Atención humana."]
     esc = html.escape
+    summary_block = (
+        f'<p style="margin:16px 0 4px;font-size:13px;font-weight:600;color:#374151">{SUMMARY_LABEL}</p>'
+        f'<p style="margin:0 0 16px;padding:12px 16px;background:#f4f6f8;border-radius:6px;color:#1f2937">{esc(summary)}</p>'
+        if summary
+        else ""
+    )
     quote_block = (
         f'<p style="margin:16px 0;padding:12px 16px;background:#f4f6f8;border-left:3px solid #16a34a;border-radius:6px;color:#1f2937">'
         f"«{esc(detail)}»</p>"
@@ -222,7 +239,7 @@ def alert_email(*, title: str, business_name: str, detail: str | None, link: str
         '<p style="margin:0 0 16px;font-size:13px;color:#6b7280;letter-spacing:.02em">AI SALES ENGINE</p>'
         f'<h1 style="margin:0 0 8px;font-size:20px;line-height:1.3">{esc(title)}</h1>'
         f'<p style="margin:0;color:#4b5563">{esc(business_name)}</p>'
-        f"{quote_block}{button}"
+        f"{summary_block}{quote_block}{button}"
         '<hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0">'
         f'<p style="margin:0;font-size:12px;color:#6b7280">Recibes este correo porque atiendes {esc(footer_business)}. '
         "Cámbialo en Configuración → Atención humana.</p></div>"
@@ -276,8 +293,10 @@ class TeamAlerts:
                 return
             if not self._storage.claim_delivery(alert.notification_id, "email"):
                 return
+            is_summary = bool(getattr(alert, "body_is_summary", False))
             subject, text, body = alert_email(
-                title=alert.title, business_name=alert.business_name, detail=alert.body, link=link, footer_business=alert.business_name
+                title=alert.title, business_name=alert.business_name, detail=None if is_summary else alert.body, link=link,
+                footer_business=alert.business_name, summary=alert.body if is_summary else None,
             )
             try:
                 self._email.send(to=recipients, subject=subject, html=body, text=text, idempotency_key=f"aviso-{alert.notification_id}")
@@ -298,7 +317,8 @@ class TeamAlerts:
             if not subscriptions or not self._storage.claim_delivery(alert.notification_id, "push"):
                 return
             body = f"{alert.business_name}: {alert.body}" if alert.body else alert.business_name
-            message = PushMessage(title=alert.title, body=body[:180], url=path, tag=alert.conversation_id or alert.notification_id)
+            body = body if len(body) <= PUSH_BODY_CHARS else f"{body[: PUSH_BODY_CHARS - 1].rstrip()}…"
+            message = PushMessage(title=alert.title, body=body, url=path, tag=alert.conversation_id or alert.notification_id)
             sent = 0
             for subscription in subscriptions:
                 outcome = self._push.send(subscription, message)

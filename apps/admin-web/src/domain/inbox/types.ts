@@ -44,6 +44,8 @@ export interface ConversationSummary {
   needsHuman: boolean;
   handoffRequestedAt: string | null;
   handoffReason?: HandoffReason | null;
+  /** Lo que la IA escribió para el equipo al pasar el chat: quién es el cliente y qué necesita. Sin nota: no se pudo escribir. */
+  handoffSummary?: string | null;
   /** La atiende el equipo: la IA no responde en este chat hasta que la reanuden. Sin dato: la IA responde. */
   aiPaused?: boolean;
   /** Mensajes del cliente que nadie del equipo ha visto. */

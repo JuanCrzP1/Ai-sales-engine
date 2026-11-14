@@ -20,6 +20,7 @@ from app.domain.business_config.ai_settings import AICredentials, AssistantTurn,
 from app.domain.business_config.conversations import NewMessage
 from app.domain.business_config.payment_data import REDACTED_PAYMENT_VALUE, payment_values
 from app.infrastructure.business_config.ai_usage_store import AIUsageStore
+from app.infrastructure.business_config.attention_store import AttentionStore
 from app.infrastructure.business_config.commerce_store import CommerceStore
 from app.infrastructure.business_config.conversation_store import ConversationStore
 from app.infrastructure.business_config.database import (
@@ -163,11 +164,11 @@ def test_the_migration_matches_the_tables():
         body = re.search(rf"CREATE TABLE IF NOT EXISTS {table.name} \((.*?)\n\);", sql, re.S).group(1)
         columns = {match.group(1) for match in re.finditer(r"^\s+([a-z_]+)\s+[A-Z]+", body, re.M)} - {"constraint"}
         # La 0005 agregó a `conversations` las columnas del traspaso a una persona; la 0009, las de la bandeja en vivo; la 0010, la
-        # etapa; la 0011, la espera del cliente y cuándo retomó la IA.
+        # etapa; la 0011, la espera del cliente y cuándo retomó la IA; la 0020, la nota de la IA para el equipo.
         added_later = (
             {
                 "needs_human", "handoff_requested_at", "ai_paused", "handoff_reason", "unread_count", "assistant_typing_until", "updated_at",
-                "stage", "customer_waiting_since", "ai_resumed_at",
+                "stage", "customer_waiting_since", "ai_resumed_at", "handoff_summary",
             }
             if table is conversations
             else {"kind", "status", "provider_message_id", "media_id", "media_note", "updated_at"}
@@ -661,3 +662,25 @@ def test_the_report_counts_the_period_by_day_and_compares_it_with_the_previous_o
     assert report["handoffs_by_reason"] == {"human_request": 1}
     assert sum(day["new_conversations"] for day in report["days"]) == 2
     assert client.get("/api/businesses/restaurant/reports", headers=_as("beto")).status_code == 404
+
+
+def test_the_team_note_goes_in_the_alert_and_the_chat_and_never_outlives_its_handoff(platform):
+    """La nota de la IA para el equipo (`handoff_brief.py`): en el aviso y en el chat del panel; con «Reanudar IA» se borra, y un paso
+    sin nota no muestra la de antes."""
+    engine, store, _lab, client = platform
+    chat = _whatsapp_chat(store)
+    note = "Ana quiere el menú del día para 20 personas y pidió hablar con alguien para confirmar el pedido."
+    notification = store.request_handoff(chat.conversation_id, "human_request", "Quiero hablar con alguien", summary=note)
+    items, _unread = NotificationStore(engine).recent(["restaurant"], ANA.user_id, limit=10)
+    assert [item.body for item in items] == [note]
+    assert AttentionStore(engine).alert(notification).body_is_summary is True
+    live = client.get(f"/api/conversations/{chat.conversation_id}/live", headers=_as("ana")).json()["conversation"]
+    assert live["handoff_summary"] == note
+    resumed = client.post(f"/api/conversations/{chat.conversation_id}/assistant", json={"active": True}, headers=_as("ana")).json()
+    assert resumed["handoff_summary"] is None
+    # Otro paso, sin nota (la llamada falló): el aviso lleva lo que escribió el cliente y el chat no muestra la nota vieja.
+    again = store.request_handoff(chat.conversation_id, "complaint", "Nadie me responde")
+    assert AttentionStore(engine).alert(again).body_is_summary is False
+    items, _unread = NotificationStore(engine).recent(["restaurant"], ANA.user_id, limit=10)
+    assert items[0].body == "Nadie me responde"
+    assert client.get(f"/api/conversations/{chat.conversation_id}/live", headers=_as("ana")).json()["conversation"]["handoff_summary"] is None

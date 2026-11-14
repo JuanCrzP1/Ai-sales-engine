@@ -165,9 +165,12 @@ def set_conversation_typing(conversation_id: str, until: datetime | None) -> Non
     ConversationStore(_store_engine()).set_typing(conversation_id, until)
 
 
-def request_conversation_handoff(conversation_id: str, reason: str, detail: str | None = None, *, pause_ai: bool = True) -> str | None:
-    """La conversación pasa a una persona y el equipo recibe un aviso (su id, o None si ya esperaba). Con `pause_ai`, la IA se pausa."""
-    return ConversationStore(_store_engine()).request_handoff(conversation_id, reason, detail, pause_ai=pause_ai)
+def request_conversation_handoff(
+    conversation_id: str, reason: str, detail: str | None = None, *, pause_ai: bool = True, summary: str | None = None
+) -> str | None:
+    """La conversación pasa a una persona y el equipo recibe un aviso (su id, o None si ya esperaba). Con `pause_ai`, la IA se pausa;
+    `summary` es la nota de la IA para el equipo."""
+    return ConversationStore(_store_engine()).request_handoff(conversation_id, reason, detail, pause_ai=pause_ai, summary=summary)
 
 
 def attention_settings(tenant_slug: str) -> AttentionSettings:

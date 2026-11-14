@@ -82,6 +82,8 @@ class ConversationSummary:
     needs_human: bool = False
     handoff_requested_at: datetime | None = None
     handoff_reason: str | None = None
+    # La nota de la IA para el equipo al pasar el chat: quién es el cliente y qué necesita (`handoff_brief.py`).
+    handoff_summary: str | None = None
     # La atiende una persona: la IA no responde en este chat hasta que la reanuden.
     ai_paused: bool = False
     unread_count: int = 0
@@ -218,6 +220,11 @@ def message_preview(kind: str, body: str) -> str:
         return preview(body)
     label = _MEDIA_PREVIEW.get(kind, _MEDIA_PREVIEW["other"])
     return preview(f"{label}: {body}" if str(body or "").strip() else label)
+
+
+def handoff_reason_text(reason: str | None) -> str:
+    """El motivo en una frase («el cliente tiene un reclamo»), para la IA que escribe el resumen para el equipo."""
+    return f"el cliente {_HANDOFF_TITLES.get(reason or 'assistant', _HANDOFF_TITLES['assistant'])}"
 
 
 def handoff_title(reason: str | None, channel: str, contact_name: str | None) -> str:

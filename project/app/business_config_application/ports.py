@@ -179,6 +179,7 @@ class ConversationStorage(Protocol):
         messages: list[NewMessage],
         handoff: bool = False,
         handoff_reason: str | None = None,
+        handoff_summary: str | None = None,
     ) -> str:
         """Agrega mensajes al hilo de ese contacto en ese canal (lo crea si no existe) y devuelve su identificador. Con `handoff`,
         la conversación queda esperando a una persona y el equipo recibe un aviso, en la misma transacción."""

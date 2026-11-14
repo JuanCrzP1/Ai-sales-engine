@@ -5,6 +5,13 @@ está en el historial de git y en `docs/plan-v1.md`.
 
 ## 14 de noviembre de 2026
 
+**Tu equipo sabe qué necesita el cliente antes de abrir el chat**
+- Cuando un chat pasa a tu equipo, el asistente deja una **nota corta**: quién es el cliente, qué le interesaba y qué pidió. Antes
+  el aviso solo traía su último mensaje («No, gracias, prefiero una persona»), que no decía de qué se trataba.
+- La ves en la campana, en el correo, en la notificación del celular y arriba del chat en Conversaciones.
+- Sale solo de lo que dijo el cliente y nunca lleva datos de pago. Usa tu clave de IA una vez por cada chat que pasa a tu equipo.
+- El resumen de las conversaciones largas ya no agrega cosas que el cliente no dijo ni afirma que le falta un dato que dio después.
+
 **Tú decides cuándo el asistente pasa un chat a tu equipo**
 - Nueva tarjeta **Cuándo pasar a una persona** en Asistente IA → Cómo atiende. Si el cliente pide una persona, puedes elegir que el
   asistente **primero le ofrezca ayuda** (una vez, sin insistir) y lo pase si insiste.

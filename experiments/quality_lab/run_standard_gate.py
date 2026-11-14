@@ -33,7 +33,7 @@ import costs  # noqa: E402
 import judge  # noqa: E402
 from run_quality_eval import REPO, RESULTS, _child_env, _export, _git, _model_prices, _usage  # noqa: E402
 from escalation_standard import HANDOFF_MESSAGE, PROFILE as ESCALATION_PROFILE  # noqa: E402
-from standard import CONFIRM, EXACT_RULES, JUDGE, JUDGE_RULES, confirm_request, exact_failures, judge_failures, keep_confirmed  # noqa: E402
+from standard import CONFIRM, EXACT_RULES, JUDGE, JUDGE_RULES, confirm_request, exact_failures, judge_failures, keep_confirmed, transcript  # noqa: E402
 
 # Para calcular el costo antes de correr: las conversaciones del estándar y sus turnos, por negocio y por muestra (con `--escalation`,
 # las de paso a persona).
@@ -67,7 +67,7 @@ def _publish_escalation(tree: Path, tenants: list[str]) -> None:
 def judge_conversation(key: str, model: str, facts: dict, turns: list[dict]) -> tuple[dict[str, list[dict]], list[dict], list[dict]]:
     """Las reglas del juez en una conversación: por cada una, dónde no pasa y por qué (lista vacía si pasa); las fallas que reportó
     y no valieron (sin su frase textual, o no confirmadas por el segundo revisor) y lo que gastaron sus llamadas."""
-    user = f"FICHA:\n{json.dumps(_ficha(facts), ensure_ascii=False)}\n\nCONVERSACIÓN:\n{judge._transcript(turns)}"
+    user = f"FICHA:\n{json.dumps(_ficha(facts), ensure_ascii=False)}\n\nCONVERSACIÓN:\n{transcript(turns)}"
     verdict, usage = judge._call(key, model, JUDGE, user)
     failures, discarded = judge_failures(verdict, turns)
     usages = [usage]
@@ -129,12 +129,16 @@ def build_report(data: dict) -> str:
                 if turn:
                     lines.append(f"  - Cliente: «{turn['message']}»")
                     lines.append(f"  - Asesor: «{' ⏎ '.join(turn['reply'].split(chr(10)))[:420]}»")
+                    if turn.get("team_note"):
+                        lines.append(f"  - Nota para el equipo: «{turn['team_note']}»")
         lines.append("")
     lines += ["## Las conversaciones", ""]
     for row in rows:
         lines += [f"### {row['tenant']} · {row['conversation']}", ""]
         for turn in row["turns"]:
             lines += [f"**[{turn['turn']}] Cliente:** {turn['message']}", "", f"**[{turn['turn']}] Asesor:** " + turn["reply"].replace("\n", "  \n"), ""]
+            if turn.get("team_note"):
+                lines += [f"*[{turn['turn']}] Nota para el equipo:* {turn['team_note']}", ""]
     return "\n".join(lines)
 
 
@@ -205,7 +209,8 @@ def report(args, captured: dict, key: str, output: Path) -> int:
         "experiment": args.experiment, "candidate": captured.get("commit"), "model": model, "judge_model": args.judge_model,
         "samples": len(rows) // max(1, len(tenants)) // max(1, len({row["conversation"] for row in rows})),
         "tenants": tenants, "rows": [{key_: value for key_, value in row.items() if key_ != "turns"} | {"turns": [
-            {name: turn[name] for name in ("turn", "message", "expect", "reply", "handoff")} for turn in row["turns"]]} for row in rows],
+            {name: turn.get(name, "") for name in ("turn", "message", "expect", "reply", "handoff", "team_note")} for turn in row["turns"]]}
+            for row in rows],
         "gasto": {"asesor_usd": usage["costo_usd_sin_cache"], "juez_usd": costs.spent(judge_usages, _model_prices(args.judge_model))},
         "llamadas_por_mensaje": round(usage["llamadas"] / messages, 2) if messages else 0,
     }

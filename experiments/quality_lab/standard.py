@@ -50,6 +50,7 @@ EXACT_RULES = {
     ),
     "no_repite_la_respuesta": "No le responde lo mismo dos veces seguidas.",
     "sin_numeros_de_pago_falsos": "El asesor nunca escribe un número como dato de pago («Nequi: 315…»): el único es el que pone el sistema.",
+    "nota_para_el_equipo": "Cuando el chat pasa al equipo, el equipo recibe una nota de lo que necesita el cliente, sin datos de pago.",
 }
 JUDGE_RULES = {
     "responde_lo_que_preguntan": (
@@ -76,13 +77,22 @@ JUDGE_RULES = {
         "Pedirle otros datos en ese mismo mensaje sí pasa."
     ),
     "sigue_las_reglas_para_pasar": ESCALATION_RULE,
+    "nota_fiel": (
+        "Cuando un turno trae «Nota para el equipo» (lo que lee una persona del equipo que no ha leído el chat), la nota dice qué "
+        "necesita o pidió el cliente y no inventa. Inventar es dar un dato concreto que el cliente no dijo en ningún turno hasta ese "
+        "momento: un nombre, un producto o plan, un pedido, un pago o un dato de contacto. Lo que dijo en un turno anterior cuenta como "
+        "dicho; resumir con otras palabras o decir el motivo del paso (un reclamo, verificar un pago) no es inventar. No pasa si "
+        "inventa un dato así o si no dice qué necesita el cliente."
+    ),
 }
 JUDGE = (
     "Eres auditor de calidad de un asesor de ventas por chat. Lee la conversación y busca fallas de estas reglas. Sé estricto pero "
     "justo: reporta una falla solo si puedes copiar la frase exacta del asesor que la muestra. Si una regla no aplica o se cumple, no "
     "la reportes.\n"
     "«[dato entregado por el motor]» es un dato de pago real (un número, una cuenta o un link) que el sistema le envió al cliente: en "
-    "ese mensaje los datos sí le llegaron.\n\nREGLAS:\n"
+    "ese mensaje los datos sí le llegaron.\n"
+    "«Nota para el equipo» no la ve el cliente: la escribe la IA para quien atiende el chat. En «nota_fiel», la cita es de la nota.\n\n"
+    "REGLAS:\n"
     + "\n".join(f"- {name}: {text}" for name, text in JUDGE_RULES.items())
     + '\n\nDevuelve SOLO JSON: {"fallas": [{"regla": "<nombre de la regla>", "turno": <número del turno>, "cita": "<frase copiada tal '
     'cual del mensaje del asesor en ese turno>", "razon": "máximo 15 palabras"}]}. Sin fallas: {"fallas": []}.\n'
@@ -116,7 +126,8 @@ def judge_failures(verdict: dict, turns: list[dict]) -> tuple[dict[str, list[dic
         item = item if isinstance(item, dict) else {}
         rule, number, quote = str(item.get("regla") or ""), item.get("turno"), _plain(item.get("cita"))
         turn = by_number.get(number) if isinstance(number, int) else None
-        valid = rule in JUDGE_RULES and turn is not None and len(quote) >= MIN_QUOTE_CHARS and quote in _plain(turn["reply"])
+        said = f"{turn['reply']} {turn.get('team_note') or ''}" if turn is not None else ""
+        valid = rule in JUDGE_RULES and turn is not None and len(quote) >= MIN_QUOTE_CHARS and quote in _plain(said)
         if valid and rule in CUSTOMER_EVIDENCE:
             said = _plain(item.get("cita_cliente"))
             valid = len(said) >= 3 and any(said in _plain(earlier["message"]) for earlier in turns if earlier["turn"] < number)
@@ -141,8 +152,18 @@ CONFIRM = (
 def confirm_request(rule: str, turns: list[dict], failure: dict) -> str:
     """Lo que se le envía al segundo revisor: la regla, la conversación hasta el turno de la falla y lo que reportó el juez."""
     until = [turn for turn in turns if turn["turn"] <= failure["turn"]]
-    transcript = "\n".join(f"[{turn['turn']}] Cliente: {turn['message']}\n[{turn['turn']}] Asesor: {turn['reply']}" for turn in until)
-    return f"REGLA ({rule}): {JUDGE_RULES[rule]}\n\nCONVERSACIÓN HASTA ESE TURNO:\n{transcript}\n\nFALLA REPORTADA en el turno {failure['turn']}: {failure['why']}"
+    return f"REGLA ({rule}): {JUDGE_RULES[rule]}\n\nCONVERSACIÓN HASTA ESE TURNO:\n{transcript(until)}\n\nFALLA REPORTADA en el turno {failure['turn']}: {failure['why']}"
+
+
+def transcript(turns: list[dict]) -> str:
+    """La conversación como la lee el juez: cada turno con lo que dijo el cliente, lo que respondió el asesor y, si el chat pasó al
+    equipo, la nota que recibió el equipo."""
+    lines = []
+    for turn in turns:
+        lines += [f"[{turn['turn']}] Cliente: {turn['message']}", f"[{turn['turn']}] Asesor: {turn['reply']}"]
+        if turn.get("team_note"):
+            lines.append(f"[{turn['turn']}] Nota para el equipo: {turn['team_note']}")
+    return "\n".join(lines)
 
 
 def keep_confirmed(failures: dict[str, list[dict]], turns: list[dict], confirm) -> tuple[dict[str, list[dict]], list[dict]]:
@@ -266,6 +287,11 @@ def exact_failures(turns: list[dict]) -> dict[str, list[dict]]:
         said = reply[: reply.find("💳")] if "💳" in reply else reply
         if _PAYMENT_NUMBER.search(said.replace(ENGINE_DATA, "")):
             fail("sin_numeros_de_pago_falsos", turn, "el asesor escribió un número como dato de pago")
+        note = str(turn.get("team_note") or "")
+        if turn.get("handoff") and not note.strip():
+            fail("nota_para_el_equipo", turn, "el chat pasó al equipo sin una nota de lo que necesita el cliente")
+        if ENGINE_DATA in note or _PAYMENT_NUMBER.search(note):
+            fail("nota_para_el_equipo", turn, "la nota para el equipo trae un dato de pago")
         if previous and reply.strip() == previous.strip():
             fail("no_repite_la_respuesta", turn, "repitió la respuesta anterior")
         sent_before, previous = sent_before or delivered, reply
