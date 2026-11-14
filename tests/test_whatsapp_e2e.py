@@ -245,7 +245,9 @@ def test_a_business_day_on_whatsapp(monkeypatch, tmp_path):
             thread = wait_for(lambda: (lambda c: c if c["conversation"]["needs_human"] else None)(_conversation(stack, "saas")), what="el chat pasa a una persona")
             photo = next(m for m in thread["messages"] if m["kind"] == "image")
             assert photo.get("media_note"), photo
-            assert stack.alerts and stack.alerts[-1], "el equipo no recibió el aviso"
+            # El aviso al equipo sale después de marcar el chat (`inbound._hand_off`): se espera, como lo demás. Revisarlo apenas el
+            # chat quedaba marcado fallaba en el CI, más lento (14 nov 2026).
+            wait_for(lambda: stack.alerts and stack.alerts[-1], what="el aviso al equipo")
             return f"la foto se descargó del simulador, la IA la leyó como comprobante, el chat pasó al equipo y le llegó: «{reply['text'][:60]}…»"
 
         def team_reply() -> str:
