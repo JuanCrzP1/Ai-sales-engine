@@ -30,7 +30,8 @@ class NotificationStore:
         query = (
             select(
                 notifications.c.id, tenants.c.slug, tenants.c.name, notifications.c.conversation_id, notifications.c.kind,
-                notifications.c.title, notifications.c.body, notifications.c.created_at, notification_reads.c.read_at,
+                notifications.c.title, notifications.c.body, notifications.c.body_is_note, notifications.c.created_at,
+                notification_reads.c.read_at,
             )
             .select_from(base)
             .where(self._mine(tenant_slugs))
@@ -45,7 +46,7 @@ class NotificationStore:
             Notification(
                 id=str(row.id), business_slug=row.slug, business_name=row.name,
                 conversation_id=str(row.conversation_id) if row.conversation_id else None, kind=row.kind, title=row.title,
-                body=row.body, created_at=_utc(row.created_at), read=row.read_at is not None,
+                body=row.body, body_is_note=bool(row.body_is_note), created_at=_utc(row.created_at), read=row.read_at is not None,
             )
             for row in rows
         ]

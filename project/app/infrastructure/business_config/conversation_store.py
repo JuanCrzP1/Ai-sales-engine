@@ -423,6 +423,7 @@ class ConversationStore:
                     id=notification_id, tenant_id=row.tenant_id, conversation_id=conversation_id, kind="handoff",
                     title=handoff_title(reason, row.channel, row.contact_name),
                     body=summary or (preview(detail) if detail else None),
+                    body_is_note=bool(summary),
                     created_at=now,
                 )
             )

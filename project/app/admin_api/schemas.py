@@ -274,6 +274,7 @@ def notification_payload(item: Notification) -> dict[str, Any]:
         "kind": item.kind,
         "title": item.title,
         "body": item.body,
+        "body_is_note": item.body_is_note,
         "created_at": _iso(item.created_at),
         "read": item.read,
     }

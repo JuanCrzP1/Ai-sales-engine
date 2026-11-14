@@ -318,7 +318,12 @@ def test_an_old_local_database_accepts_the_new_alerts(tmp_path):
     _refresh_outdated_checks(engine)
     with engine.begin() as conn:
         assert "ai_resumed" in conn.exec_driver_sql("SELECT sql FROM sqlite_master WHERE name = 'notifications'").scalar()
-        conn.exec_driver_sql("INSERT INTO notifications VALUES ('m', 't', NULL, 'ai_resumed', 'La IA retomó', NULL, '2026-11-11 10:00:00')")
+        conn.exec_driver_sql(
+            "INSERT INTO notifications (id, tenant_id, conversation_id, kind, title, body, created_at) "
+            "VALUES ('m', 't', NULL, 'ai_resumed', 'La IA retomó', NULL, '2026-11-11 10:00:00')"
+        )
+        # Los avisos anteriores quedan como lo que escribió el cliente (van entre comillas).
+        assert conn.exec_driver_sql("SELECT body_is_note FROM notifications WHERE id = 'n'").scalar() in (0, False)
         assert conn.exec_driver_sql("SELECT count(*) FROM notification_reads").scalar() == 1
         assert conn.exec_driver_sql("PRAGMA foreign_key_check").all() == []
     engine.dispose()

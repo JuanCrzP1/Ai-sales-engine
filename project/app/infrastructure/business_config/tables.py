@@ -12,6 +12,7 @@ import uuid
 from datetime import datetime, timezone
 
 from sqlalchemy import (
+    false,
     JSON,
     BigInteger,
     Boolean,
@@ -251,6 +252,8 @@ notifications = Table(
     Column("kind", Text, nullable=False),
     Column("title", Text, nullable=False),
     Column("body", Text),
+    # Si `body` es la nota de la IA para el equipo (`handoff_brief.py`) y no lo que escribió el cliente: solo esto último va entre comillas.
+    Column("body_is_note", Boolean, nullable=False, default=False, server_default=false()),
     Column("created_at", DateTime(timezone=True), nullable=False, default=_now),
     CheckConstraint("kind IN ('handoff', 'ai_resumed')", name="notifications_kind_check"),
     Index("notifications_tenant_recent_idx", "tenant_id", "created_at"),

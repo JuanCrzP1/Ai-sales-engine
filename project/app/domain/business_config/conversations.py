@@ -207,6 +207,8 @@ class Notification:
     body: str | None
     created_at: datetime
     read: bool
+    # Si `body` es la nota de la IA para el equipo (no lo que escribió el cliente): no va entre comillas.
+    body_is_note: bool = False
 
 
 def preview(text: str) -> str:

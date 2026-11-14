@@ -63,6 +63,7 @@ interface ApiNotification {
   kind: "handoff" | "ai_resumed";
   title: string;
   body: string | null;
+  body_is_note?: boolean;
   created_at: string;
   read: boolean;
 }
@@ -74,6 +75,7 @@ const toNotification = (item: ApiNotification): Notification => ({
   kind: item.kind,
   title: item.title,
   body: item.body,
+  bodyIsNote: item.body_is_note ?? false,
   createdAt: item.created_at,
   read: item.read,
 });

@@ -86,7 +86,7 @@ export function NotificationBell() {
                     </span>
                     <span className="bell__text">
                       <span className="bell__title">{item.title}</span>
-                      {item.body && <span className="bell__body">{item.kind === "handoff" ? `«${item.body}»` : item.body}</span>}
+                      {item.body && <span className="bell__body">{item.kind === "handoff" && !item.bodyIsNote ? `«${item.body}»` : item.body}</span>}
                       <span className="bell__meta">
                         {item.business.name} · {relativeTime(item.createdAt)}
                       </span>

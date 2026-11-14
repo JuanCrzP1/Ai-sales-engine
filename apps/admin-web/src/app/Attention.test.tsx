@@ -192,6 +192,18 @@ describe("Avisos y chats", () => {
     expect(within(panel).queryByRole("button", { name: "Activar notificaciones" })).not.toBeInTheDocument();
   });
 
+  it("la nota de la IA para el equipo no va entre comillas: no son palabras del cliente", async () => {
+    window.history.pushState({}, "", `/negocios/${CAFE}`);
+    const user = userEvent.setup();
+    const note = "Laura quiere el combo familiar y pidió hablar con alguien para pagar en efectivo.";
+    const inbox = createMemoryInbox([], [notification({ body: note, bodyIsNote: true })]);
+    render(<App services={createTestServices(createMemoryBackend([SAMPLE_DOCUMENT]), { inbox, devicePush: createMemoryDevicePush() })} />);
+    await user.click(await screen.findByRole("button", { name: /Notificaciones: 1 sin leer/ }));
+    const panel = screen.getByRole("dialog", { name: "Notificaciones" });
+    expect(within(panel).getByText(note)).toBeInTheDocument();
+    expect(within(panel).queryByText(`«${note}»`)).not.toBeInTheDocument();
+  });
+
   it("el chat dice si la IA lo retomó o si llegó fuera del horario", async () => {
     const thread = (id: string, overrides: Partial<ConversationThread["conversation"]>): ConversationThread => ({
       conversation: {

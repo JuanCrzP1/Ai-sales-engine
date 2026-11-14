@@ -109,6 +109,8 @@ export interface Notification {
   kind: "handoff" | "ai_resumed";
   title: string;
   body: string | null;
+  /** El texto es la nota de la IA para el equipo, no lo que escribió el cliente: no va entre comillas. */
+  bodyIsNote?: boolean;
   createdAt: string;
   read: boolean;
 }

@@ -336,7 +336,8 @@ def test_the_handoff_migration_matches_the_tables():
     for table in (notifications, notification_reads):
         body = re.search(rf"CREATE TABLE IF NOT EXISTS {table.name} \((.*?)\n\);", sql, re.S).group(1)
         columns = {match.group(1) for match in re.finditer(r"^\s+([a-z_]+)\s+[A-Z]+", body, re.M)} - {"constraint", "primary"}
-        assert columns == {column.name for column in table.columns}, table.name
+        # La 0021 agregó si el texto del aviso es la nota de la IA para el equipo.
+        assert columns == {column.name for column in table.columns} - {"body_is_note"}, table.name
     assert "ADD COLUMN IF NOT EXISTS needs_human" in sql and "ADD COLUMN IF NOT EXISTS handoff_requested_at" in sql
 
 
@@ -672,7 +673,7 @@ def test_the_team_note_goes_in_the_alert_and_the_chat_and_never_outlives_its_han
     note = "Ana quiere el menú del día para 20 personas y pidió hablar con alguien para confirmar el pedido."
     notification = store.request_handoff(chat.conversation_id, "human_request", "Quiero hablar con alguien", summary=note)
     items, _unread = NotificationStore(engine).recent(["restaurant"], ANA.user_id, limit=10)
-    assert [item.body for item in items] == [note]
+    assert [(item.body, item.body_is_note) for item in items] == [(note, True)]
     assert AttentionStore(engine).alert(notification).body_is_summary is True
     live = client.get(f"/api/conversations/{chat.conversation_id}/live", headers=_as("ana")).json()["conversation"]
     assert live["handoff_summary"] == note
@@ -682,5 +683,5 @@ def test_the_team_note_goes_in_the_alert_and_the_chat_and_never_outlives_its_han
     again = store.request_handoff(chat.conversation_id, "complaint", "Nadie me responde")
     assert AttentionStore(engine).alert(again).body_is_summary is False
     items, _unread = NotificationStore(engine).recent(["restaurant"], ANA.user_id, limit=10)
-    assert items[0].body == "Nadie me responde"
+    assert (items[0].body, items[0].body_is_note) == ("Nadie me responde", False)
     assert client.get(f"/api/conversations/{chat.conversation_id}/live", headers=_as("ana")).json()["conversation"]["handoff_summary"] is None
