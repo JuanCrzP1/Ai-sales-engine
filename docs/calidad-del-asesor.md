@@ -200,7 +200,9 @@ Con `asesor_ai_prod` y `restaurant`, tres muestras (24 conversaciones), modelo `
 |---|---|---|
 | `paso_a_persona_20261114` | No pasa: pasó el chat a la primera en 6 de 6, y con reembolsos inventó «no manejamos reembolsos». | Las instrucciones dicen qué poner en `metadata.handoff` aunque el formato diga otra cosa, y que no responda sobre un tema del equipo. El juez acepta pasar el chat cuando se estanca. |
 | `paso_a_persona_20261114_b` | No pasa: los reembolsos y el estancamiento ya pasan; ofrecer ayuda primero todavía no. | Las reglas del negocio van al final de lo del negocio y dicen que reemplazan la del formato. Si la IA decide pasar el chat sin escribir el mensaje, se respeta (`paso_sin_mensaje`; antes el cliente recibía «Hubo un problema»). |
-| `paso_a_persona_20261114_c` | 23 de 24. La única falla: con reembolsos pasó el chat, pero su mensaje le ofrecía ayuda con el pedido en vez de decirle que lo pasaba. | Es la debilidad de `gpt-4o-mini` que ya se ve en los pagos (paso 3: elegir el modelo con la puerta). |
+| `paso_a_persona_20261114_c` | 23 de 24. La única falla: con reembolsos pasó el chat, pero su mensaje le ofrecía ayuda con el pedido en vez de decirle que lo pasaba. | Publicado. Al verificarlo en producción con «Probar», el negocio real pasaba el chat a la primera: tiene un mensaje propio para pasar el chat y «pasar a una persona» como cierre, y el cierre decía «si lo pasas, usa este mensaje». La puerta suma esos dos ajustes. |
+| `paso_a_persona_20261114_d` | 23 de 24: una vez usó ese mensaje a la primera. | Con reglas propias, el mensaje del negocio va solo en la sección de reglas, con cuándo usarlo; el cierre ya no lo repite. Un solo lugar habla del paso a una persona. |
+| `paso_a_persona_20261114_e` | **Pasa**: 24 de 24 en todas las reglas. | |
 
 Los negocios que no cambian estas reglas no cambian: el laboratorio de regresión da prompts y respuestas idénticos en los 9 negocios.
 

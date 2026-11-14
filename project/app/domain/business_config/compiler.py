@@ -301,7 +301,7 @@ def _config(config: BusinessConfig) -> dict:
     if attention:
         section["attention_messages"] = attention
     # «Cuándo pasar a una persona»: solo si el negocio cambió algo. Sin cambios, el asistente sigue la regla general de la plataforma.
-    if not config.escalation.is_default:
+    if config.escalation is not None and not config.escalation.is_default:
         section["escalation"] = config.escalation.model_dump(exclude_none=True)
     section["features"] = _features(config)
     section["response"] = {"length": config.response_style.length, "max_words": config.response_style.effective_max_words()}

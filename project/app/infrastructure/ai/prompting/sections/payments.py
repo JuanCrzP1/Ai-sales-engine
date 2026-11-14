@@ -95,7 +95,9 @@ def render(view: PromptView) -> str:
         sentence(f"Para cerrar puedes {', '.join(enabled)}") if enabled else "",
         sentence(f"Datos que pides para cerrar: {', '.join(fields)}") if fields else "",
         f"Para pedirle sus datos, usa este mensaje del negocio: «{data_request}»" if data_request and fields else "",
-        f"Si lo pasas con una persona del equipo, usa este mensaje del negocio: «{handoff}»" if handoff and _enabled(closing.get("human_handoff")) else "",
+        # Con reglas propias para pasar el chat (`escalation.py`), el mensaje va con ellas: un solo lugar dice cuándo y cómo pasarlo.
+        f"Si lo pasas con una persona del equipo, usa este mensaje del negocio: «{handoff}»"
+        if handoff and _enabled(closing.get("human_handoff")) and not as_dict(view.config.get("escalation")) else "",
         sentence(f"Puedes ayudarle a: {', '.join(action_names)}") if action_names else "",
         sentence(f"Atiendes por: {', '.join(attention)}") if attention else "",
         sentence(f"Lo que vende funciona en: {', '.join(product)}") if product else "",

@@ -47,6 +47,8 @@ export async function startApiServer() {
   const environment = serverEnvironment({
     ADMIN_API_PORT: String(port),
     BUSINESS_CONFIG_DATABASE_URL: `sqlite:///${join(folder, "business_config.sqlite3").replaceAll("\\", "/")}`,
+    // La base del motor (memoria de «Probar» y de los chats): una temporal, nunca la del `.env`. Sin ella, la API no arranca en el CI.
+    DATABASE_URL: `sqlite:///${join(folder, "engine.sqlite3").replaceAll("\\", "/")}`,
     BUSINESS_CONFIG_SECRETS_KEY: `${randomBytes(32).toString("base64url")}=`,
   });
   let child = null;

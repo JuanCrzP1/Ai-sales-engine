@@ -20,6 +20,7 @@ import pytest
 import yaml
 from pydantic import ValidationError
 
+from app.domain.business_config.contract.escalation import Escalation
 from app.domain.business_config.compiler import comparable_with_yaml, compile_business_config
 from app.domain.business_config.contract import BusinessConfig, business_config_json_schema
 from app.domain.business_config.diagnostics import review
@@ -979,7 +980,10 @@ def test_without_escalation_rules_the_assistant_behaves_as_before():
     document = _example()
     document.pop("escalation", None)
     config = BusinessConfig.model_validate(document)
-    assert config.escalation.is_default and config.escalation.on_request == "always" and config.escalation.when_stuck is False
+    assert config.escalation is None
+    assert "escalation" not in config.model_dump(mode="json", exclude_none=True), "se guarda sin la sección"
+    default = Escalation()
+    assert default.is_default and default.on_request == "always" and default.when_stuck is False
     assert "escalation" not in compile_business_config(config, lambda ref: f"valor:{ref.secret_ref}")["config"]
 
 

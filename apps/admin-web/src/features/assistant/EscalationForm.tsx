@@ -3,9 +3,9 @@ import { TextAreaField } from "../../components/ui/FormFields";
 import { Card } from "../../components/ui/Layout";
 import { ListEditor } from "../../components/ui/ListEditor";
 import { Toggle } from "../../components/ui/Toggle";
-import { escalationOf, MAX_ESCALATION_INSTRUCTIONS_CHARS, MAX_ESCALATION_TOPICS, ON_REQUEST_OPTIONS } from "../../domain/assistant/escalation";
+import { type EscalationRules, escalationOf, MAX_ESCALATION_INSTRUCTIONS_CHARS, MAX_ESCALATION_TOPICS, ON_REQUEST_OPTIONS, updatedEscalation } from "../../domain/assistant/escalation";
 import { optionalText } from "../../domain/config/document";
-import { useConfig, useFieldIssue, useSection } from "../../state/useConfig";
+import { useConfig, useFieldIssue } from "../../state/useConfig";
 
 /**
  * Cuándo pasa el asistente el chat a una persona del equipo. Son instrucciones para la IA: decide ella con lo que dice el cliente,
@@ -13,8 +13,8 @@ import { useConfig, useFieldIssue, useSection } from "../../state/useConfig";
  * Configuración → Atención humana.
  */
 export function EscalationForm() {
-  const { document } = useConfig();
-  const [, update] = useSection("escalation");
+  const { document, actions } = useConfig();
+  const update = (patch: Partial<EscalationRules>) => actions.setRootValue("escalation", updatedEscalation(document, patch));
   const rules = escalationOf(document);
   const alwaysIssue = useFieldIssue("escalation.always_topics");
   const neverIssue = useFieldIssue("escalation.never_topics");

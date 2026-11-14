@@ -27,6 +27,9 @@ STUCK = (
     "«estancado» en metadata.handoff."
 )
 INSTRUCTIONS = "Indicaciones del negocio: «{instructions}»"
+# El mensaje del negocio para cuando pasa el chat (Mensajes y canales). Con reglas propias va aquí y no en el cierre (`payments.py`):
+# allí, «si lo pasas, usa este mensaje», hacía que la IA lo usara apenas el cliente pedía una persona (14 nov 2026).
+HANDOFF_MESSAGE = "Solo en el mensaje en que de verdad pasas el chat al equipo (con metadata.handoff marcado), usa este mensaje del negocio: «{message}»"
 
 
 def _join(topics: list[str]) -> str:
@@ -39,11 +42,13 @@ def render(view: PromptView) -> str:
         return ""
     always, never = texts(rules.get("always_topics")), texts(rules.get("never_topics"))
     instructions = " ".join(as_text(rules.get("instructions")).split())
+    message = " ".join(as_text(as_dict(view.config.get("messages")).get("human_handoff")).split())
     lines = [
         OFFER_HELP_FIRST if as_text(rules.get("on_request")) == "offer_help_first" else "",
         ALWAYS.format(topics=_join(always)) if always else "",
         NEVER.format(topics=_join(never)) if never else "",
         STUCK if rules.get("when_stuck") is True else "",
         INSTRUCTIONS.format(instructions=instructions) if instructions else "",
+        HANDOFF_MESSAGE.format(message=message) if message else "",
     ]
     return section(HEADER, [f"- {line}" for line in lines if line])

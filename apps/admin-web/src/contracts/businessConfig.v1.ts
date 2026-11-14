@@ -666,7 +666,7 @@ export interface BusinessConfig {
   /** [audiencia: cliente] */
   knowledge?: Knowledge;
   /** [audiencia: cliente] */
-  escalation?: Escalation;
+  escalation?: Escalation | null;
   /** [audiencia: cliente; motor: conectado] */
   fulfillment?: Fulfillment | null;
   /** [audiencia: cliente; motor: conectado] */

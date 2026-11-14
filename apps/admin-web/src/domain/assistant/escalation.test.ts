@@ -2,7 +2,7 @@ import { SAMPLE_DOCUMENT } from "../../test/fixtures/sampleDocument";
 import { MAX_ESCALATION_TOPIC_CHARS, MAX_ESCALATION_TOPICS } from "../../contracts/businessConfig.v1";
 import type { BusinessDocument } from "../config/types";
 import { validateDocument } from "../validation/rules";
-import { escalationOf, escalationSummary, validateEscalation } from "./escalation";
+import { escalationOf, escalationSummary, updatedEscalation, validateEscalation } from "./escalation";
 
 const withRules = (escalation: BusinessDocument["escalation"]): BusinessDocument => ({ ...structuredClone(SAMPLE_DOCUMENT), escalation });
 const fields = (document: BusinessDocument) => validateEscalation(document).map((issue) => issue.field);
@@ -13,6 +13,13 @@ describe("Cuándo pasar a una persona", () => {
     expect(escalationOf(document)).toEqual({ on_request: "always", always_topics: [], never_topics: [], when_stuck: false, instructions: null });
     expect(fields(document)).toEqual([]);
     expect(escalationSummary(document)).toBe("Si piden una persona, la pasa de inmediato.");
+  });
+
+  it("si las reglas vuelven a ser las de siempre, la sección se quita (no aparece como cambio al publicar)", () => {
+    const configured = withRules({ on_request: "offer_help_first" });
+    expect(updatedEscalation(configured, { on_request: "always" })).toBeUndefined();
+    expect(updatedEscalation(withRules(undefined), { when_stuck: true })).toEqual(expect.objectContaining({ when_stuck: true, on_request: "always" }));
+    expect(updatedEscalation(withRules(undefined), { instructions: "   " })).toBeUndefined();
   });
 
   it("resume las reglas del negocio", () => {

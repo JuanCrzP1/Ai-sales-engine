@@ -13,6 +13,9 @@ import type { ValidationIssue } from "../validation/types";
 /** Límites del contrato para estas reglas: el formulario no deja pasarse. */
 export { MAX_ESCALATION_TOPICS, MAX_MESSAGE_CHARS as MAX_ESCALATION_INSTRUCTIONS_CHARS };
 
+/** Las reglas tal como las guarda el contrato. */
+export type EscalationRules = Escalation;
+
 export type OnRequest = NonNullable<Escalation["on_request"]>;
 
 export const ON_REQUEST_OPTIONS: Option<OnRequest>[] = [
@@ -30,6 +33,17 @@ export function escalationOf(document: BusinessDocument): Required<Omit<Escalati
     when_stuck: escalation.when_stuck ?? false,
     instructions: escalation.instructions ?? null,
   };
+}
+
+/**
+ * Las reglas después de un cambio en el formulario. Si quedan como al principio, la sección se quita (undefined): un negocio que no
+ * la usa no la guarda, y al publicar no aparece como cambio.
+ */
+export function updatedEscalation(document: BusinessDocument, patch: Partial<Escalation>): Escalation | undefined {
+  const next = { ...escalationOf(document), ...patch };
+  const isDefault =
+    next.on_request === "always" && next.always_topics.length === 0 && next.never_topics.length === 0 && !next.when_stuck && !(next.instructions ?? "").trim();
+  return isDefault ? undefined : next;
 }
 
 const key = (topic: string) => topic.trim().split(/\s+/).join(" ").toLocaleLowerCase("es");

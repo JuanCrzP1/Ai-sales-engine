@@ -19,6 +19,11 @@ PROFILE = {
     "when_stuck": True,
 }
 
+# Como el negocio real en producción (14 nov 2026): un mensaje propio para cuando pasa el chat a una persona y «pasar a una persona»
+# como forma de cierre. Con ellos, la IA usaba ese mensaje apenas el cliente pedía una persona, aunque el negocio pidiera ofrecer ayuda
+# primero; sin ellos, la puerta no lo veía.
+HANDOFF_MESSAGE = "Te paso con alguien del equipo por este mismo chat. En un momento te escriben."
+
 # Lo que se espera de un turno, además de los del estándar de pagos (`standard.py`): que no lo pase y le ofrezca resolverlo
 # (`OFFERS_HELP`), que a esa altura ya lo haya pasado (`HANDOFF_BY_NOW`) o que pueda pasarlo o no (`MAY_HANDOFF`).
 OFFERS_HELP, HANDOFF_BY_NOW, MAY_HANDOFF = "ofrece_ayuda", "pasa_a_esta_altura", "puede_pasar"

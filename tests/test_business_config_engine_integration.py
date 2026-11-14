@@ -194,6 +194,24 @@ def test_only_the_rules_the_business_changed_reach_the_assistant(monkeypatch, tm
     assert "reembolsos" in rules and "ofrecer ayuda" not in rules and "se estanca" not in rules and "resuelves tú" not in rules
 
 
+def test_with_escalation_rules_the_handoff_message_lives_only_with_them(monkeypatch, tmp_path):
+    """Producción, 14 nov 2026: el cierre decía «si lo pasas, usa este mensaje» y la IA lo usaba apenas el cliente pedía una persona,
+    aunque el negocio pidiera ofrecer ayuda primero. Con reglas propias, el mensaje va con ellas y dice cuándo usarlo."""
+    message = "Te paso con alguien del equipo por este mismo chat. En un momento te escriben."
+
+    def configure(document, escalation=None):
+        document.setdefault("messages", {})["human_handoff"] = message
+        document["capabilities"]["closing_methods"]["human_handoff"] = True
+        if escalation:
+            document["escalation"] = escalation
+
+    (prompts, _), = run_with_document(monkeypatch, tmp_path / "sin", "saas", configure, TWO_TURNS[:1])
+    assert prompts[0].count(message) == 1 and "CUÁNDO PASAS EL CHAT" not in prompts[0]
+    (prompts, _), = run_with_document(monkeypatch, tmp_path / "con", "saas", lambda d: configure(d, {"on_request": "offer_help_first"}), TWO_TURNS[:1])
+    rules = prompts[0].split("CUÁNDO PASAS EL CHAT A UNA PERSONA DEL EQUIPO", 1)[1]
+    assert prompts[0].count(message) == 1 and message in rules and "de verdad pasas el chat" in rules
+
+
 @pytest.mark.parametrize("marked, reason", [("tema", "business_topic"), ("estancado", "stuck")])
 def test_the_ai_hands_off_with_the_reason_of_the_business_rule(monkeypatch, tmp_path, marked, reason):
     """La IA decide con las reglas del negocio y marca el motivo: la bandeja lo muestra al equipo."""

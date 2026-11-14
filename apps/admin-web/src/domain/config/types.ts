@@ -27,7 +27,7 @@ export type BusinessDocument = BusinessConfig &
   Required<Pick<BusinessConfig, "terms" | "payments" | "sales" | "response_style" | "knowledge" | "inventory">>;
 
 /** Secciones que se editan como un único objeto. */
-export type EditableSection = "identity" | "terms" | "sales" | "capabilities" | "messages" | "response_style" | "knowledge" | "inventory" | "escalation";
+export type EditableSection = "identity" | "terms" | "sales" | "capabilities" | "messages" | "response_style" | "knowledge" | "inventory";
 
 export type OfferModel = Offer["model"];
 

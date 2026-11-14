@@ -417,7 +417,8 @@ sistema envió los datos de pago.
 **Cuándo pasar a una persona** (Asistente IA → Cómo atiende; se publica con el resto). El contrato es `contract/escalation.py`
 (`escalation`: `on_request` `always` | `offer_help_first`, `always_topics`, `never_topics`, `when_stuck`, `instructions`); el
 compilador lo deja en `config.escalation` solo si el negocio cambió algo, y `prompting/sections/escalation.py` lo convierte en
-instrucciones para la IA, al final de lo del negocio. Sin cambios no hay sección: el prompt es idéntico al de antes (lo comprueba el
+instrucciones para la IA, al final de lo del negocio; con reglas propias, el mensaje del negocio para pasar el chat
+(`messages.human_handoff`) va en esa sección, con cuándo usarlo, y no en el cierre (`sections/payments.py`). Sin cambios no hay sección: el prompt es idéntico al de antes (lo comprueba el
 laboratorio de regresión). Son instrucciones, no reglas de palabras: la IA decide y marca el motivo en `metadata.handoff`, que la
 bandeja guarda como `human_request` («persona»), `complaint` («reclamo»), `business_topic` («tema») o `stuck` («estancado»;
 `output_contract.HANDOFF_VALUES`, `conversations.HANDOFF_REASONS`). Si la IA decide pasar el chat y deja el mensaje vacío, se respeta

@@ -32,7 +32,7 @@ sys.path.insert(0, str(LAB))
 import costs  # noqa: E402
 import judge  # noqa: E402
 from run_quality_eval import REPO, RESULTS, _child_env, _export, _git, _model_prices, _usage  # noqa: E402
-from escalation_standard import PROFILE as ESCALATION_PROFILE  # noqa: E402
+from escalation_standard import HANDOFF_MESSAGE, PROFILE as ESCALATION_PROFILE  # noqa: E402
 from standard import CONFIRM, EXACT_RULES, JUDGE, JUDGE_RULES, confirm_request, exact_failures, judge_failures, keep_confirmed  # noqa: E402
 
 # Para calcular el costo antes de correr: las conversaciones del estándar y sus turnos, por negocio y por muestra (con `--escalation`,
@@ -53,11 +53,14 @@ def _ficha(facts: dict) -> dict:
 
 def _publish_escalation(tree: Path, tenants: list[str]) -> None:
     """Escribe las reglas de paso a persona del estándar (`escalation_standard.PROFILE`) en los negocios de la copia aislada, antes
-    de que la captura los importe: es lo que haría el negocio en el panel."""
+    de que la captura los importe: es lo que haría el negocio en el panel. También su mensaje para pasar el chat y el cierre con una
+    persona, como el negocio real."""
     for slug in tenants:
         path = tree / "project" / "config" / "tenants" / slug / "business-config.json"
         document = json.loads(path.read_text(encoding="utf-8"))
         document["escalation"] = ESCALATION_PROFILE
+        document.setdefault("messages", {})["human_handoff"] = HANDOFF_MESSAGE
+        document["capabilities"]["closing_methods"]["human_handoff"] = True
         path.write_text(json.dumps(document, ensure_ascii=False, indent=2), encoding="utf-8")
 
 

@@ -342,7 +342,7 @@ describe("12 y 16. métodos de pago y datos sensibles", () => {
     fill(screen.getByLabelText(/^Número de celular/), MOBILE);
     await user.click(screen.getByRole("button", { name: "Agregar cuenta" }));
     const bank = within(screen.getByRole("group", { name: "Cuenta 2" }));
-    await user.selectOptions(bank.getByLabelText("Tipo"), "bank");
+    await user.selectOptions(bank.getByLabelText(/^Medio de pago/), "bank");
     fill(bank.getByLabelText(/^Banco/), "Banco Ejemplo");
     fill(bank.getByLabelText(/^Número de cuenta/), ACCOUNT);
     await saveInPanel(user);
@@ -407,7 +407,7 @@ describe("12 y 16. métodos de pago y datos sensibles", () => {
     await user.click(screen.getByRole("button", { name: "Agregar cuenta" }));
     fill(screen.getByLabelText(/^Número de celular/), METHOD_MOBILE);
     await user.click(screen.getByRole("button", { name: "Agregar cuenta" }));
-    await user.selectOptions(account(2).getByLabelText("Tipo"), "bank");
+    await user.selectOptions(account(2).getByLabelText(/^Medio de pago/), "bank");
     fill(account(2).getByLabelText(/^Banco/), "Banco Ejemplo");
     fill(account(2).getByLabelText(/^Número de cuenta/), METHOD_ACCOUNT);
     await saveInPanel(user);
@@ -433,7 +433,7 @@ describe("12 y 16. métodos de pago y datos sensibles", () => {
 
     // Editar sin reemplazar: el dato cifrado no cambia.
     fill(account(2).getByLabelText(/^Banco/), "Banco Otro");
-    fill(account(2).getByLabelText(/^Titular o etiqueta/), "Cuenta de la tienda");
+    fill(account(2).getByLabelText(/^Etiqueta \(solo para ti\)/), "Cuenta de la tienda");
     await saveInPanel(user);
     const edited = await apiConfig("metodos_real");
     expect(storedDocument(edited).payments?.[0]?.transfer_methods?.[1]).toMatchObject({ bank: "Banco Otro", label: "Cuenta de la tienda" });
@@ -442,7 +442,7 @@ describe("12 y 16. métodos de pago y datos sensibles", () => {
 
     // Un reemplazo vacío conserva el dato.
     await user.click(screen.getByRole("button", { name: "Reemplazar Número de celular" }));
-    fill(account(2).getByLabelText(/^Titular o etiqueta/), "Cuenta principal");
+    fill(account(2).getByLabelText(/^Etiqueta \(solo para ti\)/), "Cuenta principal");
     await saveInPanel(user);
     expect(overview().getByText("••••4321")).toBeInTheDocument();
 
@@ -610,14 +610,15 @@ describe("13 y 14. validaciones y errores", () => {
   it("eliminar exige confirmación con el identificador, también en la API", async () => {
     await seedBusiness("borrar_real", { ...SAMPLE_PLANS_DOCUMENT, identity: { ...SAMPLE_PLANS_DOCUMENT.identity, name: "Negocio para borrar" } });
     const response = await fetch(`${server.apiUrl}/businesses/borrar_real`, { method: "DELETE" });
-    expect(response.status).toBe(400);
+    // Sin escribir el nombre del negocio no se borra nada: la API lo rechaza como un dato que falta.
+    expect(response.status).toBe(422);
     expect((await apiConfig("borrar_real")).latest_version).toBe(1);
 
     const user = await openPanel("/negocios");
     await user.click(screen.getByRole("button", { name: "Eliminar Negocio para borrar" }));
-    fill(screen.getByLabelText("Para confirmar, escribe borrar_real"), "borrar_real");
+    fill(screen.getByLabelText("Para confirmar, escribe el nombre del negocio: Negocio para borrar"), "Negocio para borrar");
     await user.click(screen.getByRole("button", { name: "Eliminar definitivamente" }));
-    await screen.findByText('Se eliminó "Negocio para borrar".');
+    await screen.findByText("Se eliminó «Negocio para borrar» con todo lo suyo.");
     expect((await fetch(`${server.apiUrl}/businesses/borrar_real/config`)).status).toBe(404);
   });
 });

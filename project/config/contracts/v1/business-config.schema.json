@@ -3507,7 +3507,15 @@
       "x-audience": "cliente"
     },
     "escalation": {
-      "$ref": "#/$defs/Escalation",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Escalation"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
       "x-audience": "cliente"
     },
     "fulfillment": {
