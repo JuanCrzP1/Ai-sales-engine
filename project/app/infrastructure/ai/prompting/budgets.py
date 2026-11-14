@@ -12,6 +12,8 @@ from __future__ import annotations
 from app.domain.business_config.engine_policy import (
     CUSTOMER_PROMPT_MAX_CHARS,
     FAQ_PROMPT_MAX_CHARS,
+    MAX_ESCALATION_TOPIC_CHARS,
+    MAX_ESCALATION_TOPICS,
     MAX_DESCRIPTION_CHARS,
     MAX_MESSAGE_CHARS,
     MAX_POLICY_CHARS,
@@ -43,6 +45,8 @@ SECTION_BUDGETS: dict[str, int] = {
     # Instrucciones, preguntas para entender al cliente, promociones y recomendaciones al máximo.
     "guidance": 3 * _PROFILE_LIST + MAX_PROMOTIONS * MAX_PROFILE_ITEM_CHARS + 600,
     # Estrategia avanzada: problemas, casos, motivos y objeciones; y orden, atención, presentación y cierre. Acotadas por relevancia.
+    # Las reglas de «Cuándo pasar a una persona»: los dos listados de temas completos, las indicaciones y el texto fijo.
+    "escalation": 2 * MAX_ESCALATION_TOPICS * MAX_ESCALATION_TOPIC_CHARS + MAX_MESSAGE_CHARS + 1_000,
     "customer": CUSTOMER_PROMPT_MAX_CHARS + 200,
     "strategy": STRATEGY_PROMPT_MAX_CHARS + 200,
     "knowledge": FAQ_PROMPT_MAX_CHARS + 100,

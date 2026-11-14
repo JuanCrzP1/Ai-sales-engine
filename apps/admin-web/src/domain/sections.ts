@@ -33,6 +33,7 @@ export function sectionForPath(path: string): ConfigSectionId {
     case "sales":
     case "response_style":
     case "knowledge":
+    case "escalation":
     case "features":
       return "assistant";
     case "messages":

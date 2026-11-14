@@ -74,3 +74,25 @@ def test_the_conversation_step_comes_from_facts_not_words():
     prompts = [turn_prompts[0] for turn_prompts, _ in run_conversation(SLUG, turns, user_id="sin-palabras")]
     for phrase in ("Venían avanzando por", "Ya iban dejando todo listo", "Ya iban coordinando"):
         assert all(phrase not in prompt for prompt in prompts), phrase
+
+
+def test_a_decision_without_a_message_still_hands_off(caplog):
+    """IA real, 14 nov 2026: al insistir el cliente, decidió pasarlo y dejó el mensaje vacío; el cliente recibía «Hubo un problema»
+    y no pasaba al equipo. Ahora se respeta su decisión con una frase neutra y queda el aviso `paso_sin_mensaje`."""
+    import logging
+
+    from app.services.ai.ai_orchestrator import HANDOFF_WITHOUT_TEXT
+
+    empty = reply("", "info", handoff="persona")
+    with caplog.at_level(logging.WARNING, logger="assistant"):
+        answer, context = _turn("Ya te dije que quiero una persona", empty, "sin-mensaje")
+    assert answer.startswith(HANDOFF_WITHOUT_TEXT) and context.get("handoff") is True and context.get("handoff_reason") == "human_request"
+    assert "paso_sin_mensaje" in [record.message for record in caplog.records]
+
+
+def test_an_empty_message_without_a_decision_is_still_an_error():
+    from app.services.ai.ai_orchestrator import FAILED_REPLY
+
+    turns = [("Necesito información", reply("Claro, te cuento.")), ("¿Y cuánto cuesta?", reply("", "info"))]
+    (_first, (answer, context)) = run_conversation(SLUG, turns, user_id="vacio", with_context=True)
+    assert answer == FAILED_REPLY and not context.get("handoff")

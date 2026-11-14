@@ -31,7 +31,7 @@ from app.domain.business_config.engine_policy import COMMON_CLOSING_POLICY
 SecretResolver = Callable[[SecretRef], str]
 
 # Claves de `config` que solo produce el contrato: los YAML no las tienen (ver `commercial_profile.py`).
-CONTRACT_ONLY_CONFIG_KEYS = ("profile", "knowledge", "messages", "attention_messages")
+CONTRACT_ONLY_CONFIG_KEYS = ("profile", "knowledge", "messages", "attention_messages", "escalation")
 # Los mensajes de la atención humana: los envía la plataforma, no la IA (`domain/business_config/attention.py`).
 ATTENTION_MESSAGES = ("after_hours", "ai_resumed")
 
@@ -300,6 +300,9 @@ def _config(config: BusinessConfig) -> dict:
     attention = {key: text.strip() for key in ATTENTION_MESSAGES if (text := getattr(config.messages, key)) and text.strip()}
     if attention:
         section["attention_messages"] = attention
+    # «Cuándo pasar a una persona»: solo si el negocio cambió algo. Sin cambios, el asistente sigue la regla general de la plataforma.
+    if not config.escalation.is_default:
+        section["escalation"] = config.escalation.model_dump(exclude_none=True)
     section["features"] = _features(config)
     section["response"] = {"length": config.response_style.length, "max_words": config.response_style.effective_max_words()}
     section["profile"] = compile_profile(config)

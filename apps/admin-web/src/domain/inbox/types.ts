@@ -7,12 +7,14 @@ export type MessageKind = "text" | "image" | "audio" | "video" | "document" | "s
 /** Lo del cliente queda «recibido»; lo que sale pasa por enviando → enviado → entregado → leído, o «no enviado». */
 export type DeliveryStatus = "received" | "sending" | "sent" | "delivered" | "read" | "failed";
 /** Por qué la conversación pasó a una persona. */
-export type HandoffReason = "human_request" | "complaint" | "payment_review" | "assistant";
+export type HandoffReason = "human_request" | "complaint" | "payment_review" | "business_topic" | "stuck" | "assistant";
 
 export const HANDOFF_LABELS: Record<HandoffReason, string> = {
   human_request: "Pidió hablar con una persona",
   complaint: "Tiene un reclamo",
   payment_review: "Reportó un pago: verifícalo",
+  business_topic: "Un tema que atiende tu equipo",
+  stuck: "No logra avanzar con el asistente",
   assistant: "Necesita a una persona",
 };
 

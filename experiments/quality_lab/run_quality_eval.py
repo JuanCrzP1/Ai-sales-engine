@@ -49,7 +49,7 @@ from checks import check_turn  # noqa: E402
 from judge import CRITERIA, compare, score_conversation  # noqa: E402
 
 SAFE_ENV = ("PATH", "HOME", "LANG", "TMPDIR", "SYSTEMROOT", "TEMP", "TMP", "USERPROFILE", "APPDATA", "LOCALAPPDATA")
-LAB_FILES = ("__init__.py", "capture.py", "facts.py", "scenarios.py", "standard.py")
+LAB_FILES = ("__init__.py", "capture.py", "facts.py", "scenarios.py", "standard.py", "escalation_standard.py")
 
 
 def _git(*args: str) -> bytes:

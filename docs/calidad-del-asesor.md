@@ -86,6 +86,7 @@ Aun así el juez varía un poco de una corrida a otra. Las reglas exactas no.
 | `--judge-model` | `google/gemini-2.5-flash` | Modelo del juez. |
 | `--max-usd` | `0.30` | Tope de gasto. Calcula el costo antes de correr y no arranca si lo supera. |
 | `--rejudge` | | Revisa de nuevo las conversaciones ya guardadas, sin repetirlas. Cuesta cerca de un centavo. |
+| `--escalation` | | Publica los negocios de la copia con reglas de «Cuándo pasar a una persona» y corre esas conversaciones en lugar de las de pagos. |
 
 - Corre el código del árbol de trabajo en una copia aislada, sin `.env`, con la red cerrada salvo OpenRouter.
 - Usa la clave de OpenRouter del `.env`. Nunca la imprime.
@@ -183,6 +184,25 @@ lo anterior.
 Rama `paso-a-persona-ia`: se quitó la regla de palabras que pasaba el chat al equipo. La puerta sumó dos conversaciones (pide una
 persona, reclama) y la regla exacta revisa los dos lados: pasa cuando debe y no pasa sin motivo. Con el código final **pasa** en las
 24 conversaciones. Una corrida anterior, con 18, no pasó por un dato que el asesor volvió a pedir (la debilidad de `gpt-4o-mini`).
+
+### Cuándo pasar a una persona (14 de noviembre de 2026)
+
+Rama `cuando-pasar-a-una-persona`. Con `--escalation`, la copia publica los negocios con las reglas de
+[`escalation_standard.py`](../experiments/quality_lab/escalation_standard.py): primero ofrecer ayuda, los reembolsos al equipo, los
+descuentos los resuelve el asistente y pasar el chat si se estanca. Hay cuatro conversaciones, una por regla. La regla exacta «pasa al
+equipo cuando debe» revisa cada turno: que no lo pase a la primera, que lo pase cuando insiste o pregunta por un tema del equipo, que
+no lo pase por un tema del asistente y que, a la tercera queja, ya lo haya pasado. El juez suma «sigue las reglas para pasar», con las
+reglas del negocio en la ficha.
+
+Con `asesor_ai_prod` y `restaurant`, tres muestras (24 conversaciones), modelo `gpt-4o-mini`:
+
+| Corrida | Resultado | Qué se cambió después |
+|---|---|---|
+| `paso_a_persona_20261114` | No pasa: pasó el chat a la primera en 6 de 6, y con reembolsos inventó «no manejamos reembolsos». | Las instrucciones dicen qué poner en `metadata.handoff` aunque el formato diga otra cosa, y que no responda sobre un tema del equipo. El juez acepta pasar el chat cuando se estanca. |
+| `paso_a_persona_20261114_b` | No pasa: los reembolsos y el estancamiento ya pasan; ofrecer ayuda primero todavía no. | Las reglas del negocio van al final de lo del negocio y dicen que reemplazan la del formato. Si la IA decide pasar el chat sin escribir el mensaje, se respeta (`paso_sin_mensaje`; antes el cliente recibía «Hubo un problema»). |
+| `paso_a_persona_20261114_c` | 23 de 24. La única falla: con reembolsos pasó el chat, pero su mensaje le ofrecía ayuda con el pedido en vez de decirle que lo pasaba. | Es la debilidad de `gpt-4o-mini` que ya se ve en los pagos (paso 3: elegir el modelo con la puerta). |
+
+Los negocios que no cambian estas reglas no cambian: el laboratorio de regresión da prompts y respuestas idénticos en los 9 negocios.
 
 ## Lo que la puerta no cubre
 

@@ -62,6 +62,9 @@ MAX_TONE_CHARS = 160
 MAX_PROMOTIONS = 10
 MAX_POLICY_CHARS = 800
 MAX_MESSAGE_CHARS = 800
+# «Cuándo pasar a una persona» (`contract/escalation.py`): temas por lista y el largo de cada uno.
+MAX_ESCALATION_TOPICS = 15
+MAX_ESCALATION_TOPIC_CHARS = 120
 
 # Largo máximo de los textos del negocio que usa el asistente, en caracteres. El contrato no acepta más y el panel no deja
 # escribir más (con un contador): el asistente usa cada texto completo, nunca un recorte.

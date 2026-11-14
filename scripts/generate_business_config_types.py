@@ -109,6 +109,8 @@ def render_types() -> str:
         f"export const MAX_OFFER_DESCRIPTION_CHARS = {engine_policy.MAX_OFFER_DESCRIPTION_CHARS};",
         f"export const MAX_CATEGORIES = {engine_policy.MAX_CATEGORIES};",
         f"export const MAX_CUSTOMER_PROBLEMS = {engine_policy.MAX_CUSTOMER_PROBLEMS};",
+        f"export const MAX_ESCALATION_TOPICS = {engine_policy.MAX_ESCALATION_TOPICS};",
+        f"export const MAX_ESCALATION_TOPIC_CHARS = {engine_policy.MAX_ESCALATION_TOPIC_CHARS};",
         f"export const MAX_PAYMENT_INSTRUCTIONS_CHARS = {MAX_PAYMENT_INSTRUCTIONS_CHARS};",
         "/** Los medios de pago que un negocio puede configurar, de cualquier país (`project/app/domain/business_config/payment_catalog.py`). */",
         f"export const PAYMENT_METHOD_GROUPS = {json.dumps(list(payment_catalog.GROUPS), ensure_ascii=False)} as const;",

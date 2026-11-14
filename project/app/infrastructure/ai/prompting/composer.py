@@ -3,7 +3,7 @@
 1. Plataforma: cómo vende el asistente y el formato de respuesta (igual para todos los negocios).
 2. Manual del tipo de negocio (productos, planes, servicios o citas).
 3. El negocio, lo que vende, cómo compra y recibe el cliente, cómo se paga y se cierra, sus políticas, sus indicaciones, su cliente, su
-   estrategia de venta y sus preguntas frecuentes (cambian cuando publica).
+   estrategia de venta, cuándo pasa el chat a una persona y sus preguntas frecuentes (cambian cuando publica).
 4. Esta conversación: el momento y lo que se sabe del cliente (cambia en cada mensaje).
 
 El orden permite que el proveedor reutilice de su caché el comienzo del prompt, que se repite en cada mensaje del mismo negocio, y deja
@@ -19,6 +19,7 @@ from app.infrastructure.ai.prompting.sections import (
     conversation,
     customer,
     delivery,
+    escalation,
     guidance,
     knowledge,
     offer,
@@ -45,6 +46,8 @@ def render_sections(view: PromptView) -> dict[str, str]:
         "guidance": guidance.render(view),
         "customer": customer.render(view),
         "strategy": strategy.render(view),
+        # Cerca del final de lo del negocio: cuando el negocio cambia cuándo pasar el chat, esto reemplaza reglas de la plataforma.
+        "escalation": escalation.render(view),
         "knowledge": knowledge.build_knowledge_context(view.runtime, user_message=view.user_message),
         "conversation": conversation.render(view),
     }

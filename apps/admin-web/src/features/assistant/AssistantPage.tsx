@@ -4,6 +4,7 @@ import { SettingsGroup } from "../../components/ui/SettingsCard";
 import { ContractSection } from "../../layout/ContractSection";
 import { SectionPager } from "../../layout/SectionPager";
 import { stepLabel } from "../../navigation/navItems";
+import { EscalationForm } from "./EscalationForm";
 import { FaqForm } from "./FaqForm";
 import { RecommendationsForm } from "./RecommendationsForm";
 import { SalesKnowledgeForm } from "./SalesKnowledgeForm";
@@ -19,11 +20,12 @@ export function AssistantPage() {
         title="Cómo atiende el asistente"
         description="Define su personalidad, cómo debe vender y las respuestas a preguntas frecuentes. Aquí se configura el negocio: las instrucciones internas del asistente no cambian."
       />
-      <SettingsGroup title="Lo esencial" description="Su forma de hablar, cómo vende y lo que responde siempre igual.">
+      <SettingsGroup title="Lo esencial" description="Su forma de hablar, cómo vende, lo que responde siempre igual y cuándo pasa el chat a tu equipo.">
         <StyleForm />
         <SalesKnowledgeForm />
         <RecommendationsForm />
         <FaqForm />
+        <EscalationForm />
       </SettingsGroup>
       <SettingsGroup
         title="Estrategia de venta avanzada"

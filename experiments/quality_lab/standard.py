@@ -14,6 +14,8 @@ from __future__ import annotations
 
 import re
 
+from escalation_standard import HANDOFF_BY_NOW, JUDGE_RULE as ESCALATION_RULE, MAY_HANDOFF, OFFERS_HELP, conversations as escalation_conversations
+
 # Con lo que el laboratorio oculta el dato de pago real que entregó el motor (`capture.py`).
 ENGINE_DATA = "[dato entregado por el motor]"
 # Así empieza el mensaje con los datos de pago (la plantilla de la plataforma).
@@ -42,7 +44,10 @@ EXACT_RULES = {
     "sin_datos_sin_pedirlos": "No le llega la cuenta cuando solo pregunta, saluda o habla de otra cosa.",
     "no_repite_el_bloque": "Los datos que ya tiene no se repiten si no los pide otra vez.",
     "sin_marcadores": "Nunca ve un marcador entre corchetes en lugar de un dato.",
-    "pasa_al_equipo_cuando_debe": "El chat pasa al equipo cuando el cliente pide una persona, reclama o dice que ya pagó; si no, no pasa.",
+    "pasa_al_equipo_cuando_debe": (
+        "El chat pasa al equipo cuando el cliente pide una persona, reclama o dice que ya pagó, o cuando lo piden las reglas del "
+        "negocio; si no, no pasa."
+    ),
     "no_repite_la_respuesta": "No le responde lo mismo dos veces seguidas.",
     "sin_numeros_de_pago_falsos": "El asesor nunca escribe un número como dato de pago («Nequi: 315…»): el único es el que pone el sistema.",
 }
@@ -62,13 +67,15 @@ JUDGE_RULES = {
     ),
     "explica_cuando_no_entienden": (
         "Cuando el cliente dice que no entendió («cómo así»), el asesor le explica con sus palabras qué debe hacer. No pasa si solo "
-        "repite una frase suelta, lo ignora o cambia de tema."
+        "repite una frase suelta, lo ignora o cambia de tema. Si las reglas del negocio piden pasar el chat cuando la conversación se "
+        "estanca, pasarlo también cumple."
     ),
     "coherente_con_los_datos": (
         "En los mensajes donde aparece «[dato entregado por el motor]», lo que dice el asesor cuadra con que los datos van ahí: no "
         "dice que se los enviará después ni los condiciona a que el cliente haga algo primero («dame tu teléfono y te los envío»). "
         "Pedirle otros datos en ese mismo mensaje sí pasa."
     ),
+    "sigue_las_reglas_para_pasar": ESCALATION_RULE,
 }
 JUDGE = (
     "Eres auditor de calidad de un asesor de ventas por chat. Lee la conversación y busca fallas de estas reglas. Sé estricto pero "
@@ -161,7 +168,10 @@ def _methods(facts: dict) -> tuple[str, str]:
 
 
 def conversations_for(facts: dict) -> list[tuple[str, list[dict]]]:
-    """Las conversaciones del estándar para ese negocio: (nombre, turnos). Cada turno dice qué escribe el cliente y qué se espera."""
+    """Las conversaciones del estándar para ese negocio: (nombre, turnos). Cada turno dice qué escribe el cliente y qué se espera.
+    Si el negocio tiene reglas para pasar el chat a una persona (`--escalation`), las de esas reglas (`escalation_standard.py`)."""
+    if facts.get("paso_a_persona"):
+        return _numbered(escalation_conversations(facts, HANDOFF))
     offer = facts["oferta"][0]["name"] if facts["oferta"] else "lo que ofrecen"
     paid, other = _methods(facts)
     if not paid:
@@ -195,7 +205,10 @@ def conversations_for(facts: dict) -> list[tuple[str, list[dict]]]:
         ("reclama", [start, ("Me cobraron dos veces y nadie me responde, estoy muy molesto", HANDOFF)]),
         *([("pide los datos de otro medio", [start, (f"listo, mándame los datos para pagar por {_SAID[other]}", DETAILS)])] if other else []),
     ]
-    scripts = [("el chat de producción", production), *short]
+    return _numbered([("el chat de producción", production), *short])
+
+
+def _numbered(scripts: list[tuple[str, list[tuple[str, str]]]]) -> list[tuple[str, list[dict]]]:
     return [
         (name, [{"turn": number, "message": message, "kind": expect or "libre", "expect": expect} for number, (message, expect) in enumerate(script, start=1)])
         for name, script in scripts
@@ -227,7 +240,7 @@ def exact_failures(turns: list[dict]) -> dict[str, list[dict]]:
     def fail(rule: str, turn: dict, why: str) -> None:
         failures[rule].append({"turn": turn["turn"], "why": why})
 
-    sent_before, previous, sent_details = False, "", set()
+    sent_before, previous, sent_details, handed_off = False, "", set(), False
     for turn in turns:
         reply, expect = str(turn.get("reply") or ""), str(turn.get("expect") or "")
         details, delivered = details_of(reply), ENGINE_DATA in reply
@@ -243,8 +256,13 @@ def exact_failures(turns: list[dict]) -> dict[str, list[dict]]:
             fail("no_repite_el_bloque", turn, "le llegaron otra vez los mismos datos sin pedirlos")
         if "[dato de pago]" in reply or _PLACEHOLDER.search(reply.replace(ENGINE_DATA, "")):
             fail("sin_marcadores", turn, "vio un marcador entre corchetes")
-        if bool(turn.get("handoff")) != (expect in (REPORTED, HANDOFF)):
-            fail("pasa_al_equipo_cuando_debe", turn, "debía pasar al equipo y no pasó" if expect in (REPORTED, HANDOFF) else "el chat pasó al equipo sin motivo")
+        handed_off = handed_off or bool(turn.get("handoff"))
+        if expect == HANDOFF_BY_NOW:
+            if not handed_off:
+                fail("pasa_al_equipo_cuando_debe", turn, "a esta altura ya debía haber pasado al equipo")
+        elif expect != MAY_HANDOFF and bool(turn.get("handoff")) != (expect in (REPORTED, HANDOFF)):
+            why = "debía pasar al equipo y no pasó" if expect in (REPORTED, HANDOFF) else "el chat pasó al equipo sin motivo"
+            fail("pasa_al_equipo_cuando_debe", turn, why + (" (primero debía ofrecerle ayuda)" if expect == OFFERS_HELP else ""))
         said = reply[: reply.find("💳")] if "💳" in reply else reply
         if _PAYMENT_NUMBER.search(said.replace(ENGINE_DATA, "")):
             fail("sin_numeros_de_pago_falsos", turn, "el asesor escribió un número como dato de pago")

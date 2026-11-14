@@ -3,6 +3,18 @@
 Lo que cambió en AI Sales Engine, de lo más reciente a lo más antiguo. Cada entrada dice qué gana el negocio; el detalle técnico
 está en el historial de git y en `docs/plan-v1.md`.
 
+## 14 de noviembre de 2026
+
+**Tú decides cuándo el asistente pasa un chat a tu equipo**
+- Nueva tarjeta **Cuándo pasar a una persona** en Asistente IA → Cómo atiende. Si el cliente pide una persona, puedes elegir que el
+  asistente **primero le ofrezca ayuda** (una vez, sin insistir) y lo pase si insiste.
+- **Temas que siempre atiende tu equipo** (por ejemplo, reembolsos) y **temas que resuelve el asistente** (por ejemplo, precios).
+- **Pasar el chat si la conversación se estanca:** cuando el cliente repite lo mismo o se frustra.
+- En la bandeja ves el motivo: «Un tema que atiende tu equipo» o «No logra avanzar con el asistente».
+- Si no cambias nada, el asistente se comporta igual que antes. Los reclamos y los pagos avisados siempre pasan a tu equipo.
+- Si el asistente decide pasar un chat y no escribe el mensaje, el chat pasa igual y el cliente recibe «Claro, te paso con una
+  persona del equipo por este mismo chat.» (antes recibía «Hubo un problema procesando el mensaje»).
+
 ## 13 de noviembre de 2026
 
 **El asistente decide cuándo pasar un chat a tu equipo**

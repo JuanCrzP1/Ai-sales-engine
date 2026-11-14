@@ -1,4 +1,5 @@
 import type { CatalogItem, Plan } from "../../contracts/businessConfig.v1";
+import { validateEscalation } from "../assistant/escalation";
 import { paymentHolders, isAvailable, isCatalog, isLinkActive, isMethodActive, isStoredRef, offerEntries } from "../config/document";
 import {
   MAX_CATEGORIES,
@@ -32,6 +33,7 @@ export function validateDocument({ document, paymentValues }: WorkingCopy, today
     ...validateOffer(document),
     ...validatePayments(document, paymentValues, localIsoDate(today)),
     ...validateAssistant(document),
+    ...validateEscalation(document),
     ...validateMessages(document),
   ];
 }

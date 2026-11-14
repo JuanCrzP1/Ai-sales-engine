@@ -23,6 +23,8 @@ export const MAX_VALUE_PROPOSITION_CHARS = 300;
 export const MAX_OFFER_DESCRIPTION_CHARS = 300;
 export const MAX_CATEGORIES = 20;
 export const MAX_CUSTOMER_PROBLEMS = 10;
+export const MAX_ESCALATION_TOPICS = 15;
+export const MAX_ESCALATION_TOPIC_CHARS = 120;
 export const MAX_PAYMENT_INSTRUCTIONS_CHARS = 300;
 /** Los medios de pago que un negocio puede configurar, de cualquier país (`project/app/domain/business_config/payment_catalog.py`). */
 export const PAYMENT_METHOD_GROUPS = ["Colombia", "México", "Perú", "Argentina", "España", "Estados Unidos", "Todos los países"] as const;
@@ -166,6 +168,19 @@ export interface Discovery {
   questions?: string[] | null;
   /** Qué debe averiguar el asistente. [audiencia: avanzado; motor: conectado] */
   objectives?: string[] | null;
+}
+
+export interface Escalation {
+  /** Si el cliente pide hablar con una persona: always (lo pasa) u offer_help_first (primero le ofrece resolverlo una vez; si insiste, lo pasa). [motor: conectado] */
+  on_request?: "always" | "offer_help_first";
+  /** Temas que siempre van al equipo (p. ej. reembolsos, garantías). [motor: conectado] */
+  always_topics?: string[];
+  /** Temas que resuelve el asistente sin pasar el chat, salvo que el cliente pida una persona (p. ej. precios, horarios). [motor: conectado] */
+  never_topics?: string[];
+  /** Pasar el chat si la conversación se estanca: el cliente repite lo mismo o está frustrado y no se le puede ayudar. [motor: conectado] */
+  when_stuck?: boolean;
+  /** Otras indicaciones del negocio sobre cuándo pasar el chat a una persona. [motor: conectado] */
+  instructions?: string | null;
 }
 
 export interface Faq {
@@ -650,6 +665,8 @@ export interface BusinessConfig {
   response_style?: ResponseStyle;
   /** [audiencia: cliente] */
   knowledge?: Knowledge;
+  /** [audiencia: cliente] */
+  escalation?: Escalation;
   /** [audiencia: cliente; motor: conectado] */
   fulfillment?: Fulfillment | null;
   /** [audiencia: cliente; motor: conectado] */

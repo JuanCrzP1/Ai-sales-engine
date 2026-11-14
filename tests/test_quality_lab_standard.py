@@ -150,3 +150,35 @@ def test_only_the_failures_a_second_look_confirms_count():
     # El segundo revisor ve la regla y la conversación solo hasta ese turno.
     assert len(asked) == 2 and "Cómo así" not in asked[0] and asked[0].startswith("REGLA (responde_lo_que_preguntan): ")
     assert "FALLA REPORTADA en el turno 2: no explica" in asked[1]
+
+
+# ---------------------------------------------------------------------------
+# «Cuándo pasar a una persona» (`escalation_standard.py`, `--escalation`)
+# ---------------------------------------------------------------------------
+
+from escalation_standard import HANDOFF_BY_NOW, MAY_HANDOFF, OFFERS_HELP, PROFILE  # noqa: E402
+
+
+def test_with_escalation_rules_the_business_gets_the_escalation_conversations():
+    conversations = dict(conversations_for({**FACTS, "paso_a_persona": PROFILE}))
+    assert list(conversations) == [
+        "pide una persona y luego insiste", "pregunta por un tema del equipo", "pregunta por un tema que resuelve el asistente", "la conversación se estanca",
+    ]
+    assert [turn["expect"] for turn in conversations["pide una persona y luego insiste"]] == ["", OFFERS_HELP, HANDOFF]
+    assert [turn["expect"] for turn in conversations["la conversación se estanca"]][-1] == HANDOFF_BY_NOW
+    # Sin reglas, las de pagos de siempre.
+    assert "el chat de producción" in dict(conversations_for(FACTS))
+
+
+def test_the_escalation_expectations_are_checked_exactly():
+    # Primero ofrece ayuda: si lo pasa a la primera, no pasa.
+    assert _broken(_turns(("Quiero una persona", OFFERS_HELP, "Te paso con el equipo.", True))) == {"pasa_al_equipo_cuando_debe": [1]}
+    assert _broken(_turns(("Quiero una persona", OFFERS_HELP, "Claro, ¿te ayudo yo con lo que necesitas?"))) == {}
+    # Se estanca: puede pasarlo antes; a la tercera queja ya lo tuvo que pasar.
+    stuck = [("No entiendo", MAY_HANDOFF, "Te explico."), ("Sigo sin entender", MAY_HANDOFF, "Te paso con el equipo.", True), ("Ya me cansé", HANDOFF_BY_NOW, "Ya le avisé al equipo.")]
+    assert _broken(_turns(*stuck)) == {}
+    assert _broken(_turns(*[(message, expect, reply) for message, expect, reply, *_ in stuck])) == {"pasa_al_equipo_cuando_debe": [3]}
+
+
+def test_the_judge_knows_the_business_escalation_rules():
+    assert "sigue_las_reglas_para_pasar" in JUDGE_RULES and "reglas_para_pasar_a_una_persona" in JUDGE

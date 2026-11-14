@@ -30,7 +30,7 @@ STATUSES = ("received", "sending", "sent", "delivered", "read", "failed")
 # Lo que salió solo avanza: un recibo de «entregado» que llega tarde no deshace un «leído».
 DELIVERY_ORDER = {"sending": 0, "sent": 1, "delivered": 2, "read": 3}
 # Por qué la conversación pasó a una persona.
-HANDOFF_REASONS = ("human_request", "complaint", "payment_review", "assistant")
+HANDOFF_REASONS = ("human_request", "complaint", "payment_review", "business_topic", "stuck", "assistant")
 # Lo más grande que se guarda de un archivo: el panel lo sirve en una sola respuesta.
 MAX_MEDIA_BYTES = 4 * 1024 * 1024
 MAX_REPLY_CHARS = 4000
@@ -58,6 +58,8 @@ _HANDOFF_TITLES = {
     "human_request": "pidió hablar con una persona",
     "complaint": "tiene un reclamo",
     "payment_review": "reportó un pago para verificar",
+    "business_topic": "pregunta por un tema que atiende tu equipo",
+    "stuck": "no logra avanzar con el asistente",
     "assistant": "necesita a una persona",
 }
 

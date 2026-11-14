@@ -75,6 +75,10 @@ from app.utils.logger import logger
 # Cuando el modelo no devuelve una respuesta utilizable. No se repite la llamada: repetirla duplicaba el gasto de tokens del
 # negocio por un formato, y el cliente recibe este mensaje en lugar de un JSON o un texto vacío.
 FAILED_REPLY = "Hubo un problema procesando el mensaje. Intenta de nuevo."
+# Cuando la IA decide pasar el chat a una persona (`metadata.handoff`) pero no escribe el mensaje: se respeta su decisión y el cliente
+# recibe esta frase (y, después, el aviso del horario del equipo). Con la IA real, al insistir el cliente en hablar con una persona,
+# a veces devolvía la decisión con el mensaje vacío (14 nov 2026), y el cliente recibía el error de arriba sin pasar al equipo.
+HANDOFF_WITHOUT_TEXT = "Claro, te paso con una persona del equipo por este mismo chat."
 # El valor de `response` en un JSON incompleto (por ejemplo, cortado por el límite de tokens).
 _RESPONSE_FIELD = re.compile(r'"response"\s*:\s*("(?:[^"\\]|\\.)*")')
 
@@ -142,8 +146,11 @@ class AIOrchestrator:
         # Sin datos del cliente en los registros: solo qué falló del formato.
         error = str(result.get("error") or "invalid_llm_output")
         reply = _usable_reply(result)
+        legacy = result.get("_legacy_metadata") if isinstance(result.get("_legacy_metadata"), dict) else {}
+        if not reply and str(legacy.get("handoff") or "").strip():
+            logger.warning("paso_sin_mensaje", extra={"tenant": tenant_slug, "format": error})
+            reply = HANDOFF_WITHOUT_TEXT
         if reply:
-            legacy = result.get("_legacy_metadata") if isinstance(result.get("_legacy_metadata"), dict) else {}
             metadata = {**legacy, "intent": "", "intent_missing": True, "format_error": error, "prompt_version": PROMPT_VERSION}
             logger.warning("ai_reply", extra={"tenant": tenant_slug, "intent": "", "format": error, "prompt_version": PROMPT_VERSION})
             return reply, True, metadata

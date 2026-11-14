@@ -261,7 +261,7 @@ def test_common_definition_is_the_same_in_every_business():
 
 def test_contract_only_fields_are_commercial_and_have_a_clear_responsibility():
     fields = contract_fields(json.loads(SCHEMA_PATH.read_text(encoding="utf-8")))
-    sections = {"identity", "offer", "terms", "payments[]", "sales", "messages", "response_style", "knowledge", "inventory"}
+    sections = {"identity", "offer", "terms", "payments[]", "sales", "messages", "response_style", "knowledge", "inventory", "escalation"}
     for path in NEW_CONTRACT_FIELDS:
         field = fields[path]
         assert field.audience in {"cliente", "avanzado"}, f"{path}: no lo configura el negocio"

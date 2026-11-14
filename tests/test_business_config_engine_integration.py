@@ -165,6 +165,44 @@ def test_the_fallback_message_is_the_one_written_in_the_panel(monkeypatch, tmp_p
     assert _answer_without_ai() == (PLATFORM_FALLBACK_REPLY, False)
 
 
+ESCALATION = {
+    "on_request": "offer_help_first",
+    "always_topics": ["reembolsos", "facturas a empresas"],
+    "never_topics": ["descuentos"],
+    "when_stuck": True,
+    "instructions": "Los fines de semana avisa que el equipo responde el lunes.",
+}
+
+
+def test_the_escalation_rules_written_in_the_panel_reach_the_assistant(monkeypatch, tmp_path):
+    """«Cuándo pasar a una persona»: cada regla del panel le llega a la IA; sin reglas, la sección no existe (vale la general)."""
+    (prompts, _), = run_with_document(monkeypatch, tmp_path / "con", "saas", lambda d: d.update(escalation=ESCALATION), TWO_TURNS[:1])
+    prompt = prompts[0]
+    assert "CUÁNDO PASAS EL CHAT A UNA PERSONA DEL EQUIPO" in prompt
+    assert "todavía no lo pases" in prompt and "lo ayudas tú" in prompt
+    assert "reembolsos; facturas a empresas" in prompt and "«tema»" in prompt
+    assert "los resuelves tú" in prompt and "descuentos" in prompt
+    assert "se estanca" in prompt and "«estancado»" in prompt
+    assert "«Los fines de semana avisa que el equipo responde el lunes.»" in prompt
+    (prompts, _), = run_with_document(monkeypatch, tmp_path / "sin", "saas", lambda d: None, TWO_TURNS[:1])
+    assert "CUÁNDO PASAS EL CHAT A UNA PERSONA DEL EQUIPO" not in prompts[0]
+
+
+def test_only_the_rules_the_business_changed_reach_the_assistant(monkeypatch, tmp_path):
+    (prompts, _), = run_with_document(monkeypatch, tmp_path / "tema", "saas", lambda d: d.update(escalation={"always_topics": ["reembolsos"]}), TWO_TURNS[:1])
+    rules = prompts[0].split("CUÁNDO PASAS EL CHAT A UNA PERSONA DEL EQUIPO", 1)[1].split("\n\n", 1)[0]
+    assert "reembolsos" in rules and "ofrecer ayuda" not in rules and "se estanca" not in rules and "resuelves tú" not in rules
+
+
+@pytest.mark.parametrize("marked, reason", [("tema", "business_topic"), ("estancado", "stuck")])
+def test_the_ai_hands_off_with_the_reason_of_the_business_rule(monkeypatch, tmp_path, marked, reason):
+    """La IA decide con las reglas del negocio y marca el motivo: la bandeja lo muestra al equipo."""
+    publish_document(monkeypatch, tmp_path, "saas", lambda d: d.update(escalation=ESCALATION))
+    decided = reply("Eso lo revisa el equipo: te paso con ellos por este mismo chat.", "info", handoff=marked)
+    (_answer, context), = run_conversation("saas", [("Quiero un reembolso", decided)], user_id=f"regla-{marked}", with_context=True)
+    assert context.get("handoff") is True and context.get("handoff_reason") == reason
+
+
 def test_the_panel_previews_the_same_neutral_message_the_engine_sends():
     from app.application.pipeline.fallback import PLATFORM_FALLBACK_REPLY
 
@@ -901,6 +939,11 @@ CONNECTED_EVIDENCE: dict[str, str] = {
     "schema_version": "test_a_corrupt_published_document_is_never_served",
     "tenant_slug": "test_a_corrupt_published_document_is_never_served",
     "messages.fallback": "test_the_fallback_message_is_the_one_written_in_the_panel",
+    "escalation.on_request": "test_the_escalation_rules_written_in_the_panel_reach_the_assistant",
+    "escalation.always_topics": "test_the_ai_hands_off_with_the_reason_of_the_business_rule",
+    "escalation.never_topics": "test_the_escalation_rules_written_in_the_panel_reach_the_assistant",
+    "escalation.when_stuck": "test_the_ai_hands_off_with_the_reason_of_the_business_rule",
+    "escalation.instructions": "test_the_escalation_rules_written_in_the_panel_reach_the_assistant",
     "messages.payment_details": "test_the_payment_details_follow_the_business_template",
     "identity.industry": "test_the_assistant_uses_the_whole_text_up_to_the_contract_limit",
     "identity.value_proposition": "test_the_assistant_uses_the_whole_text_up_to_the_contract_limit",

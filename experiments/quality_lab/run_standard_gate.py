@@ -32,16 +32,33 @@ sys.path.insert(0, str(LAB))
 import costs  # noqa: E402
 import judge  # noqa: E402
 from run_quality_eval import REPO, RESULTS, _child_env, _export, _git, _model_prices, _usage  # noqa: E402
+from escalation_standard import PROFILE as ESCALATION_PROFILE  # noqa: E402
 from standard import CONFIRM, EXACT_RULES, JUDGE, JUDGE_RULES, confirm_request, exact_failures, judge_failures, keep_confirmed  # noqa: E402
 
-# Para calcular el costo antes de correr: las conversaciones del estándar y sus turnos, por negocio y por muestra.
+# Para calcular el costo antes de correr: las conversaciones del estándar y sus turnos, por negocio y por muestra (con `--escalation`,
+# las de paso a persona).
 CONVERSATIONS, TURNS = 8, 27
+ESCALATION_CONVERSATIONS, ESCALATION_TURNS = 4, 11
 _METHOD_NAMES = {"bank": "transferencia bancaria", "link": "link de pago", "breb": "Bre-B", "nequi": "Nequi", "daviplata": "Daviplata"}
 
 
 def _ficha(facts: dict) -> dict:
-    """Lo que el juez necesita saber del negocio para revisar las reglas: qué medios de pago tiene."""
-    return {"medios_de_pago_del_negocio": [_METHOD_NAMES.get(kind, kind) for kind, has in facts["pagos_disponibles"].items() if has]}
+    """Lo que el juez necesita saber del negocio para revisar las reglas: qué medios de pago tiene y, si las configuró, sus reglas
+    para pasar el chat a una persona."""
+    ficha = {"medios_de_pago_del_negocio": [_METHOD_NAMES.get(kind, kind) for kind, has in facts["pagos_disponibles"].items() if has]}
+    if facts.get("paso_a_persona"):
+        ficha["reglas_para_pasar_a_una_persona"] = facts["paso_a_persona"]
+    return ficha
+
+
+def _publish_escalation(tree: Path, tenants: list[str]) -> None:
+    """Escribe las reglas de paso a persona del estándar (`escalation_standard.PROFILE`) en los negocios de la copia aislada, antes
+    de que la captura los importe: es lo que haría el negocio en el panel."""
+    for slug in tenants:
+        path = tree / "project" / "config" / "tenants" / slug / "business-config.json"
+        document = json.loads(path.read_text(encoding="utf-8"))
+        document["escalation"] = ESCALATION_PROFILE
+        path.write_text(json.dumps(document, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
 def judge_conversation(key: str, model: str, facts: dict, turns: list[dict]) -> tuple[dict[str, list[dict]], list[dict], list[dict]]:
@@ -129,6 +146,7 @@ def main() -> int:
     parser.add_argument("--judge-model", default="google/gemini-2.5-flash")
     parser.add_argument("--max-usd", type=float, default=0.30, help="Tope de gasto de la corrida; no arranca si el cálculo lo supera")
     parser.add_argument("--rejudge", action="store_true", help="Revisa de nuevo las conversaciones ya guardadas, sin repetirlas")
+    parser.add_argument("--escalation", action="store_true", help="Publica los negocios con reglas de paso a persona y corre esas conversaciones")
     args = parser.parse_args()
     output = RESULTS / args.experiment
     if output.exists() and not args.rejudge:
@@ -140,7 +158,8 @@ def main() -> int:
         raise SystemExit("Falta OPENROUTER_API_KEY en el .env.")
     tenants = [slug for slug in args.tenants.split(",") if slug]
     volume = len(tenants) * args.samples
-    budget = costs.estimate(conversations=volume * CONVERSATIONS, turns=volume * TURNS, model=model, judge=args.judge_model,
+    conversations, turns = (ESCALATION_CONVERSATIONS, ESCALATION_TURNS) if args.escalation else (CONVERSATIONS, TURNS)
+    budget = costs.estimate(conversations=volume * conversations, turns=volume * turns, model=model, judge=args.judge_model,
                             table=costs.prices({model, args.judge_model}), with_capture=not args.rejudge)
     print(f"Costo calculado: USD {budget:.2f} (tope USD {args.max_usd:.2f}) · asesor {model} · juez {args.judge_model}", flush=True)
     if budget > args.max_usd:
@@ -157,6 +176,8 @@ def main() -> int:
         work_path = Path(work)
         tree = work_path / "candidate"
         _export(None, tree)
+        if args.escalation:
+            _publish_escalation(tree, tenants)
         settings = work_path / "candidate.json"
         settings.write_text(json.dumps({"label": "candidate", "commit": reference, "samples": args.samples, "tenants": tenants, "standard": True,
                                         "output": str(work_path / "candidate.out.json")}), encoding="utf-8")

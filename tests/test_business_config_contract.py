@@ -663,6 +663,7 @@ def test_duplicates_are_rejected(case):
 _SECRET = {"secret_ref": "secret_store:dato"}
 # Cada opción cerrada del contrato: cómo ponerla en un documento. Una opción nueva exige añadirla aquí.
 OPTION_SETTERS = {
+    "escalation.on_request": lambda d, v: d.update(escalation={"on_request": v}),
     "features.business_model": lambda d, v: d.update(features={"pricing_enabled": True, "catalog_mode": True, "business_model": v}),
     "fulfillment.delivery.cost.type": lambda d, v: d["fulfillment"]["delivery"].update(cost={"type": v, "value": 0}),
     "fulfillment.delivery.type": lambda d, v: d["fulfillment"]["delivery"].update(type=v),
@@ -966,3 +967,35 @@ def test_the_payment_message_drops_lines_left_empty_and_never_uses_a_broken_temp
     assert "*Bancolombia*\nCuenta de ahorros\n1234567890\n\nCuando pagues" in message and "A nombre de" not in message
     assert render_payment_details("Sin datos", medio="Nequi", datos="300") == render_payment_details(DEFAULT_PAYMENT_DETAILS, medio="Nequi", datos="300")
     assert method_parts("breb", {"reference": "@cafe"}) == ("Bre-B", "Llave: @cafe") and method_parts("nequi", {}) == ("", "")
+
+
+# ---------------------------------------------------------------------------
+# «Cuándo pasar a una persona» (`contract/escalation.py`)
+# ---------------------------------------------------------------------------
+
+
+def test_without_escalation_rules_the_assistant_behaves_as_before():
+    """Un documento sin la sección (todos los publicados antes del 14 nov 2026) queda con las reglas por defecto, y no se compilan."""
+    document = _example()
+    document.pop("escalation", None)
+    config = BusinessConfig.model_validate(document)
+    assert config.escalation.is_default and config.escalation.on_request == "always" and config.escalation.when_stuck is False
+    assert "escalation" not in compile_business_config(config, lambda ref: f"valor:{ref.secret_ref}")["config"]
+
+
+@pytest.mark.parametrize(
+    "escalation",
+    [
+        {"always_topics": ["Reembolsos", "reembolsos "]},
+        {"never_topics": ["precios", "Precios"]},
+        {"always_topics": ["reembolsos"], "never_topics": ["Reembolsos"]},
+        {"always_topics": ["x" * 121]},
+        {"always_topics": [f"tema {n}" for n in range(16)]},
+        {"on_request": "never"},
+    ],
+)
+def test_escalation_rules_that_contradict_or_overflow_are_rejected(escalation):
+    document = _example()
+    document["escalation"] = escalation
+    with pytest.raises(ValidationError):
+        BusinessConfig.model_validate(document)

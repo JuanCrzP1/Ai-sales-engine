@@ -15,8 +15,9 @@ from __future__ import annotations
 
 INTENTS = ("pain", "info", "objection", "buy")
 PAYMENT_REPORTED = "reportado"
-# Cuándo la conversación pasa a una persona del equipo: lo que escribe el modelo → el motivo que guarda la bandeja.
-HANDOFF_VALUES = {"persona": "human_request", "reclamo": "complaint"}
+# Cuándo la conversación pasa a una persona del equipo: lo que escribe el modelo → el motivo que guarda la bandeja. «tema» y «estancado»
+# solo se le piden a la IA cuando el negocio los configuró («Cuándo pasar a una persona», `prompting/sections/escalation.py`).
+HANDOFF_VALUES = {"persona": "human_request", "reclamo": "complaint", "tema": "business_topic", "estancado": "stuck"}
 
 OUTPUT_CONTRACT = f"""
 FORMATO DE RESPUESTA (obligatorio):

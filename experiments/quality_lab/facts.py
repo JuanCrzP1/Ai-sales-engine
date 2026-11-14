@@ -129,6 +129,8 @@ def business_facts(runtime: dict, business_model: str) -> dict:
         "politicas": _dict(profile.get("policies")),
         "lo_que_no_hace": _dict(capabilities.get("constraints")),
         "estrategia_de_venta": _strategy(runtime),
+        # Las reglas del negocio para pasar el chat a una persona («Cuándo pasar a una persona»); {} si usa las de siempre.
+        "paso_a_persona": _dict(config.get("escalation")),
     }
 
 

@@ -15,7 +15,7 @@ SECTIONS: dict[str, dict[str, Any]] = {
     "negocio": {"title": "Mi negocio", "keys": ("identity",), "about": "Quién es el negocio, a qué se dedica, dónde está, su horario y por qué elegirlo."},
     "productos": {"title": "Productos y servicios", "keys": ("offer", "inventory", "fulfillment"), "about": "Lo que vende (planes o catálogo) con precios, existencias y cómo lo recibe el cliente (domicilio, envío, recogida, citas)."},
     "pagos": {"title": "Pagos y cierre", "keys": ("payments", "terms", "capabilities"), "about": "Cómo le pagan (enlace, Nequi, Daviplata, cuentas, Bre-B), promociones, políticas, condiciones y qué hace al cerrar una venta."},
-    "atencion": {"title": "Cómo atiende", "keys": ("response_style", "knowledge", "sales", "features"), "about": "Tono y largo de las respuestas, preguntas frecuentes, instrucciones y estrategia de venta."},
+    "atencion": {"title": "Cómo atiende", "keys": ("response_style", "knowledge", "sales", "escalation", "features"), "about": "Tono y largo de las respuestas, preguntas frecuentes, instrucciones, estrategia de venta y cuándo pasa el chat a una persona del equipo."},
     "mensajes": {"title": "Mensajes y canales", "keys": ("messages",), "about": "Bienvenida y lo que dice al recibir un pago, al pasar a una persona, fuera del horario, al retomar un chat y si la IA no puede responder."},
 }
 

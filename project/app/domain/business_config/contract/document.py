@@ -6,6 +6,7 @@ from typing import Literal
 from pydantic import Field, PrivateAttr, model_validator
 
 from app.domain.business_config.contract.assistant import Capabilities, Knowledge, Messages, ResponseStyle
+from app.domain.business_config.contract.escalation import Escalation
 from app.domain.business_config.contract.fulfillment import Fulfillment
 from app.domain.business_config.contract.identity import Identity
 from app.domain.business_config.contract.inventory import Inventory
@@ -73,6 +74,7 @@ class BusinessConfig(ContractModel):
     messages: Messages = Field(json_schema_extra=CLIENT)
     response_style: ResponseStyle = Field(default_factory=ResponseStyle, json_schema_extra=CLIENT)
     knowledge: Knowledge = Field(default_factory=Knowledge, json_schema_extra=CLIENT)
+    escalation: Escalation = Field(default_factory=Escalation, json_schema_extra=CLIENT)
     fulfillment: Fulfillment | None = Field(default=None, json_schema_extra={**CLIENT, **CONNECTED})
     inventory: Inventory = Field(default_factory=Inventory, json_schema_extra={**CLIENT, **CONNECTED})
     features: Features | None = Field(

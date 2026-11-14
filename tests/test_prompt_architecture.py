@@ -23,7 +23,7 @@ from pipeline_harness import TENANTS, prepared_tenant, stored_document
 
 PROMPTING = Path(__file__).resolve().parents[1] / "project" / "app" / "infrastructure" / "ai" / "prompting"
 MAX_MODULE_LINES = 200
-LAYERS = ("platform", "playbook", "business", "offer", "delivery", "payments", "policies", "guidance", "customer", "strategy", "knowledge", "conversation")
+LAYERS = ("platform", "playbook", "business", "offer", "delivery", "payments", "policies", "guidance", "customer", "strategy", "escalation", "knowledge", "conversation")
 
 STATES = {
     "presentacion": {"conversation_state": "new"},

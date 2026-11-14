@@ -95,6 +95,11 @@ Finalidad comercial, sin origen en los YAML. No se compilan salvo los marcados `
 
 | Módulo | Campo | Responsabilidad | Tipo y opciones | Audiencia | Motor | Interfaz |
 |---|---|---|---|---|---|---|
+| escalation | `escalation.always_topics` | Temas que siempre van al equipo (p. ej. reembolsos, garantías). | lista de texto | cliente | conectado | pantalla |
+| escalation | `escalation.instructions` | Otras indicaciones del negocio sobre cuándo pasar el chat a una persona. | texto | cliente | conectado | pantalla |
+| escalation | `escalation.never_topics` | Temas que resuelve el asistente sin pasar el chat, salvo que el cliente pida una persona (p. ej. precios, horarios). | lista de texto | cliente | conectado | pantalla |
+| escalation | `escalation.on_request` | Si el cliente pide hablar con una persona: always (lo pasa) u offer_help_first (primero le ofrece resolverlo una vez; si insiste, lo pasa). | always \| offer_help_first | cliente | conectado | pantalla |
+| escalation | `escalation.when_stuck` | Pasar el chat si la conversación se estanca: el cliente repite lo mismo o está frustrado y no se le puede ayudar. | interruptor true/false | cliente | conectado | pantalla |
 | identity | `identity.opening_hours[].closes` | Hora de cierre (HH:MM, 24 h). | texto con formato validado | cliente | conectado | pantalla |
 | identity | `identity.opening_hours[].days` | Días en los que aplica este horario. | lista de lunes \| martes \| miercoles \| jueves \| viernes \| sabado \| domingo | cliente | conectado | pantalla |
 | identity | `identity.opening_hours[].opens` | Hora de apertura (HH:MM, 24 h). | texto con formato validado | cliente | conectado | pantalla |
@@ -357,10 +362,10 @@ si el motor actual lo usa y de dónde viene.
 
 | Audiencia | Conectados | Programados | Solo panel | Pendientes |
 |---|---|---|---|---|
-| cliente | 138 | 2 | 2 | 0 |
+| cliente | 143 | 2 | 2 | 0 |
 | avanzado | 50 | 0 | 0 | 0 |
 | sistema | 2 | 0 | 0 | 0 |
-| **Total** | 190 | 2 | 2 | 0 |
+| **Total** | 195 | 2 | 2 | 0 |
 
 | Campo | Audiencia | Motor | Origen | Interfaz | Descripción |
 |---|---|---|---|---|---|
@@ -375,6 +380,11 @@ si el motor actual lo usa y de dónde viene.
 | `capabilities.restrictions.disallowed_actions` | cliente | conectado | `config.capabilities.constraints.**` | pantalla | Acciones que el negocio no realiza (p. ej. llamadas). |
 | `capabilities.restrictions.disallowed_channels` | cliente | conectado | `config.capabilities.constraints.**` | pantalla | Canales por los que el negocio no atiende. |
 | `capabilities.service_channels` | cliente | conectado | `config.capabilities.business_channels.allowed` | pantalla | Canales de atención al cliente. |
+| `escalation.always_topics` | cliente | conectado | nuevo | pantalla | Temas que siempre van al equipo (p. ej. reembolsos, garantías). |
+| `escalation.instructions` | cliente | conectado | nuevo | pantalla | Otras indicaciones del negocio sobre cuándo pasar el chat a una persona. |
+| `escalation.never_topics` | cliente | conectado | nuevo | pantalla | Temas que resuelve el asistente sin pasar el chat, salvo que el cliente pida una persona (p. ej. precios, horarios). |
+| `escalation.on_request` | cliente | conectado | nuevo | pantalla | Si el cliente pide hablar con una persona: always (lo pasa) u offer_help_first (primero le ofrece resolverlo una vez; si insiste, lo pasa). |
+| `escalation.when_stuck` | cliente | conectado | nuevo | pantalla | Pasar el chat si la conversación se estanca: el cliente repite lo mismo o está frustrado y no se le puede ayudar. |
 | `features.business_model` | avanzado | conectado | `config.features.business_model` | no | Qué vende el negocio: catalog (productos), saas (planes o suscripción), services (servicios) o service_booking (servicios con cita). El asistente usa el manual de venta de ese tipo; sin indicar, se deduce de la oferta. |
 | `features.multi_currency` | avanzado | conectado | `config.features.multi_currency` | pantalla | true: da los precios en todas sus monedas. false: solo en la primera de cada precio. |
 | `features.multi_plan` | avanzado | conectado | `config.features.multi_plan` | pantalla | true: puede ofrecer varios planes. false: recomienda uno solo, el que mejor encaje. |

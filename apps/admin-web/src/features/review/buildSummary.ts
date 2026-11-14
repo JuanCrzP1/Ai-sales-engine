@@ -1,4 +1,5 @@
 import { allActions, categoryName, isAvailable, isCatalog, isLinkActive, isMethodActive, joinList, offerEntries, paymentOptionCounts } from "../../domain/config/document";
+import { escalationSummary } from "../../domain/assistant/escalation";
 import { mainPlanAmount } from "../../domain/config/factories";
 import { ASSISTANT_ACTIONS, CUSTOMER_DATA_FIELDS, labelFor, OFFER_MODELS, RESPONSE_LENGTHS, SERVICE_CHANNELS, TRANSFER_METHOD_TYPES } from "../../domain/config/options";
 import type { BusinessDocument, CatalogItem, Plan } from "../../domain/config/types";
@@ -91,6 +92,7 @@ export function buildSummary(document: BusinessDocument): SummarySection[] {
         { label: "Por qué te compran", value: list([sales.buying_motivation?.primary ?? "", sales.buying_motivation?.secondary ?? ""]) },
         { label: "Instrucciones", value: list(sales.instructions) },
         { label: "Preguntas frecuentes", value: list(knowledge.faqs?.map((faq) => faq.question)) },
+        { label: "Cuándo pasa a una persona", value: escalationSummary(document) },
       ],
     },
     {

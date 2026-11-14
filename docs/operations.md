@@ -501,6 +501,7 @@ corre la puerta de calidad ([Calidad del asesor](calidad-del-asesor.md)).
 | `pago_numero_inventado` | El asesor escribió como dato de pago un número que no puede saber: uno que no leyó en ninguna parte, o uno que sí leyó (el teléfono del cliente) justo después del nombre de un medio («Nequi: 315…»). | Lo cambió por el dato real. Nunca le llegó al cliente. |
 | `paso_a_persona_segunda_respuesta` | El mensaje del asesor le decía al cliente que lo pasa con el equipo, pero no lo marcó. | Le pidió otra respuesta, diciéndole por qué. |
 | `paso_a_persona_sin_marcar` | Insistió en decirle que lo pasa sin marcarlo. | Mandó su decisión: el chat no pasa. Si se repite en un negocio, revisa sus conversaciones. |
+| `paso_sin_mensaje` | El asesor decidió pasar el chat a una persona y no escribió el mensaje. | Pasó el chat y le dijo al cliente «Claro, te paso con una persona del equipo por este mismo chat.». |
 | `pago_medio_negado` | El asesor insistió en que el negocio no recibe un medio que sí tiene. | Respondió «Sí, claro: también recibimos…». |
 
 ## 3. Qué Revisar Si El Sistema No Responde Como Esperas

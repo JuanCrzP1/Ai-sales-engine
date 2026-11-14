@@ -802,6 +802,68 @@
       "title": "Discovery",
       "type": "object"
     },
+    "Escalation": {
+      "additionalProperties": false,
+      "properties": {
+        "on_request": {
+          "default": "always",
+          "description": "Si el cliente pide hablar con una persona: always (lo pasa) u offer_help_first (primero le ofrece resolverlo una vez; si insiste, lo pasa).",
+          "enum": [
+            "always",
+            "offer_help_first"
+          ],
+          "title": "On Request",
+          "type": "string",
+          "x-engine": "conectado"
+        },
+        "always_topics": {
+          "description": "Temas que siempre van al equipo (p. ej. reembolsos, garantías).",
+          "items": {
+            "maxLength": 120,
+            "type": "string"
+          },
+          "maxItems": 15,
+          "title": "Always Topics",
+          "type": "array",
+          "x-engine": "conectado"
+        },
+        "never_topics": {
+          "description": "Temas que resuelve el asistente sin pasar el chat, salvo que el cliente pida una persona (p. ej. precios, horarios).",
+          "items": {
+            "maxLength": 120,
+            "type": "string"
+          },
+          "maxItems": 15,
+          "title": "Never Topics",
+          "type": "array",
+          "x-engine": "conectado"
+        },
+        "when_stuck": {
+          "default": false,
+          "description": "Pasar el chat si la conversación se estanca: el cliente repite lo mismo o está frustrado y no se le puede ayudar.",
+          "title": "When Stuck",
+          "type": "boolean",
+          "x-engine": "conectado"
+        },
+        "instructions": {
+          "anyOf": [
+            {
+              "maxLength": 800,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Otras indicaciones del negocio sobre cuándo pasar el chat a una persona.",
+          "title": "Instructions",
+          "x-engine": "conectado"
+        }
+      },
+      "title": "Escalation",
+      "type": "object"
+    },
     "Faq": {
       "additionalProperties": false,
       "properties": {
@@ -3442,6 +3504,10 @@
     },
     "knowledge": {
       "$ref": "#/$defs/Knowledge",
+      "x-audience": "cliente"
+    },
+    "escalation": {
+      "$ref": "#/$defs/Escalation",
       "x-audience": "cliente"
     },
     "fulfillment": {

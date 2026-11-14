@@ -414,6 +414,16 @@ otra respuesta (`application/pipeline/handoff_review.py`); si insiste sin marcar
 `paso_a_persona_sin_marcar`. El paso de la conversación (`domain/operations/operational_renderer.py`) también sale solo de hechos: el
 sistema envió los datos de pago.
 
+**Cuándo pasar a una persona** (Asistente IA → Cómo atiende; se publica con el resto). El contrato es `contract/escalation.py`
+(`escalation`: `on_request` `always` | `offer_help_first`, `always_topics`, `never_topics`, `when_stuck`, `instructions`); el
+compilador lo deja en `config.escalation` solo si el negocio cambió algo, y `prompting/sections/escalation.py` lo convierte en
+instrucciones para la IA, al final de lo del negocio. Sin cambios no hay sección: el prompt es idéntico al de antes (lo comprueba el
+laboratorio de regresión). Son instrucciones, no reglas de palabras: la IA decide y marca el motivo en `metadata.handoff`, que la
+bandeja guarda como `human_request` («persona»), `complaint` («reclamo»), `business_topic` («tema») o `stuck` («estancado»;
+`output_contract.HANDOFF_VALUES`, `conversations.HANDOFF_REASONS`). Si la IA decide pasar el chat y deja el mensaje vacío, se respeta
+su decisión con una frase neutra (`ai_orchestrator.HANDOFF_WITHOUT_TEXT`, aviso `paso_sin_mensaje`). Que la IA siga estas reglas lo
+mide la puerta de calidad con `--escalation` ([Calidad del asesor](calidad-del-asesor.md)).
+
 1. **El traspaso** (`application/channels/inbound.py`, `_hand_off`). Si el asistente marca `handoff`:
    - dentro del horario del equipo, la IA se pausa, el cliente empieza a esperar (`conversations.customer_waiting_since`) y recibe
      «Una persona de nuestro equipo te responderá en unos 10 minutos» (o nada, si el negocio lo eligió);

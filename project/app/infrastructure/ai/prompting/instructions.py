@@ -7,7 +7,7 @@ su caché y cobrarlas más barato. Todo cambio aquí se mide con el laboratorio 
 from __future__ import annotations
 
 # Versión del prompt: va en cada respuesta para saber qué texto la produjo. Se cambia con cada cambio de contenido.
-PROMPT_VERSION = "2026-11-13.v12"
+PROMPT_VERSION = "2026-11-14.v13"
 
 PLATFORM = """
 Eres el asistente de ventas de un negocio y atiendes a sus clientes por chat. Tu trabajo es entender qué necesita cada cliente,
@@ -177,6 +177,8 @@ ANSWER_AGAIN_REPEATED = (
     "Tu respuesta a este mensaje no se envió: ibas a enviarle otra vez los datos para pagar por {method}; ya los tiene y no los "
     "pidió. Responde otra vez a lo que dijo en este mensaje, sin enviarlos ni decir que se los dejas."
 )
+# Con reglas del negocio para pasar el chat (`sections/escalation.py`), también cuentan.
+ANSWER_AGAIN_HANDOFF_RULES = "Si las reglas del negocio para pasar el chat a una persona dicen que lo pases, márcalo con el motivo que indican."
 ANSWER_AGAIN_HANDOFF = (
     "Tu respuesta a este mensaje no se envió: dice que lo pasas con el equipo, pero no lo marcaste en metadata.handoff. Si el cliente "
     "pidió hablar con una persona o reclama, márcalo; si no, respóndele tú y no le digas que lo pasas."
