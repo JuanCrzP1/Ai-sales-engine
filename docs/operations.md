@@ -473,6 +473,19 @@ Esos eventos ayudan a detectar:
 - request al LLM sin credenciales
 - fallback por excepción
 
+### Avisos De La Memoria
+
+Lo que el motor recuerda de cada cliente vive en la base (ver [Arquitectura](architecture.md), «La memoria del motor»). Ninguno de
+estos avisos lleva lo que escribió el cliente.
+
+| Aviso | Qué pasó | Qué hizo el motor |
+|---|---|---|
+| `memoria_no_disponible` | La base no respondió al leer o guardar la memoria (`operation`: `leer`, `leer_historial`, `guardar`, `reiniciar`). | Atendió ese mensaje sin memoria; no guardó nada en la RAM de ese servidor. Si se repite, revisa la base (Neon) y `DATABASE_URL`. |
+| `memoria_sin_negocio` | Llegó un mensaje de un negocio que no está en la tabla `tenants` del motor. | Lo atendió sin memoria. |
+| `memoria_en_ram` | El motor arrancó con una base que no es PostgreSQL, fuera de las pruebas. | Usa memoria en RAM: no se comparte entre servidores ni sobrevive a un reinicio. En la nube no debe aparecer nunca. |
+| `resumen_actualizado` | La IA resumió lo anterior de una conversación larga (`mensajes`: cuántos cubrió). | Lo normal en chats largos: una vez cada 10 mensajes. |
+| `resumen_fallido` | La llamada que resume falló o respondió algo que no se entiende. | Siguió con el resumen anterior; el asesor responde igual. |
+
 ### Avisos De Pagos
 
 El asesor (la IA) habla y el sistema pone los datos de pago debajo de su mensaje. Estos avisos dicen cuándo la IA falló y qué hizo el
@@ -485,7 +498,7 @@ corre la puerta de calidad ([Calidad del asesor](calidad-del-asesor.md)).
 | `pago_lectura_fallida` | El lector no respondió o respondió algo que no se entiende (`error`). | Decidió el asesor solo, con su acción. |
 | `pago_segunda_respuesta` | La primera respuesta del asesor no podía salir (`why`): `refused` (dijo que no podía enviar los datos), `denied` (negó un medio que el negocio tiene), `repeated` (iba a repetir datos que el cliente ya tiene) o `unrequested` (iba a enviar un medio que el cliente no pidió). | Le pidió otra respuesta, diciéndole por qué. |
 | `pago_red_de_seguridad` | El asesor insistió en que no podía (`how: la_ia_dijo_que_no_podia`) o escribió el marcador del dato sin decir el medio. | Envió los datos con una frase corta, le recordó al cliente que ya los tiene, o le preguntó con cuál medio paga. |
-| `pago_numero_inventado` | El asesor escribió un celular o una cuenta que no leyó en ninguna parte. | Lo cambió por el dato real. Nunca le llegó al cliente. |
+| `pago_numero_inventado` | El asesor escribió como dato de pago un número que no puede saber: uno que no leyó en ninguna parte, o uno que sí leyó (el teléfono del cliente) justo después del nombre de un medio («Nequi: 315…»). | Lo cambió por el dato real. Nunca le llegó al cliente. |
 | `pago_medio_negado` | El asesor insistió en que el negocio no recibe un medio que sí tiene. | Respondió «Sí, claro: también recibimos…». |
 
 ## 3. Qué Revisar Si El Sistema No Responde Como Esperas

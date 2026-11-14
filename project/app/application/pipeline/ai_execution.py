@@ -75,7 +75,8 @@ from __future__ import annotations
 import json
 
 from app.application.pipeline.fallback import build_fallback_response
-from app.application.pipeline.payment_names import named_option
+from app.application.pipeline.payment_names import named_option, payment_terms
+from app.application.pipeline.conversation_summary import refresh_summary
 from app.application.pipeline.payment_reading import read_customer_message
 from app.application.pipeline.response_postprocessor import enforce_max_words, without_model_artifacts
 from app.application.pipeline.response_router import route_response
@@ -95,7 +96,7 @@ from app.application.pipeline.payment_delivery import (  # noqa: F401 - las prue
     sent_state,
     without_payment_placeholder,
 )
-from app.domain.business_config.payment_data import mask_invented_numbers, mask_own_markers
+from app.domain.business_config.payment_data import mask_invented_numbers, mask_own_markers, redact_payment_values
 from app.domain.conversation.memory import ConversationState, MemoryDomainService
 from app.domain.memory.observability.audit import emit_memory_audit
 from app.domain.memory.salience.selector import select as select_commercial_memory
@@ -148,11 +149,13 @@ def _current_op_state(memory_service: MemoryDomainService | None, *, tenant_slug
 
 def _known_to_the_ai(runtime_yaml: dict, user_message: str) -> str:
     """Todo lo que la IA leyó para responder (el negocio, la memoria y la conversación), en un solo texto: sirve para saber si un
-    número que escribió lo leyó en alguna parte o lo inventó."""
+    número que escribió lo leyó en alguna parte o lo inventó. Sin los datos de pago: la IA nunca los ve. (Con ellos, un número
+    inventado que coincidía con parte de una cuenta real, «123456789» de «1234567890», pasaba como leído; 13 nov 2026.)"""
     try:
-        return f"{json.dumps(runtime_yaml, ensure_ascii=False, default=str)} {user_message}"
+        read = f"{json.dumps(runtime_yaml, ensure_ascii=False, default=str)} {user_message}"
     except (TypeError, ValueError):
-        return user_message
+        read = user_message
+    return redact_payment_values(read, runtime_yaml)
 
 
 def _remembered_payment_method(memory_service: MemoryDomainService | None, *, tenant_slug: str, user_id: str) -> str:
@@ -525,6 +528,18 @@ class AIExecution:
         op_before = _current_op_state(memory_service, tenant_slug=tenant_slug_value, user_id=user_key)
         remembered_method = _remembered_payment_method(memory_service, tenant_slug=tenant_slug_value, user_id=user_key)
 
+        # Lo que pasó antes en una conversación larga, resumido por la IA: el asesor ve los últimos mensajes y, resumido, lo anterior.
+        _summary = refresh_summary(
+            runtime,
+            bot_config=bot_config,
+            memory=memory_service,
+            runtime_yaml=runtime_yaml_with_memory,
+            tenant_slug=tenant_slug_value,
+            user_id=user_key,
+        ) if memory_service is not None else ""
+        if _summary:
+            runtime_yaml_with_memory["conversation_summary"] = _summary
+
         # El lector de pagos: qué pide el cliente sobre el pago en este mensaje, entendido por la IA en una llamada corta. El asesor
         # lo sabe antes de responder.
         reading = read_customer_message(
@@ -614,7 +629,11 @@ class AIExecution:
             response_text = without_model_artifacts(str(response or "")).strip()
             # La IA no ve los datos de pago: un celular o una cuenta que escribe sin haberlo leído es inventado, y a veces escribe su
             # propio marcador («[número de Nequi]»). Se cambian por el marcador del dato y el sistema pone el real.
-            checked_text = mask_invented_numbers(mask_own_markers(response_text), _known_to_the_ai(runtime_yaml_with_memory, str(user_message or "")))
+            checked_text = mask_invented_numbers(
+                mask_own_markers(response_text),
+                _known_to_the_ai(runtime_yaml_with_memory, str(user_message or "")),
+                payment_terms=payment_terms(runtime_yaml_with_memory),
+            )
             if checked_text != response_text:
                 logger.warning("pago_numero_inventado", extra={"tenant": tenant_slug_value})
                 response_text = checked_text

@@ -94,6 +94,9 @@ def test_each_exact_rule_catches_its_failure():
     assert _broken(_turns(("Pásame el Nequi", DETAILS, "Usa este número [número de Nequi]."))) == {"datos_cuando_los_necesita": [1], "sin_marcadores": [1]}
     assert _broken(_turns(("Hola", "", "Hola, ¿en qué te ayudo?", True))) == {"pago_avisado_al_equipo": [1]}
     assert _broken(_turns(("ya te consigné", REPORTED, "¡Gracias!"))) == {"pago_avisado_al_equipo": [1]}
+    # El teléfono del cliente dado como Nequi (13 nov 2026); anotarlo no es darlo como dato de pago.
+    assert _broken(_turns(("Cómo así", NO_DETAILS, "Paga a ese número de Nequi 315 777 8899."))) == {"sin_numeros_de_pago_falsos": [1]}
+    assert _broken(_turns(("Mi teléfono es 3157778899", "", "Anoté tu teléfono 3157778899."))) == {}
 
 
 def test_the_judge_is_asked_one_verdict_per_rule():

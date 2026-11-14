@@ -82,6 +82,9 @@ def render(view: PromptView) -> str:
             facts.append(instructions.AFTER_SALE.format(message=after_sale))
     elif method:
         facts.append(instructions.PAYMENT_CHOSEN.format(method=_method_name(method)))
+    summary = one_line(view.runtime.get("conversation_summary"))
+    if summary:
+        facts.insert(0, instructions.SUMMARY_FACT.format(summary=summary))
     facts += _this_message(view, status)
     anchor, rule = one_line(memory.get("operational_anchor")), one_line(memory.get("operational_rule"))
     if anchor:

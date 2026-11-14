@@ -28,6 +28,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterator
+from contextlib import contextmanager, nullcontext
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Protocol
@@ -133,6 +135,14 @@ class MemoryDomainService:
     @property
     def repository(self) -> MemoryRepositoryPort:
         return self._repository
+
+    @contextmanager
+    def turn(self, *, tenant_slug: str, user_id: str) -> Iterator[None]:
+        """Un mensaje del cliente: la memoria se lee una vez al empezar y se guarda una vez al terminar (si el almacenamiento lo
+        permite; la memoria en RAM de las pruebas no lo necesita)."""
+        opener = getattr(self._repository, "turn", None)
+        with opener(tenant_slug=tenant_slug, user_id=user_id) if callable(opener) else nullcontext():
+            yield
 
     def save_message(self, *, tenant_slug: str, user_id: str, message_text: str, role: str = "user") -> None:
         self._repository.save_message(tenant_slug=tenant_slug, user_id=user_id, message_text=message_text, role=role)
@@ -248,6 +258,21 @@ class MemoryDomainService:
 
     def reset_conversation(self, *, tenant_slug: str, user_id: str) -> None:
         self._repository.reset_conversation(tenant_slug=tenant_slug, user_id=user_id)
+
+    def get_history_entries(self, *, tenant_slug: str, user_id: str) -> list[dict]:
+        """Los mensajes recientes con su hora (`role`, `text`, `at`), si el almacenamiento la guarda."""
+        _fn = getattr(self._repository, "get_history_entries", None)
+        return list(_fn(tenant_slug=tenant_slug, user_id=user_id) or []) if callable(_fn) else []
+
+    def get_summary(self, *, tenant_slug: str, user_id: str) -> tuple[str, datetime | None]:
+        """El resumen de lo que pasó antes en la conversación y la hora del último mensaje que cubre."""
+        _fn = getattr(self._repository, "get_summary", None)
+        return _fn(tenant_slug=tenant_slug, user_id=user_id) if callable(_fn) else ("", None)
+
+    def set_summary(self, *, tenant_slug: str, user_id: str, summary: str, until: datetime) -> None:
+        _fn = getattr(self._repository, "set_summary", None)
+        if callable(_fn):
+            _fn(tenant_slug=tenant_slug, user_id=user_id, summary=summary, until=until)
 
     def set_op_state(self, *, tenant_slug: str, user_id: str, state_dict: dict) -> None:
         _fn = getattr(self._repository, "set_op_state", None)

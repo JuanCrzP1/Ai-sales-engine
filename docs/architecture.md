@@ -129,6 +129,31 @@ No hay un módulo activo con ese nombre. La decisión efectiva se reparte entre:
 Qué hace cada uno:
 
 - `conversation_flow.py`: decide early responses, continuidad, memoria y contexto del turno.
+
+### La memoria del motor
+
+Lo que el motor recuerda de cada cliente entre un mensaje y el siguiente: la conversación (`conversation_messages`) y sus datos
+(`conversation_memory`: el medio de pago elegido, el estado del pago, el paso de la conversación, la etapa, el resumen…).
+
+- **La base es la única fuente** (`infrastructure/persistence/sql_memory.py`). En Vercel cada mensaje puede llegar a otro servidor:
+  ninguno guarda nada en su RAM entre mensajes. (Hasta el 13 nov 2026 cada servidor respondía primero con su copia en RAM, que podía
+  estar vieja, y la etapa, el modo y la hora del último mensaje ni siquiera se guardaban en la base.)
+- **Un mensaje, un turno** (`AIPipeline.run` → `MemoryDomainService.turn`): la memoria se lee una vez al empezar y se guarda una vez
+  al terminar, en una transacción, solo con lo que cambió (dos mensajes del mismo cliente a la vez no se borran lo suyo). Son 5
+  consultas por mensaje; antes eran unas 50.
+- **El historial son los mensajes más recientes**, en orden y con su hora (antes eran los primeros 40: pasados 40 mensajes, la IA
+  respondía con lo de hace rato). Lo busca el índice `conversation_messages_recent` (migración 0019).
+- **Lo anterior, resumido por la IA** (`application/pipeline/conversation_summary.py`, texto en `prompting/summary_writer.py`): la
+  IA ve los últimos 8 mensajes; cuando hay 10 que ya no ve y el resumen no cubre, una llamada corta al modelo del negocio actualiza un
+  resumen de hechos estables (quién es el cliente, qué necesita, qué eligió, qué datos dio), sin datos de pago. El asesor lo recibe
+  en «ESTA CONVERSACIÓN», sabiendo que si algo cambió después manda lo reciente.
+- **Si la base no responde**, el mensaje se atiende sin memoria y queda el aviso `memoria_no_disponible`; nunca se parte la memoria
+  entre servidores.
+- **Cuál memoria se usa** lo decide `memory_factory.build_memory_repository` por la base: PostgreSQL → la base; otra (el SQLite de las
+  pruebas) → `memory_repository.MemoryRepository`, en RAM, que es la referencia de cómo se comporta cada dato. «Probar» del panel en la
+  nube usa la de la base; el simulador de conversaciones y el panel local usan una en RAM aparte.
+- Las pruebas contra un PostgreSQL de verdad están en `tests/test_memory_postgres.py` (con `TEST_POSTGRES_URL`; la integración
+  continua levanta uno).
 - `sales_flow.py`: decide qué contexto comercial, pricing, features e inventario deben inyectarse al runtime.
 - `response_router.py`: decide si la salida proviene de IA o fallback por excepción, y conserva metadata operativa.
 
@@ -344,16 +369,15 @@ panel (papelera del chat o de Clientes)
 -> project/app/admin_api/conversation_routes.py
 -> project/app/business_config_application/conversations.py   ConversationsService.delete: comprueba que el chat sea del usuario
 -> project/app/application/channels/contact_memory.py         EngineContactMemory: el motor olvida al cliente
-   -> project/app/infrastructure/persistence/memory_repository.py   SQLMemoryRepository.forget_contact
+   -> project/app/infrastructure/persistence/sql_memory.py   SQLMemoryRepository.forget_contact
 -> project/app/infrastructure/business_config/conversation_store.py   ConversationStore.delete
 ```
 
 - **Primero la memoria del motor:** borra el historial (`conversation_messages`), la memoria comercial (`conversation_memory`) y el
-  registro del cliente (`clients`), y su copia en RAM. Si falla, responde 503 y no se borra nada.
+  registro del cliente (`clients`). Si falla, responde 503 y no se borra nada.
 - **Después la conversación:** sus mensajes, archivos y avisos se borran en cascada en la base; las ventas quedan con
   `conversation_id` en `NULL`.
-- Cada instancia del motor guarda el registro de cada cliente en una caché que vence en `IDS_CACHE_SECONDS` (60 s), para que
-  ninguna siga usando uno borrado.
+- Ningún servidor del motor guarda copias del cliente: lo borrado ya no lo recuerda nadie.
 - Los chats de prueba no tienen memoria en el motor: solo se borra la conversación.
 
 ## Eliminar Un Negocio
@@ -367,7 +391,7 @@ panel (DeleteBusinessDialog)
    1. BusinessAccess.require_owner + el nombre escrito (sin distinguir mayúsculas ni espacios de más)
    2. WhatsAppChannelService.disconnect: cierra la sesión y borra la instancia en uazapi (si falla: 409 y no se borra nada)
    3. BusinessConfigRepository.delete_business: DELETE de `tenants`; todo lo demás cae en cascada en una transacción
-   4. EngineContactMemory.forget_business: la RAM del motor sobre los clientes de ese negocio (si falla, se registra)
+   4. EngineContactMemory.forget_business: en la base no queda nada (cae en cascada); solo la memoria en RAM de las pruebas tiene algo que olvidar
 ```
 
 - **Todo cae en cascada:** cada tabla con `tenant_id` lo declara con `ON DELETE CASCADE`, en las migraciones del panel y en el esquema

@@ -5,6 +5,14 @@ está en el historial de git y en `docs/plan-v1.md`.
 
 ## 13 de noviembre de 2026
 
+**Tu asistente ya no olvida en conversaciones largas**
+- Pasados 40 mensajes, el asistente leía el principio de la conversación y no lo último. Ahora siempre lee lo más reciente, y lo de
+  antes le llega **resumido** (quién es el cliente, qué necesita, qué eligió). El resumen lo escribe la IA cada 10 mensajes en chats
+  largos: suma un poco al consumo de tu clave solo en esas conversaciones.
+- Lo que recuerda de cada cliente (el medio de pago que eligió, si ya pagó, en qué paso va) es el mismo en todos los servidores: antes
+  uno podía responder con un dato viejo. Y responde más rápido: cada mensaje consulta la memoria 5 veces en lugar de unas 50.
+- Si el asistente llegara a escribir el teléfono del cliente como si fuera tu Nequi («Nequi: 315…»), ese número no sale: va el tuyo.
+
 **Pagos: tu asistente habla como un asesor, no como un contestador**
 - Cuando el cliente necesita los datos para pagar, el asistente **le habla y debajo van los datos**. Antes llegaba solo la plantilla,
   sin una palabra.

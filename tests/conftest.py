@@ -187,40 +187,33 @@ def pytest_collection_modifyitems(config, items):
 def _isolate_last_message_timestamps(request):
     """Aísla la marca del último mensaje del usuario en cada prueba.
 
-    - test_sql_memory_repository.py → sin parches (valida la memoria SQL real)
-    - resto                         → set/get_last_user_message_at usan un dict por prueba,
-      de modo que el estado histórico de la DB no contamina las pruebas conversacionales,
-      mientras los cambios dentro de la prueba (ventanas de actividad) siguen funcionando.
+    - test_memory_postgres.py y test_memory_repository_contract.py → sin parches (validan la memoria de verdad)
+    - resto → set/get_last_user_message_at de la memoria en RAM (la del motor en las pruebas, compartida por todas) usan un dict
+      por prueba: lo que dejó otra prueba no cambia las ventanas de actividad, y los cambios dentro de la prueba sí funcionan.
     """
     test_file = request.node.fspath.basename
 
-    if test_file == "test_sql_memory_repository.py":
+    if test_file in ("test_memory_postgres.py", "test_memory_repository_contract.py"):
         yield
         return
 
-    # Per-test in-memory store: (tenant_slug, user_id) → datetime | None
-    # Captures writes done during this test only; DB state from previous runs is ignored.
+    # Per-test store: (tenant_slug, user_id) → datetime | None. Solo la memoria compartida del motor (`GLOBAL_MEMORY_REPOSITORY`):
+    # las memorias propias de una prueba (un `MemoryRepository()` nuevo) se comportan de verdad.
+    from app.services.ai_service import GLOBAL_MEMORY_REPOSITORY as _shared
+
     _mem_store: dict = {}
+    _orig_set = _shared.set_last_user_message_at
 
-    # Capture the real implementation BEFORE the patch is applied.
-    import importlib as _il
-    _mem_mod = _il.import_module("app.infrastructure.persistence.memory_repository")
-    _orig_set = _mem_mod.SQLMemoryRepository.set_last_user_message_at
-
-    def _fake_set(self, *, tenant_slug: str, user_id: str, sent_at) -> None:
-        # Write to DB (keeps get_memory() consistent within the test)
-        _orig_set(self, tenant_slug=tenant_slug, user_id=user_id, sent_at=sent_at)
-        # Also record in per-test store so _fake_get sees it
+    def _fake_set(*, tenant_slug: str, user_id: str, sent_at) -> None:
+        _orig_set(tenant_slug=tenant_slug, user_id=user_id, sent_at=sent_at)
         _mem_store[(tenant_slug, user_id)] = sent_at
 
-    def _fake_get(self, *, tenant_slug: str, user_id: str):
-        # Read ONLY from per-test store → historical DB state is invisible
+    def _fake_get(*, tenant_slug: str, user_id: str):
+        # Solo lo escrito en esta prueba: lo que dejó otra no cuenta.
         return _mem_store.get((tenant_slug, user_id))
 
-    _mem_base = "app.infrastructure.persistence.memory_repository.SQLMemoryRepository"
-
     with (
-        patch(f"{_mem_base}.set_last_user_message_at", _fake_set),
-        patch(f"{_mem_base}.get_last_user_message_at", _fake_get),
+        patch.object(_shared, "set_last_user_message_at", _fake_set),
+        patch.object(_shared, "get_last_user_message_at", _fake_get),
     ):
         yield

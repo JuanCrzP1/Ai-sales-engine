@@ -39,6 +39,15 @@ npm --prefix apps/admin-web run test:integration   # panel contra la API real y 
 
 `pytest -m integration` habla con el modelo real y consume API: solo con `OPENROUTER_API_KEY` y cuando haga falta.
 
+La memoria del motor se prueba contra un PostgreSQL de verdad (`tests/test_memory_postgres.py`). Sin `TEST_POSTGRES_URL` esas
+pruebas se saltan; el CI levanta un PostgreSQL y las corre siempre. En tu equipo, con una base **vacía y solo para esto** (las pruebas
+vacían sus tablas):
+
+```bash
+createdb ai_sales_engine_pruebas_memoria
+TEST_POSTGRES_URL=postgresql+psycopg:///ai_sales_engine_pruebas_memoria pytest tests/test_memory_postgres.py
+```
+
 Si cambias el contrato de BusinessConfig, regenera lo derivado en este orden (cada script acepta `--check`):
 
 ```bash

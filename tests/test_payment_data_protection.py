@@ -331,6 +331,26 @@ def test_an_invented_number_never_reaches_the_customer():
     invented = reply("Puedes pagar por Nequi al número que te compartí: 310 123 4567. Envíame el comprobante.", "info")
     _first, (_p, answer) = run_conversation("saas", [FIRST, ("Se me borró el número", invented, reads(True))], user_id="numero-inventado")
     assert "310 123 4567" not in answer and number in _details(answer) and _said(answer) == "Envíame el comprobante."
+    # Con la IA real (13 nov 2026): «Datos para Nequi: Número: 123456789», parte de la cuenta real 1234567890. La IA nunca ve los
+    # datos de pago: un número parecido a uno de ellos también es inventado.
+    account = next(value for value in payment_values(load_tenant_runtime_yaml("saas")) if value.isdigit() and len(value) == 10 and not value.startswith("3"))
+    near = reply(f"¡Listo! Ahí abajo te dejo los datos.\n\nDatos para Nequi:\n- Número: {account[:-1]}", "info")
+    (_p, cleaned), = run_conversation("saas", [("Te pago por Nequi", near, WANTS_NEQUI)], user_id="numero-parecido")
+    assert account[:-1] not in _said(cleaned) and "*Nequi*" in _details(cleaned)
+    # Con la IA real (13 nov 2026, en producción y en la puerta de calidad): el cliente dio su teléfono y el asesor escribió
+    # «Nequi: 3157778899», su propio teléfono como si fuera el Nequi del negocio. Un número justo después del nombre de un medio es
+    # un dato de pago: va el real.
+    phone = "3157778899"
+    confused = reply(f"Te dejo los datos para el pago por Nequi: {phone}. Cuando pagues me envías la captura.", "info")
+    turns = [FIRST, (f"Mi teléfono es {phone}", reply("Anoté tu teléfono, gracias.", "info"), reads()), ("Cómo así", confused, reads())]
+    _first, (_p2, noted), (_p3, fixed) = run_conversation("saas", turns, user_id="telefono-como-nequi")
+    assert noted == "Anoté tu teléfono, gracias." and phone not in fixed and number in fixed
+    from app.application.pipeline.payment_names import payment_terms
+    terms = payment_terms(load_tenant_runtime_yaml("saas"))
+    known = f"cliente: mi teléfono es {phone}"
+    assert mask_invented_numbers(f"realiza el pago a ese número de Nequi {phone}", known, payment_terms=terms) == f"realiza el pago a ese número de Nequi {REDACTED_PAYMENT_VALUE}"
+    assert mask_invented_numbers(f"Anoté tu teléfono {phone} para el pago por Nequi.", known, payment_terms=terms) == f"Anoté tu teléfono {phone} para el pago por Nequi."
+    assert mask_invented_numbers("Puedes pagar 210000 pesos por Nequi.", known, payment_terms=terms) == "Puedes pagar 210000 pesos por Nequi."
     # Un número que la IA sí leyó (el teléfono que dio el cliente) o un precio no se tocan.
     known = "el cliente dijo: mi teléfono es 3001234567"
     assert mask_invented_numbers("Anoté tu teléfono 300 123 4567. Son COP 1.320.000 al año.", known) == "Anoté tu teléfono 300 123 4567. Son COP 1.320.000 al año."

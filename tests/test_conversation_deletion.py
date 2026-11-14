@@ -5,8 +5,8 @@
 - Si no se puede borrar la memoria del asistente, no se borra nada (y se puede intentar de nuevo).
 - Los chats de «Probar asistente» se borran de una vez; los de clientes reales no se tocan.
 - Nadie borra chats de un negocio ajeno: responde como si no existieran.
-- En el motor, olvidar a un cliente borra su historial, su memoria comercial y su registro; y el registro que guarda cada
-  instancia en su caché vence, para que ninguna siga usando uno borrado.
+- En el motor, olvidar a un cliente borra su historial, su memoria comercial y su registro (contra un PostgreSQL de verdad, en
+  `test_memory_postgres.py`).
 """
 from __future__ import annotations
 
@@ -41,8 +41,6 @@ from app.infrastructure.business_config.tables import (
     tenants,
 )
 from app.infrastructure.business_config.usage_store import UsageCounterStore
-from app.infrastructure.persistence import memory_repository
-from app.infrastructure.persistence.memory_repository import SQLMemoryRepository
 
 ANA = Principal(user_id="usuario-ana", email="ana@example.com")
 BETO = Principal(user_id="usuario-beto", email="beto@example.com")
@@ -212,87 +210,3 @@ def test_the_test_chats_are_deleted_at_once_and_real_customers_stay(platform):
     # Otro usuario no puede borrar las pruebas de un negocio ajeno.
     assert client.delete("/api/businesses/saas/conversations/tests", headers=_as("ana")).status_code == 404
     assert _count(engine, conversations) == 3
-
-
-# ---------------------------------------------------------------------------
-# La memoria del motor
-# ---------------------------------------------------------------------------
-
-ENGINE_TENANT = "11111111-1111-1111-1111-111111111111"
-
-
-@pytest.fixture
-def engine_memory(monkeypatch):
-    """Las tablas de memoria del motor en SQLite, con un cliente que olvidar y otro que no."""
-    db = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
-    with db.begin() as conn:
-        conn.execute(text("CREATE TABLE clients (id TEXT PRIMARY KEY, tenant_id TEXT, external_id TEXT, name TEXT)"))
-        conn.execute(text("CREATE TABLE conversation_messages (id INTEGER PRIMARY KEY, tenant_id TEXT, client_id TEXT, role TEXT, content TEXT)"))
-        conn.execute(text("CREATE TABLE conversation_memory (id INTEGER PRIMARY KEY, tenant_id TEXT, client_id TEXT, memory TEXT)"))
-        for client_id, phone in (("cliente-laura", PHONE), ("cliente-pedro", "573009998877")):
-            conn.execute(text("INSERT INTO clients VALUES (:id, :tid, :ext, 'x')"), {"id": client_id, "tid": ENGINE_TENANT, "ext": phone})
-            conn.execute(text("INSERT INTO conversation_messages (tenant_id, client_id, role, content) VALUES (:tid, :cid, 'user', 'hola')"), {"tid": ENGINE_TENANT, "cid": client_id})
-            conn.execute(text("INSERT INTO conversation_memory (tenant_id, client_id, memory) VALUES (:tid, :cid, '{}')"), {"tid": ENGINE_TENANT, "cid": client_id})
-    from app.infrastructure.db import repository as db_repository
-
-    monkeypatch.setattr(db_repository.DBRepository, "get_tenant_by_key", lambda self, key: {"id": ENGINE_TENANT, "slug": key})
-    monkeypatch.setattr(SQLMemoryRepository, "_engine", staticmethod(lambda: db))
-    yield db
-    db.dispose()
-
-
-def test_forgetting_a_contact_erases_their_history_memory_and_record_in_the_engine(engine_memory):
-    repository = SQLMemoryRepository()
-    super(SQLMemoryRepository, repository).save_message(tenant_slug="restaurant", user_id=PHONE, message_text="hola", role="user")
-
-    repository.forget_contact(tenant_slug="restaurant", user_id=PHONE)
-
-    with engine_memory.connect() as conn:
-        assert conn.execute(text("SELECT external_id FROM clients")).scalars().all() == ["573009998877"]
-        for table in ("conversation_messages", "conversation_memory"):
-            assert conn.execute(text(f"SELECT client_id FROM {table}")).scalars().all() == ["cliente-pedro"], table
-    assert super(SQLMemoryRepository, repository).get_history(tenant_slug="restaurant", user_id=PHONE) == [], "tampoco queda en RAM"
-
-
-def test_forgetting_the_test_conversations_erases_only_the_prueba_contacts(engine_memory):
-    """«Probar» guarda su memoria con contactos «prueba-<sesión>»: borrar las pruebas borra solo esos, nunca a un cliente."""
-    with engine_memory.begin() as conn:
-        for client_id, ext in (("prueba-1", "prueba-aaaa"), ("prueba-2", "prueba-bbbb"), ("parecido", "pruebaxcliente")):
-            conn.execute(text("INSERT INTO clients VALUES (:id, :tid, :ext, 'x')"), {"id": client_id, "tid": ENGINE_TENANT, "ext": ext})
-            conn.execute(text("INSERT INTO conversation_messages (tenant_id, client_id, role, content) VALUES (:tid, :cid, 'user', 'hola')"), {"tid": ENGINE_TENANT, "cid": client_id})
-    repository = SQLMemoryRepository()
-    super(SQLMemoryRepository, repository).save_message(tenant_slug="restaurant", user_id="prueba-aaaa", message_text="hola", role="user")
-
-    repository.forget_contacts_with_prefix(tenant_slug="restaurant", prefix="prueba-")
-
-    with engine_memory.connect() as conn:
-        assert sorted(conn.execute(text("SELECT external_id FROM clients")).scalars().all()) == sorted([PHONE, "573009998877", "pruebaxcliente"])
-        assert sorted(conn.execute(text("SELECT client_id FROM conversation_messages")).scalars().all()) == ["cliente-laura", "cliente-pedro", "parecido"]
-    assert super(SQLMemoryRepository, repository).get_history(tenant_slug="restaurant", user_id="prueba-aaaa") == [], "tampoco queda en RAM"
-
-
-def test_forgetting_reports_a_failure_instead_of_hiding_it(engine_memory, monkeypatch):
-    def _down():
-        raise RuntimeError("la base del motor no responde")
-
-    monkeypatch.setattr(SQLMemoryRepository, "_engine", staticmethod(_down))
-    with pytest.raises(RuntimeError):
-        SQLMemoryRepository().forget_contact(tenant_slug="restaurant", user_id=PHONE)
-
-
-def test_each_instance_looks_up_the_contact_again_after_a_minute(monkeypatch):
-    """Si el panel elimina al cliente, ninguna instancia sigue usando su registro borrado más de un minuto."""
-    lookups: list[str] = []
-    from app.infrastructure.db import repository as db_repository
-    from app.infrastructure.persistence import client_repository
-
-    monkeypatch.setattr(db_repository.DBRepository, "get_tenant_by_key", lambda self, key: {"id": ENGINE_TENANT})
-    monkeypatch.setattr(client_repository.ClientRepository, "get_or_create", lambda self, **_kwargs: lookups.append("x") or f"cliente-{len(lookups)}")
-    now = [1000.0]
-    monkeypatch.setattr(memory_repository.time, "monotonic", lambda: now[0])
-    repository = SQLMemoryRepository()
-
-    first = repository._resolve_ids("restaurant", PHONE)
-    assert repository._resolve_ids("restaurant", PHONE) == first and len(lookups) == 1, "dentro de un turno, sin volver a buscar"
-    now[0] += memory_repository.IDS_CACHE_SECONDS + 1
-    assert repository._resolve_ids("restaurant", PHONE) == (ENGINE_TENANT, "cliente-2") and len(lookups) == 2

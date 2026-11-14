@@ -7,7 +7,6 @@ la red. Las aserciones comparan conteos y nombres: si una falla, el informe no d
 """
 from __future__ import annotations
 
-import inspect
 import json
 import os
 import re
@@ -35,9 +34,8 @@ from app.application.runtime import load_tenant_runtime_yaml
 from app.config import settings
 from app.database.connection import get_db
 from app.domain.business_config.payment_data import REDACTED_PAYMENT_VALUE, payment_values, redact_payment_values
-from app.infrastructure.persistence.memory_repository import SQLMemoryRepository
 from app.models import AdminUser, Base, Tenant
-from app.services.ai_service import GLOBAL_MEMORY_SERVICE, AIService
+from app.services.ai_service import GLOBAL_MEMORY_REPOSITORY, GLOBAL_MEMORY_SERVICE, AIService
 from app.services.auth_service import AuthService
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
@@ -617,9 +615,11 @@ def test_the_simulation_never_touches_the_real_memory_repository(api, monkeypatc
 
         return _wrapper
 
-    for name, member in list(vars(SQLMemoryRepository).items()):
-        if inspect.isfunction(member):
-            monkeypatch.setattr(SQLMemoryRepository, name, _recording(name, member))
+    # La memoria real del motor (en la base en la nube; en RAM en estas pruebas): la simulación usa la suya, aparte.
+    for name in [name for name in dir(GLOBAL_MEMORY_REPOSITORY) if not name.startswith("_")]:
+        member = getattr(GLOBAL_MEMORY_REPOSITORY, name)
+        if callable(member):
+            monkeypatch.setattr(GLOBAL_MEMORY_REPOSITORY, name, _recording(name, member))
 
     for message in ("hola", "tengo muchos mensajes", "quiero empezar"):
         body = {"user_message": message, **({"user_id": label} if label else {})}

@@ -58,7 +58,7 @@ from app.application.runtime import BusinessUnavailableError, business_usage_rec
 from app.application.runtime.business_ai import UsageCallback
 from app.domain.business_config.ai_settings import AICredentials
 from app.domain.conversation.memory import MemoryDomainService
-from app.infrastructure.persistence.memory_repository import MemoryRepository, SQLMemoryRepository
+from app.infrastructure.persistence.memory_factory import build_memory_repository
 from app.services.ai_runtime.runtime_core import AIService as AIRuntimeService
 from app.utils.logger import logger
 
@@ -92,7 +92,7 @@ class AIPipeline:
             message_repository=message_repository,
         )
         if memory_service is None:
-            memory_repository = SQLMemoryRepository()
+            memory_repository = build_memory_repository()
             memory = MemoryDomainService(memory_repository)
         else:
             memory = memory_service
@@ -132,6 +132,36 @@ class AIPipeline:
                 return UNAVAILABLE_REPLY, False, metadata
             return UNAVAILABLE_REPLY, False
 
+        # Un mensaje del cliente es un turno de su memoria: se lee una vez al empezar y se guarda una vez al terminar
+        # (`infrastructure/persistence/sql_memory.py`).
+        memory_key = self.conversation_flow._normalize_user_id(user_id)
+        with self.conversation_flow.memory.turn(tenant_slug=tenant_slug_value, user_id=memory_key):
+            return self._answer(
+                tenant=tenant,
+                tenant_slug_value=tenant_slug_value,
+                user_id=user_id,
+                user_message=user_message,
+                bot_config=bot_config,
+                conversation_history=conversation_history,
+                faq_results=faq_results,
+                runtime_yaml=runtime_yaml,
+                include_metadata=include_metadata,
+            )
+
+    def _answer(
+        self,
+        *,
+        tenant,
+        tenant_slug_value: str,
+        user_id: str | None,
+        user_message: str,
+        bot_config,
+        conversation_history: list,
+        faq_results: list[dict],
+        runtime_yaml: dict,
+        include_metadata: bool,
+    ) -> tuple[str, bool] | tuple[str, bool, dict]:
+        """La respuesta a un mensaje, dentro del turno de la memoria del cliente."""
         conversation = self.conversation_flow.process(
             tenant=tenant,
             tenant_slug=tenant_slug_value,

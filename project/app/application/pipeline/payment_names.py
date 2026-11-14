@@ -70,3 +70,19 @@ def refine(key: str, *texts: str, runtime_yaml: dict) -> str:
         if named.startswith("bank:"):
             return named
     return key
+
+
+# Las palabras con las que se habla de pagarle a alguien, además del nombre del medio.
+_PAYING = r"\bcuenta\b|\bconsign\w*|\btransf\w*|\bpag\w*|\bdeposit\w*|\bgir\w*"
+
+
+def payment_terms(runtime_yaml: dict) -> str:
+    """Una expresión que reconoce cuándo se nombra un medio de pago del negocio (o se habla de pagar): «Nequi», «transferencia a
+    Davivienda», «Nu», «la cuenta», «págale». La usa el cuidado de números de pago (`payment_data.mask_invented_numbers`)."""
+    terms = [_PAYING]
+    for option in options(runtime_yaml):
+        kind = method_kind(option.split(":", 1)[0])
+        if kind is not None and kind.aliases and not kind.custom:
+            terms.append(kind.aliases)
+    terms += [_word(account.own_name) for account in accounts(runtime_yaml) if account.own_name]
+    return "|".join(f"(?:{term})" for term in terms)

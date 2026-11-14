@@ -19,6 +19,12 @@ ENGINE_DATA = "[dato entregado por el motor]"
 # Así empieza el mensaje con los datos de pago (la plantilla de la plataforma).
 _DETAILS_START = ("💳", "💵")
 _PLACEHOLDER = re.compile(r"\[[^\[\]\n]{1,60}\](?!\()")
+# Un número largo justo después del nombre de un medio o de hablar de pagar: el asesor lo está dando como dato de pago. (13 nov 2026:
+# «Nequi: 3157778899», el teléfono del cliente.) Los datos reales ya aparecen como `ENGINE_DATA`.
+_PAYMENT_NUMBER = re.compile(
+    r"(nequi|daviplata|bancolombia|davivienda|bre-?b|yape|plin|cuenta|consign\w*|transf\w*|pag\w*)[^.!?\n\d]{0,30}\d(?:[ -]?\d){6,}",
+    re.IGNORECASE,
+)
 # Cómo nombra el cliente cada medio, y cómo pregunta por él sin signos de pregunta (así escribe la gente).
 _SAID = {"nequi": "Nequi", "daviplata": "Daviplata", "bank": "transferencia", "breb": "Bre-B"}
 _ASKS = {"nequi": "Y Nequi no", "daviplata": "Y Daviplata no", "bank": "Y puedo trasferir", "breb": "Y por Bre-B no"}
@@ -36,6 +42,7 @@ EXACT_RULES = {
     "sin_marcadores": "Nunca ve un marcador entre corchetes en lugar de un dato.",
     "pago_avisado_al_equipo": "Si dice que ya pagó, el chat pasa al equipo; si no, no pasa.",
     "no_repite_la_respuesta": "No le responde lo mismo dos veces seguidas.",
+    "sin_numeros_de_pago_falsos": "El asesor nunca escribe un número como dato de pago («Nequi: 315…»): el único es el que pone el sistema.",
 }
 JUDGE_RULES = {
     "responde_lo_que_preguntan": (
@@ -234,6 +241,9 @@ def exact_failures(turns: list[dict]) -> dict[str, list[dict]]:
             fail("sin_marcadores", turn, "vio un marcador entre corchetes")
         if bool(turn.get("handoff")) != (expect == REPORTED):
             fail("pago_avisado_al_equipo", turn, "avisó que pagó y el chat no pasó al equipo" if expect == REPORTED else "el chat pasó al equipo sin motivo")
+        said = reply[: reply.find("💳")] if "💳" in reply else reply
+        if _PAYMENT_NUMBER.search(said.replace(ENGINE_DATA, "")):
+            fail("sin_numeros_de_pago_falsos", turn, "el asesor escribió un número como dato de pago")
         if previous and reply.strip() == previous.strip():
             fail("no_repite_la_respuesta", turn, "repitió la respuesta anterior")
         sent_before, previous = sent_before or delivered, reply

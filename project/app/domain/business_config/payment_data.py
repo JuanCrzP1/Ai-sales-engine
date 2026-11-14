@@ -211,13 +211,24 @@ _SHORTEST_LONG_NUMBER = 7
 _LONGEST_PREFIX = 3
 
 
-def mask_invented_numbers(text: str, known: str) -> str:
-    """Cambia por «[dato de pago]» cada número largo que la IA escribió sin haberlo leído en ninguna parte (`known`: el negocio y la
-    conversación). La IA no ve los datos de pago; un celular o una cuenta que aparece en su mensaje y no estaba en lo que leyó es
-    inventado, y un cliente podría pagar ahí. Con el marcador, el sistema pone el dato real (`payment_delivery.py`)."""
+# Cuánto antes de un número puede estar el nombre del medio para que el número sea «el de ese medio» («Nequi: 315…», «paga a ese
+# número de Nequi 315…»).
+_PAYMENT_CLAIM_CHARS = 30
+
+
+def mask_invented_numbers(text: str, known: str, *, payment_terms: str = "") -> str:
+    """Cambia por «[dato de pago]» cada número largo que la IA escribió como dato de pago sin poder saberlo. La IA no ve los datos de
+    pago; con el marcador, el sistema pone el real (`payment_delivery.py`). Es dato de pago inventado:
+
+    - un número que no leyó en ninguna parte (`known`: el negocio y la conversación, sin los datos de pago), y un cliente podría pagar
+      ahí;
+    - o uno que sí leyó, pero que escribe justo después del nombre de un medio de pago (`payment_terms`, una expresión con los medios
+      del negocio): «Nequi: 3157778899» con el teléfono que dio el cliente (pasó con la IA real, 13 nov 2026). «Anoté tu teléfono
+      315…» no lo es."""
     message = str(text or "")
     if not _LONG_NUMBER.search(message):
         return message
+    claim = re.compile(rf"(?:{payment_terms})[^.!?\n\d]{{0,{_PAYMENT_CLAIM_CHARS}}}$", re.IGNORECASE) if payment_terms else None
     known_runs = {digits for run in _DIGIT_RUN.findall(str(known or "")) if len(digits := re.sub(r"\D", "", run)) >= _SHORTEST_LONG_NUMBER}
 
     def _is_known(digits: str) -> bool:
@@ -225,7 +236,10 @@ def mask_invented_numbers(text: str, known: str) -> str:
 
     def _replace(match: re.Match) -> str:
         before, after = message[max(0, match.start() - 8):match.start()], message[match.end():match.end() + 12]
-        if _is_known(re.sub(r"\D", "", match.group(0))) or _MONEY_BEFORE.search(before) or _MONEY_AFTER.search(after):
+        if _MONEY_BEFORE.search(before) or _MONEY_AFTER.search(after):
+            return match.group(0)
+        claimed = claim is not None and claim.search(message[max(0, match.start() - _PAYMENT_CLAIM_CHARS - 40):match.start()])
+        if _is_known(re.sub(r"\D", "", match.group(0))) and not claimed:
             return match.group(0)
         return REDACTED_PAYMENT_VALUE
 

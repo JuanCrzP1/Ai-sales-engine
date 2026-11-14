@@ -17,9 +17,9 @@ publica solo si pasan todas.
 
 ## El estándar
 
-Está en [`experiments/quality_lab/standard.py`](../experiments/quality_lab/standard.py). Son 12 reglas.
+Está en [`experiments/quality_lab/standard.py`](../experiments/quality_lab/standard.py). Son 13 reglas.
 
-**Siete exactas.** Se comprueban con código, sin opinión, y dan siempre el mismo resultado para la misma conversación.
+**Ocho exactas.** Se comprueban con código, sin opinión, y dan siempre el mismo resultado para la misma conversación.
 
 | Regla | Qué exige |
 |---|---|
@@ -30,6 +30,7 @@ Está en [`experiments/quality_lab/standard.py`](../experiments/quality_lab/stan
 | Sin marcadores | Nunca ve un marcador entre corchetes en lugar de un dato. |
 | Pago avisado al equipo | Si dice que ya pagó, el chat pasa al equipo; si no, no pasa. |
 | No repite la respuesta | No le responde lo mismo dos veces seguidas. |
+| Sin números de pago falsos | El asesor nunca escribe un número como dato de pago («Nequi: 315…»): el único es el que pone el sistema. |
 
 **Cinco con juez.** Necesitan leer la conversación.
 
@@ -68,7 +69,7 @@ El juez por omisión es `google/gemini-2.5-flash`. Con las mismas 18 conversacio
 otro laboratorio (`deepseek/deepseek-chat-v3.1`) marcó «no responde» ante un «Sí, aceptamos Nequi», y «pide lo ya dado» seis veces
 sin que el cliente hubiera dado el dato.
 
-Aun así el juez varía un poco de una corrida a otra. Las siete reglas exactas no.
+Aun así el juez varía un poco de una corrida a otra. Las reglas exactas no.
 
 ## Cómo se corre
 
@@ -165,6 +166,17 @@ En restaurante y clínica, con `gpt-4o-mini`:
 
 Son fallas de cómo se expresa el modelo, no de lo que hace el motor. El paso que sigue es elegir el modelo con esta misma puerta
 (`--model`).
+
+### La memoria confiable (13 de noviembre de 2026)
+
+Rama `memoria-confiable`, mismo modelo y juez. El chat de producción tiene 13 turnos: desde el turno 10 el asesor recibe el resumen de
+lo anterior.
+
+- La regla nueva **sin números de pago falsos** nació aquí: una corrida mostró «Nequi: 3157778899», el teléfono que dio el cliente
+  (el mismo error que se vio en producción). Revisada otra vez con esa regla, esa corrida la marca; el cuidado del motor ya lo
+  corrige (`pago_numero_inventado`).
+- Con el código final: una corrida **pasa** y otra no pasa por un solo «cómo así» con una explicación floja («te envío nuevamente
+  los datos…»). Es la debilidad de `gpt-4o-mini` que ya se veía antes de este cambio; las reglas exactas pasan en todas.
 
 ## Lo que la puerta no cubre
 
