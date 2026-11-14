@@ -368,7 +368,9 @@ def test_the_engine_says_when_the_assistant_passes_the_chat_to_a_person():
         )
         return metadata
 
-    assert answer("Claro, te paso con un asesor de nuestro equipo.").get("handoff") is True
+    # Lo decide el modelo con su señal, no las palabras de su mensaje (ver `test_handoff_decision.py`): «te paso con un asesor» sin
+    # marcarlo no pasa el chat (se le pide otra respuesta y aquí repite la misma).
+    assert not answer("Claro, te paso con un asesor de nuestro equipo.").get("handoff")
     assert not answer("Claro, ¿qué pedido es?").get("handoff")
     # El modelo dice por qué pasa a una persona: la pidió o reclama. Un pago reportado también pasa: solo el equipo lo verifica.
     asked = answer("Listo, te paso con el equipo por este mismo chat.", handoff="persona")

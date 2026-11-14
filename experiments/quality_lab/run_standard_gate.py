@@ -35,7 +35,7 @@ from run_quality_eval import REPO, RESULTS, _child_env, _export, _git, _model_pr
 from standard import CONFIRM, EXACT_RULES, JUDGE, JUDGE_RULES, confirm_request, exact_failures, judge_failures, keep_confirmed  # noqa: E402
 
 # Para calcular el costo antes de correr: las conversaciones del estándar y sus turnos, por negocio y por muestra.
-CONVERSATIONS, TURNS = 6, 23
+CONVERSATIONS, TURNS = 8, 27
 _METHOD_NAMES = {"bank": "transferencia bancaria", "link": "link de pago", "breb": "Bre-B", "nequi": "Nequi", "daviplata": "Daviplata"}
 
 

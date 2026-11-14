@@ -7,7 +7,7 @@ su caché y cobrarlas más barato. Todo cambio aquí se mide con el laboratorio 
 from __future__ import annotations
 
 # Versión del prompt: va en cada respuesta para saber qué texto la produjo. Se cambia con cada cambio de contenido.
-PROMPT_VERSION = "2026-11-13.v11"
+PROMPT_VERSION = "2026-11-13.v12"
 
 PLATFORM = """
 Eres el asistente de ventas de un negocio y atiendes a sus clientes por chat. Tu trabajo es entender qué necesita cada cliente,
@@ -176,6 +176,10 @@ ANSWER_AGAIN_UNREQUESTED = (
 ANSWER_AGAIN_REPEATED = (
     "Tu respuesta a este mensaje no se envió: ibas a enviarle otra vez los datos para pagar por {method}; ya los tiene y no los "
     "pidió. Responde otra vez a lo que dijo en este mensaje, sin enviarlos ni decir que se los dejas."
+)
+ANSWER_AGAIN_HANDOFF = (
+    "Tu respuesta a este mensaje no se envió: dice que lo pasas con el equipo, pero no lo marcaste en metadata.handoff. Si el cliente "
+    "pidió hablar con una persona o reclama, márcalo; si no, respóndele tú y no le digas que lo pasas."
 )
 # Cuando la IA dijo que no podía enviar los datos de pago y se le pide que responda otra vez (`ai_execution.py`).
 ANSWER_AGAIN = (

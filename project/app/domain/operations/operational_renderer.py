@@ -1,7 +1,9 @@
-"""Render one short human-language anchor line from an OperationalState.
+"""El paso de la conversación, en una frase para la IA: qué ya hizo el sistema y qué falta.
 
-Single responsibility: given a state, return one sentence or empty string.
-No side effects. No external dependencies beyond the dataclass.
+Solo hechos: el paso lo marca el sistema cuando de verdad pasa algo (envió los datos de pago: `payment_delivery.sent_state`), nunca
+las palabras de la IA. Hasta el 13 nov 2026 también se sacaba de lo que escribía la IA («Nequi», «datos de arranque», «te paso
+con…»), y unas palabras sueltas cambiaban el paso o pasaban el chat a una persona. Lo demás de la conversación lo da la memoria: los
+mensajes recientes y el resumen de lo anterior.
 """
 from __future__ import annotations
 
@@ -16,67 +18,41 @@ _OPTION_LABELS: dict[str, str] = {
     "bank": "transferencia bancaria",
     "breb": "Bre-B",
 }
-
-
 _CASH = "cash"
 
 
+def _sent_payment(state: OperationalState | None) -> bool:
+    return bool(state and state.is_active() and state.active_process == "payment" and state.pending_action == "report_payment")
+
+
 def render_op_anchor(state: OperationalState | None) -> str:
-    """Return one short natural sentence for active operational context.
-
-    Returns empty string when the state is None, inactive, or unknown.
-    """
-    if state is None or not state.is_active():
+    """Qué ya hizo el sistema: «Ya le enviaste los datos para pagar por Nequi…», o "" si no hay un paso en curso."""
+    if not _sent_payment(state):
         return ""
-
-    option = str(state.active_option or "").strip().lower()
-    # Una cuenta concreta («bank:davivienda»): se nombra por su tipo; un medio de otro país, por su nombre en el catálogo.
-    kind = option.split(":", 1)[0]
+    kind = str(state.active_option or "").strip().lower().split(":", 1)[0]
+    if kind == _CASH:
+        # El efectivo no tiene comprobante que enviar.
+        return "Ya le enviaste cómo pagar en efectivo."
     catalog = method_kind(kind)
-    opt_label = _OPTION_LABELS.get(kind, "") or (catalog.name if catalog is not None and not catalog.custom else "")
-    p = str(state.active_process or "").strip().lower()
-
-    if p == "payment":
-        if state.pending_action == "report_payment":
-            if kind == _CASH:
-                # El efectivo no tiene comprobante que enviar.
-                return "Ya le enviaste cómo pagar en efectivo."
-            by = f" por {opt_label}" if opt_label else ""
-            return f"Ya le enviaste los datos para pagar{by}: falta que pague y te envíe el comprobante."
-        if opt_label:
-            return f"Venían avanzando por {opt_label}."
-        return "Venían avanzando con el pago."
-
-    if p in ("activation", "onboarding"):
-        return "Ya iban dejando todo listo para empezar."
-
-    if p == "handoff":
-        return "Ya iban coordinando el siguiente paso."
-
-    return ""
+    label = _OPTION_LABELS.get(kind, "") or (catalog.name if catalog is not None and not catalog.custom else "")
+    by = f" por {label}" if label else ""
+    return f"Ya le enviaste los datos para pagar{by}: falta que pague y te envíe el comprobante."
 
 
 def render_op_rule(state: OperationalState | None) -> str:
-    """Return a one-line continuation rule for active operational states.
-
-    Injected into the prompt so the model continues rather than restarts.
-    """
-    if state is None or not state.is_active():
+    """Qué hacer en ese paso, o "" si no hay un paso en curso."""
+    if not _sent_payment(state):
         return ""
-    if state.active_process == "payment" and state.pending_action == "report_payment":
-        # Qué explicar, con todas las letras y con un ejemplo: con «explícaselo con tus palabras», un modelo pequeño respondía «¿te los
-        # envío de nuevo?» o repetía su mensaje anterior ante un «cómo así» (medido con la IA real, 13 nov 2026). Sin prohibiciones:
-        # con «no le ofrezcas reenviarlos» llegó a decir «no puedo reenviar los datos».
-        if str(state.active_option or "").strip().lower().split(":", 1)[0] == _CASH:
-            return (
-                "Si no entiende algo o pregunta qué sigue, explícale paso a paso cómo paga, con las indicaciones que ya tiene arriba "
-                "en el chat. Por ejemplo: «Te explico: arriba te dejé cómo pagar en efectivo. Sigues esos pasos y con eso continuamos.»"
-            )
+    # Qué explicar, con todas las letras y con un ejemplo: con «explícaselo con tus palabras», un modelo pequeño respondía «¿te los
+    # envío de nuevo?» o repetía su mensaje anterior ante un «cómo así» (medido con la IA real, 13 nov 2026). Sin prohibiciones:
+    # con «no le ofrezcas reenviarlos» llegó a decir «no puedo reenviar los datos».
+    if str(state.active_option or "").strip().lower().split(":", 1)[0] == _CASH:
         return (
-            "Si no entiende algo o pregunta qué sigue, explícale paso a paso qué hacer. Por ejemplo: «Te explico: arriba, en este chat, "
-            "te dejé los datos para pagar. Haces el pago con esos datos y me envías aquí la captura del comprobante; con eso seguimos.» "
-            "Si te pide los datos otra vez, se le envían."
+            "Si no entiende algo o pregunta qué sigue, explícale paso a paso cómo paga, con las indicaciones que ya tiene arriba "
+            "en el chat. Por ejemplo: «Te explico: arriba te dejé cómo pagar en efectivo. Sigues esos pasos y con eso continuamos.»"
         )
-    if str(state.active_option or "").strip():
-        return "Si el usuario responde brevemente, continúa naturalmente desde ahí sin reabrir la opción."
-    return "Si el usuario responde brevemente, continúa desde el paso activo sin reiniciarlo."
+    return (
+        "Si no entiende algo o pregunta qué sigue, explícale paso a paso qué hacer. Por ejemplo: «Te explico: arriba, en este chat, "
+        "te dejé los datos para pagar. Haces el pago con esos datos y me envías aquí la captura del comprobante; con eso seguimos.» "
+        "Si te pide los datos otra vez, se le envían."
+    )

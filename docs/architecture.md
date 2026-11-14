@@ -407,6 +407,13 @@ hora como argumento), con los ajustes de Configuración → Atención humana (`b
 publicado del negocio (el horario de «Mi negocio» y los mensajes `after_hours` y `ai_resumed`, compilados en
 `config.attention_messages`).
 
+Quién decide el traspaso: **la IA**, con su señal `metadata.handoff` (el cliente pide una persona o reclama), y el lector de pagos
+cuando el cliente dice que ya pagó. Las palabras de su mensaje no deciden nada (hasta el 13 nov 2026, «te paso con…» en el mensaje
+pasaba el chat al equipo aunque describiera un paso futuro). Si su mensaje le dice al cliente que lo pasa y no lo marcó, se le pide
+otra respuesta (`application/pipeline/handoff_review.py`); si insiste sin marcarlo, manda su decisión y queda el aviso
+`paso_a_persona_sin_marcar`. El paso de la conversación (`domain/operations/operational_renderer.py`) también sale solo de hechos: el
+sistema envió los datos de pago.
+
 1. **El traspaso** (`application/channels/inbound.py`, `_hand_off`). Si el asistente marca `handoff`:
    - dentro del horario del equipo, la IA se pausa, el cliente empieza a esperar (`conversations.customer_waiting_since`) y recibe
      «Una persona de nuestro equipo te responderá en unos 10 minutos» (o nada, si el negocio lo eligió);

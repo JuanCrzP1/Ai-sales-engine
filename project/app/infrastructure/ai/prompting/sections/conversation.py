@@ -60,6 +60,8 @@ def _this_message(view: PromptView, status: str) -> list[str]:
         facts.append(instructions.ANSWER_AGAIN_DENIED.format(method=one_line(again.get("denied"))))
     elif again.get("unrequested"):
         facts.append(instructions.ANSWER_AGAIN_UNREQUESTED.format(method=one_line(again.get("unrequested"))))
+    elif again.get("handoff_unmarked"):
+        facts.append(instructions.ANSWER_AGAIN_HANDOFF)
     elif again.get("repeated"):
         facts.append(instructions.ANSWER_AGAIN_REPEATED.format(method=one_line(again.get("repeated"))))
     elif again:

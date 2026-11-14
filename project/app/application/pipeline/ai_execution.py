@@ -75,6 +75,7 @@ from __future__ import annotations
 import json
 
 from app.application.pipeline.fallback import build_fallback_response
+from app.application.pipeline.handoff_review import UNMARKED, handoff_problem
 from app.application.pipeline.payment_names import named_option, payment_terms
 from app.application.pipeline.conversation_summary import refresh_summary
 from app.application.pipeline.payment_reading import read_customer_message
@@ -91,7 +92,6 @@ from app.application.pipeline.payment_delivery import (  # noqa: F401 - las prue
     OFFER_DETAILS,
     payment_problem,
     remembered_message,
-    same_payment,
     sent_label,
     sent_state,
     without_payment_placeholder,
@@ -100,12 +100,9 @@ from app.domain.business_config.payment_data import mask_invented_numbers, mask_
 from app.domain.conversation.memory import ConversationState, MemoryDomainService
 from app.domain.memory.observability.audit import emit_memory_audit
 from app.domain.memory.salience.selector import select as select_commercial_memory
-from app.domain.operations.operational_extractor import extract_op_state
 from app.domain.operations.operational_renderer import render_op_anchor, render_op_rule
 from app.domain.operations.operational_state import OperationalState
 from app.utils.logger import logger
-
-
 
 
 def validate_runtime_yaml(runtime_yaml: dict) -> None:
@@ -115,7 +112,6 @@ def validate_runtime_yaml(runtime_yaml: dict) -> None:
         value = payload.get(key)
         if not isinstance(value, dict):
             raise RuntimeError(f"{key} not loaded in runtime")
-
 
 
 def _safe_history(memory_service: MemoryDomainService | None, *, tenant_slug: str, user_id: str) -> list[dict]:
@@ -418,48 +414,6 @@ def _log_payment_override(*, tenant_slug: str, user_id: str, payment_method: str
     )
 
 
-def _get_configured_payment_methods(runtime_yaml: dict) -> list[str]:
-    """Extract the list of payment method types configured for this tenant.
-
-    Reads pricing.plans[*].payment.transfer.methods and
-    pricing.catalog.payment.transfer.methods.
-    Returns only method type strings (e.g. ["nequi", "bank"]).
-    """
-    pricing = runtime_yaml.get("pricing") if isinstance(runtime_yaml.get("pricing"), dict) else {}
-    seen: set[str] = set()
-    result: list[str] = []
-
-    candidate_lists: list[list] = []
-    plans = pricing.get("plans") if isinstance(pricing.get("plans"), list) else []
-    for plan in plans:
-        if not isinstance(plan, dict):
-            continue
-        try:
-            methods = plan["payment"]["transfer"]["methods"]
-            if isinstance(methods, list):
-                candidate_lists.append(methods)
-        except (KeyError, TypeError):
-            pass
-
-    catalog = pricing.get("catalog") if isinstance(pricing.get("catalog"), dict) else {}
-    try:
-        methods = catalog["payment"]["transfer"]["methods"]
-        if isinstance(methods, list):
-            candidate_lists.append(methods)
-    except (KeyError, TypeError):
-        pass
-
-    for method_list in candidate_lists:
-        for m in method_list:
-            if not isinstance(m, dict):
-                continue
-            t = str(m.get("type") or "").strip().lower()
-            if t and t not in seen:
-                seen.add(t)
-                result.append(t)
-    return result
-
-
 class AIExecution:
     def run(
         self,
@@ -575,7 +529,8 @@ class AIExecution:
             )
 
         def _problem(answer: str, context) -> dict:
-            """Por qué esa respuesta del asesor no puede salir así (algo falso sobre los pagos, o datos que el cliente no pidió)."""
+            """Por qué esa respuesta del asesor no puede salir así: algo falso sobre los pagos, datos que el cliente no pidió, o que le
+            dice al cliente que lo pasa con el equipo sin haberlo decidido."""
             metadata = context.get("ai_metadata") if isinstance(context, dict) and isinstance(context.get("ai_metadata"), dict) else {}
             return payment_problem(
                 str(answer or ""),
@@ -584,20 +539,24 @@ class AIExecution:
                 asked=reading.wants_details if reading is not None else None,
                 state=op_before,
                 remembered=remembered_method,
-            )
+            ) or handoff_problem(str(answer or ""), metadata)
 
         response, ai_used, route_context = _ask_ai(runtime_yaml_with_memory)
         problem = _problem(response, route_context) if ai_used else {}
         if problem:
-            # La respuesta decía algo falso sobre los pagos («no puedo enviarte el número», «no recibimos Nequi») o iba a enviar unos
-            # datos que el cliente no pidió (los de un medio que no ha elegido, o los que ya tiene). Se le pide a la IA que responda
-            # otra vez, sabiendo por qué. Lo decide ella de nuevo (su mensaje, su acción, si pasa el chat a una persona); el código
-            # no le escribe la respuesta.
-            logger.warning("pago_segunda_respuesta", extra={"tenant": tenant_slug_value, "why": next(iter(problem))})
+            # La respuesta decía algo falso sobre los pagos («no puedo enviarte el número», «no recibimos Nequi»), iba a enviar unos
+            # datos que el cliente no pidió, o le decía al cliente que lo pasa con el equipo sin haberlo decidido. Se le pide a la IA
+            # que responda otra vez, sabiendo por qué. Lo decide ella de nuevo (su mensaje, su acción, si pasa el chat a una persona);
+            # el código no le escribe la respuesta.
+            event = "paso_a_persona_segunda_respuesta" if UNMARKED in problem else "pago_segunda_respuesta"
+            logger.warning(event, extra={"tenant": tenant_slug_value, "why": next(iter(problem))})
             second = _ask_ai({**runtime_yaml_with_memory, "answer_again": problem})
             if second[1]:
                 response, ai_used, route_context = second
                 problem = _problem(response, route_context)
+            if UNMARKED in problem:
+                # Insistió en decirle que lo pasa sin decidirlo: manda su decisión (no se pasa), y queda a la vista.
+                logger.warning("paso_a_persona_sin_marcar", extra={"tenant": tenant_slug_value})
 
         try:
             route_meta = route_context if isinstance(route_context, dict) else {}
@@ -710,22 +669,12 @@ class AIExecution:
                 # En su historial la IA ve lo que dijo ella y el marcador de los datos, no el mensaje con los datos.
                 persisted_response = remembered_message(delivery, runtime_yaml_with_memory)
 
-            # Operational continuity — persist state extracted from response text.
-            _route_source = str(route_context.get("source") if isinstance(route_context, dict) else "").strip()
-            _configured_methods = _get_configured_payment_methods(runtime_yaml_with_memory)
-            _new_op_state = extract_op_state(raw_response, route_source=_route_source, payment_methods=_configured_methods)
-            if payment_details_sent:
-                # El sistema entregó los datos de ese medio: falta que el cliente pague y envíe el comprobante.
-                _new_op_state = sent_state(delivery.method)
-            elif op_before and already_sent(op_before, op_before.active_option) and _new_op_state.active_process == "payment" and (
-                not _new_op_state.active_option or same_payment(_new_op_state.active_option, op_before.active_option)
-            ):
-                # Se sigue hablando del mismo pago: se conserva que los datos ya salieron (la IA lo sabe y no los repite sola).
-                _new_op_state = sent_state(op_before.active_option)
+            # El paso de la conversación sale de hechos, no de palabras: el sistema entregó los datos de ese medio, así que falta que
+            # el cliente pague y envíe el comprobante. Si no, queda el paso que había (vence solo, `PAYMENT_STATE_HOURS`).
             _set_op = getattr(memory_service, "set_op_state", None)
-            if callable(_set_op) and _new_op_state.active_process:
+            if payment_details_sent and callable(_set_op):
                 try:
-                    _set_op(tenant_slug=tenant_slug_value, user_id=user_key, state_dict=_new_op_state.to_dict())
+                    _set_op(tenant_slug=tenant_slug_value, user_id=user_key, state_dict=sent_state(delivery.method).to_dict())
                 except Exception:
                     pass
 
@@ -771,8 +720,6 @@ class AIExecution:
             # La conversación pasa a una persona: quien la guarda pausa la IA en ese chat y avisa al equipo del negocio.
             if handoff_reason:
                 safe_context.update(handoff=True, handoff_reason=handoff_reason)
-            elif _new_op_state.active_process == "handoff":
-                safe_context.update(handoff=True, handoff_reason="assistant")
             return final_response, bool(ai_used), safe_context
         except Exception:
             fallback = build_fallback_response(user_message=user_message, tenant_config=tenant_config)

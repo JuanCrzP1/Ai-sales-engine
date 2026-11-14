@@ -499,6 +499,8 @@ corre la puerta de calidad ([Calidad del asesor](calidad-del-asesor.md)).
 | `pago_segunda_respuesta` | La primera respuesta del asesor no podía salir (`why`): `refused` (dijo que no podía enviar los datos), `denied` (negó un medio que el negocio tiene), `repeated` (iba a repetir datos que el cliente ya tiene) o `unrequested` (iba a enviar un medio que el cliente no pidió). | Le pidió otra respuesta, diciéndole por qué. |
 | `pago_red_de_seguridad` | El asesor insistió en que no podía (`how: la_ia_dijo_que_no_podia`) o escribió el marcador del dato sin decir el medio. | Envió los datos con una frase corta, le recordó al cliente que ya los tiene, o le preguntó con cuál medio paga. |
 | `pago_numero_inventado` | El asesor escribió como dato de pago un número que no puede saber: uno que no leyó en ninguna parte, o uno que sí leyó (el teléfono del cliente) justo después del nombre de un medio («Nequi: 315…»). | Lo cambió por el dato real. Nunca le llegó al cliente. |
+| `paso_a_persona_segunda_respuesta` | El mensaje del asesor le decía al cliente que lo pasa con el equipo, pero no lo marcó. | Le pidió otra respuesta, diciéndole por qué. |
+| `paso_a_persona_sin_marcar` | Insistió en decirle que lo pasa sin marcarlo. | Mandó su decisión: el chat no pasa. Si se repite en un negocio, revisa sus conversaciones. |
 | `pago_medio_negado` | El asesor insistió en que el negocio no recibe un medio que sí tiene. | Respondió «Sí, claro: también recibimos…». |
 
 ## 3. Qué Revisar Si El Sistema No Responde Como Esperas

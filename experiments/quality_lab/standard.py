@@ -33,6 +33,8 @@ _TYPO = {"nequi": "nekui", "daviplata": "davi plata"}
 # Lo que se espera de un turno: nada en particular (""), que no le llegue el mensaje con los datos de pago (`NO_DETAILS`), que le
 # lleguen en ese turno (`DETAILS`), que a esa altura ya le hayan llegado (`DETAILS_BY_NOW`) o que el chat pase al equipo (`REPORTED`).
 NO_DETAILS, DETAILS, DETAILS_BY_NOW, REPORTED = "sin_datos", "datos", "datos_a_esta_altura", "pago_avisado"
+# Que el chat pase a una persona del equipo: el cliente la pide o reclama.
+HANDOFF = "pasa_al_equipo"
 
 EXACT_RULES = {
     "el_asesor_habla": "Cuando van los datos de pago, el asesor dice algo: el mensaje no es solo la plantilla.",
@@ -40,7 +42,7 @@ EXACT_RULES = {
     "sin_datos_sin_pedirlos": "No le llega la cuenta cuando solo pregunta, saluda o habla de otra cosa.",
     "no_repite_el_bloque": "Los datos que ya tiene no se repiten si no los pide otra vez.",
     "sin_marcadores": "Nunca ve un marcador entre corchetes en lugar de un dato.",
-    "pago_avisado_al_equipo": "Si dice que ya pagó, el chat pasa al equipo; si no, no pasa.",
+    "pasa_al_equipo_cuando_debe": "El chat pasa al equipo cuando el cliente pide una persona, reclama o dice que ya pagó; si no, no pasa.",
     "no_repite_la_respuesta": "No le responde lo mismo dos veces seguidas.",
     "sin_numeros_de_pago_falsos": "El asesor nunca escribe un número como dato de pago («Nequi: 315…»): el único es el que pone el sistema.",
 }
@@ -189,6 +191,8 @@ def conversations_for(facts: dict) -> list[tuple[str, list[dict]]]:
         ("pregunta a dónde consigna", [start, ("¿A qué número te consigno?", "")]),
         ("pregunta cómo paga", [start, ("cómo te pago", NO_DETAILS)]),
         ("pregunta si tienen un medio", [start, (f"¿Tienen {said}?", NO_DETAILS)]),
+        ("pide hablar con una persona", [start, ("Quiero hablar con una persona del equipo", HANDOFF)]),
+        ("reclama", [start, ("Me cobraron dos veces y nadie me responde, estoy muy molesto", HANDOFF)]),
         *([("pide los datos de otro medio", [start, (f"listo, mándame los datos para pagar por {_SAID[other]}", DETAILS)])] if other else []),
     ]
     scripts = [("el chat de producción", production), *short]
@@ -239,8 +243,8 @@ def exact_failures(turns: list[dict]) -> dict[str, list[dict]]:
             fail("no_repite_el_bloque", turn, "le llegaron otra vez los mismos datos sin pedirlos")
         if "[dato de pago]" in reply or _PLACEHOLDER.search(reply.replace(ENGINE_DATA, "")):
             fail("sin_marcadores", turn, "vio un marcador entre corchetes")
-        if bool(turn.get("handoff")) != (expect == REPORTED):
-            fail("pago_avisado_al_equipo", turn, "avisó que pagó y el chat no pasó al equipo" if expect == REPORTED else "el chat pasó al equipo sin motivo")
+        if bool(turn.get("handoff")) != (expect in (REPORTED, HANDOFF)):
+            fail("pasa_al_equipo_cuando_debe", turn, "debía pasar al equipo y no pasó" if expect in (REPORTED, HANDOFF) else "el chat pasó al equipo sin motivo")
         said = reply[: reply.find("💳")] if "💳" in reply else reply
         if _PAYMENT_NUMBER.search(said.replace(ENGINE_DATA, "")):
             fail("sin_numeros_de_pago_falsos", turn, "el asesor escribió un número como dato de pago")

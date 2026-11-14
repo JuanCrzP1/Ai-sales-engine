@@ -28,7 +28,7 @@ Está en [`experiments/quality_lab/standard.py`](../experiments/quality_lab/stan
 | Sin datos sin pedirlos | No le llega la cuenta cuando solo pregunta, saluda o habla de otra cosa. |
 | No repite el bloque | Los datos que ya tiene no se repiten si no los pide otra vez. |
 | Sin marcadores | Nunca ve un marcador entre corchetes en lugar de un dato. |
-| Pago avisado al equipo | Si dice que ya pagó, el chat pasa al equipo; si no, no pasa. |
+| Pasa al equipo cuando debe | El chat pasa al equipo cuando el cliente pide una persona, reclama o dice que ya pagó; si no, no pasa. |
 | No repite la respuesta | No le responde lo mismo dos veces seguidas. |
 | Sin números de pago falsos | El asesor nunca escribe un número como dato de pago («Nequi: 315…»): el único es el que pone el sistema. |
 
@@ -48,8 +48,8 @@ Las arma `conversations_for` con la oferta y los medios de pago reales del negoc
 
 - **El chat de producción** (13 turnos): el chat real del 13 de noviembre. Incluye «Y puedo trasferir», «Y Nequi no», «Te pago por
   Nequi», «Pero se me borró el Nequi me lo envías de nuevo», «Cómo así», «Ya voy a pagar» y «ya te consigné».
-- **Cinco cortas**, cada una con un cliente nuevo: pide el medio con un error de escritura («pásame el nekui»), pregunta a dónde
-  consigna, pregunta cómo paga, pregunta si tienen un medio y pide los datos de otro medio.
+- **Siete cortas**, cada una con un cliente nuevo: pide el medio con un error de escritura («pásame el nekui»), pregunta a dónde
+  consigna, pregunta cómo paga, pregunta si tienen un medio, pide los datos de otro medio, pide hablar con una persona y reclama.
 
 Cada turno dice qué se espera: que no le lleguen datos, que le lleguen, que a esa altura ya los tenga, o que el chat pase al equipo.
 Lo que el cliente cuenta de sí mismo va con el tipo de negocio (a un restaurante no le dice «es una tienda de ropa»).
@@ -177,6 +177,12 @@ lo anterior.
   corrige (`pago_numero_inventado`).
 - Con el código final: una corrida **pasa** y otra no pasa por un solo «cómo así» con una explicación floja («te envío nuevamente
   los datos…»). Es la debilidad de `gpt-4o-mini` que ya se veía antes de este cambio; las reglas exactas pasan en todas.
+
+### El paso a una persona lo decide la IA (13 de noviembre de 2026)
+
+Rama `paso-a-persona-ia`: se quitó la regla de palabras que pasaba el chat al equipo. La puerta sumó dos conversaciones (pide una
+persona, reclama) y la regla exacta revisa los dos lados: pasa cuando debe y no pasa sin motivo. Con el código final **pasa** en las
+24 conversaciones. Una corrida anterior, con 18, no pasó por un dato que el asesor volvió a pedir (la debilidad de `gpt-4o-mini`).
 
 ## Lo que la puerta no cubre
 

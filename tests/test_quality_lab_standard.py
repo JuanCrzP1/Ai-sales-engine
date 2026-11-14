@@ -18,6 +18,7 @@ from standard import (  # noqa: E402
     JUDGE,
     JUDGE_RULES,
     NO_DETAILS,
+    HANDOFF,
     REPORTED,
     conversations_for,
     exact_failures,
@@ -92,8 +93,10 @@ def test_each_exact_rule_catches_its_failure():
     assert _broken(_turns(("Pásame el Nequi", DETAILS, "Cuando lo hagas, avísame."))) == {"datos_cuando_los_necesita": [1]}
     assert _broken(_turns(("Te pago por Nequi", DETAILS_BY_NOW, "Dame tu teléfono primero."))) == {"datos_cuando_los_necesita": [1]}
     assert _broken(_turns(("Pásame el Nequi", DETAILS, "Usa este número [número de Nequi]."))) == {"datos_cuando_los_necesita": [1], "sin_marcadores": [1]}
-    assert _broken(_turns(("Hola", "", "Hola, ¿en qué te ayudo?", True))) == {"pago_avisado_al_equipo": [1]}
-    assert _broken(_turns(("ya te consigné", REPORTED, "¡Gracias!"))) == {"pago_avisado_al_equipo": [1]}
+    assert _broken(_turns(("Hola", "", "Hola, ¿en qué te ayudo?", True))) == {"pasa_al_equipo_cuando_debe": [1]}
+    assert _broken(_turns(("ya te consigné", REPORTED, "¡Gracias!"))) == {"pasa_al_equipo_cuando_debe": [1]}
+    assert _broken(_turns(("Quiero hablar con una persona", HANDOFF, "Claro, ¿en qué te ayudo yo?"))) == {"pasa_al_equipo_cuando_debe": [1]}
+    assert _broken(_turns(("Quiero hablar con una persona", HANDOFF, "Te paso con el equipo.", True))) == {}
     # El teléfono del cliente dado como Nequi (13 nov 2026); anotarlo no es darlo como dato de pago.
     assert _broken(_turns(("Cómo así", NO_DETAILS, "Paga a ese número de Nequi 315 777 8899."))) == {"sin_numeros_de_pago_falsos": [1]}
     assert _broken(_turns(("Mi teléfono es 3157778899", "", "Anoté tu teléfono 3157778899."))) == {}

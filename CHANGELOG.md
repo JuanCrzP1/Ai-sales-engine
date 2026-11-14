@@ -5,6 +5,12 @@ está en el historial de git y en `docs/plan-v1.md`.
 
 ## 13 de noviembre de 2026
 
+**El asistente decide cuándo pasar un chat a tu equipo**
+- Antes, si el asistente escribía «te paso con el equipo», el chat pasaba a tu equipo aunque solo estuviera explicando un paso de
+  después. Ahora lo decide el asistente entendiendo la conversación: cuando el cliente pide una persona, reclama o avisa que ya pagó.
+- Si el asistente le dice al cliente que lo pasa con el equipo sin decidirlo, se le pide que responda otra vez: lo que le dice al
+  cliente y lo que hace siempre coinciden.
+
 **Tu asistente ya no olvida en conversaciones largas**
 - Pasados 40 mensajes, el asistente leía el principio de la conversación y no lo último. Ahora siempre lee lo más reciente, y lo de
   antes le llega **resumido** (quién es el cliente, qué necesita, qué eligió). El resumen lo escribe la IA cada 10 mensajes en chats
