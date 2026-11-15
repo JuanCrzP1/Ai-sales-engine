@@ -29,6 +29,41 @@ LEAST_REASONING = {'effort': 'minimal'}
 _MANDATORY_REASONING: set[str] = set()
 
 
+# Una falla pasajera se reintenta una vez, como lo hace por omisión la librería oficial de OpenAI. Sin esto, el cliente recibía «En
+# este momento no puedo responderte» (2 de 123 respuestas en producción el 13 nov 2026; 6 de cada 1.000 en la puerta de calidad).
+# - Pasajeras: la conexión se cortó o se pasó del tiempo, o OpenRouter respondió que está ocupado o con un error suyo.
+# - No pasajeras (una clave inválida, sin saldo, una petición rechazada): reintentar no sirve, y no se reintenta.
+TRANSIENT_STATUS = {408, 429, 500, 502, 503, 504}
+RETRY_WAIT_SECONDS = 1.0
+
+
+def _transient_reason(response=None, error: Exception | None = None) -> str:
+    """Por qué falló la llamada, si es una falla pasajera (`tiempo_agotado`, `conexion`, `http_503`…), o "" si no lo es."""
+    if isinstance(error, requests.Timeout):
+        return 'tiempo_agotado'
+    if isinstance(error, requests.ConnectionError):
+        return 'conexion'
+    if response is not None and response.status_code in TRANSIENT_STATUS:
+        return f'http_{response.status_code}'
+    return ''
+
+
+def _post_with_retry(url: str, *, headers: dict, payload: dict, timeout, model: str):
+    """La llamada a OpenRouter, repetida una vez si la falla es pasajera. Una falla que no es pasajera, o la segunda, sigue su curso."""
+    try:
+        response = requests.post(url, headers=headers, json=payload, timeout=timeout)
+        reason = _transient_reason(response=response)
+    except requests.RequestException as error:
+        reason = _transient_reason(error=error)
+        if not reason:
+            raise
+    if not reason:
+        return response
+    logger.warning('openrouter_reintento', extra={'model': model, 'reason': reason})
+    time.sleep(RETRY_WAIT_SECONDS)
+    return requests.post(url, headers=headers, json=payload, timeout=timeout)
+
+
 def _reasoning_is_mandatory(response) -> bool:
     """Si OpenRouter rechazó la llamada porque ese modelo no puede dejar de razonar."""
     if response.status_code != 400:
@@ -74,13 +109,13 @@ class _OpenRouterCompletions:
                 payload.setdefault('reasoning', dict(LEAST_REASONING if model in _MANDATORY_REASONING else NO_REASONING))
                 timeout = self._parent._parent.timeout
                 started = time.monotonic()
-                response = requests.post(url, headers=headers, json=payload, timeout=timeout)
+                response = _post_with_retry(url, headers=headers, payload=payload, timeout=timeout, model=model)
                 if payload['reasoning'] == NO_REASONING and _reasoning_is_mandatory(response):
                     # Ese modelo no puede dejar de razonar: la llamada rechazada no llegó al modelo y se repite pidiendo lo mínimo.
                     _MANDATORY_REASONING.add(model)
                     logger.info('razonamiento_obligatorio', extra={'model': model})
                     payload['reasoning'] = dict(LEAST_REASONING)
-                    response = requests.post(url, headers=headers, json=payload, timeout=timeout)
+                    response = _post_with_retry(url, headers=headers, payload=payload, timeout=timeout, model=model)
                 elapsed_ms = int((time.monotonic() - started) * 1000)
                 logger.info('openrouter_call', extra={'model': model, 'status_code': response.status_code, 'elapsed_ms': elapsed_ms})
                 if response.status_code >= 400:

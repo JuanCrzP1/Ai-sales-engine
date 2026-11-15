@@ -77,10 +77,16 @@ def route_response(
             "intent_missing": intent_missing,
             "ai_metadata": ai_metadata,
         }
-    except Exception:
+    except Exception as error:
         fallback = build_fallback_response(
             user_message=user_message,
             tenant_config={"tenant_slug": tenant_slug, "runtime_yaml": safe_runtime_yaml},
         )
+        # Por qué el cliente no recibió la respuesta de la IA: el tipo de error y, si OpenRouter respondió, su código. Nunca el mensaje
+        # del error, que puede repetir lo que escribió el cliente. (Antes no quedaba nada: 2 de 123 respuestas en producción, 13 nov 2026.)
+        response = getattr(error, "response", None)
+        logger.error("asesor_sin_respuesta", extra={
+            "tenant": tenant_slug, "error": type(error).__name__, "status_code": getattr(response, "status_code", None),
+        })
         _log_route_event(tenant_slug=tenant_slug, source="fallback_exception", ai_metadata={}, intent="")
         return fallback, False, {**base_context, "source": "fallback_exception", "intent": "", "ai_metadata": {}}

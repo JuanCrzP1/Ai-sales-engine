@@ -478,7 +478,9 @@ Esos eventos ayudan a detectar:
 | Aviso | Qué pasó | Qué hizo el motor |
 |---|---|---|
 | `razonamiento_obligatorio` | El modelo del negocio no puede dejar de razonar antes de responder (`gpt-5-mini`, `gemini-2.5-pro`). Sale una vez por modelo y por servidor. | Repitió la llamada pidiendo el mínimo de razonamiento, y así sigue con ese modelo. La llamada rechazada no se cobra. |
-| `openrouter_error` | OpenRouter respondió con un error (trae el código, nunca el mensaje del cliente). | El mensaje sale con la respuesta de respaldo. |
+| `openrouter_reintento` | Falla pasajera: la conexión se cortó (`conexion`), se pasó de 15 s (`tiempo_agotado`) u OpenRouter respondió ocupado o con un error suyo (`http_429`, `http_500`, `http_502`, `http_503`, `http_504`). | Esperó un segundo y repitió la llamada una vez. Una clave inválida, sin saldo o una petición rechazada no se reintenta. |
+| `openrouter_error` | OpenRouter respondió con un error (trae el código, nunca el mensaje del cliente). | Si no era pasajero o ya se reintentó, sigue a `asesor_sin_respuesta`. |
+| `asesor_sin_respuesta` | El cliente no recibió la respuesta de la IA: trae el tipo de error (`Timeout`, `ConnectionError`, `HTTPError`…) y, si OpenRouter respondió, su código. | El cliente recibió la respuesta de respaldo («En este momento no puedo responderte…»). Si se repite, revisa la clave y el saldo del negocio, o el estado de OpenRouter. |
 
 A todo modelo se le pide no razonar antes de responder: un asesor de chat no lo necesita, y el razonamiento se comía el tope de la
 respuesta (el cliente recibía «Hubo un problema…»). Ver «La elección del modelo» en [Calidad del asesor](calidad-del-asesor.md).

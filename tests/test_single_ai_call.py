@@ -357,3 +357,104 @@ def test_the_panel_names_the_same_intents_as_the_engine():
     block = re.search(r"INTENT_LABELS = \{(.*?)\}", source, re.S).group(1)
     assert tuple(re.findall(r"^\s+([a-z]+):", block, re.M)) == INTENTS
     assert set(INTENTS) == VALID_INTENTS
+
+
+# ---------------------------------------------------------------------------
+# Una falla pasajera de la conexión se reintenta una vez (15 nov 2026)
+# ---------------------------------------------------------------------------
+
+def _answering(*outcomes):
+    """OpenRouter de mentira que responde, en orden, cada resultado: un código HTTP o una excepción de `requests`."""
+    import requests as requests_module
+
+    calls: list[dict] = []
+
+    def post(_url, headers=None, json=None, timeout=None):  # noqa: A002 - misma firma que requests.post
+        calls.append(dict(json))
+        outcome = outcomes[len(calls) - 1]
+        if isinstance(outcome, Exception):
+            raise outcome
+
+        class Response:
+            status_code = outcome
+
+            def raise_for_status(self):
+                if outcome >= 400:
+                    raise requests_module.HTTPError(f"HTTP {outcome}", response=self)
+
+            def json(self):
+                return {"choices": [{"message": {"content": reply("Hola.")}}]} if outcome < 400 else {"error": {"code": outcome, "message": "x"}}
+
+        return Response()
+
+    return post, calls
+
+
+def _create(monkeypatch, *outcomes):
+    post, calls = _answering(*outcomes)
+    monkeypatch.setattr(client_module.requests, "post", post)
+    monkeypatch.setattr(client_module.time, "sleep", lambda _seconds: None)
+    completions = client_module._OpenRouterCompletions(KEY, "https://openrouter.ai/api/v1", 10, 0)
+    return lambda: completions.chat.completions.create(model="openai/gpt-4o-mini", messages=[{"role": "user", "content": MESSAGE}]), calls
+
+
+@pytest.mark.parametrize("first", [
+    pytest.param(__import__("requests").ConnectionError("cortada"), id="conexion"),
+    pytest.param(__import__("requests").Timeout("15 s"), id="tiempo_agotado"),
+    pytest.param(429, id="ocupado"),
+    pytest.param(502, id="error_de_openrouter"),
+    pytest.param(503, id="no_disponible"),
+])
+def test_a_passing_failure_is_retried_once_and_the_customer_gets_the_answer(monkeypatch, first):
+    create, calls = _create(monkeypatch, first, 200)
+    assert create()["choices"][0]["message"]["content"] == reply("Hola.")
+    assert len(calls) == 2
+
+
+def test_it_retries_only_once(monkeypatch):
+    import requests as requests_module
+
+    create, calls = _create(monkeypatch, requests_module.Timeout("15 s"), requests_module.Timeout("15 s"), 200)
+    with pytest.raises(requests_module.Timeout):
+        create()
+    assert len(calls) == 2
+
+
+@pytest.mark.parametrize("status", [400, 401, 402, 403])
+def test_a_failure_that_is_not_passing_is_not_retried(monkeypatch, status):
+    """Una clave inválida, sin saldo o una petición rechazada: reintentar no sirve."""
+    import requests as requests_module
+
+    create, calls = _create(monkeypatch, status, 200)
+    with pytest.raises(requests_module.HTTPError):
+        create()
+    assert len(calls) == 1
+
+
+def test_when_the_ai_does_not_answer_the_cause_is_logged_without_the_customer_text(monkeypatch):
+    import requests as requests_module
+
+    from app.application.pipeline import response_router
+
+    records: list[tuple] = []
+
+    class Recorder:
+        def info(self, *args, **kwargs):
+            records.append((args, kwargs))
+
+        error = warning = info
+
+    class Orchestrator:
+        def generate_business_reply(self, *_args, **_kwargs):
+            raise requests_module.Timeout(f"tiempo agotado leyendo {MESSAGE}")
+
+    monkeypatch.setattr(response_router, "logger", Recorder())
+    runtime = type("Runtime", (), {"ai_orchestrator": Orchestrator()})()
+    _reply, ai_used, context = response_router.route_response(
+        runtime=runtime, tenant=type("T", (), {"slug": "saas"})(), bot_config=None, user_message=MESSAGE,
+        conversation_history=[], faq_results=[], runtime_yaml={},
+    )
+    assert ai_used is False and context["source"] == "fallback_exception"
+    (logged,) = [kwargs["extra"] for args, kwargs in records if args and args[0] == "asesor_sin_respuesta"]
+    assert logged == {"tenant": "saas", "error": "Timeout", "status_code": None}
+    assert MESSAGE not in repr(records)

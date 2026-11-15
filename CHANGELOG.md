@@ -3,6 +3,13 @@
 Lo que cambió en AI Sales Engine, de lo más reciente a lo más antiguo. Cada entrada dice qué gana el negocio; el detalle técnico
 está en el historial de git y en `docs/plan-v1.md`.
 
+## 15 de noviembre de 2026
+
+**Menos mensajes sin respuesta**
+- Si la conexión con el proveedor de IA se corta, se demora o está ocupado por un momento, el asistente lo intenta otra vez antes de
+  rendirse. Antes, tu cliente recibía «En este momento no puedo responderte» a la primera (pasó en 2 de 123 respuestas).
+- Si aun así no responde, queda anotada la causa para revisarla.
+
 ## 14 de noviembre de 2026
 
 **Los modelos más nuevos ya responden bien**

@@ -295,7 +295,9 @@ Pasa igual en los tres modelos y en las corridas en paralelo, así que no sirve 
 gpt-4o-mini es el único sin fallas críticas propias y el que más conversaciones limpias tuvo.
 
 Lo que queda abierto:
-- **Mensajes sin respuesta por la conexión** (unos 6 de cada 1.000 en la prueba): el motor no anota la causa y no reintenta.
+- ~~**Mensajes sin respuesta por la conexión**~~ (unos 6 de cada 1.000 en la prueba; 2 de 123 en producción). Resuelto el 15 nov:
+  una falla pasajera se reintenta una vez y, si aun así no hay respuesta, queda el aviso `asesor_sin_respuesta` con la causa
+  ([Operación](operations.md), «Avisos del modelo»).
 - **«No pide lo ya dado»** falló en 4 o 5 conversaciones con los tres modelos: no se arregla cambiando de modelo, sino lo que se le
   pide al asesor al cerrar (pide los datos del negocio aunque el cliente ya los dio).
 
