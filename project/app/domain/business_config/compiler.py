@@ -305,6 +305,9 @@ def _config(config: BusinessConfig) -> dict:
         section["escalation"] = config.escalation.model_dump(exclude_none=True)
     section["features"] = _features(config)
     section["response"] = {"length": config.response_style.length, "max_words": config.response_style.effective_max_words()}
+    # Cuánto espera a que el cliente termine de escribir: solo si el negocio lo eligió; si no, el canal usa el valor de la plataforma.
+    if config.response_style.reply_delay_seconds is not None:
+        section["response"]["reply_delay_seconds"] = config.response_style.reply_delay_seconds
     section["profile"] = compile_profile(config)
     knowledge = compile_knowledge(config)
     if knowledge is not None:

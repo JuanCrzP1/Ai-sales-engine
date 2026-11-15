@@ -3,8 +3,14 @@ import { NumberField, SelectField, TextField } from "../../components/ui/FormFie
 import { Card } from "../../components/ui/Layout";
 import { ListEditor } from "../../components/ui/ListEditor";
 import { optionalList, optionalText } from "../../domain/config/document";
-import { EMOJI_OPTIONS, FORMALITY_OPTIONS, RESPONSE_LENGTHS } from "../../domain/config/options";
+import { EMOJI_OPTIONS, FORMALITY_OPTIONS, REPLY_DELAY_OPTIONS, RESPONSE_LENGTHS } from "../../domain/config/options";
 import { useFieldIssue, useSection } from "../../state/useConfig";
+
+/** Las opciones de espera, con la que ya tiene el negocio aunque no esté en la lista (la pudo elegir desde la API o el MCP). */
+function replyDelayOptions(current: number | null | undefined) {
+  const known = REPLY_DELAY_OPTIONS.some((option) => option.value === String(current));
+  return current === null || current === undefined || known ? REPLY_DELAY_OPTIONS : [...REPLY_DELAY_OPTIONS, { value: String(current), label: `${current} segundos` }];
+}
 
 /** Personalidad y estilo de atención. El largo de las respuestas fija el límite de palabras que aplica el motor. */
 export function StyleForm() {
@@ -34,6 +40,13 @@ export function StyleForm() {
         onChange={(max_words) => update({ max_words })}
         issue={maxWordsIssue}
         hint="Ajuste avanzado dentro del rango de la opción elegida. Si lo dejas vacío, se usa el de la opción."
+      />
+      <SelectField
+        label="Esperar antes de responder"
+        value={style.reply_delay_seconds === null || style.reply_delay_seconds === undefined ? "" : String(style.reply_delay_seconds)}
+        options={replyDelayOptions(style.reply_delay_seconds)}
+        onChange={(choice) => update({ reply_delay_seconds: choice === "" ? null : Number(choice) })}
+        hint="Por WhatsApp y Telegram la gente escribe en varios mensajes seguidos: el asistente espera a que termine y responde una sola vez a todo."
       />
       <ListEditor
         label="Cómo debe expresarse"

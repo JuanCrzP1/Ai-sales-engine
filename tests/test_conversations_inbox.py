@@ -164,14 +164,15 @@ def test_the_migration_matches_the_tables():
         body = re.search(rf"CREATE TABLE IF NOT EXISTS {table.name} \((.*?)\n\);", sql, re.S).group(1)
         columns = {match.group(1) for match in re.finditer(r"^\s+([a-z_]+)\s+[A-Z]+", body, re.M)} - {"constraint"}
         # La 0005 agregó a `conversations` las columnas del traspaso a una persona; la 0009, las de la bandeja en vivo; la 0010, la
-        # etapa; la 0011, la espera del cliente y cuándo retomó la IA; la 0020, la nota de la IA para el equipo.
+        # etapa; la 0011, la espera del cliente y cuándo retomó la IA; la 0020, la nota de la IA para el equipo; la 0022, lo que lee el
+        # asistente de cada mensaje y cuándo lo atendió una respuesta (esperar a que el cliente termine de escribir).
         added_later = (
             {
                 "needs_human", "handoff_requested_at", "ai_paused", "handoff_reason", "unread_count", "assistant_typing_until", "updated_at",
                 "stage", "customer_waiting_since", "ai_resumed_at", "handoff_summary",
             }
             if table is conversations
-            else {"kind", "status", "provider_message_id", "media_id", "media_note", "updated_at"}
+            else {"kind", "status", "provider_message_id", "media_id", "media_note", "updated_at", "reads_as", "answered_at"}
         )
         assert columns == {column.name for column in table.columns} - added_later, table.name
     assert "REFERENCES tenants(id) ON DELETE CASCADE" in sql and "REFERENCES conversations(id) ON DELETE CASCADE" in sql

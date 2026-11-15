@@ -38,6 +38,7 @@ from app.domain.business_config.conversations import (
     MediaFile,
     MediaInfo,
     NewMessage,
+    PendingMessage,
     advances,
     handoff_title,
     message_preview,
@@ -341,6 +342,46 @@ class ConversationStore:
                 changes["media_note"] = media_note
             conn.execute(update(conversation_entries).where(conversation_entries.c.id == key).values(**changes))
             conn.execute(update(conversations).where(conversations.c.id == conversation_id).values(updated_at=now))
+
+    # ------------------------------------------------------------------ esperar a que el cliente termine de escribir
+
+    def set_reading(self, entry_id: str, reads_as: str) -> None:
+        """Lo que lee el asistente de un mensaje del cliente, ya entendido: el texto, o lo que se entendió de la foto o el audio ("" si
+        no hay nada que leer, como un sticker)."""
+        with self._engine.begin() as conn:
+            conn.execute(update(conversation_entries).where(conversation_entries.c.id == self._key(entry_id)).values(reads_as=reads_as))
+
+    def pending_messages(self, conversation_id: str, *, since: datetime) -> list[PendingMessage]:
+        """Los mensajes del cliente desde `since` que ninguna respuesta atendió, del más antiguo al más nuevo."""
+        entry = conversation_entries.c
+        with self._engine.connect() as conn:
+            rows = conn.execute(
+                select(entry.id, entry.created_at, entry.reads_as)
+                .where(entry.conversation_id == self._key(conversation_id), entry.author == "customer", entry.answered_at.is_(None))
+                .order_by(entry.created_at, entry.id)
+            ).all()
+        # La fecha se compara aquí: SQLite la guarda sin zona horaria.
+        return [PendingMessage(str(row.id), _utc(row.created_at), row.reads_as) for row in rows if _utc(row.created_at) >= since]
+
+    def claim(self, conversation_id: str, entry_ids: Collection[str]) -> list[str]:
+        """Marca como atendidos los mensajes que todavía no lo estaban y devuelve los que marcó. Si otro proceso ya reclamó uno, no es
+        de este: así ningún mensaje se responde dos veces. (En PostgreSQL, dos reclamos a la vez del mismo mensaje se esperan y el
+        segundo ya no lo encuentra pendiente.)"""
+        claimed, now = [], _now()
+        with self._engine.begin() as conn:
+            for entry_id in entry_ids:
+                result = conn.execute(
+                    update(conversation_entries)
+                    .where(
+                        conversation_entries.c.id == self._key(entry_id),
+                        conversation_entries.c.conversation_id == self._key(conversation_id),
+                        conversation_entries.c.answered_at.is_(None),
+                    )
+                    .values(answered_at=now)
+                )
+                if result.rowcount:
+                    claimed.append(str(entry_id))
+        return claimed
 
     def mark_delivery(self, tenant_slug: str, provider_message_ids: Collection[str], status: str) -> int:
         """Los recibos del canal (entregado, leído) de lo que salió de ese negocio. Solo avanza; devuelve cuántos cambió."""

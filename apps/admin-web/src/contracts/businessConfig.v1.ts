@@ -466,6 +466,8 @@ export interface ResponseStyle {
   length?: "short" | "medium" | "long";
   /** Ajuste dentro del rango de la opción elegida. Si falta, el límite de la opción. [audiencia: avanzado; motor: conectado] */
   max_words?: number | null;
+  /** Segundos que espera el asistente a que el cliente termine de escribir antes de responder por WhatsApp y Telegram: si llegan varios mensajes seguidos, responde una sola vez a todos. 0 responde al instante. Si falta, 8. [motor: conectado] */
+  reply_delay_seconds?: number | null;
 }
 
 export interface Restrictions {

@@ -8,13 +8,17 @@ En el webhook, enseguida (`receive`):
    si respondiera desde el panel.
 2. El mensaje del cliente se guarda en la bandeja apenas llega, con su tipo y el id del canal: si el aviso se repite, no se guarda
    ni se responde dos veces (lo garantiza la base, no la memoria de un proceso: en la nube hay muchos).
-3. Si la IA está pausada en ese chat (la atiende una persona), no se responde: el equipo lo ve en vivo.
+3. Si la IA está pausada en ese chat (la atiende una persona), no se responde: el equipo lo ve en vivo, y el mensaje queda como suyo
+   (no entra en una respuesta posterior del asistente).
 
 Después de contestarle al canal (`process`), porque responder toma unos segundos:
-4. La bandeja y el chat del cliente dicen «escribiendo…».
-5. Si es una foto o un audio, se descarga y se guarda (el enlace del canal vence), y la IA lo entiende con la clave del negocio:
-   describe la foto (y si es un comprobante de pago) o transcribe la nota de voz. Eso es lo que lee el asistente.
-6. El asistente responde con lo publicado del negocio. Si en ese momento alguien del equipo tomó el chat, no se envía nada.
+4. Si es una foto o un audio, se descarga y se guarda (el enlace del canal vence), y la IA lo entiende con la clave del negocio:
+   describe la foto (y si es un comprobante de pago) o transcribe la nota de voz. Lo que lee el asistente del mensaje queda guardado.
+5. Espera a que el cliente termine de escribir (`_gathered`, `domain/business_config/reply_timing.py`): unos segundos después del
+   mensaje; si llegó otro, lo responde ese. El que responde reclama en la base los mensajes del cliente sin respuesta y el asistente
+   los lee juntos: varios mensajes seguidos tienen una sola respuesta, y ninguno se responde dos veces ni se pierde.
+6. La bandeja y el chat del cliente dicen «escribiendo…» y el asistente responde con lo publicado del negocio. Si en ese momento
+   alguien del equipo tomó el chat, no se envía nada.
 7. La respuesta sale por el canal y queda en la bandeja con su id, para sus recibos. Si no sale, queda «no enviada»; si el canal dice
    que la conexión ya no sirve (Telegram rechazó el código del bot), se avisa con `on_lost`.
 8. Si el cliente pidió una persona, reclamó o reportó un pago, la conversación pasa al equipo y le llega un aviso (en la campana, por
@@ -28,6 +32,7 @@ Todo lo que se guarda va con los datos de pago ocultos. Las dependencias entran 
 """
 from __future__ import annotations
 
+import time
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
@@ -36,8 +41,9 @@ from typing import Any, Protocol
 from app.application.channels.handoff_plan import plan_handoff
 from app.domain.business_config.attention import DEFAULT_RESUMED_NOTICE, AttentionSettings, HandoffPlan, published_attention
 from app.domain.business_config.channels import ChannelError, ChannelSecrets, IncomingMessage
-from app.domain.business_config.conversations import MEDIA_KINDS, TYPING_SECONDS, AppendResult, MediaFile, NewMessage
+from app.domain.business_config.conversations import MEDIA_KINDS, TYPING_SECONDS, AppendResult, MediaFile, NewMessage, PendingMessage
 from app.domain.business_config.payment_data import redact_payment_values
+from app.domain.business_config.reply_timing import DEFAULT_REPLY_DELAY_SECONDS, MAX_REPLY_WAIT_SECONDS, reply_delay
 from app.utils.logger import logger
 
 
@@ -67,6 +73,12 @@ class ConversationGateway(Protocol):
     def ai_paused(self, conversation_id: str) -> bool: ...
 
     def team_replied(self, conversation_id: str) -> None: ...
+
+    def set_reading(self, entry_id: str, reads_as: str) -> None: ...
+
+    def pending_messages(self, conversation_id: str, *, since: datetime) -> list[PendingMessage]: ...
+
+    def claim(self, conversation_id: str, entry_ids: list[str]) -> list[str]: ...
 
 
 class MediaUnderstanding(Protocol):
@@ -102,6 +114,12 @@ class Received:
 def _now() -> datetime:
     return datetime.now(timezone.utc)
 
+
+# Esperar a que el cliente termine de escribir (`ChannelInbound._gathered`): solo cuentan sus mensajes recientes sin respuesta, y una
+# foto o un audio que se está entendiendo en otro proceso se espera hasta este tope, mirando cada medio segundo.
+PENDING_WINDOW = timedelta(minutes=2)
+MAX_UNDERSTANDING_WAIT_SECONDS = 20.0
+UNDERSTANDING_POLL_SECONDS = 0.5
 
 _CHANNEL_NAMES = {"whatsapp": "WhatsApp", "telegram": "Telegram"}
 
@@ -149,6 +167,7 @@ class ChannelInbound:
         alerts: AlertSender | None = None,
         clock: Callable[[], datetime] | None = None,
         on_lost: Callable[[ChannelSecrets], None] | None = None,
+        pause: Callable[[float], None] | None = None,
     ) -> None:
         self._conversations = conversations
         self._server = server
@@ -163,6 +182,7 @@ class ChannelInbound:
         self._alerts = alerts or (lambda _notification: None)
         self._clock = clock or _now
         self._on_lost = on_lost or (lambda _secrets: None)
+        self._pause = pause or time.sleep
 
     # ------------------------------------------------------------------ en el webhook
 
@@ -203,24 +223,76 @@ class ChannelInbound:
     # ------------------------------------------------------------------ después de contestar
 
     def process(self, secrets: ChannelSecrets, message: IncomingMessage, stored: AppendResult) -> None:
-        """Entiende el mensaje, responde con el asistente y pasa la conversación a una persona si hace falta. Nunca lanza."""
-        answering = not stored.ai_paused
+        """Entiende el mensaje, espera a que el cliente termine de escribir, responde una sola vez a todo lo que escribió y pasa la
+        conversación a una persona si hace falta. Nunca lanza."""
+        typing = False
         try:
-            if answering:
-                self._typing(secrets, message, stored)
             understanding = self._understand(secrets, message, stored) if message.kind in MEDIA_KINDS else {}
-            if answering:
-                self._answer(secrets, message, stored, understanding)
+            if stored.ai_paused:
+                # La atiende una persona: el mensaje es del equipo y no entra en una respuesta del asistente.
+                self._conversations.claim(stored.conversation_id, [stored.entry_id])
+                return
+            reads = assistant_text(
+                message, note=understanding.get("note"), payment_proof=bool(understanding.get("payment_proof")),
+                payment_details=str(understanding.get("payment_details") or ""),
+            )
+            self._conversations.set_reading(stored.entry_id, self._hide_payments(secrets.tenant_slug, reads) if reads else "")
+            text = self._gathered(secrets, stored)
+            if not text:
+                return
+            typing = True
+            self._typing(secrets, message.phone, stored.conversation_id)
+            self._answer(secrets, message.phone, stored.conversation_id, text)
         except Exception as exc:  # noqa: BLE001 - un fallo aquí no puede tumbar el webhook; se registra el tipo, nunca el contenido
             logger.error("whatsapp_qr_proceso_fallido", extra={"tenant": secrets.tenant_slug, "error": type(exc).__name__})
         finally:
-            if answering:
+            if typing:
                 self._quiet(stored.conversation_id)
 
-    def _typing(self, secrets: ChannelSecrets, message: IncomingMessage, stored: AppendResult) -> None:
-        self._conversations.set_typing(stored.conversation_id, _now() + timedelta(seconds=TYPING_SECONDS))
+    def _gathered(self, secrets: ChannelSecrets, stored: AppendResult) -> str | None:
+        """Espera a que el cliente termine de escribir y reclama sus mensajes sin responder. Devuelve lo que lee el asistente de todos,
+        en orden y uno por renglón, o None si los responde otro: llegó un mensaje después de este (lo responde ese, cuando el cliente se
+        detenga) o una respuesta ya lo atendió.
+
+        Cada mensaje lo procesa su propio proceso, quizá en otro servidor: quién responde se decide en la base. Si el cliente no para
+        de escribir, a los `MAX_REPLY_WAIT_SECONDS` de su primer mensaje sin respuesta se le responde igual."""
+        conversation, mine = stored.conversation_id, stored.entry_id
+        delay = self._reply_delay(secrets.tenant_slug)
+        if delay:
+            self._pause(delay)
+        waited = 0.0
+        while True:
+            now = self._clock()
+            pending = self._conversations.pending_messages(conversation, since=now - PENDING_WINDOW)
+            if not any(item.entry_id == mine for item in pending):
+                return None
+            still_writing = pending[-1].entry_id != mine
+            waited_long = (now - pending[0].created_at).total_seconds() >= MAX_REPLY_WAIT_SECONDS
+            if still_writing and not waited_long:
+                return None
+            # Una foto o un audio de otro mensaje puede estar entendiéndose todavía: se le da un momento.
+            if all(item.reads_as is not None for item in pending) or waited >= MAX_UNDERSTANDING_WAIT_SECONDS:
+                break
+            self._pause(UNDERSTANDING_POLL_SECONDS)
+            waited += UNDERSTANDING_POLL_SECONDS
+        claimed = set(self._conversations.claim(conversation, [item.entry_id for item in pending]))
+        if mine not in claimed:
+            return None
+        if len(claimed) > 1:
+            logger.info("mensajes_agrupados", extra={"tenant": secrets.tenant_slug, "messages": len(claimed)})
+        return "\n".join(item.reads_as for item in pending if item.entry_id in claimed and item.reads_as) or None
+
+    def _reply_delay(self, slug: str) -> int:
+        """Los segundos que el negocio eligió esperar (Cómo atiende); sin lo publicado, el valor de la plataforma."""
         try:
-            self._server(secrets).presence(secrets.instance_token, message.phone, "composing", 30_000)
+            return reply_delay(self._sections(slug))
+        except Exception:  # noqa: BLE001
+            return DEFAULT_REPLY_DELAY_SECONDS
+
+    def _typing(self, secrets: ChannelSecrets, phone: str, conversation_id: str) -> None:
+        self._conversations.set_typing(conversation_id, _now() + timedelta(seconds=TYPING_SECONDS))
+        try:
+            self._server(secrets).presence(secrets.instance_token, phone, "composing", 30_000)
         except ChannelError:
             pass  # El «escribiendo…» en el teléfono del cliente es un detalle: la respuesta sale igual.
 
@@ -256,30 +328,24 @@ class ChannelInbound:
         self._conversations.update_entry(stored.entry_id, media=media, media_note=self._hide_payments(secrets.tenant_slug, note) if note else None)
         return result
 
-    def _answer(self, secrets: ChannelSecrets, message: IncomingMessage, stored: AppendResult, understanding: dict) -> None:
+    def _answer(self, secrets: ChannelSecrets, phone: str, conversation_id: str, text: str) -> None:
+        """El asistente responde `text` (lo que escribió el cliente, uno o varios mensajes) y, si lo decide, pasa el chat a una persona."""
         slug = secrets.tenant_slug
-        text = assistant_text(
-            message, note=understanding.get("note"), payment_proof=bool(understanding.get("payment_proof")),
-            payment_details=str(understanding.get("payment_details") or ""),
-        )
-        if not text:
-            return
-        reply, metadata = self._responder(slug, message.phone, text)
+        reply, metadata = self._responder(slug, phone, text)
         reply = str(reply or "").strip()
         if not reply:
             return
         # Mientras el asistente pensaba, alguien del equipo pudo tomar el chat: entonces no se envía nada.
-        if self._conversations.ai_paused(stored.conversation_id):
+        if self._conversations.ai_paused(conversation_id):
             logger.info("whatsapp_qr_respuesta_descartada", extra={"tenant": slug, "reason": "chat_tomado_por_el_equipo"})
             return
         intent = str(metadata.get("intent") or "").strip() or None
-        if not self._say(secrets, message.phone, reply, intent):
+        if not self._say(secrets, phone, reply, intent):
             return
         logger.info("whatsapp_qr_respuesta", extra={"tenant": slug})
         if metadata.get("handoff"):
-            detail = message.text or understanding.get("note") or None
             self._hand_off(
-                secrets, message.phone, stored.conversation_id, str(metadata.get("handoff_reason") or "assistant"), detail,
+                secrets, phone, conversation_id, str(metadata.get("handoff_reason") or "assistant"), text,
                 summary=str(metadata.get("handoff_summary") or "") or None,
             )
 
@@ -342,8 +408,7 @@ class ChannelInbound:
                 notice = DEFAULT_RESUMED_NOTICE
             self._say(secrets, phone, notice)
             if pending_text.strip():
-                waiting = IncomingMessage(message_id="", phone=phone, contact_name=None, text=pending_text.strip())
-                self._answer(secrets, waiting, AppendResult(conversation_id, "", True, False), {})
+                self._answer(secrets, phone, conversation_id, pending_text.strip())
         except Exception as exc:  # noqa: BLE001
             logger.error("whatsapp_qr_retomar_fallido", extra={"tenant": slug, "error": type(exc).__name__})
 

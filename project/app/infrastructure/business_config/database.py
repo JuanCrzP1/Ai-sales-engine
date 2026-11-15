@@ -108,6 +108,8 @@ _ADDED_COLUMNS = {
         "media_id": "CHAR(32)",
         "media_note": "TEXT",
         "updated_at": "DATETIME NOT NULL DEFAULT '1970-01-01 00:00:00'",
+        "reads_as": "TEXT",
+        "answered_at": "DATETIME",
     },
 }
 

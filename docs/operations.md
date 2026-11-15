@@ -482,6 +482,20 @@ Esos eventos ayudan a detectar:
 | `openrouter_error` | OpenRouter respondió con un error (trae el código, nunca el mensaje del cliente). | Si no era pasajero o ya se reintentó, sigue a `asesor_sin_respuesta`. |
 | `asesor_sin_respuesta` | El cliente no recibió la respuesta de la IA: trae el tipo de error (`Timeout`, `ConnectionError`, `HTTPError`…) y, si OpenRouter respondió, su código. | El cliente recibió la respuesta de respaldo («En este momento no puedo responderte…»). Si se repite, revisa la clave y el saldo del negocio, o el estado de OpenRouter. |
 
+### Esperar A Que El Cliente Termine De Escribir
+
+Por WhatsApp y Telegram, después de cada mensaje del cliente el asistente espera lo que eligió el negocio (Cómo atiende → «Esperar
+antes de responder»; 8 segundos si no eligió). Si llega otro mensaje, lo responde el proceso de ese mensaje; si el cliente no para, a
+los 30 segundos de su primer mensaje sin respuesta se le responde igual. El que responde reclama en la base los mensajes pendientes
+(`conversation_entries.answered_at`, migración 0022) y el asistente los lee juntos, uno por renglón. Ver
+`application/channels/inbound.py` (`_gathered`) y `domain/business_config/reply_timing.py`.
+
+| Aviso | Qué pasó |
+|---|---|
+| `mensajes_agrupados` | Una respuesta atendió varios mensajes seguidos del cliente (trae cuántos). |
+
+Si un cliente dice que el asistente tarda: es la espera elegida más el tiempo de la IA. Con «Al instante» responde sin esperar.
+
 A todo modelo se le pide no razonar antes de responder: un asesor de chat no lo necesita, y el razonamiento se comía el tope de la
 respuesta (el cliente recibía «Hubo un problema…»). Ver «La elección del modelo» en [Calidad del asesor](calidad-del-asesor.md).
 

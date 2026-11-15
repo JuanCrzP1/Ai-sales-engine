@@ -626,6 +626,20 @@ describe("Secciones del negocio", () => {
     expect(sales.instructions).toEqual(["Confirma la dirección antes de cerrar el pedido.", "Pregunta para cuántas personas es"]);
   });
 
+  it("elige cuánto espera el asistente a que el cliente termine de escribir, y vuelve a lo recomendado", async () => {
+    const { user, backend } = await renderWorkspace("/atencion");
+    const wait = screen.getByLabelText(/^Esperar antes de responder/);
+    expect(wait).toHaveValue("");
+    expect(within(wait).getByRole("option", { name: "8 segundos (recomendado)" })).toBeInTheDocument();
+    await user.selectOptions(wait, "0");
+    await saveAndWait(user);
+    expect(storedOf(backend).response_style.reply_delay_seconds).toBe(0);
+    await user.selectOptions(wait, "");
+    await saveAndWait(user);
+    // Vacío vuelve a lo de la plataforma (el servidor no guarda el campo vacío).
+    expect(storedOf(backend).response_style.reply_delay_seconds ?? null).toBeNull();
+  });
+
   it("valida el límite de palabras contra el largo elegido", async () => {
     const { user } = await renderWorkspace("/atencion");
     await user.type(screen.getByLabelText(/^Límite de palabras/), "5");

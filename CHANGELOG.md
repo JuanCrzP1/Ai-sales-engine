@@ -5,6 +5,13 @@ está en el historial de git y en `docs/plan-v1.md`.
 
 ## 15 de noviembre de 2026
 
+**El asistente espera a que tu cliente termine de escribir**
+- Por WhatsApp la gente escribe en varios mensajes seguidos («Hola»… «quiero el plan»… «¿cuánto vale?»). Antes el asistente
+  contestaba cada uno por separado y a medias. Ahora espera unos segundos, lee todo junto y **responde una sola vez**.
+- Lo eliges en Asistente IA → Cómo atiende → **Esperar antes de responder**: 8 segundos (recomendado), al instante, 3, 5, 12 o 20.
+- Si el cliente no para de escribir, a los 30 segundos le responde igual. Las fotos y los audios se entienden mientras espera.
+- Funciona en WhatsApp y Telegram. En Probar sigue respondiendo al instante.
+
 **Menos mensajes sin respuesta**
 - Si la conexión con el proveedor de IA se corta, se demora o está ocupado por un momento, el asistente lo intenta otra vez antes de
   rendirse. Antes, tu cliente recibía «En este momento no puedo responderte» a la primera (pasó en 2 de 123 respuestas).

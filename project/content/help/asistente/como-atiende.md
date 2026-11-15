@@ -3,8 +3,8 @@ title: "Cómo atiende: tono, preguntas frecuentes y forma de vender"
 module: asistente
 summary: La personalidad del asistente, las preguntas frecuentes, las instrucciones comerciales, qué vendes y el tipo de cierre.
 order: 5
-updated: 2026-11-12
-keywords: tono, personalidad, emojis, preguntas frecuentes, instrucciones, estrategia de venta, tipo de cierre, qué vendes, objeciones, recomendaciones
+updated: 2026-11-15
+keywords: tono, personalidad, emojis, esperar, varios mensajes, tiempo de respuesta, preguntas frecuentes, instrucciones, estrategia de venta, tipo de cierre, qué vendes, objeciones, recomendaciones
 related: pagos-y-cierre, mensajes-del-asistente, probar-el-asistente
 ---
 
@@ -12,10 +12,18 @@ En [Cómo atiende](panel:atencion) decides cómo habla tu asistente y cómo vend
 
 ## Lo esencial
 
-- **Personalidad y estilo de atención:** el tono (por ejemplo, «cercano y claro»), la personalidad de la marca, si trata de tú o de usted, si puede usar emojis, un límite de palabras y cómo debe expresarse.
+- **Personalidad y estilo de atención:** el tono (por ejemplo, «cercano y claro»), la personalidad de la marca, si trata de tú o de usted, si puede usar emojis, un límite de palabras, cuánto espera antes de responder y cómo debe expresarse.
 - **Preguntas frecuentes:** pregunta y respuesta. El asistente usa estas respuestas **tal como las escribas**.
 - **Instrucciones comerciales:** la principal razón por la que te compran, cómo debe vender en tu negocio, los resultados que obtiene el cliente, tus argumentos de venta y las preguntas para entender al cliente.
 - **Recomendaciones:** qué plan o producto sugerir según la situación del cliente (por ejemplo, «Tiene poco presupuesto» → tu plan básico).
+
+## Esperar antes de responder
+
+Por WhatsApp y Telegram la gente escribe en varios mensajes seguidos: «Hola»… «quiero el plan»… «¿cuánto vale?». Si el asistente respondiera al primero, contestaría a medias.
+
+Por eso espera unos segundos después de cada mensaje. Si llega otro, vuelve a esperar. Cuando el cliente deja de escribir, lee todo junto y **responde una sola vez**. Si el cliente no para de escribir, a los 30 segundos le responde igual.
+
+En **Personalidad y estilo de atención → Esperar antes de responder** eliges cuánto: **8 segundos** (recomendado), al instante, 3, 5, 12 o 20 segundos. En [Probar](probar-el-asistente) siempre responde al instante.
 
 ## Qué vendes
 

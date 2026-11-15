@@ -11,6 +11,7 @@ from app.domain.business_config.engine_policy import (
     MAX_FAQ_QUESTION_CHARS,
     MAX_FAQS,
     MAX_MESSAGE_CHARS,
+    MAX_REPLY_DELAY_SECONDS,
     MAX_TONE_CHARS,
     MIN_MAX_WORDS,
     RESPONSE_LENGTH_MAX_WORDS,
@@ -167,6 +168,14 @@ class ResponseStyle(ContractModel):
         default=None,
         description="Ajuste dentro del rango de la opción elegida. Si falta, el límite de la opción.",
         json_schema_extra={**CONNECTED, **ADVANCED},
+    )
+    reply_delay_seconds: Annotated[int, Field(ge=0, le=MAX_REPLY_DELAY_SECONDS)] | None = Field(
+        default=None,
+        description=(
+            "Segundos que espera el asistente a que el cliente termine de escribir antes de responder por WhatsApp y Telegram: si llegan "
+            "varios mensajes seguidos, responde una sola vez a todos. 0 responde al instante. Si falta, 8."
+        ),
+        json_schema_extra=CONNECTED,
     )
 
     @model_validator(mode="after")

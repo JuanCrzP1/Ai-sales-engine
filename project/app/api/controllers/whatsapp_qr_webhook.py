@@ -15,6 +15,7 @@ from __future__ import annotations
 import hmac
 import os
 import threading
+import time
 from datetime import datetime, timezone
 from types import SimpleNamespace
 
@@ -75,6 +76,9 @@ class _Conversations:
     request_handoff = staticmethod(runtime_access.request_conversation_handoff)
     ai_paused = staticmethod(runtime_access.conversation_ai_paused)
     team_replied = staticmethod(runtime_access.conversation_team_replied)
+    set_reading = staticmethod(runtime_access.set_conversation_reading)
+    pending_messages = staticmethod(runtime_access.pending_conversation_messages)
+    claim = staticmethod(runtime_access.claim_conversation_messages)
 
 
 def channel_client(secrets: ChannelSecrets):
@@ -87,6 +91,11 @@ def channel_lost(secrets: ChannelSecrets) -> None:
     WhatsApp lo avisa el propio servidor con su evento de conexión.)"""
     if secrets.channel == TELEGRAM:
         runtime_access.set_channel_status(secrets.tenant_slug, TELEGRAM, "disconnected")
+
+
+def pause(seconds: float) -> None:
+    """La espera a que el cliente termine de escribir (`ChannelInbound`). Las pruebas la cambian para no esperar de verdad."""
+    time.sleep(seconds)
 
 
 def build_inbound() -> ChannelInbound:
@@ -104,6 +113,7 @@ def build_inbound() -> ChannelInbound:
         alerts=deliver_alert,
         clock=lambda: now(),
         on_lost=channel_lost,
+        pause=pause,
     )
 
 

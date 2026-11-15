@@ -206,6 +206,9 @@ conversation_entries = Table(
     Column("media_id", Uuid, ForeignKey("conversation_media.id", ondelete="SET NULL")),
     Column("media_note", Text),
     Column("updated_at", DateTime(timezone=True), nullable=False, default=_now),
+    # Migración 0022: lo que lee el asistente de un mensaje del cliente y cuándo lo atendió una respuesta (o lo tomó el equipo).
+    Column("reads_as", Text),
+    Column("answered_at", DateTime(timezone=True)),
     CheckConstraint("author IN ('customer', 'assistant', 'agent')", name="conversation_entries_author_check"),
     CheckConstraint(
         "kind IN ('text', 'image', 'audio', 'video', 'document', 'sticker', 'location', 'contact', 'other')", name="conversation_entries_kind_check"
@@ -217,6 +220,10 @@ conversation_entries = Table(
         postgresql_where=text("provider_message_id IS NOT NULL"), sqlite_where=text("provider_message_id IS NOT NULL"),
     ),
     Index("conversation_entries_live_idx", "conversation_id", "updated_at"),
+    Index(
+        "conversation_entries_pending_idx", "conversation_id", "created_at",
+        postgresql_where=text("author = 'customer' AND answered_at IS NULL"), sqlite_where=text("author = 'customer' AND answered_at IS NULL"),
+    ),
     Index(
         "conversation_entries_provider_idx", "provider_message_id",
         postgresql_where=text("provider_message_id IS NOT NULL"), sqlite_where=text("provider_message_id IS NOT NULL"),

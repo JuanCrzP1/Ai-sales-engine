@@ -131,6 +131,7 @@ Finalidad comercial, sin origen en los YAML. No se compilan salvo los marcados `
 | response_style | `response_style.emojis` | Si el asistente puede usar emojis. | interruptor true/false | cliente | conectado | pantalla |
 | response_style | `response_style.formality` | informal (tutea), neutral o formal (usted). | informal \| neutral \| formal | cliente | conectado | pantalla |
 | response_style | `response_style.instructions` | Cómo debe expresarse el asistente en este negocio. | lista de texto | cliente | conectado | pantalla |
+| response_style | `response_style.reply_delay_seconds` | Segundos que espera el asistente a que el cliente termine de escribir antes de responder por WhatsApp y Telegram: si llegan varios mensajes seguidos, responde una sola vez a todos. 0 responde al instante. Si falta, 8. | entero (mínimo 0) | cliente | conectado | pantalla |
 | sales | `sales.instructions` | Cómo debe vender el asistente en este negocio. | lista de texto | cliente | conectado | pantalla |
 | terms | `terms.policies.cancellation` | Cancelaciones y reembolsos (citas, reservas, suscripciones). | texto | cliente | conectado | pantalla |
 | terms | `terms.policies.returns` | Cambios y devoluciones. | texto | cliente | conectado | pantalla |
@@ -362,10 +363,10 @@ si el motor actual lo usa y de dónde viene.
 
 | Audiencia | Conectados | Programados | Solo panel | Pendientes |
 |---|---|---|---|---|
-| cliente | 143 | 2 | 2 | 0 |
+| cliente | 144 | 2 | 2 | 0 |
 | avanzado | 50 | 0 | 0 | 0 |
 | sistema | 2 | 0 | 0 | 0 |
-| **Total** | 195 | 2 | 2 | 0 |
+| **Total** | 196 | 2 | 2 | 0 |
 
 | Campo | Audiencia | Motor | Origen | Interfaz | Descripción |
 |---|---|---|---|---|---|
@@ -495,6 +496,7 @@ si el motor actual lo usa y de dónde viene.
 | `response_style.instructions` | cliente | conectado | nuevo | pantalla | Cómo debe expresarse el asistente en este negocio. |
 | `response_style.length` | cliente | conectado | `config.response.length` | pantalla | short (cortas), medium (equilibradas) o long (detalladas). |
 | `response_style.max_words` | avanzado | conectado | `config.response.max_words` | modelo | Ajuste dentro del rango de la opción elegida. Si falta, el límite de la opción. |
+| `response_style.reply_delay_seconds` | cliente | conectado | nuevo | pantalla | Segundos que espera el asistente a que el cliente termine de escribir antes de responder por WhatsApp y Telegram: si llegan varios mensajes seguidos, responde una sola vez a todos. 0 responde al instante. Si falta, 8. |
 | `response_style.tone` | cliente | conectado | `business.tone` | modelo | Tono del asistente (p. ej. cercano y claro). |
 | `response_style.voice` | cliente | conectado | `business.voice` | pantalla | Personalidad de la marca. |
 | `sales.arguments` | cliente | conectado | `sales.solution.framing` | modelo | Argumentos de venta. |

@@ -25,7 +25,7 @@ from app.domain.business_config.contract import BusinessConfig, SecretRef
 from app.business_config_application.usage_limits import UsageGuard
 from app.domain.business_config.api_keys import ApiKeyIdentity
 from app.domain.business_config.attention import AttentionSettings
-from app.domain.business_config.conversations import AppendResult, MediaFile, NewMessage, WaitingChat
+from app.domain.business_config.conversations import AppendResult, MediaFile, NewMessage, PendingMessage, WaitingChat
 from app.domain.business_config.errors import BusinessConfigError
 from app.infrastructure.business_config.ai_settings_store import AISettingsStore
 from app.infrastructure.business_config.ai_usage_store import AIUsageStore
@@ -242,6 +242,21 @@ def authenticate_api_key(secret: str) -> ApiKeyIdentity | None:
 def usage_guard() -> UsageGuard:
     """Los límites de uso con el contador compartido de la base (todas las instancias cuentan juntas)."""
     return UsageGuard(UsageCounterStore(_store_engine()))
+
+
+def set_conversation_reading(entry_id: str, reads_as: str) -> None:
+    """Lo que lee el asistente de un mensaje del cliente, ya entendido (esperar a que termine de escribir: `ChannelInbound`)."""
+    ConversationStore(_store_engine()).set_reading(entry_id, reads_as)
+
+
+def pending_conversation_messages(conversation_id: str, *, since: datetime) -> list[PendingMessage]:
+    """Los mensajes del cliente desde `since` que ninguna respuesta atendió todavía."""
+    return ConversationStore(_store_engine()).pending_messages(conversation_id, since=since)
+
+
+def claim_conversation_messages(conversation_id: str, entry_ids: list[str]) -> list[str]:
+    """Marca como atendidos los mensajes pendientes y devuelve los que marcó (los demás ya los reclamó otro proceso)."""
+    return ConversationStore(_store_engine()).claim(conversation_id, entry_ids)
 
 
 def conversation_ai_paused(conversation_id: str) -> bool:

@@ -33,6 +33,15 @@ RESPONSE_LENGTH_WORD_RANGES: dict[str, tuple[int, int | None]] = {
     "long": (RESPONSE_LENGTH_MAX_WORDS["medium"] + 1, None),
 }
 
+# Esperar a que el cliente termine de escribir (por WhatsApp y Telegram). La gente parte lo que quiere decir en varios mensajes
+# seguidos («Hola» … «quiero el plan» … «¿cuánto vale?»): el asistente espera unos segundos después de cada uno y, si llega otro, vuelve
+# a esperar; cuando el cliente se detiene, responde una sola vez a todo (`application/channels/inbound.py`). El negocio lo elige en
+# Cómo atiende (`response_style.reply_delay_seconds`); 0 responde al instante.
+DEFAULT_REPLY_DELAY_SECONDS = 8
+MAX_REPLY_DELAY_SECONDS = 20
+# Si el cliente sigue escribiendo sin parar, a los 30 segundos de su primer mensaje sin respuesta el asistente le responde igual.
+MAX_REPLY_WAIT_SECONDS = 30
+
 DEFAULT_ACTIVE_WINDOW_MINUTES = 15
 DEFAULT_RESET_HOURS = 4
 

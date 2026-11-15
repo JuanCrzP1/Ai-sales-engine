@@ -410,6 +410,8 @@ def engine_webhook(monkeypatch, tmp_path):
     monkeypatch.setattr(whatsapp_qr_webhook, "AIService", FakeAI)
     monkeypatch.setattr(whatsapp_qr_webhook, "UazapiClient", server.client)
     monkeypatch.setattr(whatsapp_qr_webhook, "OpenRouterMediaInterpreter", FakeMedia)
+    # Sin esperar de verdad a que el cliente termine de escribir: cada mensaje de estas pruebas llega después de la respuesta anterior.
+    monkeypatch.setattr(whatsapp_qr_webhook, "pause", lambda _seconds: None)
     monkeypatch.setattr(whatsapp_qr_webhook, "_business_key", lambda _slug: "clave-del-negocio")
     app = FastAPI()
     app.include_router(whatsapp_qr_webhook.router)

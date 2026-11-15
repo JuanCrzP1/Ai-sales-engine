@@ -520,6 +520,19 @@ def test_the_attention_messages_reach_the_platform_from_what_was_published(monke
     assert published_attention(published_sections("restaurant")).after_hours is None
 
 
+def test_the_reply_wait_reaches_the_channels_from_what_was_published(monkeypatch, tmp_path):
+    """«Esperar antes de responder» (Cómo atiende) llega a WhatsApp y Telegram desde lo publicado: es lo que espera el canal a que el
+    cliente termine de escribir (`ChannelInbound`). Sin elegirlo, la plataforma espera 8 segundos."""
+    from app.domain.business_config.reply_timing import DEFAULT_REPLY_DELAY_SECONDS, reply_delay
+
+    publish_document(monkeypatch, tmp_path, "restaurant", lambda d: d["response_style"].update(reply_delay_seconds=3))
+    assert reply_delay(published_sections("restaurant")) == 3
+    publish_document(monkeypatch, tmp_path / "al_instante", "restaurant", lambda d: d["response_style"].update(reply_delay_seconds=0))
+    assert reply_delay(published_sections("restaurant")) == 0
+    publish_document(monkeypatch, tmp_path / "sin", "restaurant")
+    assert reply_delay(published_sections("restaurant")) == DEFAULT_REPLY_DELAY_SECONDS
+
+
 def test_conversation_windows_drive_the_conversation_state(monkeypatch, tmp_path):
     default = load_tenant_runtime_yaml("saas")["config"]
     publish_document(monkeypatch, tmp_path, "saas", engine_settings={"conversation": {"active_window_minutes": 60, "reset_hours": 1}})
@@ -1020,6 +1033,7 @@ CONNECTED_EVIDENCE: dict[str, str] = {
     "messages.payment_reported": "test_payment_report_message_is_optional",
     "response_style.length": "test_each_response_length_option_controls_prompt_and_truncation",
     "response_style.max_words": "test_changing_the_contract_changes_response_length",
+    "response_style.reply_delay_seconds": "test_the_reply_wait_reaches_the_channels_from_what_was_published",
     "features.business_model": "test_connected_fields_change_the_prompt",
     # Perfil comercial, tono, preguntas frecuentes y precios del catálogo: solo con el contrato.
     "identity.name": "test_the_profile_block_reaches_the_prompt",

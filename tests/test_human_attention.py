@@ -50,7 +50,7 @@ from app.domain.business_config.attention import (
     when_text,
 )
 from app.domain.business_config.channels import ChannelSecrets
-from app.domain.business_config.conversations import AppendResult, NewMessage
+from app.domain.business_config.conversations import AppendResult, NewMessage, PendingMessage
 from app.domain.business_config.errors import InvalidFieldsError
 from app.domain.business_config.push import PushMessage, PushSubscription, validated_subscription
 from app.infrastructure.business_config.attention_store import AttentionStore
@@ -357,6 +357,8 @@ class FakeGateway:
     def __init__(self) -> None:
         self.appended: list[NewMessage] = []
         self.handoffs: list[tuple[str, str, bool]] = []
+        self.readings: dict[str, str] = {}
+        self.claimed: set[str] = set()
 
     def append(self, tenant_slug, *, channel, contact_ref, contact_name, message, media=None):
         self.appended.append(message)
@@ -377,6 +379,18 @@ class FakeGateway:
 
     def team_replied(self, conversation_id):
         return None
+
+    # Esperar a que el cliente termine de escribir: lo que lee el asistente de cada mensaje y cuáles ya atendió una respuesta.
+    def set_reading(self, entry_id, reads_as):
+        self.readings[entry_id] = reads_as
+
+    def pending_messages(self, conversation_id, *, since):
+        return [PendingMessage(entry_id, since, reads) for entry_id, reads in self.readings.items() if entry_id not in self.claimed]
+
+    def claim(self, conversation_id, entry_ids):
+        mine = [entry_id for entry_id in entry_ids if entry_id not in self.claimed]
+        self.claimed.update(mine)
+        return mine
 
 
 SECTIONS = {
@@ -402,6 +416,7 @@ def _inbound(server, gateway, *, reply=("Te paso con alguien del equipo.", {"int
         attention=attention,
         alerts=alerts,
         clock=clock,
+        pause=lambda _seconds: None,
     )
 
 

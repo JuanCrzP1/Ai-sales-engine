@@ -160,6 +160,17 @@ class AppendResult:
 
 
 @dataclass(frozen=True)
+class PendingMessage:
+    """Un mensaje del cliente que ninguna respuesta del asistente atendió todavía (`ChannelInbound`). `reads_as` es lo que lee el
+    asistente de él (el texto, o lo que se entendió de la foto o el audio): None mientras se entiende, "" si no hay nada que leer (un
+    sticker)."""
+
+    entry_id: str
+    created_at: datetime
+    reads_as: str | None
+
+
+@dataclass(frozen=True)
 class ConversationTarget:
     """A quién responde el equipo: el negocio, el canal y el contacto de una conversación."""
 

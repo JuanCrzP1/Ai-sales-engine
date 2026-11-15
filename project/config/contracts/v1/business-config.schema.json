@@ -2412,6 +2412,22 @@
           "title": "Max Words",
           "x-audience": "avanzado",
           "x-engine": "conectado"
+        },
+        "reply_delay_seconds": {
+          "anyOf": [
+            {
+              "maximum": 20,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Segundos que espera el asistente a que el cliente termine de escribir antes de responder por WhatsApp y Telegram: si llegan varios mensajes seguidos, responde una sola vez a todos. 0 responde al instante. Si falta, 8.",
+          "title": "Reply Delay Seconds",
+          "x-engine": "conectado"
         }
       },
       "title": "ResponseStyle",

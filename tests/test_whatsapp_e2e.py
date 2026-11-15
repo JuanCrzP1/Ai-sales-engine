@@ -116,6 +116,8 @@ def running_stack(monkeypatch, tmp_path, slugs: list[str], mutate=None):
     monkeypatch.setattr(RuntimeLLMImplementation, "generate", lambda self, prompt, **kwargs: model.generate(prompt, **kwargs))
     monkeypatch.setattr(RuntimeLLMImplementation, "classify", lambda self, prompt, **kwargs: model.classify(prompt, **kwargs))
     monkeypatch.setattr(whatsapp_qr_webhook, "OpenRouterMediaInterpreter", FakeMedia)
+    # Sin esperar de verdad a que el cliente termine de escribir: cada mensaje de estas pruebas llega después de la respuesta anterior.
+    monkeypatch.setattr(whatsapp_qr_webhook, "pause", lambda _seconds: None)
     alerts: list = []
     monkeypatch.setattr(whatsapp_qr_webhook, "deliver_alert", alerts.append)
 

@@ -432,6 +432,7 @@ NEW_CONTRACT_FIELDS: dict[str, tuple[str, str]] = {
     "response_style.formality": ("Nivel de formalidad", "pantalla"),
     "response_style.emojis": ("Uso de emojis", "pantalla"),
     "response_style.instructions": ("Indicaciones de comunicación", "pantalla"),
+    "response_style.reply_delay_seconds": ("Segundos que espera a que el cliente termine de escribir antes de responder", "pantalla"),
     "escalation.on_request": ("Si el cliente pide una persona: pasarlo u ofrecer ayuda primero", "pantalla"),
     "escalation.always_topics": ("Temas que siempre van al equipo", "pantalla"),
     "escalation.never_topics": ("Temas que resuelve el asistente sin pasar el chat", "pantalla"),

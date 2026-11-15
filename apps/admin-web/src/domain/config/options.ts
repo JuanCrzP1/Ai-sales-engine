@@ -39,6 +39,19 @@ export const FORMALITY_OPTIONS: Option<"" | "informal" | "neutral" | "formal">[]
   { value: "formal", label: "Formal (trata de usted)" },
 ];
 
+/**
+ * Cuánto espera el asistente a que el cliente termine de escribir antes de responder por WhatsApp y Telegram (`response_style.reply_delay_seconds`).
+ * Vacío: el valor de la plataforma (8 segundos). Si el cliente manda varios mensajes seguidos, responde una sola vez a todos.
+ */
+export const REPLY_DELAY_OPTIONS: Option<string>[] = [
+  { value: "", label: "8 segundos (recomendado)" },
+  { value: "0", label: "Al instante" },
+  { value: "3", label: "3 segundos" },
+  { value: "5", label: "5 segundos" },
+  { value: "12", label: "12 segundos" },
+  { value: "20", label: "20 segundos" },
+];
+
 export const EMOJI_OPTIONS: Option<"" | "yes" | "no">[] = [
   { value: "", label: "Sin indicar" },
   { value: "yes", label: "Sí, puede usarlos" },
