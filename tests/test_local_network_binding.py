@@ -53,7 +53,13 @@ def _own_addresses(family: socket.AddressFamily) -> list[str]:
                 found.add(probe.getsockname()[0])
             except OSError:
                 pass
-    return sorted(address for address in found if not address.startswith("127.") and address not in ("0.0.0.0", "::1"))
+    return sorted(address for address in found if not address.startswith("127.") and address not in ("0.0.0.0", "::1") and not _unreachable(address))
+
+
+def _unreachable(address: str) -> bool:
+    """Una IPv6 de enlace local (`fe80::…`) sin su interfaz no se alcanza ni desde este equipo: ni el servidor de control respondería
+    en ella, así que no prueba nada. En el CI de GitHub (Linux) el nombre del equipo empezó a dar una así (15 nov 2026)."""
+    return address.lower().startswith("fe80:") and "%" not in address
 
 
 def _ipv6_available() -> bool:
