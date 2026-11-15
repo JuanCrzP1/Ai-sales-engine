@@ -557,7 +557,8 @@ def test_active_prompt_shorter_without_payment() -> None:
     # Desde el prompt por capas el negocio completo va en todos los mensajes: lo fijo es igual en cada mensaje y el proveedor lo
     # cobra más barato desde su caché. Este negocio trae toda su estrategia avanzada (unos 3.000 tokens). Los presupuestos por capa
     # están en `prompting/budgets.py`.
-    assert len(prompt) < 12_500, f"Prompt activo sin pago demasiado largo: {len(prompt)} chars"
+    # 15 nov 2026: +100 caracteres para pedir solo los datos que el cliente aún no dio (`payments.KNOWN_DATA`).
+    assert len(prompt) < 12_600, f"Prompt activo sin pago demasiado largo: {len(prompt)} chars"
 
 ## ----------------------------------------
 ## QUÉ HACE ESTE TEST:

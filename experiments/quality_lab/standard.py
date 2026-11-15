@@ -104,7 +104,7 @@ JUDGE = (
     + '\n\nDevuelve SOLO JSON: {"fallas": [{"regla": "<nombre de la regla>", "turno": <número del turno>, "cita": "<frase copiada tal '
     'cual del mensaje del asesor en ese turno>", "razon": "máximo 15 palabras"}]}. Sin fallas: {"fallas": []}.\n'
     "En «no_pide_lo_ya_dado» agrega «cita_cliente»: la frase copiada tal cual de un mensaje anterior del cliente donde ya había dado "
-    "ese dato."
+    "ese mismo dato (por ejemplo «soy Laura» para el nombre). Si no hay una frase así, no es falla."
 )
 # Las reglas en las que el juez debe mostrar, además, lo que dijo antes el cliente (copiado tal cual de un turno anterior).
 CUSTOMER_EVIDENCE = ("no_pide_lo_ya_dado",)
@@ -139,6 +139,9 @@ def judge_failures(verdict: dict, turns: list[dict]) -> tuple[dict[str, list[dic
             said = _plain(item.get("cita_cliente"))
             valid = len(said) >= 3 and any(said in _plain(earlier["message"]) for earlier in turns if earlier["turn"] < number)
         entry = {"turn": number if isinstance(number, int) else 0, "why": str(item.get("razon") or "")}
+        if rule in CUSTOMER_EVIDENCE and item.get("cita_cliente"):
+            # Lo que dijo antes el cliente, según el juez: el segundo revisor lo ve y comprueba que de verdad sea ese dato.
+            entry["customer_said"] = str(item.get("cita_cliente"))
         if valid:
             failures[rule].append(entry)
         else:
@@ -159,7 +162,13 @@ CONFIRM = (
 def confirm_request(rule: str, turns: list[dict], failure: dict) -> str:
     """Lo que se le envía al segundo revisor: la regla, la conversación hasta el turno de la falla y lo que reportó el juez."""
     until = [turn for turn in turns if turn["turn"] <= failure["turn"]]
-    return f"REGLA ({rule}): {JUDGE_RULES[rule]}\n\nCONVERSACIÓN HASTA ESE TURNO:\n{transcript(until)}\n\nFALLA REPORTADA en el turno {failure['turn']}: {failure['why']}"
+    evidence = (
+        f"\nSegún el juez, el cliente ya había dado ese dato al decir: «{failure['customer_said']}». Confírmala solo si esa frase de "
+        "verdad trae el dato que el asesor vuelve a pedir (no basta con que sea otra frase del cliente)."
+        if failure.get("customer_said") else ""
+    )
+    return (f"REGLA ({rule}): {JUDGE_RULES[rule]}\n\nCONVERSACIÓN HASTA ESE TURNO:\n{transcript(until)}\n\n"
+            f"FALLA REPORTADA en el turno {failure['turn']}: {failure['why']}{evidence}")
 
 
 def transcript(turns: list[dict]) -> str:

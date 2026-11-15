@@ -719,13 +719,15 @@ def test_active_prompt_stays_within_budget(monkeypatch):
     assert "Tono: humano, cercano, directo y comercial de cierre. Responde en máximo 75 palabras." in prompt
     # El negocio completo va en todos los mensajes; lo fijo se repite igual y el proveedor lo cobra más barato desde su caché. Es el
     # negocio de ejemplo con más estrategia avanzada (problemas, motivos, objeciones, reglas de cierre): cabe en unos 3.000 tokens.
-    assert len(prompt) < 12_500
+    # 15 nov 2026: +100 caracteres para que el asesor pida solo los datos que el cliente aún no dio (`payments.KNOWN_DATA`).
+    assert len(prompt) < 12_600
     # Un negocio con poca estrategia avanzada sigue con un prompt corto.
     small = load_tenant_runtime_yaml("restaurant", extra_yaml={"conversation_state": "active", "memory_context": {"last_ai_response": "ok"}})
     small_prompt, _, _ = PromptBuilderService().build(client_config_id="restaurant", user_message="siguiente", yaml_config=small, faq_results=[], progression_rules=None)
     # Las reglas fijas de pasar a una persona (prompt v4) suman unos 450 caracteres, y las de pagos del v9 (primero decide y después
-    # habla; cuándo recibe el cliente los datos de pago) unos 220: iguales en cada mensaje y cobrados desde la caché.
-    assert len(small_prompt) < 7_250
+    # habla; cuándo recibe el cliente los datos de pago) unos 220: iguales en cada mensaje y cobrados desde la caché. Pedir solo los datos
+    # que el cliente aún no dio (v15) suma unos 100.
+    assert len(small_prompt) < 7_350
 
 
 def test_panel_document_is_valid_and_reaches_the_engine():

@@ -299,7 +299,40 @@ Lo que queda abierto:
   una falla pasajera se reintenta una vez y, si aun así no hay respuesta, queda el aviso `asesor_sin_respuesta` con la causa
   ([Operación](operations.md), «Avisos del modelo»).
 - **«No pide lo ya dado»** falló en 4 o 5 conversaciones con los tres modelos: no se arregla cambiando de modelo, sino lo que se le
-  pide al asesor al cerrar (pide los datos del negocio aunque el cliente ya los dio).
+  pide al asesor al cerrar (pide los datos del negocio aunque el cliente ya los dio). Ver «Pedir solo los datos que faltan».
+
+### Pedir solo los datos que faltan (15 de noviembre de 2026)
+
+Rama `no-pedir-lo-ya-dado`, prompt `v15`. En producción, Laura escribió «soy Laura y tengo una tienda de ropa» y, al decir con qué
+pagaba, el asesor le pidió «tu nombre y los detalles de tu tienda».
+
+**La causa.** El asesor recibía la lista «Datos que pides para cerrar: nombre, teléfono…» y, en el turno en que salen los datos de
+pago, «Lo que te falte de él, pídeselo después de esa frase». En ninguna parte decía «solo los que falten»: el modelo pedía la lista
+completa justo al cerrar.
+
+**El cambio**, sin reglas de palabras:
+- Junto a los datos del negocio, un ejemplo: «Pide solo los que aún no te dio: si escribió «soy Camila», ya tienes su nombre;
+  llámala Camila» (`sections/payments.py`, `KNOWN_DATA`).
+- Las instrucciones de cierre dicen «los datos que el negocio necesita y aún no te dio».
+- En el turno del pago: «Lo que ya te dijo en el chat (su nombre, su teléfono) ya lo tienes: pídele solo lo que todavía falte»
+  (`PAYMENT_ASKED`).
+- El prompt crece unos 100 caracteres (unos 25 tokens por mensaje).
+
+**La medición** (gpt-4o-mini, 90 conversaciones: el negocio real, el restaurante y la clínica, tres muestras). La línea base son las
+conversaciones de la confirmación del modelo, juzgadas otra vez con el juez corregido: ahora el segundo revisor ve la frase del
+cliente que el juez cita como prueba (antes aceptaba «Quiero Agenda Plus» como si fuera el nombre).
+
+| Corrida | Sin fallas | Pide lo ya dado (revisado a mano) | Laura |
+|---|---|---|---|
+| `no_pide_base_20261115` (antes) | 79 de 90 | 7 | falla |
+| `no_pide_v15_20261115` (lista y cierres) | 82 de 90 | 3 | a veces |
+| `no_pide_v15b_20261115` (también el turno del pago) | **86 de 90** | **2** | **0 de 9** |
+
+Las reglas exactas (pagos, paso al equipo, nota) pasan en las tres. Se publica como mejora; la meta era 0. Queda:
+- En la clínica, dentro del chat largo de producción, el cliente da su teléfono en el mensaje 7 y en el 10 se lo vuelven a pedir (2
+  de 9). Siguiente paso: que el asesor anote los datos que el cliente le da y el motor se los recuerde en cada mensaje.
+- Una vez en 90 (restaurante), «luego te envío los datos» con los datos ya debajo: el mismo caso que ya se había visto en negocios
+  que piden datos al cerrar. Con una aparición no se puede atribuir al cambio; se vigila.
 
 ## Lo que la puerta no cubre
 

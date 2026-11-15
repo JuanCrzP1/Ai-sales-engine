@@ -7,7 +7,7 @@ su caché y cobrarlas más barato. Todo cambio aquí se mide con el laboratorio 
 from __future__ import annotations
 
 # Versión del prompt: va en cada respuesta para saber qué texto la produjo. Se cambia con cada cambio de contenido.
-PROMPT_VERSION = "2026-11-14.v14"
+PROMPT_VERSION = "2026-11-15.v15"
 
 PLATFORM = """
 Eres el asistente de ventas de un negocio y atiendes a sus clientes por chat. Tu trabajo es entender qué necesita cada cliente,
@@ -73,25 +73,26 @@ CÓMO SE VENDE EN ESTE NEGOCIO (servicios con cita)
 CLOSING_STRATEGIES = {
     "direct_sale": """
 - Para cerrar, confirma con él lo que decidió llevar antes de seguir. Cuando lo confirme, pídele los datos que el negocio necesita
-  y dile cómo pagar.
+  y aún no te dio, y dile cómo pagar.
 """,
     "checkout": """
-- Cuando decida, llévalo directo al pago con los medios del negocio y pídele solo los datos que el negocio necesita. No alargues
+- Cuando decida, llévalo directo al pago con los medios del negocio y pídele solo los datos que el negocio necesita y aún no te dio. No alargues
   el cierre con más preguntas.
 """,
     "lead_capture": """
 - Tu meta es dejar sus datos para que el equipo lo contacte: cuando muestre interés, pídele los datos que el negocio necesita y
-  dile que el equipo lo contacta para continuar. No le pidas que pague ni le ofrezcas medios de pago, salvo que él lo pida.
+  aún no te dio, y dile que el equipo lo contacta para continuar. No le pidas que pague ni le ofrezcas medios de pago, salvo que
+  él lo pida.
 """,
 }
 
 # Cómo se cierra según el tipo de negocio, si el negocio no eligió una estrategia de cierre.
 PLAYBOOK_CLOSINGS = {
-    "catalog": "- Para cerrar, pídele los datos que el negocio necesita y llévalo a pagar.",
+    "catalog": "- Para cerrar, pídele los datos que el negocio necesita y aún no te dio, y llévalo a pagar.",
     "plans": "- Cuando decida, guíalo a empezar: los datos que hacen falta y el pago.",
     "services": "- Resuelve sus dudas con la información del negocio y, cuando esté listo, pídele los datos que hacen falta y llévalo a pagar.",
     "booking": """
-- Para agendar, pide los datos que el negocio necesita. No confirmes fechas ni horas que no estén en la información del negocio:
+- Para agendar, pide los datos que el negocio necesita y aún no te dio. No confirmes fechas ni horas que no estén en la información del negocio:
   dile que el equipo se las confirma.
 - Si el negocio cobra por adelantado, llévalo a pagar.
 """,
@@ -137,10 +138,13 @@ READER_MESSAGE = "Mensaje del cliente: «{message}»"
 # Lo que entendió el lector de este mensaje, para el asesor (`sections/conversation.py`).
 # Con un ejemplo y con el orden dicho: sin eso, un modelo pequeño a veces escribía «necesito tu nombre y luego te envío los datos» con
 # los datos ya debajo de su mensaje, sobre todo cuando el negocio pide datos para cerrar (medido con la IA real, 13 nov 2026).
+# «Lo que te falte de él» lo leía como «pide ahora todos los datos»: le volvía a pedir el nombre o el teléfono que ya había dado
+# (puerta de calidad, 15 nov 2026). Ahora dice que lo que ya dijo en el chat ya lo tiene.
 PAYMENT_ASKED = (
     "Con este mensaje el cliente recibe los datos para pagar por {method}: van en este mismo mensaje, debajo de lo que escribas, "
     "aunque todavía te falten datos suyos. Empieza diciéndole que ahí abajo se los dejas, por ejemplo: «¡Listo! Ahí abajo te dejo "
-    "los datos para pagar por {method}.» Lo que te falte de él, pídeselo después de esa frase."
+    "los datos para pagar por {method}.» Lo que ya te dijo en el chat (su nombre, su teléfono) ya lo tienes: después de esa frase "
+    "pídele solo lo que todavía falte, si falta algo."
 )
 PAYMENT_ASKED_NO_METHOD = (
     "En este mensaje el cliente pide los datos para pagar y no ha dicho con qué medio: pregúntale con cuál de los medios del negocio."

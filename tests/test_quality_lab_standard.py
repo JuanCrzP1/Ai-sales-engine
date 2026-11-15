@@ -127,7 +127,7 @@ def test_a_judge_failure_without_its_proof_does_not_count():
 
     asked_again = {"regla": "no_pide_lo_ya_dado", "turno": 3, "cita": "¿cuál es tu nombre?", "razon": "pide el nombre otra vez"}
     failures, discarded = judged({**asked_again, "cita_cliente": "Me llamo Juan"})
-    assert failures["no_pide_lo_ya_dado"] == [{"turn": 3, "why": "pide el nombre otra vez"}] and not discarded
+    assert failures["no_pide_lo_ya_dado"] == [{"turn": 3, "why": "pide el nombre otra vez", "customer_said": "Me llamo Juan"}] and not discarded
     # Sin la frase del cliente, con una que no dijo o con una frase del asesor que no está en ese turno, la falla se descarta.
     for broken in (asked_again, {**asked_again, "cita_cliente": "mi nombre es Pedro"}, {**asked_again, "cita": "dame tu nombre", "cita_cliente": "Me llamo Juan"},
                    {**asked_again, "turno": 2, "cita_cliente": "Me llamo Juan"}, {**asked_again, "regla": "otra_regla"}):
@@ -158,6 +158,15 @@ def test_only_the_failures_a_second_look_confirms_count():
     # El segundo revisor ve la regla y la conversación solo hasta ese turno.
     assert len(asked) == 2 and "Cómo así" not in asked[0] and asked[0].startswith("REGLA (responde_lo_que_preguntan): ")
     assert "FALLA REPORTADA en el turno 2: no explica" in asked[1]
+
+
+def test_the_second_look_sees_what_the_customer_said_before():
+    """15 nov 2026: el juez marcó «pide lo ya dado» citando «Quiero Agenda Plus» como si fuera el nombre. El segundo revisor ve esa
+    frase y la regla le pide confirmar solo si de verdad trae el dato."""
+    turns = _turns(("Quiero Agenda Plus", "", "¿Me das tu nombre?"), ("Listo, por Nequi", "", "Listo. ¿Me das tu nombre?"))
+    request = confirm_request("no_pide_lo_ya_dado", turns, {"turn": 2, "why": "pide el nombre otra vez", "customer_said": "Quiero Agenda Plus"})
+    assert "«Quiero Agenda Plus»" in request and "de verdad trae el dato" in request
+    assert "Según el juez" not in confirm_request("explica_cuando_no_entienden", turns, {"turn": 2, "why": "no explica"})
 
 
 # ---------------------------------------------------------------------------

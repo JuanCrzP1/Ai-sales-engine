@@ -73,6 +73,10 @@ def _data_fields(view: PromptView, capabilities: dict) -> list[str]:
     return said_all([*fields, *as_list(as_dict(view.sales.get("closing")).get("required_data"))], DATA)
 
 
+# Pedir solo los datos que faltan: lo que el cliente ya dijo en la conversación no se le vuelve a pedir.
+KNOWN_DATA = "Pide solo los que aún no te dio: si escribió «soy Camila», ya tienes su nombre; llámala Camila."
+
+
 def render(view: PromptView) -> str:
     capabilities = view.capabilities
     methods = payment_methods(view)
@@ -94,6 +98,9 @@ def render(view: PromptView) -> str:
         _financing(view.pricing),
         sentence(f"Para cerrar puedes {', '.join(enabled)}") if enabled else "",
         sentence(f"Datos que pides para cerrar: {', '.join(fields)}") if fields else "",
+        # El asesor pedía la lista completa aunque el cliente ya hubiera dado su nombre o su teléfono (Laura, 14 nov 2026; 7 de 90
+        # conversaciones en la puerta de calidad). Un ejemplo, no una prohibición: con gpt-4o-mini, así funciona.
+        KNOWN_DATA if fields else "",
         f"Para pedirle sus datos, usa este mensaje del negocio: «{data_request}»" if data_request and fields else "",
         # Con reglas propias para pasar el chat (`escalation.py`), el mensaje va con ellas: un solo lugar dice cuándo y cómo pasarlo.
         f"Si lo pasas con una persona del equipo, usa este mensaje del negocio: «{handoff}»"

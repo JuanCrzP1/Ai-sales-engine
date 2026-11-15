@@ -5,6 +5,11 @@ está en el historial de git y en `docs/plan-v1.md`.
 
 ## 15 de noviembre de 2026
 
+**El asistente ya no le pide al cliente lo que ya le dijo**
+- Si tu cliente escribe «soy Laura» o te da su teléfono, el asistente lo usa y pide solo lo que falta para cerrar. Antes, justo al
+  enviarle los datos de pago, le pedía otra vez el nombre o el teléfono.
+- Medido con 90 conversaciones de venta: los casos bajaron de 7 a 2, y seguimos con los que quedan.
+
 **El asistente espera a que tu cliente termine de escribir**
 - Por WhatsApp la gente escribe en varios mensajes seguidos («Hola»… «quiero el plan»… «¿cuánto vale?»). Antes el asistente
   contestaba cada uno por separado y a medias. Ahora espera unos segundos, lee todo junto y **responde una sola vez**.
