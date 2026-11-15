@@ -5,6 +5,13 @@ está en el historial de git y en `docs/plan-v1.md`.
 
 ## 14 de noviembre de 2026
 
+**Los modelos más nuevos ya responden bien**
+- Si elegiste un modelo que «razona» antes de responder (por ejemplo Claude Haiku 5.5, GPT-6 Luna o DeepSeek V4.1 Flash), muchos
+  mensajes le llegaban a tu cliente como «Hubo un problema procesando el mensaje». Ahora el asistente le pide al modelo responder
+  directo: contesta completo, más rápido y gastando menos de tu clave.
+- Comparamos seis modelos con las mismas conversaciones de venta y el modelo recomendado sigue siendo `openai/gpt-4o-mini`: fue el
+  que menos se equivocó con los pagos y con el paso de los chats a tu equipo.
+
 **Tu equipo sabe qué necesita el cliente antes de abrir el chat**
 - Cuando un chat pasa a tu equipo, el asistente deja una **nota corta**: quién es el cliente, qué le interesaba y qué pidió. Antes
   el aviso solo traía su último mensaje («No, gracias, prefiero una persona»), que no decía de qué se trataba.

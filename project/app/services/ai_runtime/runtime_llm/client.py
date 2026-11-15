@@ -18,6 +18,29 @@ def _error_code(response) -> str:
     return str(error.get('code') or '') if isinstance(error, dict) else ''
 
 
+# El asesor conversa por chat y cada respuesta tiene un tope de tokens. Un modelo que razona antes de responder gastaba ese tope
+# pensando y no le quedaba para escribir: el cliente recibía «Hubo un problema…» (Claude Haiku 5.5 en 25 de 32 mensajes y GPT-6 Luna en
+# 12, puerta de calidad del 14 nov 2026, `modelo_r1_*`). Sin razonar responde completo, más rápido y más barato. Los modelos que no
+# razonan aceptan el ajuste y no cambian.
+NO_REASONING = {'enabled': False}
+# Algunos modelos siempre razonan y rechazan apagarlo (gpt-5-mini, gemini-2.5-pro: «Reasoning is mandatory…»). Con ellos, lo mínimo.
+LEAST_REASONING = {'effort': 'minimal'}
+# Los modelos que ya lo rechazaron en este proceso: con ellos se pide lo mínimo desde la primera llamada.
+_MANDATORY_REASONING: set[str] = set()
+
+
+def _reasoning_is_mandatory(response) -> bool:
+    """Si OpenRouter rechazó la llamada porque ese modelo no puede dejar de razonar."""
+    if response.status_code != 400:
+        return False
+    try:
+        error = response.json().get('error') or {}
+    except ValueError:
+        return False
+    message = str(error.get('message') or '') if isinstance(error, dict) else ''
+    return 'reasoning is mandatory' in message.lower()
+
+
 class _OpenRouterCompletions:
     def __init__(self, api_key: str, base_url: str, timeout: int, max_retries: int):
         self.api_key = api_key
@@ -48,8 +71,16 @@ class _OpenRouterCompletions:
                 if temperature is not None:
                     payload['temperature'] = temperature
                 payload.update(kwargs or {})
+                payload.setdefault('reasoning', dict(LEAST_REASONING if model in _MANDATORY_REASONING else NO_REASONING))
+                timeout = self._parent._parent.timeout
                 started = time.monotonic()
-                response = requests.post(url, headers=headers, json=payload, timeout=self._parent._parent.timeout)
+                response = requests.post(url, headers=headers, json=payload, timeout=timeout)
+                if payload['reasoning'] == NO_REASONING and _reasoning_is_mandatory(response):
+                    # Ese modelo no puede dejar de razonar: la llamada rechazada no llegó al modelo y se repite pidiendo lo mínimo.
+                    _MANDATORY_REASONING.add(model)
+                    logger.info('razonamiento_obligatorio', extra={'model': model})
+                    payload['reasoning'] = dict(LEAST_REASONING)
+                    response = requests.post(url, headers=headers, json=payload, timeout=timeout)
                 elapsed_ms = int((time.monotonic() - started) * 1000)
                 logger.info('openrouter_call', extra={'model': model, 'status_code': response.status_code, 'elapsed_ms': elapsed_ms})
                 if response.status_code >= 400:

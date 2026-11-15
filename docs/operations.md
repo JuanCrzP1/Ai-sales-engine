@@ -473,6 +473,16 @@ Esos eventos ayudan a detectar:
 - request al LLM sin credenciales
 - fallback por excepción
 
+### Avisos Del Modelo
+
+| Aviso | Qué pasó | Qué hizo el motor |
+|---|---|---|
+| `razonamiento_obligatorio` | El modelo del negocio no puede dejar de razonar antes de responder (`gpt-5-mini`, `gemini-2.5-pro`). Sale una vez por modelo y por servidor. | Repitió la llamada pidiendo el mínimo de razonamiento, y así sigue con ese modelo. La llamada rechazada no se cobra. |
+| `openrouter_error` | OpenRouter respondió con un error (trae el código, nunca el mensaje del cliente). | El mensaje sale con la respuesta de respaldo. |
+
+A todo modelo se le pide no razonar antes de responder: un asesor de chat no lo necesita, y el razonamiento se comía el tope de la
+respuesta (el cliente recibía «Hubo un problema…»). Ver «La elección del modelo» en [Calidad del asesor](calidad-del-asesor.md).
+
 ### Avisos De La Memoria
 
 Lo que el motor recuerda de cada cliente vive en la base (ver [Arquitectura](architecture.md), «La memoria del motor»). Ninguno de

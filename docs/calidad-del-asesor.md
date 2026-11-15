@@ -17,9 +17,9 @@ publica solo si pasan todas.
 
 ## El estándar
 
-Está en [`experiments/quality_lab/standard.py`](../experiments/quality_lab/standard.py). Son 13 reglas.
+Está en [`experiments/quality_lab/standard.py`](../experiments/quality_lab/standard.py). Son 17 reglas.
 
-**Ocho exactas.** Se comprueban con código, sin opinión, y dan siempre el mismo resultado para la misma conversación.
+**Nueve exactas.** Se comprueban con código, sin opinión, y dan siempre el mismo resultado para la misma conversación.
 
 | Regla | Qué exige |
 |---|---|
@@ -31,16 +31,20 @@ Está en [`experiments/quality_lab/standard.py`](../experiments/quality_lab/stan
 | Pasa al equipo cuando debe | El chat pasa al equipo cuando el cliente pide una persona, reclama o dice que ya pagó; si no, no pasa. |
 | No repite la respuesta | No le responde lo mismo dos veces seguidas. |
 | Sin números de pago falsos | El asesor nunca escribe un número como dato de pago («Nequi: 315…»): el único es el que pone el sistema. |
+| Nota para el equipo | Cuando el chat pasa al equipo, el equipo recibe una nota de lo que necesita el cliente, sin datos de pago. |
 
-**Cinco con juez.** Necesitan leer la conversación.
+**Ocho con juez.** Necesitan leer la conversación.
 
 | Regla | Qué exige |
 |---|---|
 | Responde lo que preguntan | Si pregunta si puede pagar con un medio, le dice claramente si se puede. |
 | No pide lo ya dado | No vuelve a pedir un dato que el cliente ya le dio. |
+| No pide el dato de pago | Nunca le pide al cliente el número o la cuenta a la que debe pagar, ni le dice que pague al número que dio el cliente. |
 | No dice nada falso del pago | No dice que no puede enviar los datos, que no recibe un medio que sí tiene, ni que ya envió algo que no envió. |
 | Explica cuando no entienden | Ante un «cómo así», le explica qué hacer. |
 | Coherente con los datos | Cuando van los datos, no dice que los enviará después ni los condiciona. |
+| Sigue las reglas para pasar | Con las reglas de «Cuándo pasar a una persona» del negocio, pasa el chat cuando debe y solo entonces. |
+| Nota fiel | La nota para el equipo dice qué necesita el cliente y no inventa datos que no dio. |
 
 ### Las conversaciones
 
@@ -48,8 +52,10 @@ Las arma `conversations_for` con la oferta y los medios de pago reales del negoc
 
 - **El chat de producción** (13 turnos): el chat real del 13 de noviembre. Incluye «Y puedo trasferir», «Y Nequi no», «Te pago por
   Nequi», «Pero se me borró el Nequi me lo envías de nuevo», «Cómo así», «Ya voy a pagar» y «ya te consigné».
-- **Siete cortas**, cada una con un cliente nuevo: pide el medio con un error de escritura («pásame el nekui»), pregunta a dónde
-  consigna, pregunta cómo paga, pregunta si tienen un medio, pide los datos de otro medio, pide hablar con una persona y reclama.
+- **Nueve cortas**, cada una con un cliente nuevo: se presenta al empezar y luego dice con qué paga (Laura, 14 nov: el asesor le
+  pidió el nombre que ya había dado), da su teléfono antes de preguntar cómo pagar (13 nov: el asesor le pidió «el número al que
+  debo enviar el dinero»), pide el medio con un error de escritura («pásame el nekui»), pregunta a dónde consigna, pregunta cómo
+  paga, pregunta si tienen un medio, pide los datos de otro medio, pide hablar con una persona y reclama.
 
 Cada turno dice qué se espera: que no le lleguen datos, que le lleguen, que a esa altura ya los tenga, o que el chat pase al equipo.
 Lo que el cliente cuenta de sí mismo va con el tipo de negocio (a un restaurante no le dice «es una tienda de ropa»).
@@ -90,8 +96,11 @@ Aun así el juez varía un poco de una corrida a otra. Las reglas exactas no.
 
 - Corre el código del árbol de trabajo en una copia aislada, sin `.env`, con la red cerrada salvo OpenRouter.
 - Usa la clave de OpenRouter del `.env`. Nunca la imprime.
-- Con tres muestras de un negocio tarda unos cinco minutos y cuesta cerca de USD 0,05. El cálculo previo es conservador: muestra
-  cuatro o cinco veces más.
+- Con tres muestras de un negocio y gpt-4o-mini tarda unos cinco minutos y cuesta cerca de USD 0,08. El cálculo previo usa lo
+  medido por mensaje (unos 3.800 tokens en 2,1 llamadas). Si el modelo puede razonar antes de responder, suma un máximo de
+  razonamiento: ahí el gasto real suele ser menor que el calculado.
+- El informe dice, por cada mensaje del cliente, cuánto tarda la respuesta (la mediana y el 5 % más lento), cuánto cuesta cada
+  1.000 mensajes según lo que cobró OpenRouter, cuántas respuestas vinieron fuera de formato y cuántas no las pudo usar el motor.
 - Termina con código 0 si pasa y 1 si no, para usarlo en un script.
 
 ### Qué deja
@@ -104,6 +113,35 @@ En `experiments/quality_lab/results/<identificador>/`:
 - `captures.json`: las conversaciones tal como salieron, con los prompts.
 
 Ninguno lleva datos de pago: lo que entregó el motor aparece como `[dato entregado por el motor]`.
+
+## Cómo se elige el modelo
+
+El modelo cambia todo lo que dice el asesor, y también el lector de pagos, la nota para el equipo y el resumen: todos usan el modelo
+del negocio. Se elige con la misma puerta, cambiando solo `--model`, y se compara con
+[`compare_models.py`](../experiments/quality_lab/compare_models.py).
+
+**La regla de decisión se fija antes de ver resultados**, para que el resultado no la acomode:
+
+1. **Fuera con cualquier falla crítica.** Un error con los datos de pago (no le llegan, le llegan sin pedirlos, un número falso,
+   pedirle al cliente la cuenta a la que paga, decir algo falso del pago), que no pase el chat al equipo cuando debe, que el equipo no
+   reciba la nota, o una respuesta que el motor no pudo usar. Con dinero de por medio, estos errores no se compensan con nada.
+2. **Fuera si es lento:** el 5 % más lento de sus respuestas pasa de 8 segundos. Por WhatsApp ya se siente lento.
+3. **De los que quedan, el que tiene más conversaciones sin ninguna falla.** Con una conversación o menos de diferencia es ruido, y
+   gana el más barato.
+
+**En dos rondas**, para no gastar de más:
+
+1. **Selección:** una muestra de cada modelo con el negocio real. Descarta los que fallan claro.
+2. **Confirmación:** los mejores, junto al modelo actual, con tres muestras y tres tipos de negocio (planes, productos y servicios
+   con cita). La decisión sale de esta ronda.
+
+```bash
+.venv/bin/python experiments/quality_lab/run_standard_gate.py --experiment modelo_<nombre> --model <proveedor/modelo> --samples 3 --tenants asesor_ai_prod,restaurant,clinic
+.venv/bin/python experiments/quality_lab/compare_models.py --experiments modelo_a,modelo_b,modelo_c --output eleccion_de_modelo
+```
+
+Un cuidado: el juez es un modelo de Google. Cuando el candidato también lo es, su veredicto puede favorecerlo; las reglas exactas no
+dependen del juez.
 
 ## Cómo se publica un cambio al asesor
 
@@ -221,6 +259,45 @@ inventa un dato que no dijo; el juez cita la frase de la nota). El juez ve la no
 | `…_e` | **Nota fiel 24 de 24.** Solo un «cómo así» flojo, la debilidad de `gpt-4o-mini` de siempre. | |
 | `nota_equipo_reglas_20261114` | Con reembolsos, la nota decía «debido a su reclamo»: el motivo que marcó el asesor se tomaba como hecho. | El motivo es una pista; la nota sale de los mensajes. El juez ya no pide «ofrecer ayuda» en un tema del equipo. |
 | `nota_equipo_reglas_20261114_b` | **Pasa: 24 de 24** (vuelto a juzgar con la regla precisada; las respuestas eran correctas). | |
+
+### La elección del modelo (14 de noviembre de 2026)
+
+Rama `modelo-del-asesor`. Con la regla de decisión fijada antes de correr (ver «Cómo se elige el modelo»).
+
+**Selección** (una muestra, el negocio real, 10 conversaciones). Primero, tres de los seis modelos dejaban al cliente sin respuesta en
+el 40 % a 80 % de los mensajes: Claude Haiku 5.5, GPT-6 Luna y DeepSeek V4.1 Flash razonan antes de responder, y ese razonamiento se
+comía el tope de 400 tokens de la respuesta. **Era un error del motor**, no de los modelos: cualquier negocio que eligiera uno de ellos
+en el panel recibía «Hubo un problema…». Ahora el motor les pide no razonar y, a los que siempre razonan (gpt-5-mini,
+gemini-2.5-pro), lo mínimo ([`client.py`](../project/app/services/ai_runtime/runtime_llm/client.py)). Ya con el arreglo:
+
+| Modelo | Sin fallas | Respuesta (mediana · 5 % más lento) | USD por 1.000 mensajes | |
+|---|---|---|---|---|
+| `openai/gpt-6-luna` | 10 de 10 | 3,0 s · 5,7 s | 0,29 | a confirmación |
+| `openai/gpt-4o-mini` | 10 de 10 | 3,0 s · 4,5 s | 0,42 | a confirmación |
+| `google/gemini-2.5-flash` | 10 de 10 | 1,9 s · 3,2 s | 0,81 | a confirmación |
+| `deepseek/deepseek-v4.1-flash` | 8 de 10 | 2,5 s · 6,5 s | 0,31 | fuera: algo falso del pago |
+| `google/gemini-3.5-flash-lite` | 7 de 10 | 2,2 s · 3,8 s | 1,69 | fuera: datos sin pedirlos, bloque repetido |
+| `anthropic/claude-haiku-5.5` | 7 de 10 | 2,5 s · 4,7 s | 0,78 | fuera: no pasó al equipo; 22 de 32 respuestas fuera de formato |
+
+**Confirmación** (tres muestras de tu negocio, el restaurante y la clínica, más las conversaciones de «Cuándo pasar a una persona»:
+114 conversaciones por modelo, `eleccion_de_modelo_ronda2_20261114`):
+
+| Modelo | Sin fallas | Fallas críticas del modelo | Respuesta | USD por 1.000 mensajes |
+|---|---|---|---|---|
+| **`openai/gpt-4o-mini`** | **106 de 114** | ninguna | 3,3 s · 4,9 s | 0,37 |
+| `google/gemini-2.5-flash` | 101 de 114 | pasa el chat a la primera aunque el negocio pida ofrecer ayuda (3 de 6) | 2,0 s · 3,2 s | 0,88 |
+| `openai/gpt-6-luna` | 98 de 114 | le dijo al cliente «no se volvieron a enviar» los datos que sí se le reenviaron | 3,2 s · 5,5 s | 0,20 |
+
+**Decisión: el modelo se queda en `openai/gpt-4o-mini`.** Con la regla al pie de la letra ninguno califica: los tres tuvieron entre 1
+y 3 mensajes sin respuesta de la IA. En esos mensajes el lector de pagos respondió y la llamada al asesor nunca llegó a registrarse.
+OpenRouter no respondió con error, porque eso queda registrado con su código: falló la conexión o pasó el límite de 15 segundos.
+Pasa igual en los tres modelos y en las corridas en paralelo, así que no sirve para elegir entre ellos. Sin esa causa común,
+gpt-4o-mini es el único sin fallas críticas propias y el que más conversaciones limpias tuvo.
+
+Lo que queda abierto:
+- **Mensajes sin respuesta por la conexión** (unos 6 de cada 1.000 en la prueba): el motor no anota la causa y no reintenta.
+- **«No pide lo ya dado»** falló en 4 o 5 conversaciones con los tres modelos: no se arregla cambiando de modelo, sino lo que se le
+  pide al asesor al cerrar (pide los datos del negocio aunque el cliente ya los dio).
 
 ## Lo que la puerta no cubre
 

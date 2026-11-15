@@ -225,6 +225,81 @@ def test_the_openrouter_logs_never_carry_what_the_customer_wrote(monkeypatch):
     assert records and MESSAGE not in repr(records) and KEY not in repr(records)
 
 
+class _OpenRouter:
+    """OpenRouter de mentira: anota cada cuerpo enviado. Los modelos de `mandatory` rechazan apagar el razonamiento, como gpt-5-mini."""
+
+    def __init__(self, *, mandatory: tuple[str, ...] = ()):
+        self.mandatory, self.bodies = mandatory, []
+
+    def post(self, _url, headers=None, json=None, timeout=None):  # noqa: A002 - misma firma que requests.post
+        self.bodies.append(dict(json))
+        refused = json.get("model") in self.mandatory and json.get("reasoning") == {"enabled": False}
+        status, payload = (400, {"error": {"code": 400, "message": "Reasoning is mandatory for this endpoint and cannot be disabled."}}) if refused \
+            else (200, {"choices": [{"message": {"content": reply("Hola.")}}]})
+
+        class Response:
+            status_code = status
+
+            def raise_for_status(self):
+                if status >= 400:
+                    raise RuntimeError("HTTP 400")
+
+            def json(self):
+                return payload
+
+        return Response()
+
+
+def test_the_model_answers_without_reasoning_first(monkeypatch):
+    """Claude Haiku 5.5 y GPT-6 Luna gastaban en razonar el tope de su respuesta y el cliente recibía «Hubo un problema…» (puerta de
+    calidad del 14 nov 2026). Se les pide no razonar; los modelos que no razonan lo aceptan sin cambiar."""
+    provider = _OpenRouter()
+    monkeypatch.setattr(client_module.requests, "post", provider.post)
+    completions = client_module._OpenRouterCompletions(KEY, "https://openrouter.ai/api/v1", 10, 0)
+    completions.chat.completions.create(model="anthropic/claude-haiku-5.5", messages=[{"role": "user", "content": MESSAGE}], max_tokens=400)
+    assert [body["reasoning"] for body in provider.bodies] == [{"enabled": False}]
+
+
+def test_a_model_that_always_reasons_is_asked_for_the_least(monkeypatch):
+    """gpt-5-mini y gemini-2.5-pro rechazan apagar el razonamiento: la llamada se repite una vez pidiendo lo mínimo, y desde ahí ese
+    modelo se pide así de entrada."""
+    monkeypatch.setattr(client_module, "_MANDATORY_REASONING", set())
+    provider = _OpenRouter(mandatory=("openai/gpt-5-mini",))
+    monkeypatch.setattr(client_module.requests, "post", provider.post)
+    completions = client_module._OpenRouterCompletions(KEY, "https://openrouter.ai/api/v1", 10, 0)
+    for _ in range(2):
+        answer = completions.chat.completions.create(model="openai/gpt-5-mini", messages=[{"role": "user", "content": MESSAGE}])
+        assert answer["choices"][0]["message"]["content"] == reply("Hola.")
+    assert [body["reasoning"] for body in provider.bodies] == [{"enabled": False}, {"effort": "minimal"}, {"effort": "minimal"}]
+    # Otro modelo empieza sin razonar.
+    completions.chat.completions.create(model="openai/gpt-4o-mini", messages=[{"role": "user", "content": MESSAGE}])
+    assert provider.bodies[-1]["reasoning"] == {"enabled": False}
+
+
+def test_another_error_is_not_repeated(monkeypatch):
+    class Refused(_OpenRouter):
+        def post(self, _url, headers=None, json=None, timeout=None):  # noqa: A002
+            self.bodies.append(dict(json))
+
+            class Response:
+                status_code = 401
+
+                def raise_for_status(self):
+                    raise RuntimeError("HTTP 401")
+
+                def json(self):
+                    return {"error": {"code": 401, "message": "No auth credentials found"}}
+
+            return Response()
+
+    provider = Refused()
+    monkeypatch.setattr(client_module.requests, "post", provider.post)
+    completions = client_module._OpenRouterCompletions(KEY, "https://openrouter.ai/api/v1", 10, 0)
+    with pytest.raises(RuntimeError):
+        completions.chat.completions.create(model="openai/gpt-4o-mini", messages=[{"role": "user", "content": MESSAGE}])
+    assert len(provider.bodies) == 1
+
+
 # ---------------------------------------------------------------------------
 # El consumo de cada negocio
 # ---------------------------------------------------------------------------

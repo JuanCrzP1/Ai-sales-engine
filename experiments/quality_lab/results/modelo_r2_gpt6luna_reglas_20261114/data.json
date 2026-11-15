@@ -1,0 +1,1222 @@
+{
+ "por_mensaje": {
+  "mensajes": 66,
+  "segundos_mediana": 3.6,
+  "segundos_p95": 5.5,
+  "usd_por_1000_mensajes": 0.18,
+  "fuera_de_formato": 0,
+  "sin_respuesta_de_la_ia": 0,
+  "tokens_de_razonamiento_por_mensaje": 0
+ },
+ "experiment": "modelo_r2_gpt6luna_reglas_20261114",
+ "candidate": "48d37ce + cambios",
+ "model": "openai/gpt-6-luna",
+ "judge_model": "google/gemini-2.5-flash",
+ "samples": 3,
+ "tenants": [
+  "asesor_ai_prod",
+  "restaurant"
+ ],
+ "rows": [
+  {
+   "tenant": "asesor_ai_prod",
+   "conversation": "pide una persona y luego insiste",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_pide_el_dato_de_pago": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": [],
+    "sigue_las_reglas_para_pasar": [],
+    "nota_fiel": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Hola, me interesa Plan Basico",
+     "expect": "",
+     "reply": "Perfecto. El Plan Básico incluye configuración inicial, guía de integración con WhatsApp y un asistente conversacional inteligente. El primer mes cuesta COP 210.000 y luego COP 110.000 al mes; se puede cancelar mensualmente. Para iniciar, compárteme tu nombre, teléfono y los detalles de tu negocio.",
+     "handoff": false,
+     "team_note": ""
+    },
+    {
+     "turn": 2,
+     "message": "Quiero hablar con una persona",
+     "expect": "ofrece_ayuda",
+     "reply": "Con gusto te ayudo por aquí. ¿Qué necesitas resolver con una persona del equipo?",
+     "handoff": false,
+     "team_note": ""
+    },
+    {
+     "turn": 3,
+     "message": "No, gracias, prefiero que me atienda una persona",
+     "expect": "pasa_al_equipo",
+     "reply": "Te paso con alguien del equipo por este mismo chat. En un momento te escriben.",
+     "handoff": true,
+     "team_note": "El cliente está interesado en el Plan Básico y prefiere que lo atienda una persona."
+    }
+   ]
+  },
+  {
+   "tenant": "asesor_ai_prod",
+   "conversation": "pregunta por un tema del equipo",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_pide_el_dato_de_pago": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": [],
+    "sigue_las_reglas_para_pasar": [],
+    "nota_fiel": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Hola, me interesa Plan Basico",
+     "expect": "",
+     "reply": "Perfecto. El Plan Básico incluye configuración inicial, guía de integración con WhatsApp y asistente conversacional inteligente. El primer mes cuesta COP 210.000 y luego COP 110.000 al mes; no incluye costos de Meta, tokens de IA ni personalización avanzada. Para arrancar, compárteme tu nombre, teléfono y los detalles de tu negocio.",
+     "handoff": false,
+     "team_note": ""
+    },
+    {
+     "turn": 2,
+     "message": "Si no me sirve, ¿cómo es lo del reembolso? ¿Me devuelven la plata?",
+     "expect": "pasa_al_equipo",
+     "reply": "Te paso con alguien del equipo para que te ayude con el tema del reembolso. En un momento te escriben.",
+     "handoff": true,
+     "team_note": "El cliente está interesado en el Plan Básico y pregunta si le devuelven el dinero cuando el plan no le sirve."
+    }
+   ]
+  },
+  {
+   "tenant": "asesor_ai_prod",
+   "conversation": "pregunta por un tema que resuelve el asistente",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_pide_el_dato_de_pago": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": [],
+    "sigue_las_reglas_para_pasar": [],
+    "nota_fiel": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Hola, me interesa Plan Basico",
+     "expect": "",
+     "reply": "Perfecto. El Plan Básico incluye configuración inicial, guía de integración con WhatsApp y asistente conversacional inteligente. El primer mes cuesta COP 210.000 (implementación + mes); luego COP 110.000 al mes. No incluye costos de Meta, tokens de IA ni personalización avanzada. Para arrancar, compárteme tu nombre, teléfono y qué tipo de negocio tienes.",
+     "handoff": false,
+     "team_note": ""
+    },
+    {
+     "turn": 2,
+     "message": "¿Tienen algún descuento o promoción?",
+     "expect": "",
+     "reply": "Por ahora no tengo descuentos ni promociones informados. El Plan Básico cuesta COP 210.000 el primer mes y luego COP 110.000 mensuales, sin permanencia obligatoria. Si te sirve, avanzamos con la activación y me compartes tu nombre, teléfono y detalles de tu negocio.",
+     "handoff": false,
+     "team_note": ""
+    }
+   ]
+  },
+  {
+   "tenant": "asesor_ai_prod",
+   "conversation": "la conversación se estanca",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [
+     {
+      "turn": 4,
+      "why": "repitió la respuesta anterior"
+     }
+    ],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_pide_el_dato_de_pago": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": [],
+    "sigue_las_reglas_para_pasar": [],
+    "nota_fiel": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Hola, me interesa Plan Basico",
+     "expect": "",
+     "reply": "Perfecto. El Plan Básico incluye configuración inicial, guía de integración con WhatsApp y asistente conversacional inteligente. El primer mes cuesta COP 210.000 y luego COP 110.000 al mes; no incluye costos de Meta, tokens de IA ni personalización avanzada. Para arrancar, compárteme tu nombre, teléfono y los detalles de tu negocio.",
+     "handoff": false,
+     "team_note": ""
+    },
+    {
+     "turn": 2,
+     "message": "No entiendo nada de lo que me dices",
+     "expect": "puede_pasar",
+     "reply": "Perdón, te lo explico simple: el Plan Básico ayuda a responder y dar seguimiento a tus clientes por WhatsApp. El primer mes cuesta COP 210.000 y después COP 110.000 al mes. Para empezar, necesito tu nombre, teléfono y qué negocio tienes.",
+     "handoff": false,
+     "team_note": ""
+    },
+    {
+     "turn": 3,
+     "message": "Sigo sin entender, ya te lo pregunté y no me ayudas",
+     "expect": "puede_pasar",
+     "reply": "Entiendo la frustración. Te paso con alguien del equipo por este mismo chat. En un momento te escriben.",
+     "handoff": true,
+     "team_note": "El cliente está interesado en el Plan Básico y dice que sigue sin entender la información que recibió y que no le han ayudado."
+    },
+    {
+     "turn": 4,
+     "message": "Esto no me sirve, ya me cansé de preguntar lo mismo",
+     "expect": "pasa_a_esta_altura",
+     "reply": "Entiendo la frustración. Te paso con alguien del equipo por este mismo chat. En un momento te escriben.",
+     "handoff": true,
+     "team_note": "El cliente está interesado en el Plan Básico. Dice que no entiende la información y que no ha recibido ayuda pese a preguntar varias veces."
+    }
+   ]
+  },
+  {
+   "tenant": "asesor_ai_prod",
+   "conversation": "pide una persona y luego insiste",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_pide_el_dato_de_pago": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": [],
+    "sigue_las_reglas_para_pasar": [],
+    "nota_fiel": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Hola, me interesa Plan Basico",
+     "expect": "",
+     "reply": "Perfecto. El Plan Básico incluye configuración inicial, guía de integración con WhatsApp y asistente conversacional inteligente. El primer mes cuesta COP 210.000 y luego COP 110.000 al mes; no tiene permanencia obligatoria. Para arrancar, compárteme tu nombre, teléfono y los detalles de tu negocio.",
+     "handoff": false,
+     "team_note": ""
+    },
+    {
+     "turn": 2,
+     "message": "Quiero hablar con una persona",
+     "expect": "ofrece_ayuda",
+     "reply": "Con gusto te ayudo por aquí. ¿Qué necesitas revisar del Plan Básico?",
+     "handoff": false,
+     "team_note": ""
+    },
+    {
+     "turn": 3,
+     "message": "No, gracias, prefiero que me atienda una persona",
+     "expect": "pasa_al_equipo",
+     "reply": "Te paso con alguien del equipo por este mismo chat. En un momento te escriben.",
+     "handoff": true,
+     "team_note": "El cliente está interesado en el Plan Básico y prefiere que lo atienda una persona."
+    }
+   ]
+  },
+  {
+   "tenant": "asesor_ai_prod",
+   "conversation": "pregunta por un tema del equipo",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_pide_el_dato_de_pago": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": [],
+    "sigue_las_reglas_para_pasar": [],
+    "nota_fiel": []
+   },
+   "discarded": [
+    {
+     "turn": 2,
+     "why": "Debió ofrecer ayuda antes de pasar el chat.",
+     "rule": "sigue_las_reglas_para_pasar"
+    }
+   ],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Hola, me interesa Plan Basico",
+     "expect": "",
+     "reply": "Perfecto. El Plan Básico incluye configuración inicial, guía de integración con WhatsApp y un asistente conversacional inteligente. El primer mes cuesta COP 210.000 y luego COP 110.000 mensuales; no incluye costos de Meta, tokens de IA ni personalización avanzada. Para iniciar, envíame tu nombre, teléfono y detalles de tu negocio, y te indico cómo pagar.",
+     "handoff": false,
+     "team_note": ""
+    },
+    {
+     "turn": 2,
+     "message": "Si no me sirve, ¿cómo es lo del reembolso? ¿Me devuelven la plata?",
+     "expect": "pasa_al_equipo",
+     "reply": "Te paso con alguien del equipo por este mismo chat. En un momento te escriben.",
+     "handoff": true,
+     "team_note": "El cliente está interesado en el Plan Básico y pregunta si le devuelven el dinero si no le sirve."
+    }
+   ]
+  },
+  {
+   "tenant": "asesor_ai_prod",
+   "conversation": "pregunta por un tema que resuelve el asistente",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_pide_el_dato_de_pago": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": [],
+    "sigue_las_reglas_para_pasar": [],
+    "nota_fiel": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Hola, me interesa Plan Basico",
+     "expect": "",
+     "reply": "Perfecto. El Plan Básico incluye configuración inicial, guía de integración con WhatsApp y asistente conversacional inteligente. El primer mes cuesta COP 210.000 y luego COP 110.000 al mes; no incluye costos de Meta, tokens de IA ni personalización avanzada. Para iniciar, compárteme tu nombre, teléfono y los detalles de tu negocio.",
+     "handoff": false,
+     "team_note": ""
+    },
+    {
+     "turn": 2,
+     "message": "¿Tienen algún descuento o promoción?",
+     "expect": "",
+     "reply": "Por ahora no tengo descuentos o promociones confirmados. El Plan Básico cuesta COP 100.000 de implementación + COP 110.000 al mes; el primer mes pagas COP 210.000 y luego COP 110.000 mensuales. Incluye configuración inicial, guía de integración con WhatsApp y asistente conversacional inteligente. Avanzamos con esos datos para iniciar: nombre, teléfono y detalles de tu negocio.",
+     "handoff": false,
+     "team_note": ""
+    }
+   ]
+  },
+  {
+   "tenant": "asesor_ai_prod",
+   "conversation": "la conversación se estanca",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [
+     {
+      "turn": 4,
+      "why": "repitió la respuesta anterior"
+     }
+    ],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_pide_el_dato_de_pago": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": [],
+    "sigue_las_reglas_para_pasar": [],
+    "nota_fiel": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Hola, me interesa Plan Basico",
+     "expect": "",
+     "reply": "Perfecto. El Plan Básico encaja para automatizar respuestas y dar seguimiento en WhatsApp. El primer mes cuesta COP 210.000 (implementación + primer mes); luego COP 110.000 al mes. Para arrancar, compárteme tu nombre, teléfono y los detalles de tu negocio.",
+     "handoff": false,
+     "team_note": ""
+    },
+    {
+     "turn": 2,
+     "message": "No entiendo nada de lo que me dices",
+     "expect": "puede_pasar",
+     "reply": "Perdón, te lo explico simple: el Plan Básico configura un asistente que responde y hace seguimiento por WhatsApp. Cuesta COP 100.000 de implementación y COP 110.000 al mes; el primer mes pagas COP 210.000. Luego, COP 110.000 al mes. Si te sirve, avanzamos con la activación y me compartes tu nombre, teléfono y detalles del negocio.",
+     "handoff": false,
+     "team_note": ""
+    },
+    {
+     "turn": 3,
+     "message": "Sigo sin entender, ya te lo pregunté y no me ayudas",
+     "expect": "puede_pasar",
+     "reply": "Te paso con alguien del equipo por este mismo chat. En un momento te escriben.",
+     "handoff": true,
+     "team_note": "El cliente está interesado en el Plan Básico. Dice que sigue sin entender la explicación y que no le han ayudado."
+    },
+    {
+     "turn": 4,
+     "message": "Esto no me sirve, ya me cansé de preguntar lo mismo",
+     "expect": "pasa_a_esta_altura",
+     "reply": "Te paso con alguien del equipo por este mismo chat. En un momento te escriben.",
+     "handoff": true,
+     "team_note": "El cliente está interesado en el Plan Básico. Dice que sigue sin entender y que ya se cansó de preguntar lo mismo."
+    }
+   ]
+  },
+  {
+   "tenant": "asesor_ai_prod",
+   "conversation": "pide una persona y luego insiste",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_pide_el_dato_de_pago": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": [],
+    "sigue_las_reglas_para_pasar": [],
+    "nota_fiel": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Hola, me interesa Plan Basico",
+     "expect": "",
+     "reply": "El Plan Básico encaja para automatizar respuestas y dar seguimiento por WhatsApp. El primer mes cuesta COP 210.000 (COP 100.000 de implementación + COP 110.000 mensual); después, COP 110.000 al mes. Incluye configuración inicial, guía de integración y asistente conversacional. No incluye costos de Meta, tokens de IA ni personalización avanzada. Para arrancar, compárteme tu nombre, teléfono y detalles de tu negocio; luego eliges cómo pagar.",
+     "handoff": false,
+     "team_note": ""
+    },
+    {
+     "turn": 2,
+     "message": "Quiero hablar con una persona",
+     "expect": "ofrece_ayuda",
+     "reply": "Con gusto te ayudo por aquí. ¿Qué necesitas resolver sobre el Plan Básico?",
+     "handoff": false,
+     "team_note": ""
+    },
+    {
+     "turn": 3,
+     "message": "No, gracias, prefiero que me atienda una persona",
+     "expect": "pasa_al_equipo",
+     "reply": "Te paso con alguien del equipo por este mismo chat. En un momento te escriben.",
+     "handoff": true,
+     "team_note": "El cliente está interesado en el Plan Básico y pidió que lo atienda una persona."
+    }
+   ]
+  },
+  {
+   "tenant": "asesor_ai_prod",
+   "conversation": "pregunta por un tema del equipo",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_pide_el_dato_de_pago": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": [],
+    "sigue_las_reglas_para_pasar": [],
+    "nota_fiel": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Hola, me interesa Plan Basico",
+     "expect": "",
+     "reply": "El Plan Básico encaja para automatizar respuestas y seguimiento en WhatsApp. El primer mes cuesta COP 210.000: COP 100.000 de implementación y COP 110.000 del mes; después, COP 110.000 mensuales. Incluye configuración inicial, guía de integración con WhatsApp y asistente conversacional. No incluye costos de Meta, tokens de IA ni personalización avanzada. Para iniciar, envíame tu nombre, teléfono y detalles de tu negocio.",
+     "handoff": false,
+     "team_note": ""
+    },
+    {
+     "turn": 2,
+     "message": "Si no me sirve, ¿cómo es lo del reembolso? ¿Me devuelven la plata?",
+     "expect": "pasa_al_equipo",
+     "reply": "Te paso con alguien del equipo por este mismo chat. En un momento te escriben.",
+     "handoff": true,
+     "team_note": "El cliente está interesado en el Plan Básico y pregunta si le devuelven el dinero si no le sirve."
+    }
+   ]
+  },
+  {
+   "tenant": "asesor_ai_prod",
+   "conversation": "pregunta por un tema que resuelve el asistente",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_pide_el_dato_de_pago": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": [],
+    "sigue_las_reglas_para_pasar": [],
+    "nota_fiel": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Hola, me interesa Plan Basico",
+     "expect": "",
+     "reply": "Perfecto. El Plan Básico incluye configuración inicial, guía de integración con WhatsApp y asistente conversacional inteligente. El primer mes cuesta COP 210.000 y luego COP 110.000 al mes; puedes cancelar mensualmente. Para arrancar, compárteme tu nombre, teléfono y un detalle de cómo usas WhatsApp para atender clientes.",
+     "handoff": false,
+     "team_note": ""
+    },
+    {
+     "turn": 2,
+     "message": "¿Tienen algún descuento o promoción?",
+     "expect": "",
+     "reply": "Por ahora no tengo descuentos o promociones registrados. El Plan Básico cuesta COP 210.000 el primer mes y luego COP 110.000 al mes, sin permanencia obligatoria. Incluye configuración inicial, guía de integración con WhatsApp y asistente conversacional inteligente. Si te sirve, seguimos con la activación.",
+     "handoff": false,
+     "team_note": ""
+    }
+   ]
+  },
+  {
+   "tenant": "asesor_ai_prod",
+   "conversation": "la conversación se estanca",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_pide_el_dato_de_pago": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": [],
+    "sigue_las_reglas_para_pasar": [],
+    "nota_fiel": []
+   },
+   "discarded": [
+    {
+     "turn": 3,
+     "why": "No explica, solo pasa el chat sin intentar resolver la duda.",
+     "rule": "explica_cuando_no_entienden"
+    }
+   ],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Hola, me interesa Plan Basico",
+     "expect": "",
+     "reply": "El Plan Básico incluye configuración inicial, guía de integración con WhatsApp y un asistente conversacional inteligente. El primer mes cuesta COP 210.000 y luego COP 110.000 al mes; no incluye costos de Meta, tokens de IA ni personalización avanzada. Si te sirve, arrancamos con la configuración. Para iniciar, compárteme tu nombre, teléfono y los detalles de tu negocio.",
+     "handoff": false,
+     "team_note": ""
+    },
+    {
+     "turn": 2,
+     "message": "No entiendo nada de lo que me dices",
+     "expect": "puede_pasar",
+     "reply": "Perdón, me enredé. El Plan Básico ayuda a responder y hacer seguimiento por WhatsApp automáticamente. ¿Qué pasa hoy con tus mensajes: no alcanzas a responderlos o se te pierden los seguimientos?",
+     "handoff": false,
+     "team_note": ""
+    },
+    {
+     "turn": 3,
+     "message": "Sigo sin entender, ya te lo pregunté y no me ayudas",
+     "expect": "puede_pasar",
+     "reply": "Entiendo la molestia. Te paso con alguien del equipo por este mismo chat. En un momento te escriben.",
+     "handoff": true,
+     "team_note": "El cliente está interesado en el Plan Básico. Dice que no entiende la información recibida y que no le han ayudado."
+    },
+    {
+     "turn": 4,
+     "message": "Esto no me sirve, ya me cansé de preguntar lo mismo",
+     "expect": "pasa_a_esta_altura",
+     "reply": "Te paso con alguien del equipo por este mismo chat. En un momento te escriben.",
+     "handoff": true,
+     "team_note": "El cliente está interesado en el Plan Básico y dice que no entiende la información recibida. Reclama que ya preguntó lo mismo y no le ayudan."
+    }
+   ]
+  },
+  {
+   "tenant": "restaurant",
+   "conversation": "pide una persona y luego insiste",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_pide_el_dato_de_pago": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": [],
+    "sigue_las_reglas_para_pasar": [],
+    "nota_fiel": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Hola, me interesa Hamburguesa Sencilla",
+     "expect": "",
+     "reply": "¡Claro! La Hamburguesa Sencilla cuesta COP 18.000 e incluye carne artesanal, queso y vegetales frescos. ¿Cuántas quieres y sería para domicilio en El Poblado o Laureles, o para recoger?",
+     "handoff": false,
+     "team_note": ""
+    },
+    {
+     "turn": 2,
+     "message": "Quiero hablar con una persona",
+     "expect": "ofrece_ayuda",
+     "reply": "Con gusto te ayudo por aquí. ¿Qué necesitas saber sobre tu pedido de Hamburguesa Sencilla?",
+     "handoff": false,
+     "team_note": ""
+    },
+    {
+     "turn": 3,
+     "message": "No, gracias, prefiero que me atienda una persona",
+     "expect": "pasa_al_equipo",
+     "reply": "Te paso con alguien del equipo por este mismo chat. En un momento te escriben.",
+     "handoff": true,
+     "team_note": "El cliente está interesado en la Hamburguesa Sencilla y pidió que lo atienda una persona."
+    }
+   ]
+  },
+  {
+   "tenant": "restaurant",
+   "conversation": "pregunta por un tema del equipo",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_pide_el_dato_de_pago": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": [],
+    "sigue_las_reglas_para_pasar": [],
+    "nota_fiel": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Hola, me interesa Hamburguesa Sencilla",
+     "expect": "",
+     "reply": "¡Claro! La Hamburguesa Sencilla cuesta COP 18.000 e incluye carne artesanal, queso y vegetales frescos. ¿Cuántas quieres y sería para domicilio en El Poblado o Laureles, o para recoger en el local?",
+     "handoff": false,
+     "team_note": ""
+    },
+    {
+     "turn": 2,
+     "message": "Si no me sirve, ¿cómo es lo del reembolso? ¿Me devuelven la plata?",
+     "expect": "pasa_al_equipo",
+     "reply": "Te paso con alguien del equipo por este mismo chat. En un momento te escriben.",
+     "handoff": true,
+     "team_note": "El cliente está interesado en la Hamburguesa Sencilla y pregunta cómo funciona el reembolso si no le sirve."
+    }
+   ]
+  },
+  {
+   "tenant": "restaurant",
+   "conversation": "pregunta por un tema que resuelve el asistente",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_pide_el_dato_de_pago": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": [],
+    "sigue_las_reglas_para_pasar": [],
+    "nota_fiel": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Hola, me interesa Hamburguesa Sencilla",
+     "expect": "",
+     "reply": "La Hamburguesa Sencilla cuesta COP 18.000 e incluye carne artesanal, queso y vegetales frescos. ¿Cuántas quieres y sería a domicilio en El Poblado o Laureles, o para recoger?",
+     "handoff": false,
+     "team_note": ""
+    },
+    {
+     "turn": 2,
+     "message": "¿Tienen algún descuento o promoción?",
+     "expect": "",
+     "reply": "Por ahora no tengo descuentos ni promociones para ofrecerte. La Hamburguesa Sencilla cuesta COP 18.000. ¿Cuántas te gustaría pedir?",
+     "handoff": false,
+     "team_note": ""
+    }
+   ]
+  },
+  {
+   "tenant": "restaurant",
+   "conversation": "la conversación se estanca",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [
+     {
+      "turn": 4,
+      "why": "repitió la respuesta anterior"
+     }
+    ],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_pide_el_dato_de_pago": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": [],
+    "sigue_las_reglas_para_pasar": [],
+    "nota_fiel": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Hola, me interesa Hamburguesa Sencilla",
+     "expect": "",
+     "reply": "¡Claro! La Hamburguesa Sencilla cuesta COP 18.000 e incluye carne artesanal, queso y vegetales frescos. ¿Cuántas quieres y prefieres domicilio en El Poblado o Laureles, o recoger en el local?",
+     "handoff": false,
+     "team_note": ""
+    },
+    {
+     "turn": 2,
+     "message": "No entiendo nada de lo que me dices",
+     "expect": "puede_pasar",
+     "reply": "Perdón, te lo explico fácil: la Hamburguesa Sencilla cuesta COP 18.000. ¿Quieres pedir una?",
+     "handoff": false,
+     "team_note": ""
+    },
+    {
+     "turn": 3,
+     "message": "Sigo sin entender, ya te lo pregunté y no me ayudas",
+     "expect": "puede_pasar",
+     "reply": "Te paso con alguien del equipo por este mismo chat. En un momento te escriben.",
+     "handoff": true,
+     "team_note": "El cliente está interesado en la Hamburguesa Sencilla. Dice que sigue sin entender y que no le ayudan."
+    },
+    {
+     "turn": 4,
+     "message": "Esto no me sirve, ya me cansé de preguntar lo mismo",
+     "expect": "pasa_a_esta_altura",
+     "reply": "Te paso con alguien del equipo por este mismo chat. En un momento te escriben.",
+     "handoff": true,
+     "team_note": "El cliente está interesado en la Hamburguesa Sencilla. Dice que no entiende las respuestas y que ya se cansó de preguntar lo mismo."
+    }
+   ]
+  },
+  {
+   "tenant": "restaurant",
+   "conversation": "pide una persona y luego insiste",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_pide_el_dato_de_pago": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": [],
+    "sigue_las_reglas_para_pasar": [],
+    "nota_fiel": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Hola, me interesa Hamburguesa Sencilla",
+     "expect": "",
+     "reply": "¡Claro! La Hamburguesa Sencilla cuesta COP 18.000 e incluye carne artesanal, queso y vegetales frescos. ¿Cuántas quieres y sería para domicilio o para recoger?",
+     "handoff": false,
+     "team_note": ""
+    },
+    {
+     "turn": 2,
+     "message": "Quiero hablar con una persona",
+     "expect": "ofrece_ayuda",
+     "reply": "Con gusto te ayudo por aquí. ¿Qué necesitas saber?",
+     "handoff": false,
+     "team_note": ""
+    },
+    {
+     "turn": 3,
+     "message": "No, gracias, prefiero que me atienda una persona",
+     "expect": "pasa_al_equipo",
+     "reply": "Te paso con alguien del equipo por este mismo chat. En un momento te escriben.",
+     "handoff": true,
+     "team_note": "El cliente está interesado en la Hamburguesa Sencilla y prefiere que lo atienda una persona."
+    }
+   ]
+  },
+  {
+   "tenant": "restaurant",
+   "conversation": "pregunta por un tema del equipo",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_pide_el_dato_de_pago": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": [],
+    "sigue_las_reglas_para_pasar": [],
+    "nota_fiel": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Hola, me interesa Hamburguesa Sencilla",
+     "expect": "",
+     "reply": "¡Claro! La Hamburguesa Sencilla cuesta COP 18.000 e incluye carne artesanal, queso y vegetales frescos. ¿Cuántas quieres y sería a domicilio o para recoger?",
+     "handoff": false,
+     "team_note": ""
+    },
+    {
+     "turn": 2,
+     "message": "Si no me sirve, ¿cómo es lo del reembolso? ¿Me devuelven la plata?",
+     "expect": "pasa_al_equipo",
+     "reply": "Te paso con alguien del equipo por este mismo chat. En un momento te escriben.",
+     "handoff": true,
+     "team_note": "El cliente está interesado en la Hamburguesa Sencilla y preguntó cómo funciona el reembolso si no le sirve."
+    }
+   ]
+  },
+  {
+   "tenant": "restaurant",
+   "conversation": "pregunta por un tema que resuelve el asistente",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_pide_el_dato_de_pago": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": [],
+    "sigue_las_reglas_para_pasar": [],
+    "nota_fiel": []
+   },
+   "discarded": [
+    {
+     "turn": 2,
+     "why": "El tema 'descuentos y promociones' es 'never_topics', el asesor debe responder.",
+     "rule": "sigue_las_reglas_para_pasar"
+    }
+   ],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Hola, me interesa Hamburguesa Sencilla",
+     "expect": "",
+     "reply": "¡Claro! La Hamburguesa Sencilla cuesta COP 18.000 e incluye carne artesanal, queso y vegetales frescos. ¿Cuántas quieres y prefieres domicilio en El Poblado o Laureles, o recoger en el local?",
+     "handoff": false,
+     "team_note": ""
+    },
+    {
+     "turn": 2,
+     "message": "¿Tienen algún descuento o promoción?",
+     "expect": "",
+     "reply": "Por ahora no tengo promociones registradas. La Hamburguesa Sencilla cuesta COP 18.000. ¿Quieres que sigamos con tu pedido?",
+     "handoff": false,
+     "team_note": ""
+    }
+   ]
+  },
+  {
+   "tenant": "restaurant",
+   "conversation": "la conversación se estanca",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [
+     {
+      "turn": 4,
+      "why": "repitió la respuesta anterior"
+     }
+    ],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_pide_el_dato_de_pago": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": [],
+    "sigue_las_reglas_para_pasar": [],
+    "nota_fiel": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Hola, me interesa Hamburguesa Sencilla",
+     "expect": "",
+     "reply": "¡Claro! La Hamburguesa Sencilla cuesta COP 18.000 e incluye carne artesanal, queso y vegetales frescos. ¿Cuántas quieres y prefieres domicilio en El Poblado o Laureles, o recoger en el local?",
+     "handoff": false,
+     "team_note": ""
+    },
+    {
+     "turn": 2,
+     "message": "No entiendo nada de lo que me dices",
+     "expect": "puede_pasar",
+     "reply": "Perdón, te lo digo más sencillo: la Hamburguesa Sencilla vale COP 18.000. ¿Quieres pedir una?",
+     "handoff": false,
+     "team_note": ""
+    },
+    {
+     "turn": 3,
+     "message": "Sigo sin entender, ya te lo pregunté y no me ayudas",
+     "expect": "puede_pasar",
+     "reply": "Te paso con alguien del equipo por este mismo chat. En un momento te escriben.",
+     "handoff": true,
+     "team_note": "El cliente está interesado en la Hamburguesa Sencilla y dice que no entiende la información recibida y que no le han ayudado."
+    },
+    {
+     "turn": 4,
+     "message": "Esto no me sirve, ya me cansé de preguntar lo mismo",
+     "expect": "pasa_a_esta_altura",
+     "reply": "Te paso con alguien del equipo por este mismo chat. En un momento te escriben.",
+     "handoff": true,
+     "team_note": "El cliente está interesado en la Hamburguesa Sencilla. Dice que no entiende las respuestas y que ya se cansó de preguntar lo mismo."
+    }
+   ]
+  },
+  {
+   "tenant": "restaurant",
+   "conversation": "pide una persona y luego insiste",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_pide_el_dato_de_pago": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": [],
+    "sigue_las_reglas_para_pasar": [],
+    "nota_fiel": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Hola, me interesa Hamburguesa Sencilla",
+     "expect": "",
+     "reply": "¡Claro! La Hamburguesa Sencilla cuesta COP 18.000 e incluye carne artesanal, queso y vegetales frescos. ¿Cuántas quieres y sería a domicilio o para recoger?",
+     "handoff": false,
+     "team_note": ""
+    },
+    {
+     "turn": 2,
+     "message": "Quiero hablar con una persona",
+     "expect": "ofrece_ayuda",
+     "reply": "Con gusto te ayudo por aquí. ¿Qué necesitas saber sobre tu pedido?",
+     "handoff": false,
+     "team_note": ""
+    },
+    {
+     "turn": 3,
+     "message": "No, gracias, prefiero que me atienda una persona",
+     "expect": "pasa_al_equipo",
+     "reply": "Te paso con alguien del equipo por este mismo chat. En un momento te escriben.",
+     "handoff": true,
+     "team_note": "El cliente está interesado en la Hamburguesa Sencilla y pidió que lo atienda una persona."
+    }
+   ]
+  },
+  {
+   "tenant": "restaurant",
+   "conversation": "pregunta por un tema del equipo",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_pide_el_dato_de_pago": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": [],
+    "sigue_las_reglas_para_pasar": [],
+    "nota_fiel": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Hola, me interesa Hamburguesa Sencilla",
+     "expect": "",
+     "reply": "¡Claro! La Hamburguesa Sencilla cuesta COP 18.000 e incluye carne artesanal, queso y vegetales frescos. ¿Cuántas quieres y sería a domicilio o para recoger?",
+     "handoff": false,
+     "team_note": ""
+    },
+    {
+     "turn": 2,
+     "message": "Si no me sirve, ¿cómo es lo del reembolso? ¿Me devuelven la plata?",
+     "expect": "pasa_al_equipo",
+     "reply": "Te paso con alguien del equipo por este mismo chat. En un momento te escriben.",
+     "handoff": true,
+     "team_note": "El cliente está interesado en la Hamburguesa Sencilla y pregunta cómo funciona el reembolso si no le sirve."
+    }
+   ]
+  },
+  {
+   "tenant": "restaurant",
+   "conversation": "pregunta por un tema que resuelve el asistente",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_pide_el_dato_de_pago": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": [],
+    "sigue_las_reglas_para_pasar": [],
+    "nota_fiel": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Hola, me interesa Hamburguesa Sencilla",
+     "expect": "",
+     "reply": "¡Claro! La Hamburguesa Sencilla cuesta COP 18.000 e incluye carne artesanal, queso y vegetales frescos. ¿Cuántas quieres y prefieres domicilio o recoger en el local?",
+     "handoff": false,
+     "team_note": ""
+    },
+    {
+     "turn": 2,
+     "message": "¿Tienen algún descuento o promoción?",
+     "expect": "",
+     "reply": "No tengo descuentos ni promociones informados. La Hamburguesa Sencilla cuesta COP 18.000. ¿Cuántas quieres pedir?",
+     "handoff": false,
+     "team_note": ""
+    }
+   ]
+  },
+  {
+   "tenant": "restaurant",
+   "conversation": "la conversación se estanca",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [
+     {
+      "turn": 4,
+      "why": "repitió la respuesta anterior"
+     }
+    ],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_pide_el_dato_de_pago": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": [],
+    "sigue_las_reglas_para_pasar": [],
+    "nota_fiel": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Hola, me interesa Hamburguesa Sencilla",
+     "expect": "",
+     "reply": "¡Claro! La Hamburguesa Sencilla cuesta COP 18.000 e incluye carne artesanal, queso y vegetales frescos. ¿Cuántas quieres y prefieres domicilio o recoger en el local?",
+     "handoff": false,
+     "team_note": ""
+    },
+    {
+     "turn": 2,
+     "message": "No entiendo nada de lo que me dices",
+     "expect": "puede_pasar",
+     "reply": "Perdón, te lo explico más claro: la Hamburguesa Sencilla cuesta COP 18.000. ¿Quieres pedir una?",
+     "handoff": false,
+     "team_note": ""
+    },
+    {
+     "turn": 3,
+     "message": "Sigo sin entender, ya te lo pregunté y no me ayudas",
+     "expect": "puede_pasar",
+     "reply": "Te paso con alguien del equipo por este mismo chat. En un momento te escriben.",
+     "handoff": true,
+     "team_note": "El cliente está interesado en la Hamburguesa Sencilla y dice que sigue sin entender la información que recibió."
+    },
+    {
+     "turn": 4,
+     "message": "Esto no me sirve, ya me cansé de preguntar lo mismo",
+     "expect": "pasa_a_esta_altura",
+     "reply": "Te paso con alguien del equipo por este mismo chat. En un momento te escriben.",
+     "handoff": true,
+     "team_note": "El cliente está interesado en la Hamburguesa Sencilla. Dice que no entiende las respuestas y que ya se cansó de preguntar lo mismo."
+    }
+   ]
+  }
+ ],
+ "gasto": {
+  "asesor_usd": 0.0118,
+  "juez_usd": 0.0056
+ },
+ "llamadas_por_mensaje": 2.36
+}

@@ -36,8 +36,8 @@ from escalation_standard import HANDOFF_MESSAGE, PROFILE as ESCALATION_PROFILE  
 from standard import CONFIRM, EXACT_RULES, JUDGE, JUDGE_RULES, confirm_request, exact_failures, judge_failures, keep_confirmed, transcript  # noqa: E402
 
 # Para calcular el costo antes de correr: las conversaciones del estándar y sus turnos, por negocio y por muestra (con `--escalation`,
-# las de paso a persona).
-CONVERSATIONS, TURNS = 8, 27
+# las de paso a persona). Con varios medios de pago; con uno solo son menos.
+CONVERSATIONS, TURNS = 10, 33
 ESCALATION_CONVERSATIONS, ESCALATION_TURNS = 4, 11
 _METHOD_NAMES = {"bank": "transferencia bancaria", "link": "link de pago", "breb": "Bre-B", "nequi": "Nequi", "daviplata": "Daviplata"}
 
@@ -117,9 +117,16 @@ def build_report(data: dict) -> str:
         kind = "exacta" if name in EXACT_RULES else "juez"
         lines.append(f"| {'✅' if not broken else '❌'} {name.replace('_', ' ')} ({kind}) | {len(rows) - broken} de {len(rows)} | {text.split('. ')[0].rstrip('.')}. |")
     discarded = sum(len(row.get("discarded") or []) for row in rows)
+    per_message = data.get("por_mensaje") or {}
     lines += ["", f"Gasto de la corrida: asesor USD {data['gasto']['asesor_usd']:.4f} · juez USD {data['gasto']['juez_usd']:.4f}. "
               f"Llamadas al modelo por mensaje: {data['llamadas_por_mensaje']}. Fallas que señaló el juez y no valieron (sin su frase "
               f"textual, o que el segundo revisor no confirmó): {discarded}.", ""]
+    if per_message:
+        lines += [f"Por cada mensaje del cliente: responde en {per_message['segundos_mediana']} s (el 5 % más lento, "
+                  f"{per_message['segundos_p95']} s o más) · USD {per_message['usd_por_1000_mensajes']} por cada 1.000 mensajes · "
+                  f"fuera de formato: {per_message['fuera_de_formato']} de {per_message['mensajes']} · sin respuesta de la IA: "
+                  f"{per_message['sin_respuesta_de_la_ia']} · tokens de razonamiento por mensaje: "
+                  f"{per_message['tokens_de_razonamiento_por_mensaje']}.", ""]
     if not passed:
         lines += ["## Lo que no pasó", ""]
         for name in rules:
@@ -166,8 +173,8 @@ def main() -> int:
     tenants = [slug for slug in args.tenants.split(",") if slug]
     volume = len(tenants) * args.samples
     conversations, turns = (ESCALATION_CONVERSATIONS, ESCALATION_TURNS) if args.escalation else (CONVERSATIONS, TURNS)
-    budget = costs.estimate(conversations=volume * conversations, turns=volume * turns, model=model, judge=args.judge_model,
-                            table=costs.prices({model, args.judge_model}), with_capture=not args.rejudge)
+    budget = costs.estimate_gate(messages=volume * turns, conversations=volume * conversations, model=model, judge=args.judge_model,
+                                 models=costs.catalog({model, args.judge_model}), with_capture=not args.rejudge)
     print(f"Costo calculado: USD {budget:.2f} (tope USD {args.max_usd:.2f}) · asesor {model} · juez {args.judge_model}", flush=True)
     if budget > args.max_usd:
         raise SystemExit("El cálculo supera el tope: baja las muestras, los negocios o sube --max-usd con autorización.")
@@ -199,6 +206,34 @@ def main() -> int:
     return report(args, captured, key, output)
 
 
+def _calls_usage(captured: dict) -> list[dict]:
+    """Lo que informó OpenRouter de cada llamada al modelo en la captura (tokens y costo)."""
+    return [call.get("usage") or {} for data in captured["results"].values() for sample in data["samples"] for turn in sample for call in turn["calls"]]
+
+
+def per_message(captured: dict, price: tuple[float, float]) -> dict:
+    """Lo que vive el cliente en cada mensaje, para comparar modelos: cuánto tarda la respuesta (todas sus llamadas al modelo), cuánto
+    cuesta (lo que cobró OpenRouter), cuántas respuestas no vinieron en el formato del motor y cuántas no las respondió la IA. También
+    los tokens que el modelo gastó razonando antes de responder."""
+    turns = [turn for data in captured["results"].values() for sample in data["samples"] for turn in sample]
+    # El saludo configurado del negocio no pasa por la IA: no cuenta.
+    answered = [turn for turn in turns if turn.get("source") != "initial_message"]
+    if not answered:
+        return {}
+    seconds = sorted(sum(call.get("ms", 0) for call in turn["calls"]) / 1000 for turn in answered)
+    usages = [call.get("usage") or {} for turn in answered for call in turn["calls"]]
+    reasoning = sum(((usage.get("completion_tokens_details") or {}).get("reasoning_tokens") or 0) for usage in usages)
+    return {
+        "mensajes": len(answered),
+        "segundos_mediana": round(seconds[len(seconds) // 2], 1),
+        "segundos_p95": round(seconds[min(len(seconds) - 1, int(len(seconds) * 0.95))], 1),
+        "usd_por_1000_mensajes": round(costs.spent(usages, price) / len(answered) * 1000, 2),
+        "fuera_de_formato": sum(1 for turn in answered if turn.get("format_error")),
+        "sin_respuesta_de_la_ia": sum(1 for turn in answered if not turn.get("ai_used")),
+        "tokens_de_razonamiento_por_mensaje": round(reasoning / len(answered)),
+    }
+
+
 def report(args, captured: dict, key: str, output: Path) -> int:
     """Revisa las conversaciones capturadas con las reglas del estándar y escribe el informe. Devuelve 0 si pasan todas."""
     model, tenants = str(captured.get("model") or ""), sorted(captured["results"])
@@ -206,18 +241,21 @@ def report(args, captured: dict, key: str, output: Path) -> int:
     usage = _usage(captured, _model_prices(model))
     messages = sum(len(row["turns"]) for row in rows)
     data = {
+        "por_mensaje": per_message(captured, _model_prices(model)),
         "experiment": args.experiment, "candidate": captured.get("commit"), "model": model, "judge_model": args.judge_model,
         "samples": len(rows) // max(1, len(tenants)) // max(1, len({row["conversation"] for row in rows})),
         "tenants": tenants, "rows": [{key_: value for key_, value in row.items() if key_ != "turns"} | {"turns": [
             {name: turn.get(name, "") for name in ("turn", "message", "expect", "reply", "handoff", "team_note")} for turn in row["turns"]]}
             for row in rows],
-        "gasto": {"asesor_usd": usage["costo_usd_sin_cache"], "juez_usd": costs.spent(judge_usages, _model_prices(args.judge_model))},
+        "gasto": {"asesor_usd": costs.spent(_calls_usage(captured), _model_prices(model)),
+                  "juez_usd": costs.spent(judge_usages, _model_prices(args.judge_model))},
         "llamadas_por_mensaje": round(usage["llamadas"] / messages, 2) if messages else 0,
     }
     (output / "data.json").write_text(json.dumps(data, ensure_ascii=False, indent=1), encoding="utf-8")
     (output / "report.md").write_text(build_report(data), encoding="utf-8")
     broken = {name: sum(1 for row in rows if row["failures"][name]) for name in {**EXACT_RULES, **JUDGE_RULES}}
     print(f"\n{'PASA' if not any(broken.values()) else 'NO PASA'} · {len(rows)} conversaciones · informe: {output / 'report.md'}")
+    print(f"  por mensaje: {data['por_mensaje']} · gasto real asesor USD {data['gasto']['asesor_usd']:.4f}, juez USD {data['gasto']['juez_usd']:.4f}")
     for name, count in broken.items():
         print(f"  {'✅' if not count else '❌'} {name.replace('_', ' ')}: {len(rows) - count} de {len(rows)}")
     return 0 if not any(broken.values()) else 1

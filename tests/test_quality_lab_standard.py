@@ -209,3 +209,91 @@ def test_the_judge_reads_the_team_note_and_its_quote_counts_as_proof():
     failures, discarded = judge_failures(verdict, turns)
     assert failures["nota_fiel"] == [{"turn": 1, "why": "el cliente no dijo su nombre"}] and discarded == []
     assert "Nota para el equipo" in JUDGE and "nota_fiel" in JUDGE
+
+
+# ---------------------------------------------------------------------------
+# Elegir el modelo del asesor (paso 3 de la auditoría, 14 nov 2026)
+# ---------------------------------------------------------------------------
+
+def test_the_standard_has_the_production_mistakes_of_november():
+    """Laura se presentó en su primer mensaje y el asesor le pidió el nombre; otro cliente dio su teléfono y el asesor le pidió «el
+    número al que debo enviar el dinero»."""
+    conversations = dict(conversations_for(FACTS))
+    presents = [(turn["message"], turn["expect"]) for turn in conversations["se presenta al empezar"]]
+    assert presents[0] == ("Hola, soy Laura y tengo una tienda de ropa. Me interesa el Plan Básico", NO_DETAILS)
+    assert presents[1] == ("Listo, lo quiero. Te pago por Nequi", DETAILS_BY_NOW)
+    phone = [(turn["message"], turn["expect"]) for turn in conversations["da su teléfono antes de pagar"]]
+    assert phone[1] == ("Mi número es 3157778899, ¿cómo hago para pagarte?", "") and phone[2] == ("Listo, por Nequi", DETAILS_BY_NOW)
+    # A un restaurante no le dice que tiene una tienda de ropa.
+    assert dict(conversations_for({**FACTS, "modelo": "catalog"}))["se presenta al empezar"][0]["message"] == "Hola, soy Laura. Me interesa el Plan Básico"
+    assert "- no_pide_el_dato_de_pago: " in JUDGE
+
+
+def test_the_cost_estimate_uses_what_the_gate_really_spends():
+    import costs
+
+    models = {"barato": {"prices": (0.15e-6, 0.6e-6), "reasons": False}, "razona": {"prices": (0.15e-6, 0.6e-6), "reasons": True},
+              "juez": {"prices": (0.3e-6, 2.5e-6), "reasons": True}}
+    plain = costs.estimate_gate(messages=81, conversations=24, model="barato", judge="juez", models=models)
+    # Lo medido con gpt-4o-mini en esa corrida: USD 0,05 del asesor y 0,009 del juez.
+    assert 0.05 <= plain <= 0.08
+    assert costs.estimate_gate(messages=81, conversations=24, model="razona", judge="juez", models=models) > plain
+    assert costs.estimate_gate(messages=81, conversations=24, model="barato", judge="juez", models=models, with_capture=False) < 0.02
+
+
+def test_each_message_reports_its_speed_cost_and_format():
+    from run_standard_gate import per_message
+
+    def turn(ms: int, cost: float, **extra) -> dict:
+        return {"calls": [{"ms": ms, "usage": {"cost": cost, "completion_tokens_details": {"reasoning_tokens": 10}}}], "ai_used": True, **extra}
+
+    captured = {"results": {"saas": {"samples": [[
+        {"source": "initial_message", "calls": [], "ai_used": False},
+        turn(2000, 0.001), turn(3000, 0.001, format_error="invalid_intent"), turn(9000, 0.001, ai_used=False),
+    ]]}}}
+    stats = per_message(captured, (0.0, 0.0))
+    assert stats["mensajes"] == 3 and stats["segundos_mediana"] == 3.0 and stats["segundos_p95"] == 9.0
+    assert stats["usd_por_1000_mensajes"] == 1.0 and stats["fuera_de_formato"] == 1 and stats["sin_respuesta_de_la_ia"] == 1
+    assert stats["tokens_de_razonamiento_por_mensaje"] == 10
+
+
+def _run(model: str, clean: int, *, critical: dict | None = None, p95: float = 4.0, usd: float = 0.6) -> dict:
+    return {"experiment": f"exp_{model}", "model": model, "conversations": 30, "clean": clean, "critical": critical or {}, "quality": {},
+            "p50": 3.0, "p95": p95, "usd_1000": usd, "reasoning": 0}
+
+
+def test_the_model_decision_rule_was_fixed_before_the_results():
+    from compare_models import decide
+
+    # Una falla crítica deja fuera aunque sea el mejor en lo demás; tardar demasiado también.
+    winner, why = decide([_run("a", 30, critical={"sin_numeros_de_pago_falsos": 1}), _run("b", 25), _run("c", 29, p95=12.0)])
+    assert winner["model"] == "b" and why["a"].startswith("fuera") and why["c"].startswith("fuera")
+    # Con una conversación de diferencia es ruido: gana el más barato.
+    winner, why = decide([_run("caro", 28, usd=1.4), _run("barato", 27, usd=0.4), _run("peor", 24, usd=0.1)])
+    assert winner["model"] == "barato" and why["caro"] == "empata en calidad, pero cuesta más" and why["peor"].startswith("califica")
+    # Si ninguno califica, no hay ganador.
+    assert decide([_run("a", 30, critical={"pasa_al_equipo_cuando_debe": 2})])[0] is None
+
+
+def test_a_wrong_format_does_not_disqualify_but_a_failed_reply_does():
+    from compare_models import summarize
+
+    rows = [{"failures": {}}]
+    data = {"experiment": "x", "model": "m", "rows": rows, "por_mensaje": {"fuera_de_formato": 2, "sin_respuesta_de_la_ia": 0, "segundos_p95": 4}}
+    assert summarize(data)["critical"] == {} and summarize(data)["quality"] == {"fuera_de_formato": 2}
+    data["por_mensaje"]["sin_respuesta_de_la_ia"] = 1
+    assert summarize(data)["critical"] == {"sin_respuesta_de_la_ia": 1}
+
+
+def test_the_runs_of_one_model_count_together():
+    """La corrida de pagos y la de «Cuándo pasar a una persona» de un mismo modelo son una sola fila: una falla crítica en cualquiera
+    de las dos lo deja fuera (antes, la segunda pisaba el veredicto de la primera)."""
+    from compare_models import decide, merge
+
+    payments = {**_run("m", 28, critical={"sin_respuesta_de_la_ia": 1}, p95=4.0, usd=0.4), "conversations": 30, "experiment": "pagos"}
+    rules = {**_run("m", 24, p95=6.0, usd=0.2), "conversations": 24, "experiment": "reglas"}
+    (merged,) = merge([payments, rules])
+    assert merged["conversations"] == 54 and merged["clean"] == 52 and merged["critical"] == {"sin_respuesta_de_la_ia": 1}
+    assert merged["p95"] == 6.0 and merged["experiments"] == ["pagos", "reglas"]
+    winner, why = decide([merged])
+    assert winner is None and why["m"].startswith("fuera")

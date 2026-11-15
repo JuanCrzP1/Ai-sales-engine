@@ -61,6 +61,13 @@ JUDGE_RULES = {
         "El asesor no vuelve a pedir un dato que el cliente ya le dio en esta conversación (su nombre, su negocio, su teléfono). Pedir "
         "un dato que el cliente todavía no ha dado sí pasa, aunque lo pida más de una vez."
     ),
+    # 13 nov 2026, en producción: «indícame el número al que debo enviar el dinero» y, cuando el cliente dio su teléfono, «realiza el
+    # pago a ese número de Nequi».
+    "no_pide_el_dato_de_pago": (
+        "El asesor nunca le pide al cliente el número, la cuenta o el link al que debe pagar, ni le dice que pague al número que dio "
+        "el cliente: los datos para pagar los da el negocio («[dato entregado por el motor]»). Pedirle su propio teléfono o su "
+        "nombre para el pedido sí pasa."
+    ),
     "no_dice_nada_falso_del_pago": (
         "El asesor no dice que no puede enviar los datos de pago ni que no tiene acceso a ellos; no dice que el negocio no recibe un "
         "medio de pago que está en la ficha; y no dice que ya le envió o que ahí le deja los datos si ni en ese mensaje ni antes "
@@ -217,7 +224,12 @@ def conversations_for(facts: dict) -> list[tuple[str, list[dict]]]:
         ("ya te consigné", REPORTED),
     ]
     start = (f"Quiero {offer}", NO_DETAILS)
+    # 14 nov 2026, en producción: Laura se presentó en su primer mensaje y, al decir con qué pagaba, el asesor le pidió «tu nombre y
+    # los detalles de tu tienda».
+    presents = f"Hola, soy Laura y tengo una tienda de ropa. Me interesa {offer}" if facts.get("modelo") == "saas" else f"Hola, soy Laura. Me interesa {offer}"
     short = [
+        ("se presenta al empezar", [(presents, NO_DETAILS), (f"Listo, lo quiero. Te pago por {said}", DETAILS_BY_NOW), ("¿Y ahora qué sigue?", "")]),
+        ("da su teléfono antes de pagar", [start, ("Mi número es 3157778899, ¿cómo hago para pagarte?", ""), (f"Listo, por {said}", DETAILS_BY_NOW)]),
         ("pide el medio con un error de escritura", [start, (f"Pásame el {_TYPO.get(paid, said)} porfa", DETAILS)]),
         ("pregunta a dónde consigna", [start, ("¿A qué número te consigno?", "")]),
         ("pregunta cómo paga", [start, ("cómo te pago", NO_DETAILS)]),
