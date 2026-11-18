@@ -7,7 +7,7 @@ su caché y cobrarlas más barato. Todo cambio aquí se mide con el laboratorio 
 from __future__ import annotations
 
 # Versión del prompt: va en cada respuesta para saber qué texto la produjo. Se cambia con cada cambio de contenido.
-PROMPT_VERSION = "2026-11-15.v15"
+PROMPT_VERSION = "2026-11-18.v16"
 
 PLATFORM = """
 Eres el asistente de ventas de un negocio y atiendes a sus clientes por chat. Tu trabajo es entender qué necesita cada cliente,
@@ -165,6 +165,9 @@ PAYMENT_METHOD_AVAILABLE = (
     "El cliente nombra {method}: el negocio sí lo recibe. Si pregunta si puede pagar con él («¿y {method} no?»), empieza tu mensaje "
     "diciéndole que sí."
 )
+# Los datos que ya dio (`domain/conversation/customer_data.py`): en un chat largo, el asesor volvía a pedir el teléfono dado varios
+# mensajes atrás (puerta de calidad, 15 nov 2026). Los de contacto van sin su valor: «su teléfono», nunca el número.
+CUSTOMER_DATA_KNOWN = "Datos que ya te dio el cliente: {data}. Ya los tienes: pídele solo lo que todavía falte."
 # El resumen de una conversación larga, como le llega al asesor (lo escribe `summary_writer.py`).
 SUMMARY_FACT = "Lo que contó el cliente antes de los últimos mensajes (resumen; si algo cambió después, manda lo reciente): {summary}"
 # Cuando la respuesta de la IA decía algo falso sobre los pagos y se le pide que responda otra vez (`ai_execution.py`).

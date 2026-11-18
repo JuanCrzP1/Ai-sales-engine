@@ -1,0 +1,589 @@
+{
+ "por_mensaje": {
+  "mensajes": 32,
+  "segundos_mediana": 3.2,
+  "segundos_p95": 4.7,
+  "usd_por_1000_mensajes": 0.43,
+  "fuera_de_formato": 0,
+  "sin_respuesta_de_la_ia": 0,
+  "tokens_de_razonamiento_por_mensaje": 0
+ },
+ "experiment": "datos_ya_dados_20261118_b",
+ "candidate": "1a7438e + cambios",
+ "model": "openai/gpt-4o-mini",
+ "judge_model": "google/gemini-2.5-flash",
+ "samples": 1,
+ "tenants": [
+  "asesor_ai_prod"
+ ],
+ "rows": [
+  {
+   "tenant": "asesor_ai_prod",
+   "conversation": "el chat de producción",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_pide_el_dato_de_pago": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": [],
+    "sigue_las_reglas_para_pasar": [],
+    "nota_fiel": []
+   },
+   "discarded": [
+    {
+     "turn": 3,
+     "why": "El asesor pide el nombre, teléfono y correo que ya había pedido.",
+     "customer_said": "Me llamo Juan Camilo y es una tienda de ropa",
+     "rule": "no_pide_lo_ya_dado"
+    },
+    {
+     "turn": 5,
+     "why": "El asesor pide el nombre, teléfono y correo que ya había pedido.",
+     "customer_said": "Me llamo Juan Camilo y es una tienda de ropa",
+     "rule": "no_pide_lo_ya_dado"
+    },
+    {
+     "turn": 7,
+     "why": "El asesor pide el nombre, teléfono y correo que ya había pedido.",
+     "customer_said": "Mi teléfono es 3157778899",
+     "rule": "no_pide_lo_ya_dado"
+    }
+   ],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Hola",
+     "expect": "",
+     "reply": "Hola, ¿qué más? 👋 soy Juan un gusto tenerte por aquí.",
+     "handoff": false,
+     "team_note": ""
+    },
+    {
+     "turn": 2,
+     "message": "Me interesa Plan Basico, quiero empezar",
+     "expect": "sin_datos",
+     "reply": "Genial, el Plan Básico cuesta COP 210.000 el primer mes (incluye implementación y el primer mes de servicio). Luego, se paga COP 110.000 mensuales. ¿Me puedes dar tu nombre, teléfono y correo para continuar con la activación?",
+     "handoff": false,
+     "team_note": ""
+    },
+    {
+     "turn": 3,
+     "message": "Y puedo trasferir",
+     "expect": "sin_datos",
+     "reply": "Perfecto, puedes hacer la transferencia a Bancolombia. Solo necesito tu nombre, teléfono y correo para completar la activación.",
+     "handoff": false,
+     "team_note": ""
+    },
+    {
+     "turn": 4,
+     "message": "Y Nequi no",
+     "expect": "sin_datos",
+     "reply": "Sí, también recibimos pagos por Nequi. ¿Te gustaría que te envíe los datos para que puedas hacer la transferencia?",
+     "handoff": false,
+     "team_note": ""
+    },
+    {
+     "turn": 5,
+     "message": "Me llamo Juan Camilo y es una tienda de ropa",
+     "expect": "",
+     "reply": "Gracias, Juan Camilo. Para continuar con la activación del Plan Básico, ¿prefieres pagar por Nequi o transferencia a Bancolombia?",
+     "handoff": false,
+     "team_note": ""
+    },
+    {
+     "turn": 6,
+     "message": "Te pago por Nequi",
+     "expect": "datos_a_esta_altura",
+     "reply": "¡Listo! Ahí abajo te dejo los datos para pagar por Nequi.\n\n💳 *Datos para pagar*\n\n*Nequi*\n[dato entregado por el motor]\n\nCuando pagues, envíame aquí la captura del comprobante y te confirmamos. ✅",
+     "handoff": false,
+     "team_note": ""
+    },
+    {
+     "turn": 7,
+     "message": "Mi teléfono es 3157778899",
+     "expect": "",
+     "reply": "Perfecto, Juan Camilo. Ya tienes los datos para pagar por Nequi. Haz el pago y envíame aquí la captura del comprobante para seguir con la activación.",
+     "handoff": false,
+     "team_note": ""
+    },
+    {
+     "turn": 8,
+     "message": "Cuando lo haga que nesesito hacer",
+     "expect": "sin_datos",
+     "reply": "Una vez me envíes la captura del comprobante, procederemos a configurar tu sistema y te guiaré en el proceso de implementación. ¡Estamos a un paso de que puedas empezar a automatizar tus respuestas!",
+     "handoff": false,
+     "team_note": ""
+    },
+    {
+     "turn": 9,
+     "message": "Espérame un momento",
+     "expect": "sin_datos",
+     "reply": "¡Claro! Tómate tu tiempo.",
+     "handoff": false,
+     "team_note": ""
+    },
+    {
+     "turn": 10,
+     "message": "Pero se me borró el Nequi me lo envías de nuevo",
+     "expect": "datos",
+     "reply": "¡Listo! Ahí abajo te dejo los datos para pagar por Nequi.\n\n💳 *Datos para pagar*\n\n*Nequi*\n[dato entregado por el motor]\n\nCuando pagues, envíame aquí la captura del comprobante y te confirmamos. ✅",
+     "handoff": false,
+     "team_note": ""
+    },
+    {
+     "turn": 11,
+     "message": "Cómo así",
+     "expect": "sin_datos",
+     "reply": "Te explico: arriba, en este chat, te dejé los datos para pagar por Nequi. Haces el pago con esos datos y me envías aquí la captura del comprobante; con eso seguimos.",
+     "handoff": false,
+     "team_note": ""
+    },
+    {
+     "turn": 12,
+     "message": "Ya voy a pagar",
+     "expect": "sin_datos",
+     "reply": "Perfecto, avísame cuando hayas hecho el pago y me envías la captura del comprobante para continuar con la configuración.",
+     "handoff": false,
+     "team_note": ""
+    },
+    {
+     "turn": 13,
+     "message": "ya te consigné",
+     "expect": "pago_avisado",
+     "reply": "Perfecto, ya lo reviso y te confirmo en un momento para continuar.",
+     "handoff": true,
+     "team_note": "Juan Camilo, dueño de una tienda de ropa, necesita activar el Plan Básico y le interesa pagar por Nequi. Informó que ya realizó el pago."
+    }
+   ]
+  },
+  {
+   "tenant": "asesor_ai_prod",
+   "conversation": "se presenta al empezar",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_pide_el_dato_de_pago": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": [],
+    "sigue_las_reglas_para_pasar": [],
+    "nota_fiel": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Hola, soy Laura y tengo una tienda de ropa. Me interesa Plan Basico",
+     "expect": "sin_datos",
+     "reply": "¡Genial, Laura! El Plan Básico cuesta COP 100.000 de implementación y COP 110.000 al mes. Incluye la configuración inicial, la guía de integración con WhatsApp y un asistente conversacional inteligente. Para avanzar, necesito tu número de teléfono y detalles para la configuración.",
+     "handoff": false,
+     "team_note": ""
+    },
+    {
+     "turn": 2,
+     "message": "Listo, lo quiero. Te pago por Nequi",
+     "expect": "datos_a_esta_altura",
+     "reply": "¡Listo! Ahí abajo te dejo los datos para pagar por Nequi.\n\nPor favor, indícame si necesitas algo más para la configuración.\n\n💳 *Datos para pagar*\n\n*Nequi*\n[dato entregado por el motor]\n\nCuando pagues, envíame aquí la captura del comprobante y te confirmamos. ✅",
+     "handoff": false,
+     "team_note": ""
+    },
+    {
+     "turn": 3,
+     "message": "¿Y ahora qué sigue?",
+     "expect": "",
+     "reply": "Te explico: arriba, en este chat, te dejé los datos para pagar. Haces el pago con esos datos y me envías aquí la captura del comprobante; con eso seguimos.",
+     "handoff": false,
+     "team_note": ""
+    }
+   ]
+  },
+  {
+   "tenant": "asesor_ai_prod",
+   "conversation": "da su teléfono antes de pagar",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_pide_el_dato_de_pago": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": [],
+    "sigue_las_reglas_para_pasar": [],
+    "nota_fiel": []
+   },
+   "discarded": [
+    {
+     "turn": 2,
+     "why": "El asesor pide el teléfono que el cliente ya dio.",
+     "customer_said": "Mi número es 3157778899",
+     "rule": "no_pide_lo_ya_dado"
+    },
+    {
+     "turn": 3,
+     "why": "El asesor pide el teléfono que el cliente ya dio.",
+     "customer_said": "Mi número es 3157778899",
+     "rule": "no_pide_lo_ya_dado"
+    }
+   ],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Quiero Plan Basico",
+     "expect": "sin_datos",
+     "reply": "Genial, el Plan Básico cuesta COP 100.000 de implementación y COP 110.000 al mes. Incluye configuración inicial, guía de integración con WhatsApp y un asistente conversacional inteligente. Para avanzar, necesito tu nombre, teléfono y detalles de tu negocio.",
+     "handoff": false,
+     "team_note": ""
+    },
+    {
+     "turn": 2,
+     "message": "Mi número es 3157778899, ¿cómo hago para pagarte?",
+     "expect": "",
+     "reply": "Perfecto, solo necesito tu nombre y detalles de tu negocio para completar la información. Luego, te enviaré los medios de pago disponibles.",
+     "handoff": false,
+     "team_note": ""
+    },
+    {
+     "turn": 3,
+     "message": "Listo, por Nequi",
+     "expect": "datos_a_esta_altura",
+     "reply": "¡Listo! Ahí abajo te dejo los datos para pagar por Nequi. Solo necesito tu nombre y detalles de tu negocio para completar el proceso.\n\n💳 *Datos para pagar*\n\n*Nequi*\n[dato entregado por el motor]\n\nCuando pagues, envíame aquí la captura del comprobante y te confirmamos. ✅",
+     "handoff": false,
+     "team_note": ""
+    }
+   ]
+  },
+  {
+   "tenant": "asesor_ai_prod",
+   "conversation": "pide el medio con un error de escritura",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_pide_el_dato_de_pago": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": [],
+    "sigue_las_reglas_para_pasar": [],
+    "nota_fiel": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Quiero Plan Basico",
+     "expect": "sin_datos",
+     "reply": "Genial, el Plan Básico cuesta COP 100.000 de implementación y COP 110.000 al mes. Incluye configuración inicial, guía de integración con WhatsApp y un asistente conversacional inteligente. Para avanzar, necesito tu nombre, teléfono y detalles de tu negocio.",
+     "handoff": false,
+     "team_note": ""
+    },
+    {
+     "turn": 2,
+     "message": "Pásame el nekui porfa",
+     "expect": "datos",
+     "reply": "¡Listo! Ahí abajo te dejo los datos para pagar por Nequi.\n\nAhora, por favor, compárteme tu nombre, teléfono y detalles de tu negocio para completar la activación.\n\n💳 *Datos para pagar*\n\n*Nequi*\n[dato entregado por el motor]\n\nCuando pagues, envíame aquí la captura del comprobante y te confirmamos. ✅",
+     "handoff": false,
+     "team_note": ""
+    }
+   ]
+  },
+  {
+   "tenant": "asesor_ai_prod",
+   "conversation": "pregunta a dónde consigna",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_pide_el_dato_de_pago": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": [],
+    "sigue_las_reglas_para_pasar": [],
+    "nota_fiel": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Quiero Plan Basico",
+     "expect": "sin_datos",
+     "reply": "Genial, el Plan Básico cuesta COP 210.000 el primer mes (incluye implementación y primer mes) y luego COP 110.000 mensuales. ¿Cuál es tu nombre y número de teléfono para proceder con la activación?",
+     "handoff": false,
+     "team_note": ""
+    },
+    {
+     "turn": 2,
+     "message": "¿A qué número te consigno?",
+     "expect": "",
+     "reply": "¿Con cuál de los medios de pago prefieres hacer la consignación: Nequi, Daviplata, transferencia a Bancolombia, Bre-B o link de pago?",
+     "handoff": false,
+     "team_note": ""
+    }
+   ]
+  },
+  {
+   "tenant": "asesor_ai_prod",
+   "conversation": "pregunta cómo paga",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_pide_el_dato_de_pago": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": [],
+    "sigue_las_reglas_para_pasar": [],
+    "nota_fiel": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Quiero Plan Basico",
+     "expect": "sin_datos",
+     "reply": "Perfecto, el Plan Básico cuesta COP 210.000 en el primer mes (incluye la implementación y el primer mes del servicio) y luego COP 110.000 mensuales. ¿Podrías darme tu nombre, teléfono y detalles para proceder?",
+     "handoff": false,
+     "team_note": ""
+    },
+    {
+     "turn": 2,
+     "message": "cómo te pago",
+     "expect": "sin_datos",
+     "reply": "Puedes pagar a través de Nequi, Daviplata, transferencia a Bancolombia, Bre-B o un link de pago. ¿Con cuál medio prefieres hacer el pago?",
+     "handoff": false,
+     "team_note": ""
+    }
+   ]
+  },
+  {
+   "tenant": "asesor_ai_prod",
+   "conversation": "pregunta si tienen un medio",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_pide_el_dato_de_pago": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": [],
+    "sigue_las_reglas_para_pasar": [],
+    "nota_fiel": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Quiero Plan Basico",
+     "expect": "sin_datos",
+     "reply": "Genial, el Plan Básico cuesta COP 210.000 el primer mes (incluye la implementación y el primer mes de servicio) y luego COP 110.000 mensuales. ¿Me puedes dar tu nombre, teléfono y otros detalles necesarios para continuar?",
+     "handoff": false,
+     "team_note": ""
+    },
+    {
+     "turn": 2,
+     "message": "¿Tienen Nequi?",
+     "expect": "sin_datos",
+     "reply": "Sí, aceptamos Nequi como medio de pago. ¿Te gustaría que te enviara los datos para que puedas proceder?",
+     "handoff": false,
+     "team_note": ""
+    }
+   ]
+  },
+  {
+   "tenant": "asesor_ai_prod",
+   "conversation": "pide hablar con una persona",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_pide_el_dato_de_pago": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": [],
+    "sigue_las_reglas_para_pasar": [],
+    "nota_fiel": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Quiero Plan Basico",
+     "expect": "sin_datos",
+     "reply": "Perfecto, el Plan Básico incluye configuración inicial y un asistente conversacional inteligente por COP 210.000 el primer mes. Luego, se paga COP 110.000 mensualmente. Para avanzar, necesito tu nombre, teléfono y detalles. ¿Me los puedes proporcionar?",
+     "handoff": false,
+     "team_note": ""
+    },
+    {
+     "turn": 2,
+     "message": "Quiero hablar con una persona del equipo",
+     "expect": "pasa_al_equipo",
+     "reply": "Te paso con el equipo para que puedan ayudarte con el Plan Básico.",
+     "handoff": true,
+     "team_note": "El cliente quiere el Plan Básico y pidió hablar con una persona del equipo."
+    }
+   ]
+  },
+  {
+   "tenant": "asesor_ai_prod",
+   "conversation": "reclama",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_pide_el_dato_de_pago": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": [],
+    "sigue_las_reglas_para_pasar": [],
+    "nota_fiel": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Quiero Plan Basico",
+     "expect": "sin_datos",
+     "reply": "Perfecto, el Plan Básico cuesta COP 210.000 el primer mes (incluye la implementación y el primer pago mensual) y luego COP 110.000 cada mes. Para proceder, necesito tu nombre, teléfono y detalles, y te enviaré los datos de pago.",
+     "handoff": false,
+     "team_note": ""
+    },
+    {
+     "turn": 2,
+     "message": "Me cobraron dos veces y nadie me responde, estoy muy molesto",
+     "expect": "pasa_al_equipo",
+     "reply": "Lamento mucho la situación. Te pasaré con el equipo para que puedan atender tu reclamo y resolverlo lo antes posible.",
+     "handoff": true,
+     "team_note": "El cliente está molesto porque le cobraron dos veces y nadie le responde. Quiere que lo atiendan para resolver su reclamo."
+    }
+   ]
+  },
+  {
+   "tenant": "asesor_ai_prod",
+   "conversation": "pide los datos de otro medio",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_pide_el_dato_de_pago": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": [],
+    "sigue_las_reglas_para_pasar": [],
+    "nota_fiel": []
+   },
+   "discarded": [
+    {
+     "turn": 2,
+     "why": "El asesor vuelve a pedir el nombre y el teléfono.",
+     "customer_said": "¿Me puedes dar tu nombre y número de teléfono para continuar con la activación?",
+     "rule": "no_pide_lo_ya_dado"
+    }
+   ],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Quiero Plan Basico",
+     "expect": "sin_datos",
+     "reply": "Perfecto, el Plan Básico cuesta COP 210.000 en el primer mes (incluye la implementación y el primer pago mensual) y luego COP 110.000 cada mes. ¿Me puedes dar tu nombre y número de teléfono para continuar con la activación?",
+     "handoff": false,
+     "team_note": ""
+    },
+    {
+     "turn": 2,
+     "message": "listo, mándame los datos para pagar por transferencia",
+     "expect": "datos",
+     "reply": "Para la transferencia, puedes hacerlo a la cuenta de Bancolombia (ahorros). ¿Me puedes dar tu nombre y número de teléfono para finalizar el proceso?\n\n💳 *Datos para pagar*\n\n*Bancolombia*\nCuenta de ahorros\n[dato entregado por el motor]\n\nCuando pagues, envíame aquí la captura del comprobante y te confirmamos. ✅",
+     "handoff": false,
+     "team_note": ""
+    }
+   ]
+  }
+ ],
+ "gasto": {
+  "asesor_usd": 0.0137,
+  "juez_usd": 0.0056
+ },
+ "llamadas_por_mensaje": 2.09
+}

@@ -143,7 +143,7 @@ este orden:
    pagos y el largo de respuesta del negocio.
 2. `answer_review.py`: le pide la respuesta a la IA (`response_router.py`). Si la respuesta dice algo que no puede salir así, le pide
    otra. Los números que la IA no leyó en ninguna parte se cambian por el marcador del dato.
-3. `turn_persistence.py`: lo que decidió el asesor queda en la memoria del cliente.
+3. `turn_persistence.py`: lo que decidió el asesor queda en la memoria del cliente, con los datos que el cliente dio.
 4. `payment_outcome.py`: el pago avisado, los datos reales debajo del mensaje (`payment_delivery.py`) y el largo máximo.
 5. `handoff_brief.py`: si el chat pasa a una persona, la nota para el equipo.
 
@@ -154,7 +154,8 @@ en una sola función de unas 300 líneas. La división no cambió nada de lo que
 ### La memoria del motor
 
 Lo que el motor recuerda de cada cliente entre un mensaje y el siguiente: la conversación (`conversation_messages`) y sus datos
-(`conversation_memory`: el medio de pago elegido, el estado del pago, el paso de la conversación, la etapa, el resumen…).
+(`conversation_memory`: el medio de pago elegido, el estado del pago, el paso de la conversación, la etapa, el resumen, los datos
+que ya dio…).
 
 - **La base es la única fuente** (`infrastructure/persistence/sql_memory.py`). En Vercel cada mensaje puede llegar a otro servidor:
   ninguno guarda nada en su RAM entre mensajes. (Hasta el 13 nov 2026 cada servidor respondía primero con su copia en RAM, que podía
@@ -168,6 +169,12 @@ Lo que el motor recuerda de cada cliente entre un mensaje y el siguiente: la con
   IA ve los últimos 8 mensajes; cuando hay 10 que ya no ve y el resumen no cubre, una llamada corta al modelo del negocio actualiza un
   resumen de hechos estables (quién es el cliente, qué necesita, qué eligió, qué datos dio), sin datos de pago. El asesor lo recibe
   en «ESTA CONVERSACIÓN», sabiendo que si algo cambió después manda lo reciente.
+- **Los datos que el cliente ya dio** (`domain/conversation/customer_data.py`, desde el 18 nov 2026): el asesor anota en su respuesta
+  los datos que el cliente da (`metadata.customer_data`: nombre, teléfono, negocio…); el motor los suma a la memoria
+  (`datos_del_cliente`, sin migración) y en cada mensaje le dice «Datos que ya te dio el cliente: su nombre (Camila) y su teléfono».
+  Así no los vuelve a pedir aunque el chat sea largo. De los datos de contacto (teléfono, correo, documento, dirección) se guarda que
+  los dio, nunca el valor; un valor con un dato de pago del negocio no se guarda; el registro `datos_del_cliente` dice qué datos
+  dio, nunca cuáles son. Se borran con la conversación.
 - **Si la base no responde**, el mensaje se atiende sin memoria y queda el aviso `memoria_no_disponible`; nunca se parte la memoria
   entre servidores.
 - **Cuál memoria se usa** lo decide `memory_factory.build_memory_repository` por la base: PostgreSQL → la base; otra (el SQLite de las

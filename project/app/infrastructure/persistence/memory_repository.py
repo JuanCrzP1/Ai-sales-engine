@@ -32,6 +32,7 @@ class MemoryRepository:
         self._last_user_message_at_by_user: dict[tuple[str, str], datetime] = {}
         self._op_state_by_user: dict[tuple[str, str], dict] = {}
         self._summary_by_user: dict[tuple[str, str], tuple[str, datetime]] = {}
+        self._customer_data_by_user: dict[tuple[str, str], dict[str, str]] = {}
 
     @staticmethod
     def _key(*, tenant_slug: str, user_id: str) -> tuple[str, str] | None:
@@ -59,6 +60,15 @@ class MemoryRepository:
         key = self._key(tenant_slug=tenant_slug, user_id=user_id)
         return self._summary_by_user.get(key, ("", None)) if key else ("", None)
 
+    def set_customer_data(self, *, tenant_slug: str, user_id: str, data: dict[str, str]) -> None:
+        key = self._key(tenant_slug=tenant_slug, user_id=user_id)
+        if key and isinstance(data, dict) and data:
+            self._customer_data_by_user[key] = {str(name): str(value) for name, value in data.items()}
+
+    def get_customer_data(self, *, tenant_slug: str, user_id: str) -> dict[str, str]:
+        key = self._key(tenant_slug=tenant_slug, user_id=user_id)
+        return dict(self._customer_data_by_user.get(key) or {}) if key else {}
+
     def turn(self, *, tenant_slug: str, user_id: str):
         """En RAM no hay nada que leer al empezar ni que guardar al terminar un mensaje (ver `sql_memory.SQLMemoryRepository.turn`)."""
         del tenant_slug, user_id
@@ -85,6 +95,7 @@ class MemoryRepository:
         self._last_user_message_at_by_user.pop(key, None)
         self._op_state_by_user.pop(key, None)
         self._summary_by_user.pop(key, None)
+        self._customer_data_by_user.pop(key, None)
 
     def forget_contact(self, *, tenant_slug: str, user_id: str) -> None:
         """Olvida todo lo de ese cliente (al eliminar su chat en el panel): si vuelve a escribir, empieza de cero."""

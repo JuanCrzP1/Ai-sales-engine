@@ -10,6 +10,9 @@ casi cada mensaje costaba dos.
 Los medios de pago se nombran como aparecen en los medios del negocio («Nequi», «Yape», «transferencia a Bancolombia»): el motor los
 reconoce (`payment_names.py`), sean del país que sean. `send_payment` es la acción con la que el modelo pide que el sistema le
 envíe al cliente los datos de pago de un medio; si el negocio no lo tiene, no sale nada.
+
+`customer_data` son los datos que el cliente da sobre sí mismo: el motor los recuerda para no volver a pedírselos
+(`domain/conversation/customer_data.py`).
 """
 from __future__ import annotations
 
@@ -22,7 +25,7 @@ HANDOFF_VALUES = {"persona": "human_request", "reclamo": "complaint", "tema": "b
 OUTPUT_CONTRACT = f"""
 FORMATO DE RESPUESTA (obligatorio):
 Responde solo con un objeto JSON, sin texto antes ni después. Primero decide y al final escribe tu mensaje:
-{{"intent": "...", "metadata": {{"send_payment": "", "payment_status": "", "handoff": ""}}, "response": "..."}}
+{{"intent": "...", "metadata": {{"send_payment": "", "payment_status": "", "handoff": "", "customer_data": {{}}}}, "response": "..."}}
 - intent: una sola de estas:
   - "pain": el cliente cuenta un problema o una necesidad.
   - "info": pregunta por productos, precios, horarios o cómo funciona.
@@ -35,5 +38,7 @@ Responde solo con un objeto JSON, sin texto antes ni después. Primero decide y 
   comprobante. Si no, "".
 - metadata.handoff: "persona" si pide hablar con alguien del equipo; "reclamo" si reclama por un pago, un pedido o el servicio.
   Si no, "".
+- metadata.customer_data: los datos suyos que el cliente da en este mensaje (nombre, teléfono, correo, ciudad, su negocio…), con
+  el nombre del dato en español: {{"nombre": "Camila", "negocio": "tienda de ropa"}}. Si no da ninguno: {{}}.
 - response: el mensaje para el cliente, tal como lo leerá en el chat.
 """.strip()

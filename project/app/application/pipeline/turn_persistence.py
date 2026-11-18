@@ -2,11 +2,16 @@
 
 - `save_ai_metadata`: lo que decidió el asesor en su respuesta (intención, etapa, interés o problema del cliente, medio y estado del
   pago). Así lo sabe en el siguiente mensaje (`turn_context.build_memory_context`).
+- `save_customer_data`: los datos que el cliente dio en este mensaje (su nombre, su negocio, que dio el teléfono), junto a los que ya
+  había dado. El asesor los ve en cada mensaje y no se los vuelve a pedir (`domain/conversation/customer_data.py`).
 - `save_final_response`: lo que respondió, como lo ve la IA en su historial (con el marcador de los datos de pago, nunca los datos).
 """
 from __future__ import annotations
 
+from app.domain.business_config.payment_data import redact_payment_values
+from app.domain.conversation import customer_data
 from app.domain.conversation.memory import ConversationState, MemoryDomainService
+from app.utils.logger import logger
 
 # Cuántos intereses o problemas del cliente se recuerdan.
 PAIN_TIMELINE_LIMIT = 20
@@ -72,6 +77,34 @@ def save_ai_metadata(
         last_cta=last_cta or str(getattr(previous_state, "last_cta", "") or "").strip(),
     )
     memory_service.set_conversation_state(tenant_slug=tenant_slug, user_id=user_id, state=state)
+
+
+def save_customer_data(
+    memory_service: MemoryDomainService | None,
+    *,
+    tenant_slug: str,
+    user_id: str,
+    metadata: dict,
+    runtime_yaml: dict,
+) -> None:
+    """Suma a la memoria los datos que el asesor anotó en este mensaje (`metadata.customer_data`). Nunca guarda datos de pago del
+    negocio ni el valor de un dato de contacto; el registro solo dice qué datos dio, nunca cuáles son."""
+    raw = metadata.get("customer_data") if isinstance(metadata, dict) else None
+    if memory_service is None or not isinstance(raw, dict) or not raw:
+        return
+    get_data = getattr(memory_service, "get_customer_data", None)
+    set_data = getattr(memory_service, "set_customer_data", None)
+    if not callable(get_data) or not callable(set_data):
+        return
+    # Primero, los datos de contacto quedan como «dado»; después, un valor que lleva un dato de pago del negocio no se guarda.
+    given = {name: value for name, value in customer_data.tidy(raw).items() if redact_payment_values(value, runtime_yaml) == value}
+    if not given:
+        return
+    known = get_data(tenant_slug=tenant_slug, user_id=user_id)
+    merged = customer_data.merge(known, given)
+    if merged != known:
+        set_data(tenant_slug=tenant_slug, user_id=user_id, data=merged)
+        logger.info("datos_del_cliente", extra={"tenant": tenant_slug, "datos": sorted(merged)})
 
 
 def save_final_response(

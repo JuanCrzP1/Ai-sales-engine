@@ -274,6 +274,16 @@ class MemoryDomainService:
         if callable(_fn):
             _fn(tenant_slug=tenant_slug, user_id=user_id, summary=summary, until=until)
 
+    def get_customer_data(self, *, tenant_slug: str, user_id: str) -> dict[str, str]:
+        """Los datos que el cliente ya dio en la conversación (`customer_data.py`): nombre del dato → valor, o «dado»."""
+        _fn = getattr(self._repository, "get_customer_data", None)
+        return dict(_fn(tenant_slug=tenant_slug, user_id=user_id) or {}) if callable(_fn) else {}
+
+    def set_customer_data(self, *, tenant_slug: str, user_id: str, data: dict[str, str]) -> None:
+        _fn = getattr(self._repository, "set_customer_data", None)
+        if callable(_fn):
+            _fn(tenant_slug=tenant_slug, user_id=user_id, data=data)
+
     def set_op_state(self, *, tenant_slug: str, user_id: str, state_dict: dict) -> None:
         _fn = getattr(self._repository, "set_op_state", None)
         if callable(_fn):

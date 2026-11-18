@@ -1,7 +1,7 @@
 """Lo que el asesor sabe antes de responder un mensaje: se arma una vez por turno, antes de llamar a la IA (`ai_execution.py`).
 
-- La memoria del cliente (`build_memory_context`): lo último que dijo y lo que se le respondió, sus intereses, el medio de pago que
-  eligió, si avisó un pago y el paso de la conversación (por ejemplo, «ya se le enviaron los datos de Nequi»).
+- La memoria del cliente (`build_memory_context`): lo último que dijo y lo que se le respondió, sus intereses, los datos que ya dio,
+  el medio de pago que eligió, si avisó un pago y el paso de la conversación (por ejemplo, «ya se le enviaron los datos de Nequi»).
 - Lo que conviene recordarle en este mensaje (`select_commercial_memory`) y, en una conversación larga, el resumen de lo anterior
   (`conversation_summary.py`).
 - Qué pide el cliente sobre el pago en este mensaje, entendido por la IA en una llamada corta (`payment_reading.py`).
@@ -191,6 +191,17 @@ def _remembered_payment_method(memory_service: MemoryDomainService | None, *, te
         return ""
 
 
+def _customer_data(memory_service: MemoryDomainService, *, tenant_slug: str, user_id: str) -> dict[str, str]:
+    get_data = getattr(memory_service, "get_customer_data", None)
+    if not callable(get_data):
+        return {}
+    try:
+        data = get_data(tenant_slug=tenant_slug, user_id=user_id)
+    except Exception:
+        return {}
+    return dict(data) if isinstance(data, dict) else {}
+
+
 def build_memory_context(memory_service: MemoryDomainService | None, *, tenant_slug: str, user_id: str) -> dict:
     """Lo que la memoria sabe del cliente, como lo lee el prompt (`memory_context`). Vacío sin memoria."""
     if memory_service is None:
@@ -273,6 +284,8 @@ def build_memory_context(memory_service: MemoryDomainService | None, *, tenant_s
         "last_cta": memory.get("next_step"),
         # Todos los intereses o problemas que contó el cliente: `select_commercial_memory` los pondera.
         "pain_timeline": list(getattr(conversation_state, "pain_timeline", None) or []),
+        # Los datos que ya dio (su nombre, que dio el teléfono): el asesor no se los vuelve a pedir (`customer_data.py`).
+        "datos_del_cliente": _customer_data(memory_service, tenant_slug=tenant_slug, user_id=user_id),
     }
 
     # El paso de la conversación guardado, dicho para el asesor («ya le enviaste los datos de Nequi…»).

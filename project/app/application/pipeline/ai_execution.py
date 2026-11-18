@@ -2,7 +2,7 @@
 
 1. Lo que el asesor sabe antes de responder: memoria, resumen, lector de pagos y largo de respuesta (`turn_context.py`).
 2. La respuesta de la IA, revisada: si dice algo que no puede salir así, se le pide otra (`answer_review.py`).
-3. Lo que decidió queda en la memoria del cliente (`turn_persistence.py`).
+3. Lo que decidió queda en la memoria del cliente, con los datos que el cliente dio (`turn_persistence.py`).
 4. El pago: los datos reales debajo del mensaje, el pago avisado y el largo máximo (`payment_outcome.py`).
 5. Si el chat pasa a una persona, la nota para el equipo (`handoff_brief.py`). Quien guarda la conversación pausa la IA y avisa.
 
@@ -17,7 +17,7 @@ from app.application.pipeline.fallback import build_fallback_response
 from app.application.pipeline.handoff_brief import brief_for_team
 from app.application.pipeline.payment_outcome import settle_payment
 from app.application.pipeline.turn_context import TurnContext, prepare_turn
-from app.application.pipeline.turn_persistence import save_ai_metadata, save_final_response
+from app.application.pipeline.turn_persistence import save_ai_metadata, save_customer_data, save_final_response
 from app.domain.conversation.memory import MemoryDomainService
 from app.utils.logger import logger
 
@@ -63,6 +63,9 @@ class AIExecution:
             context = _turn_context(answer, turn, user_message)
             ai_metadata = context["ai_metadata"]
             save_ai_metadata(memory_service, tenant_slug=turn.tenant_slug, user_id=turn.user_id, metadata=ai_metadata)
+            save_customer_data(
+                memory_service, tenant_slug=turn.tenant_slug, user_id=turn.user_id, metadata=ai_metadata, runtime_yaml=turn.runtime_yaml,
+            )
             outcome = settle_payment(
                 checked_text(answer.response, turn, user_message),
                 ai_metadata=ai_metadata,

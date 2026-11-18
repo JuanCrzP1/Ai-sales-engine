@@ -3,6 +3,15 @@
 Lo que cambió en AI Sales Engine, de lo más reciente a lo más antiguo. Cada entrada dice qué gana el negocio; el detalle técnico
 está en el historial de git y en `docs/plan-v1.md`.
 
+## 18 de noviembre de 2026
+
+**El asistente recuerda lo que tu cliente ya le dijo, aunque el chat sea largo**
+- Si tu cliente da su nombre, su teléfono o cuenta qué negocio tiene, el asistente lo anota y lo tiene presente en cada mensaje.
+  Ya no se lo vuelve a pedir veinte mensajes después.
+- Cuida los datos: del teléfono, el correo, el documento o la dirección solo recuerda que el cliente ya los dio, no el número. Se
+  borran con la conversación.
+- Medido con 90 conversaciones de venta: 0 veces pidió algo que el cliente ya había dado (antes, 2).
+
 ## 15 de noviembre de 2026
 
 **El asistente ya no le pide al cliente lo que ya le dijo**

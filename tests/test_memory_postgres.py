@@ -267,6 +267,15 @@ def test_the_engine_continues_the_conversation_on_another_server_and_sees_the_la
         {"role": "user", "text": "Me llamo Juan Camilo"}, {"role": "assistant", "text": "Gracias, Juan Camilo."}]
 
 
+def test_the_data_the_customer_gave_is_shared_between_servers(engine):
+    """Los datos que ya dio (`customer_data.py`) los guarda un servidor y los lee el del siguiente mensaje; se van con la conversación."""
+    first, second = server(engine), server(engine)
+    first.set_customer_data(tenant_slug=SLUG, user_id=CUSTOMER, data={"nombre": "Juan Camilo", "teléfono": "dado"})
+    assert second.get_customer_data(tenant_slug=SLUG, user_id=CUSTOMER) == {"nombre": "Juan Camilo", "teléfono": "dado"}
+    second.reset_conversation(tenant_slug=SLUG, user_id=CUSTOMER)
+    assert server(engine).get_customer_data(tenant_slug=SLUG, user_id=CUSTOMER) == {}
+
+
 def test_the_conversation_summary_is_shared_between_servers(engine):
     first, second = server(engine), server(engine)
     until = datetime.now(timezone.utc).replace(microsecond=0)

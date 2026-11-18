@@ -3,7 +3,7 @@
 Guarda dos cosas por negocio y cliente (`clients`, del esquema del motor en `project/docs/postgresql_schema.sql`):
 - **los mensajes** (`conversation_messages`): la conversación que la IA ve como historial;
 - **la memoria** (`conversation_memory.memory`, un JSON): el medio de pago elegido, el estado del pago, el paso de la conversación, la
-  necesidad del cliente, la etapa, la hora de su último mensaje…
+  necesidad del cliente, los datos que ya dio (`domain/conversation/customer_data.py`), la etapa, la hora de su último mensaje…
 
 Reglas, porque en la nube cada mensaje puede llegar a un servidor distinto:
 - **La base es la única fuente.** Ningún servidor guarda nada en su RAM entre mensajes: lo que escribe uno es lo que lee el siguiente.
@@ -44,6 +44,7 @@ LAST_INTENT, DETECTED_INTENT, PAYMENT_METHOD, PAYMENT_STATUS = "last_intent", "i
 LAST_PAIN, MODE, STAGE, LAST_RESPONSE = "last_pain", "mode", "stage", "last_ai_response"
 CONVERSATION_STATE, OP_STATE = "conversation_state", "estado_operativo"
 SUMMARY, SUMMARY_UNTIL = "resumen", "resumen_hasta"
+CUSTOMER_DATA = "datos_del_cliente"
 LAST_USER_MESSAGE_AT, INITIAL_MESSAGE_SENT_AT = "last_user_message_at", "initial_message_last_sent_at"
 
 
@@ -385,6 +386,15 @@ class SQLMemoryRepository:
 
     def get_summary(self, *, tenant_slug: str, user_id: str) -> tuple[str, datetime | None]:
         return str(self._get(tenant_slug, user_id, SUMMARY) or ""), _moment(self._get(tenant_slug, user_id, SUMMARY_UNTIL, None))
+
+    def set_customer_data(self, *, tenant_slug: str, user_id: str, data: dict[str, str]) -> None:
+        """Los datos que el cliente ya dio (`customer_data.py`), completos: reemplaza los anteriores."""
+        if isinstance(data, dict) and data:
+            self._set(tenant_slug, user_id, CUSTOMER_DATA, {str(name): str(value) for name, value in data.items()})
+
+    def get_customer_data(self, *, tenant_slug: str, user_id: str) -> dict[str, str]:
+        stored = self._get(tenant_slug, user_id, CUSTOMER_DATA, {})
+        return {str(name): str(value) for name, value in stored.items()} if isinstance(stored, dict) else {}
 
     def set_op_state(self, *, tenant_slug: str, user_id: str, state_dict: dict) -> None:
         """El paso de la conversación (`OperationalState`). Uno vacío no borra el que hay: vence solo (`expires_at`)."""

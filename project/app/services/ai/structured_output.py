@@ -250,7 +250,16 @@ def normalize_metadata(raw_metadata: dict | None) -> dict:
         "send_payment": str(metadata.get("send_payment") or "").strip().lower(),
         "payment_status": str(metadata.get("payment_status") or "").strip().lower(),
         "handoff": _handoff(metadata.get("handoff")),
+        "customer_data": _customer_data(metadata.get("customer_data")),
     }
+
+
+def _customer_data(value: object) -> dict[str, str]:
+    """Los datos que dio el cliente, como textos y sin vacíos. Qué se guarda y cómo lo decide `domain/conversation/customer_data.py`."""
+    if not isinstance(value, dict):
+        return {}
+    data = {" ".join(str(name or "").split()): " ".join(str(item).split()) for name, item in value.items() if item is not None and not isinstance(item, (dict, list))}
+    return {name: item for name, item in data.items() if name and item}
 
 
 def _handoff(value: object) -> str:
@@ -309,6 +318,7 @@ def parse_structured_output(raw_text: str) -> StructuredOutputResult:
         "send_payment": parsed.get("send_payment"),
         "payment_status": parsed.get("payment_status"),
         "handoff": parsed.get("handoff"),
+        "customer_data": parsed.get("customer_data"),
     }
     metadata_payload = parsed.get("metadata") if isinstance(parsed.get("metadata"), dict) else {}
     metadata = normalize_metadata({**top_level_metadata, **metadata_payload})

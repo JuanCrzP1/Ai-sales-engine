@@ -330,9 +330,41 @@ cliente que el juez cita como prueba (antes aceptaba «Quiero Agenda Plus» como
 
 Las reglas exactas (pagos, paso al equipo, nota) pasan en las tres. Se publica como mejora; la meta era 0. Queda:
 - En la clínica, dentro del chat largo de producción, el cliente da su teléfono en el mensaje 7 y en el 10 se lo vuelven a pedir (2
-  de 9). Siguiente paso: que el asesor anote los datos que el cliente le da y el motor se los recuerde en cada mensaje.
+  de 9). Resuelto con la memoria de los datos del cliente (ver «Recordar los datos que ya dio»).
 - Una vez en 90 (restaurante), «luego te envío los datos» con los datos ya debajo: el mismo caso que ya se había visto en negocios
   que piden datos al cerrar. Con una aparición no se puede atribuir al cambio; se vigila.
+
+### Recordar los datos que ya dio (18 de noviembre de 2026)
+
+Rama `datos-ya-dados`, prompt `v16`. Lo que quedaba de «pedir solo los datos que faltan»: en un chat largo, el modelo pierde de
+vista lo que se dijo varios mensajes atrás, y ninguna frase del prompt lo arregla del todo.
+
+**El cambio: memoria de los datos del cliente** (`domain/conversation/customer_data.py`), sin reglas de palabras:
+- El asesor anota en su respuesta los datos que el cliente da (`metadata.customer_data`). Qué dato dio lo entiende la IA.
+- El motor los suma a la memoria del cliente (`datos_del_cliente`, en el JSON de la memoria: sin migración) y en cada mensaje le
+  dice «Datos que ya te dio el cliente: su nombre (Camila) y su teléfono. Ya los tienes: pídele solo lo que todavía falte».
+- Lo mínimo de datos personales: de teléfono, correo, documento y dirección se guarda que los dio, nunca el valor (el asesor
+  confundió una vez el teléfono del cliente con el número de Nequi). Un valor con un número largo queda igual, y uno con un dato de
+  pago del negocio no se guarda. El registro `datos_del_cliente` dice qué datos dio, nunca cuáles son.
+- El prompt crece unos 250 caracteres (unos 64 tokens por mensaje).
+
+**La medición** (gpt-4o-mini, las mismas 90 conversaciones que v15):
+
+| Corrida | No pide lo ya dado | Sin respuesta de la IA |
+|---|---|---|
+| `no_pide_v15b_20261115` (antes) | 88 de 90 | 1 |
+| `datos_ya_dados_20261118` | **90 de 90** | 5 |
+| `datos_ya_dados_20261118_b` (el negocio real otra vez, 10 conversaciones) | 10 de 10, **todas las reglas** | 0 |
+
+- El asesor anotó los datos en las 27 conversaciones donde el cliente da alguno, y ningún recordatorio llevó un número.
+- Las 5 sin respuesta fueron en una sola conversación: la llamada del asesor se cortó por tiempo (el proveedor tardaba hasta 27 s
+  en la llamada corta del lector) y ninguna vino del código nuevo (`fallback_exception`, no `fallback_exception_execution`). La
+  repetición salió sin ninguna.
+- Fuera de esas 5: «responde lo que preguntan» falló una vez (restaurante, «Y puedo trasferir»: siguió con el pedido) y «explica
+  cuando no entienden» una (restaurante), como en v15b. Se vigila el primero. «Luego te envío los datos» no apareció.
+- Laboratorio de regresión `datos_ya_dados_20261118`: respuestas idénticas, sin salidas a la red; solo cambia la línea nueva del
+  prompt.
+- Gasto: unos USD 0,16.
 
 ## Lo que la puerta no cubre
 
