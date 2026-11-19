@@ -414,6 +414,51 @@ real de esas conversaciones:
   una sí.
 - **Largo.** Con un máximo de 40 palabras, gpt-4o-mini se pasa por unas pocas.
 
+### El lector de pagos: querer comprar no es pedir los datos (19 de noviembre de 2026)
+
+La primera medición del panel mostró que el lector de pagos leía «Me convence, lo quiero» como «pide los datos para pagar», y el
+motor le indicaba al asesor preguntar con qué medio paga, también en un negocio que solo capta datos. Para medir al lector solo hay
+una evaluación propia: [`run_reader_eval.py`](../experiments/quality_lab/run_reader_eval.py) corre los casos de
+[`reader_cases.py`](../experiments/quality_lab/reader_cases.py) (mensajes de clientes con lo último que les dijo el asesor y la
+lectura correcta) con la función real del motor, varias veces cada uno. Cuesta un par de centavos.
+
+```bash
+.venv/bin/python experiments/quality_lab/run_reader_eval.py --experiment <id> [--samples 5] [--model <modelo>]
+```
+
+Los 32 casos cubren los pedidos de datos, las preguntas que no son pedidos, los avisos de pago, querer comprar con las frases de los
+ejemplos y con frases que no están en ninguna instrucción (para que entienda la idea, no la frase), y aceptar cuando el asesor
+ofreció enviar los datos (ahí sí los recibe). Se probaron cinco redacciones, todas medidas igual:
+
+| Versión del lector | Acierto (gpt-4o-mini) | Lo que falla |
+|---|---|---|
+| La anterior | 66 de 96 (69 %) | 10 de los 11 casos de «quiero comprar», también con frases nuevas: 0 de 30 lecturas |
+| Una lista de frases de compra en «false» | 149 de 160 | «prefiero el link» 1 de 5: el cliente se queda sin su link |
+| Una condición («y el asesor no le ofreció…») | 126 de 160 | Casi todo «quiero comprar» |
+| Un principio con «lo quiero» de ejemplo | 150 de 160 | «sí, lo quiero» cuando el asesor ofreció enviar los datos, 0 de 5 |
+| **Un principio con ejemplos que no chocan** | **156 de 160 (97,5 %)** | «hágale pues, de una» 1 de 5 |
+
+Quedó la última (`lector_despues_g_20261119`); con gemini-2.5-flash acierta 95 de 96. Lo aprendido:
+
+- **Un principio corto vale más que una lista.** La lista de frases de compra desordenó casos que no tenían nada que ver.
+- **Un ejemplo de «no» con las mismas palabras que un «sí» se lleva el «sí».** Con «lo quiero» como ejemplo de «no», el lector dejó
+  de enviar los datos al cliente que respondía «sí, lo quiero» a «¿le envío los datos?».
+- **Las condiciones enredan a un modelo pequeño.** Lo mismo dicho como condición acertó menos que dicho como principio.
+
+Las instrucciones del lector pasaron de `instructions.py` a `prompting/payment_reader.py`, donde se usan (el traslado se comprobó
+aparte con el laboratorio de regresión: motor sin diferencias). Laboratorio de regresión `lector_quiere_comprar_20261119`: cambian
+solo las 9 peticiones del lector; las 10 del asesor y las respuestas, idénticas. Prompt `v17`.
+
+En la puerta del panel (`panel_lector_v17_20261119`): «cierra como el negocio» pasó de 17 a 18 de 18, y la indicación equivocada
+apareció en 0 de 12 turnos de «decide comprar» (antes, 3).
+
+Como el lector decide cuándo le llegan los datos de pago en todos los negocios, se repitió la puerta de pagos completa
+(`pagos_lector_v17_20261119`, 90 conversaciones en `asesor_ai_prod`, `clinic` y `restaurant`): todas las reglas exactas, 90 de 90
+(los datos llegan cuando los pide y nunca sin pedirlos). Del juez quedaron 4 fallas (en la medición del 18 de noviembre, 6), ninguna
+del lector: «nota fiel» dos veces (una es del juez: el cliente sí había dicho «Quiero Agenda Plus»; la otra, la nota mezcla un pedido
+viejo con el aviso de pago), y una de «responde lo que preguntan» y otra de «explica cuando no entienden», como antes. Gasto del
+arreglo, con las mediciones: unos USD 0,31.
+
 ## Lo que la puerta no cubre
 
 - Solo mira los momentos de pago y, con `--panel`, lo que configura el negocio. La oferta, los precios y las objeciones los mide

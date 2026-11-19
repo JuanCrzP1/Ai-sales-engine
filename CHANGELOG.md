@@ -3,6 +3,15 @@
 Lo que cambió en AI Sales Engine, de lo más reciente a lo más antiguo. Cada entrada dice qué gana el negocio; el detalle técnico
 está en el historial de git y en `docs/plan-v1.md`.
 
+## 19 de noviembre de 2026
+
+**El asistente entiende cuando tu cliente se decide a comprar**
+- Si tu cliente dice «me convence, lo quiero» o «listo, avancemos», el asistente lo toma como lo que es: que quiere comprar. Antes lo
+  confundía con que pedía los datos para pagar y le preguntaba con qué medio iba a pagar, aunque tu negocio cerrara tomando sus
+  datos para llamarlo.
+- Si le ofreció enviarle los datos para pagar y el cliente responde «sí, lo quiero», se los envía, como siempre.
+- Medido con 32 tipos de mensaje, cinco veces cada uno: entiende bien 156 de 160 (antes, 69 %).
+
 ## 18 de noviembre de 2026
 
 **El asistente recuerda lo que tu cliente ya le dijo, aunque el chat sea largo**

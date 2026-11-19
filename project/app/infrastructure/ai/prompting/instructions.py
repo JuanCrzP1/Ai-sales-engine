@@ -7,7 +7,7 @@ su caché y cobrarlas más barato. Todo cambio aquí se mide con el laboratorio 
 from __future__ import annotations
 
 # Versión del prompt: va en cada respuesta para saber qué texto la produjo. Se cambia con cada cambio de contenido.
-PROMPT_VERSION = "2026-11-18.v16"
+PROMPT_VERSION = "2026-11-19.v17"
 
 PLATFORM = """
 Eres el asistente de ventas de un negocio y atiendes a sus clientes por chat. Tu trabajo es entender qué necesita cada cliente,
@@ -109,32 +109,6 @@ STATE_RULES = {
 # No repetir la lista, pero sí cambiar de medio: con «no le ofrezcas medios», un modelo pequeño llegó a negar que el negocio tuviera
 # Nequi cuando el cliente lo pidió (13 nov 2026).
 PAYMENT_CHOSEN = "Ya eligió pagar por {method}: no le repitas la lista de medios; si pregunta por otro de los del negocio, dile que también lo recibe."
-# El lector de pagos (`payment_reader.py`): una llamada corta, antes del asesor, que dice qué pide el cliente sobre el pago. Los
-# ejemplos no nombran medios de ningún país: sirven para cualquier negocio.
-PAYMENT_READER = """
-Lees el último mensaje de un cliente en el chat de ventas de un negocio y dices qué pide sobre el pago. No le respondes al cliente.
-Responde solo con un objeto JSON, sin texto antes ni después:
-{{"recibe_datos_de_pago": false, "medio": "", "dice_que_ya_pago": false}}
-
-- recibe_datos_de_pago: true si con este mensaje el cliente debe recibir los datos para pagar (el número, la cuenta o el link):
-  - los pide, o pide que se los envíen otra vez: «pásame el número», «¿a qué cuenta te consigno?», «se me borró, envíamelo de
-    nuevo», «no me llegó», «¿cuál era el número?»;
-  - dice con cuál de los medios va a pagar o prefiere pagar: «te pago por transferencia», «mejor en efectivo», «prefiero el
-    link», o responde con un medio cuando el asesor le pregunta con cuál paga;
-  - o acepta cuando el asesor le ofrece enviárselos: «sí, envíamelos», «dale».
-  Es false si solo pregunta si puede pagar con un medio o cuáles hay, aunque no escriba los signos de pregunta («y puedo
-  transferir», «y con tarjeta no», «¿cómo pago?»), si quiere pagar y no dice con qué medio, si avisa que va a pagar o que ya pagó,
-  si no entiende algo («¿cómo así?») o si habla de otra cosa (pide otro número, información, un precio).
-- medio: el medio de pago del que debe recibir los datos, como aparece en los medios del negocio. Si no dice cuál, "".
-- dice_que_ya_pago: true solo si dice que ya pagó, consignó o transfirió, o que envía el comprobante de un pago hecho. Es false si
-  todavía no ha pagado: va a pagar ahora o después («ya voy a pagar», «ahorita te consigno», «mañana pago»).
-
-Medios de pago del negocio: {methods}
-""".strip()
-READER_SENT = "Al cliente ya se le enviaron los datos para pagar por {method}."
-READER_NOT_SENT = "Al cliente todavía no se le han enviado datos de pago (aunque el asesor diga otra cosa)."
-READER_LAST_REPLY = "Lo último que le dijo el asesor: «{reply}»"
-READER_MESSAGE = "Mensaje del cliente: «{message}»"
 # Lo que entendió el lector de este mensaje, para el asesor (`sections/conversation.py`).
 # Con un ejemplo y con el orden dicho: sin eso, un modelo pequeño a veces escribía «necesito tu nombre y luego te envío los datos» con
 # los datos ya debajo de su mensaje, sobre todo cuando el negocio pide datos para cerrar (medido con la IA real, 13 nov 2026).

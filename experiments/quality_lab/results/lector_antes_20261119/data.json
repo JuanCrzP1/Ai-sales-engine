@@ -1,0 +1,1370 @@
+{
+ "experiment": "lector_antes_20261119",
+ "model": "openai/gpt-4o-mini",
+ "samples": 3,
+ "rows": [
+  {
+   "case": "pide el número",
+   "sample": 0,
+   "message": "pásame el número para pagar",
+   "last_reply": "",
+   "expected": {
+    "wants_details": true,
+    "method": "",
+    "says_paid": false
+   },
+   "read": {
+    "wants_details": true,
+    "method": "",
+    "says_paid": false
+   },
+   "mistakes": []
+  },
+  {
+   "case": "pide el número",
+   "sample": 1,
+   "message": "pásame el número para pagar",
+   "last_reply": "",
+   "expected": {
+    "wants_details": true,
+    "method": "",
+    "says_paid": false
+   },
+   "read": {
+    "wants_details": true,
+    "method": "",
+    "says_paid": false
+   },
+   "mistakes": []
+  },
+  {
+   "case": "pide el número",
+   "sample": 2,
+   "message": "pásame el número para pagar",
+   "last_reply": "",
+   "expected": {
+    "wants_details": true,
+    "method": "",
+    "says_paid": false
+   },
+   "read": {
+    "wants_details": true,
+    "method": "",
+    "says_paid": false
+   },
+   "mistakes": []
+  },
+  {
+   "case": "pregunta a qué cuenta consigna",
+   "sample": 0,
+   "message": "¿A qué cuenta te consigno?",
+   "last_reply": "",
+   "expected": {
+    "wants_details": true,
+    "method": "",
+    "says_paid": false
+   },
+   "read": {
+    "wants_details": true,
+    "method": "",
+    "says_paid": false
+   },
+   "mistakes": []
+  },
+  {
+   "case": "pregunta a qué cuenta consigna",
+   "sample": 1,
+   "message": "¿A qué cuenta te consigno?",
+   "last_reply": "",
+   "expected": {
+    "wants_details": true,
+    "method": "",
+    "says_paid": false
+   },
+   "read": {
+    "wants_details": true,
+    "method": "",
+    "says_paid": false
+   },
+   "mistakes": []
+  },
+  {
+   "case": "pregunta a qué cuenta consigna",
+   "sample": 2,
+   "message": "¿A qué cuenta te consigno?",
+   "last_reply": "",
+   "expected": {
+    "wants_details": true,
+    "method": "",
+    "says_paid": false
+   },
+   "read": {
+    "wants_details": true,
+    "method": "",
+    "says_paid": false
+   },
+   "mistakes": []
+  },
+  {
+   "case": "se le borraron",
+   "sample": 0,
+   "message": "se me borró, envíamelo de nuevo",
+   "last_reply": "",
+   "expected": {
+    "wants_details": true,
+    "method": "nequi",
+    "says_paid": false
+   },
+   "read": {
+    "wants_details": true,
+    "method": "nequi",
+    "says_paid": false
+   },
+   "mistakes": []
+  },
+  {
+   "case": "se le borraron",
+   "sample": 1,
+   "message": "se me borró, envíamelo de nuevo",
+   "last_reply": "",
+   "expected": {
+    "wants_details": true,
+    "method": "nequi",
+    "says_paid": false
+   },
+   "read": {
+    "wants_details": true,
+    "method": "nequi",
+    "says_paid": false
+   },
+   "mistakes": []
+  },
+  {
+   "case": "se le borraron",
+   "sample": 2,
+   "message": "se me borró, envíamelo de nuevo",
+   "last_reply": "",
+   "expected": {
+    "wants_details": true,
+    "method": "nequi",
+    "says_paid": false
+   },
+   "read": {
+    "wants_details": true,
+    "method": "nequi",
+    "says_paid": false
+   },
+   "mistakes": []
+  },
+  {
+   "case": "dice con qué paga",
+   "sample": 0,
+   "message": "Te pago por Nequi",
+   "last_reply": "",
+   "expected": {
+    "wants_details": true,
+    "method": "nequi",
+    "says_paid": false
+   },
+   "read": {
+    "wants_details": true,
+    "method": "nequi",
+    "says_paid": false
+   },
+   "mistakes": []
+  },
+  {
+   "case": "dice con qué paga",
+   "sample": 1,
+   "message": "Te pago por Nequi",
+   "last_reply": "",
+   "expected": {
+    "wants_details": true,
+    "method": "nequi",
+    "says_paid": false
+   },
+   "read": {
+    "wants_details": true,
+    "method": "nequi",
+    "says_paid": false
+   },
+   "mistakes": []
+  },
+  {
+   "case": "dice con qué paga",
+   "sample": 2,
+   "message": "Te pago por Nequi",
+   "last_reply": "",
+   "expected": {
+    "wants_details": true,
+    "method": "nequi",
+    "says_paid": false
+   },
+   "read": {
+    "wants_details": true,
+    "method": "nequi",
+    "says_paid": false
+   },
+   "mistakes": []
+  },
+  {
+   "case": "prefiere el link",
+   "sample": 0,
+   "message": "prefiero el link",
+   "last_reply": "",
+   "expected": {
+    "wants_details": true,
+    "method": "link",
+    "says_paid": false
+   },
+   "read": {
+    "wants_details": true,
+    "method": "link",
+    "says_paid": false
+   },
+   "mistakes": []
+  },
+  {
+   "case": "prefiere el link",
+   "sample": 1,
+   "message": "prefiero el link",
+   "last_reply": "",
+   "expected": {
+    "wants_details": true,
+    "method": "link",
+    "says_paid": false
+   },
+   "read": {
+    "wants_details": true,
+    "method": "link",
+    "says_paid": false
+   },
+   "mistakes": []
+  },
+  {
+   "case": "prefiere el link",
+   "sample": 2,
+   "message": "prefiero el link",
+   "last_reply": "",
+   "expected": {
+    "wants_details": true,
+    "method": "link",
+    "says_paid": false
+   },
+   "read": {
+    "wants_details": true,
+    "method": "link",
+    "says_paid": false
+   },
+   "mistakes": []
+  },
+  {
+   "case": "responde el medio que le preguntan",
+   "sample": 0,
+   "message": "Daviplata",
+   "last_reply": "¡Perfecto! ¿Con cuál medio prefiere pagar: Nequi, Daviplata, transferencia, Bre-B o link de pago?",
+   "expected": {
+    "wants_details": true,
+    "method": "daviplata",
+    "says_paid": false
+   },
+   "read": {
+    "wants_details": true,
+    "method": "daviplata",
+    "says_paid": false
+   },
+   "mistakes": []
+  },
+  {
+   "case": "responde el medio que le preguntan",
+   "sample": 1,
+   "message": "Daviplata",
+   "last_reply": "¡Perfecto! ¿Con cuál medio prefiere pagar: Nequi, Daviplata, transferencia, Bre-B o link de pago?",
+   "expected": {
+    "wants_details": true,
+    "method": "daviplata",
+    "says_paid": false
+   },
+   "read": {
+    "wants_details": true,
+    "method": "daviplata",
+    "says_paid": false
+   },
+   "mistakes": []
+  },
+  {
+   "case": "responde el medio que le preguntan",
+   "sample": 2,
+   "message": "Daviplata",
+   "last_reply": "¡Perfecto! ¿Con cuál medio prefiere pagar: Nequi, Daviplata, transferencia, Bre-B o link de pago?",
+   "expected": {
+    "wants_details": true,
+    "method": "daviplata",
+    "says_paid": false
+   },
+   "read": {
+    "wants_details": true,
+    "method": "daviplata",
+    "says_paid": false
+   },
+   "mistakes": []
+  },
+  {
+   "case": "pide los datos de un medio",
+   "sample": 0,
+   "message": "listo, mándame los datos para pagar por Bre-B",
+   "last_reply": "",
+   "expected": {
+    "wants_details": true,
+    "method": "breb",
+    "says_paid": false
+   },
+   "read": {
+    "wants_details": true,
+    "method": "breb",
+    "says_paid": false
+   },
+   "mistakes": []
+  },
+  {
+   "case": "pide los datos de un medio",
+   "sample": 1,
+   "message": "listo, mándame los datos para pagar por Bre-B",
+   "last_reply": "",
+   "expected": {
+    "wants_details": true,
+    "method": "breb",
+    "says_paid": false
+   },
+   "read": {
+    "wants_details": true,
+    "method": "breb",
+    "says_paid": false
+   },
+   "mistakes": []
+  },
+  {
+   "case": "pide los datos de un medio",
+   "sample": 2,
+   "message": "listo, mándame los datos para pagar por Bre-B",
+   "last_reply": "",
+   "expected": {
+    "wants_details": true,
+    "method": "breb",
+    "says_paid": false
+   },
+   "read": {
+    "wants_details": true,
+    "method": "breb",
+    "says_paid": false
+   },
+   "mistakes": []
+  },
+  {
+   "case": "acepta que se los envíen",
+   "sample": 0,
+   "message": "sí, envíamelos",
+   "last_reply": "Con gusto. ¿Quiere que le envíe los datos para pagar?",
+   "expected": {
+    "wants_details": true,
+    "method": "",
+    "says_paid": false
+   },
+   "read": {
+    "wants_details": true,
+    "method": "",
+    "says_paid": false
+   },
+   "mistakes": []
+  },
+  {
+   "case": "acepta que se los envíen",
+   "sample": 1,
+   "message": "sí, envíamelos",
+   "last_reply": "Con gusto. ¿Quiere que le envíe los datos para pagar?",
+   "expected": {
+    "wants_details": true,
+    "method": "",
+    "says_paid": false
+   },
+   "read": {
+    "wants_details": true,
+    "method": "",
+    "says_paid": false
+   },
+   "mistakes": []
+  },
+  {
+   "case": "acepta que se los envíen",
+   "sample": 2,
+   "message": "sí, envíamelos",
+   "last_reply": "Con gusto. ¿Quiere que le envíe los datos para pagar?",
+   "expected": {
+    "wants_details": true,
+    "method": "",
+    "says_paid": false
+   },
+   "read": {
+    "wants_details": true,
+    "method": "",
+    "says_paid": false
+   },
+   "mistakes": []
+  },
+  {
+   "case": "acepta con un dale",
+   "sample": 0,
+   "message": "dale",
+   "last_reply": "Con gusto. ¿Quiere que le envíe los datos para pagar?",
+   "expected": {
+    "wants_details": true,
+    "method": "",
+    "says_paid": false
+   },
+   "read": {
+    "wants_details": true,
+    "method": "",
+    "says_paid": false
+   },
+   "mistakes": []
+  },
+  {
+   "case": "acepta con un dale",
+   "sample": 1,
+   "message": "dale",
+   "last_reply": "Con gusto. ¿Quiere que le envíe los datos para pagar?",
+   "expected": {
+    "wants_details": true,
+    "method": "",
+    "says_paid": false
+   },
+   "read": {
+    "wants_details": true,
+    "method": "",
+    "says_paid": false
+   },
+   "mistakes": []
+  },
+  {
+   "case": "acepta con un dale",
+   "sample": 2,
+   "message": "dale",
+   "last_reply": "Con gusto. ¿Quiere que le envíe los datos para pagar?",
+   "expected": {
+    "wants_details": true,
+    "method": "",
+    "says_paid": false
+   },
+   "read": {
+    "wants_details": true,
+    "method": "",
+    "says_paid": false
+   },
+   "mistakes": []
+  },
+  {
+   "case": "acepta diciendo que lo quiere",
+   "sample": 0,
+   "message": "sí, lo quiero",
+   "last_reply": "Con gusto. ¿Quiere que le envíe los datos para pagar?",
+   "expected": {
+    "wants_details": true,
+    "method": "",
+    "says_paid": false
+   },
+   "read": {
+    "wants_details": true,
+    "method": "",
+    "says_paid": false
+   },
+   "mistakes": []
+  },
+  {
+   "case": "acepta diciendo que lo quiere",
+   "sample": 1,
+   "message": "sí, lo quiero",
+   "last_reply": "Con gusto. ¿Quiere que le envíe los datos para pagar?",
+   "expected": {
+    "wants_details": true,
+    "method": "",
+    "says_paid": false
+   },
+   "read": {
+    "wants_details": true,
+    "method": "",
+    "says_paid": false
+   },
+   "mistakes": []
+  },
+  {
+   "case": "acepta diciendo que lo quiere",
+   "sample": 2,
+   "message": "sí, lo quiero",
+   "last_reply": "Con gusto. ¿Quiere que le envíe los datos para pagar?",
+   "expected": {
+    "wants_details": true,
+    "method": "",
+    "says_paid": false
+   },
+   "read": {
+    "wants_details": true,
+    "method": "",
+    "says_paid": false
+   },
+   "mistakes": []
+  },
+  {
+   "case": "pregunta si puede transferir",
+   "sample": 0,
+   "message": "y puedo transferir",
+   "last_reply": "",
+   "expected": {
+    "wants_details": false,
+    "method": "",
+    "says_paid": false
+   },
+   "read": {
+    "wants_details": false,
+    "method": "",
+    "says_paid": false
+   },
+   "mistakes": []
+  },
+  {
+   "case": "pregunta si puede transferir",
+   "sample": 1,
+   "message": "y puedo transferir",
+   "last_reply": "",
+   "expected": {
+    "wants_details": false,
+    "method": "",
+    "says_paid": false
+   },
+   "read": {
+    "wants_details": false,
+    "method": "",
+    "says_paid": false
+   },
+   "mistakes": []
+  },
+  {
+   "case": "pregunta si puede transferir",
+   "sample": 2,
+   "message": "y puedo transferir",
+   "last_reply": "",
+   "expected": {
+    "wants_details": false,
+    "method": "",
+    "says_paid": false
+   },
+   "read": {
+    "wants_details": false,
+    "method": "",
+    "says_paid": false
+   },
+   "mistakes": []
+  },
+  {
+   "case": "pregunta cómo paga",
+   "sample": 0,
+   "message": "¿cómo pago?",
+   "last_reply": "",
+   "expected": {
+    "wants_details": false,
+    "method": "",
+    "says_paid": false
+   },
+   "read": {
+    "wants_details": false,
+    "method": "",
+    "says_paid": false
+   },
+   "mistakes": []
+  },
+  {
+   "case": "pregunta cómo paga",
+   "sample": 1,
+   "message": "¿cómo pago?",
+   "last_reply": "",
+   "expected": {
+    "wants_details": false,
+    "method": "",
+    "says_paid": false
+   },
+   "read": {
+    "wants_details": false,
+    "method": "",
+    "says_paid": false
+   },
+   "mistakes": []
+  },
+  {
+   "case": "pregunta cómo paga",
+   "sample": 2,
+   "message": "¿cómo pago?",
+   "last_reply": "",
+   "expected": {
+    "wants_details": false,
+    "method": "",
+    "says_paid": false
+   },
+   "read": {
+    "wants_details": false,
+    "method": "",
+    "says_paid": false
+   },
+   "mistakes": []
+  },
+  {
+   "case": "pregunta si tienen un medio",
+   "sample": 0,
+   "message": "¿Tienen Nequi?",
+   "last_reply": "",
+   "expected": {
+    "wants_details": false,
+    "method": "",
+    "says_paid": false
+   },
+   "read": {
+    "wants_details": false,
+    "method": "",
+    "says_paid": false
+   },
+   "mistakes": []
+  },
+  {
+   "case": "pregunta si tienen un medio",
+   "sample": 1,
+   "message": "¿Tienen Nequi?",
+   "last_reply": "",
+   "expected": {
+    "wants_details": false,
+    "method": "",
+    "says_paid": false
+   },
+   "read": {
+    "wants_details": false,
+    "method": "",
+    "says_paid": false
+   },
+   "mistakes": []
+  },
+  {
+   "case": "pregunta si tienen un medio",
+   "sample": 2,
+   "message": "¿Tienen Nequi?",
+   "last_reply": "",
+   "expected": {
+    "wants_details": false,
+    "method": "",
+    "says_paid": false
+   },
+   "read": {
+    "wants_details": false,
+    "method": "",
+    "says_paid": false
+   },
+   "mistakes": []
+  },
+  {
+   "case": "avisa que va a pagar",
+   "sample": 0,
+   "message": "ya voy a pagar",
+   "last_reply": "",
+   "expected": {
+    "wants_details": false,
+    "method": "",
+    "says_paid": false
+   },
+   "read": {
+    "wants_details": false,
+    "method": "",
+    "says_paid": false
+   },
+   "mistakes": []
+  },
+  {
+   "case": "avisa que va a pagar",
+   "sample": 1,
+   "message": "ya voy a pagar",
+   "last_reply": "",
+   "expected": {
+    "wants_details": false,
+    "method": "",
+    "says_paid": false
+   },
+   "read": {
+    "wants_details": false,
+    "method": "",
+    "says_paid": false
+   },
+   "mistakes": []
+  },
+  {
+   "case": "avisa que va a pagar",
+   "sample": 2,
+   "message": "ya voy a pagar",
+   "last_reply": "",
+   "expected": {
+    "wants_details": false,
+    "method": "",
+    "says_paid": false
+   },
+   "read": {
+    "wants_details": false,
+    "method": "",
+    "says_paid": false
+   },
+   "mistakes": []
+  },
+  {
+   "case": "no entiende",
+   "sample": 0,
+   "message": "cómo así",
+   "last_reply": "El Plan Básico cuesta COP 210.000 el primer mes, con la configuración incluida, y luego COP 110.000 al mes.",
+   "expected": {
+    "wants_details": false,
+    "method": "",
+    "says_paid": false
+   },
+   "read": {
+    "wants_details": false,
+    "method": "",
+    "says_paid": false
+   },
+   "mistakes": []
+  },
+  {
+   "case": "no entiende",
+   "sample": 1,
+   "message": "cómo así",
+   "last_reply": "El Plan Básico cuesta COP 210.000 el primer mes, con la configuración incluida, y luego COP 110.000 al mes.",
+   "expected": {
+    "wants_details": false,
+    "method": "",
+    "says_paid": false
+   },
+   "read": {
+    "wants_details": false,
+    "method": "",
+    "says_paid": false
+   },
+   "mistakes": []
+  },
+  {
+   "case": "no entiende",
+   "sample": 2,
+   "message": "cómo así",
+   "last_reply": "El Plan Básico cuesta COP 210.000 el primer mes, con la configuración incluida, y luego COP 110.000 al mes.",
+   "expected": {
+    "wants_details": false,
+    "method": "",
+    "says_paid": false
+   },
+   "read": {
+    "wants_details": false,
+    "method": "",
+    "says_paid": false
+   },
+   "mistakes": []
+  },
+  {
+   "case": "pregunta el precio",
+   "sample": 0,
+   "message": "¿cuánto cuesta?",
+   "last_reply": "",
+   "expected": {
+    "wants_details": false,
+    "method": "",
+    "says_paid": false
+   },
+   "read": {
+    "wants_details": false,
+    "method": "",
+    "says_paid": false
+   },
+   "mistakes": []
+  },
+  {
+   "case": "pregunta el precio",
+   "sample": 1,
+   "message": "¿cuánto cuesta?",
+   "last_reply": "",
+   "expected": {
+    "wants_details": false,
+    "method": "",
+    "says_paid": false
+   },
+   "read": {
+    "wants_details": false,
+    "method": "",
+    "says_paid": false
+   },
+   "mistakes": []
+  },
+  {
+   "case": "pregunta el precio",
+   "sample": 2,
+   "message": "¿cuánto cuesta?",
+   "last_reply": "",
+   "expected": {
+    "wants_details": false,
+    "method": "",
+    "says_paid": false
+   },
+   "read": {
+    "wants_details": false,
+    "method": "",
+    "says_paid": false
+   },
+   "mistakes": []
+  },
+  {
+   "case": "decide después del precio",
+   "sample": 0,
+   "message": "Me convence, lo quiero",
+   "last_reply": "El Plan Básico cuesta COP 210.000 el primer mes, con la configuración incluida, y luego COP 110.000 al mes.",
+   "expected": {
+    "wants_details": false,
+    "method": "",
+    "says_paid": false
+   },
+   "read": {
+    "wants_details": true,
+    "method": "",
+    "says_paid": false
+   },
+   "mistakes": [
+    "dijo que recibe los datos"
+   ]
+  },
+  {
+   "case": "decide después del precio",
+   "sample": 1,
+   "message": "Me convence, lo quiero",
+   "last_reply": "El Plan Básico cuesta COP 210.000 el primer mes, con la configuración incluida, y luego COP 110.000 al mes.",
+   "expected": {
+    "wants_details": false,
+    "method": "",
+    "says_paid": false
+   },
+   "read": {
+    "wants_details": true,
+    "method": "",
+    "says_paid": false
+   },
+   "mistakes": [
+    "dijo que recibe los datos"
+   ]
+  },
+  {
+   "case": "decide después del precio",
+   "sample": 2,
+   "message": "Me convence, lo quiero",
+   "last_reply": "El Plan Básico cuesta COP 210.000 el primer mes, con la configuración incluida, y luego COP 110.000 al mes.",
+   "expected": {
+    "wants_details": false,
+    "method": "",
+    "says_paid": false
+   },
+   "read": {
+    "wants_details": true,
+    "method": "",
+    "says_paid": false
+   },
+   "mistakes": [
+    "dijo que recibe los datos"
+   ]
+  },
+  {
+   "case": "acepta avanzar",
+   "sample": 0,
+   "message": "Me convence, lo quiero",
+   "last_reply": "El Plan Básico cuesta COP 210.000 el primer mes y luego COP 110.000 mensuales. ¿Le gustaría avanzar con la activación?",
+   "expected": {
+    "wants_details": false,
+    "method": "",
+    "says_paid": false
+   },
+   "read": {
+    "wants_details": true,
+    "method": "",
+    "says_paid": false
+   },
+   "mistakes": [
+    "dijo que recibe los datos"
+   ]
+  },
+  {
+   "case": "acepta avanzar",
+   "sample": 1,
+   "message": "Me convence, lo quiero",
+   "last_reply": "El Plan Básico cuesta COP 210.000 el primer mes y luego COP 110.000 mensuales. ¿Le gustaría avanzar con la activación?",
+   "expected": {
+    "wants_details": false,
+    "method": "",
+    "says_paid": false
+   },
+   "read": {
+    "wants_details": true,
+    "method": "",
+    "says_paid": false
+   },
+   "mistakes": [
+    "dijo que recibe los datos"
+   ]
+  },
+  {
+   "case": "acepta avanzar",
+   "sample": 2,
+   "message": "Me convence, lo quiero",
+   "last_reply": "El Plan Básico cuesta COP 210.000 el primer mes y luego COP 110.000 mensuales. ¿Le gustaría avanzar con la activación?",
+   "expected": {
+    "wants_details": false,
+    "method": "",
+    "says_paid": false
+   },
+   "read": {
+    "wants_details": true,
+    "method": "",
+    "says_paid": false
+   },
+   "mistakes": [
+    "dijo que recibe los datos"
+   ]
+  },
+  {
+   "case": "lo quiere sin contexto",
+   "sample": 0,
+   "message": "Me convence, lo quiero",
+   "last_reply": "",
+   "expected": {
+    "wants_details": false,
+    "method": "",
+    "says_paid": false
+   },
+   "read": {
+    "wants_details": true,
+    "method": "",
+    "says_paid": false
+   },
+   "mistakes": [
+    "dijo que recibe los datos"
+   ]
+  },
+  {
+   "case": "lo quiere sin contexto",
+   "sample": 1,
+   "message": "Me convence, lo quiero",
+   "last_reply": "",
+   "expected": {
+    "wants_details": false,
+    "method": "",
+    "says_paid": false
+   },
+   "read": {
+    "wants_details": true,
+    "method": "",
+    "says_paid": false
+   },
+   "mistakes": [
+    "dijo que recibe los datos"
+   ]
+  },
+  {
+   "case": "lo quiere sin contexto",
+   "sample": 2,
+   "message": "Me convence, lo quiero",
+   "last_reply": "",
+   "expected": {
+    "wants_details": false,
+    "method": "",
+    "says_paid": false
+   },
+   "read": {
+    "wants_details": true,
+    "method": "",
+    "says_paid": false
+   },
+   "mistakes": [
+    "dijo que recibe los datos"
+   ]
+  },
+  {
+   "case": "quiere empezar",
+   "sample": 0,
+   "message": "sí, quiero empezar",
+   "last_reply": "El Plan Básico cuesta COP 210.000 el primer mes y luego COP 110.000 mensuales. ¿Le gustaría avanzar con la activación?",
+   "expected": {
+    "wants_details": false,
+    "method": "",
+    "says_paid": false
+   },
+   "read": {
+    "wants_details": true,
+    "method": "",
+    "says_paid": false
+   },
+   "mistakes": [
+    "dijo que recibe los datos"
+   ]
+  },
+  {
+   "case": "quiere empezar",
+   "sample": 1,
+   "message": "sí, quiero empezar",
+   "last_reply": "El Plan Básico cuesta COP 210.000 el primer mes y luego COP 110.000 mensuales. ¿Le gustaría avanzar con la activación?",
+   "expected": {
+    "wants_details": false,
+    "method": "",
+    "says_paid": false
+   },
+   "read": {
+    "wants_details": true,
+    "method": "",
+    "says_paid": false
+   },
+   "mistakes": [
+    "dijo que recibe los datos"
+   ]
+  },
+  {
+   "case": "quiere empezar",
+   "sample": 2,
+   "message": "sí, quiero empezar",
+   "last_reply": "El Plan Básico cuesta COP 210.000 el primer mes y luego COP 110.000 mensuales. ¿Le gustaría avanzar con la activación?",
+   "expected": {
+    "wants_details": false,
+    "method": "",
+    "says_paid": false
+   },
+   "read": {
+    "wants_details": true,
+    "method": "",
+    "says_paid": false
+   },
+   "mistakes": [
+    "dijo que recibe los datos"
+   ]
+  },
+  {
+   "case": "dice que avancen",
+   "sample": 0,
+   "message": "listo, avancemos",
+   "last_reply": "El Plan Básico cuesta COP 210.000 el primer mes y luego COP 110.000 mensuales. ¿Le gustaría avanzar con la activación?",
+   "expected": {
+    "wants_details": false,
+    "method": "",
+    "says_paid": false
+   },
+   "read": {
+    "wants_details": true,
+    "method": "",
+    "says_paid": false
+   },
+   "mistakes": [
+    "dijo que recibe los datos"
+   ]
+  },
+  {
+   "case": "dice que avancen",
+   "sample": 1,
+   "message": "listo, avancemos",
+   "last_reply": "El Plan Básico cuesta COP 210.000 el primer mes y luego COP 110.000 mensuales. ¿Le gustaría avanzar con la activación?",
+   "expected": {
+    "wants_details": false,
+    "method": "",
+    "says_paid": false
+   },
+   "read": {
+    "wants_details": true,
+    "method": "",
+    "says_paid": false
+   },
+   "mistakes": [
+    "dijo que recibe los datos"
+   ]
+  },
+  {
+   "case": "dice que avancen",
+   "sample": 2,
+   "message": "listo, avancemos",
+   "last_reply": "El Plan Básico cuesta COP 210.000 el primer mes y luego COP 110.000 mensuales. ¿Le gustaría avanzar con la activación?",
+   "expected": {
+    "wants_details": false,
+    "method": "",
+    "says_paid": false
+   },
+   "read": {
+    "wants_details": true,
+    "method": "",
+    "says_paid": false
+   },
+   "mistakes": [
+    "dijo que recibe los datos"
+   ]
+  },
+  {
+   "case": "lo toma",
+   "sample": 0,
+   "message": "dale, lo tomo",
+   "last_reply": "El Plan Básico cuesta COP 210.000 el primer mes y luego COP 110.000 mensuales. ¿Le gustaría avanzar con la activación?",
+   "expected": {
+    "wants_details": false,
+    "method": "",
+    "says_paid": false
+   },
+   "read": {
+    "wants_details": true,
+    "method": "",
+    "says_paid": false
+   },
+   "mistakes": [
+    "dijo que recibe los datos"
+   ]
+  },
+  {
+   "case": "lo toma",
+   "sample": 1,
+   "message": "dale, lo tomo",
+   "last_reply": "El Plan Básico cuesta COP 210.000 el primer mes y luego COP 110.000 mensuales. ¿Le gustaría avanzar con la activación?",
+   "expected": {
+    "wants_details": false,
+    "method": "",
+    "says_paid": false
+   },
+   "read": {
+    "wants_details": true,
+    "method": "",
+    "says_paid": false
+   },
+   "mistakes": [
+    "dijo que recibe los datos"
+   ]
+  },
+  {
+   "case": "lo toma",
+   "sample": 2,
+   "message": "dale, lo tomo",
+   "last_reply": "El Plan Básico cuesta COP 210.000 el primer mes y luego COP 110.000 mensuales. ¿Le gustaría avanzar con la activación?",
+   "expected": {
+    "wants_details": false,
+    "method": "",
+    "says_paid": false
+   },
+   "read": {
+    "wants_details": true,
+    "method": "",
+    "says_paid": false
+   },
+   "mistakes": [
+    "dijo que recibe los datos"
+   ]
+  },
+  {
+   "case": "quiere comprarlo",
+   "sample": 0,
+   "message": "quiero comprarlo, ¿cómo seguimos?",
+   "last_reply": "El Plan Básico cuesta COP 210.000 el primer mes, con la configuración incluida, y luego COP 110.000 al mes.",
+   "expected": {
+    "wants_details": false,
+    "method": "",
+    "says_paid": false
+   },
+   "read": {
+    "wants_details": false,
+    "method": "",
+    "says_paid": false
+   },
+   "mistakes": []
+  },
+  {
+   "case": "quiere comprarlo",
+   "sample": 1,
+   "message": "quiero comprarlo, ¿cómo seguimos?",
+   "last_reply": "El Plan Básico cuesta COP 210.000 el primer mes, con la configuración incluida, y luego COP 110.000 al mes.",
+   "expected": {
+    "wants_details": false,
+    "method": "",
+    "says_paid": false
+   },
+   "read": {
+    "wants_details": false,
+    "method": "",
+    "says_paid": false
+   },
+   "mistakes": []
+  },
+  {
+   "case": "quiere comprarlo",
+   "sample": 2,
+   "message": "quiero comprarlo, ¿cómo seguimos?",
+   "last_reply": "El Plan Básico cuesta COP 210.000 el primer mes, con la configuración incluida, y luego COP 110.000 al mes.",
+   "expected": {
+    "wants_details": false,
+    "method": "",
+    "says_paid": false
+   },
+   "read": {
+    "wants_details": false,
+    "method": "",
+    "says_paid": false
+   },
+   "mistakes": []
+  },
+  {
+   "case": "ya consignó",
+   "sample": 0,
+   "message": "ya te consigné",
+   "last_reply": "",
+   "expected": {
+    "wants_details": false,
+    "method": "",
+    "says_paid": true
+   },
+   "read": {
+    "wants_details": false,
+    "method": "",
+    "says_paid": true
+   },
+   "mistakes": []
+  },
+  {
+   "case": "ya consignó",
+   "sample": 1,
+   "message": "ya te consigné",
+   "last_reply": "",
+   "expected": {
+    "wants_details": false,
+    "method": "",
+    "says_paid": true
+   },
+   "read": {
+    "wants_details": false,
+    "method": "",
+    "says_paid": true
+   },
+   "mistakes": []
+  },
+  {
+   "case": "ya consignó",
+   "sample": 2,
+   "message": "ya te consigné",
+   "last_reply": "",
+   "expected": {
+    "wants_details": false,
+    "method": "",
+    "says_paid": true
+   },
+   "read": {
+    "wants_details": false,
+    "method": "",
+    "says_paid": true
+   },
+   "mistakes": []
+  },
+  {
+   "case": "envía el comprobante",
+   "sample": 0,
+   "message": "ahí te mando el comprobante del pago",
+   "last_reply": "",
+   "expected": {
+    "wants_details": false,
+    "method": "",
+    "says_paid": true
+   },
+   "read": {
+    "wants_details": false,
+    "method": "",
+    "says_paid": true
+   },
+   "mistakes": []
+  },
+  {
+   "case": "envía el comprobante",
+   "sample": 1,
+   "message": "ahí te mando el comprobante del pago",
+   "last_reply": "",
+   "expected": {
+    "wants_details": false,
+    "method": "",
+    "says_paid": true
+   },
+   "read": {
+    "wants_details": false,
+    "method": "",
+    "says_paid": true
+   },
+   "mistakes": []
+  },
+  {
+   "case": "envía el comprobante",
+   "sample": 2,
+   "message": "ahí te mando el comprobante del pago",
+   "last_reply": "",
+   "expected": {
+    "wants_details": false,
+    "method": "",
+    "says_paid": true
+   },
+   "read": {
+    "wants_details": false,
+    "method": "",
+    "says_paid": true
+   },
+   "mistakes": []
+  },
+  {
+   "case": "paga mañana",
+   "sample": 0,
+   "message": "mañana te pago",
+   "last_reply": "",
+   "expected": {
+    "wants_details": false,
+    "method": "",
+    "says_paid": false
+   },
+   "read": {
+    "wants_details": false,
+    "method": "",
+    "says_paid": false
+   },
+   "mistakes": []
+  },
+  {
+   "case": "paga mañana",
+   "sample": 1,
+   "message": "mañana te pago",
+   "last_reply": "",
+   "expected": {
+    "wants_details": false,
+    "method": "",
+    "says_paid": false
+   },
+   "read": {
+    "wants_details": false,
+    "method": "",
+    "says_paid": false
+   },
+   "mistakes": []
+  },
+  {
+   "case": "paga mañana",
+   "sample": 2,
+   "message": "mañana te pago",
+   "last_reply": "",
+   "expected": {
+    "wants_details": false,
+    "method": "",
+    "says_paid": false
+   },
+   "read": {
+    "wants_details": false,
+    "method": "",
+    "says_paid": false
+   },
+   "mistakes": []
+  }
+ ],
+ "gasto_usd": 0.0072
+}
