@@ -32,7 +32,7 @@ uazapi (aviso de la instancia del negocio)
 -> project/app/application/channels/inbound.py    guarda el mensaje en la bandeja (sin duplicados), y después:
                                                             «escribiendo…», entiende fotos y audios, responde o pasa a una persona
 -> project/app/infrastructure/ai/media_interpreter.py      describe la foto o transcribe la nota de voz, con la clave del negocio
--> project/app/services/ai_service.py -> el pipeline común (abajo)
+-> project/app/application/assistant_service.py -> el pipeline común (abajo)
 -> project/app/infrastructure/channels/uazapi.py           envía la respuesta; los recibos de entregado y leído llegan por el webhook
 -> project/app/infrastructure/business_config/conversation_store.py   la conversación queda en la bandeja del panel
 ```
@@ -43,7 +43,7 @@ mismo camino desde `inbound.py`; envía con `infrastructure/channels/telegram.py
 ### El Pipeline Común
 
 ```text
-project/app/services/ai_service.py                    la puerta de los canales: delega el turno y entrega la respuesta con los
+project/app/application/assistant_service.py                    la puerta de los canales: delega el turno y entrega la respuesta con los
                                                       espacios en orden (`response_postprocessor.tidy_spacing`)
 -> project/app/application/ai_pipeline.py
 -> project/app/application/runtime/tenant_runtime_loader.py
@@ -55,11 +55,11 @@ project/app/services/ai_service.py                    la puerta de los canales: 
 -> project/app/application/pipeline/turn_context.py
 -> project/app/application/pipeline/answer_review.py
 -> project/app/application/pipeline/response_router.py
--> project/app/services/ai/ai_orchestrator.py
+-> project/app/infrastructure/ai/ai_orchestrator.py
 -> project/app/infrastructure/ai/prompting/builder/prompt_builder.py
 -> project/app/domain/ai/prompt_context.py
--> project/app/services/ai_runtime/runtime_llm/client.py
--> project/app/services/ai/structured_output.py
+-> project/app/infrastructure/ai/openrouter_client.py
+-> project/app/infrastructure/ai/structured_output.py
 -> project/app/application/pipeline/response_postprocessor.py
 -> project/app/application/pipeline/turn_persistence.py
 -> project/app/application/pipeline/payment_outcome.py
@@ -79,9 +79,22 @@ project/app/services/ai_service.py                    la puerta de los canales: 
 
 La capa HTTP no decide la respuesta. Su trabajo es recibir, validar, resolver tenant y delegar al runtime.
 
+## Capas Del Motor
+
+| Capa | Qué tiene | Puede usar |
+|---|---|---|
+| `domain/` | Las reglas: el contrato del negocio, la memoria, los datos del cliente, los pagos | Nada del motor |
+| `application/` | Los casos de uso: el turno del asistente (`ai_pipeline.py`, `pipeline/`), los canales, la atención humana | Dominio e infraestructura |
+| `infrastructure/` | Lo que habla con el exterior: el modelo de IA (`ai/`), la base, los canales, el correo | Dominio |
+| `api/` | Las rutas del motor | Todo lo anterior |
+
+`tests/test_engine_architecture.py` lo vigila. Hay una excepción anotada: el constructor del prompt arma la configuración del
+mensaje con `application/runtime/runtime_yaml_builder.py`. (`app/services/` mezclaba las tres capas; se ordenó el 19 de noviembre de
+2026.) El almacén del panel sigue sus propias reglas de puertos (`tests/test_business_config_architecture.py`).
+
 ## Orquestación Del Runtime
 
-- `project/app/services/ai_service.py`: fachada de alto nivel para generar respuesta comercial.
+- `project/app/application/assistant_service.py`: la puerta de los canales al turno del asistente.
 - `project/app/application/ai_pipeline.py`: coordinador central del pipeline.
 
 `AIService` no contiene el negocio completo. Su responsabilidad es delegar al pipeline, consolidar metadata, ordenar los espacios de la respuesta (nunca cambia una palabra) y exponer una interfaz simple al resto del sistema.
@@ -95,7 +108,7 @@ El pipeline actual no está separado en archivos llamados `decision_engine` o `n
 No existe un archivo activo llamado `intent.py` para la decisión final del runtime. La interpretación actual se apoya en:
 
 - el modelo LLM
-- `project/app/services/ai/structured_output.py`
+- `project/app/infrastructure/ai/structured_output.py`
 - `project/app/application/pipeline/response_router.py`
 
 `structured_output.py` normaliza la salida del modelo y expone `intent`, `stage`, `next_step` y metadata útil para el resto del flujo.
@@ -169,7 +182,7 @@ Tampoco existe como archivo aislado. La construcción narrativa del turno actual
 
 - `project/app/infrastructure/ai/prompting/` (el prompt por bloques)
 - `project/app/domain/ai/prompt_context.py`
-- `project/app/services/ai/ai_orchestrator.py`
+- `project/app/infrastructure/ai/ai_orchestrator.py`
 
 En la práctica:
 
@@ -226,7 +239,7 @@ Todo cambio al prompt se mide en dos laboratorios y pasa por una puerta:
 
 La integración activa con OpenRouter vive en:
 
-- `project/app/services/ai_runtime/runtime_llm/client.py`
+- `project/app/infrastructure/ai/openrouter_client.py`
 
 Ese archivo:
 
@@ -239,7 +252,7 @@ Ese archivo:
 
 La salida se consolida en varias capas:
 
-- `project/app/services/ai/structured_output.py`: parsea contenido y metadata
+- `project/app/infrastructure/ai/structured_output.py`: parsea contenido y metadata
 - `project/app/application/pipeline/response_postprocessor.py`: aplica reglas de postproceso del texto y ordena los espacios de
   la respuesta final (`tidy_spacing`, nunca cambia una palabra)
 - `project/app/infrastructure/channels/uazapi.py` (WhatsApp por QR) o `project/app/infrastructure/channels/telegram.py`: envían al canal
@@ -248,7 +261,7 @@ La salida se consolida en varias capas:
 
 ### Archivo Activo
 
-- `project/app/services/ai/ai_orchestrator.py`
+- `project/app/infrastructure/ai/ai_orchestrator.py`
 
 ### Qué Recibe
 
@@ -306,7 +319,7 @@ La construcción activa del prompt toma insumos de:
 tenant_runtime_loader.py
 -> runtime_yaml_builder.py
 -> sales_flow.py
--> services/ai_runtime/runtime_llm/prompting.py
+-> infrastructure/ai/llm_runtime.py
 -> infrastructure/ai/prompting/builder/prompt_builder.py
 -> domain/ai/prompt_context.py
 ```

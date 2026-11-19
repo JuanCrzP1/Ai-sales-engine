@@ -27,7 +27,7 @@ from app.domain.business_config.assistant_api import parse_message, reply_payloa
 from app.domain.business_config.errors import InvalidFieldsError, UsageLimitExceededError
 from app.domain.conversation.business import BusinessRef
 from app.infrastructure.business_config import runtime_access
-from app.services.ai_service import AIService
+from app.application.assistant_service import AIService
 from app.utils.logger import logger
 
 router = APIRouter(prefix="/assistant", tags=["API del asistente"])

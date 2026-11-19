@@ -29,10 +29,10 @@ from app.infrastructure.business_config.ai_usage_store import AIUsageStore
 from app.infrastructure.business_config.database import create_business_config_engine, create_local_schema
 from app.infrastructure.business_config.tables import ai_usage
 from app.infrastructure.persistence.memory_repository import MemoryRepository
-from app.services.ai.ai_orchestrator import FAILED_REPLY
-from app.services.ai.output_contract import OUTPUT_CONTRACT
-from app.services.ai_runtime.runtime_llm import client as client_module
-from app.services.ai_runtime.runtime_llm.prompting import RuntimeLLMImplementation
+from app.infrastructure.ai.ai_orchestrator import FAILED_REPLY
+from app.infrastructure.ai.prompting.output_contract import OUTPUT_CONTRACT
+from app.infrastructure.ai import openrouter_client as client_module
+from app.infrastructure.ai.llm_runtime import LLMRuntime
 from pipeline_harness import reply
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
@@ -169,7 +169,7 @@ def provider(monkeypatch):
 def test_the_provider_is_asked_for_json_and_the_usage_goes_to_the_business(provider):
     seen: list[tuple] = []
     config = MessageAI(api_key=KEY, model_name="openai/gpt-4o-mini", on_usage=lambda *usage: seen.append(usage))
-    RuntimeLLMImplementation().generate("instrucciones", user_message="hola", bot_config=config)
+    LLMRuntime().generate("instrucciones", user_message="hola", bot_config=config)
     assert [payload["response_format"] for payload in provider.payloads] == [{"type": "json_object"}]
     assert seen == [("openai/gpt-4o-mini", 1200, 80, 0.0004)]
 
@@ -181,7 +181,7 @@ def test_a_client_that_does_not_take_the_format_still_answers_once():
         calls.append({"model": model})
         return {"choices": [{"message": {"content": reply("Hola.")}}]}
 
-    runtime = RuntimeLLMImplementation()
+    runtime = LLMRuntime()
     runtime.client = SimpleNamespace(chat=SimpleNamespace(completions=SimpleNamespace(create=create)))
     assert runtime.generate("instrucciones", user_message="hola", bot_config=MessageAI(api_key=KEY))
     assert len(calls) == 1
@@ -350,8 +350,8 @@ def test_the_ai_usage_migration_matches_the_table():
 
 
 def test_the_panel_names_the_same_intents_as_the_engine():
-    from app.services.ai.output_contract import INTENTS
-    from app.services.ai.structured_output import VALID_INTENTS
+    from app.infrastructure.ai.prompting.output_contract import INTENTS
+    from app.infrastructure.ai.structured_output import VALID_INTENTS
 
     source = (ROOT_DIR / "apps" / "admin-web" / "src" / "domain" / "assistant" / "intents.ts").read_text(encoding="utf-8")
     block = re.search(r"INTENT_LABELS = \{(.*?)\}", source, re.S).group(1)

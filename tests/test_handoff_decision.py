@@ -81,7 +81,7 @@ def test_a_decision_without_a_message_still_hands_off(caplog):
     y no pasaba al equipo. Ahora se respeta su decisión con una frase neutra y queda el aviso `paso_sin_mensaje`."""
     import logging
 
-    from app.services.ai.ai_orchestrator import HANDOFF_WITHOUT_TEXT
+    from app.infrastructure.ai.ai_orchestrator import HANDOFF_WITHOUT_TEXT
 
     empty = reply("", "info", handoff="persona")
     with caplog.at_level(logging.WARNING, logger="assistant"):
@@ -91,7 +91,7 @@ def test_a_decision_without_a_message_still_hands_off(caplog):
 
 
 def test_an_empty_message_without_a_decision_is_still_an_error():
-    from app.services.ai.ai_orchestrator import FAILED_REPLY
+    from app.infrastructure.ai.ai_orchestrator import FAILED_REPLY
 
     turns = [("Necesito información", reply("Claro, te cuento.")), ("¿Y cuánto cuesta?", reply("", "info"))]
     (_first, (answer, context)) = run_conversation(SLUG, turns, user_id="vacio", with_context=True)

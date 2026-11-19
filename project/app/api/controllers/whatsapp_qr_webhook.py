@@ -34,7 +34,7 @@ from app.infrastructure.business_config import runtime_access
 from app.infrastructure.channels import uazapi
 from app.infrastructure.channels.telegram import TelegramClient
 from app.infrastructure.channels.uazapi import UazapiClient
-from app.services.ai_service import AIService
+from app.application.assistant_service import AIService
 from app.utils.logger import logger
 
 router = APIRouter(prefix="/channels", tags=["WhatsApp QR"])

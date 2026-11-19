@@ -140,7 +140,11 @@ def main(settings_path: str) -> int:
     from app.application.runtime import load_tenant_runtime_yaml
     from app.domain.business_config.payment_data import payment_values
     from app.infrastructure.ai.prompting.business_model import detect_business_model
-    from app.services.ai_service import AIService
+    try:
+        from app.application.assistant_service import AIService
+    except ImportError:
+        # Commits anteriores al 19 de noviembre de 2026: la puerta de los canales vivía en `app/services/`.
+        from app.services.ai_service import AIService
 
     service = AIService()
     wanted = settings.get("tenants") or slugs

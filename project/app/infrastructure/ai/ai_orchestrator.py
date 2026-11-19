@@ -69,7 +69,7 @@ import re
 
 from app.infrastructure.ai.prompting.history import recent_messages
 from app.infrastructure.ai.prompting.instructions import PROMPT_VERSION
-from app.services.ai.structured_output import parse_structured_output
+from app.infrastructure.ai.structured_output import parse_structured_output
 from app.utils.logger import logger
 
 # Cuando el modelo no devuelve una respuesta utilizable. No se repite la llamada: repetirla duplicaba el gasto de tokens del

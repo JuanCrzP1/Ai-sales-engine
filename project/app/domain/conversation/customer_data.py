@@ -3,7 +3,7 @@
 En un chat largo, un modelo pequeño pierde de vista lo que se dijo varios mensajes atrás y vuelve a pedir el nombre o el teléfono
 (puerta de calidad, 15 nov 2026: 2 de 90 conversaciones, las dos en un chat largo). Por eso el motor no espera a que el asesor lo
 encuentre en el historial: el asesor anota en su respuesta los datos que el cliente dio (`metadata.customer_data`,
-`services/ai/output_contract.py`), el motor los guarda en la memoria del cliente (`turn_persistence.save_customer_data`) y se los
+`infrastructure/ai/prompting/output_contract.py`), el motor los guarda en la memoria del cliente (`turn_persistence.save_customer_data`) y se los
 recuerda en cada mensaje (`prompting/sections/conversation.py`).
 
 AI-first: qué dato dio el cliente lo entiende la IA; el código no lo busca por palabras. Aquí solo se ordena lo que anotó: el nombre

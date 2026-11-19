@@ -131,7 +131,7 @@ from __future__ import annotations
 
 import json
 
-from app.services.ai.output_contract import HANDOFF_VALUES
+from app.infrastructure.ai.prompting.output_contract import HANDOFF_VALUES
 from app.utils.logger import logger
 
 

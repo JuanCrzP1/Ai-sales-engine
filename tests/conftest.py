@@ -199,7 +199,7 @@ def _isolate_last_message_timestamps(request):
 
     # Per-test store: (tenant_slug, user_id) → datetime | None. Solo la memoria compartida del motor (`GLOBAL_MEMORY_REPOSITORY`):
     # las memorias propias de una prueba (un `MemoryRepository()` nuevo) se comportan de verdad.
-    from app.services.ai_service import GLOBAL_MEMORY_REPOSITORY as _shared
+    from app.application.assistant_service import GLOBAL_MEMORY_REPOSITORY as _shared
 
     _mem_store: dict = {}
     _orig_set = _shared.set_last_user_message_at

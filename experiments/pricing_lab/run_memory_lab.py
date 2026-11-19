@@ -380,7 +380,7 @@ def main() -> int:
     run_at = utc_now_iso()
 
     from app.application.runtime import load_tenant_runtime_yaml
-    from app.services.ai_service import AIService
+    from app.application.assistant_service import AIService
 
     service = AIService()
     th = tenant_handle(tenant_slug)

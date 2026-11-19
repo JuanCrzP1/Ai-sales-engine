@@ -268,7 +268,7 @@ Rama `modelo-del-asesor`. Con la regla de decisión fijada antes de correr (ver 
 el 40 % a 80 % de los mensajes: Claude Haiku 5.5, GPT-6 Luna y DeepSeek V4.1 Flash razonan antes de responder, y ese razonamiento se
 comía el tope de 400 tokens de la respuesta. **Era un error del motor**, no de los modelos: cualquier negocio que eligiera uno de ellos
 en el panel recibía «Hubo un problema…». Ahora el motor les pide no razonar y, a los que siempre razonan (gpt-5-mini,
-gemini-2.5-pro), lo mínimo ([`client.py`](../project/app/services/ai_runtime/runtime_llm/client.py)). Ya con el arreglo:
+gemini-2.5-pro), lo mínimo ([`client.py`](../project/app/infrastructure/ai/openrouter_client.py)). Ya con el arreglo:
 
 | Modelo | Sin fallas | Respuesta (mediana · 5 % más lento) | USD por 1.000 mensajes | |
 |---|---|---|---|---|

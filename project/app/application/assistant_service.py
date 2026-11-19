@@ -1,7 +1,7 @@
 """La puerta de entrada de los canales al motor: WhatsApp (QR), Telegram, la API del asistente y «Probar asistente».
 
 Delega todo el turno en `AIPipeline` y entrega la respuesta con los espacios en orden (`tidy_spacing`). Lo que dice el asesor lo
-decide la IA: aquí no se infiere la intención ni se cambia una palabra (`services/ai/structured_output.py` es la única fuente de
+decide la IA: aquí no se infiere la intención ni se cambia una palabra (`infrastructure/ai/structured_output.py` es la única fuente de
 la intención).
 """
 from __future__ import annotations

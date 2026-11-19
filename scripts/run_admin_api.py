@@ -80,7 +80,7 @@ def _assistant_lab(engine, service):
     from app.config import settings
     from app.infrastructure.ai.openrouter_key_verifier import OpenRouterKeyVerifier
     from app.infrastructure.ai.openrouter_models import OpenRouterModelCatalog
-    from app.services.ai_service import GLOBAL_MEMORY_REPOSITORY
+    from app.application.assistant_service import GLOBAL_MEMORY_REPOSITORY
 
     return build_assistant_lab_service(
         engine,

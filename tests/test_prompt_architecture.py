@@ -18,7 +18,7 @@ from app.infrastructure.ai.prompting import budgets, composer, instructions
 from app.infrastructure.ai.prompting.history import recent_messages
 from app.infrastructure.ai.prompting.sections import playbook
 from app.infrastructure.ai.prompting.view import PromptView
-from app.services.ai.output_contract import OUTPUT_CONTRACT
+from app.infrastructure.ai.prompting.output_contract import OUTPUT_CONTRACT
 from pipeline_harness import TENANTS, prepared_tenant, stored_document
 
 PROMPTING = Path(__file__).resolve().parents[1] / "project" / "app" / "infrastructure" / "ai" / "prompting"

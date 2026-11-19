@@ -11,7 +11,7 @@ from app.utils.logger import logger
 
 class EngineContactMemory:
     def forget(self, business_slug: str, contact_ref: str) -> None:
-        from app.services.ai_service import GLOBAL_MEMORY_REPOSITORY
+        from app.application.assistant_service import GLOBAL_MEMORY_REPOSITORY
 
         try:
             GLOBAL_MEMORY_REPOSITORY.forget_contact(tenant_slug=business_slug, user_id=contact_ref)
@@ -24,7 +24,7 @@ class EngineContactMemory:
     def forget_playground(self, business_slug: str, session_id: str | None = None) -> None:
         """Lo que el motor recuerda de las conversaciones de «Probar»: de una sesión, o de todas las del negocio."""
         from app.application.assistant_lab.engine_runner import PLAYGROUND_CONTACT_PREFIX, playground_contact
-        from app.services.ai_service import GLOBAL_MEMORY_REPOSITORY
+        from app.application.assistant_service import GLOBAL_MEMORY_REPOSITORY
 
         try:
             if session_id:
@@ -37,6 +37,6 @@ class EngineContactMemory:
 
     def forget_business(self, business_slug: str) -> None:
         """Al eliminar un negocio: lo que el motor tiene en memoria de sus clientes (en la base se borra con el negocio)."""
-        from app.services.ai_service import GLOBAL_MEMORY_REPOSITORY
+        from app.application.assistant_service import GLOBAL_MEMORY_REPOSITORY
 
         GLOBAL_MEMORY_REPOSITORY.forget_business(tenant_slug=business_slug)

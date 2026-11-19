@@ -14,7 +14,7 @@ from app.domain.conversation import customer_data
 from app.domain.conversation.memory import MemoryDomainService
 from app.application.pipeline.turn_persistence import save_customer_data
 from app.infrastructure.persistence.memory_repository import MemoryRepository
-from app.services.ai.structured_output import parse_structured_output
+from app.infrastructure.ai.structured_output import parse_structured_output
 from pipeline_harness import reads, reply, run_conversation
 
 SLUG, CUSTOMER = "saas", "573001112233"

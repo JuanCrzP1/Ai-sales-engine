@@ -1,3 +1,9 @@
+"""El cliente HTTP de OpenRouter (`OpenRouterClient`): una petición de chat con la clave del negocio, que nunca se guarda.
+
+Si la llamada falla por algo pasajero (conexión cortada, tiempo agotado, OpenRouter ocupado o con un error suyo) se repite una vez
+(`openrouter_reintento`); si aun así falla, el motor lo anota como `asesor_sin_respuesta` (`application/pipeline/response_router.py`).
+Llama a `requests.post` en cada petición: los laboratorios y las pruebas lo sustituyen ahí para ver la petición exacta sin red.
+"""
 from __future__ import annotations
 
 import logging
@@ -132,7 +138,7 @@ class _OpenRouterCompletions:
         return _OpenRouterCompletions.Chat(self)
 
 
-class AIService:
+class OpenRouterClient:
     def __init__(self, *, provider: str = 'openrouter', api_key: str | None = None, request_timeout: int | None = None) -> None:
         self.provider = provider
         # No hay clave general: sin la clave de un negocio no se arma ningún cliente.

@@ -5,7 +5,7 @@ from lab_config import GOLDEN_TURNS
 from evaluate_conversations import enrich_metrics_payload
 
 from app.application.runtime import load_tenant_runtime_yaml
-from app.services.ai_service import AIService
+from app.application.assistant_service import AIService
 from lab_common import tenant_handle
 
 

@@ -24,7 +24,7 @@ if str(PROJECT_DIR) not in sys.path:
     sys.path.insert(0, str(PROJECT_DIR))
 
 from app.application.runtime import load_tenant_runtime_yaml
-from app.services.ai_service import AIService
+from app.application.assistant_service import AIService
 
 
 def _capabilities_block(runtime: dict) -> str:
@@ -96,7 +96,7 @@ def _ask_with_stub(
 ## ----------------------------------------
 def test_memory_context_persists_and_contains_useful_data() -> None:
     from app.application.pipeline.turn_context import build_memory_context
-    from app.services.ai_service import GLOBAL_MEMORY_SERVICE
+    from app.application.assistant_service import GLOBAL_MEMORY_SERVICE
 
     service = AIService()
     user_id = f"mem-persist-{uuid4().hex[:8]}"

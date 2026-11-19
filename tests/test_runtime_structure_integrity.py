@@ -29,7 +29,7 @@ from app.application.pipeline.turn_context import validate_runtime_yaml as valid
 from app.application.runtime import load_tenant_runtime_yaml
 from app.infrastructure.ai.prompting.builder.prompt_builder import PromptBuilderService
 from app.infrastructure.ai.prompting.view import validate_runtime_yaml as validate_prompt_runtime
-from app.services.ai_service import AIService
+from app.application.assistant_service import AIService
 from pipeline_harness import forbid_examples_folder
 
 

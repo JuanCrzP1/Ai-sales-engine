@@ -98,7 +98,7 @@ def running_stack(monkeypatch, tmp_path, slugs: list[str], mutate=None):
     from app.api.controllers import whatsapp_qr_webhook
     from app.infrastructure.business_config.ai_settings_store import AISettingsStore
     from app.infrastructure.business_config.database import create_business_config_engine
-    from app.services.ai_runtime.runtime_llm.prompting import RuntimeLLMImplementation
+    from app.infrastructure.ai.llm_runtime import LLMRuntime
 
     _simulator, sim_server = start_simulator(receipt_seconds=0.15)
     engine_port = free_port()
@@ -113,8 +113,8 @@ def running_stack(monkeypatch, tmp_path, slugs: list[str], mutate=None):
         keys.save_ai_settings(slug, model=None, api_key="sk-or-v1-clave-de-prueba-e2e", clear_key=False)
 
     model = ScriptedModel(rules=list(MODEL), readings=list(READINGS))
-    monkeypatch.setattr(RuntimeLLMImplementation, "generate", lambda self, prompt, **kwargs: model.generate(prompt, **kwargs))
-    monkeypatch.setattr(RuntimeLLMImplementation, "classify", lambda self, prompt, **kwargs: model.classify(prompt, **kwargs))
+    monkeypatch.setattr(LLMRuntime, "generate", lambda self, prompt, **kwargs: model.generate(prompt, **kwargs))
+    monkeypatch.setattr(LLMRuntime, "classify", lambda self, prompt, **kwargs: model.classify(prompt, **kwargs))
     monkeypatch.setattr(whatsapp_qr_webhook, "OpenRouterMediaInterpreter", FakeMedia)
     # Sin esperar de verdad a que el cliente termine de escribir: cada mensaje de estas pruebas llega después de la respuesta anterior.
     monkeypatch.setattr(whatsapp_qr_webhook, "pause", lambda _seconds: None)

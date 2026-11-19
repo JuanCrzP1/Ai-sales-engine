@@ -29,7 +29,7 @@ from app.infrastructure.ai.prompting.sections import (
     strategy,
 )
 from app.infrastructure.ai.prompting.view import PromptView
-from app.services.ai.output_contract import OUTPUT_CONTRACT
+from app.infrastructure.ai.prompting.output_contract import OUTPUT_CONTRACT
 from app.utils.logger import logger
 
 

@@ -27,8 +27,8 @@ El backend de AI Sales Engine (FastAPI). En la nube corre en Vercel con Neon; en
 | Carpeta | Qué hay |
 |---|---|
 | `app/api/` | Rutas del motor: webhooks de los canales, API del asistente y revisión de la atención |
-| `app/application/` | Pipeline de la IA (`ai_pipeline.py`, `pipeline/`), carga de lo publicado (`runtime/`), entrada de WhatsApp (`channels/`) |
-| `app/infrastructure/ai/prompting/` | El prompt por bloques |
+| `app/application/` | La puerta de los canales (`assistant_service.py`), el pipeline de la IA (`ai_pipeline.py`, `pipeline/`), carga de lo publicado (`runtime/`), entrada de los canales (`channels/`) |
+| `app/infrastructure/ai/` | La llamada al modelo (`llm_runtime.py`), el cliente de OpenRouter con su reintento (`openrouter_client.py`), el lector de su respuesta (`structured_output.py`) y el prompt por bloques (`prompting/`) |
 | `app/domain/business_config/` | El contrato del negocio, su compilador y sus reglas |
 | `app/business_config_application/` | Casos de uso del panel: configuración, conversaciones, ventas, canales, IA, «Probar» |
 | `app/infrastructure/business_config/` | El almacén (tablas, migraciones, cifrado, conversaciones, ventas) y los negocios de ejemplo |

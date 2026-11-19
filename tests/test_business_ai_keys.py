@@ -22,8 +22,8 @@ from app.infrastructure.business_config.database import build_business_config_se
 from app.infrastructure.business_config.payment_secret_store import SECRETS_KEY_ENV
 from app.infrastructure.business_config.example_businesses import import_example, load_example
 from app.infrastructure.persistence.memory_repository import MemoryRepository
-from app.services.ai_runtime.runtime_llm import client as client_module
-from app.services.ai_runtime.runtime_llm.prompting import RuntimeLLMImplementation
+from app.infrastructure.ai import openrouter_client as client_module
+from app.infrastructure.ai.llm_runtime import LLMRuntime
 from pipeline_harness import reply
 
 KEY_A = "sk-or-v1-clave-ficticia-del-restaurante-0001"
@@ -93,7 +93,7 @@ def test_the_call_to_the_provider_goes_out_with_the_key_of_that_message(monkeypa
             self.chat = SimpleNamespace(completions=SimpleNamespace(create=lambda **_payload: answer))
 
     monkeypatch.setattr(client_module, "_OpenRouterCompletions", Provider)
-    runtime = RuntimeLLMImplementation()
+    runtime = LLMRuntime()
     for key in (KEY_A, KEY_B):
         assert runtime.generate("prompt", user_message="hola", bot_config=MessageAI(api_key=key))
     assert sent == [KEY_A, KEY_B]

@@ -56,7 +56,7 @@ No toma decisiones comerciales. Solo valida estado y delega.
 
 ---
 
-### `AIService` — `project/app/services/ai_service.py`
+### `AIService` — `project/app/application/assistant_service.py`
 
 Adapter liviano que expone `generate_business_reply()` al mundo exterior. Instancia `AIPipeline` e inyecta los repositorios globales. Entrega la respuesta con los espacios en orden (`tidy_spacing()`), sin cambiar ninguna palabra.
 
@@ -90,7 +90,7 @@ Dirige el turno del asesor. Cada paso vive en su propio módulo de `application/
 - `handoff_brief.py`: escribe la nota para el equipo cuando el chat pasa a una persona.
 
 El formato de la respuesta estructurada (intención, `send_payment`, `payment_status`, `handoff`) está en
-`services/ai/output_contract.py` y se interpreta en `services/ai/structured_output.py`.
+`infrastructure/ai/prompting/output_contract.py` y se interpreta en `infrastructure/ai/structured_output.py`.
 
 ---
 

@@ -28,7 +28,7 @@ from app.infrastructure.business_config.notification_store import NotificationSt
 from app.infrastructure.business_config.push_store import PushStore
 from app.infrastructure.business_config.secrets_key import find_secrets_key
 from app.infrastructure.business_config.usage_store import UsageCounterStore
-from app.services.ai_service import GLOBAL_MEMORY_REPOSITORY
+from app.application.assistant_service import GLOBAL_MEMORY_REPOSITORY
 
 
 def build_cloud_panel_api(auth_url: str) -> FastAPI:

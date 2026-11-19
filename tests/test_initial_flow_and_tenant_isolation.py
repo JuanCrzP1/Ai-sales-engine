@@ -27,7 +27,7 @@ if str(PROJECT_DIR) not in sys.path:
 
 from app.application.pipeline.conversation_flow import ConversationFlow, should_send_initial_message
 from app.application.runtime import load_tenant_runtime_yaml
-from app.services.ai_service import AIService
+from app.application.assistant_service import AIService
 from pipeline_harness import engine_sections
 
 

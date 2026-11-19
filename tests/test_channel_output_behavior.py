@@ -8,7 +8,7 @@ from uuid import uuid4
 import pytest
 
 from app.application.runtime import load_tenant_runtime_yaml
-from app.services.ai_service import AIService
+from app.application.assistant_service import AIService
 
 # Suite de integración: ejercita el LLM en vivo (requiere OPENROUTER_API_KEY).
 pytestmark = pytest.mark.integration

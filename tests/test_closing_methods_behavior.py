@@ -13,7 +13,7 @@ from app.application.runtime import load_tenant_runtime_yaml
 # Suite de integración: ejercita el LLM en vivo (requiere OPENROUTER_API_KEY).
 pytestmark = pytest.mark.integration
 from app.infrastructure.ai.prompting.builder.prompt_builder import PromptBuilderService
-from app.services.ai_service import AIService
+from app.application.assistant_service import AIService
 from semantic_guard import has_forward_intent
 
 ROOT_DIR = Path(__file__).resolve().parents[1]

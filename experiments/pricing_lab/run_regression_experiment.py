@@ -603,7 +603,11 @@ def capture(settings: dict) -> int:
     except ImportError:
         pass
 
-    from app.services.ai_service import GLOBAL_MEMORY_REPOSITORY, AIService
+    try:
+        from app.application.assistant_service import GLOBAL_MEMORY_REPOSITORY, AIService
+    except ImportError:
+        # Commits anteriores al 19 de noviembre de 2026: la puerta de los canales vivía en `app/services/`.
+        from app.services.ai_service import GLOBAL_MEMORY_REPOSITORY, AIService
 
     service = AIService()
     tenant_slug, channel, user_id = settings["tenant"], settings["channel"], settings["user_id"]

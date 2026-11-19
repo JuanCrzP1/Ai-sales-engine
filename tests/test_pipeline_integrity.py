@@ -21,14 +21,14 @@ from uuid import uuid4
 
 from app.application.runtime import load_tenant_runtime_yaml
 from app.infrastructure.ai.prompting.builder.prompt_builder import PromptBuilderService
-from app.services.ai.structured_output import parse_structured_output
+from app.infrastructure.ai.structured_output import parse_structured_output
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
 PROJECT_DIR = ROOT_DIR / "project"
 if str(PROJECT_DIR) not in sys.path:
     sys.path.insert(0, str(PROJECT_DIR))
 
-from app.services.ai_service import AIService
+from app.application.assistant_service import AIService
 from pipeline_harness import engine_sections
 
 

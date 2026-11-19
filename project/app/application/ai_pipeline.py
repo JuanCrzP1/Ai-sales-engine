@@ -59,7 +59,7 @@ from app.application.runtime.business_ai import UsageCallback
 from app.domain.business_config.ai_settings import AICredentials
 from app.domain.conversation.memory import MemoryDomainService
 from app.infrastructure.persistence.memory_factory import build_memory_repository
-from app.services.ai_runtime.runtime_core import AIService as AIRuntimeService
+from app.infrastructure.ai.llm_runtime import LLMRuntime
 from app.utils.logger import logger
 
 # Lo que recibe el cliente si no se puede leer la configuración publicada de su negocio: el mensaje neutro de la plataforma (no se
@@ -72,7 +72,7 @@ class AIPipeline:
         self,
         *,
         prompt_path: str | None = None,
-        runtime: AIRuntimeService | None = None,
+        runtime: LLMRuntime | None = None,
         memory_service: MemoryDomainService | None = None,
         runtime_loader: Callable[..., dict] | None = None,
         ai_loader: Callable[[str], AICredentials | None] | None = None,
@@ -86,7 +86,7 @@ class AIPipeline:
         self._ai_loader = ai_loader
         # Cada respuesta de la IA suma al consumo de su negocio (lo muestra el panel en «Inteligencia artificial»).
         self._usage_recorder = usage_recorder
-        runtime_service = runtime or AIRuntimeService(prompt_path=prompt_path)
+        runtime_service = runtime or LLMRuntime(prompt_path=prompt_path)
         if memory_service is None:
             memory_repository = build_memory_repository()
             memory = MemoryDomainService(memory_repository)

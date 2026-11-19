@@ -1,55 +1,24 @@
-##### 🧠 SYSTEM OVERVIEW #####
-# Sistema SaaS multi-tenant AI-first de ventas conversacionales.
-#
-# Flujo:
-# usuario -> prompt_builder -> IA -> structured_output -> respuesta
-#
-# La IA es responsable de:
-# - entender intención
-# - generar respuesta
-# - ejecutar venta
-#
-# El código SOLO:
-# - pasa contexto
-# - orquesta flujo
-#
-################################
+"""La llamada al modelo de cada mensaje, con la clave y el modelo del negocio (`LLMRuntime`).
 
-##### 🚨 AI-FIRST RULE #####
-# ❌ PROHIBIDO:
-# - lógica comercial en código
-# - heurísticas por palabras
-# - forzar respuestas
-# - if/else por intent
-#
-# ✅ PERMITIDO:
-# - pasar datos
-# - estructurar contexto
-#
-################################
+`generate` arma la conversación (las instrucciones del negocio, lo reciente del chat y el mensaje del cliente) y `classify` hace una
+llamada corta y exacta para entender un mensaje (el lector de pagos). Las dos usan el cliente de OpenRouter (`openrouter_client.py`)
+con la clave del negocio de ese mensaje, que nunca se guarda, y registran los tokens para el consumo del negocio.
 
-##### ⚠️ ANTI-PATTERNS #####
-# NO hacer:
-# - if intent == "buy"
-# - detectar "quiero"
-# - agregar textos manuales de cierre
-# - concatenar respuestas
-#
-# Si haces esto:
-# 👉 rompes AI-first
-################################
+AI-first: aquí no se decide nada del mensaje ni de la venta; solo se pasa el contexto y se devuelve lo que respondió el modelo.
+Antes vivía en `services/ai_runtime/` repartida en tres clases que solo se heredaban entre sí (retirado el 19 de noviembre de 2026).
+"""
 from __future__ import annotations
 
 import os
 
 from app.config import settings
+from app.infrastructure.ai.ai_orchestrator import AIOrchestrator
+from app.infrastructure.ai.openrouter_client import OpenRouterClient
 from app.infrastructure.ai.prompting.builder.prompt_builder import PromptBuilderService
-from app.services.ai.ai_orchestrator import AIOrchestrator
-from app.services.ai_runtime.runtime_llm.client import AIService as CoreAIService
 from app.utils.logger import logger
 
 
-class RuntimeLLMImplementation:
+class LLMRuntime:
     STRICT_FALLBACK_MESSAGE = "Se me paso tu mensaje, me cuentas otra vez que necesitas?"
 
     def __init__(self, prompt_path: str | None = None) -> None:
@@ -57,7 +26,7 @@ class RuntimeLLMImplementation:
         self.provider = settings.llm_provider or "openrouter"
         self.request_timeout = settings.llm_timeout_seconds
         # Sin clave propia: la plataforma no tiene ninguna. Cada mensaje trae la de su negocio (ver `generate`).
-        self.core_ai = CoreAIService(provider=self.provider, request_timeout=self.request_timeout)
+        self.core_ai = OpenRouterClient(provider=self.provider, request_timeout=self.request_timeout)
         # Solo para pruebas: un cliente ya armado que sustituye la llamada al proveedor.
         self.client = None
         self.prompt_builder = PromptBuilderService(prompt_path=prompt_path)
@@ -87,7 +56,7 @@ class RuntimeLLMImplementation:
     def validate(text: str | None) -> bool:
         return len(str(text or "").strip()) > 0
 
-    # La respuesta llega en JSON (`app/services/ai/output_contract.py`). Los modelos que no admiten `response_format` lo ignoran
+    # La respuesta llega en JSON (`app/infrastructure/ai/prompting/output_contract.py`). Los modelos que no admiten `response_format` lo ignoran
     # y el formato lo sigue pidiendo el prompt.
     RESPONSE_FORMAT = {"type": "json_object"}
 

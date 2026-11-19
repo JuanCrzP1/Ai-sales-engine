@@ -2,14 +2,14 @@
 
 Antes lo hacía `application/response_guard.py`, que también borraba palabras «prohibidas» según el tipo de negocio; esa parte
 estaba apagada desde abril (AI-first: lo que dice el asesor lo decide la IA) y se retiró el 18 de noviembre de 2026. Queda solo el
-orden de los espacios (`response_postprocessor.tidy_spacing`), en el mismo lugar del camino (`services/ai_service.py`).
+orden de los espacios (`response_postprocessor.tidy_spacing`), en el mismo lugar del camino (`application/assistant_service.py`).
 """
 from __future__ import annotations
 
 import pytest
 
 from app.application.pipeline.response_postprocessor import tidy_spacing
-from app.services import ai_service
+from app.application import assistant_service as ai_service
 
 
 @pytest.mark.parametrize(

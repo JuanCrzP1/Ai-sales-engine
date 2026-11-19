@@ -82,7 +82,7 @@ Meta todavía no.
 | Q3, Fase 3 | Hecho | Todo lo que el panel deja configurar llega al motor (prompt v3): 184 campos conectados, 0 pendientes. Solo quedan fuera, a propósito, lo que es del equipo (la etiqueta de una cuenta y el código de una variante) y lo que enviará la plataforma ante un evento (pago confirmado y seguimiento). Capas nuevas: cómo compra y recibe el cliente, políticas, el cliente y la estrategia de venta. Laboratorio de regresión (`exp_20261110_fase3_campos_conectados`): mismas respuestas, webhook y rutas; los prompts solo suman lo nuevo. Calidad con la IA real (`exp_20261110_calidad_fase3_ficha_completa`): 9,64 contra 9,62 por respuesta, 0 precios inventados y gana 15 de 18 a ciegas; en los negocios con estrategia avanzada (`exp_20261110_calidad_fase3_objeciones`): 9,58 → 9,81, dudas por precio 9,25 → 9,5 y gana 7 de 8. Los ejemplos de restaurante, tienda de ropa y agencia de viajes (y el posicionamiento y las reglas de cierre de la escuela) tenían la estrategia escrita como si vendieran el asistente a su sector; se corrigieron para que describan lo que venden. Con la ficha real (`exp_20261110_calidad_ejemplos_limpios_ficha_real`): 8,86 → 9,36, dudas por precio 5,5 → 8,88, pregunta trampa 7,5 → 9,88 y gana 6 de 8. |
 | T3 | Hecho | Cada respuesta suma a `ai_usage` (migración 0007) por negocio, día y modelo, con el costo si OpenRouter lo informa. El panel lo muestra en «Inteligencia artificial». |
 | Fase 5 (WhatsApp) | Hecho en la nube | WhatsApp por QR, conversaciones en vivo, paso a una persona, clientes, ventas y reportes (ver Fase 5). |
-| A4 (Fase 6) | En curso | Retirados los YAML, `ConfigService`, la API de administración vieja, el *polling* de Telegram (11 nov) y el resto del código del sistema anterior (18 nov) y sus tablas en Neon (19 nov), con el motor sin diferencias en el laboratorio. Queda ordenar `app/services/` y dividir `memory_repository.py` (ver Fase 6). |
+| A4 (Fase 6) | En curso | Retirados los YAML, `ConfigService`, la API de administración vieja, el *polling* de Telegram (11 nov) y el resto del código del sistema anterior (18 nov), sus tablas en Neon y `app/services/` ordenado por capas (19 nov), con el motor sin diferencias en el laboratorio. Queda partir los módulos de más de unas 400 líneas (ver Fase 6). |
 
 ## 2. Cómo funcionaba antes y cómo funciona hoy
 
@@ -385,7 +385,18 @@ comprobó en las dos ramas que nada dependía de ellas (solo tenían llaves haci
 `run_sql_file`: en `production` quedó anotada en `schema_migrations` (el despliegue la ve aplicada) y los negocios, clientes,
 mensajes y memorias quedaron iguales (2, 16, 228 y 16). El esquema del motor (`postgresql_schema.sql`) ya no las crea.
 
-Falta: mover lo vivo de `app/services/` (la llamada a la IA y su lector) a su capa, dividir `memory_repository.py` y quitar los errores silenciados. (`ai_execution.py` quedó dividido el 14 nov 2026:
+**Avance (19 de noviembre de 2026, segunda parte):** ~~`app/services/`~~, que mezclaba tres capas, quedó ordenado sin cambiar el
+motor: la puerta de los canales en `application/assistant_service.py`; en `infrastructure/ai/`, la llamada al modelo
+(`llm_runtime.py`, una sola clase `LLMRuntime` en vez de tres que solo se heredaban), el cliente de OpenRouter (`openrouter_client.py`,
+`OpenRouterClient`), el orquestador y el lector de la respuesta; el contrato de salida en `prompting/output_contract.py`. Una prueba
+de capas del motor (`tests/test_engine_architecture.py`) vigila que el dominio no dependa de nada y que la infraestructura no use la
+aplicación ni la API, con una excepción anotada: el constructor del prompt arma la configuración del mensaje con
+`application/runtime/runtime_yaml_builder.py`. Laboratorio contra `69a913f` (`ordenar_services_20261119`): motor sin diferencias en
+los 9 negocios, la petición exacta al modelo incluida.
+
+Falta: quitar esa excepción (que quien llama al constructor del prompt le pase el runtime ya armado), partir los módulos que pasan de
+unas 400 líneas (al 19 nov: `conversation_store.py` 698, `tables.py` 543, `ports.py` 521, `conversation_flow.py` 503, `sql_memory.py`
+450, `inbound.py` 422, `schemas.py` 406; `memory_repository.py` ya bajó a 390) y quitar los errores silenciados. (`ai_execution.py` quedó dividido el 14 nov 2026:
 laboratorio `dividir_ai_execution_20261114`, motor sin diferencias en los 9 negocios.)
 
 **Terminada cuando:** no queda código ni tabla del sistema anterior y ningún módulo supera unas 400 líneas.
