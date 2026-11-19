@@ -287,12 +287,9 @@ La API del panel en este equipo no tiene cuentas: solo atiende en `127.0.0.1` (v
 El sistema de cuentas anterior ya no existe en el código: sus rutas (`/auth/register`, `/auth/login`, `/bot-config`, `/clients`,
 `/connectors`, `/conversations` y `/dashboard`) se retiraron el 11 de noviembre de 2026, y el 18 de noviembre lo que quedaba
 (`AuthService`, `/simulate`, los modelos de `app/models`, el secreto por defecto `jwt_secret`). `python-jose` sigue sin declararse
-en los requisitos, a propósito, y solo el verificador de Neon Auth usa una librería JWT (`tests/test_engine_security.py`).
-
-### Pendiente
-
-1. Borrar de Neon las tablas del sistema anterior que ya no usa nada (`admin_users`, `tenant_secrets`, `tenant_settings`,
-   `tenant_channels`; Fase 6 de `docs/plan-v1.md`). Borrar tablas necesita la aprobación de la persona dueña.
+en los requisitos, a propósito, y solo el verificador de Neon Auth usa una librería JWT (`tests/test_engine_security.py`). Sus
+tablas (`admin_users`, `tenant_secrets`, `tenant_settings`, `tenant_channels`) se borraron de las dos ramas de Neon el 19 de noviembre
+de 2026, con la persona dueña de acuerdo (migración `0023_retire_legacy_tables.sql`; ver Fase 6 de `docs/plan-v1.md`).
 
 ## Nube: Vercel Y Neon
 
@@ -568,9 +565,8 @@ Antes de cerrar un cambio relevante en runtime:
 ## Scripts De Base De Datos
 
 `scripts/setup_cloud_database.py` deja lista una rama de Neon (ver «Nube: Vercel Y Neon»). En la rama `pruebas` usa
-`scripts/bootstrap_saas_data.py`, que garantiza por cada negocio de ejemplo (`project/config/tenants/`) una fila en `tenants`,
-`admin_users` y `tenant_settings` (tablas del sistema anterior: ya no las usa el código y se borran en la Fase 6). No sobrescribe filas existentes y
-procesa cada negocio en su propia transacción.
+`scripts/bootstrap_saas_data.py`, que garantiza por cada negocio de ejemplo (`project/config/tenants/`) su fila en `tenants`. No
+sobrescribe filas existentes y procesa cada negocio en su propia transacción.
 
 ### Precauciones
 

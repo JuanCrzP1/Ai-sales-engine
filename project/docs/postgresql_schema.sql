@@ -11,19 +11,8 @@ CREATE TABLE tenants (
 
 -- Suscripciones, planes y límites de uso pertenecen a la plataforma externa:
 -- el motor no define ni consulta tablas para ello.
-
--- ADMIN USERS
-CREATE TABLE admin_users (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  tenant_id UUID REFERENCES tenants(id) ON DELETE CASCADE,
-  email TEXT UNIQUE,
-  password_hash TEXT,
-  name TEXT,
-  phone TEXT,
-  document_number TEXT,
-  company_name TEXT,
-  created_at TIMESTAMPTZ DEFAULT now()
-);
+-- Las tablas del sistema anterior (admin_users, tenant_secrets, tenant_channels,
+-- tenant_settings) se retiraron: project/db/migrations/0023_retire_legacy_tables.sql.
 
 -- CLIENTES
 CREATE TABLE clients (
@@ -53,28 +42,6 @@ CREATE TABLE conversation_memory (
   memory JSONB,
   updated_at TIMESTAMPTZ DEFAULT now(),
   UNIQUE (tenant_id, client_id)
-);
-
--- SECRETOS
-CREATE TABLE tenant_secrets (
-  tenant_id UUID PRIMARY KEY REFERENCES tenants(id) ON DELETE CASCADE,
-  encrypted_data JSONB,
-  created_at TIMESTAMPTZ DEFAULT now()
-);
-
--- CANALES
-CREATE TABLE tenant_channels (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  tenant_id UUID REFERENCES tenants(id) ON DELETE CASCADE,
-  channel TEXT,
-  config JSONB,
-  is_active BOOLEAN DEFAULT true
-);
-
--- SETTINGS
-CREATE TABLE tenant_settings (
-  tenant_id UUID PRIMARY KEY REFERENCES tenants(id) ON DELETE CASCADE,
-  settings JSONB
 );
 
 -- ÍNDICES (MEJORADOS)

@@ -305,7 +305,7 @@ El contrato no guarda links, números de cuenta ni referencias: usa `{"secret_re
 (comprobado en los nueve negocios de ejemplo: sus valores ficticios van aparte, en `payment-values.json`, y se cifran al
 importarlos). Los errores de validación tampoco repiten el valor recibido.
 
-Son datos del negocio y no se mezclan con las credenciales de canales (`tenant_secrets`), que pertenecen a
+Son datos del negocio y no se mezclan con las credenciales de los canales (`business_channels`), que pertenecen a
 las integraciones.
 
 ### Consultarlos sin exponerlos

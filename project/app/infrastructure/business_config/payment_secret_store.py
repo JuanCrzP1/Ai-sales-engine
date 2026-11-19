@@ -3,7 +3,7 @@
 El contrato solo guarda referencias `{"secret_ref": "secret_store:<clave>"}`; el valor (link, número,
 cuenta o referencia) se cifra con Fernet antes de llegar a la base de datos. La clave se toma de
 `BUSINESS_CONFIG_SECRETS_KEY` y no tiene valor por defecto: sin clave no se cifra ni se lee nada.
-Estos datos no se mezclan con las credenciales de canales (`tenant_secrets`), que son de las integraciones.
+Estos datos no se mezclan con las credenciales de los canales (`business_channels`), que son de las integraciones.
 """
 from __future__ import annotations
 

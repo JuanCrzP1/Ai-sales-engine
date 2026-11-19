@@ -104,7 +104,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r project/requirements-dev.txt
       - name: Run memory tests (PostgreSQL)
-        run: pytest -q tests/test_memory_postgres.py tests/test_reply_batching_postgres.py
+        run: pytest -q tests/test_memory_postgres.py tests/test_reply_batching_postgres.py tests/test_legacy_tables_postgres.py
 
   integration:
     needs: test

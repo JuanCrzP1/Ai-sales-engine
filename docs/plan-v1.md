@@ -82,7 +82,7 @@ Meta todavía no.
 | Q3, Fase 3 | Hecho | Todo lo que el panel deja configurar llega al motor (prompt v3): 184 campos conectados, 0 pendientes. Solo quedan fuera, a propósito, lo que es del equipo (la etiqueta de una cuenta y el código de una variante) y lo que enviará la plataforma ante un evento (pago confirmado y seguimiento). Capas nuevas: cómo compra y recibe el cliente, políticas, el cliente y la estrategia de venta. Laboratorio de regresión (`exp_20261110_fase3_campos_conectados`): mismas respuestas, webhook y rutas; los prompts solo suman lo nuevo. Calidad con la IA real (`exp_20261110_calidad_fase3_ficha_completa`): 9,64 contra 9,62 por respuesta, 0 precios inventados y gana 15 de 18 a ciegas; en los negocios con estrategia avanzada (`exp_20261110_calidad_fase3_objeciones`): 9,58 → 9,81, dudas por precio 9,25 → 9,5 y gana 7 de 8. Los ejemplos de restaurante, tienda de ropa y agencia de viajes (y el posicionamiento y las reglas de cierre de la escuela) tenían la estrategia escrita como si vendieran el asistente a su sector; se corrigieron para que describan lo que venden. Con la ficha real (`exp_20261110_calidad_ejemplos_limpios_ficha_real`): 8,86 → 9,36, dudas por precio 5,5 → 8,88, pregunta trampa 7,5 → 9,88 y gana 6 de 8. |
 | T3 | Hecho | Cada respuesta suma a `ai_usage` (migración 0007) por negocio, día y modelo, con el costo si OpenRouter lo informa. El panel lo muestra en «Inteligencia artificial». |
 | Fase 5 (WhatsApp) | Hecho en la nube | WhatsApp por QR, conversaciones en vivo, paso a una persona, clientes, ventas y reportes (ver Fase 5). |
-| A4 (Fase 6) | En curso | Retirados los YAML, `ConfigService`, la API de administración vieja, el *polling* de Telegram (11 nov) y el resto del código del sistema anterior (18 nov), con el motor sin diferencias en el laboratorio. Faltan sus tablas en Neon (ver Fase 6). |
+| A4 (Fase 6) | En curso | Retirados los YAML, `ConfigService`, la API de administración vieja, el *polling* de Telegram (11 nov) y el resto del código del sistema anterior (18 nov) y sus tablas en Neon (19 nov), con el motor sin diferencias en el laboratorio. Queda ordenar `app/services/` y dividir `memory_repository.py` (ver Fase 6). |
 
 ## 2. Cómo funcionaba antes y cómo funciona hoy
 
@@ -377,9 +377,15 @@ del motor, los scripts, las pruebas y los laboratorios, y consultas de solo lect
   (`retirar_sistema_anterior_20261118`): motor sin diferencias en los 9 negocios, webhook igual; solo cambian las 2 rutas de Meta.
   Un control negativo (una respuesta alterada a propósito) sale como diferencia en las respuestas y en el webhook.
 
-Falta: borrar de Neon las tablas del sistema anterior que ya no usa el código (`admin_users`, `tenant_secrets`, `tenant_settings`,
-`tenant_channels`; necesita la aprobación de la persona dueña), mover lo vivo de `app/services/` (la llamada a la IA y su lector) a
-su capa, dividir `memory_repository.py` y quitar los errores silenciados. (`ai_execution.py` quedó dividido el 14 nov 2026:
+**Avance (19 de noviembre de 2026):** ~~las tablas del sistema anterior en Neon~~ (`admin_users`, `tenant_secrets`,
+`tenant_settings`, `tenant_channels`), con la persona dueña de acuerdo. Migración `0023_retire_legacy_tables.sql` (sin `CASCADE`: si
+algo dependiera de una, falla sin borrar nada; probada contra PostgreSQL real en `tests/test_legacy_tables_postgres.py`). Antes se
+comprobó en las dos ramas que nada dependía de ellas (solo tenían llaves hacia `tenants`) y se respaldaron estructura y filas. En
+`production` estaban vacías; en `pruebas`, 9 filas sin datos que sembraba `bootstrap_saas_data.py` (ya no lo hace). Se aplicó con
+`run_sql_file`: en `production` quedó anotada en `schema_migrations` (el despliegue la ve aplicada) y los negocios, clientes,
+mensajes y memorias quedaron iguales (2, 16, 228 y 16). El esquema del motor (`postgresql_schema.sql`) ya no las crea.
+
+Falta: mover lo vivo de `app/services/` (la llamada a la IA y su lector) a su capa, dividir `memory_repository.py` y quitar los errores silenciados. (`ai_execution.py` quedó dividido el 14 nov 2026:
 laboratorio `dividir_ai_execution_20261114`, motor sin diferencias en los 9 negocios.)
 
 **Terminada cuando:** no queda código ni tabla del sistema anterior y ningún módulo supera unas 400 líneas.

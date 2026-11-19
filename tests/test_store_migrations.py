@@ -22,7 +22,7 @@ from app.infrastructure.business_config import migrations
 
 def test_migrations_are_ordered_and_every_statement_can_run_again():
     names = [path.name for path in migrations.MIGRATIONS]
-    assert names == sorted(names) and names[-1] == "0022_reply_batching.sql"
+    assert names == sorted(names) and names[-1] == "0023_retire_legacy_tables.sql"
     assert all(migrations.MIGRATION_NAME.fullmatch(name) for name in names)
     for path in migrations.MIGRATIONS:
         sql = re.sub(r"--[^\n]*", "", path.read_text(encoding="utf-8"))
@@ -30,6 +30,9 @@ def test_migrations_are_ordered_and_every_statement_can_run_again():
             assert "IF NOT EXISTS" in statement, (path.name, statement[:80])
         for constraint in re.findall(r"ADD CONSTRAINT (\w+)", sql):
             assert f"DROP CONSTRAINT IF EXISTS {constraint}" in sql, (path.name, constraint)
+        # Borrar una tabla también se puede repetir, y nunca arrastra lo que dependa de ella: si algo inesperado depende, falla.
+        for statement in re.findall(r"DROP TABLE[^;]*", sql):
+            assert "IF EXISTS" in statement and "CASCADE" not in statement.upper(), (path.name, statement[:80])
 
 
 def test_the_tracking_table_is_written_in_the_same_transaction(monkeypatch):
