@@ -3,7 +3,7 @@
 Reutiliza lo que ya tiene el laboratorio: la conversación dorada, las métricas del prompt y los evaluadores. Cada lado corre
 en su propia copia del código, sin `.env`, con la memoria en RAM y la red bloqueada. Como el motor solo lee lo publicado, cada copia
 arma su almacén temporal con los negocios de ejemplo importados de sus YAML, cada uno con una clave de IA ficticia, y el webhook de
-WhatsApp se prueba con la firma de Meta. El motor no se toca: solo se sustituye el
+WhatsApp por código QR se prueba con un servidor de uazapi del laboratorio (nada sale a la red). El motor no se toca: solo se sustituye el
 transporte hacia el proveedor del modelo, así que se compara la petición exacta que saldría hacia él.
 
 Sin `--live-model` no se llama a ningún modelo: cada turno recibe la respuesta real registrada en
@@ -51,7 +51,10 @@ DEFAULT_CHANNEL = "whatsapp"
 LAB_USER_ID = "pricing-lab-user"
 PROVIDER_HOSTS = {"openrouter.ai"}
 PLACEHOLDER_KEY = "clave-ficticia-del-laboratorio"
-# Secreto de la app de Meta solo para el laboratorio: el webhook exige la firma `X-Hub-Signature-256` y la sonda firma con este.
+# Token de la instancia de uazapi del laboratorio: el webhook de WhatsApp por QR solo acepta avisos que lo traen.
+LAB_INSTANCE_TOKEN = "token-de-instancia-del-laboratorio"
+# Secreto de la app de Meta solo para el laboratorio: el webhook de Meta (retirado el 18 de noviembre de 2026) exigía la firma
+# `X-Hub-Signature-256`. Solo lo usa la sonda de los commits anteriores al canal por QR.
 LAB_META_APP_SECRET = "secreto-de-meta-del-laboratorio"
 SAFE_ENV_NAMES = ("PATH", "SYSTEMROOT", "WINDIR", "TEMP", "TMP", "USERPROFILE", "APPDATA", "LOCALAPPDATA", "COMSPEC", "PATHEXT", "HOME", "LANG")
 
@@ -102,6 +105,9 @@ EXPECTED_ROUTE_CHANGES |= {"GET /"}
 EXPECTED_ROUTE_CHANGES |= {"GET /api/v1/internal/attention/run", "POST /api/v1/internal/attention/run"}
 # La API del asistente (12 de noviembre de 2026): otro sistema conversa con el asistente con una clave de API del negocio.
 EXPECTED_ROUTE_CHANGES |= {"POST /api/v1/assistant/messages"}
+# El webhook de WhatsApp de Meta del sistema anterior, retirado el 18 de noviembre de 2026: buscaba el negocio en una tabla que en
+# producción está vacía (`tenant_channels`). WhatsApp llega por código QR (`/channels/whatsapp/{webhook_id}`).
+EXPECTED_ROUTE_CHANGES |= {"GET /api/v1/whatsapp/webhook", "POST /api/v1/whatsapp/webhook"}
 
 # Zonas del repositorio, de la más específica a la más general, para clasificar las diferencias de Git.
 CHANGE_ZONES = [
@@ -440,7 +446,62 @@ def _probe_application() -> tuple[object, dict, str]:
 
 
 def _probe_webhook(client, model, api_prefix: str, tenant_slug: str) -> dict:
-    """Mensaje entrante con un número ficticio hasta la respuesta que se enviaría. El envío a WhatsApp se intercepta: nada sale."""
+    """Mensaje entrante por WhatsApp (código QR) con un número ficticio hasta la respuesta que se enviaría, como en producción: el
+    negocio con su WhatsApp conectado, el aviso de uazapi con el token de su instancia y la respuesta enviada por esa instancia. El
+    servidor de uazapi es del laboratorio: nada sale a la red. Los commits anteriores al canal por QR se prueban por el de Meta."""
+    try:
+        import app.api.controllers.whatsapp_qr_webhook as webhook
+        from app.infrastructure.business_config.channel_store import ChannelStore
+        from app.infrastructure.business_config.database import create_business_config_engine
+    except ImportError:
+        return _probe_meta_webhook(client, model, api_prefix, tenant_slug)
+
+    sent: list[str] = []
+
+    class LabUazapi:
+        def __init__(self, _server_url: str, *args, **kwargs) -> None:
+            pass
+
+        def presence(self, *args, **kwargs) -> None:
+            return None
+
+        def send_text(self, _token: str, _phone: str, text: str) -> str:
+            sent.append(str(text or ""))
+            return f"laboratorio-{len(sent)}"
+
+        def send_media(self, _token: str, _phone: str, _kind: str, _media, caption: str = "") -> str:
+            sent.append(str(caption or ""))
+            return f"laboratorio-{len(sent)}"
+
+        def download(self, *args, **kwargs):
+            return None
+
+    webhook.UazapiClient = LabUazapi
+    # Sin esperar a que el cliente termine de escribir: cada mensaje llega después de la respuesta anterior.
+    webhook.pause = lambda _seconds: None
+    store = create_business_config_engine(os.environ["BUSINESS_CONFIG_DATABASE_URL"])
+    try:
+        channels = ChannelStore(store, os.environ["BUSINESS_CONFIG_SECRETS_KEY"])
+        channels.save_whatsapp(tenant_slug, server_url="https://free.uazapi.com", instance_token=LAB_INSTANCE_TOKEN)
+        path = f"{api_prefix}/channels/whatsapp/{channels.whatsapp_secrets(tenant_slug).webhook_id}"
+    finally:
+        store.dispose()
+    rows = []
+    for number, (text, reply) in enumerate((("Hola", None), ("¿Y qué precio tiene?", _scripted("Respuesta de prueba del webhook."))), start=1):
+        model.start_turn(reply)
+        payload = {
+            "EventType": "messages",
+            "token": LAB_INSTANCE_TOKEN,
+            "message": {"messageid": f"laboratorio-{number}", "chatid": "570000000000@s.whatsapp.net", "sender": "570000000000@s.whatsapp.net",
+                        "senderName": "Laboratorio", "fromMe": False, "isGroup": False, "messageType": "Conversation", "text": text},
+        }
+        response = client.post(path, json=payload)
+        rows.append({"message": text, "status": response.status_code, "body": response.json(), "model_calls": len(model.calls), "prompt_sha256": [digest(str((call["payload"].get("messages") or [{}])[0].get("content") or "")) for call in model.calls]})
+    return {"turns": rows, "sent": sent}
+
+
+def _probe_meta_webhook(client, model, api_prefix: str, tenant_slug: str) -> dict:
+    """La misma sonda por el webhook de Meta, para los commits anteriores al canal por QR (retirado el 18 de noviembre de 2026)."""
     import app.api.controllers.whatsapp_webhook as webhook
 
     sent: list[str] = []

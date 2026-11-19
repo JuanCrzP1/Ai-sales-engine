@@ -26,8 +26,6 @@ features:
   enable_human_handoff: true
   enable_audit_logs: true
   enable_audit_alerts: true
-  enable_simulation_endpoint: false
-  enable_webhook_processing: true
 
 behavior:
   semantic_threshold: 0.22

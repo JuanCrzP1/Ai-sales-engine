@@ -1,82 +1,26 @@
-##### 🚨 AI-FIRST ARCHITECTURE RULE #####
-# Este sistema es AI-first.
-#
-# ❌ PROHIBIDO:
-# - NO inferir intent fuera de structured_output.py
-# - NO usar heurísticas ("quiero", "comprar", etc.)
-# - NO crear lógica comercial en código
-# - NO forzar respuestas
-# - NO agregar reglas de cierre
-#
-# ✅ PERMITIDO:
-# - pasar contexto
-# - estructurar datos
-# - delegar completamente en la IA
-#
-# 💣 SI VIOLAS ESTO:
-# rompes consistencia, ventas y multi-tenant
-#########################################
-##### 🚫 NO INTENT MANIPULATION #####
-# Este servicio NO puede tocar intent.
-#
-# ❌ NO:
-# - sobrescribir metadata.intent
-# - ajustar intent
-################################
+"""La puerta de entrada de los canales al motor: WhatsApp (QR), Telegram, la API del asistente y «Probar asistente».
+
+Delega todo el turno en `AIPipeline` y entrega la respuesta con los espacios en orden (`tidy_spacing`). Lo que dice el asesor lo
+decide la IA: aquí no se infiere la intención ni se cambia una palabra (`services/ai/structured_output.py` es la única fuente de
+la intención).
+"""
 from __future__ import annotations
 
 from app.application.ai_pipeline import AIPipeline
-from app.application.response_guard import validate_response_against_yaml
+from app.application.pipeline.response_postprocessor import tidy_spacing
 from app.domain.conversation.memory import MemoryDomainService
 from app.infrastructure.persistence.memory_factory import build_memory_repository
-from app.utils.logger import logger
 
 
 GLOBAL_MEMORY_REPOSITORY = build_memory_repository()
 GLOBAL_MEMORY_SERVICE = MemoryDomainService(GLOBAL_MEMORY_REPOSITORY)
 
 
-def _extract_price_anchor(text: str, runtime_yaml: dict) -> str:
-    pricing = runtime_yaml.get("pricing", {})
-    plans = pricing.get("plans", [])
-    if not plans:
-        return ""
-
-    p = plans[0]
-    monthly = str(p.get("pricing", {}).get("COP", {}).get("monthly") or "")
-    implementation = str(p.get("pricing", {}).get("COP", {}).get("implementation") or "")
-
-    text_lower = str(text or "").lower()
-
-    if monthly and monthly in text_lower:
-        return f"mensual {monthly}"
-
-    if implementation and implementation in text_lower:
-        return f"implementación {implementation}"
-
-    return ""
-
-
-# 🚨 ARCHITECTURE RULE:
-# Este modulo NO puede modificar, inferir ni ajustar el intent.
-# structured_output.py es la unica fuente de intent.
-# Cualquier cambio aqui rompe la consistencia del sistema.
-#
-# ⚠️ NO HACER:
-# - NO recalcular intent
-# - NO sobrescribir metadata.intent
-# - NO inferir comportamiento comercial
-
-
 class AIService:
-    """Adapter liviano: delega todo el flujo al AIPipeline."""
+    """Adaptador liviano: delega todo el flujo al AIPipeline."""
 
-    def __init__(self, prompt_path: str | None = None, message_repository=None) -> None:
-        self.pipeline = AIPipeline(
-            prompt_path=prompt_path,
-            message_repository=message_repository,
-            memory_service=GLOBAL_MEMORY_SERVICE,
-        )
+    def __init__(self, prompt_path: str | None = None) -> None:
+        self.pipeline = AIPipeline(prompt_path=prompt_path, memory_service=GLOBAL_MEMORY_SERVICE)
 
     def generate_business_reply(
         self,
@@ -89,10 +33,7 @@ class AIService:
         user_id: str | None = None,
         include_metadata: bool = False,
     ) -> tuple[str, bool] | tuple[str, bool, dict]:
-        if isinstance(yaml_config, dict):
-            incoming_memory = yaml_config.get("memory_context")
-        else:
-            incoming_memory = None
+        incoming_memory = yaml_config.get("memory_context") if isinstance(yaml_config, dict) else None
 
         result = self.pipeline.run(
             tenant=tenant,
@@ -107,34 +48,17 @@ class AIService:
 
         if isinstance(result, tuple) and len(result) == 3:
             response, ai_used, metadata = result
-            safe_metadata = metadata if isinstance(metadata, dict) else {}
+            metadata = metadata if isinstance(metadata, dict) else {}
         else:
             response, ai_used = result
-            safe_metadata = {}
-
-        metadata = safe_metadata
+            metadata = {}
 
         if not isinstance(metadata.get("memory_context"), dict):
             metadata["memory_context"] = {}
+        if isinstance(incoming_memory, dict) and incoming_memory:
+            metadata["memory_context"] = {**incoming_memory, **metadata["memory_context"]}
 
-        if incoming_memory and isinstance(incoming_memory, dict):
-            metadata_memory = metadata.get("memory_context") or {}
-            metadata_memory = {**incoming_memory, **metadata_memory}
-            metadata["memory_context"] = metadata_memory
-
-        price_anchor = _extract_price_anchor(response, yaml_config if isinstance(yaml_config, dict) else {})
-
-        if price_anchor:
-            if isinstance(metadata, dict):
-                memory = metadata.get("memory_context") or {}
-                memory["price_anchor"] = price_anchor
-                metadata["memory_context"] = memory
-
-        response = validate_response_against_yaml(
-            str(response or ""),
-            yaml_config if isinstance(yaml_config, dict) else {},
-        )
-
+        response = tidy_spacing(response)
         if include_metadata:
-            return str(response or ""), bool(ai_used), metadata
-        return str(response or ""), bool(ai_used)
+            return response, bool(ai_used), metadata
+        return response, bool(ai_used)

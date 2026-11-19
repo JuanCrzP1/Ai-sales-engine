@@ -46,7 +46,7 @@ retiraron el 11 de noviembre de 2026.
 | Políticas del motor y límites del contrato | `project/app/domain/business_config/engine_policy.py` | a mano |
 | Diagnóstico (incoherencias que no bloquean) | `project/app/domain/business_config/diagnostics.py` | a mano |
 | Compilador al formato que lee el motor | `project/app/domain/business_config/compiler.py` | a mano |
-| Catálogo de campos antiguos (adónde fue cada campo de los YAML; lo usan las pruebas y la matriz) | `project/app/infrastructure/config/legacy_field_catalog.py` | a mano |
+| Catálogo de campos antiguos (adónde fue cada campo de los YAML; lo usan las pruebas y la matriz) | `tests/legacy_field_catalog.py` | a mano |
 | JSON Schema publicado | `project/config/contracts/v1/business-config.schema.json` | generado |
 | Tipos TypeScript del panel | `apps/admin-web/src/contracts/businessConfig.v1.ts` | generado |
 | Matriz y referencia de campos | `docs/business-config-traceability.md` | generada |
@@ -341,23 +341,9 @@ al proveedor; si el enlace no tiene nada más, oculta también parte del servido
 `label`, `enabled` y `link_enabled` son opcionales: sin indicar, un método está activo y los documentos que no los usan no cambian
 ni compilan distinto. `label` no llega al motor.
 
-### Datos de pago en `/simulate`
+### Datos de pago en los canales
 
-`POST /api/v1/simulate` está apagado por defecto y exige el token de un administrador, que hoy nadie puede obtener porque
-la autenticación definitiva queda para la fase de nube (ver `docs/operations.md`). No devuelve configuración interna ni usa
-la memoria de los clientes:
-
-| Dato | ¿Se devuelve? |
-|---|---|
-| Datos de pago: link, número, cuenta y referencia | No; ni el modelo los recibe, y `reply` muestra `[dato de pago]` |
-| Estrategia comercial, `pricing`, `business` y `ai_metadata` | No |
-| Memoria de conversaciones de clientes | No; la simulación usa una memoria propia en RAM |
-| Credenciales, tokens y prompt del sistema | No |
-| `reply`, `ai_used` y las etiquetas `source`, `intent`, `conversation_state` y `tenant_slug` | Sí |
-
-`reply` es texto del modelo, igual que el que recibe un cliente: puede mencionar precios. Ningún otro campo los lleva.
-
-En los canales reales, ni el prompt de la IA ni el registro `conversation_trace` llevan los datos de pago (ver
+En los canales, ni el prompt de la IA ni el registro `conversation_trace` llevan los datos de pago (ver
 [Lo Que El Motor Usa Del Contrato](#lo-que-el-motor-usa-del-contrato)); la bandeja los guarda ocultos con
 `payment_data.redact_payment_values`.
 
@@ -487,7 +473,7 @@ De la configuración antigua solo queda:
 
 | Elemento | Para qué |
 |---|---|
-| `legacy_field_catalog.py`, `generate_traceability_matrix.py` y `docs/business-config-traceability.md` | Adónde fue cada campo de los YAML. Lo usan las pruebas y la matriz, nunca la aplicación |
+| `tests/legacy_field_catalog.py`, `generate_traceability_matrix.py` y `docs/business-config-traceability.md` | Adónde fue cada campo de los YAML. Lo usan las pruebas y la matriz; vive con las pruebas, fuera de la aplicación |
 | `tests/golden/` | Lo que el motor recibía de los YAML, congelado: la referencia de los negocios de ejemplo |
 | `legacy` en los ajustes técnicos | Tres estructuras antiguas que el motor todavía lee en esa forma |
 

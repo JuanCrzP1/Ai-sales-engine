@@ -4,7 +4,7 @@ El backend de AI Sales Engine (FastAPI). En la nube corre en Vercel con Neon; en
 
 ## Qué hace
 
-- Recibe los mensajes de los canales (WhatsApp por QR con uazapi y la API de Meta), identifica el negocio y responde con su
+- Recibe los mensajes de los canales (WhatsApp por QR con uazapi, Telegram y la API del asistente), identifica el negocio y responde con su
   versión publicada y su propia clave de IA.
 - Guarda cada conversación para la bandeja del panel, entiende fotos y notas de voz, y pasa la conversación a una persona cuando
   corresponde.
@@ -17,15 +17,16 @@ El backend de AI Sales Engine (FastAPI). En la nube corre en Vercel con Neon; en
 |---|---|
 | `GET /health` | Estado del motor (no nombra ningún negocio) |
 | `POST /api/v1/channels/whatsapp/{webhook_id}` | Avisos de la instancia de WhatsApp por QR de cada negocio |
-| `GET`/`POST /api/v1/whatsapp/webhook` | Webhook de la API de Meta (exige su firma) |
-| `POST /api/v1/simulate` | Apagado por defecto (404) |
+| `POST /api/v1/channels/telegram/{webhook_id}` | Avisos del bot de Telegram de cada negocio (exige su firma) |
+| `POST /api/v1/assistant/messages` | API del asistente: otro sistema conversa con él con una clave de API del negocio |
+| `GET`/`POST /api/v1/internal/attention/run` | La IA retoma los chats que nadie atendió a tiempo (protegida con `CRON_SECRET`) |
 | `/panel/api/...` | API del panel en la nube (solo con `NEON_AUTH_URL`) |
 
 ## Dónde está cada cosa
 
 | Carpeta | Qué hay |
 |---|---|
-| `app/api/` | Rutas del motor: webhooks y simulación |
+| `app/api/` | Rutas del motor: webhooks de los canales, API del asistente y revisión de la atención |
 | `app/application/` | Pipeline de la IA (`ai_pipeline.py`, `pipeline/`), carga de lo publicado (`runtime/`), entrada de WhatsApp (`channels/`) |
 | `app/infrastructure/ai/prompting/` | El prompt por bloques |
 | `app/domain/business_config/` | El contrato del negocio, su compilador y sus reglas |

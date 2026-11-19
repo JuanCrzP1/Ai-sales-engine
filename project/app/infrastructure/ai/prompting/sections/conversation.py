@@ -97,9 +97,6 @@ def render(view: PromptView) -> str:
     anchor, rule = one_line(memory.get("operational_anchor")), one_line(memory.get("operational_rule"))
     if anchor:
         facts.append(f"{anchor} {rule}".strip())
-    price_anchor = one_line(memory.get("price_anchor"))
-    if price_anchor:
-        facts.append(f"Ya conoce el precio: {price_anchor}")
     hint = one_line(memory.get("sales_memory_hint"))
     if hint:
         facts.append(f"Dato que contó antes: {hint}")

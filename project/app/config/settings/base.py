@@ -140,8 +140,6 @@ def _passthrough_keys() -> tuple[str, ...]:
         "enable_human_handoff",
         "enable_audit_logs",
         "enable_audit_alerts",
-        "enable_simulation_endpoint",
-        "enable_webhook_processing",
         "semantic_threshold",
         "conversation_context_limit",
         "max_message_length",
@@ -212,9 +210,6 @@ class Settings(BaseSettings):
     debug: bool = False
 
     database_url: str = Field(default="")
-    jwt_secret: str = "change-me-in-production"
-    jwt_algorithm: str = "HS256"
-    jwt_expire_minutes: int = 60 * 8
 
     llm_provider: str = "openrouter"
     openrouter_base_url: str = "https://openrouter.ai/api/v1"
@@ -224,16 +219,6 @@ class Settings(BaseSettings):
     allow_provider_fallback: bool = False
     embedding_model: str = "text-embedding-3-small"
 
-    twilio_account_sid: str = ""
-    twilio_auth_token: str = ""
-    twilio_whatsapp_number: str = ""
-    meta_access_token: str = ""
-    meta_phone_number_id: str = ""
-    meta_verify_token: str = os.getenv("META_VERIFY_TOKEN", "")
-    meta_app_secret: str = ""
-    meta_business_account_id: str = ""
-    meta_ig_account_id: str = ""
-    connector_secrets_key: str = ""
     public_base_url: str = "http://localhost:8000"
 
     seed_default_data: bool = True
@@ -245,8 +230,6 @@ class Settings(BaseSettings):
     enable_human_handoff: bool = True
     enable_audit_logs: bool = True
     enable_audit_alerts: bool = True
-    enable_simulation_endpoint: bool = False
-    enable_webhook_processing: bool = True
     semantic_threshold: float = 0.22
     conversation_context_limit: int = 8
     max_message_length: int = 2000
@@ -294,7 +277,6 @@ def normalize_database_url(url: str | None) -> str:
 
 
 settings = Settings(**_yaml_cfg)
-# Antes de que nadie cree la conexión: `app.database.connection` la crea al importarse.
 settings.database_url = normalize_database_url(settings.database_url)
 
 def is_test_context() -> bool:

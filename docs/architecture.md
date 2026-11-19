@@ -12,13 +12,16 @@ El foco está en responder tres preguntas:
 
 ## Flujo Completo Del Sistema
 
-Hay tres entradas activas:
+Hay cuatro entradas activas:
 
 - WhatsApp por código QR (uazapi): el canal en uso en la nube
-- webhook de WhatsApp Cloud API de Meta
-- «Probar asistente» en el panel (y el endpoint de simulación, apagado por defecto)
+- Telegram: el bot de cada negocio
+- La API del asistente (`POST /api/v1/assistant/messages`): otro sistema conversa con el asistente con una clave de API del negocio
+- «Probar asistente» en el panel
 
-Las tres usan el mismo pipeline y la misma fuente: la versión publicada del negocio en el almacén (Neon en la nube).
+Todas usan el mismo pipeline y la misma fuente: la versión publicada del negocio en el almacén (Neon en la nube). (El webhook de
+WhatsApp Cloud API de Meta y la simulación `/simulate` del sistema anterior se retiraron el 18 de noviembre de 2026: el de Meta
+buscaba el negocio en una tabla que en producción está vacía y la simulación no tenía cómo autenticarse.)
 
 ### WhatsApp Por Código QR (uazapi)
 
@@ -29,26 +32,23 @@ uazapi (aviso de la instancia del negocio)
 -> project/app/application/channels/inbound.py    guarda el mensaje en la bandeja (sin duplicados), y después:
                                                             «escribiendo…», entiende fotos y audios, responde o pasa a una persona
 -> project/app/infrastructure/ai/media_interpreter.py      describe la foto o transcribe la nota de voz, con la clave del negocio
--> project/app/services/ai_service.py -> mismo pipeline (abajo)
+-> project/app/services/ai_service.py -> el pipeline común (abajo)
 -> project/app/infrastructure/channels/uazapi.py           envía la respuesta; los recibos de entregado y leído llegan por el webhook
 -> project/app/infrastructure/business_config/conversation_store.py   la conversación queda en la bandeja del panel
 ```
 
-### WhatsApp Cloud API De Meta
+Telegram entra por `telegram_webhook.py` (`POST /api/v1/channels/telegram/{webhook_id}`, con la firma del negocio) y sigue el
+mismo camino desde `inbound.py`; envía con `infrastructure/channels/telegram.py`.
+
+### El Pipeline Común
 
 ```text
-WhatsApp Cloud API
--> project/app/main.py
--> project/app/api/routes.py
--> project/app/api/controllers/whatsapp_webhook.py
--> project/app/services/tenant_channel_resolver.py
--> project/app/connectors/router.py
--> project/app/connectors/whatsapp/meta/parser.py
+project/app/services/ai_service.py                    la puerta de los canales: delega el turno y entrega la respuesta con los
+                                                      espacios en orden (`response_postprocessor.tidy_spacing`)
+-> project/app/application/ai_pipeline.py
 -> project/app/application/runtime/tenant_runtime_loader.py
 -> project/app/application/runtime/runtime_yaml_builder.py
 -> project/app/infrastructure/business_config/runtime_access.py
--> project/app/services/ai_service.py
--> project/app/application/ai_pipeline.py
 -> project/app/application/pipeline/conversation_flow.py
 -> project/app/application/pipeline/sales_flow.py
 -> project/app/application/pipeline/ai_execution.py
@@ -63,30 +63,8 @@ WhatsApp Cloud API
 -> project/app/application/pipeline/response_postprocessor.py
 -> project/app/application/pipeline/turn_persistence.py
 -> project/app/application/pipeline/payment_outcome.py
--> project/app/application/response_guard.py
--> project/app/connectors/whatsapp/transport_runtime.py
--> project/app/connectors/whatsapp/transport/sender.py
--> project/app/connectors/whatsapp/meta/sender.py
 -> respuesta al canal
 ```
-
-### Flujo De Simulación
-
-```text
-Cliente HTTP
--> project/app/main.py
--> project/app/api/routes.py
--> project/app/api/controllers/simulation.py
--> project/app/api/dependencies.py
--> project/app/services/ai_service.py
--> mismo pipeline AI-first del runtime
--> respuesta JSON
-```
-
-La diferencia es operativa:
-
-- `whatsapp_webhook.py` recibe un evento real y envía respuesta al canal.
-- `simulation.py` usa el mismo motor de respuesta, pero devuelve JSON sin enviar mensaje por connector.
 
 ## Componentes Activos
 
@@ -95,9 +73,9 @@ La diferencia es operativa:
 - `project/app/main.py`: inicia FastAPI, prepara logger, valida entorno y monta las rutas.
 - `project/app/api/routes.py`: registra controladores HTTP.
 - `project/app/api/controllers/whatsapp_qr_webhook.py`: entrada de WhatsApp por código QR (uazapi), una ruta secreta por negocio.
-- `project/app/api/controllers/whatsapp_webhook.py`: entrada de WhatsApp Cloud API de Meta (exige su firma).
-- `project/app/api/controllers/simulation.py`: entrada controlada para simulación y validación.
-- `project/app/api/dependencies.py`: resuelve el tenant para endpoints públicos y autenticados.
+- `project/app/api/controllers/telegram_webhook.py`: entrada de Telegram, una ruta secreta por negocio.
+- `project/app/api/controllers/assistant_api.py`: la API del asistente, con la clave de API del negocio.
+- `project/app/api/controllers/attention_tasks.py`: la revisión periódica de los chats que esperan a una persona (`CRON_SECRET`).
 
 La capa HTTP no decide la respuesta. Su trabajo es recibir, validar, resolver tenant y delegar al runtime.
 
@@ -106,7 +84,7 @@ La capa HTTP no decide la respuesta. Su trabajo es recibir, validar, resolver te
 - `project/app/services/ai_service.py`: fachada de alto nivel para generar respuesta comercial.
 - `project/app/application/ai_pipeline.py`: coordinador central del pipeline.
 
-`AIService` no contiene el negocio completo. Su responsabilidad es delegar al pipeline, consolidar metadata, aplicar guardas de salida y exponer una interfaz simple al resto del sistema.
+`AIService` no contiene el negocio completo. Su responsabilidad es delegar al pipeline, consolidar metadata, ordenar los espacios de la respuesta (nunca cambia una palabra) y exponer una interfaz simple al resto del sistema.
 
 ## Pipeline Activo
 
@@ -262,9 +240,9 @@ Ese archivo:
 La salida se consolida en varias capas:
 
 - `project/app/services/ai/structured_output.py`: parsea contenido y metadata
-- `project/app/application/pipeline/response_postprocessor.py`: aplica reglas de postproceso del texto
-- `project/app/application/response_guard.py`: valida la salida contra la configuración del negocio
-- `project/app/infrastructure/channels/uazapi.py` (WhatsApp por QR) o `project/app/connectors/whatsapp/meta/sender.py` (Meta): envían al canal
+- `project/app/application/pipeline/response_postprocessor.py`: aplica reglas de postproceso del texto y ordena los espacios de
+  la respuesta final (`tidy_spacing`, nunca cambia una palabra)
+- `project/app/infrastructure/channels/uazapi.py` (WhatsApp por QR) o `project/app/infrastructure/channels/telegram.py`: envían al canal
 
 ## ai_orchestrator.py
 
@@ -354,9 +332,9 @@ El prompt final controla, como mínimo:
 | Entrada | Cómo sabe de qué negocio es |
 |---|---|
 | WhatsApp por QR | El `webhook_id` secreto de la ruta (`business_channels`) y el token de la instancia que trae cada aviso |
-| WhatsApp de Meta | El `phone_number_id` del aviso, con `project/app/services/tenant_channel_resolver.py` |
+| Telegram | El `webhook_id` secreto de la ruta (`business_channels`) y la firma del negocio que trae cada aviso |
+| API del asistente | La clave de API del negocio (`Authorization: Bearer …`): cada clave es de un solo negocio |
 | «Probar» en el panel | El negocio abierto en el panel, con la cuenta de Neon Auth que es su dueña |
-| Simulación (apagada) | `X-Tenant-Slug` y el administrador del sistema anterior (`project/app/api/dependencies.py`) |
 
 Ver `docs/tenants.md`.
 
@@ -607,7 +585,7 @@ La respuesta final no es genérica. Se construye sobre la versión publicada del
 
 ## Observaciones Técnicas Relevantes
 
-- El canal en uso en la nube es WhatsApp por código QR (uazapi); la API oficial de Meta tiene su conector y su webhook.
+- El canal en uso en la nube es WhatsApp por código QR (uazapi). El conector de la API oficial de Meta se retiró el 18 de noviembre de 2026 (no atendía a ningún negocio); si se necesita, se construye de nuevo sobre `business_channels`, como los demás canales.
 - No hay `decision_engine.py` ni `narrative_builder.py` como archivos activos. Sus responsabilidades están distribuidas.
 - El runtime es AI-first: el backend organiza contexto, acceso y validación, pero la interpretación del turno y la redacción dependen del modelo.
 - La simulación es parte importante de la arquitectura porque permite probar el mismo motor sin enviar mensajes reales al canal.

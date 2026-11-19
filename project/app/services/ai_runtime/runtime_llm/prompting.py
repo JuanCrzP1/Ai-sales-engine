@@ -44,8 +44,6 @@ import os
 
 from app.config import settings
 from app.infrastructure.ai.prompting.builder.prompt_builder import PromptBuilderService
-from app.models import BotConfig, Tenant
-from app.repositories.message_repository import MessageRepository
 from app.services.ai.ai_orchestrator import AIOrchestrator
 from app.services.ai_runtime.runtime_llm.client import AIService as CoreAIService
 from app.utils.logger import logger
@@ -54,10 +52,9 @@ from app.utils.logger import logger
 class RuntimeLLMImplementation:
     STRICT_FALLBACK_MESSAGE = "Se me paso tu mensaje, me cuentas otra vez que necesitas?"
 
-    def __init__(self, prompt_path: str | None = None, message_repository: MessageRepository | None = None) -> None:
+    def __init__(self, prompt_path: str | None = None) -> None:
         self.settings = settings
         self.provider = settings.llm_provider or "openrouter"
-        self.message_repository = message_repository
         self.request_timeout = settings.llm_timeout_seconds
         # Sin clave propia: la plataforma no tiene ninguna. Cada mensaje trae la de su negocio (ver `generate`).
         self.core_ai = CoreAIService(provider=self.provider, request_timeout=self.request_timeout)
@@ -73,11 +70,6 @@ class RuntimeLLMImplementation:
         if token in {"", "<<TOKEN>>", "<TOKEN>"}:
             return ""
         return token
-
-    def build_messages(self, client_id: int, limit: int = 10):
-        if not self.message_repository:
-            return []
-        return self.message_repository.list_recent(client_id=client_id, limit=limit)
 
     def _default_model(self) -> str:
         return self.core_ai.default_model()
@@ -119,7 +111,7 @@ class RuntimeLLMImplementation:
                     raise
                 payload.pop(optional, None)
 
-    def _build_prompt(self, *, tenant: Tenant, user_message: str, yaml_config: dict | None = None, faq_results: list[dict] | None = None) -> tuple[str, dict, dict]:
+    def _build_prompt(self, *, tenant, user_message: str, yaml_config: dict | None = None, faq_results: list[dict] | None = None) -> tuple[str, dict, dict]:
         tenant_slug = str(getattr(tenant, "slug", None) or "").strip() or None
         runtime_yaml = yaml_config if isinstance(yaml_config, dict) else {}
         sales_cfg = runtime_yaml.get("sales") if isinstance(runtime_yaml.get("sales"), dict) else {}
@@ -164,7 +156,7 @@ class RuntimeLLMImplementation:
             cost = usage_dict.get("cost")
             on_usage(model, prompt_tokens, completion_tokens, float(cost) if isinstance(cost, (int, float)) else None)
 
-    def generate(self, prompt: str, *, user_message: str, bot_config: BotConfig | None = None, history: list[dict] | None = None) -> str:
+    def generate(self, prompt: str, *, user_message: str, bot_config: object | None = None, history: list[dict] | None = None) -> str:
         """Una llamada al modelo: las instrucciones del negocio, la conversación reciente (`history`) y el mensaje del cliente."""
         configured_max_tokens = getattr(bot_config, "max_tokens", None)
         try:
@@ -184,13 +176,13 @@ class RuntimeLLMImplementation:
             top_p=getattr(bot_config, "top_p", None),
         )
 
-    def classify(self, prompt: str, *, user_message: str, bot_config: BotConfig | None = None, max_tokens: int = 120) -> str:
+    def classify(self, prompt: str, *, user_message: str, bot_config: object | None = None, max_tokens: int = 120) -> str:
         """Una llamada corta y exacta (sin creatividad) para entender un mensaje, con la clave y el modelo del negocio. La usa el
         lector de pagos (`application/pipeline/payment_reading.py`); también responde en JSON."""
         messages = [{"role": "system", "content": str(prompt or "")}, {"role": "user", "content": str(user_message or "")}]
         return self._complete(messages, bot_config=bot_config, temperature=0.0, max_tokens=max_tokens)
 
-    def _complete(self, messages: list[dict], *, bot_config: BotConfig | None, temperature: float, max_tokens: int, top_p: float | None = None) -> str:
+    def _complete(self, messages: list[dict], *, bot_config: object | None, temperature: float, max_tokens: int, top_p: float | None = None) -> str:
         if str(os.getenv("LLM_MODE") or "").strip().lower() == "mock_fail":
             raise RuntimeError("mock_fail provider simulation")
 

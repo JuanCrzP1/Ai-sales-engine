@@ -1,1 +1,0 @@
-# Inicialización del paquete de esquemas

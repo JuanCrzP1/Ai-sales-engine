@@ -3,7 +3,7 @@
 Versión del contrato: `1.0`. Negocios: 9. Patrones catalogados: 132.
 
 > Archivo generado por `scripts/generate_traceability_matrix.py` desde
-> `project/app/infrastructure/config/legacy_field_catalog.py`. No editar a mano: `--check` falla si
+> `tests/legacy_field_catalog.py`. No editar a mano: `--check` falla si
 > está desactualizado y `tests/test_business_config_traceability.py` lo comprueba.
 
 Cada fila es un campo de los YAML de origen (`business.yaml`, `sales.yaml`, `pricing.yaml`,

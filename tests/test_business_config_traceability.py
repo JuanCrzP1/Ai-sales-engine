@@ -22,7 +22,7 @@ from pathlib import Path
 import pytest
 
 from app.infrastructure.business_config.example_businesses import load_example
-from app.infrastructure.config.legacy_field_catalog import (
+from legacy_field_catalog import (
     CATALOG,
     COMMERCIAL_CONTROLS,
     CONSERVED,

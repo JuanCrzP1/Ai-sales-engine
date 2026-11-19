@@ -3,7 +3,7 @@ generate_traceability_matrix.py
 
 Genera la matriz de trazabilidad entre lo que lee el motor (las secciones que antes venían de los cinco YAML de cada negocio)
 y el contrato BusinessConfig v1 (`docs/business-config-traceability.md`), desde el catálogo
-`project/app/infrastructure/config/legacy_field_catalog.py`, los negocios de ejemplo (`business-config.json`, compilados como
+`tests/legacy_field_catalog.py`, los negocios de ejemplo (`business-config.json`, compilados como
 los recibe el motor) y el JSON Schema publicado, que aporta la referencia de cada campo del contrato (audiencia y estado en el
 motor). No incluye ningún valor de configuración: solo rutas, significado y estado. Los YAML se retiraron el 11 de noviembre de
 2026: lo que compila cada ejemplo es idéntico a lo que tenían (`tests/golden/`).
@@ -26,14 +26,16 @@ PROJECT_DIR = REPO_ROOT / "project"
 OUTPUT_PATH = REPO_ROOT / "docs" / "business-config-traceability.md"
 SCHEMA_PATH = PROJECT_DIR / "config" / "contracts" / "v1" / "business-config.schema.json"
 
-if str(PROJECT_DIR) not in sys.path:
-    sys.path.insert(0, str(PROJECT_DIR))
+# El catálogo vive con las pruebas, sus únicas usuarias además de esta matriz: no es código de la aplicación.
+for folder in (PROJECT_DIR, REPO_ROOT / "tests"):
+    if str(folder) not in sys.path:
+        sys.path.insert(0, str(folder))
 os.environ.setdefault("MODE", "test")
 
 from app.domain.business_config.compiler import comparable_with_yaml, compile_business_config  # noqa: E402
 from app.domain.business_config.engine_policy import COMMON_CLOSING_POLICY  # noqa: E402
 from app.infrastructure.business_config.example_businesses import example_slugs, load_example  # noqa: E402
-from app.infrastructure.config.legacy_field_catalog import (  # noqa: E402
+from legacy_field_catalog import (  # noqa: E402
     CATALOG,
     COMMERCIAL_CONTROLS,
     CONSERVED,
@@ -197,7 +199,7 @@ def render_matrix() -> str:
         "# Matriz de trazabilidad: YAML antiguos → BusinessConfig v1",
         "",
         "> Archivo generado por `scripts/generate_traceability_matrix.py` desde",
-        "> `project/app/infrastructure/config/legacy_field_catalog.py`. No editar a mano: `--check` falla si",
+        "> `tests/legacy_field_catalog.py`. No editar a mano: `--check` falla si",
         "> está desactualizado y `tests/test_business_config_traceability.py` lo comprueba.",
         "",
         "Cada fila es un campo de los YAML de origen (`business.yaml`, `sales.yaml`, `pricing.yaml`,",

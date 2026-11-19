@@ -40,7 +40,7 @@ from app.infrastructure.ai.prompting.view import PromptView
 from app.infrastructure.business_config.database import create_business_config_engine
 from app.infrastructure.business_config.runtime_access import open_published_reader
 from app.infrastructure.business_config.tables import business_configs
-from app.infrastructure.config.legacy_field_catalog import contract_fields
+from legacy_field_catalog import contract_fields
 from app.infrastructure.persistence.memory_repository import MemoryRepository
 from pipeline_harness import TENANTS, TENANTS_DIR, forbid_examples_folder, publish_document, reply, run_conversation, run_with_document, stored_document
 

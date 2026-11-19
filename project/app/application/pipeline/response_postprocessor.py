@@ -40,6 +40,16 @@ def enforce_max_words(text: str, max_words: int, *, tenant: str = "", user_id: s
 _TOOL_BLOCK = re.compile(r"<(function_calls|tool_call|tool_use|invoke|antml:[a-z_]+)\b[^>]*>.*?</\1>", re.DOTALL | re.IGNORECASE)
 
 
+def tidy_spacing(text: str) -> str:
+    """La respuesta final con los espacios en orden; nunca cambia una palabra (AI-first: lo que dice lo decide la IA).
+
+    Une los espacios repetidos, quita el espacio antes de un signo («hola ,» → «hola,») y deja como mucho una línea en blanco.
+    """
+    text = re.sub(r"[ \t]+", " ", str(text or ""))
+    text = re.sub(r"\s+([,.!?;:])", r"\1", text)
+    return re.sub(r"\n{3,}", "\n\n", text).strip()
+
+
 def without_model_artifacts(text: str) -> str:
     """El mensaje del asesor sin los bloques de «llamada a función» que algunos modelos dejan dentro del texto."""
     if "<" not in str(text or ""):

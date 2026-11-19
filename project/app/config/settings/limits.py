@@ -13,8 +13,6 @@ FEATURE_KEY_MAP = {
     "enable_human_handoff": "enable_human_handoff",
     "enable_audit_logs": "enable_audit_logs",
     "enable_audit_alerts": "enable_audit_alerts",
-    "enable_simulation_endpoint": "enable_simulation_endpoint",
-    "enable_webhook_processing": "enable_webhook_processing",
 }
 
 FAQ_KEY_MAP = {

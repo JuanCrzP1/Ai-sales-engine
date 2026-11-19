@@ -5,19 +5,6 @@ from typing import Any, Dict
 
 CORE_CONNECTOR_KEYS = (
     "database_url",
-    "jwt_secret",
-    "jwt_algorithm",
-    "jwt_expire_minutes",
-    "twilio_account_sid",
-    "twilio_auth_token",
-    "twilio_whatsapp_number",
-    "meta_access_token",
-    "meta_phone_number_id",
-    "meta_verify_token",
-    "meta_app_secret",
-    "meta_business_account_id",
-    "meta_ig_account_id",
-    "connector_secrets_key",
     "public_base_url",
 )
 

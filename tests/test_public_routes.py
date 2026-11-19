@@ -3,6 +3,10 @@
 La API de administración del sistema de cuentas anterior (`/auth`, `/clients`, `/conversations`, `/bot-config`, `/connectors`,
 `/dashboard`) se retiró el 11 de noviembre de 2026: el panel usa su propia API (`app.admin_api`), y `/auth/register` guardaba
 negocios y usuarios sin autenticación. Ya no existe en ningún entorno.
+
+El 18 de noviembre de 2026 se retiró el resto del sistema anterior: el webhook de WhatsApp de Meta (buscaba el negocio en una tabla
+que en producción está vacía; WhatsApp llega por código QR), la simulación (`/simulate`, apagada y sin forma de autenticarse) con
+su sistema de cuentas, y los modelos, repositorios y conectores que solo ellos usaban.
 """
 from __future__ import annotations
 
@@ -14,12 +18,30 @@ from app.api import routes
 from app.config import settings
 
 PROJECT_DIR = Path(__file__).resolve().parents[1] / "project"
-LEGACY_PREFIXES = ("/auth", "/clients", "/conversations", "/bot-config", "/connectors", "/dashboard")
+LEGACY_PREFIXES = ("/auth", "/clients", "/conversations", "/bot-config", "/connectors", "/dashboard", "/simulate", "/whatsapp/webhook")
 RETIRED_FILES = [
     *(f"app/api/controllers/{name}.py" for name in ("auth", "bot_config", "clientes", "connector_config", "conversaciones", "dashboard")),
     *(f"app/api/schemas/{name}.py" for name in ("auth", "bot_config", "cliente", "connector_config", "conversacion", "dashboard")),
     "app/application/services/crm_service.py",
     "app/connectors/telegram/polling.py",
+    # 18 de noviembre de 2026.
+    "app/api/controllers/whatsapp_webhook.py",
+    "app/api/controllers/simulation.py",
+    "app/api/dependencies.py",
+    "app/application/response_guard.py",
+    "app/services/auth_service.py",
+    "app/services/tenant_channel_resolver.py",
+    "app/services/tenant_connector_service.py",
+    "app/services/tenant_secrets_service.py",
+    "app/connectors",
+    "app/models",
+    "app/repositories",
+    "app/database",
+    "app/data",
+    "app/utils/helpers.py",
+    "app/infrastructure/db/repository.py",
+    "app/infrastructure/persistence/client_repository.py",
+    "app/infrastructure/config",
 ]
 
 
@@ -41,10 +63,10 @@ def _paths(monkeypatch, *, mode: str, vercel: bool = False, flag: str | None = N
 def test_only_what_the_channels_need_is_published_everywhere(monkeypatch, mode, vercel, flag):
     paths = _paths(monkeypatch, mode=mode, vercel=vercel, flag=flag)
     assert sorted(path for path in paths if path.startswith(LEGACY_PREFIXES)) == []
-    assert any(path.startswith("/whatsapp") for path in paths)
+    assert {"/channels/whatsapp/{webhook_id}", "/assistant/messages"} <= paths
 
 
-def test_the_old_admin_api_and_telegram_polling_are_gone():
+def test_the_previous_system_is_gone():
     assert [name for name in RETIRED_FILES if (PROJECT_DIR / name).exists()] == []
 
 

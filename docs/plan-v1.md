@@ -70,7 +70,7 @@ Meta todavía no.
 | Hallazgo | Estado | Cómo quedó |
 |---|---|---|
 | S1, S2 | Hecho | Ningún `print` en `project/app` (una prueba lo impide). Los registros de OpenRouter, del analizador y del orquestador ya no llevan mensajes, respuestas, cargas ni cuerpos: solo modelo, estado, tiempo y tipo de error. |
-| S3 | Hecho | El webhook de WhatsApp solo acepta lo que firmó Meta (`X-Hub-Signature-256` con `META_APP_SECRET`). Sin secreto, rechaza todo. |
+| S3 | Hecho | El webhook de WhatsApp solo acepta lo que firmó Meta (`X-Hub-Signature-256` con `META_APP_SECRET`). Sin secreto, rechaza todo. (Ese webhook se retiró el 18 nov 2026; el de QR exige el token de la instancia del negocio.) |
 | S4 | Pendiente | Cambiar la contraseña en Neon (las dos ramas) y pegar las URL nuevas en Vercel y en el `.env`. |
 | S5 | Hecho en «Probar» | Límites en la base (`rate_limits`, migración 0006), compartidos por todas las instancias: 20 mensajes por minuto por persona, 300 por hora por negocio y 10 comprobaciones de clave cada 10 minutos. Más allá, 429 con `Retry-After` y un mensaje en español. Queda el límite por IP en Vercel (Fase 7). |
 | T1 | Hecho | Una sola llamada por mensaje (ver T1). |
@@ -82,7 +82,7 @@ Meta todavía no.
 | Q3, Fase 3 | Hecho | Todo lo que el panel deja configurar llega al motor (prompt v3): 184 campos conectados, 0 pendientes. Solo quedan fuera, a propósito, lo que es del equipo (la etiqueta de una cuenta y el código de una variante) y lo que enviará la plataforma ante un evento (pago confirmado y seguimiento). Capas nuevas: cómo compra y recibe el cliente, políticas, el cliente y la estrategia de venta. Laboratorio de regresión (`exp_20261110_fase3_campos_conectados`): mismas respuestas, webhook y rutas; los prompts solo suman lo nuevo. Calidad con la IA real (`exp_20261110_calidad_fase3_ficha_completa`): 9,64 contra 9,62 por respuesta, 0 precios inventados y gana 15 de 18 a ciegas; en los negocios con estrategia avanzada (`exp_20261110_calidad_fase3_objeciones`): 9,58 → 9,81, dudas por precio 9,25 → 9,5 y gana 7 de 8. Los ejemplos de restaurante, tienda de ropa y agencia de viajes (y el posicionamiento y las reglas de cierre de la escuela) tenían la estrategia escrita como si vendieran el asistente a su sector; se corrigieron para que describan lo que venden. Con la ficha real (`exp_20261110_calidad_ejemplos_limpios_ficha_real`): 8,86 → 9,36, dudas por precio 5,5 → 8,88, pregunta trampa 7,5 → 9,88 y gana 6 de 8. |
 | T3 | Hecho | Cada respuesta suma a `ai_usage` (migración 0007) por negocio, día y modelo, con el costo si OpenRouter lo informa. El panel lo muestra en «Inteligencia artificial». |
 | Fase 5 (WhatsApp) | Hecho en la nube | WhatsApp por QR, conversaciones en vivo, paso a una persona, clientes, ventas y reportes (ver Fase 5). |
-| A4 (Fase 6) | En curso | Retirados los YAML, `ConfigService`, la API de administración vieja y el *polling* de Telegram, con el motor sin diferencias en el laboratorio. Faltan los modelos con ids enteros, `AuthService` y sus tablas (ver Fase 6). |
+| A4 (Fase 6) | En curso | Retirados los YAML, `ConfigService`, la API de administración vieja, el *polling* de Telegram (11 nov) y el resto del código del sistema anterior (18 nov), con el motor sin diferencias en el laboratorio. Faltan sus tablas en Neon (ver Fase 6). |
 
 ## 2. Cómo funcionaba antes y cómo funciona hoy
 
@@ -355,9 +355,31 @@ importaciones (qué módulos alcanzan el motor, la API de la nube y la API local
 - Verificado: la suite completa, el panel (unidad e integración) y el laboratorio de regresión contra `aa6f266`
   (`exp_20261111_retiro_yaml_y_sistema_anterior`): motor sin diferencias en los 9 negocios; solo cambian las 12 rutas retiradas.
 
-Falta: `AuthService`, `app/models` con ids enteros y lo que los usa (`/simulate`, el webhook de Meta, el resolvedor de canales),
-las tablas del sistema anterior en Neon (borrarlas necesita la aprobación de la persona dueña), el secreto por defecto
-(`jwt_secret`), dividir `memory_repository.py` y quitar los errores silenciados. (`ai_execution.py` quedó dividido el 14 nov 2026:
+**Avance (18 de noviembre de 2026):** retirado el resto del código del sistema anterior, con el mismo método (mapa de importaciones
+del motor, los scripts, las pruebas y los laboratorios, y consultas de solo lectura en producción):
+- ~~El webhook de WhatsApp Cloud API de Meta~~ (`whatsapp_webhook.py`, `app/connectors/`, `tenant_channel_resolver.py`,
+  `tenant_connector_service.py`, `tenant_secrets_service.py`): buscaba el negocio en `tenant_channels`, que en producción tiene 0
+  filas, así que no atendía a nadie. Si se necesita la API oficial, se construye sobre `business_channels`, como QR y Telegram.
+- ~~`/simulate` y el sistema de cuentas anterior~~ (`AuthService`, `api/dependencies.py`, `jwt_secret` y su valor por defecto
+  publicado): la ruta estaba apagada y `admin_users` está vacía en producción. «Probar asistente» cubre ese uso.
+- ~~`app/models`, `app/repositories`, `app/database`~~: la API del asistente y el webhook QR solo usaban el modelo `Tenant` para
+  llevar el identificador del negocio (ahora `domain/conversation/business.BusinessRef`). `message_repository` no lo llamaba nadie.
+- ~~`application/response_guard.py`~~: su parte que borraba palabras estaba apagada desde abril. La limpieza de espacios que sí
+  hacía quedó en `response_postprocessor.tidy_spacing`, en el mismo lugar del camino. También el «precio ancla» de
+  `ai_service.py`: se calculaba con palabras y nunca llegaba a la memoria, así que la línea del prompt que lo buscaba no se
+  activaba nunca (retirada también).
+- ~~Huérfanos~~: `app/data/assistant.db` (una base SQLite en git que nada leía), `utils/helpers.py`, `infrastructure/db/repository.py`
+  y `persistence/client_repository.py` (sin usuarios fuera de sus pruebas), `smoke_8018.ps1`, los ajustes `META_*`, `TWILIO_*`,
+  `JWT_*`, `CONNECTOR_SECRETS_KEY`, `ENABLE_SIMULATION_ENDPOINT` y `ENABLE_WEBHOOK_PROCESSING`.
+- El catálogo de los YAML (`legacy_field_catalog.py`, 706 líneas) pasó a `tests/`: solo lo usan las pruebas y la matriz.
+- El laboratorio de regresión prueba ahora el webhook de WhatsApp por QR (el canal en uso) con un uazapi propio, sin red.
+- Verificado: la suite completa (1737 pruebas; las que se fueron eran de lo retirado) y el laboratorio contra `cfbbd55`
+  (`retirar_sistema_anterior_20261118`): motor sin diferencias en los 9 negocios, webhook igual; solo cambian las 2 rutas de Meta.
+  Un control negativo (una respuesta alterada a propósito) sale como diferencia en las respuestas y en el webhook.
+
+Falta: borrar de Neon las tablas del sistema anterior que ya no usa el código (`admin_users`, `tenant_secrets`, `tenant_settings`,
+`tenant_channels`; necesita la aprobación de la persona dueña), mover lo vivo de `app/services/` (la llamada a la IA y su lector) a
+su capa, dividir `memory_repository.py` y quitar los errores silenciados. (`ai_execution.py` quedó dividido el 14 nov 2026:
 laboratorio `dividir_ai_execution_20261114`, motor sin diferencias en los 9 negocios.)
 
 **Terminada cuando:** no queda código ni tabla del sistema anterior y ningún módulo supera unas 400 líneas.
@@ -427,7 +449,7 @@ Calidad con la IA real (`experiments/quality_lab`, gpt-4o-mini con juez deepseek
 Lo demás llega al motor y cada opción cambia lo que hace. Las combinaciones que el contrato rechaza son reglas a propósito (el largo
 de las respuestas va con su máximo de palabras; Nequi pide número y no cuenta). La bienvenida fija solo responde a un saludo solo.
 
-Arquitectura: las capas se respetan (pruebas de arquitectura del motor y del panel). Siguen en el código piezas del sistema anterior
-(`app/models`, `app/database`, `app/repositories`), usadas todavía por la API del asistente y los webhooks de WhatsApp: es la fase 5.
+Arquitectura: las capas se respetan (pruebas de arquitectura del motor y del panel). Las piezas del sistema anterior (`app/models`,
+`app/database`, `app/repositories`) se retiraron el 18 de noviembre de 2026 (ver Fase 6).
 Módulos que conviene partir: `memory_repository.py` (860 líneas), `ConversationsPage.tsx` (540).
 

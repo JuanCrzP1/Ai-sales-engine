@@ -84,55 +84,35 @@ def _ask_with_stub(
 
 ## ----------------------------------------
 ## QUÉ HACE ESTE TEST:
-## Verifica continuidad de memory_context entre turnos y que guarde señal útil de ventas.
+## Verifica que la memoria del motor guarda la conversación y que el turno siguiente la recibe con lo que dijo el cliente y lo
+## que se le respondió (el precio que ya conoce).
 ##
 ## POR QUÉ ES IMPORTANTE:
 ## Si la memoria llega vacía, el segundo turno pierde contexto comercial y cae en respuestas genéricas.
 ##
 ## QUÉ PROTEGE:
-## Persistencia conversacional AI-first y anclaje de pricing entre turnos.
+## Persistencia conversacional AI-first entre turnos. (Hasta el 18 de noviembre de 2026 también se calculaba un «precio ancla»
+## con palabras sobre la respuesta y se devolvía en `metadata.memory_context`, pero ningún canal ni el prompt lo leían: se retiró.)
 ## ----------------------------------------
 def test_memory_context_persists_and_contains_useful_data() -> None:
+    from app.application.pipeline.turn_context import build_memory_context
+    from app.services.ai_service import GLOBAL_MEMORY_SERVICE
+
     service = AIService()
     user_id = f"mem-persist-{uuid4().hex[:8]}"
+    price_reply = "El valor mensual es 180000 COP."
 
-    runtime_preview = load_tenant_runtime_yaml("asesor_ai_prod")
-    pricing_cfg = runtime_preview.get("pricing") if isinstance(runtime_preview.get("pricing"), dict) else {}
-    plans = pricing_cfg.get("plans") if isinstance(pricing_cfg.get("plans"), list) else []
-    first_plan = plans[0] if plans and isinstance(plans[0], dict) else {}
-    first_plan_pricing = first_plan.get("pricing") if isinstance(first_plan.get("pricing"), dict) else {}
-    cop_prices = first_plan_pricing.get("COP") if isinstance(first_plan_pricing.get("COP"), dict) else {}
-    price_value = str(cop_prices.get("monthly") or cop_prices.get("implementation") or "180000")
+    _ask_with_stub(service, user_id=user_id, message="cuanto vale", ai_text=price_reply)
+    memory = build_memory_context(GLOBAL_MEMORY_SERVICE, tenant_slug="asesor_ai_prod", user_id=user_id)
+    assert memory["last_ai_response"] == price_reply
+    assert "cuanto vale" in memory["history_summary"]
 
-    r1 = _ask_with_stub(
-        service,
-        user_id=user_id,
-        message="cuanto vale",
-        ai_text=f"El valor mensual es {price_value} COP.",
-    )
-    mem = r1[2].get("memory_context")
-
-    ## Debe existir como diccionario
-    assert isinstance(mem, dict)
-
-    ## Debe contener información relevante (no vacío inútil)
-    assert "price_anchor" in mem or len(mem) > 0
-
-    r2 = _ask_with_stub(
-        service,
-        user_id=user_id,
-        message="esta caro",
-        ai_text="Entiendo el punto, revisemos precio y retorno.",
-        memory=mem,
-    )
-    mem2 = r2[2].get("memory_context")
-
-    ## La memoria debe seguir existiendo en el siguiente turno
-    assert isinstance(mem2, dict)
-    assert mem2 is not None
-
-    ## Debe mantenerse útil tras reinyectarse al segundo turno
-    assert "price_anchor" in mem2 or len(mem2) > 0
+    second_reply = "Entiendo el punto, revisemos precio y retorno."
+    _ask_with_stub(service, user_id=user_id, message="esta caro", ai_text=second_reply)
+    memory = build_memory_context(GLOBAL_MEMORY_SERVICE, tenant_slug="asesor_ai_prod", user_id=user_id)
+    assert memory["last_ai_response"] == second_reply
+    assert memory["last_user_message"] == "esta caro"
+    assert "cuanto vale" in memory["history_summary"]
 
 
 ## ----------------------------------------

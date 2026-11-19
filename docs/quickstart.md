@@ -55,4 +55,4 @@ npm --prefix apps/admin-web run test:integration
 
 ## Simulación
 
-`POST /api/v1/simulate` está apagado por defecto (404). Para probar el asistente se usa «Probar asistente» en el panel.
+Para probar el asistente se usa «Probar asistente» en el panel. (La ruta vieja `/api/v1/simulate` se retiró el 18 de noviembre de 2026.)

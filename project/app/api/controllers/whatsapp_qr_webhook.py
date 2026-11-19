@@ -28,12 +28,12 @@ from app.application.runtime import published_sections
 from app.application.runtime.business_ai import business_usage_recorder, load_business_ai
 from app.domain.business_config.channels import TELEGRAM, ChannelSecrets
 from app.domain.business_config.errors import BusinessConfigError
+from app.domain.conversation.business import BusinessRef
 from app.infrastructure.ai.media_interpreter import OpenRouterMediaInterpreter
 from app.infrastructure.business_config import runtime_access
 from app.infrastructure.channels import uazapi
 from app.infrastructure.channels.telegram import TelegramClient
 from app.infrastructure.channels.uazapi import UazapiClient
-from app.models import Tenant
 from app.services.ai_service import AIService
 from app.utils.logger import logger
 
@@ -45,7 +45,7 @@ MIN_WEBHOOK_ID = 24
 def answer_with_assistant(slug: str, phone: str, text: str) -> tuple[str, dict]:
     """El asistente del negocio, con lo publicado y su clave de IA. Su memoria de cada cliente la guarda el motor."""
     reply, _ai_used, metadata = AIService().generate_business_reply(
-        tenant=Tenant(name=slug, slug=slug),
+        tenant=BusinessRef.of(slug),
         bot_config=None,
         user_message=text,
         user_id=phone,

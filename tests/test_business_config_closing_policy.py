@@ -24,7 +24,7 @@ from app.domain.business_config.engine_settings import EngineSettings
 from app.domain.conversation.memory import MemoryDomainService
 from app.infrastructure.business_config.database import build_business_config_service, create_business_config_engine, create_local_schema
 from app.infrastructure.business_config.example_businesses import import_example, load_example
-from app.infrastructure.config.legacy_field_catalog import contract_fields
+from legacy_field_catalog import contract_fields
 from app.infrastructure.persistence.memory_repository import MemoryRepository
 from pipeline_harness import TENANTS, engine_sections, reply
 

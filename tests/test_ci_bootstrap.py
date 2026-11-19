@@ -158,12 +158,12 @@ def test_normal_run_ignores_the_credentials_of_the_local_env_file():
 
 def test_flags_of_the_local_env_file_do_not_stop_the_run(monkeypatch):
     # `Settings` no acepta un booleano vacío; una credencial, en cambio, sí debe quedar vacía.
-    names = {"ENABLE_SIMULATION_ENDPOINT", "JWT_EXPIRE_MINUTES", "JWT_SECRET", "DATABASE_URL", "TELEGRAM_TOKEN", "NOMBRE_DESCONOCIDO"}
+    names = {"ENABLE_FAQ_SEARCH", "LLM_TIMEOUT_SECONDS", "PUBLIC_BASE_URL", "DATABASE_URL", "TELEGRAM_TOKEN", "NOMBRE_DESCONOCIDO"}
     for name in names | {"OPENROUTER_API_KEY"}:
         monkeypatch.setenv(name, "1")
     monkeypatch.setattr(suite_conftest, "_local_env_names", lambda: names)
     suite_conftest.pytest_configure(SimpleNamespace(getoption=lambda name, default=None: ""))
-    assert {name for name in names if os.environ[name]} == {"ENABLE_SIMULATION_ENDPOINT", "JWT_EXPIRE_MINUTES"}
+    assert {name for name in names if os.environ[name]} == {"ENABLE_FAQ_SEARCH", "LLM_TIMEOUT_SECONDS"}
     assert os.environ["OPENROUTER_API_KEY"] == ""
 
 

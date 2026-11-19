@@ -25,8 +25,8 @@ from app.application.runtime import published_sections
 from app.domain.business_config.api_keys import SCOPE_ASSISTANT_CHAT
 from app.domain.business_config.assistant_api import parse_message, reply_payload, valid_idempotency_key
 from app.domain.business_config.errors import InvalidFieldsError, UsageLimitExceededError
+from app.domain.conversation.business import BusinessRef
 from app.infrastructure.business_config import runtime_access
-from app.models import Tenant
 from app.services.ai_service import AIService
 from app.utils.logger import logger
 
@@ -36,7 +36,7 @@ router = APIRouter(prefix="/assistant", tags=["API del asistente"])
 def answer(slug: str, contact_id: str, text: str) -> tuple[str, bool, dict]:
     """El asistente del negocio, con lo publicado y su clave de IA; la memoria de cada cliente la guarda el motor."""
     reply, ai_used, metadata = AIService().generate_business_reply(
-        tenant=Tenant(name=slug, slug=slug),
+        tenant=BusinessRef.of(slug),
         bot_config=None,
         user_message=text,
         user_id=contact_id,

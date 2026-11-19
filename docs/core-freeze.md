@@ -58,7 +58,7 @@ No toma decisiones comerciales. Solo valida estado y delega.
 
 ### `AIService` — `project/app/services/ai_service.py`
 
-Adapter liviano que expone `generate_business_reply()` al mundo exterior. Instancia `AIPipeline` e inyecta los repositorios globales. Aplica `validate_response_against_yaml()` y `_extract_price_anchor()` sobre el resultado final.
+Adapter liviano que expone `generate_business_reply()` al mundo exterior. Instancia `AIPipeline` e inyecta los repositorios globales. Entrega la respuesta con los espacios en orden (`tidy_spacing()`), sin cambiar ninguna palabra.
 
 ---
 
@@ -126,15 +126,9 @@ Implementación en RAM de `MemoryDomainService`. Almacena 14 dicts keyed por `(t
 
 ---
 
-### `response_guard.py` — `project/app/application/response_guard.py`
-
-Validador post-LLM de coherencia comercial. Detecta si la respuesta menciona planes inexistentes en el YAML o términos de modelo de negocio incorrecto (e.g., términos de catálogo en respuesta de SaaS). Se aplica en `AIService.generate_business_reply()`.
-
----
-
 ### `response_postprocessor.py` — `project/app/application/pipeline/response_postprocessor.py`
 
-Contiene `enforce_max_words()`: trunca la respuesta a `max_words` (default 80) respetando oraciones completas. Es la última defensa antes de entregar la respuesta al usuario.
+Contiene `enforce_max_words()`: trunca la respuesta a `max_words` (default 80) respetando oraciones completas. Es la última defensa antes de entregar la respuesta al usuario. Y `tidy_spacing()`, que `AIService.generate_business_reply()` aplica a toda respuesta: ordena los espacios y nunca cambia una palabra (`tests/test_reply_spacing.py`). Reemplaza a `response_guard.py`, retirado el 18 de noviembre de 2026: borraba palabras «prohibidas» según el tipo de negocio y estaba apagado desde abril (AI-first).
 
 ---
 
@@ -156,8 +150,7 @@ Los siguientes archivos son **estables pero modificables con auditoría ligera**
 |---|---|
 | `ai_service.py` | Solo cambios que no afecten el flujo de respuesta ni la memoria |
 | `sales_flow.py` | Solo si se verifica que `_hydrate_runtime_yaml` cubre el mismo rol |
-| `response_guard.py` | Modificaciones requieren actualizar `test_response_guard.py` |
-| `response_postprocessor.py` | Solo `enforce_max_words`; no agregar lógica de negocio |
+| `response_postprocessor.py` | Solo `enforce_max_words` y `tidy_spacing`; no agregar lógica de negocio ni cambiar palabras de la IA |
 
 ---
 
@@ -183,7 +176,6 @@ Los siguientes tipos de cambio son de alto riesgo y requieren una fase numerada 
 - Tocar `ejecutar_pago()` o `_resolve_post_payment_message()`
 - Cambiar la lógica de `conversation_state` (new/active/warm/cold)
 - Migrar `MemoryRepository` a PostgreSQL
-- Conectar `response_guard.py` al pipeline de producción (hoy se llama desde `AIService` pero no desde `AIPipeline`)
 
 ---
 
@@ -213,4 +205,3 @@ LLM:            OpenRouter (configurable por tenant)
 | Migrar `MemoryRepository` a PostgreSQL | Alto — prerequisito para escalar multi-tenant en producción | Fase 8 |
 | Eliminar `SalesFlow` tras verificar que `_hydrate_runtime_yaml` lo cubre | Bajo | Fase 6C-parte-2 |
 | Retirar `intent_detectado` de la capa de memoria si no tiene consumidor futuro | Bajo | Fase 6C-parte-2 |
-| Conectar `response_guard.py` al pipeline de `AIPipeline` en lugar de solo `AIService` | Medio | Fase 7 |

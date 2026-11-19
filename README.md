@@ -83,7 +83,7 @@ Más detalle: [arquitectura del motor](docs/architecture.md) y [negocios y aisla
 | Base de datos y cuentas | Neon (PostgreSQL) con Neon Auth; SQLite en este equipo |
 | Panel | React, TypeScript, Vite |
 | Inteligencia artificial | OpenRouter, con la clave y el modelo de cada negocio |
-| WhatsApp | uazapi (código QR); la API oficial de Meta tiene su conector |
+| WhatsApp | uazapi (código QR) |
 | Despliegue | Vercel (motor y panel); las migraciones se aplican solas en cada despliegue |
 | Calidad | Pruebas en GitHub Actions, laboratorio de regresión y laboratorio de calidad con la IA real |
 

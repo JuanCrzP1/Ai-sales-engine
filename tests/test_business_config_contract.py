@@ -49,7 +49,7 @@ from app.infrastructure.business_config.example_businesses import (
     EXAMPLES_DIR,
     load_example,
 )
-from app.infrastructure.config.legacy_field_catalog import contract_fields
+from legacy_field_catalog import contract_fields
 from pipeline_harness import TENANTS, engine_sections
 
 ROOT_DIR = Path(__file__).resolve().parents[1]

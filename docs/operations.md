@@ -62,10 +62,6 @@ documenta.
 
 - `DATABASE_URL`: conexión principal a la base de datos.
 
-### Autenticación
-
-- `JWT_SECRET`: lo usa el sistema de autenticación actual, aplazado (ver «Autenticación»). `/simulate` no se registra sin un valor propio, porque el de por defecto está publicado en el repositorio. Si `CONNECTOR_SECRETS_KEY` está vacío, los conectores guardados se cifran con este valor: al cambiarlo dejan de poder leerse hasta definir `CONNECTOR_SECRETS_KEY` con el valor anterior.
-
 ### Runtime AI
 
 - `LLM_PROVIDER`: proveedor activo; hoy el runtime espera OpenRouter.
@@ -76,13 +72,6 @@ documenta.
 - `OPENROUTER_MODEL`: modelo para los negocios que no eligen uno.
 - `OPENROUTER_ADVANCED_MODEL`: modelo adicional para casos que lo requieran.
 - `LLM_TIMEOUT_SECONDS`: timeout de request al modelo.
-
-### Canal Meta WhatsApp
-
-- `META_ACCESS_TOKEN`: token de envío hacia Meta.
-- `META_PHONE_NUMBER_ID`: identificador del número activo.
-- `META_VERIFY_TOKEN`: token de verificación del webhook.
-- `META_APP_SECRET`: secreto de aplicación de Meta.
 
 ### WhatsApp Por Código QR (uazapi)
 
@@ -138,34 +127,15 @@ Lo que hace cada negocio está en Configuración → Atención humana (ver `docs
 ### Flags De Operación
 
 - `ENABLE_AI_RESPONSES`: habilita respuesta por IA.
-- `ENABLE_SIMULATION_ENDPOINT`: registra `/api/v1/simulate`. Está en `false` por defecto y solo tiene efecto junto con un `JWT_SECRET` propio. Déjala en `false`: la ruta no se puede usar hasta que exista la autenticación definitiva.
-- `ENABLE_WEBHOOK_PROCESSING`: habilita `/api/v1/whatsapp/webhook`.
 
 ## Cómo Probar El Sistema
 
-## Endpoint De Simulación
+## Probar El Asistente
 
-`POST /api/v1/simulate` es una ruta de prueba controlada. Está apagada por defecto y **hoy no se puede usar de extremo a extremo**: exige un token de administrador, y ningún entorno puede emitirlo ni verificarlo hasta que exista la autenticación definitiva (ver «Autenticación»).
-
-Estado actual, comprobado con la aplicación real:
-
-| Situación | Respuesta |
-|---|---|
-| Por defecto, o sin `ENABLE_SIMULATION_ENDPOINT=true` y un `JWT_SECRET` propio | 404: la ruta no se registra y no aparece en `/docs` |
-| Habilitada, sin token | 401 |
-| Habilitada, con cualquier token | 500: no se puede verificar y la petición no llega al motor |
-
-Cambiar la configuración exige reiniciar el proceso.
-
-Protecciones implementadas, comprobadas en `tests/test_simulation_endpoint_security.py`. Como hoy no hay tokens, esas pruebas simulan únicamente su verificación:
-
-- **Acceso.** Usa `get_current_user` y `get_current_tenant`: un token de otro negocio responde 403 y `X-Tenant-Slug` no basta. Solo se acepta como negocio un nombre simple de carpeta.
-- **Memoria aislada.** `user_id` es la etiqueta de una conversación simulada del administrador que llama. Vive en la RAM del proceso, separada por administrador (hasta 200 sesiones; se pierde al reiniciar), y no lee ni escribe la memoria de los clientes.
-- **Respuesta cerrada.** Solo devuelve `reply`, `ai_used` y `metadata` con `source`, `intent`, `conversation_state` y `tenant_slug`.
-- **Sin datos de pago.** El modelo recibe la configuración con esos valores sustituidos y `reply` los muestra como `[dato de pago]`.
-- **Configuración fija.** La petición solo admite `user_message`, `user_id` y `faq_results`; cualquier otro campo, como `yaml_config`, responde 422.
-
-Límite conocido: `reply` es texto del modelo, igual que el que recibe un cliente. Puede mencionar precios y, ante un mensaje malicioso, repetir parte de sus instrucciones. Ningún otro campo lleva esa información.
+Se prueba con «Probar asistente» en el panel: usa el motor real con la versión que se está editando y la clave de IA del negocio,
+sin tocar la memoria de los clientes. Sin el panel, `tests/pipeline_harness.py` ejecuta el pipeline real con un modelo simulado.
+(La ruta `/api/v1/simulate` del sistema anterior se retiró el 18 de noviembre de 2026: estaba apagada y no tenía cómo
+autenticarse.)
 
 ## Panel De Administración Local
 
@@ -230,7 +200,6 @@ Las rutas salen de la ubicación del repositorio y de la carpeta del usuario de 
 | `BUSINESS_CONFIG_SECRETS_KEY` | Cifra los datos de pago. El motor la usa para leerlos de lo publicado en el panel (ver `docs/business-config.md`, «Conexión Con El Motor») | Siempre que la base tenga datos. Debe ser la misma en los dos equipos y en el motor |
 | `OPENROUTER_API_KEY` | Pruebas en vivo (`pytest -m integration`) | Solo para esas pruebas. El motor no la usa: cada negocio guarda su clave en el panel |
 | `DATABASE_URL` | PostgreSQL del motor | Motor. Si apunta al propio equipo, el otro necesita su PostgreSQL |
-| `META_VERIFY_TOKEN` | Webhook de WhatsApp | Motor, si se usa WhatsApp |
 | Token de ngrok | Túnel público del motor | `run_local.*`. Lo guarda ngrok en cada equipo, no este archivo: `ngrok config add-authtoken <token>` |
 
 `.env` trae además ajustes que no son secretos (`LLM_PROVIDER`, `OPENROUTER_BASE_URL`, `OPENROUTER_MODEL`, `OPENROUTER_ADVANCED_MODEL`), y viajan igual. El archivo de ejemplo, sin valores reales, es `secrets.local.env.example`.
@@ -315,20 +284,15 @@ cada usuario llega solo a sus negocios (`business_members`). Ver «Nube: Vercel 
 
 La API del panel en este equipo no tiene cuentas: solo atiende en `127.0.0.1` (ver «Panel De Administración Local»).
 
-Lo que queda del sistema de cuentas anterior (`AuthService`, la tabla `admin_users` y los modelos de `app/models`) solo lo usa
-`/simulate`, que está apagado. Sus rutas (`/auth/register`, `/auth/login`, `/bot-config`, `/clients`, `/connectors`,
-`/conversations` y `/dashboard`) se retiraron el 11 de noviembre de 2026: ya no existen en ningún entorno. `python-jose` sigue sin
-declararse en los requisitos, a propósito (una prueba lo vigila).
+El sistema de cuentas anterior ya no existe en el código: sus rutas (`/auth/register`, `/auth/login`, `/bot-config`, `/clients`,
+`/connectors`, `/conversations` y `/dashboard`) se retiraron el 11 de noviembre de 2026, y el 18 de noviembre lo que quedaba
+(`AuthService`, `/simulate`, los modelos de `app/models`, el secreto por defecto `jwt_secret`). `python-jose` sigue sin declararse
+en los requisitos, a propósito, y solo el verificador de Neon Auth usa una librería JWT (`tests/test_engine_security.py`).
 
 ### Pendiente
 
-1. Retirar el resto del sistema anterior: `AuthService`, `app/models` con ids enteros y las tablas `admin_users`,
-   `tenant_secrets`, `tenant_settings` y `tenant_channels` (Fase 6 de `docs/plan-v1.md`; borrar tablas de Neon necesita la
-   aprobación de la persona dueña).
-2. Retirar el secreto por defecto (`jwt_secret`) de `app/config/settings/base.py` y de `project/config/system/secrets.yaml` junto con
-   ese sistema.
-3. Si `/simulate` se va a habilitar: pasarlo a las cuentas de Neon Auth, decidir si `reply` puede contener precios y añadir un
-   límite de peticiones. Mientras tanto, «Probar asistente» del panel cubre ese uso.
+1. Borrar de Neon las tablas del sistema anterior que ya no usa nada (`admin_users`, `tenant_secrets`, `tenant_settings`,
+   `tenant_channels`; Fase 6 de `docs/plan-v1.md`). Borrar tablas necesita la aprobación de la persona dueña.
 
 ## Nube: Vercel Y Neon
 
@@ -340,8 +304,8 @@ Lo que el motor ya resuelve para correr ahí:
 - No escribe en disco al arrancar (Vercel solo permite leer).
 - Acepta la cadena de conexión de Neon tal como viene (`postgres://` o `postgresql://`): la pasa a psycopg 3, tanto para su base
   (`DATABASE_URL`) como para el almacén del panel (`BUSINESS_CONFIG_DATABASE_URL`).
-- En producción (`MODE=production`) y en Vercel solo publica `/health`, el webhook de WhatsApp de Meta y el de WhatsApp por código
-  QR (`/api/v1/channels/whatsapp/{identificador}`).
+- En producción (`MODE=production`) y en Vercel solo publica `/health`, los webhooks de WhatsApp por código QR
+  (`/api/v1/channels/whatsapp/{identificador}`) y de Telegram, la API del asistente y la revisión de la atención humana.
 
 Una sola base de Neon guarda las tablas del motor y el almacén del panel: sus tablas apuntan a `tenants`. Tiene dos ramas:
 
@@ -416,7 +380,7 @@ Pendiente: Telegram por negocio (con webhook: Vercel no mantiene procesos de *po
 
 ## Secuencia De Prueba Recomendada
 
-Para revisar el flujo comercial, enviar esta secuencia dentro de una misma conversación. Mientras `/simulate` no se pueda usar, se prueba con `tests/pipeline_harness.py`, que ejecuta el pipeline real con un modelo simulado:
+Para revisar el flujo comercial, enviar esta secuencia dentro de una misma conversación, en «Probar asistente» del panel o con `tests/pipeline_harness.py`, que ejecuta el pipeline real con un modelo simulado:
 
 1. `tengo muchos mensajes`
 2. `como funciona`
@@ -432,17 +396,11 @@ Qué valida esa secuencia:
 
 ## Cómo Probar El Webhook
 
-El webhook real está en:
+Cada negocio tiene su webhook de WhatsApp por código QR: `POST /api/v1/channels/whatsapp/{identificador secreto}`. La API del
+panel lo registra en uazapi al conectar el negocio (ver «WhatsApp Por Código QR (uazapi)»), y solo cuenta un aviso que trae el
+token de la instancia de ese negocio. Telegram funciona igual en `POST /api/v1/channels/telegram/{identificador secreto}`.
 
-- `GET /api/v1/whatsapp/webhook`
-- `POST /api/v1/whatsapp/webhook`
-
-Uso operativo:
-
-- `GET` valida el token de verificación de Meta
-- `POST` recibe el evento real del canal
-
-Para operación local, el webhook requiere exponer el backend y tener la configuración correspondiente en Meta.
+Para operación local, el motor necesita una dirección pública (`ENGINE_PUBLIC_URL`, el túnel de ngrok de `run_local`).
 
 ## Cómo Debuggear
 
@@ -539,7 +497,7 @@ Revisar:
 
 - `/health`
 - que el negocio tenga su clave de IA (panel → Inteligencia artificial)
-- flags `ENABLE_AI_RESPONSES`, `ENABLE_SIMULATION_ENDPOINT`, `ENABLE_WEBHOOK_PROCESSING`
+- la bandera `ENABLE_AI_RESPONSES`
 - que el tenant exista y esté activo
 
 ### Si responde genérico
@@ -558,15 +516,14 @@ Revisar:
 - `prompting/composer.py` y `prompting/sections/` (el bloque que corresponda)
 - `prompt_context.py`
 - `structured_output.py`
-- `response_guard.py`
 
 ### Si falla el canal
 
 Revisar:
 
-- `META_ACCESS_TOKEN`
-- `META_PHONE_NUMBER_ID`
-- sender activo en `project/app/connectors/whatsapp/meta/sender.py`
+- el estado del canal en el panel (Canales): conectado, o el motivo por el que se desconectó
+- el registro del motor: `whatsapp_qr_rechazado` (aviso sin el token de la instancia) o los errores de envío
+- el envío en `project/app/infrastructure/channels/uazapi.py` (o `telegram.py`)
 
 ## Cómo Validar Respuestas
 
@@ -606,14 +563,13 @@ Antes de cerrar un cambio relevante en runtime:
 1. correr `pytest -q`
 2. levantar `uvicorn app.main:app --reload`
 3. probar `/health`
-4. comprobar que `/api/v1/simulate` responde 404, porque está apagado por defecto
-5. revisar que no aparezcan errores en consola
+4. revisar que no aparezcan errores en consola
 
 ## Scripts De Base De Datos
 
 `scripts/setup_cloud_database.py` deja lista una rama de Neon (ver «Nube: Vercel Y Neon»). En la rama `pruebas` usa
 `scripts/bootstrap_saas_data.py`, que garantiza por cada negocio de ejemplo (`project/config/tenants/`) una fila en `tenants`,
-`admin_users` y `tenant_settings` (tablas del sistema anterior, que se retiran en la Fase 6). No sobrescribe filas existentes y
+`admin_users` y `tenant_settings` (tablas del sistema anterior: ya no las usa el código y se borran en la Fase 6). No sobrescribe filas existentes y
 procesa cada negocio en su propia transacción.
 
 ### Precauciones

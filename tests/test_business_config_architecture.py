@@ -23,10 +23,7 @@ DOMAIN = "app.domain.business_config"
 APPLICATION = "app.business_config_application"
 PERSISTENCE = "app.infrastructure.business_config"
 API = "app.admin_api"
-BRIDGE = (
-    "app.application.runtime.tenant_runtime_loader",
-    "app.infrastructure.config.legacy_field_catalog",
-)
+BRIDGE = ("app.application.runtime.tenant_runtime_loader",)
 # La única puerta del motor hacia el almacén: solo lee lo publicado y nunca crea ni escribe.
 ENGINE_GATEWAY = f"{PERSISTENCE}.runtime_access"
 # Arma la API del panel en la nube con la persistencia real, como `scripts/run_admin_api.py` en este equipo. No es el motor.
@@ -173,14 +170,17 @@ def test_the_engine_reaches_the_store_only_through_its_gateway():
 
 # Los YAML de los negocios se retiraron el 11 de noviembre de 2026: cada negocio sale de su versión publicada en el almacén y los
 # de ejemplo se siembran desde sus `business-config.json`. De la migración solo queda el catálogo que documenta adónde fue cada
-# campo antiguo (`legacy_field_catalog`), que usan las pruebas y la matriz de trazabilidad, nunca la aplicación.
+# campo antiguo, que usan las pruebas y la matriz de trazabilidad: desde el 18 de noviembre de 2026 vive con las pruebas
+# (`tests/legacy_field_catalog.py`), fuera de la aplicación, y el paquete `app.infrastructure.config` ya no existe.
 MIGRATION_CATALOG = "app.infrastructure.config"
 RETIRED_MODULES = (
+    MIGRATION_CATALOG,
     "app.infrastructure.config.config_service",
     "app.infrastructure.config.legacy_yaml_importer",
     "app.infrastructure.config.legacy_store_migration",
     "app.infrastructure.config.payment_secrets",
     "app.infrastructure.config.business_config_store",
+    "app.infrastructure.config.legacy_field_catalog",
 )
 
 

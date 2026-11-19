@@ -28,7 +28,7 @@ from app.infrastructure.business_config.database import DATABASE_URL_ENV, build_
 from app.infrastructure.business_config.payment_secret_store import SECRETS_KEY_ENV, PaymentSecretStore
 from app.infrastructure.business_config.runtime_access import dispose_shared_engines
 from app.infrastructure.business_config.tables import business_config_secrets, business_configs, tenants
-from app.infrastructure.config.legacy_field_catalog import COMMERCIAL_CONTROLS, check_leaf, destination_path, find_entry, legacy_leaves, resolve_path
+from legacy_field_catalog import COMMERCIAL_CONTROLS, check_leaf, destination_path, find_entry, legacy_leaves, resolve_path
 from pipeline_harness import TENANTS, engine_sections, reply, run_conversation
 
 CONVERSATION = [

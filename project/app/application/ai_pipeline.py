@@ -72,7 +72,6 @@ class AIPipeline:
         self,
         *,
         prompt_path: str | None = None,
-        message_repository=None,
         runtime: AIRuntimeService | None = None,
         memory_service: MemoryDomainService | None = None,
         runtime_loader: Callable[..., dict] | None = None,
@@ -87,10 +86,7 @@ class AIPipeline:
         self._ai_loader = ai_loader
         # Cada respuesta de la IA suma al consumo de su negocio (lo muestra el panel en «Inteligencia artificial»).
         self._usage_recorder = usage_recorder
-        runtime_service = runtime or AIRuntimeService(
-            prompt_path=prompt_path,
-            message_repository=message_repository,
-        )
+        runtime_service = runtime or AIRuntimeService(prompt_path=prompt_path)
         if memory_service is None:
             memory_repository = build_memory_repository()
             memory = MemoryDomainService(memory_repository)

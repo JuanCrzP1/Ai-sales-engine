@@ -1,6 +1,5 @@
 """Almacén de BusinessConfig sobre SQLAlchemy (SQLite en local, PostgreSQL más adelante).
 
-Paquete aparte de `app.infrastructure.config` a propósito: importar aquel paquete carga los lectores de
-YAML del motor. Este no debe importar nada del motor ni de los YAML; lo comprueba
+No importa nada del motor ni de los YAML (retirados el 11 de noviembre de 2026); lo comprueba
 `tests/test_business_config_yaml_independence.py`.
 """

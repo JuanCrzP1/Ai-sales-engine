@@ -12,6 +12,13 @@ está en el historial de git y en `docs/plan-v1.md`.
   borran con la conversación.
 - Medido con 90 conversaciones de venta: 0 veces pidió algo que el cliente ya había dado (antes, 2).
 
+**Un motor más limpio y seguro, sin cambiar lo que responde tu asistente**
+- Retiramos el resto del sistema anterior: un webhook de WhatsApp de Meta que no atendía a ningún negocio, una ruta de pruebas
+  que estaba apagada, el sistema de cuentas viejo con su clave por defecto y una base de datos de prueba que seguía guardada en el
+  código. Menos puertas abiertas y menos código que mantener.
+- Tu asistente responde exactamente igual: lo comprobamos con los 9 negocios de ejemplo, mensaje por mensaje, y por el mismo
+  camino que siguen los mensajes de WhatsApp.
+
 ## 15 de noviembre de 2026
 
 **El asistente ya no le pide al cliente lo que ya le dijo**
