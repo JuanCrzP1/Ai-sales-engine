@@ -8,7 +8,11 @@ código del árbol de trabajo, en una copia aislada y con el modelo real. Cada r
 
 Un cambio al asesor se publica solo si pasan todas las reglas en todas las conversaciones. Termina con código 1 si alguna no pasa.
 
+Con `--escalation`, las conversaciones y la regla de «Cuándo pasar a una persona» (`escalation_standard.py`). Con `--panel`, las de lo
+que configura el negocio en el panel: el trato y el tono, el largo, los emojis, el horario y la forma de cerrar (`panel_standard.py`).
+
     python experiments/quality_lab/run_standard_gate.py --experiment <id> [--samples 3] [--tenants asesor_ai_prod] [--model <modelo>]
+        [--escalation | --panel]
 
 Usa la clave de OpenRouter del `.env` (nunca la imprime). Tiene costo: antes de correr calcula cuánto costará y no arranca si pasa de
 `--max-usd`. Los resultados van a `experiments/quality_lab/results/<id>/` (informe, datos y conversaciones, sin datos de pago). Un
@@ -31,6 +35,7 @@ sys.path.insert(0, str(LAB))
 
 import costs  # noqa: E402
 import judge  # noqa: E402
+import panel_standard  # noqa: E402
 from run_quality_eval import REPO, RESULTS, _child_env, _export, _git, _model_prices, _usage  # noqa: E402
 from escalation_standard import HANDOFF_MESSAGE, PROFILE as ESCALATION_PROFILE  # noqa: E402
 from standard import CONFIRM, EXACT_RULES, JUDGE, JUDGE_RULES, confirm_request, exact_failures, judge_failures, keep_confirmed, transcript  # noqa: E402
@@ -39,6 +44,7 @@ from standard import CONFIRM, EXACT_RULES, JUDGE, JUDGE_RULES, confirm_request, 
 # las de paso a persona). Con varios medios de pago; con uno solo son menos.
 CONVERSATIONS, TURNS = 10, 33
 ESCALATION_CONVERSATIONS, ESCALATION_TURNS = 4, 11
+PANEL_CONVERSATIONS, PANEL_TURNS = 3, 9
 _METHOD_NAMES = {"bank": "transferencia bancaria", "link": "link de pago", "breb": "Bre-B", "nequi": "Nequi", "daviplata": "Daviplata"}
 
 
@@ -64,16 +70,39 @@ def _publish_escalation(tree: Path, tenants: list[str]) -> None:
         path.write_text(json.dumps(document, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
-def judge_conversation(key: str, model: str, facts: dict, turns: list[dict]) -> tuple[dict[str, list[dict]], list[dict], list[dict]]:
+def _publish_panel(tree: Path, tenants: list[str]) -> None:
+    """Publica en la copia aislada cada negocio con su perfil del panel (`panel_standard.PROFILES`): trato, tono, largo, emojis,
+    horario y forma de cerrar, como los guardaría el negocio en el panel."""
+    missing = [slug for slug in tenants if slug not in panel_standard.PROFILES]
+    if missing:
+        raise SystemExit(f"Sin perfil del panel para: {', '.join(missing)}. Hay perfiles para: {', '.join(panel_standard.PROFILES)}.")
+    for slug in tenants:
+        path = tree / "project" / "config" / "tenants" / slug / "business-config.json"
+        document = panel_standard.publish(json.loads(path.read_text(encoding="utf-8")), panel_standard.PROFILES[slug])
+        path.write_text(json.dumps(document, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def _rules(panel: bool) -> tuple[dict[str, str], dict[str, str]]:
+    """Las reglas exactas y las del juez de la corrida. Con `--panel`, las exactas de pagos siguen (marcadores, repetir, pasar sin
+    motivo…) y se suman las del panel; el juez revisa solo las del panel."""
+    if panel:
+        return {**EXACT_RULES, **panel_standard.EXACT_RULES}, panel_standard.JUDGE_RULES
+    return EXACT_RULES, JUDGE_RULES
+
+
+def judge_conversation(key: str, model: str, facts: dict, turns: list[dict], panel: bool = False) -> tuple[dict[str, list[dict]], list[dict], list[dict]]:
     """Las reglas del juez en una conversación: por cada una, dónde no pasa y por qué (lista vacía si pasa); las fallas que reportó
     y no valieron (sin su frase textual, o no confirmadas por el segundo revisor) y lo que gastaron sus llamadas."""
-    user = f"FICHA:\n{json.dumps(_ficha(facts), ensure_ascii=False)}\n\nCONVERSACIÓN:\n{transcript(turns)}"
-    verdict, usage = judge._call(key, model, JUDGE, user)
-    failures, discarded = judge_failures(verdict, turns)
+    rules = _rules(panel)[1]
+    sheet = json.dumps(panel_standard.ficha(facts, _METHOD_NAMES) if panel else _ficha(facts), ensure_ascii=False)
+    user = f"FICHA:\n{sheet}\n\nCONVERSACIÓN:\n{transcript(turns)}"
+    verdict, usage = judge._call(key, model, panel_standard.JUDGE if panel else JUDGE, user)
+    failures, discarded = judge_failures(verdict, turns, rules)
     usages = [usage]
+    confirm_prompt, context = (panel_standard.CONFIRM, f"FICHA:\n{sheet}\n\n") if panel else (CONFIRM, "")
 
     def confirm(rule: str, conversation: list[dict], failure: dict) -> bool:
-        answer, spent = judge._call(key, model, CONFIRM, confirm_request(rule, conversation, failure))
+        answer, spent = judge._call(key, model, confirm_prompt, confirm_request(rule, conversation, failure, rules, context))
         usages.append(spent)
         return answer.get("confirmada") is True
 
@@ -82,14 +111,15 @@ def judge_conversation(key: str, model: str, facts: dict, turns: list[dict]) -> 
     return failures, discarded + unconfirmed, usages
 
 
-def evaluate(captured: dict, key: str, judge_model: str) -> tuple[list[dict], list[dict]]:
+def evaluate(captured: dict, key: str, judge_model: str, panel: bool = False) -> tuple[list[dict], list[dict]]:
     """Cada conversación con las reglas que no pasa (exactas y del juez), y lo que gastó el juez."""
     jobs = [(slug, data["facts"], turns) for slug, data in captured["results"].items() for turns in data["samples"]]
 
     def run(job):
         slug, facts, turns = job
-        judged, discarded, usages = judge_conversation(key, judge_model, facts, turns)
-        row = {"tenant": slug, "conversation": turns[0].get("conversation", ""), "turns": turns, "failures": {**exact_failures(turns), **judged},
+        judged, discarded, usages = judge_conversation(key, judge_model, facts, turns, panel)
+        exact = {**exact_failures(turns), **(panel_standard.exact_failures(turns, facts) if panel else {})}
+        row = {"tenant": slug, "conversation": turns[0].get("conversation", ""), "turns": turns, "failures": {**exact, **judged},
                "discarded": discarded}
         return row, usages
 
@@ -100,7 +130,8 @@ def evaluate(captured: dict, key: str, judge_model: str) -> tuple[list[dict], li
 
 def build_report(data: dict) -> str:
     rows = data["rows"]
-    rules = {**EXACT_RULES, **JUDGE_RULES}
+    exact_rules, judge_rules = _rules(data.get("modo") == "panel")
+    rules = {**exact_rules, **judge_rules}
     failed = {name: [(row, failure) for row in rows for failure in row["failures"][name]] for name in rules}
     passed = all(not items for items in failed.values())
     lines = [
@@ -114,7 +145,7 @@ def build_report(data: dict) -> str:
     ]
     for name, text in rules.items():
         broken = len({(id(row)) for row, _failure in failed[name]})
-        kind = "exacta" if name in EXACT_RULES else "juez"
+        kind = "exacta" if name in exact_rules else "juez"
         lines.append(f"| {'✅' if not broken else '❌'} {name.replace('_', ' ')} ({kind}) | {len(rows) - broken} de {len(rows)} | {text.split('. ')[0].rstrip('.')}. |")
     discarded = sum(len(row.get("discarded") or []) for row in rows)
     per_message = data.get("por_mensaje") or {}
@@ -161,7 +192,10 @@ def main() -> int:
     parser.add_argument("--max-usd", type=float, default=0.30, help="Tope de gasto de la corrida; no arranca si el cálculo lo supera")
     parser.add_argument("--rejudge", action="store_true", help="Revisa de nuevo las conversaciones ya guardadas, sin repetirlas")
     parser.add_argument("--escalation", action="store_true", help="Publica los negocios con reglas de paso a persona y corre esas conversaciones")
+    parser.add_argument("--panel", action="store_true", help="Publica los negocios con su perfil del panel y corre esas conversaciones")
     args = parser.parse_args()
+    if args.escalation and args.panel:
+        raise SystemExit("Elige --escalation o --panel, no los dos.")
     output = RESULTS / args.experiment
     if output.exists() and not args.rejudge:
         raise SystemExit(f"{output} ya existe: un experimento no se sobrescribe; usa --rejudge para revisar lo guardado o elige otro identificador.")
@@ -172,7 +206,9 @@ def main() -> int:
         raise SystemExit("Falta OPENROUTER_API_KEY en el .env.")
     tenants = [slug for slug in args.tenants.split(",") if slug]
     volume = len(tenants) * args.samples
-    conversations, turns = (ESCALATION_CONVERSATIONS, ESCALATION_TURNS) if args.escalation else (CONVERSATIONS, TURNS)
+    conversations, turns = (
+        (ESCALATION_CONVERSATIONS, ESCALATION_TURNS) if args.escalation else (PANEL_CONVERSATIONS, PANEL_TURNS) if args.panel else (CONVERSATIONS, TURNS)
+    )
     budget = costs.estimate_gate(messages=volume * turns, conversations=volume * conversations, model=model, judge=args.judge_model,
                                  models=costs.catalog({model, args.judge_model}), with_capture=not args.rejudge)
     print(f"Costo calculado: USD {budget:.2f} (tope USD {args.max_usd:.2f}) · asesor {model} · juez {args.judge_model}", flush=True)
@@ -192,8 +228,10 @@ def main() -> int:
         _export(None, tree)
         if args.escalation:
             _publish_escalation(tree, tenants)
+        if args.panel:
+            _publish_panel(tree, tenants)
         settings = work_path / "candidate.json"
-        settings.write_text(json.dumps({"label": "candidate", "commit": reference, "samples": args.samples, "tenants": tenants, "standard": True,
+        settings.write_text(json.dumps({"label": "candidate", "commit": reference, "samples": args.samples, "tenants": tenants, "standard": "panel" if args.panel else True,
                                         "output": str(work_path / "candidate.out.json")}), encoding="utf-8")
         print(f"[asesor] {reference} | modelo {model}", flush=True)
         process = subprocess.run([sys.executable, "-B", str(tree / "experiments" / "quality_lab" / "capture.py"), str(settings)],
@@ -237,15 +275,15 @@ def per_message(captured: dict, price: tuple[float, float]) -> dict:
 def report(args, captured: dict, key: str, output: Path) -> int:
     """Revisa las conversaciones capturadas con las reglas del estándar y escribe el informe. Devuelve 0 si pasan todas."""
     model, tenants = str(captured.get("model") or ""), sorted(captured["results"])
-    rows, judge_usages = evaluate(captured, key, args.judge_model)
+    rows, judge_usages = evaluate(captured, key, args.judge_model, args.panel)
     usage = _usage(captured, _model_prices(model))
     messages = sum(len(row["turns"]) for row in rows)
     data = {
         "por_mensaje": per_message(captured, _model_prices(model)),
-        "experiment": args.experiment, "candidate": captured.get("commit"), "model": model, "judge_model": args.judge_model,
+        "experiment": args.experiment, "modo": "panel" if args.panel else "escalation" if args.escalation else "pagos", "candidate": captured.get("commit"), "model": model, "judge_model": args.judge_model,
         "samples": len(rows) // max(1, len(tenants)) // max(1, len({row["conversation"] for row in rows})),
         "tenants": tenants, "rows": [{key_: value for key_, value in row.items() if key_ != "turns"} | {"turns": [
-            {name: turn.get(name, "") for name in ("turn", "message", "expect", "reply", "handoff", "team_note")} for turn in row["turns"]]}
+            {name: turn.get(name, "") for name in ("turn", "message", "expect", "reply", "handoff", "team_note", "source", "ai_words")} for turn in row["turns"]]}
             for row in rows],
         "gasto": {"asesor_usd": costs.spent(_calls_usage(captured), _model_prices(model)),
                   "juez_usd": costs.spent(judge_usages, _model_prices(args.judge_model))},
@@ -253,7 +291,7 @@ def report(args, captured: dict, key: str, output: Path) -> int:
     }
     (output / "data.json").write_text(json.dumps(data, ensure_ascii=False, indent=1), encoding="utf-8")
     (output / "report.md").write_text(build_report(data), encoding="utf-8")
-    broken = {name: sum(1 for row in rows if row["failures"][name]) for name in {**EXACT_RULES, **JUDGE_RULES}}
+    broken = {name: sum(1 for row in rows if row["failures"][name]) for name in {**_rules(args.panel)[0], **_rules(args.panel)[1]}}
     print(f"\n{'PASA' if not any(broken.values()) else 'NO PASA'} · {len(rows)} conversaciones · informe: {output / 'report.md'}")
     print(f"  por mensaje: {data['por_mensaje']} · gasto real asesor USD {data['gasto']['asesor_usd']:.4f}, juez USD {data['gasto']['juez_usd']:.4f}")
     for name, count in broken.items():

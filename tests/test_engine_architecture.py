@@ -56,7 +56,8 @@ def _crossing(layer: str, forbidden: tuple[str, ...]) -> list[str]:
 
 
 def test_the_old_services_package_is_gone():
-    assert not (APP_DIR / "services").exists()
+    # Sin código: una carpeta vacía que deja la caché de Python no cuenta (git no la registra).
+    assert not list((APP_DIR / "services").rglob("*.py"))
     assert not [name for name in _modules() if name.startswith("app.services")]
 
 

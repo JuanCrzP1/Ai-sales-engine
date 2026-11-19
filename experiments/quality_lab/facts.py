@@ -103,6 +103,9 @@ def business_facts(runtime: dict, business_model: str) -> dict:
         "canales_de_atencion": _list(_dict(capabilities.get("business_channels")).get("allowed")),
         "datos_que_pide": _list(_dict(capabilities.get("data_collection")).get("fields")),
         "tono": profile.get("tone") or "",
+        # Cómo trata al cliente (informal: de tú; formal: de usted) y si puede usar emojis; None si el negocio no lo indicó.
+        "trato": profile.get("formality") or "",
+        "emojis": profile.get("emojis") if isinstance(profile.get("emojis"), bool) else None,
         "max_palabras": _dict(config.get("response")).get("max_words"),
         "preguntas_frecuentes": _list(_dict(config.get("knowledge")).get("faqs")),
         "beneficios": _list(profile.get("benefits")),
@@ -129,6 +132,8 @@ def business_facts(runtime: dict, business_model: str) -> dict:
         "politicas": _dict(profile.get("policies")),
         "lo_que_no_hace": _dict(capabilities.get("constraints")),
         "estrategia_de_venta": _strategy(runtime),
+        # Cómo cierra la venta (`sales.closing.strategy`): direct_sale, lead_capture, booking o checkout; "" si no eligió.
+        "estrategia_de_cierre": str(_dict(_dict(runtime.get("sales")).get("closing")).get("strategy") or ""),
         # Las reglas del negocio para pasar el chat a una persona («Cuándo pasar a una persona»); {} si usa las de siempre.
         "paso_a_persona": _dict(config.get("escalation")),
     }

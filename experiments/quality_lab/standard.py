@@ -115,7 +115,7 @@ def _plain(text: str) -> str:
     return " ".join(str(text or "").casefold().split())
 
 
-def judge_failures(verdict: dict, turns: list[dict]) -> tuple[dict[str, list[dict]], list[dict]]:
+def judge_failures(verdict: dict, turns: list[dict], rules: dict[str, str] = JUDGE_RULES) -> tuple[dict[str, list[dict]], list[dict]]:
     """Las fallas que reportó el juez y que traen su prueba: por cada regla, dónde no pasa y por qué (lista vacía si pasa). Y las que
     se descartan por no traerla, para que queden a la vista.
 
@@ -123,10 +123,10 @@ def judge_failures(verdict: dict, turns: list[dict]) -> tuple[dict[str, list[dic
     (13 nov 2026). Por eso una falla solo vale si su cita está, tal cual, en lo que dijo el asesor en ese turno (y, en las reglas de
     `CUSTOMER_EVIDENCE`, si la cita del cliente está en un mensaje suyo anterior). Sin veredicto del juez, ninguna regla se da por
     buena: todas cuentan como que no pasan, para mirarlas."""
-    failures: dict[str, list[dict]] = {name: [] for name in JUDGE_RULES}
+    failures: dict[str, list[dict]] = {name: [] for name in rules}
     reported = verdict.get("fallas")
     if not isinstance(reported, list):
-        return {name: [{"turn": 0, "why": "el juez no dio veredicto"}] for name in JUDGE_RULES}, []
+        return {name: [{"turn": 0, "why": "el juez no dio veredicto"}] for name in rules}, []
     by_number = {turn["turn"]: turn for turn in turns}
     discarded = []
     for item in reported:
@@ -134,7 +134,7 @@ def judge_failures(verdict: dict, turns: list[dict]) -> tuple[dict[str, list[dic
         rule, number, quote = str(item.get("regla") or ""), item.get("turno"), _plain(item.get("cita"))
         turn = by_number.get(number) if isinstance(number, int) else None
         said = f"{turn['reply']} {turn.get('team_note') or ''}" if turn is not None else ""
-        valid = rule in JUDGE_RULES and turn is not None and len(quote) >= MIN_QUOTE_CHARS and quote in _plain(said)
+        valid = rule in rules and turn is not None and len(quote) >= MIN_QUOTE_CHARS and quote in _plain(said)
         if valid and rule in CUSTOMER_EVIDENCE:
             said = _plain(item.get("cita_cliente"))
             valid = len(said) >= 3 and any(said in _plain(earlier["message"]) for earlier in turns if earlier["turn"] < number)
@@ -159,15 +159,16 @@ CONFIRM = (
 )
 
 
-def confirm_request(rule: str, turns: list[dict], failure: dict) -> str:
-    """Lo que se le envía al segundo revisor: la regla, la conversación hasta el turno de la falla y lo que reportó el juez."""
+def confirm_request(rule: str, turns: list[dict], failure: dict, rules: dict[str, str] = JUDGE_RULES, context: str = "") -> str:
+    """Lo que se le envía al segundo revisor: la regla, lo que necesita saber del negocio (`context`, p. ej. la ficha de lo que
+    configuró), la conversación hasta el turno de la falla y lo que reportó el juez."""
     until = [turn for turn in turns if turn["turn"] <= failure["turn"]]
     evidence = (
         f"\nSegún el juez, el cliente ya había dado ese dato al decir: «{failure['customer_said']}». Confírmala solo si esa frase de "
         "verdad trae el dato que el asesor vuelve a pedir (no basta con que sea otra frase del cliente)."
         if failure.get("customer_said") else ""
     )
-    return (f"REGLA ({rule}): {JUDGE_RULES[rule]}\n\nCONVERSACIÓN HASTA ESE TURNO:\n{transcript(until)}\n\n"
+    return (f"REGLA ({rule}): {rules[rule]}\n\n{context}CONVERSACIÓN HASTA ESE TURNO:\n{transcript(until)}\n\n"
             f"FALLA REPORTADA en el turno {failure['turn']}: {failure['why']}{evidence}")
 
 
@@ -204,9 +205,14 @@ def _methods(facts: dict) -> tuple[str, str]:
     return paid, other
 
 
-def conversations_for(facts: dict) -> list[tuple[str, list[dict]]]:
+def conversations_for(facts: dict, *, panel: bool = False) -> list[tuple[str, list[dict]]]:
     """Las conversaciones del estándar para ese negocio: (nombre, turnos). Cada turno dice qué escribe el cliente y qué se espera.
-    Si el negocio tiene reglas para pasar el chat a una persona (`--escalation`), las de esas reglas (`escalation_standard.py`)."""
+    Si el negocio tiene reglas para pasar el chat a una persona (`--escalation`), las de esas reglas (`escalation_standard.py`); con
+    `panel` (`--panel`), las de lo que configura el negocio en el panel (`panel_standard.py`)."""
+    if panel:
+        from panel_standard import conversations as panel_conversations
+
+        return _numbered(panel_conversations(facts))
     if facts.get("paso_a_persona"):
         return _numbered(escalation_conversations(facts, HANDOFF))
     offer = facts["oferta"][0]["name"] if facts["oferta"] else "lo que ofrecen"

@@ -76,6 +76,18 @@ def _prepare_store(api_key: str) -> list[str]:
     return sorted(report.created)
 
 
+def _response_words(body: dict) -> int | None:
+    """Las palabras de la respuesta para el cliente (`response`) que devolvió el modelo, o None si esa llamada no trae una."""
+    try:
+        content = str(body["choices"][0]["message"]["content"]).strip()
+        # Algunos modelos envuelven el JSON en un bloque de código.
+        content = content.removeprefix("```json").removeprefix("```").removesuffix("```").strip()
+        reply = json.loads(content).get("response")
+    except (KeyError, IndexError, TypeError, ValueError, AttributeError):
+        return None
+    return len(reply.split()) if isinstance(reply, str) and reply.strip() else None
+
+
 def _converse(service, slug: str, customer: str, name: str, script: list[dict], calls: list[dict], secrets: list[str]) -> list[dict]:
     """Una conversación completa de un cliente con el asesor: cada turno con su respuesta (sin datos de pago), lo que decidió el motor
     y las llamadas al modelo que costó."""
@@ -98,8 +110,11 @@ def _converse(service, slug: str, customer: str, name: str, script: list[dict], 
         for secret in secrets:
             shown = shown.replace(secret, "[dato entregado por el motor]")
             note = note.replace(secret, "[dato entregado por el motor]")
+        # Cuántas palabras escribió la IA en su respuesta, antes de que el motor la recorte al máximo del negocio (la última llamada
+        # que trae una respuesta para el cliente; la del lector de pagos no la trae).
+        written = [call["response_words"] for call in calls if call.get("response_words") is not None]
         turns.append({
-            **step, "conversation": name, "reply": shown, "engine_delivered_payment": delivered, "ai_used": bool(ai_used),
+            **step, "conversation": name, "reply": shown, "ai_words": written[-1] if written else None, "engine_delivered_payment": delivered, "ai_used": bool(ai_used),
             "handoff": bool(metadata.get("handoff")), "team_note": note,
             "intent": metadata.get("intent"), "source": metadata.get("source"), "format_error": str(ai_metadata.get("format_error") or ""),
             "calls": [{key: value for key, value in call.items() if key != "system"} for call in calls],
@@ -132,7 +147,8 @@ def main(settings_path: str) -> int:
         body = response.json() if response.headers.get("content-type", "").startswith("application/json") else {}
         system = next((m.get("content") or "" for m in (json or {}).get("messages", []) if m.get("role") == "system"), "")
         calls.append({"status": response.status_code, "ms": int((time.monotonic() - started) * 1000), "usage": body.get("usage") or {},
-                      "system_chars": len(system), "messages": len((json or {}).get("messages", [])), "system": system})
+                      "system_chars": len(system), "messages": len((json or {}).get("messages", [])), "system": system,
+                      "response_words": _response_words(body)})
         return response
 
     requests.post = recording_post
@@ -157,7 +173,7 @@ def main(settings_path: str) -> int:
         for sample in range(int(settings.get("samples", 1))):
             # El guion del negocio (una conversación por muestra) o, con `standard`, las conversaciones del estándar del asesor: cada
             # una es un cliente distinto y queda como una muestra más.
-            scripts = conversations_for(facts) if settings.get("standard") else [("guion", turns_for(facts))]
+            scripts = conversations_for(facts, panel=settings.get("standard") == "panel") if settings.get("standard") else [("guion", turns_for(facts))]
             for position, (name, script) in enumerate(scripts):
                 customer = f"calidad-{slug}-{sample}" + (f"-{position}" if settings.get("standard") else "")
                 samples.append(_converse(service, slug, customer, name, script, calls, secrets))

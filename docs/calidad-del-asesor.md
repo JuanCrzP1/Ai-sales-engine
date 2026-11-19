@@ -93,6 +93,7 @@ Aun así el juez varía un poco de una corrida a otra. Las reglas exactas no.
 | `--max-usd` | `0.30` | Tope de gasto. Calcula el costo antes de correr y no arranca si lo supera. |
 | `--rejudge` | | Revisa de nuevo las conversaciones ya guardadas, sin repetirlas. Cuesta cerca de un centavo. |
 | `--escalation` | | Publica los negocios de la copia con reglas de «Cuándo pasar a una persona» y corre esas conversaciones en lugar de las de pagos. |
+| `--panel` | | Publica cada negocio con su perfil del panel (trato, tono, largo, emojis, horario y forma de cerrar) y corre esas conversaciones. Ver «Lo que configura el negocio». |
 
 - Corre el código del árbol de trabajo en una copia aislada, sin `.env`, con la red cerrada salvo OpenRouter.
 - Usa la clave de OpenRouter del `.env`. Nunca la imprime.
@@ -366,9 +367,56 @@ vista lo que se dijo varios mensajes atrás, y ninguna frase del prompt lo arreg
   prompt.
 - Gasto: unos USD 0,16.
 
+## Lo que configura el negocio (19 de noviembre de 2026)
+
+Las pruebas del motor comprueban que cada ajuste del panel llega al prompt; esta medición comprueba que la IA lo cumple. Con
+`--panel`, la puerta publica cada negocio de la copia con un perfil ([`panel_standard.py`](../experiments/quality_lab/panel_standard.py))
+y corre tres conversaciones: pregunta el horario y por un día que no abren, decide comprar, y pide que le cuenten todo. Los dos
+perfiles son opuestos a propósito: si la IA respondiera igual con cualquier ajuste, una de las dos mitades no pasaría.
+
+| Ajuste | `asesor_ai_prod` | `restaurant` |
+|---|---|---|
+| Trato y tono | De usted, «profesional, sobrio y respetuoso» | De tú, «cercano, alegre y entusiasta» |
+| Emojis | No | Sí |
+| Largo | Cortas, máximo 40 palabras | Detalladas, máximo 100 |
+| Horario | Lunes a viernes, 08:00 a 17:00 | Martes a domingo, 12:00 a 22:00 |
+| Forma de cerrar | Captar los datos (`lead_capture`) | Enviar el pago (`checkout`) |
+
+Reglas nuevas: «respeta el largo» y «sin emojis si no van» se cuentan sin opinión. El largo es el de lo que escribió la IA, antes de
+que el motor lo recorte: el recorte protege al cliente, pero la regla mide si la IA lo cumple sola. «Trato y tono», «horario del
+negocio» y «cierra como el negocio» las revisa el juez con la ficha de lo que quedó publicado (sale de lo que compiló el motor, no
+del perfil). Además siguen las reglas exactas de pagos.
+
+```bash
+.venv/bin/python experiments/quality_lab/run_standard_gate.py --experiment <id> --panel --tenants asesor_ai_prod,restaurant
+```
+
+Primera medición (`panel_obedece_20261119`, gpt-4o-mini, 18 conversaciones, unos USD 0,03):
+
+| Regla | Pasa | Lo que no pasó |
+|---|---|---|
+| Horario del negocio | 18 de 18 | |
+| Sin emojis si no van | 18 de 18 | |
+| Las reglas exactas de pagos | 18 de 18 | |
+| Cierra como el negocio | 17 de 18 | Captar datos: ofreció los medios de pago y pidió el teléfono «para proceder con el pago» |
+| Trato y tono | 16 de 18 | De usted: tuteó («¿Te gustaría…?», «Si buscas…») |
+| Respeta el largo | 16 de 18 | Máximo 40: escribió 43 y 46 (el motor lo recortó) |
+
+El perfil de tú, con emojis, largo y enviar el pago pasó todo; las fallas son del perfil formal que capta datos. Por qué, en el prompt
+real de esas conversaciones:
+
+- **Trato.** El prompt dice una vez «Trata al cliente de usted.», pero las frases del negocio (sus argumentos, sus objeciones) y las
+  de la plataforma están escritas de tú. Además, en una conversación el asesor tuteó en el turno 1 y el juez no lo marcó: el juez
+  también deja pasar fallas.
+- **Forma de cerrar.** Ante «Me convence, lo quiero», el lector de pagos dijo en las 3 muestras que el cliente pedía los datos
+  para pagar, aunque sus instrucciones dicen que querer pagar sin decir con qué medio no es pedirlos. Con eso el motor le indicó
+  al asesor «pregúntale con cuál de los medios del negocio», en contra de captar los datos. Dos veces el asesor no le hizo caso;
+  una sí.
+- **Largo.** Con un máximo de 40 palabras, gpt-4o-mini se pasa por unas pocas.
+
 ## Lo que la puerta no cubre
 
-- Solo mira los momentos de pago. La oferta, los precios y las objeciones los mide
+- Solo mira los momentos de pago y, con `--panel`, lo que configura el negocio. La oferta, los precios y las objeciones los mide
   [`run_quality_eval.py`](../experiments/quality_lab/run_quality_eval.py).
 - El cliente sigue un guion: no reacciona a lo que le responde el asesor.
 - No prueba los canales. Eso lo hacen los recorridos de WhatsApp ([`apps/wa-sim`](../apps/wa-sim/README.md)).
