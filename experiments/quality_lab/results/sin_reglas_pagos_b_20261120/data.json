@@ -1,0 +1,3765 @@
+{
+ "por_mensaje": {
+  "mensajes": 192,
+  "segundos_mediana": 3.2,
+  "segundos_p95": 4.9,
+  "usd_por_1000_mensajes": 0.4,
+  "fuera_de_formato": 0,
+  "sin_respuesta_de_la_ia": 1,
+  "tokens_de_razonamiento_por_mensaje": 0
+ },
+ "experiment": "sin_reglas_pagos_b_20261120",
+ "modo": "pagos",
+ "candidate": "66adbb9 + cambios",
+ "model": "openai/gpt-4o-mini",
+ "judge_model": "google/gemini-2.5-flash",
+ "samples": 3,
+ "tenants": [
+  "asesor_ai_prod",
+  "restaurant"
+ ],
+ "rows": [
+  {
+   "tenant": "asesor_ai_prod",
+   "conversation": "el chat de producción",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_pide_el_dato_de_pago": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [
+     {
+      "turn": 11,
+      "why": "No explica qué debe hacer, solo repite que enviará los datos."
+     }
+    ],
+    "coherente_con_los_datos": [],
+    "sigue_las_reglas_para_pasar": [],
+    "nota_fiel": []
+   },
+   "discarded": [
+    {
+     "turn": 5,
+     "why": "Pide el nombre que el cliente ya dio.",
+     "customer_said": "Me llamo Juan Camilo y es una tienda de ropa",
+     "rule": "no_pide_lo_ya_dado"
+    },
+    {
+     "turn": 7,
+     "why": "Pide el nombre que el cliente ya dio.",
+     "customer_said": "Me llamo Juan Camilo y es una tienda de ropa",
+     "rule": "no_pide_lo_ya_dado"
+    }
+   ],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Hola",
+     "expect": "",
+     "reply": "Hola, ¿qué más? 👋 soy Juan un gusto tenerte por aquí.",
+     "handoff": false,
+     "team_note": "",
+     "source": "initial_message",
+     "ai_words": null
+    },
+    {
+     "turn": 2,
+     "message": "Me interesa Plan Basico, quiero empezar",
+     "expect": "sin_datos",
+     "reply": "¡Genial! El Plan Básico cuesta COP 210.000 el primer mes, que incluye la configuración inicial y el primer mes de servicio. Luego, se paga COP 110.000 mensualmente. Para avanzar, necesito tu nombre, teléfono y detalles para la implementación.",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 38
+    },
+    {
+     "turn": 3,
+     "message": "Y puedo trasferir",
+     "expect": "sin_datos",
+     "reply": "Perfecto, puedes pagar por transferencia. Ahora, por favor, compárteme tu nombre, teléfono y detalles para la implementación.",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 17
+    },
+    {
+     "turn": 4,
+     "message": "Y Nequi no",
+     "expect": "sin_datos",
+     "reply": "Sí, también puedes pagar con Nequi. Ahora, por favor, compárteme tu nombre, teléfono y detalles para la implementación.",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 18
+    },
+    {
+     "turn": 5,
+     "message": "Me llamo Juan Camilo y es una tienda de ropa",
+     "expect": "",
+     "reply": "Gracias, Juan Camilo. Para finalizar, ¿prefieres pagar con Nequi o transferencia? Así te envío los detalles.",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 16
+    },
+    {
+     "turn": 6,
+     "message": "Te pago por Nequi",
+     "expect": "datos_a_esta_altura",
+     "reply": "¡Listo! Ahí abajo te dejo los datos para pagar por Nequi.\n\nUna vez realices el pago, avísame para activar tu Plan Básico y comenzar con la implementación.\n\n💳 *Datos para pagar*\n\n*Nequi*\n[dato entregado por el motor]\n\nCuando pagues, envíame aquí la captura del comprobante y te confirmamos. ✅",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 30
+    },
+    {
+     "turn": 7,
+     "message": "Mi teléfono es 3157778899",
+     "expect": "",
+     "reply": "Perfecto, Juan Camilo. Te dejo los datos para pagar por Nequi. Una vez realices el pago, avísame con la captura del comprobante para activar tu Plan Básico y comenzar con la implementación.",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 32
+    },
+    {
+     "turn": 8,
+     "message": "Cuando lo haga que nesesito hacer",
+     "expect": "sin_datos",
+     "reply": "Te explico: una vez realices el pago, me envías aquí la captura del comprobante. Con eso, procederemos a activar tu Plan Básico y comenzaremos con la implementación.",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 27
+    },
+    {
+     "turn": 9,
+     "message": "Espérame un momento",
+     "expect": "sin_datos",
+     "reply": "Claro, tómate tu tiempo. Estoy aquí para ayudarte cuando estés listo.",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 11
+    },
+    {
+     "turn": 10,
+     "message": "Pero se me borró el Nequi me lo envías de nuevo",
+     "expect": "datos",
+     "reply": "¡Claro! Aquí tienes de nuevo los datos para pagar por Nequi:\n\n💳 *Datos para pagar*\n\n*Nequi*\n[dato entregado por el motor]\n\nCuando pagues, envíame aquí la captura del comprobante y te confirmamos. ✅\n\nRecuerda enviarme la captura del comprobante una vez realices el pago.",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 25
+    },
+    {
+     "turn": 11,
+     "message": "Cómo así",
+     "expect": "sin_datos",
+     "reply": "Te compartí los datos para pagar por Nequi, pero parece que no están visibles. Si quieres, puedo enviarte los datos nuevamente para que puedas realizar el pago. ¿Te gustaría que lo haga?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 32
+    },
+    {
+     "turn": 12,
+     "message": "Ya voy a pagar",
+     "expect": "sin_datos",
+     "reply": "Perfecto, haz el pago y luego envíame aquí la captura del comprobante. Así procederemos con la activación de tu Plan Básico.",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 21
+    },
+    {
+     "turn": 13,
+     "message": "ya te consigné",
+     "expect": "pago_avisado",
+     "reply": "Perfecto, ya lo reviso y te confirmo en un momento para continuar.",
+     "handoff": true,
+     "team_note": "Juan Camilo, dueño de una tienda de ropa, está interesado en el Plan Básico y desea pagar por Nequi. Dijo que ya realizó la consignación.",
+     "source": "ai_raw",
+     "ai_words": 27
+    }
+   ]
+  },
+  {
+   "tenant": "asesor_ai_prod",
+   "conversation": "se presenta al empezar",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_pide_el_dato_de_pago": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": [],
+    "sigue_las_reglas_para_pasar": [],
+    "nota_fiel": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Hola, soy Laura y tengo una tienda de ropa. Me interesa Plan Basico",
+     "expect": "sin_datos",
+     "reply": "Perfecto, Laura. El Plan Básico cuesta COP 100.000 de implementación y COP 110.000 al mes. Incluye configuración inicial, guía de integración con WhatsApp y un asistente conversacional inteligente. ¿Me puedes compartir tu teléfono y los detalles para completar la activación?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 40
+    },
+    {
+     "turn": 2,
+     "message": "Listo, lo quiero. Te pago por Nequi",
+     "expect": "datos_a_esta_altura",
+     "reply": "¡Listo! Ahí abajo te dejo los datos para pagar por Nequi. Por favor, también necesito que me compartas tu teléfono para completar la activación.\n\nDatos para Nequi:\n\n💳 *Datos para pagar*\n\n*Nequi*\n[dato entregado por el motor]\n\nCuando pagues, envíame aquí la captura del comprobante y te confirmamos. ✅",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 32
+    },
+    {
+     "turn": 3,
+     "message": "¿Y ahora qué sigue?",
+     "expect": "",
+     "reply": "Te explico: arriba, en este chat, te dejé los datos para pagar. Haces el pago con esos datos y me envías aquí la captura del comprobante; con eso seguimos.",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 29
+    }
+   ]
+  },
+  {
+   "tenant": "asesor_ai_prod",
+   "conversation": "da su teléfono antes de pagar",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_pide_el_dato_de_pago": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": [],
+    "sigue_las_reglas_para_pasar": [],
+    "nota_fiel": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Quiero Plan Basico",
+     "expect": "sin_datos",
+     "reply": "Genial, el Plan Básico cuesta COP 100.000 de implementación y COP 110.000 al mes. Incluye configuración inicial, guía de integración con WhatsApp y un asistente conversacional inteligente. Para avanzar, por favor, dame tu nombre, teléfono y detalles de tu negocio.",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 40
+    },
+    {
+     "turn": 2,
+     "message": "Mi número es 3157778899, ¿cómo hago para pagarte?",
+     "expect": "",
+     "reply": "¿Con cuál de los siguientes medios prefieres pagar: Nequi, Daviplata, transferencia a Bancolombia, Bre-B o link de pago?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 18
+    },
+    {
+     "turn": 3,
+     "message": "Listo, por Nequi",
+     "expect": "datos_a_esta_altura",
+     "reply": "¡Listo! Ahí abajo te dejo los datos para pagar por Nequi.\n\nPor favor, confirma tu nombre y detalles de tu negocio para completar el proceso.\n\n💳 *Datos para pagar*\n\n*Nequi*\n[dato entregado por el motor]\n\nCuando pagues, envíame aquí la captura del comprobante y te confirmamos. ✅",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 31
+    }
+   ]
+  },
+  {
+   "tenant": "asesor_ai_prod",
+   "conversation": "pide el medio con un error de escritura",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_pide_el_dato_de_pago": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": [],
+    "sigue_las_reglas_para_pasar": [],
+    "nota_fiel": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Quiero Plan Basico",
+     "expect": "sin_datos",
+     "reply": "Genial, el Plan Básico cuesta COP 210.000 el primer mes (incluye implementación y el primer mes de servicio) y luego COP 110.000 mensuales. Para proceder, necesito tu nombre, teléfono y un correo electrónico. ¿Me los puedes proporcionar?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 37
+    },
+    {
+     "turn": 2,
+     "message": "Pásame el nekui porfa",
+     "expect": "datos",
+     "reply": "¡Listo! Ahí abajo te dejo los datos para pagar por Nequi.\n\nPor favor, indícame tu nombre, teléfono y correo electrónico para completar el proceso.\n\n💳 *Datos para pagar*\n\n*Nequi*\n[dato entregado por el motor]\n\nCuando pagues, envíame aquí la captura del comprobante y te confirmamos. ✅",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 24
+    }
+   ]
+  },
+  {
+   "tenant": "asesor_ai_prod",
+   "conversation": "pregunta a dónde consigna",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_pide_el_dato_de_pago": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": [],
+    "sigue_las_reglas_para_pasar": [],
+    "nota_fiel": []
+   },
+   "discarded": [
+    {
+     "turn": 2,
+     "why": "El asesor no debe pedir el medio de pago, solo enviarlo.",
+     "rule": "no_pide_el_dato_de_pago"
+    }
+   ],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Quiero Plan Basico",
+     "expect": "sin_datos",
+     "reply": "Perfecto, el Plan Básico cuesta COP 100.000 de implementación y COP 110.000 al mes. Incluye configuración inicial, guía de integración con WhatsApp y un asistente conversacional inteligente. ¿Me puedes dar tu nombre y teléfono para avanzar con la activación?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 39
+    },
+    {
+     "turn": 2,
+     "message": "¿A qué número te consigno?",
+     "expect": "",
+     "reply": "¿Con cuál de los siguientes medios de pago prefieres: Nequi, Daviplata, transferencia a Bancolombia, Bre-B o link de pago?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 19
+    }
+   ]
+  },
+  {
+   "tenant": "asesor_ai_prod",
+   "conversation": "pregunta cómo paga",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_pide_el_dato_de_pago": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": [],
+    "sigue_las_reglas_para_pasar": [],
+    "nota_fiel": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Quiero Plan Basico",
+     "expect": "sin_datos",
+     "reply": "Genial, el Plan Básico incluye configuración inicial, guía de integración con WhatsApp y un asistente conversacional inteligente. El costo es de COP 210.000 para el primer mes (implementación + primer mes) y luego COP 110.000 mensuales. ¿Me puedes proporcionar tu nombre, teléfono y detalles para proceder?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 46
+    },
+    {
+     "turn": 2,
+     "message": "cómo te pago",
+     "expect": "sin_datos",
+     "reply": "Puedes pagar a través de Nequi, Daviplata, transferencia a Bancolombia, Bre-B o un link de pago. ¿Cuál de estos medios prefieres?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 21
+    }
+   ]
+  },
+  {
+   "tenant": "asesor_ai_prod",
+   "conversation": "pregunta si tienen un medio",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_pide_el_dato_de_pago": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": [],
+    "sigue_las_reglas_para_pasar": [],
+    "nota_fiel": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Quiero Plan Basico",
+     "expect": "sin_datos",
+     "reply": "Genial, el Plan Básico cuesta COP 210.000 el primer mes, que incluye la configuración inicial y el sistema mensual. Luego, se paga COP 110.000 cada mes. ¿Me puedes compartir tu nombre, teléfono y cualquier detalle adicional necesario para continuar?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 39
+    },
+    {
+     "turn": 2,
+     "message": "¿Tienen Nequi?",
+     "expect": "sin_datos",
+     "reply": "Sí, aceptamos Nequi como medio de pago. ¿Te gustaría que te envíe los datos de pago para continuar con el Plan Básico?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 22
+    }
+   ]
+  },
+  {
+   "tenant": "asesor_ai_prod",
+   "conversation": "pide hablar con una persona",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_pide_el_dato_de_pago": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": [],
+    "sigue_las_reglas_para_pasar": [],
+    "nota_fiel": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Quiero Plan Basico",
+     "expect": "sin_datos",
+     "reply": "Perfecto, el Plan Básico incluye configuración inicial y un asistente conversacional inteligente por COP 100.000 de implementación y COP 110.000 al mes. ¿Me puedes dar tu nombre y teléfono para avanzar con la activación?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 34
+    },
+    {
+     "turn": 2,
+     "message": "Quiero hablar con una persona del equipo",
+     "expect": "pasa_al_equipo",
+     "reply": "Te paso con el equipo ahora mismo para que puedan ayudarte.",
+     "handoff": true,
+     "team_note": "El cliente quiere el Plan Básico y pidió hablar con una persona del equipo.",
+     "source": "ai_raw",
+     "ai_words": 11
+    }
+   ]
+  },
+  {
+   "tenant": "asesor_ai_prod",
+   "conversation": "reclama",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_pide_el_dato_de_pago": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": [],
+    "sigue_las_reglas_para_pasar": [],
+    "nota_fiel": []
+   },
+   "discarded": [
+    {
+     "turn": 2,
+     "why": "El cliente no dijo que le interesara el Plan Básico en este turno.",
+     "rule": "nota_fiel"
+    }
+   ],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Quiero Plan Basico",
+     "expect": "sin_datos",
+     "reply": "Genial, el Plan Básico cuesta COP 100.000 de implementación y COP 110.000 al mes. Incluye configuración inicial, guía de integración con WhatsApp y un asistente conversacional inteligente. Para avanzar, necesito tu nombre, teléfono y detalles para la implementación. ¿Me los compartes?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 41
+    },
+    {
+     "turn": 2,
+     "message": "Me cobraron dos veces y nadie me responde, estoy muy molesto",
+     "expect": "pasa_al_equipo",
+     "reply": "Perfecto, ya lo reviso y te confirmo en un momento para continuar.",
+     "handoff": true,
+     "team_note": "El cliente está molesto porque le cobraron dos veces y nadie le ha respondido. Mencionó que le interesa el Plan Básico.",
+     "source": "ai_raw",
+     "ai_words": 27
+    }
+   ]
+  },
+  {
+   "tenant": "asesor_ai_prod",
+   "conversation": "pide los datos de otro medio",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_pide_el_dato_de_pago": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": [],
+    "sigue_las_reglas_para_pasar": [],
+    "nota_fiel": []
+   },
+   "discarded": [
+    {
+     "turn": 2,
+     "why": "El asesor ya pidió el nombre y el teléfono en el turno 1.",
+     "rule": "no_pide_lo_ya_dado"
+    }
+   ],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Quiero Plan Basico",
+     "expect": "sin_datos",
+     "reply": "¡Genial! El Plan Básico cuesta COP 210.000 el primer mes, que incluye la implementación y el primer pago mensual. Luego, son COP 110.000 cada mes. ¿Me puedes compartir tu nombre, teléfono y detalles para proceder?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 35
+    },
+    {
+     "turn": 2,
+     "message": "listo, mándame los datos para pagar por transferencia",
+     "expect": "datos",
+     "reply": "Para la transferencia a Bancolombia, puedes hacerla con los siguientes datos:\n\n- Nombre: Asesor Comercial\n\n¿Me puedes confirmar tu nombre, teléfono y detalles para completar el proceso?\n\n💳 *Datos para pagar*\n\n*Bancolombia*\nCuenta de ahorros\n[dato entregado por el motor]\n\nCuando pagues, envíame aquí la captura del comprobante y te confirmamos. ✅",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 30
+    }
+   ]
+  },
+  {
+   "tenant": "asesor_ai_prod",
+   "conversation": "el chat de producción",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_pide_el_dato_de_pago": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": [],
+    "sigue_las_reglas_para_pasar": [],
+    "nota_fiel": []
+   },
+   "discarded": [
+    {
+     "turn": 3,
+     "why": "Pide el nombre y el negocio que el cliente ya dio.",
+     "customer_said": "Me llamo Juan Camilo y es una tienda de ropa",
+     "rule": "no_pide_lo_ya_dado"
+    },
+    {
+     "turn": 7,
+     "why": "Pide el nombre que el cliente ya dio.",
+     "customer_said": "Me llamo Juan Camilo y es una tienda de ropa",
+     "rule": "no_pide_lo_ya_dado"
+    },
+    {
+     "turn": 11,
+     "why": "No explica qué debe hacer, solo repite lo mismo.",
+     "rule": "explica_cuando_no_entienden"
+    }
+   ],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Hola",
+     "expect": "",
+     "reply": "Hola, ¿qué más? 👋 soy Juan un gusto tenerte por aquí.",
+     "handoff": false,
+     "team_note": "",
+     "source": "initial_message",
+     "ai_words": null
+    },
+    {
+     "turn": 2,
+     "message": "Me interesa Plan Basico, quiero empezar",
+     "expect": "sin_datos",
+     "reply": "Genial, el Plan Básico es una excelente elección. Incluye configuración inicial y un asistente conversacional inteligente. Para continuar, necesito tus datos: nombre, teléfono y detalles de tu negocio. ¿Me los puedes compartir?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 32
+    },
+    {
+     "turn": 3,
+     "message": "Y puedo trasferir",
+     "expect": "sin_datos",
+     "reply": "Perfecto, puedes hacer la transferencia a Bancolombia. Ahora, por favor, comparte tu nombre, teléfono y detalles de tu negocio para completar la activación.",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 23
+    },
+    {
+     "turn": 4,
+     "message": "Y Nequi no",
+     "expect": "sin_datos",
+     "reply": "Sí, también aceptamos Nequi. ¿Te gustaría que te envíe los datos de pago para que puedas proceder con la transferencia?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 20
+    },
+    {
+     "turn": 5,
+     "message": "Me llamo Juan Camilo y es una tienda de ropa",
+     "expect": "",
+     "reply": "Gracias, Juan Camilo. El primer mes cuesta COP 210.000 (incluye la implementación y el primer mes). ¿Te gustaría que te envíe los datos de pago para que puedas hacer la transferencia?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 31
+    },
+    {
+     "turn": 6,
+     "message": "Te pago por Nequi",
+     "expect": "datos_a_esta_altura",
+     "reply": "¡Listo! Ahí abajo te dejo los datos para pagar por Nequi.\n\n💳 *Datos para pagar*\n\n*Nequi*\n[dato entregado por el motor]\n\nCuando pagues, envíame aquí la captura del comprobante y te confirmamos. ✅",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 11
+    },
+    {
+     "turn": 7,
+     "message": "Mi teléfono es 3157778899",
+     "expect": "",
+     "reply": "Perfecto, Juan Camilo. Ahora, por favor, realiza el pago a través de Nequi y envíame la captura del comprobante para continuar con la activación.",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 24
+    },
+    {
+     "turn": 8,
+     "message": "Cuando lo haga que nesesito hacer",
+     "expect": "sin_datos",
+     "reply": "Una vez hagas el pago y me envíes la captura del comprobante, procederemos a activar tu servicio y te guiaré en la configuración inicial. ¡Así podrás empezar a aprovecharlo de inmediato!",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 31
+    },
+    {
+     "turn": 9,
+     "message": "Espérame un momento",
+     "expect": "sin_datos",
+     "reply": "Claro, tómate tu tiempo.",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 4
+    },
+    {
+     "turn": 10,
+     "message": "Pero se me borró el Nequi me lo envías de nuevo",
+     "expect": "datos",
+     "reply": "¡Listo! Aquí tienes nuevamente los datos para pagar por Nequi.\n\n💳 *Datos para pagar*\n\n*Nequi*\n[dato entregado por el motor]\n\nCuando pagues, envíame aquí la captura del comprobante y te confirmamos. ✅",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 13
+    },
+    {
+     "turn": 11,
+     "message": "Cómo así",
+     "expect": "sin_datos",
+     "reply": "Te explico: arriba, en este chat, te dejé los datos para pagar. Haces el pago con esos datos y me envías aquí la captura del comprobante; con eso seguimos.",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 29
+    },
+    {
+     "turn": 12,
+     "message": "Ya voy a pagar",
+     "expect": "sin_datos",
+     "reply": "Perfecto, Juan Camilo. Una vez realices el pago y me envíes la captura del comprobante, activaremos tu servicio y te guiaré en la configuración inicial. ¡Espero tu mensaje!",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 28
+    },
+    {
+     "turn": 13,
+     "message": "ya te consigné",
+     "expect": "pago_avisado",
+     "reply": "Perfecto, ya lo reviso y te confirmo en un momento para continuar.",
+     "handoff": true,
+     "team_note": "Juan Camilo, dueño de una tienda de ropa, necesita activar el Plan Básico y le interesa pagar por Nequi. Informó que ya realizó la consignación.",
+     "source": "ai_raw",
+     "ai_words": 24
+    }
+   ]
+  },
+  {
+   "tenant": "asesor_ai_prod",
+   "conversation": "se presenta al empezar",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_pide_el_dato_de_pago": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": [],
+    "sigue_las_reglas_para_pasar": [],
+    "nota_fiel": []
+   },
+   "discarded": [
+    {
+     "turn": 1,
+     "why": "El cliente ya dio su nombre.",
+     "customer_said": "Hola, soy Laura",
+     "rule": "no_pide_lo_ya_dado"
+    }
+   ],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Hola, soy Laura y tengo una tienda de ropa. Me interesa Plan Basico",
+     "expect": "sin_datos",
+     "reply": "Excelente elección, Laura. El Plan Básico incluye configuración inicial, guía de integración con WhatsApp y un asistente conversacional inteligente por COP 210.000 en el primer mes. Luego, solo COP 110.000 mensuales. ¿Me puedes compartir tu número de teléfono para continuar con el proceso?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 43
+    },
+    {
+     "turn": 2,
+     "message": "Listo, lo quiero. Te pago por Nequi",
+     "expect": "datos_a_esta_altura",
+     "reply": "¡Listo! Ahí abajo te dejo los datos para pagar por Nequi.\n\nPor favor, confirma el número de teléfono que quieres usar para el registro.\n\n💳 *Datos para pagar*\n\n*Nequi*\n[dato entregado por el motor]\n\nCuando pagues, envíame aquí la captura del comprobante y te confirmamos. ✅",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 24
+    },
+    {
+     "turn": 3,
+     "message": "¿Y ahora qué sigue?",
+     "expect": "",
+     "reply": "Te explico: arriba, en este chat, te dejé los datos para pagar. Haces el pago con esos datos y me envías aquí la captura del comprobante; con eso seguimos.",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 29
+    }
+   ]
+  },
+  {
+   "tenant": "asesor_ai_prod",
+   "conversation": "da su teléfono antes de pagar",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_pide_el_dato_de_pago": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": [],
+    "sigue_las_reglas_para_pasar": [],
+    "nota_fiel": []
+   },
+   "discarded": [
+    {
+     "turn": 2,
+     "why": "El asesor pide el teléfono que el cliente ya dio.",
+     "customer_said": "Mi número es 3157778899",
+     "rule": "no_pide_lo_ya_dado"
+    },
+    {
+     "turn": 3,
+     "why": "El asesor dice que deja los datos, pero el motor los entrega.",
+     "rule": "no_dice_nada_falso_del_pago"
+    }
+   ],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Quiero Plan Basico",
+     "expect": "sin_datos",
+     "reply": "¡Perfecto! El Plan Básico incluye configuración inicial, guía de integración con WhatsApp y un asistente conversacional inteligente. Son COP 100.000 de implementación y COP 110.000 al mes. Para avanzar, necesito tu nombre, teléfono y detalles de tu negocio.",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 38
+    },
+    {
+     "turn": 2,
+     "message": "Mi número es 3157778899, ¿cómo hago para pagarte?",
+     "expect": "",
+     "reply": "¿Cuál es tu nombre y los detalles de tu negocio para completar el registro antes de enviarte los datos de pago?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 21
+    },
+    {
+     "turn": 3,
+     "message": "Listo, por Nequi",
+     "expect": "datos_a_esta_altura",
+     "reply": "¡Listo! Ahí abajo te dejo los datos para pagar por Nequi.\n\nRecuerda enviarme el nombre y los detalles de tu negocio para completar el registro.\n\nDatos de pago:\n- Nombre: Asesor Comercial\n\n💳 *Datos para pagar*\n\n*Nequi*\n[dato entregado por el motor]\n\nCuando pagues, envíame aquí la captura del comprobante y te confirmamos. ✅",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 35
+    }
+   ]
+  },
+  {
+   "tenant": "asesor_ai_prod",
+   "conversation": "pide el medio con un error de escritura",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_pide_el_dato_de_pago": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": [],
+    "sigue_las_reglas_para_pasar": [],
+    "nota_fiel": []
+   },
+   "discarded": [
+    {
+     "turn": 2,
+     "why": "El asesor ya había pedido el nombre y teléfono en el turno 1.",
+     "rule": "no_pide_lo_ya_dado"
+    }
+   ],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Quiero Plan Basico",
+     "expect": "sin_datos",
+     "reply": "Perfecto, el Plan Básico cuesta COP 210.000 en el primer mes (incluye implementación y sistema) y luego COP 110.000 mensuales. ¿Me puedes dar tu nombre y teléfono para empezar con la activación?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 32
+    },
+    {
+     "turn": 2,
+     "message": "Pásame el nekui porfa",
+     "expect": "datos",
+     "reply": "¡Listo! Ahí abajo te dejo los datos para pagar por Nequi.\n\nRecuerda que el primer mes es COP 210.000.\n\n¿Cuál es tu nombre y teléfono para continuar con la activación?\n\n💳 *Datos para pagar*\n\n*Nequi*\n[dato entregado por el motor]\n\nCuando pagues, envíame aquí la captura del comprobante y te confirmamos. ✅",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 30
+    }
+   ]
+  },
+  {
+   "tenant": "asesor_ai_prod",
+   "conversation": "pregunta a dónde consigna",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_pide_el_dato_de_pago": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": [],
+    "sigue_las_reglas_para_pasar": [],
+    "nota_fiel": []
+   },
+   "discarded": [
+    {
+     "turn": 2,
+     "why": "El asesor no debe preguntar por el número de pago.",
+     "rule": "no_pide_el_dato_de_pago"
+    }
+   ],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Quiero Plan Basico",
+     "expect": "sin_datos",
+     "reply": "Genial, el Plan Básico cuesta COP 100.000 de implementación y COP 110.000 al mes. Incluye configuración inicial, guía de integración con WhatsApp y un asistente conversacional inteligente. Para avanzar, necesito tu nombre, teléfono y los detalles de tu negocio.",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 39
+    },
+    {
+     "turn": 2,
+     "message": "¿A qué número te consigno?",
+     "expect": "",
+     "reply": "¿Con cuál de los medios de pago prefieres hacer la consignación? Puedes elegir entre Nequi, Daviplata, transferencia a Bancolombia, Bre-B o un link de pago.",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 25
+    }
+   ]
+  },
+  {
+   "tenant": "asesor_ai_prod",
+   "conversation": "pregunta cómo paga",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_pide_el_dato_de_pago": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": [],
+    "sigue_las_reglas_para_pasar": [],
+    "nota_fiel": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Quiero Plan Basico",
+     "expect": "sin_datos",
+     "reply": "Genial, el Plan Básico cuesta COP 210.000 el primer mes (incluye la implementación y el primer mes de servicio) y luego COP 110.000 mensuales. ¿Me puedes dar tu nombre, teléfono y detalles para proceder con la activación?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 37
+    },
+    {
+     "turn": 2,
+     "message": "cómo te pago",
+     "expect": "sin_datos",
+     "reply": "Puedes pagar a través de Nequi, Daviplata, transferencia a Bancolombia, Bre-B o un link de pago. ¿Cuál medio prefieres?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 19
+    }
+   ]
+  },
+  {
+   "tenant": "asesor_ai_prod",
+   "conversation": "pregunta si tienen un medio",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_pide_el_dato_de_pago": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": [],
+    "sigue_las_reglas_para_pasar": [],
+    "nota_fiel": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Quiero Plan Basico",
+     "expect": "sin_datos",
+     "reply": "¡Genial! El Plan Básico cuesta COP 210.000 el primer mes, que incluye la implementación y el primer mes de servicio. Luego, pagas COP 110.000 mensuales. ¿Me puedes dar tu nombre y teléfono para proceder?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 34
+    },
+    {
+     "turn": 2,
+     "message": "¿Tienen Nequi?",
+     "expect": "sin_datos",
+     "reply": "Sí, aceptamos Nequi como medio de pago. ¿Te gustaría que te envíe los datos para realizar el pago?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 18
+    }
+   ]
+  },
+  {
+   "tenant": "asesor_ai_prod",
+   "conversation": "pide hablar con una persona",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_pide_el_dato_de_pago": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": [],
+    "sigue_las_reglas_para_pasar": [],
+    "nota_fiel": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Quiero Plan Basico",
+     "expect": "sin_datos",
+     "reply": "Perfecto, el Plan Básico incluye configuración inicial, guía de integración con WhatsApp y un asistente conversacional inteligente por COP 210.000 el primer mes (COP 100.000 de implementación + COP 110.000 al mes). Para continuar, necesito tu nombre, teléfono y un correo electrónico.",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 42
+    },
+    {
+     "turn": 2,
+     "message": "Quiero hablar con una persona del equipo",
+     "expect": "pasa_al_equipo",
+     "reply": "Te paso con una persona del equipo para que te ayude.",
+     "handoff": true,
+     "team_note": "El cliente quiere el Plan Básico y pidió hablar con una persona del equipo.",
+     "source": "ai_raw",
+     "ai_words": 11
+    }
+   ]
+  },
+  {
+   "tenant": "asesor_ai_prod",
+   "conversation": "reclama",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_pide_el_dato_de_pago": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": [],
+    "sigue_las_reglas_para_pasar": [],
+    "nota_fiel": []
+   },
+   "discarded": [
+    {
+     "turn": 2,
+     "why": "La nota no dice qué necesita el cliente, solo el motivo del enojo.",
+     "rule": "nota_fiel"
+    }
+   ],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Quiero Plan Basico",
+     "expect": "sin_datos",
+     "reply": "Genial, el Plan Básico cuesta COP 100.000 de implementación y COP 110.000 al mes. Incluye configuración inicial, guía de integración con WhatsApp y un asistente conversacional inteligente. ¿Me puedes dar tu nombre, teléfono y detalles para proceder?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 37
+    },
+    {
+     "turn": 2,
+     "message": "Me cobraron dos veces y nadie me responde, estoy muy molesto",
+     "expect": "pasa_al_equipo",
+     "reply": "Perfecto, ya lo reviso y te confirmo en un momento para continuar.",
+     "handoff": true,
+     "team_note": "El cliente está molesto porque le cobraron dos veces y nadie le ha respondido.",
+     "source": "ai_raw",
+     "ai_words": 23
+    }
+   ]
+  },
+  {
+   "tenant": "asesor_ai_prod",
+   "conversation": "pide los datos de otro medio",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_pide_el_dato_de_pago": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": [],
+    "sigue_las_reglas_para_pasar": [],
+    "nota_fiel": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Quiero Plan Basico",
+     "expect": "sin_datos",
+     "reply": "Genial, el Plan Básico incluye configuración inicial y un asistente conversacional inteligente por COP 210.000 el primer mes (COP 100.000 de implementación + COP 110.000 al mes). ¿Me puedes dar tu nombre y número de teléfono para continuar con la activación?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 41
+    },
+    {
+     "turn": 2,
+     "message": "listo, mándame los datos para pagar por transferencia",
+     "expect": "datos",
+     "reply": "Perfecto, aquí están los datos para hacer la transferencia a Bancolombia (ahorros). Cuando realices el pago, confirma para activar tu servicio.\n\n💳 *Datos para pagar*\n\n*Bancolombia*\nCuenta de ahorros\n[dato entregado por el motor]\n\nCuando pagues, envíame aquí la captura del comprobante y te confirmamos. ✅",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 21
+    }
+   ]
+  },
+  {
+   "tenant": "asesor_ai_prod",
+   "conversation": "el chat de producción",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_pide_el_dato_de_pago": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": [],
+    "sigue_las_reglas_para_pasar": [],
+    "nota_fiel": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Hola",
+     "expect": "",
+     "reply": "Hola, ¿qué más? 👋 soy Juan un gusto tenerte por aquí.",
+     "handoff": false,
+     "team_note": "",
+     "source": "initial_message",
+     "ai_words": null
+    },
+    {
+     "turn": 2,
+     "message": "Me interesa Plan Basico, quiero empezar",
+     "expect": "sin_datos",
+     "reply": "¡Genial! El Plan Básico cuesta COP 210.000 el primer mes, que incluye la implementación y el primer pago mensual. Luego, son COP 110.000 al mes. Para continuar, necesito tus datos: nombre, teléfono y detalles. ¿Me los compartes?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 37
+    },
+    {
+     "turn": 3,
+     "message": "Y puedo trasferir",
+     "expect": "sin_datos",
+     "reply": "Perfecto, puedes pagar por transferencia a Bancolombia. Ahora, por favor, dime tu nombre, teléfono y detalles para avanzar con la activación.",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 21
+    },
+    {
+     "turn": 4,
+     "message": "Y Nequi no",
+     "expect": "sin_datos",
+     "reply": "Sí, también aceptamos Nequi. ¿Te gustaría que te envíe los datos de pago por ese medio? También necesito tu nombre, teléfono y detalles para continuar.",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 25
+    },
+    {
+     "turn": 5,
+     "message": "Me llamo Juan Camilo y es una tienda de ropa",
+     "expect": "",
+     "reply": "Gracias, Juan Camilo. Ahora que tengo tus datos, procederé a enviarte los datos de pago para Nequi. ¿Listo para iniciar?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 20
+    },
+    {
+     "turn": 6,
+     "message": "Te pago por Nequi",
+     "expect": "datos_a_esta_altura",
+     "reply": "¡Listo! Ahí abajo te dejo los datos para pagar por Nequi. Por favor, realiza el pago y avísame cuando lo hayas hecho para continuar con la activación.\n\n💳 *Datos para pagar*\n\n*Nequi*\n[dato entregado por el motor]\n\nCuando pagues, envíame aquí la captura del comprobante y te confirmamos. ✅",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 27
+    },
+    {
+     "turn": 7,
+     "message": "Mi teléfono es 3157778899",
+     "expect": "",
+     "reply": "Perfecto, Juan Camilo. Ahora, por favor, realiza el pago por Nequi y envíame la captura del comprobante para continuar con la activación.",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 22
+    },
+    {
+     "turn": 8,
+     "message": "Cuando lo haga que nesesito hacer",
+     "expect": "sin_datos",
+     "reply": "Una vez realices el pago, solo envíame la captura del comprobante aquí. Con eso, procederemos a activar tu sistema y te guiaré en la configuración inicial.",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 26
+    },
+    {
+     "turn": 9,
+     "message": "Espérame un momento",
+     "expect": "sin_datos",
+     "reply": "Claro, tómate tu tiempo. Estoy aquí para ayudarte cuando estés listo.",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 11
+    },
+    {
+     "turn": 10,
+     "message": "Pero se me borró el Nequi me lo envías de nuevo",
+     "expect": "datos",
+     "reply": "¡Listo! Aquí te dejo de nuevo los datos para pagar por Nequi. Por favor, realiza el pago y avísame cuando lo hayas hecho para continuar con la activación.\n\n💳 *Datos para pagar*\n\n*Nequi*\n[dato entregado por el motor]\n\nCuando pagues, envíame aquí la captura del comprobante y te confirmamos. ✅",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 31
+    },
+    {
+     "turn": 11,
+     "message": "Cómo así",
+     "expect": "sin_datos",
+     "reply": "Te explico: arriba, en este chat, te dejé los datos para pagar por Nequi. Haces el pago con esos datos y me envías aquí la captura del comprobante; con eso seguimos.",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 31
+    },
+    {
+     "turn": 12,
+     "message": "Ya voy a pagar",
+     "expect": "sin_datos",
+     "reply": "Perfecto, hazlo cuando estés listo. Avísame cuando hayas realizado el pago y me envías la captura del comprobante.",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 18
+    },
+    {
+     "turn": 13,
+     "message": "ya te consigné",
+     "expect": "pago_avisado",
+     "reply": "Perfecto, ya lo reviso y te confirmo en un momento para continuar.",
+     "handoff": true,
+     "team_note": "Juan Camilo, dueño de una tienda de ropa, necesita activar el Plan Básico y le interesa pagar por Nequi. Ya realizó el pago y está esperando la confirmación para continuar con la activación.",
+     "source": "ai_raw",
+     "ai_words": 28
+    }
+   ]
+  },
+  {
+   "tenant": "asesor_ai_prod",
+   "conversation": "se presenta al empezar",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_pide_el_dato_de_pago": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": [],
+    "sigue_las_reglas_para_pasar": [],
+    "nota_fiel": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Hola, soy Laura y tengo una tienda de ropa. Me interesa Plan Basico",
+     "expect": "sin_datos",
+     "reply": "Genial, Laura. El Plan Básico cuesta COP 210.000 el primer mes (incluye implementación y el primer mes de servicio) y luego COP 110.000 mensuales. Esto te ayudará a responder rápido y mantener el seguimiento con tus clientes. ¿Me puedes dar tu número de teléfono para avanzar con la activación?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 49
+    },
+    {
+     "turn": 2,
+     "message": "Listo, lo quiero. Te pago por Nequi",
+     "expect": "datos_a_esta_altura",
+     "reply": "¡Listo! Ahí abajo te dejo los datos para pagar por Nequi.\n\nPor favor, confirma tu número de teléfono para completar la activación.\n\n💳 *Datos para pagar*\n\n*Nequi*\n[dato entregado por el motor]\n\nCuando pagues, envíame aquí la captura del comprobante y te confirmamos. ✅",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 22
+    },
+    {
+     "turn": 3,
+     "message": "¿Y ahora qué sigue?",
+     "expect": "",
+     "reply": "Te explico: arriba, en este chat, te dejé los datos para pagar. Haces el pago con esos datos y me envías aquí la captura del comprobante; con eso seguimos.",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 29
+    }
+   ]
+  },
+  {
+   "tenant": "asesor_ai_prod",
+   "conversation": "da su teléfono antes de pagar",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_pide_el_dato_de_pago": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": [],
+    "sigue_las_reglas_para_pasar": [],
+    "nota_fiel": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Quiero Plan Basico",
+     "expect": "sin_datos",
+     "reply": "Genial, el Plan Básico cuesta COP 210.000 en el primer mes, que incluye la implementación y el primer pago mensual. Luego, pagarás COP 110.000 al mes. ¿Me puedes dar tu nombre y número de teléfono para continuar con la activación?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 40
+    },
+    {
+     "turn": 2,
+     "message": "Mi número es 3157778899, ¿cómo hago para pagarte?",
+     "expect": "",
+     "reply": "Perfecto, ¿con cuál de los siguientes medios de pago prefieres hacerlo: Nequi, Daviplata, transferencia a Bancolombia, Bre-B o link de pago?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 21
+    },
+    {
+     "turn": 3,
+     "message": "Listo, por Nequi",
+     "expect": "datos_a_esta_altura",
+     "reply": "¡Listo! Ahí abajo te dejo los datos para pagar por Nequi.\n\n💳 *Datos para pagar*\n\n*Nequi*\n[dato entregado por el motor]\n\nCuando pagues, envíame aquí la captura del comprobante y te confirmamos. ✅",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 11
+    }
+   ]
+  },
+  {
+   "tenant": "asesor_ai_prod",
+   "conversation": "pide el medio con un error de escritura",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_pide_el_dato_de_pago": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": [],
+    "sigue_las_reglas_para_pasar": [],
+    "nota_fiel": []
+   },
+   "discarded": [
+    {
+     "turn": 2,
+     "why": "Dice que deja los datos, pero no aparecen en el mensaje.",
+     "rule": "no_dice_nada_falso_del_pago"
+    }
+   ],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Quiero Plan Basico",
+     "expect": "sin_datos",
+     "reply": "¡Genial! El Plan Básico cuesta COP 210.000 el primer mes, que incluye la implementación y el primer mes de servicio. Luego, pagas COP 110.000 mensuales. Para continuar, necesito tu nombre, teléfono y detalles sobre tu negocio.",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 36
+    },
+    {
+     "turn": 2,
+     "message": "Pásame el nekui porfa",
+     "expect": "datos",
+     "reply": "¡Listo! Ahí abajo te dejo los datos para pagar por Nequi.\n\nPor favor, comparte tu nombre, teléfono y detalles sobre tu negocio para continuar con la activación.\n\n💳 *Datos para pagar*\n\n*Nequi*\n[dato entregado por el motor]\n\nCuando pagues, envíame aquí la captura del comprobante y te confirmamos. ✅",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 27
+    }
+   ]
+  },
+  {
+   "tenant": "asesor_ai_prod",
+   "conversation": "pregunta a dónde consigna",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_pide_el_dato_de_pago": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": [],
+    "sigue_las_reglas_para_pasar": [],
+    "nota_fiel": []
+   },
+   "discarded": [
+    {
+     "turn": 2,
+     "why": "El asesor no debe pedir el número de pago al cliente.",
+     "rule": "no_pide_el_dato_de_pago"
+    }
+   ],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Quiero Plan Basico",
+     "expect": "sin_datos",
+     "reply": "Genial, el Plan Básico cuesta COP 100.000 de implementación y COP 110.000 al mes. Incluye la configuración inicial, guía de integración con WhatsApp y un asistente conversacional inteligente. ¿Me puedes dar tu nombre y teléfono para avanzar con la activación?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 40
+    },
+    {
+     "turn": 2,
+     "message": "¿A qué número te consigno?",
+     "expect": "",
+     "reply": "¿Cuál medio de pago prefieres: Nequi, Daviplata, transferencia a Bancolombia, Bre-B o link de pago?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 15
+    }
+   ]
+  },
+  {
+   "tenant": "asesor_ai_prod",
+   "conversation": "pregunta cómo paga",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_pide_el_dato_de_pago": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": [],
+    "sigue_las_reglas_para_pasar": [],
+    "nota_fiel": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Quiero Plan Basico",
+     "expect": "sin_datos",
+     "reply": "Perfecto, el Plan Básico cuesta COP 210.000 en el primer mes, que incluye la configuración inicial y el sistema mensual. Luego, pagarás COP 110.000 cada mes. ¿Me puedes dar tu nombre, teléfono y detalles para continuar con la activación?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 39
+    },
+    {
+     "turn": 2,
+     "message": "cómo te pago",
+     "expect": "sin_datos",
+     "reply": "Puedes pagar a través de Nequi, Daviplata, transferencia a Bancolombia, Bre-B o un link de pago. ¿Cuál medio prefieres?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 19
+    }
+   ]
+  },
+  {
+   "tenant": "asesor_ai_prod",
+   "conversation": "pregunta si tienen un medio",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_pide_el_dato_de_pago": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": [],
+    "sigue_las_reglas_para_pasar": [],
+    "nota_fiel": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Quiero Plan Basico",
+     "expect": "sin_datos",
+     "reply": "Perfecto, el Plan Básico cuesta COP 210.000 el primer mes, que incluye la implementación y el primer mes de servicio. Luego, se paga COP 110.000 mensualmente. ¿Me puedes dar tu nombre, teléfono y detalles para continuar con la activación?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 39
+    },
+    {
+     "turn": 2,
+     "message": "¿Tienen Nequi?",
+     "expect": "sin_datos",
+     "reply": "Sí, recibimos pagos por Nequi. ¿Te gustaría que te envíe los datos para el pago?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 15
+    }
+   ]
+  },
+  {
+   "tenant": "asesor_ai_prod",
+   "conversation": "pide hablar con una persona",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_pide_el_dato_de_pago": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": [],
+    "sigue_las_reglas_para_pasar": [],
+    "nota_fiel": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Quiero Plan Basico",
+     "expect": "sin_datos",
+     "reply": "Perfecto, el Plan Básico cuesta COP 210.000 el primer mes (incluye la implementación y el primer mes) y luego COP 110.000 mensuales. ¿Me puedes dar tu nombre, teléfono y detalles para proceder con la activación?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 35
+    },
+    {
+     "turn": 2,
+     "message": "Quiero hablar con una persona del equipo",
+     "expect": "pasa_al_equipo",
+     "reply": "Te paso con el equipo para que puedan atenderte directamente.",
+     "handoff": true,
+     "team_note": "El cliente quiere el Plan Básico y pidió hablar con una persona del equipo.",
+     "source": "ai_raw",
+     "ai_words": 10
+    }
+   ]
+  },
+  {
+   "tenant": "asesor_ai_prod",
+   "conversation": "reclama",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_pide_el_dato_de_pago": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": [],
+    "sigue_las_reglas_para_pasar": [],
+    "nota_fiel": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Quiero Plan Basico",
+     "expect": "sin_datos",
+     "reply": "Perfecto, el Plan Básico incluye configuración inicial y un asistente conversacional inteligente. El primer mes cuesta COP 210.000, que incluye la implementación y el primer mes de servicio. Para avanzar, necesito tu nombre, teléfono y detalles de tu negocio.",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 39
+    },
+    {
+     "turn": 2,
+     "message": "Me cobraron dos veces y nadie me responde, estoy muy molesto",
+     "expect": "pasa_al_equipo",
+     "reply": "Perfecto, ya lo reviso y te confirmo en un momento para continuar.",
+     "handoff": true,
+     "team_note": "El cliente está molesto porque le cobraron dos veces y nadie le ha respondido. Está interesado en el Plan Básico.",
+     "source": "ai_raw",
+     "ai_words": 28
+    }
+   ]
+  },
+  {
+   "tenant": "asesor_ai_prod",
+   "conversation": "pide los datos de otro medio",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_pide_el_dato_de_pago": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": [],
+    "sigue_las_reglas_para_pasar": [],
+    "nota_fiel": []
+   },
+   "discarded": [
+    {
+     "turn": 2,
+     "why": "El asesor ya pidió el nombre y teléfono en el turno 1.",
+     "customer_said": "Para proceder, necesito tu nombre, teléfono y detalles. ¿Me los puedes dar?",
+     "rule": "no_pide_lo_ya_dado"
+    }
+   ],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Quiero Plan Basico",
+     "expect": "sin_datos",
+     "reply": "Perfecto, el Plan Básico cuesta COP 100.000 de implementación y COP 110.000 al mes. Incluye configuración inicial, guía de integración con WhatsApp y un asistente conversacional inteligente. Para proceder, necesito tu nombre, teléfono y detalles. ¿Me los puedes dar?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 39
+    },
+    {
+     "turn": 2,
+     "message": "listo, mándame los datos para pagar por transferencia",
+     "expect": "datos",
+     "reply": "Para proceder con la transferencia, aquí tienes los datos:\n- Monto total: COP 210.000 (implementación + primer mes)\n\n¿Me puedes confirmar tu nombre y teléfono para completar el registro?\n\n💳 *Datos para pagar*\n\n*Bancolombia*\nCuenta de ahorros\n[dato entregado por el motor]\n\nCuando pagues, envíame aquí la captura del comprobante y te confirmamos. ✅",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 29
+    }
+   ]
+  },
+  {
+   "tenant": "restaurant",
+   "conversation": "el chat de producción",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_pide_el_dato_de_pago": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [
+     {
+      "turn": 11,
+      "why": "El asesor repite la misma información sin explicar con otras palabras."
+     }
+    ],
+    "coherente_con_los_datos": [],
+    "sigue_las_reglas_para_pasar": [],
+    "nota_fiel": []
+   },
+   "discarded": [
+    {
+     "turn": 7,
+     "why": "El asesor ya tiene el nombre del cliente.",
+     "customer_said": "Me llamo Juan Camilo",
+     "rule": "no_pide_lo_ya_dado"
+    }
+   ],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Hola",
+     "expect": "",
+     "reply": "Hola, ya estamos listos para ayudarte con tus pedidos. Cuentame, quieres tomar una orden ahora?",
+     "handoff": false,
+     "team_note": "",
+     "source": "initial_message",
+     "ai_words": null
+    },
+    {
+     "turn": 2,
+     "message": "Me interesa Hamburguesa Sencilla, quiero empezar",
+     "expect": "sin_datos",
+     "reply": "Perfecto, la Hamburguesa Sencilla cuesta COP 18.000. ¿Para cuántas personas es el pedido? También puedo ofrecerte una gaseosa o un jugo natural para acompañar.",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 24
+    },
+    {
+     "turn": 3,
+     "message": "Y puedo trasferir",
+     "expect": "sin_datos",
+     "reply": "Sí, puedes pagar por transferencia a Bancolombia. ¿Te gustaría que te envíe los datos de pago? También necesito saber cuántas hamburguesas quieres.",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 22
+    },
+    {
+     "turn": 4,
+     "message": "Y Nequi no",
+     "expect": "sin_datos",
+     "reply": "Sí, también aceptamos Nequi. ¿Te gustaría pagar con ese medio? Y, ¿cuántas Hamburguesas Sencillas te gustaría pedir?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 17
+    },
+    {
+     "turn": 5,
+     "message": "Me llamo Juan Camilo",
+     "expect": "",
+     "reply": "Gracias, Juan Camilo. ¿Cuántas Hamburguesas Sencillas quieres pedir? También puedo ofrecerte una gaseosa o un jugo natural para acompañar.",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 19
+    },
+    {
+     "turn": 6,
+     "message": "Te pago por Nequi",
+     "expect": "datos_a_esta_altura",
+     "reply": "¡Listo! Ahí abajo te dejo los datos para pagar por Nequi. Solo necesito que me confirmes cuántas Hamburguesas Sencillas deseas y si quieres añadir una gaseosa o un jugo natural.\n\n💳 *Datos para pagar*\n\n*Nequi*\n[dato entregado por el motor]\n\nCuando pagues, envíame aquí la captura del comprobante y te confirmamos. ✅",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 30
+    },
+    {
+     "turn": 7,
+     "message": "Mi teléfono es 3157778899",
+     "expect": "",
+     "reply": "Perfecto, Juan Camilo. ¿Cuántas Hamburguesas Sencillas deseas pedir y quieres añadir alguna bebida?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 13
+    },
+    {
+     "turn": 8,
+     "message": "Cuando lo haga que nesesito hacer",
+     "expect": "sin_datos",
+     "reply": "Te explico: primero haces el pago con los datos que te envié arriba y luego me envías aquí la captura del comprobante. Después de eso, confirmamos tu pedido y te pido la dirección de entrega.",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 35
+    },
+    {
+     "turn": 9,
+     "message": "Espérame un momento",
+     "expect": "sin_datos",
+     "reply": "Gracias por escribirnos. En este momento no puedo responderte; por favor escríbenos de nuevo en unos minutos.",
+     "handoff": false,
+     "team_note": "",
+     "source": "fallback_invalid_output",
+     "ai_words": null
+    },
+    {
+     "turn": 10,
+     "message": "Pero se me borró el Nequi me lo envías de nuevo",
+     "expect": "datos",
+     "reply": "¡Claro! Aquí están los datos para pagar por Nequi. Solo recuerda que necesito que me confirmes cuántas Hamburguesas Sencillas deseas y si quieres añadir una bebida.\n\n💳 *Datos para pagar*\n\n*Nequi*\n[dato entregado por el motor]\n\nCuando pagues, envíame aquí la captura del comprobante y te confirmamos. ✅",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 29
+    },
+    {
+     "turn": 11,
+     "message": "Cómo así",
+     "expect": "sin_datos",
+     "reply": "Te envié los datos para pagar por Nequi arriba. Solo necesitas hacer el pago y enviarme la captura del comprobante. ¿Cuántas Hamburguesas Sencillas deseas pedir y quieres añadir alguna bebida?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 30
+    },
+    {
+     "turn": 12,
+     "message": "Ya voy a pagar",
+     "expect": "sin_datos",
+     "reply": "Perfecto, cuando realices el pago, por favor envíame la captura del comprobante. También necesito que me confirmes cuántas Hamburguesas Sencillas quieres y si deseas añadir una bebida.",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 27
+    },
+    {
+     "turn": 13,
+     "message": "ya te consigné",
+     "expect": "pago_avisado",
+     "reply": "Perfecto, ya lo reviso y te confirmo en un momento para continuar.",
+     "handoff": true,
+     "team_note": "El cliente se llama Juan Camilo y necesita hacer un pedido de Hamburguesa Sencilla. Está interesado en pagar por Nequi y ya realizó el pago.",
+     "source": "ai_raw",
+     "ai_words": 23
+    }
+   ]
+  },
+  {
+   "tenant": "restaurant",
+   "conversation": "se presenta al empezar",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_pide_el_dato_de_pago": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": [],
+    "sigue_las_reglas_para_pasar": [],
+    "nota_fiel": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Hola, soy Laura. Me interesa Hamburguesa Sencilla",
+     "expect": "sin_datos",
+     "reply": "¡Perfecto, Laura! La Hamburguesa Sencilla cuesta COP 18.000. ¿Te gustaría agregar una bebida, como una gaseosa por COP 5.000 o un jugo natural por COP 7.000?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 26
+    },
+    {
+     "turn": 2,
+     "message": "Listo, lo quiero. Te pago por Nequi",
+     "expect": "datos_a_esta_altura",
+     "reply": "¡Listo! Ahí abajo te dejo los datos para pagar por Nequi. Solo necesito tu dirección de entrega y tu teléfono para completar el pedido.\n\n💳 *Datos para pagar*\n\n*Nequi*\n[dato entregado por el motor]\n\nCuando pagues, envíame aquí la captura del comprobante y te confirmamos. ✅",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 24
+    },
+    {
+     "turn": 3,
+     "message": "¿Y ahora qué sigue?",
+     "expect": "",
+     "reply": "Te explico: arriba, en este chat, te dejé los datos para pagar. Haces el pago con esos datos y me envías aquí la captura del comprobante. Con eso seguimos.",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 29
+    }
+   ]
+  },
+  {
+   "tenant": "restaurant",
+   "conversation": "da su teléfono antes de pagar",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_pide_el_dato_de_pago": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": [],
+    "sigue_las_reglas_para_pasar": [],
+    "nota_fiel": []
+   },
+   "discarded": [
+    {
+     "turn": 2,
+     "why": "El asesor pide el nombre que el cliente ya dio.",
+     "customer_said": "Mi número es 3157778899",
+     "rule": "no_pide_lo_ya_dado"
+    },
+    {
+     "turn": 3,
+     "why": "El asesor pide el nombre que el cliente ya dio.",
+     "customer_said": "Mi número es 3157778899",
+     "rule": "no_pide_lo_ya_dado"
+    }
+   ],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Quiero Hamburguesa Sencilla",
+     "expect": "sin_datos",
+     "reply": "Perfecto, una Hamburguesa Sencilla por COP 18.000. ¿Para cuántas personas es el pedido y quieres agregar alguna bebida, como gaseosa o jugo natural?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 23
+    },
+    {
+     "turn": 2,
+     "message": "Mi número es 3157778899, ¿cómo hago para pagarte?",
+     "expect": "",
+     "reply": "Para el pago, puedes usar Nequi, Daviplata, transferencia a Bancolombia o Bre-B. ¿Cuál prefieres? También necesito tu nombre y dirección para completar el pedido.",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 24
+    },
+    {
+     "turn": 3,
+     "message": "Listo, por Nequi",
+     "expect": "datos_a_esta_altura",
+     "reply": "¡Listo! Ahí abajo te dejo los datos para pagar por Nequi. Por favor, también necesito tu nombre y dirección para completar el pedido.\n\n💳 *Datos para pagar*\n\n*Nequi*\n[dato entregado por el motor]\n\nCuando pagues, envíame aquí la captura del comprobante y te confirmamos. ✅",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 23
+    }
+   ]
+  },
+  {
+   "tenant": "restaurant",
+   "conversation": "pide el medio con un error de escritura",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_pide_el_dato_de_pago": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": [],
+    "sigue_las_reglas_para_pasar": [],
+    "nota_fiel": []
+   },
+   "discarded": [
+    {
+     "turn": 2,
+     "why": "Dice que deja los datos, pero no aparecen en ese mensaje.",
+     "rule": "no_dice_nada_falso_del_pago"
+    }
+   ],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Quiero Hamburguesa Sencilla",
+     "expect": "sin_datos",
+     "reply": "Genial elección, la Hamburguesa Sencilla cuesta COP 18.000. ¿Para cuántas personas es el pedido y quieres agregar algo como una gaseosa o un jugo natural?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 25
+    },
+    {
+     "turn": 2,
+     "message": "Pásame el nekui porfa",
+     "expect": "datos",
+     "reply": "¡Listo! Ahí abajo te dejo los datos para pagar por Nequi.\n\nAhora, dime tu nombre, teléfono y dirección para completar el pedido.\n\n💳 *Datos para pagar*\n\n*Nequi*\n[dato entregado por el motor]\n\nCuando pagues, envíame aquí la captura del comprobante y te confirmamos. ✅",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 22
+    }
+   ]
+  },
+  {
+   "tenant": "restaurant",
+   "conversation": "pregunta a dónde consigna",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_pide_el_dato_de_pago": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": [],
+    "sigue_las_reglas_para_pasar": [],
+    "nota_fiel": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Quiero Hamburguesa Sencilla",
+     "expect": "sin_datos",
+     "reply": "Perfecto, una Hamburguesa Sencilla por COP 18.000. ¿Para cuántas personas es el pedido y dónde te la enviamos?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 18
+    },
+    {
+     "turn": 2,
+     "message": "¿A qué número te consigno?",
+     "expect": "",
+     "reply": "Antes de enviarte los datos de pago, ¿con cuál de los medios prefieres pagar: Nequi, Daviplata, transferencia a Bancolombia o Bre-B?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 21
+    }
+   ]
+  },
+  {
+   "tenant": "restaurant",
+   "conversation": "pregunta cómo paga",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_pide_el_dato_de_pago": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": [],
+    "sigue_las_reglas_para_pasar": [],
+    "nota_fiel": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Quiero Hamburguesa Sencilla",
+     "expect": "sin_datos",
+     "reply": "¡Genial! La Hamburguesa Sencilla cuesta COP 18.000. ¿Te gustaría agregar una bebida, como una gaseosa por COP 5.000 o un jugo natural por COP 7.000?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 25
+    },
+    {
+     "turn": 2,
+     "message": "cómo te pago",
+     "expect": "sin_datos",
+     "reply": "Puedes pagar con Nequi, Daviplata, transferencia a Bancolombia (ahorros) o Bre-B. ¿Cuál de estos métodos prefieres?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 16
+    }
+   ]
+  },
+  {
+   "tenant": "restaurant",
+   "conversation": "pregunta si tienen un medio",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_pide_el_dato_de_pago": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": [],
+    "sigue_las_reglas_para_pasar": [],
+    "nota_fiel": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Quiero Hamburguesa Sencilla",
+     "expect": "sin_datos",
+     "reply": "Perfecto, una Hamburguesa Sencilla por COP 18.000. ¿Te gustaría agregar una gaseosa por COP 5.000 o un jugo natural por COP 7.000 para acompañar tu pedido?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 26
+    },
+    {
+     "turn": 2,
+     "message": "¿Tienen Nequi?",
+     "expect": "sin_datos",
+     "reply": "Sí, aceptamos Nequi como forma de pago. ¿Te gustaría confirmar tu pedido de la Hamburguesa Sencilla y agregar alguna bebida?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 20
+    }
+   ]
+  },
+  {
+   "tenant": "restaurant",
+   "conversation": "pide hablar con una persona",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_pide_el_dato_de_pago": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": [],
+    "sigue_las_reglas_para_pasar": [],
+    "nota_fiel": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Quiero Hamburguesa Sencilla",
+     "expect": "sin_datos",
+     "reply": "Perfecto, una Hamburguesa Sencilla por COP 18.000. ¿Para cuántas personas es el pedido y cómo prefieres recibirlo: a domicilio o para recoger en el local?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 25
+    },
+    {
+     "turn": 2,
+     "message": "Quiero hablar con una persona del equipo",
+     "expect": "pasa_al_equipo",
+     "reply": "Te voy a pasar con una persona del equipo para que te ayude. Un momento, por favor.",
+     "handoff": true,
+     "team_note": "El cliente quiere una Hamburguesa Sencilla. Pidió hablar con una persona del equipo.",
+     "source": "ai_raw",
+     "ai_words": 17
+    }
+   ]
+  },
+  {
+   "tenant": "restaurant",
+   "conversation": "reclama",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_pide_el_dato_de_pago": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": [],
+    "sigue_las_reglas_para_pasar": [],
+    "nota_fiel": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Quiero Hamburguesa Sencilla",
+     "expect": "sin_datos",
+     "reply": "Perfecto, una Hamburguesa Sencilla por COP 18.000. ¿Te gustaría agregar una bebida, como una gaseosa por COP 5.000 o un jugo natural por COP 7.000?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 25
+    },
+    {
+     "turn": 2,
+     "message": "Me cobraron dos veces y nadie me responde, estoy muy molesto",
+     "expect": "pasa_al_equipo",
+     "reply": "Entiendo tu molestia y lamento lo que ha pasado. Voy a pasar tu reclamo al equipo para que puedan ayudarte con esto.",
+     "handoff": true,
+     "team_note": "El cliente está molesto porque le cobraron dos veces y nadie le ha respondido.",
+     "source": "ai_raw",
+     "ai_words": 22
+    }
+   ]
+  },
+  {
+   "tenant": "restaurant",
+   "conversation": "pide los datos de otro medio",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_pide_el_dato_de_pago": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": [],
+    "sigue_las_reglas_para_pasar": [],
+    "nota_fiel": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Quiero Hamburguesa Sencilla",
+     "expect": "sin_datos",
+     "reply": "Perfecto, una Hamburguesa Sencilla por COP 18.000. ¿Para cuántas personas es el pedido y a dónde te la envío?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 19
+    },
+    {
+     "turn": 2,
+     "message": "listo, mándame los datos para pagar por transferencia",
+     "expect": "datos",
+     "reply": "Genial, aquí tienes los datos para pagar por transferencia a Bancolombia (ahorros). ¿Me puedes dar tu nombre, teléfono y dirección de entrega?\n\n💳 *Datos para pagar*\n\n*Bancolombia*\nCuenta de ahorros\n[dato entregado por el motor]\n\nCuando pagues, envíame aquí la captura del comprobante y te confirmamos. ✅",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 22
+    }
+   ]
+  },
+  {
+   "tenant": "restaurant",
+   "conversation": "el chat de producción",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [
+     {
+      "turn": 10,
+      "why": "El asesor pide el teléfono que el cliente ya dio.",
+      "customer_said": "Mi teléfono es 3157778899"
+     }
+    ],
+    "no_pide_el_dato_de_pago": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [
+     {
+      "turn": 11,
+      "why": "El asesor no explica, solo repite que los datos están arriba."
+     }
+    ],
+    "coherente_con_los_datos": [],
+    "sigue_las_reglas_para_pasar": [],
+    "nota_fiel": []
+   },
+   "discarded": [
+    {
+     "turn": 13,
+     "why": "La nota inventa que el cliente ya realizó el pago.",
+     "rule": "nota_fiel"
+    }
+   ],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Hola",
+     "expect": "",
+     "reply": "Hola, ya estamos listos para ayudarte con tus pedidos. Cuentame, quieres tomar una orden ahora?",
+     "handoff": false,
+     "team_note": "",
+     "source": "initial_message",
+     "ai_words": null
+    },
+    {
+     "turn": 2,
+     "message": "Me interesa Hamburguesa Sencilla, quiero empezar",
+     "expect": "sin_datos",
+     "reply": "¡Perfecto! La Hamburguesa Sencilla cuesta COP 18.000. ¿Para cuántas personas es el pedido? También puedes agregar una bebida si lo deseas.",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 21
+    },
+    {
+     "turn": 3,
+     "message": "Y puedo trasferir",
+     "expect": "sin_datos",
+     "reply": "Claro, puedes pagar por transferencia. ¿Te gustaría agregar una gaseosa por COP 5.000 o un jugo natural por COP 7.000 a tu pedido?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 23
+    },
+    {
+     "turn": 4,
+     "message": "Y Nequi no",
+     "expect": "sin_datos",
+     "reply": "Sí, también aceptamos Nequi como medio de pago. ¿Te gustaría agregar una bebida a tu pedido de la Hamburguesa Sencilla?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 20
+    },
+    {
+     "turn": 5,
+     "message": "Me llamo Juan Camilo",
+     "expect": "",
+     "reply": "Gracias, Juan Camilo. ¿Te gustaría agregar una gaseosa por COP 5.000 o un jugo natural por COP 7.000 a tu Hamburguesa Sencilla?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 22
+    },
+    {
+     "turn": 6,
+     "message": "Te pago por Nequi",
+     "expect": "datos_a_esta_altura",
+     "reply": "¡Listo! Ahí abajo te dejo los datos para pagar por Nequi. Por favor, indícame tu dirección de entrega y tu número de teléfono para completar el pedido.\n\nDatos para Nequi:\n\n💳 *Datos para pagar*\n\n*Nequi*\n[dato entregado por el motor]\n\nCuando pagues, envíame aquí la captura del comprobante y te confirmamos. ✅",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 34
+    },
+    {
+     "turn": 7,
+     "message": "Mi teléfono es 3157778899",
+     "expect": "",
+     "reply": "Gracias, Juan Camilo. Solo falta tu dirección de entrega para completar el pedido. ¿Cuál es?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 15
+    },
+    {
+     "turn": 8,
+     "message": "Cuando lo haga que nesesito hacer",
+     "expect": "sin_datos",
+     "reply": "Te explico: después de que hagas el pago por Nequi, solo envíame aquí la captura del comprobante. Así seguimos con tu pedido. ¿Listo para darme tu dirección?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 27
+    },
+    {
+     "turn": 9,
+     "message": "Espérame un momento",
+     "expect": "sin_datos",
+     "reply": "Claro, tómate tu tiempo. Estoy aquí para ayudarte.",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 8
+    },
+    {
+     "turn": 10,
+     "message": "Pero se me borró el Nequi me lo envías de nuevo",
+     "expect": "datos",
+     "reply": "¡Listo! Ahí abajo te dejo los datos para pagar por Nequi. Por favor, indícame tu dirección de entrega y tu número de teléfono para completar el pedido.\n\nDatos para Nequi:\n\n💳 *Datos para pagar*\n\n*Nequi*\n[dato entregado por el motor]\n\nCuando pagues, envíame aquí la captura del comprobante y te confirmamos. ✅",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 33
+    },
+    {
+     "turn": 11,
+     "message": "Cómo así",
+     "expect": "sin_datos",
+     "reply": "Te explico: arriba, en este chat, te dejé los datos para pagar por Nequi. Haces el pago con esos datos y me envías aquí la captura del comprobante; con eso seguimos.",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 31
+    },
+    {
+     "turn": 12,
+     "message": "Ya voy a pagar",
+     "expect": "sin_datos",
+     "reply": "Perfecto, avísame cuando hayas hecho el pago y me envíes la captura del comprobante. También necesito tu dirección de entrega para completar el pedido.",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 24
+    },
+    {
+     "turn": 13,
+     "message": "ya te consigné",
+     "expect": "pago_avisado",
+     "reply": "Perfecto, ya lo reviso y te confirmo en un momento para continuar.",
+     "handoff": true,
+     "team_note": "Juan Camilo está interesado en pedir una Hamburguesa Sencilla y prefiere pagar por Nequi. Ya realizó el pago y está esperando la confirmación para continuar con su pedido.",
+     "source": "ai_raw",
+     "ai_words": 23
+    }
+   ]
+  },
+  {
+   "tenant": "restaurant",
+   "conversation": "se presenta al empezar",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_pide_el_dato_de_pago": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": [],
+    "sigue_las_reglas_para_pasar": [],
+    "nota_fiel": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Hola, soy Laura. Me interesa Hamburguesa Sencilla",
+     "expect": "sin_datos",
+     "reply": "Perfecto, Laura. La Hamburguesa Sencilla cuesta COP 18.000. ¿Te gustaría agregar una bebida, como una gaseosa por COP 5.000 o un jugo natural por COP 7.000?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 26
+    },
+    {
+     "turn": 2,
+     "message": "Listo, lo quiero. Te pago por Nequi",
+     "expect": "datos_a_esta_altura",
+     "reply": "¡Listo! Ahí abajo te dejo los datos para pagar por Nequi. Para completar tu pedido, necesito tu dirección de entrega y tu teléfono. ¿Me los compartes?\n\n💳 *Datos para pagar*\n\n*Nequi*\n[dato entregado por el motor]\n\nCuando pagues, envíame aquí la captura del comprobante y te confirmamos. ✅",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 26
+    },
+    {
+     "turn": 3,
+     "message": "¿Y ahora qué sigue?",
+     "expect": "",
+     "reply": "Te explico: arriba, en este chat, te dejé los datos para pagar. Haces el pago con esos datos y me envías aquí la captura del comprobante; con eso seguimos.",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 29
+    }
+   ]
+  },
+  {
+   "tenant": "restaurant",
+   "conversation": "da su teléfono antes de pagar",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_pide_el_dato_de_pago": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": [],
+    "sigue_las_reglas_para_pasar": [],
+    "nota_fiel": []
+   },
+   "discarded": [
+    {
+     "turn": 3,
+     "why": "El cliente preguntó cómo pagar y el asesor no respondió claramente.",
+     "rule": "responde_lo_que_preguntan"
+    }
+   ],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Quiero Hamburguesa Sencilla",
+     "expect": "sin_datos",
+     "reply": "Perfecto, una Hamburguesa Sencilla por COP 18.000. ¿Para cuántas personas es el pedido y a dónde te la enviamos?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 19
+    },
+    {
+     "turn": 2,
+     "message": "Mi número es 3157778899, ¿cómo hago para pagarte?",
+     "expect": "",
+     "reply": "Genial, solo necesito tu nombre y la dirección de entrega para confirmar el pedido. Luego te digo cómo puedes pagar.",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 20
+    },
+    {
+     "turn": 3,
+     "message": "Listo, por Nequi",
+     "expect": "datos_a_esta_altura",
+     "reply": "¡Listo! Ahí abajo te dejo los datos para pagar por Nequi. Solo necesito tu nombre y la dirección de entrega para completar el pedido.\n\nDatos para Nequi:\n- **Cantidad:** COP 18.000 (Hamburguesa Sencilla)\n\n💳 *Datos para pagar*\n\n*Nequi*\n[dato entregado por el motor]\n\nCuando pagues, envíame aquí la captura del comprobante y te confirmamos. ✅",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 42
+    }
+   ]
+  },
+  {
+   "tenant": "restaurant",
+   "conversation": "pide el medio con un error de escritura",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_pide_el_dato_de_pago": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": [],
+    "sigue_las_reglas_para_pasar": [],
+    "nota_fiel": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Quiero Hamburguesa Sencilla",
+     "expect": "sin_datos",
+     "reply": "Perfecto, una Hamburguesa Sencilla por COP 18.000. ¿Te gustaría agregar una bebida, como una gaseosa por COP 5.000 o un jugo natural por COP 7.000?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 25
+    },
+    {
+     "turn": 2,
+     "message": "Pásame el nekui porfa",
+     "expect": "datos",
+     "reply": "¡Listo! Ahí abajo te dejo los datos para pagar por Nequi.\n\nAhora, necesito tu nombre, teléfono y dirección para completar el pedido.\n\n💳 *Datos para pagar*\n\n*Nequi*\n[dato entregado por el motor]\n\nCuando pagues, envíame aquí la captura del comprobante y te confirmamos. ✅",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 22
+    }
+   ]
+  },
+  {
+   "tenant": "restaurant",
+   "conversation": "pregunta a dónde consigna",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_pide_el_dato_de_pago": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": [],
+    "sigue_las_reglas_para_pasar": [],
+    "nota_fiel": []
+   },
+   "discarded": [
+    {
+     "turn": 2,
+     "why": "El asesor no debe pedir el número de pago al cliente.",
+     "rule": "no_pide_el_dato_de_pago"
+    }
+   ],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Quiero Hamburguesa Sencilla",
+     "expect": "sin_datos",
+     "reply": "Genial elección. La Hamburguesa Sencilla cuesta COP 18.000. ¿Para cuántas personas es el pedido y quieres agregar algo como una gaseosa o un jugo natural?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 25
+    },
+    {
+     "turn": 2,
+     "message": "¿A qué número te consigno?",
+     "expect": "",
+     "reply": "¿Con cuál de los siguientes medios de pago prefieres hacerlo: Nequi, Daviplata, transferencia a Bancolombia (ahorros) o Bre-B?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 18
+    }
+   ]
+  },
+  {
+   "tenant": "restaurant",
+   "conversation": "pregunta cómo paga",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_pide_el_dato_de_pago": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": [],
+    "sigue_las_reglas_para_pasar": [],
+    "nota_fiel": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Quiero Hamburguesa Sencilla",
+     "expect": "sin_datos",
+     "reply": "Perfecto, una Hamburguesa Sencilla por COP 18.000. ¿Te gustaría agregar una bebida, como una gaseosa por COP 5.000 o un jugo natural por COP 7.000?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 25
+    },
+    {
+     "turn": 2,
+     "message": "cómo te pago",
+     "expect": "sin_datos",
+     "reply": "Puedes pagar por Nequi, Daviplata, transferencia a Bancolombia o Bre-B. ¿Cuál prefieres?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 12
+    }
+   ]
+  },
+  {
+   "tenant": "restaurant",
+   "conversation": "pregunta si tienen un medio",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_pide_el_dato_de_pago": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": [],
+    "sigue_las_reglas_para_pasar": [],
+    "nota_fiel": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Quiero Hamburguesa Sencilla",
+     "expect": "sin_datos",
+     "reply": "Perfecto, una Hamburguesa Sencilla por COP 18.000. ¿Te gustaría agregar una bebida, como una gaseosa por COP 5.000 o un jugo natural por COP 7.000?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 25
+    },
+    {
+     "turn": 2,
+     "message": "¿Tienen Nequi?",
+     "expect": "sin_datos",
+     "reply": "Sí, recibimos pagos por Nequi. ¿Te gustaría confirmar tu pedido y te envío los datos para el pago?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 18
+    }
+   ]
+  },
+  {
+   "tenant": "restaurant",
+   "conversation": "pide hablar con una persona",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_pide_el_dato_de_pago": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": [],
+    "sigue_las_reglas_para_pasar": [],
+    "nota_fiel": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Quiero Hamburguesa Sencilla",
+     "expect": "sin_datos",
+     "reply": "Perfecto, una Hamburguesa Sencilla por COP 18.000. ¿Para cuántas personas es el pedido y a dónde te la envío?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 19
+    },
+    {
+     "turn": 2,
+     "message": "Quiero hablar con una persona del equipo",
+     "expect": "pasa_al_equipo",
+     "reply": "Te paso con alguien del equipo para que te ayude.",
+     "handoff": true,
+     "team_note": "El cliente quiere una Hamburguesa Sencilla y pidió hablar con una persona del equipo.",
+     "source": "ai_raw",
+     "ai_words": 10
+    }
+   ]
+  },
+  {
+   "tenant": "restaurant",
+   "conversation": "reclama",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_pide_el_dato_de_pago": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": [],
+    "sigue_las_reglas_para_pasar": [],
+    "nota_fiel": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Quiero Hamburguesa Sencilla",
+     "expect": "sin_datos",
+     "reply": "Genial, una Hamburguesa Sencilla por COP 18.000. ¿Para cuántas personas es el pedido y a dónde te la envío?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 19
+    },
+    {
+     "turn": 2,
+     "message": "Me cobraron dos veces y nadie me responde, estoy muy molesto",
+     "expect": "pasa_al_equipo",
+     "reply": "Lamento que estés pasando por esto. Te paso con el equipo para que puedan ayudarte con tu reclamo y resolverlo lo antes posible.",
+     "handoff": true,
+     "team_note": "El cliente está molesto porque le cobraron dos veces y nadie le responde. Quiere que lo atiendan para resolver su reclamo.",
+     "source": "ai_raw",
+     "ai_words": 23
+    }
+   ]
+  },
+  {
+   "tenant": "restaurant",
+   "conversation": "pide los datos de otro medio",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_pide_el_dato_de_pago": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": [],
+    "sigue_las_reglas_para_pasar": [],
+    "nota_fiel": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Quiero Hamburguesa Sencilla",
+     "expect": "sin_datos",
+     "reply": "Perfecto, una Hamburguesa Sencilla por COP 18.000. ¿Para cuántas personas es el pedido y a dónde te la enviamos?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 19
+    },
+    {
+     "turn": 2,
+     "message": "listo, mándame los datos para pagar por transferencia",
+     "expect": "datos",
+     "reply": "Genial, aquí tienes los datos para pagar por transferencia a Bancolombia (ahorros). ¿Me puedes dar tu nombre, teléfono y dirección para el envío?\n\n💳 *Datos para pagar*\n\n*Bancolombia*\nCuenta de ahorros\n[dato entregado por el motor]\n\nCuando pagues, envíame aquí la captura del comprobante y te confirmamos. ✅",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 23
+    }
+   ]
+  },
+  {
+   "tenant": "restaurant",
+   "conversation": "el chat de producción",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "responde_lo_que_preguntan": [
+     {
+      "turn": 3,
+      "why": "Ignora la pregunta del cliente sobre si puede transferir."
+     }
+    ],
+    "no_pide_lo_ya_dado": [],
+    "no_pide_el_dato_de_pago": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [
+     {
+      "turn": 11,
+      "why": "Repite la misma información sin explicar 'cómo así'."
+     }
+    ],
+    "coherente_con_los_datos": [],
+    "sigue_las_reglas_para_pasar": [],
+    "nota_fiel": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Hola",
+     "expect": "",
+     "reply": "Hola, ya estamos listos para ayudarte con tus pedidos. Cuentame, quieres tomar una orden ahora?",
+     "handoff": false,
+     "team_note": "",
+     "source": "initial_message",
+     "ai_words": null
+    },
+    {
+     "turn": 2,
+     "message": "Me interesa Hamburguesa Sencilla, quiero empezar",
+     "expect": "sin_datos",
+     "reply": "Genial, la Hamburguesa Sencilla cuesta COP 18.000. ¿Te gustaría agregar una bebida, como una gaseosa por COP 5.000 o un jugo natural por COP 7.000?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 25
+    },
+    {
+     "turn": 3,
+     "message": "Y puedo trasferir",
+     "expect": "sin_datos",
+     "reply": "Perfecto, entonces vamos con la Hamburguesa Sencilla por COP 18.000. ¿Quieres agregar una bebida? Te recuerdo que la gaseosa cuesta COP 5.000 y el jugo natural COP 7.000.",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 28
+    },
+    {
+     "turn": 4,
+     "message": "Y Nequi no",
+     "expect": "sin_datos",
+     "reply": "Sí, también aceptamos Nequi. ¿Te gustaría agregar una bebida a tu pedido antes de continuar?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 15
+    },
+    {
+     "turn": 5,
+     "message": "Me llamo Juan Camilo",
+     "expect": "",
+     "reply": "Gracias, Juan Camilo. ¿Te gustaría agregar una bebida a tu Hamburguesa Sencilla? La gaseosa cuesta COP 5.000 y el jugo natural COP 7.000.",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 23
+    },
+    {
+     "turn": 6,
+     "message": "Te pago por Nequi",
+     "expect": "datos_a_esta_altura",
+     "reply": "¡Listo! Ahí abajo te dejo los datos para pagar por Nequi.\n\n- Monto: COP 18.000 (Hamburguesa Sencilla)\n\nPor favor, confírmame tu dirección de entrega y tu número de teléfono.\n\n💳 *Datos para pagar*\n\n*Nequi*\n[dato entregado por el motor]\n\nCuando pagues, envíame aquí la captura del comprobante y te confirmamos. ✅",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 29
+    },
+    {
+     "turn": 7,
+     "message": "Mi teléfono es 3157778899",
+     "expect": "",
+     "reply": "Gracias, Juan Camilo. Ahora, ¿me puedes confirmar tu dirección de entrega para completar el pedido?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 15
+    },
+    {
+     "turn": 8,
+     "message": "Cuando lo haga que nesesito hacer",
+     "expect": "sin_datos",
+     "reply": "Una vez me confirmes tu dirección, te explicaré el siguiente paso. Haces el pago por Nequi y me envías la captura del comprobante. Así podremos continuar con tu pedido.",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 29
+    },
+    {
+     "turn": 9,
+     "message": "Espérame un momento",
+     "expect": "sin_datos",
+     "reply": "¡Claro! Tómate tu tiempo.",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 4
+    },
+    {
+     "turn": 10,
+     "message": "Pero se me borró el Nequi me lo envías de nuevo",
+     "expect": "datos",
+     "reply": "¡Listo! Ahí abajo te dejo los datos para pagar por Nequi.\n\n- Monto: COP 18.000 (Hamburguesa Sencilla)\n\nPor favor, confírmame tu dirección de entrega.\n\n💳 *Datos para pagar*\n\n*Nequi*\n[dato entregado por el motor]\n\nCuando pagues, envíame aquí la captura del comprobante y te confirmamos. ✅",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 24
+    },
+    {
+     "turn": 11,
+     "message": "Cómo así",
+     "expect": "sin_datos",
+     "reply": "Te envié los datos para pagar por Nequi, pero si necesitas que te los repita, no dudes en decirme. Solo necesito que me confirmes tu dirección de entrega para seguir con el pedido.",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 33
+    },
+    {
+     "turn": 12,
+     "message": "Ya voy a pagar",
+     "expect": "sin_datos",
+     "reply": "Perfecto, haz el pago por Nequi y, cuando lo tengas, envíame la captura del comprobante. Así seguimos con tu pedido.",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 20
+    },
+    {
+     "turn": 13,
+     "message": "ya te consigné",
+     "expect": "pago_avisado",
+     "reply": "Perfecto, ya lo reviso y te confirmo en un momento para continuar.",
+     "handoff": true,
+     "team_note": "El cliente se llama Juan Camilo y está interesado en hacer un pedido de una Hamburguesa Sencilla por COP 18.000. Ha mencionado que ya realizó el pago por Nequi.",
+     "source": "ai_raw",
+     "ai_words": 28
+    }
+   ]
+  },
+  {
+   "tenant": "restaurant",
+   "conversation": "se presenta al empezar",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_pide_el_dato_de_pago": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": [],
+    "sigue_las_reglas_para_pasar": [],
+    "nota_fiel": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Hola, soy Laura. Me interesa Hamburguesa Sencilla",
+     "expect": "sin_datos",
+     "reply": "Genial, Laura. La Hamburguesa Sencilla cuesta COP 18.000. ¿Te gustaría añadir algo para beber, como una gaseosa o un jugo natural?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 21
+    },
+    {
+     "turn": 2,
+     "message": "Listo, lo quiero. Te pago por Nequi",
+     "expect": "datos_a_esta_altura",
+     "reply": "¡Listo! Ahí abajo te dejo los datos para pagar por Nequi. Solo necesito que me confirmes tu dirección de entrega y tu teléfono.\n\n💳 *Datos para pagar*\n\n*Nequi*\n[dato entregado por el motor]\n\nCuando pagues, envíame aquí la captura del comprobante y te confirmamos. ✅",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 23
+    },
+    {
+     "turn": 3,
+     "message": "¿Y ahora qué sigue?",
+     "expect": "",
+     "reply": "Te explico: arriba, en este chat, te dejé los datos para pagar. Haces el pago con esos datos y me envías aquí la captura del comprobante; con eso seguimos.",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 29
+    }
+   ]
+  },
+  {
+   "tenant": "restaurant",
+   "conversation": "da su teléfono antes de pagar",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "responde_lo_que_preguntan": [
+     {
+      "turn": 2,
+      "why": "El asesor no respondió cómo pagar, que fue la pregunta del cliente."
+     }
+    ],
+    "no_pide_lo_ya_dado": [],
+    "no_pide_el_dato_de_pago": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": [],
+    "sigue_las_reglas_para_pasar": [],
+    "nota_fiel": []
+   },
+   "discarded": [
+    {
+     "turn": 2,
+     "why": "El asesor no pidió la dirección de entrega en el turno anterior.",
+     "rule": "no_pide_lo_ya_dado"
+    }
+   ],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Quiero Hamburguesa Sencilla",
+     "expect": "sin_datos",
+     "reply": "Perfecto, una Hamburguesa Sencilla por COP 18.000. ¿Para cuántas personas es el pedido y a dónde te la envío?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 19
+    },
+    {
+     "turn": 2,
+     "message": "Mi número es 3157778899, ¿cómo hago para pagarte?",
+     "expect": "",
+     "reply": "Genial, solo necesito que me digas la dirección de entrega y si quieres añadir algo más, como una gaseosa o un jugo natural.",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 23
+    },
+    {
+     "turn": 3,
+     "message": "Listo, por Nequi",
+     "expect": "datos_a_esta_altura",
+     "reply": "¡Listo! Ahí abajo te dejo los datos para pagar por Nequi. Solo necesito la dirección de entrega y confirmamos el pedido.\n\nDatos para Nequi:\n- Nombre: Mesa Activa\n\n💳 *Datos para pagar*\n\n*Nequi*\n[dato entregado por el motor]\n\nCuando pagues, envíame aquí la captura del comprobante y te confirmamos. ✅",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 31
+    }
+   ]
+  },
+  {
+   "tenant": "restaurant",
+   "conversation": "pide el medio con un error de escritura",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_pide_el_dato_de_pago": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": [],
+    "sigue_las_reglas_para_pasar": [],
+    "nota_fiel": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Quiero Hamburguesa Sencilla",
+     "expect": "sin_datos",
+     "reply": "Genial, una Hamburguesa Sencilla por COP 18.000. ¿Para cuántas personas es el pedido y dónde te la envío?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 18
+    },
+    {
+     "turn": 2,
+     "message": "Pásame el nekui porfa",
+     "expect": "datos",
+     "reply": "¡Listo! Ahí abajo te dejo los datos para pagar por Nequi. Solo necesito tu dirección y teléfono para completar el pedido.\n\n💳 *Datos para pagar*\n\n*Nequi*\n[dato entregado por el motor]\n\nCuando pagues, envíame aquí la captura del comprobante y te confirmamos. ✅",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 21
+    }
+   ]
+  },
+  {
+   "tenant": "restaurant",
+   "conversation": "pregunta a dónde consigna",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_pide_el_dato_de_pago": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": [],
+    "sigue_las_reglas_para_pasar": [],
+    "nota_fiel": []
+   },
+   "discarded": [
+    {
+     "turn": 2,
+     "why": "El asesor no debe pedir el medio de pago, sino dar los datos.",
+     "rule": "no_pide_el_dato_de_pago"
+    }
+   ],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Quiero Hamburguesa Sencilla",
+     "expect": "sin_datos",
+     "reply": "Perfecto, una Hamburguesa Sencilla. ¿Te gustaría agregar una bebida, como una gaseosa por COP 5.000 o un jugo natural por COP 7.000?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 22
+    },
+    {
+     "turn": 2,
+     "message": "¿A qué número te consigno?",
+     "expect": "",
+     "reply": "¿Con cuál de los siguientes medios de pago prefieres hacer la consignación: Nequi, Daviplata, transferencia a Bancolombia (ahorros) o Bre-B?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 20
+    }
+   ]
+  },
+  {
+   "tenant": "restaurant",
+   "conversation": "pregunta cómo paga",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_pide_el_dato_de_pago": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": [],
+    "sigue_las_reglas_para_pasar": [],
+    "nota_fiel": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Quiero Hamburguesa Sencilla",
+     "expect": "sin_datos",
+     "reply": "Genial, la Hamburguesa Sencilla cuesta COP 18.000. ¿Para cuántas personas es el pedido y deseas agregar alguna bebida, como una gaseosa o un jugo natural?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 25
+    },
+    {
+     "turn": 2,
+     "message": "cómo te pago",
+     "expect": "sin_datos",
+     "reply": "Puedes pagar por Nequi, Daviplata, transferencia a Bancolombia (ahorros) o Bre-B. ¿Cuál prefieres?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 13
+    }
+   ]
+  },
+  {
+   "tenant": "restaurant",
+   "conversation": "pregunta si tienen un medio",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_pide_el_dato_de_pago": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": [],
+    "sigue_las_reglas_para_pasar": [],
+    "nota_fiel": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Quiero Hamburguesa Sencilla",
+     "expect": "sin_datos",
+     "reply": "Perfecto, una Hamburguesa Sencilla por COP 18.000. ¿Para cuántas personas es el pedido y cómo prefieres recibirlo: a domicilio o recogiendo en el local?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 24
+    },
+    {
+     "turn": 2,
+     "message": "¿Tienen Nequi?",
+     "expect": "sin_datos",
+     "reply": "Sí, aceptamos Nequi como medio de pago. ¿Te gustaría que te envíe los datos de pago para tu pedido?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 19
+    }
+   ]
+  },
+  {
+   "tenant": "restaurant",
+   "conversation": "pide hablar con una persona",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_pide_el_dato_de_pago": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": [],
+    "sigue_las_reglas_para_pasar": [],
+    "nota_fiel": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Quiero Hamburguesa Sencilla",
+     "expect": "sin_datos",
+     "reply": "Genial, una Hamburguesa Sencilla por COP 18.000. ¿Para cuántas personas es el pedido y quieres agregar algo más, como una gaseosa o un jugo natural?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 25
+    },
+    {
+     "turn": 2,
+     "message": "Quiero hablar con una persona del equipo",
+     "expect": "pasa_al_equipo",
+     "reply": "Te paso con una persona del equipo para que te ayude. Un momento, por favor.",
+     "handoff": true,
+     "team_note": "El cliente quiere una Hamburguesa Sencilla. Pidió hablar con una persona del equipo.",
+     "source": "ai_raw",
+     "ai_words": 15
+    }
+   ]
+  },
+  {
+   "tenant": "restaurant",
+   "conversation": "reclama",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_pide_el_dato_de_pago": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": [],
+    "sigue_las_reglas_para_pasar": [],
+    "nota_fiel": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Quiero Hamburguesa Sencilla",
+     "expect": "sin_datos",
+     "reply": "Perfecto, una Hamburguesa Sencilla por COP 18.000. ¿Te gustaría añadir una gaseosa por COP 5.000 o un jugo natural por COP 7.000 para acompañarla?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 24
+    },
+    {
+     "turn": 2,
+     "message": "Me cobraron dos veces y nadie me responde, estoy muy molesto",
+     "expect": "pasa_al_equipo",
+     "reply": "Lamento mucho la situación. Te voy a pasar con el equipo para que puedan ayudarte con el cobro y resolver tu inquietud.",
+     "handoff": true,
+     "team_note": "El cliente está molesto porque le cobraron dos veces y nadie le ha respondido. Quiere que lo ayuden con el cobro.",
+     "source": "ai_raw",
+     "ai_words": 22
+    }
+   ]
+  },
+  {
+   "tenant": "restaurant",
+   "conversation": "pide los datos de otro medio",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "responde_lo_que_preguntan": [],
+    "no_pide_lo_ya_dado": [],
+    "no_pide_el_dato_de_pago": [],
+    "no_dice_nada_falso_del_pago": [],
+    "explica_cuando_no_entienden": [],
+    "coherente_con_los_datos": [],
+    "sigue_las_reglas_para_pasar": [],
+    "nota_fiel": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Quiero Hamburguesa Sencilla",
+     "expect": "sin_datos",
+     "reply": "Perfecto, una Hamburguesa Sencilla por COP 18.000. ¿Para cuántas personas es el pedido y cómo prefieres pagar?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 17
+    },
+    {
+     "turn": 2,
+     "message": "listo, mándame los datos para pagar por transferencia",
+     "expect": "datos",
+     "reply": "Genial, aquí tienes los datos para pagar por transferencia a Bancolombia (ahorros). ¿Me puedes dar tu nombre, teléfono y dirección para la entrega?\n\n💳 *Datos para pagar*\n\n*Bancolombia*\nCuenta de ahorros\n[dato entregado por el motor]\n\nCuando pagues, envíame aquí la captura del comprobante y te confirmamos. ✅",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 23
+    }
+   ]
+  }
+ ],
+ "gasto": {
+  "asesor_usd": 0.0769,
+  "juez_usd": 0.0264
+ },
+ "llamadas_por_mensaje": 2.08
+}

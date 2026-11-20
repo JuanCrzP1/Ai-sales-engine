@@ -29,7 +29,7 @@ from app.infrastructure.business_config.ai_usage_store import AIUsageStore
 from app.infrastructure.business_config.database import create_business_config_engine, create_local_schema
 from app.infrastructure.business_config.tables import ai_usage
 from app.infrastructure.persistence.memory_repository import MemoryRepository
-from app.infrastructure.ai.ai_orchestrator import FAILED_REPLY
+from app.application.pipeline.fallback import PLATFORM_FALLBACK_REPLY
 from app.infrastructure.ai.prompting.output_contract import OUTPUT_CONTRACT
 from app.infrastructure.ai import openrouter_client as client_module
 from app.infrastructure.ai.llm_runtime import LLMRuntime
@@ -95,10 +95,12 @@ def test_an_imperfect_answer_is_used_without_calling_again(output, expected):
 
 
 def test_an_unusable_answer_never_reaches_the_customer_as_json_and_is_not_repeated():
+    """Sin respuesta utilizable, el cliente recibe el mensaje de respaldo (el del negocio o, sin él, el de la plataforma), no un JSON
+    ni «Hubo un problema…» (lo que salía hasta el 20 nov 2026)."""
     pipeline, prompts = _pipeline(['{"intent": "info", "response": "Tenemos menú'])
     answer, ai_used, _metadata = _say(pipeline)
     assert len(prompts) == 1
-    assert answer == FAILED_REPLY.tu and ai_used is False
+    assert answer == PLATFORM_FALLBACK_REPLY.tu and ai_used is False
 
 
 def test_the_first_call_already_asks_for_the_format():

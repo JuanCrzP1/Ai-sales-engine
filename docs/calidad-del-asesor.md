@@ -507,6 +507,46 @@ ejemplos con el trato del negocio, y una prueba compara sus textos con los del m
 ([`test_platform_texts_formality.py`](../tests/test_platform_texts_formality.py); control negativo: con todo de tú, fallan las 7
 pruebas de usted). Laboratorio de regresión `textos_de_usted_misma_version_20261120`: sin diferencias en los 9 negocios.
 
+### Sin reglas de palabras sobre lo que dice la IA (20 de noviembre de 2026)
+
+Hasta hoy el motor revisaba el texto del asesor con tres reglas de palabras: si decía que no podía enviar los datos de pago, si
+decía que el negocio no recibe un medio que sí tiene, o si decía «te paso con el equipo» sin marcarlo. Si pasaba, le pedía otra
+respuesta y, si insistía, cambiaba su mensaje por una frase fija. Eso no es AI-first: las palabras decidían. Se midió cuánto actuaba
+cada una en los 1377 turnos de la puerta desde el 16 de noviembre (las segundas respuestas que pidió el motor):
+
+| Regla | Veces |
+|---|---|
+| Dice que el negocio no recibe un medio | 0 |
+| Dice «te paso con el equipo» sin marcarlo | 0 |
+| Dice que no puede enviar los datos | 2, siempre ante «cómo así» con los datos ya enviados |
+
+Las dos primeras se quitaron sin más. La tercera tapaba un error del prompt: cuando el cliente ya tenía los datos, el motor le decía
+a la IA «Con este mensaje el cliente no recibe datos de pago», y la IA se lo repetía al cliente como «no puedo enviar los datos de
+pago de nuevo». Se corrigió la causa: ahora le dice lo que sí es («El cliente ya tiene los datos para pagar: están arriba, en el
+chat»), y la indicación de ese momento pide empezar el mensaje con la explicación (en el restaurante, ante «cómo así», pasaba a
+pedir la dirección sin explicar). Prompt `v20`.
+
+| Medición | Conversaciones | No dice nada falso del pago | Explica cuando no entienden |
+|---|---|---|---|
+| Con las reglas (`pagos_lector_v17_20261119`) | 90 | 90 | 89 |
+| Sin las reglas, prompt igual (`sin_reglas_pagos_20261120`) | 90 | **88** | 86 |
+| Sin las reglas, causa corregida (`sin_reglas_pagos_b_20261120`) | 60 | 60 | 56 |
+| Y empezar por la explicación (`sin_reglas_pagos_c_20261120`) | 60 | **60** | 57 |
+
+Las tres fallas de «explica» que quedan son explicaciones cortas, no falsas («te envié los datos, solo necesitas hacer el pago y
+enviarme la captura»); una es el ejemplo del prompt copiado tal cual. La lección: **una regla que «nunca actúa» se mide por lo que
+hace en silencio** (aquí, pedir otra respuesta), no solo por la frase final que deja ver; el primer conteo, que miraba solo esa frase,
+dio 0 y no era cierto.
+
+El paso a una persona (`--escalation`, 24 conversaciones): antes 24 de 24 (`sin_reglas_antes_paso_20261120`), después 23 de 24
+(`sin_reglas_despues_paso_20261120`). La falla es al revés del caso de la regla quitada: la IA escribió «con gusto te ayudo yo» y
+marcó pasar a una persona (el desajuste de gpt-4o-mini que se vio el 14 de noviembre).
+
+Además, si la IA responde algo que no se puede usar, el cliente recibe el mensaje de respaldo del negocio (Mensajes → «Si el
+asistente no puede responder») o, sin él, el de la plataforma, en vez de «Hubo un problema procesando el mensaje. Intenta de nuevo.»
+Laboratorio de regresión `sin_reglas_y_causa_20261120`: sin diferencias en los 9 negocios (sus prompts de muestra no incluyen el
+momento después de enviar los datos; ese cambio lo cubren las pruebas y la puerta). Gasto: unos USD 0,42.
+
 ## Lo que la puerta no cubre
 
 - Solo mira los momentos de pago y, con `--panel`, lo que configura el negocio. La oferta, los precios y las objeciones los mide

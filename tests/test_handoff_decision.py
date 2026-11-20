@@ -6,8 +6,9 @@ el chat quedó esperando a una persona. Ahora:
 
 - La IA decide con su señal (`metadata.handoff`: el cliente pide una persona o reclama). Un pago avisado también pasa al equipo.
 - Ofrecer pasarlo no es pasarlo.
-- Si su mensaje dice que lo pasa con el equipo y no lo marcó, se le pide otra respuesta, diciéndole por qué. Decide ella: si insiste
-  sin marcarlo, no se pasa (como en el paso futuro de arriba), y queda el aviso `paso_a_persona_sin_marcar`.
+- Su mensaje tampoco se revisa con reglas de palabras: hasta el 20 nov 2026, si decía «te paso con el equipo» sin marcarlo, se le
+  pedía otra respuesta. Con el modelo y el prompt de hoy no hacía falta; que el mensaje cuadre con la decisión lo mide la puerta de
+  calidad (`--escalation`).
 - El paso de la conversación sale de hechos (el sistema envió los datos de pago), no de palabras: «Nequi» o «datos de arranque» en
   el mensaje de la IA ya no cambian nada.
 
@@ -44,24 +45,13 @@ def test_the_ai_decides_to_hand_off():
     assert context.get("handoff") is True and context.get("handoff_reason") == "human_request"
 
 
-def test_a_promise_without_the_decision_gets_another_answer():
-    """Le dijo al cliente que lo pasa y no lo marcó: se le pide otra respuesta. Si en la segunda lo decide, pasa."""
+def test_what_the_ai_writes_is_never_rewritten_by_word_rules():
+    """«Te paso con alguien» sin marcarlo: no pasa el chat (las palabras no deciden) y su mensaje sale tal cual, con una sola llamada."""
     promise = reply("Te paso con alguien del equipo en un momento.", "info")
-    marked = reply("Te paso con alguien del equipo en un momento.", "info", handoff="persona")
-    (prompts, _answer), = run_conversation(SLUG, [("Necesito ayuda con mi cuenta", [promise, marked], reads())], user_id="promete")
-    assert len(prompts) == 2 and "dice que lo pasas con el equipo, pero no lo marcaste" in prompts[1]
-    (_answer, context), = run_conversation(SLUG, [("Necesito ayuda con mi cuenta", [promise, marked], reads())], user_id="promete-2", with_context=True)
-    assert context.get("handoff") is True
-
-
-def test_if_it_insists_without_deciding_its_decision_stands(caplog):
-    import logging
-
-    promise = reply("Te paso con alguien del equipo en un momento.", "info")
-    with caplog.at_level(logging.WARNING, logger="assistant"):
-        _answer, context = _turn("Necesito ayuda", [promise, promise], "insiste")
+    (prompts, answer), = run_conversation(SLUG, [("Necesito ayuda con mi cuenta", [promise], reads())], user_id="promete")
+    assert len(prompts) == 1 and answer == "Te paso con alguien del equipo en un momento."
+    (_answer, context), = run_conversation(SLUG, [("Necesito ayuda con mi cuenta", [promise], reads())], user_id="promete-2", with_context=True)
     assert not context.get("handoff")
-    assert "paso_a_persona_sin_marcar" in [record.message for record in caplog.records]
 
 
 def test_the_conversation_step_comes_from_facts_not_words():
@@ -90,9 +80,10 @@ def test_a_decision_without_a_message_still_hands_off(caplog):
     assert "paso_sin_mensaje" in [record.message for record in caplog.records]
 
 
-def test_an_empty_message_without_a_decision_is_still_an_error():
-    from app.infrastructure.ai.ai_orchestrator import FAILED_REPLY
+def test_an_empty_message_without_a_decision_gets_the_fallback_message():
+    """Sin texto ni decisión, el cliente recibe el mensaje de respaldo (el del negocio o el de la plataforma), no «Hubo un problema…»."""
+    from app.application.pipeline.fallback import PLATFORM_FALLBACK_REPLY
 
     turns = [("Necesito información", reply("Claro, te cuento.")), ("¿Y cuánto cuesta?", reply("", "info"))]
     (_first, (answer, context)) = run_conversation(SLUG, turns, user_id="vacio", with_context=True)
-    assert answer == FAILED_REPLY.tu and not context.get("handoff")
+    assert answer == PLATFORM_FALLBACK_REPLY.tu and not context.get("handoff")

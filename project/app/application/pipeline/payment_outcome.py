@@ -1,6 +1,5 @@
 """Lo que pasa con el pago en un turno, una vez revisada la respuesta del asesor (`ai_execution.py`).
 
-- Si la IA insistió en que el negocio no recibe un medio que sí tiene, esa respuesta no sale: sale la verdad (`METHOD_AVAILABLE`).
 - Si el cliente avisó en este mensaje que ya pagó, lo dice el lector de pagos (`payment_reading.py`), no el asesor: una pregunta
   enfocada acierta más que el asesor, que a veces lo marca sin que el cliente lo diga o se le pasa. Un pago avisado sale con el mensaje
   del negocio para ese momento y pasa al equipo, porque solo el equipo puede verificarlo. Un pago avisado antes sigue avisado.
@@ -13,18 +12,14 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from app.application.pipeline.payment_delivery import (
-    METHOD_AVAILABLE,
-    OFFER_DETAILS,
     PaymentDelivery,
     compose,
     deliver,
-    keeps_handoff,
     remembered_message,
     sent_state,
 )
 from app.application.pipeline.response_postprocessor import enforce_max_words
 from app.application.pipeline.turn_context import TurnContext
-from app.domain.business_config.formality import formality_of
 from app.domain.conversation.memory import MemoryDomainService
 from app.utils.logger import logger
 
@@ -51,10 +46,6 @@ def settle_payment(
     memory_service: MemoryDomainService | None,
 ) -> PaymentOutcome:
     reading = turn.reading
-    if problem.get("denied"):
-        logger.error("pago_medio_negado", extra={"tenant": turn.tenant_slug})
-        offer = "" if reading is not None and reading.wants_details else OFFER_DETAILS.to(formality_of(turn.runtime_yaml))
-        response_text = f"{METHOD_AVAILABLE.format(method=problem['denied'])} {offer}".strip()
     payment_method = str(ai_metadata.get("payment_method") or "").strip().lower()
     payment_status = _payment_status(ai_metadata, turn, memory_service)
     # Pasa a una persona si el asesor lo decidió (el cliente la pidió, reclama…); un pago avisado también.
@@ -83,8 +74,6 @@ def settle_payment(
             _remember_sent_method(delivery, turn, memory_service)
             _log_payment_override(turn, payment_method=delivery.method, payment_status=payment_status)
         response_text = delivery.text
-        if handoff_reason and not keeps_handoff(delivery):
-            handoff_reason = ""
 
     remembered = response_text
     if delivery is not None and delivery.details:

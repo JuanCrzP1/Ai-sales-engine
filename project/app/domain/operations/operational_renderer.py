@@ -57,13 +57,15 @@ def render_op_rule(state: OperationalState | None, formality: str = "") -> str:
         return ""
     # Qué explicar, con todas las letras y con un ejemplo: con «explícaselo con tus palabras», un modelo pequeño respondía «¿te los
     # envío de nuevo?» o repetía su mensaje anterior ante un «cómo así» (medido con la IA real, 13 nov 2026). Sin prohibiciones:
-    # con «no le ofrezcas reenviarlos» llegó a decir «no puedo reenviar los datos».
+    # con «no le ofrezcas reenviarlos» llegó a decir «no puedo reenviar los datos». Primero la explicación: en un negocio que cierra
+    # con un pedido, ante «cómo así» pasaba a pedir la dirección o la cantidad sin explicar (puerta de pagos, 20 nov 2026).
     if str(state.active_option or "").strip().lower().split(":", 1)[0] == _CASH:
         return (
-            "Si no entiende algo o pregunta qué sigue, explícale paso a paso cómo paga, con las indicaciones que ya tiene arriba "
-            f"en el chat. Por ejemplo: {_EXPLAIN_CASH.to(formality)}"
+            "Si no entiende algo o pregunta qué sigue, empieza tu mensaje explicándole paso a paso cómo paga, con las indicaciones "
+            f"que ya tiene arriba en el chat. Por ejemplo: {_EXPLAIN_CASH.to(formality)}"
         )
     return (
-        f"Si no entiende algo o pregunta qué sigue, explícale paso a paso qué hacer. Por ejemplo: {_EXPLAIN_PAYMENT.to(formality)} "
+        "Si no entiende algo o pregunta qué sigue, empieza tu mensaje explicándole paso a paso qué hacer. Por ejemplo: "
+        f"{_EXPLAIN_PAYMENT.to(formality)} "
         "Si te pide los datos otra vez, se le envían."
     )

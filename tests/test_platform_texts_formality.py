@@ -2,8 +2,8 @@
 
 Hasta el 19 nov 2026 todos estaban de tú: un negocio que trataba de usted recibía «Cuando pagues, envíame aquí la captura…» justo
 debajo de una respuesta de usted. Aquí se prueban por el camino real (el negocio publicado y el motor que lo lee): el mensaje con
-los datos de pago, la pregunta del medio, las frases cuando la IA no puede enviar los datos, el mensaje cuando la IA falla o pasa
-a una persona sin escribir, y el ejemplo que lee la IA cuando el cliente no entiende qué sigue. Los avisos de espera están en
+los datos de pago, la pregunta del medio, el mensaje cuando la IA falla o pasa a una persona sin escribir, y el ejemplo que lee la
+IA cuando el cliente no entiende qué sigue. Los avisos de espera están en
 `test_human_attention.py`.
 """
 from __future__ import annotations
@@ -12,14 +12,14 @@ import pytest
 
 from app.application.ai_pipeline import AIPipeline
 from app.application.pipeline.fallback import PLATFORM_FALLBACK_REPLY
-from app.application.pipeline.payment_delivery import deliver
+from app.application.pipeline.payment_delivery import deliver, remembered_message
 from app.application.runtime import load_tenant_runtime_yaml
 from app.domain.business_config.formality import Phrase, formality_of
 from app.domain.business_config.payment_accounts import which_method_question
 from app.domain.conversation.memory import MemoryDomainService
 from app.domain.operations.operational_renderer import render_op_rule
 from app.domain.operations.operational_state import OperationalState
-from app.infrastructure.ai.ai_orchestrator import FAILED_REPLY, HANDOFF_WITHOUT_TEXT
+from app.infrastructure.ai.ai_orchestrator import HANDOFF_WITHOUT_TEXT
 from app.infrastructure.persistence.memory_repository import MemoryRepository
 from pipeline_harness import publish_document, reply, run_conversation
 
@@ -78,27 +78,24 @@ def test_a_template_written_by_the_business_is_never_changed(monkeypatch, tmp_pa
     assert answer.endswith("Cuando pagues, avísame.") and "envíeme" not in answer
 
 
-def test_the_payment_questions_and_rescues_speak_like_the_business(monkeypatch, tmp_path):
+def test_the_payment_question_and_memory_speak_like_the_business(monkeypatch, tmp_path):
     publish_document(monkeypatch, tmp_path, SLUG, _with("formal"))
     runtime = load_tenant_runtime_yaml(SLUG)
     assert which_method_question(runtime).startswith("¿Con qué medio prefiere pagar: ")
-    # La IA dijo (dos veces) que no podía enviar los datos: sale una frase de la plataforma, que sí es verdad.
-    refusal = "No puedo enviarte el número de Nequi."
-    offered = deliver(refusal, runtime, asked=False)
-    assert offered.lead == "Claro, puede pagar por Nequi. ¿Quiere que le envíe los datos?" and not offered.details
-    sent = deliver(refusal, runtime, asked=True, asked_method="nequi")
-    assert sent.lead == "Le dejo aquí los datos para pagar por Nequi." and sent.details
+    # Los datos salieron sin palabras del asesor: lo que queda en su historial también va de usted.
+    sent = deliver("", runtime, asked=True, asked_method="nequi")
+    assert sent.details and remembered_message(sent, runtime).startswith("Le dejo aquí los datos para pagar por Nequi.")
     publish_document(monkeypatch, tmp_path / "tu", SLUG, _with("informal"))
     runtime = load_tenant_runtime_yaml(SLUG)
     assert which_method_question(runtime).startswith("¿Con qué medio prefieres pagar: ")
-    assert deliver(refusal, runtime, asked=False).lead == "Claro, puedes pagar por Nequi. ¿Quieres que te envíe los datos?"
+    assert remembered_message(deliver("", runtime, asked=True, asked_method="nequi"), runtime).startswith("Te dejo aquí los datos")
 
 
 def test_when_the_ai_fails_or_hands_off_without_writing_the_platform_speaks_like_the_business(monkeypatch, tmp_path):
     publish_document(monkeypatch, tmp_path, SLUG, _with("formal"))
     turns = [("Necesito información", reply("Claro, le cuento.")), ("¿Y cuánto cuesta?", reply("", "info"))]
     (_first, (failed, _context)) = run_conversation(SLUG, turns, user_id="falla", with_context=True)
-    assert failed == FAILED_REPLY.usted
+    assert failed == PLATFORM_FALLBACK_REPLY.usted
     ((handed, context),) = run_conversation(SLUG, [("Quiero una persona", reply("", "info", handoff="persona"))], user_id="pasa", with_context=True)
     assert handed.startswith(HANDOFF_WITHOUT_TEXT.usted) and context.get("handoff") is True
     # Sin clave de IA: el mensaje de respaldo de la plataforma (el negocio no escribió el suyo).

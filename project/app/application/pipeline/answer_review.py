@@ -1,9 +1,10 @@
 """La respuesta del asesor, revisada antes de salir (`ai_execution.py`).
 
-- `ask_and_review` le pide la respuesta a la IA. Si dice algo que no puede salir así, le pide otra y le dice por qué. Eso pasa con algo
-  falso sobre los pagos («no recibimos Nequi»), con datos que el cliente no pidió o que ya tiene (`payment_delivery.payment_problem`),
-  o si le dice al cliente que lo pasa con el equipo sin haberlo decidido (`handoff_review.py`). La IA decide de nuevo su mensaje, su
-  acción y si pasa el chat a una persona: el código no le escribe la respuesta.
+- `ask_and_review` le pide la respuesta a la IA. Si iba a enviar datos de pago que el cliente no pidió o que ya tiene (lo entiende el
+  lector de pagos: `payment_delivery.payment_problem`), le pide otra y le dice por qué. La IA decide de nuevo su mensaje, su acción y
+  si pasa el chat a una persona: el código no le escribe la respuesta. Lo que dice no se revisa con reglas de palabras: hasta el 20
+  nov 2026 también se le pedía otra si su texto decía «no puedo enviarte los datos», «no recibimos Nequi» o «te paso con el equipo»
+  sin haberlo marcado: dos no actuaban nunca y la negativa venía de una instrucción del prompt, que se corrigió. Lo mide la puerta.
 - `checked_text` revisa los números. La IA nunca ve los datos de pago, así que un celular o una cuenta que escribe sin haberlo leído es
   inventado. Se cambia por el marcador del dato y el sistema pone el real (`payment_delivery.py`).
 """
@@ -12,7 +13,6 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 
-from app.application.pipeline.handoff_review import UNMARKED, handoff_problem
 from app.application.pipeline.payment_delivery import payment_problem
 from app.application.pipeline.payment_names import payment_terms
 from app.application.pipeline.response_postprocessor import without_model_artifacts
@@ -57,15 +57,11 @@ def ask_and_review(
     response, ai_used, route_context = ask(turn.runtime_yaml)
     problem = _problem(response, route_context, turn) if ai_used else {}
     if problem:
-        event = "paso_a_persona_segunda_respuesta" if UNMARKED in problem else "pago_segunda_respuesta"
-        logger.warning(event, extra={"tenant": turn.tenant_slug, "why": next(iter(problem))})
+        logger.warning("pago_segunda_respuesta", extra={"tenant": turn.tenant_slug, "why": next(iter(problem))})
         second = ask({**turn.runtime_yaml, "answer_again": problem})
         if second[1]:
             response, ai_used, route_context = second
             problem = _problem(response, route_context, turn)
-        if UNMARKED in problem:
-            # Insistió en decirle que lo pasa sin decidirlo: manda su decisión (no se pasa), y queda a la vista.
-            logger.warning("paso_a_persona_sin_marcar", extra={"tenant": turn.tenant_slug})
     return ReviewedAnswer(response=response, ai_used=ai_used, route_context=route_context, problem=problem)
 
 
@@ -79,7 +75,7 @@ def _problem(answer: str, context, turn: TurnContext) -> dict:
         asked=turn.reading.wants_details if turn.reading is not None else None,
         state=turn.op_before,
         remembered=turn.remembered_method,
-    ) or handoff_problem(str(answer or ""), metadata)
+    )
 
 
 def checked_text(response: str, turn: TurnContext, user_message: str) -> str:

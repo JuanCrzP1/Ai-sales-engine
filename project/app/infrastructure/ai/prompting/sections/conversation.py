@@ -44,7 +44,7 @@ def commercial_memory(view: PromptView) -> list[str]:
 
 def _this_message(view: PromptView, status: str) -> list[str]:
     """Lo que se sabe de este mensaje antes de responder: lo que entendió el lector de pagos (`payment_reading.py`) y, si la primera
-    respuesta decía algo falso sobre los pagos, por qué se pide otra (`ai_execution.py`)."""
+    respuesta iba a enviar datos que el cliente no pidió, por qué se pide otra (`answer_review.py`)."""
     facts = []
     reading = as_dict(view.runtime.get("payment_reading"))
     named = one_line(view.runtime.get("named_payment_method"))
@@ -59,18 +59,10 @@ def _this_message(view: PromptView, status: str) -> list[str]:
     if reading.get("says_paid") and status != "reportado":
         facts.append(instructions.PAYMENT_REPORTED)
     again = as_dict(view.runtime.get("answer_again"))
-    if again.get("denied"):
-        facts.append(instructions.ANSWER_AGAIN_DENIED.format(method=one_line(again.get("denied"))))
-    elif again.get("unrequested"):
+    if again.get("unrequested"):
         facts.append(instructions.ANSWER_AGAIN_UNREQUESTED.format(method=one_line(again.get("unrequested"))))
-    elif again.get("handoff_unmarked"):
-        facts.append(instructions.ANSWER_AGAIN_HANDOFF)
-        if as_dict(view.config.get("escalation")):
-            facts.append(instructions.ANSWER_AGAIN_HANDOFF_RULES)
     elif again.get("repeated"):
         facts.append(instructions.ANSWER_AGAIN_REPEATED.format(method=one_line(again.get("repeated"))))
-    elif again:
-        facts.append(instructions.ANSWER_AGAIN)
     return facts
 
 

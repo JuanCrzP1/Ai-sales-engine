@@ -69,6 +69,15 @@ def route_response(
         intent = ai_metadata.get("intent")
         raw = str(ai_response or "").strip()
 
+        if not ai_used and not raw:
+            # La IA respondió algo que no se pudo usar: el cliente recibe el mensaje de respaldo del negocio (o el de la plataforma).
+            fallback = build_fallback_response(
+                user_message=user_message,
+                tenant_config={"tenant_slug": tenant_slug, "runtime_yaml": safe_runtime_yaml},
+            )
+            _log_route_event(tenant_slug=tenant_slug, source="fallback_invalid_output", ai_metadata=ai_metadata, intent="")
+            return fallback, False, {**base_context, "source": "fallback_invalid_output", "intent": "", "ai_metadata": ai_metadata}
+
         _log_route_event(tenant_slug=tenant_slug, source="ai_raw", ai_metadata=ai_metadata, intent=intent)
         return raw, bool(ai_used), {
             **base_context,

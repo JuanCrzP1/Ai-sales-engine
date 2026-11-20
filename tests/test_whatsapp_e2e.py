@@ -36,9 +36,8 @@ _EXAMPLE_PAYMENT_VALUES = {value for slug in ("saas", "restaurant") for value in
 MODEL = [
     (r"qu[eé] venden", {"response": "Tenemos planes para que tu WhatsApp venda solo. ¿Quieres saber precios?", "intent": "info", "metadata": {}}),
     (r"pagar por nequi", {"response": "¡Listo! Ahí abajo te dejo los datos de Nequi.", "intent": "buy", "metadata": {"send_payment": "Nequi"}}),
-    # Lo que pasó en producción el 13 nov 2026: el modelo dice que no puede reenviar el número (dos veces: el motor le pide otra
-    # respuesta). El cliente debe recibirlo igual.
-    (r"se me borr", {"response": "Lo siento, no puedo enviarlo de nuevo.", "intent": "info", "metadata": {}}),
+    # El cliente pide el número otra vez: lo entiende el lector de pagos y los datos van debajo de lo que dice el asesor.
+    (r"se me borr", {"response": "¡Claro! Aquí te lo dejo otra vez.", "intent": "info", "metadata": {}}),
     (r"ya pagu", {"response": "Gracias, lo paso al equipo para verificarlo.", "intent": "buy", "metadata": {"payment_status": "reportado"}}),
     (r"pago por nu", {"response": "¡Claro! También recibimos Nu. Ahí abajo te dejo los datos.", "intent": "buy", "metadata": {}}),
     (r"por yape", {"response": "¡Perfecto! Ahí abajo te dejo los datos de Yape.", "intent": "buy", "metadata": {}}),
@@ -237,8 +236,8 @@ def test_a_business_day_on_whatsapp(monkeypatch, tmp_path):
             before = len(phone.from_business(state["token"], ANA))
             phone.write(state["token"], ANA, "Se me borró el número, ¿me lo envías otra vez?")
             reply = phone.wait_reply(state["token"], ANA, before, what="el reenvío de los datos")
-            assert nequi in reply["text"] and "no puedo" not in reply["text"].lower(), reply["text"]
-            return "la IA dijo dos veces «no puedo enviarlo» (es falso) y aun así le llegaron los datos: el cliente los pidió"
+            assert reply["text"].startswith("¡Claro! Aquí te lo dejo otra vez.\n\n💳 *Datos para pagar*") and nequi in reply["text"], reply["text"]
+            return "pidió el número otra vez y le llegó debajo de lo que dijo el asesor: lo entendió el lector de pagos"
 
         def receipt_photo() -> str:
             before = len(phone.from_business(state["token"], ANA))
@@ -457,8 +456,7 @@ def test_payments_with_every_method(monkeypatch, tmp_path):
                 others = [other for other in all_values if other != value and other not in value]
                 assert not any(other in chosen for other in others), f"llegaron datos de otro medio: {chosen}"
                 again = say(number, "Se me borró, me lo envías de nuevo", what=f"el reenvío de {said}")
-                # El asesor simulado dice «no puedo enviarlo» (dos veces): los datos salen igual, sin esa frase y con una que sí es verdad.
-                assert again.startswith("Te dejo aquí los datos para pagar por ") and again.endswith(f"\n\n{details}"), again
+                assert again == f"¡Claro! Aquí te lo dejo otra vez.\n\n{details}", again
                 return f"«Te pago por {said}» → el asesor le habló y debajo le llegó su dato (y solo el suyo); al pedirlo de nuevo, otra vez"
             return check
 

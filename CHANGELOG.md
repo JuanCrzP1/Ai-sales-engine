@@ -5,6 +5,14 @@ está en el historial de git y en `docs/plan-v1.md`.
 
 ## 20 de noviembre de 2026
 
+**Tu asistente habla por sí mismo, sin frases de rescate**
+- Antes, si el asistente decía ciertas frases («no puedo enviarte los datos», «no recibimos Nequi»), la plataforma cambiaba su
+  mensaje por uno fijo. Ahora el asistente responde con sus propias palabras: corregimos de raíz la indicación que lo llevaba a decir
+  «no puedo enviar los datos», en vez de taparlo.
+- Medido con 60 conversaciones de pago: 0 veces dijo algo falso sobre los pagos.
+- Si el asistente no puede responder, tu cliente recibe tu mensaje de respaldo (Mensajes → «Si el asistente no puede responder»), no
+  «Hubo un problema procesando el mensaje».
+
 **Los mensajes automáticos también tratan de usted si tu negocio lo hace**
 - Si en el panel elegiste tratar a los clientes de usted, los mensajes que envía la plataforma también van de usted: el de los datos
   de pago («Cuando pague, envíeme aquí la captura…»), el del efectivo, «¿Quiere que le envíe los datos?», «Una persona de nuestro

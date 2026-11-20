@@ -7,7 +7,7 @@ su caché y cobrarlas más barato. Todo cambio aquí se mide con el laboratorio 
 from __future__ import annotations
 
 # Versión del prompt: va en cada respuesta para saber qué texto la produjo. Se cambia con cada cambio de contenido.
-PROMPT_VERSION = "2026-11-20.v19"
+PROMPT_VERSION = "2026-11-20.v20"
 
 PLATFORM = """
 Eres el asistente de ventas de un negocio y atiendes a sus clientes por chat. Tu trabajo es entender qué necesita cada cliente,
@@ -133,11 +133,11 @@ PAYMENT_NOT_NOW = (
     "Con este mensaje el cliente no recibe datos de pago: deja metadata.send_payment vacío y no le digas que ya se los dejas. Si "
     "le sirve, ofrécele enviárselos."
 )
-# Ya tiene los datos. Sin prohibiciones: con «no le ofrezcas reenviárselos», un modelo pequeño llegó a decirle al cliente «no puedo
-# reenviar los datos de pago» (medido con la IA real, 13 nov 2026).
+# Ya tiene los datos. Sin prohibiciones ni «no recibe»: con «no le ofrezcas reenviárselos» (13 nov 2026) y con «Con este mensaje el
+# cliente no recibe datos de pago» (20 nov 2026), un modelo pequeño le decía al cliente «no puedo enviar los datos de pago de nuevo»
+# ante un «cómo así». Hasta ese día lo tapaba una regla de palabras que le pedía otra respuesta; ahora se dice lo que sí es.
 PAYMENT_HAS_DETAILS = (
-    "Con este mensaje el cliente no recibe datos de pago: ya los tiene arriba, en el chat. Deja metadata.send_payment vacío y "
-    "respóndele lo que dice."
+    "El cliente ya tiene los datos para pagar: están arriba, en el chat. Respóndele lo que dice y deja metadata.send_payment vacío."
 )
 # Un dato del negocio que viene al caso: el cliente nombra uno de sus medios de pago (por su nombre; no se interpreta qué quiere).
 # «Y Nequi no», sin signos, es una pregunta: un modelo pequeño lo leyó como «Nequi no» y siguió con otro medio (13 nov 2026).
@@ -150,11 +150,7 @@ PAYMENT_METHOD_AVAILABLE = (
 CUSTOMER_DATA_KNOWN = "Datos que ya te dio el cliente: {data}. Ya los tienes: pídele solo lo que todavía falte."
 # El resumen de una conversación larga, como le llega al asesor (lo escribe `summary_writer.py`).
 SUMMARY_FACT = "Lo que contó el cliente antes de los últimos mensajes (resumen; si algo cambió después, manda lo reciente): {summary}"
-# Cuando la respuesta de la IA decía algo falso sobre los pagos y se le pide que responda otra vez (`ai_execution.py`).
-ANSWER_AGAIN_DENIED = (
-    "Tu respuesta a este mensaje no se envió: decía que el negocio no recibe {method}, y sí lo recibe (mira los medios de pago). "
-    "Responde otra vez."
-)
+# Cuando la IA iba a enviar datos de pago que el cliente no pidió y se le pide que responda otra vez (`answer_review.py`).
 ANSWER_AGAIN_UNREQUESTED = (
     "Tu respuesta a este mensaje no se envió: ibas a enviarle los datos para pagar por {method} y el cliente no los ha pedido ni ha "
     "dicho que paga con ese medio. Responde otra vez a lo que dijo, sin enviarlos ni decir que se los dejas; si ya quiere pagar, "
@@ -163,17 +159,6 @@ ANSWER_AGAIN_UNREQUESTED = (
 ANSWER_AGAIN_REPEATED = (
     "Tu respuesta a este mensaje no se envió: ibas a enviarle otra vez los datos para pagar por {method}; ya los tiene y no los "
     "pidió. Responde otra vez a lo que dijo en este mensaje, sin enviarlos ni decir que se los dejas."
-)
-# Con reglas del negocio para pasar el chat (`sections/escalation.py`), también cuentan.
-ANSWER_AGAIN_HANDOFF_RULES = "Si las reglas del negocio para pasar el chat a una persona dicen que lo pases, márcalo con el motivo que indican."
-ANSWER_AGAIN_HANDOFF = (
-    "Tu respuesta a este mensaje no se envió: dice que lo pasas con el equipo, pero no lo marcaste en metadata.handoff. Si el cliente "
-    "pidió hablar con una persona o reclama, márcalo; si no, respóndele tú y no le digas que lo pasas."
-)
-# Cuando la IA dijo que no podía enviar los datos de pago y se le pide que responda otra vez (`ai_execution.py`).
-ANSWER_AGAIN = (
-    "Tu respuesta a este mensaje no se envió: decía que no puedes dar los datos de pago o que no tienes acceso a ellos, y sí "
-    "puedes. Pon el medio en metadata.send_payment (el sistema pone los datos debajo de tu mensaje) y responde otra vez."
 )
 PAYMENT_REPORTED = "Dijo que ya pagó: no le pidas que pague otra vez y no confirmes el pago; el equipo lo verifica."
 # El mensaje del negocio para después de una compra (`messages.after_sale`), cuando el cliente sigue escribiendo después de pagar.

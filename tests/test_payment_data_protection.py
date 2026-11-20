@@ -233,8 +233,8 @@ def test_details_already_sent_are_not_repeated_unless_the_customer_asks():
     assert explained == "Te explico: arriba tienes el número de Nequi. Pagas ahí y me envías la captura."
     assert "Ya le enviaste los datos para pagar por Nequi" in prompts[0]
     # El asesor sabe qué explicar y que no debe ofrecer reenviarlos (con «explícaselo con tus palabras» respondía «¿te los envío de nuevo?»).
-    assert "explícale paso a paso qué hacer. Por ejemplo: «Te explico: arriba, en este chat, te dejé los datos para pagar." in prompts[0]
-    assert "ya los tiene arriba, en el chat" in prompts[0]
+    assert "empieza tu mensaje explicándole paso a paso qué hacer. Por ejemplo: «Te explico: arriba, en este chat, te dejé los datos para pagar." in prompts[0]
+    assert "El cliente ya tiene los datos para pagar: están arriba, en el chat." in prompts[0]
     assert "ibas a enviarle otra vez los datos para pagar por Nequi; ya los tiene y no los pidió" in prompts[1]
     # Si insiste, los datos no se repiten.
     assert going == "Aquí tienes los datos de Nequi." and not _details(going)
@@ -255,54 +255,18 @@ def test_without_the_reader_the_advisor_action_is_trusted():
     assert _details(again) == _details(first) and thanks == "Con gusto."
 
 
-def test_a_false_refusal_never_reaches_the_customer():
-    """El chat real (13 nov 2026, 07:58): «Pero envíame el Nequi» → «No puedo enviarte el número de Nequi directamente. Te paso con
-    alguien del equipo». Es falso: se le pide otra respuesta; si insiste, salen los datos sin esa frase y el chat no pasa a una
-    persona por eso."""
+def test_what_the_advisor_says_is_never_rewritten_by_word_rules():
+    """Lo que dice el asesor sale tal cual, con una sola llamada: ya no se revisa con reglas de palabras («no puedo enviarte…», «no
+    recibimos Nequi»). Hasta el 20 nov 2026 eso le pedía otra respuesta y, si insistía, cambiaba su mensaje por una frase fija. La
+    negativa venía de una instrucción del prompt, que se corrigió; que no diga nada falso del pago lo mide la puerta. Los datos le
+    llegan al cliente cuando el lector de pagos entiende que los pidió, debajo de lo que dijo el asesor."""
     number = _nequi()
-    refusal = reply("No puedo enviarte el número de Nequi directamente. Te paso con alguien del equipo.", "info", handoff="persona")
-    fixed = reply("¡Claro! Ahí abajo te lo dejo.", "info")
-    turns = [("Pero envíame el Nequi", [refusal, fixed], WANTS_NEQUI)]
-    (prompts, answer), = run_conversation("saas", turns, user_id="negativa")
-    assert _said(answer) == "¡Claro! Ahí abajo te lo dejo." and number in _details(answer)
-    assert "decía que no puedes dar los datos de pago o que no tienes acceso a ellos, y sí puedes" in prompts[1]
-    (insisted, context), = run_conversation("saas", [("Pero envíame el Nequi", [refusal, refusal], WANTS_NEQUI)], user_id="negativa-insiste", with_context=True)
-    # Los datos nunca van solos: encima va una frase corta que sí es verdad.
-    assert insisted == f"Te dejo aquí los datos para pagar por Nequi.\n\n{_details(answer)}" and "No puedo" not in insisted
-    assert not context.get("handoff")
-    # Si el cliente no los pidió («cómo así»; pasó con la IA real: le llegó el bloque otra vez, sin una palabra), no se le envían: se le
-    # recuerda que ya los tiene. Y si todavía no los tiene, se le ofrecen.
-    lost = reply("No puedo enviarlo de nuevo.", "info")
-    _first, (has_them, _ctx) = run_conversation("saas", [FIRST, ("Cómo así", [lost, lost], reads())], user_id="negativa-ya-los-tiene", with_context=True)
-    assert has_them == "Arriba te dejé los datos para pagar por Nequi. Si quieres, te los envío otra vez."
-    (offered, _ctx), = run_conversation("saas", [("¿Y por Nequi?", [refusal, refusal], reads())], user_id="negativa-sin-pedir", with_context=True)
-    assert offered == "Claro, puedes pagar por Nequi. ¿Quieres que te envíe los datos?"
-    # Sin saber el medio, se le pregunta al cliente con cuál.
-    unknown = reply("No puedo darte el número de cuenta.", "info")
-    (_p, question), = run_conversation("saas", [("¿A qué número te consigno?", [unknown, unknown], reads(True))], user_id="negativa-sin-medio")
-    assert question == "¿Con qué medio prefieres pagar: pago en línea, Nequi, Daviplata, transferencia a Bancolombia o Bre-B?"
-
-
-def test_a_refusal_about_something_else_is_left_alone():
-    turns = [("¿Me lo pueden llevar a Medellín?", reply("No puedo enviarlo a Medellín, solo hacemos entregas en Bogotá.", "info"), reads())]
-    (prompts, answer), = run_conversation("restaurant", turns, user_id="negativa-de-envio")
-    assert answer == "No puedo enviarlo a Medellín, solo hacemos entregas en Bogotá." and len(prompts) == 1
-
-
-def test_if_the_ai_denies_a_method_the_business_has_the_truth_goes_out():
-    """Con la IA real (13 nov 2026): «Y Nequi no» → «Nequi no es un medio que manejamos en este momento» (falso), y lo repitió cuatro
-    turnos. Se le pide otra respuesta; si insiste, sale la verdad."""
-    denial = reply("Nequi no es un medio que manejamos en este momento. Puedes transferir a Bancolombia.", "info")
-    turns = [("Y Nequi no", [denial, reply("Sí, también recibimos Nequi. ¿Prefieres ese?", "info")], reads())]
-    (prompts, answer), = run_conversation("saas", turns, user_id="niega")
-    assert answer == "Sí, también recibimos Nequi. ¿Prefieres ese?"
-    assert "decía que el negocio no recibe Nequi, y sí lo recibe" in prompts[1]
-    (_p, insisted), = run_conversation("saas", [("Y Nequi no", [denial, denial], reads())], user_id="niega-insiste")
-    assert insisted == "Sí, claro: también recibimos Nequi. ¿Quieres que te envíe los datos para pagar?"
-    # Negar lo que el negocio no tiene se respeta.
-    other = [("¿Y PayPal no?", reply("No manejamos PayPal; puedes pagar por Nequi o Daviplata.", "info"), reads())]
-    (prompts, kept), = run_conversation("saas", other, user_id="niega-paypal")
-    assert kept == "No manejamos PayPal; puedes pagar por Nequi o Daviplata." and len(prompts) == 1
+    said = reply("¡Claro! Ahí abajo te lo dejo.", "info")
+    (prompts, answer), = run_conversation("saas", [("Pero envíame el Nequi", said, WANTS_NEQUI)], user_id="tal-cual")
+    assert len(prompts) == 1 and _said(answer) == "¡Claro! Ahí abajo te lo dejo." and number in _details(answer)
+    other = reply("No puedo enviarlo a Medellín, solo hacemos entregas en Bogotá.", "info")
+    (prompts, kept), = run_conversation("restaurant", [("¿Me lo pueden llevar a Medellín?", other, reads())], user_id="otra-negativa")
+    assert kept == "No puedo enviarlo a Medellín, solo hacemos entregas en Bogotá." and len(prompts) == 1
 
 
 def test_the_marker_marks_where_the_details_go_and_never_reaches_the_customer():
@@ -510,13 +474,9 @@ def test_what_cannot_go_out_as_it_is():
     """`payment_problem`: por qué se le pide al asesor otra respuesta."""
     runtime = load_tenant_runtime_yaml("saas")
     assert payment_problem("Claro, con gusto.", runtime, asked=False) == {}
-    assert payment_problem("No puedo enviarte el número.", runtime, asked=True) == {"refused": True}
-    # «No tengo acceso a los datos» (con la IA real, al pedir el reenvío): es la misma negativa cuando ya están pagando.
-    assert payment_problem("No tengo acceso a los números, pero puedo ayudarte.", runtime, asked=True, remembered="nequi") == {"refused": True}
-    assert payment_problem("No tengo acceso a los datos de tu pedido anterior.", runtime, asked=False) == {}
-    assert payment_problem("Te pido disculpas, no puedo reenviar los datos de pago.", runtime, asked=False) == {"refused": True}
-    assert payment_problem("Lamentablemente, no recibimos pagos por Nequi.", runtime, asked=False) == {"denied": "Nequi"}
-    assert payment_problem("Si no tienes Nequi, puedes usar Daviplata.", runtime, asked=False) == {}
+    # Las palabras del asesor no son un problema: solo lo que entendió el lector de pagos (datos que el cliente no pidió o ya tiene).
+    assert payment_problem("No puedo enviarte el número.", runtime, asked=True) == {}
+    assert payment_problem("Lamentablemente, no recibimos pagos por Nequi.", runtime, asked=False) == {}
     assert payment_problem("Te dejo el link.", runtime, send_payment="link de pago", asked=False) == {"unrequested": "pago en línea"}
     assert payment_problem(f"Te los dejo:\n{REDACTED_PAYMENT_VALUE}", runtime, asked=False, remembered="nequi") == {"unrequested": "Nequi"}
     # Si el cliente debe recibirlos, o no hubo lectura, la acción del asesor vale.

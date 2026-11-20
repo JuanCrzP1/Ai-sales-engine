@@ -73,13 +73,10 @@ from app.infrastructure.ai.prompting.instructions import PROMPT_VERSION
 from app.infrastructure.ai.structured_output import parse_structured_output
 from app.utils.logger import logger
 
-# Cuando el modelo no devuelve una respuesta utilizable. No se repite la llamada: repetirla duplicaba el gasto de tokens del
-# negocio por un formato, y el cliente recibe este mensaje en lugar de un JSON o un texto vacío.
-FAILED_REPLY = Phrase(tu="Hubo un problema procesando el mensaje. Intenta de nuevo.", usted="Hubo un problema procesando el mensaje. Intente de nuevo.")
 # Cuando la IA decide pasar el chat a una persona (`metadata.handoff`) pero no escribe el mensaje: se respeta su decisión y el cliente
 # recibe esta frase (y, después, el aviso del horario del equipo). Con la IA real, al insistir el cliente en hablar con una persona,
 # a veces devolvía la decisión con el mensaje vacío (14 nov 2026), y el cliente recibía el error de arriba sin pasar al equipo.
-# Las dos, con el trato del negocio (`domain/business_config/formality.py`).
+# Con el trato del negocio (`domain/business_config/formality.py`).
 HANDOFF_WITHOUT_TEXT = Phrase(
     tu="Claro, te paso con una persona del equipo por este mismo chat.",
     usted="Claro, le paso con una persona del equipo por este mismo chat.",
@@ -160,6 +157,8 @@ class AIOrchestrator:
             logger.warning("ai_reply", extra={"tenant": tenant_slug, "intent": "", "format": error, "prompt_version": PROMPT_VERSION})
             return reply, True, metadata
 
+        # Sin respuesta utilizable: no se repite la llamada (duplicaba el gasto de tokens del negocio por un formato). Sale vacía y
+        # el enrutador envía el mensaje de respaldo del negocio (`application/pipeline/fallback.py`). Hasta el 20 nov 2026 salía
+        # «Hubo un problema procesando el mensaje. Intenta de nuevo.», aunque el negocio hubiera escrito el suyo en el panel.
         logger.warning("ai_reply_unusable", extra={"tenant": tenant_slug, "format": error})
-        failed = FAILED_REPLY.to(formality_of(yaml_config))
-        return failed, False, {"intent": None, "response": failed, "error": "invalid_llm_output"}
+        return "", False, {"intent": None, "response": "", "error": "invalid_llm_output"}

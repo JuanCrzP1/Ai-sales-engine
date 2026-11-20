@@ -478,13 +478,16 @@ corre la puerta de calidad ([Calidad del asesor](calidad-del-asesor.md)).
 |---|---|---|
 | `pago_lectura` | El lector de pagos entendió el mensaje (`wants_details`, `method`, `says_paid`). | Lo normal: va en cada mensaje de un negocio con medios de pago. |
 | `pago_lectura_fallida` | El lector no respondió o respondió algo que no se entiende (`error`). | Decidió el asesor solo, con su acción. |
-| `pago_segunda_respuesta` | La primera respuesta del asesor no podía salir (`why`): `refused` (dijo que no podía enviar los datos), `denied` (negó un medio que el negocio tiene), `repeated` (iba a repetir datos que el cliente ya tiene) o `unrequested` (iba a enviar un medio que el cliente no pidió). | Le pidió otra respuesta, diciéndole por qué. |
-| `pago_red_de_seguridad` | El asesor insistió en que no podía (`how: la_ia_dijo_que_no_podia`) o escribió el marcador del dato sin decir el medio. | Envió los datos con una frase corta, le recordó al cliente que ya los tiene, o le preguntó con cuál medio paga. |
+| `pago_segunda_respuesta` | La primera respuesta del asesor no podía salir (`why`): `repeated` (iba a repetir datos que el cliente ya tiene) o `unrequested` (iba a enviar un medio que el cliente no pidió). Lo decide el lector de pagos, no las palabras del asesor. | Le pidió otra respuesta, diciéndole por qué. |
+| `pago_red_de_seguridad` | El asesor escribió el marcador del dato (`how`: de dónde se supo el medio). | Puso los datos donde iba el marcador o, sin saber el medio, le preguntó al cliente con cuál paga. |
 | `pago_numero_inventado` | El asesor escribió como dato de pago un número que no puede saber: uno que no leyó en ninguna parte, o uno que sí leyó (el teléfono del cliente) justo después del nombre de un medio («Nequi: 315…»). | Lo cambió por el dato real. Nunca le llegó al cliente. |
-| `paso_a_persona_segunda_respuesta` | El mensaje del asesor le decía al cliente que lo pasa con el equipo, pero no lo marcó. | Le pidió otra respuesta, diciéndole por qué. |
-| `paso_a_persona_sin_marcar` | Insistió en decirle que lo pasa sin marcarlo. | Mandó su decisión: el chat no pasa. Si se repite en un negocio, revisa sus conversaciones. |
 | `paso_sin_mensaje` | El asesor decidió pasar el chat a una persona y no escribió el mensaje. | Pasó el chat y le dijo al cliente «Claro, te paso con una persona del equipo por este mismo chat.». |
-| `pago_medio_negado` | El asesor insistió en que el negocio no recibe un medio que sí tiene. | Respondió «Sí, claro: también recibimos…». |
+| `ai_reply_unusable` | El asesor respondió algo que no se pudo usar (`format`). | Envió el mensaje de respaldo del negocio (Mensajes → «Si el asistente no puede responder») o, sin él, el de la plataforma. |
+
+Lo que dice el asesor no se revisa con reglas de palabras. Hasta el 20 nov 2026 había tres (`pago_medio_negado`,
+`paso_a_persona_sin_marcar` y la negativa `la_ia_dijo_que_no_podia`): las dos primeras no actuaron nunca en 1377 turnos medidos
+desde el 16 nov; la negativa actuó 2 veces y venía de una instrucción del prompt, que se corrigió. Lo mide la puerta de calidad
+(`docs/calidad-del-asesor.md`).
 
 ## 3. Qué Revisar Si El Sistema No Responde Como Esperas
 
