@@ -63,8 +63,9 @@ from app.infrastructure.ai.llm_runtime import LLMRuntime
 from app.utils.logger import logger
 
 # Lo que recibe el cliente si no se puede leer la configuración publicada de su negocio: el mensaje neutro de la plataforma (no se
-# puede usar el del negocio, que vive en esa configuración). El fallo queda como alerta en el registro (`business_config_unavailable`).
-UNAVAILABLE_REPLY = PLATFORM_FALLBACK_REPLY
+# puede usar el del negocio, que vive en esa configuración, ni su trato: sale de tú). El fallo queda como alerta en el registro
+# (`business_config_unavailable`).
+UNAVAILABLE_REPLY = PLATFORM_FALLBACK_REPLY.tu
 
 
 class AIPipeline:

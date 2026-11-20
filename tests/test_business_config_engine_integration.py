@@ -162,7 +162,7 @@ def test_the_fallback_message_is_the_one_written_in_the_panel(monkeypatch, tmp_p
     publish_document(monkeypatch, tmp_path / "con", "saas", lambda d: d["messages"].update(fallback=message))
     assert _answer_without_ai() == (message, False)
     publish_document(monkeypatch, tmp_path / "sin", "saas")
-    assert _answer_without_ai() == (PLATFORM_FALLBACK_REPLY, False)
+    assert _answer_without_ai() == (PLATFORM_FALLBACK_REPLY.tu, False)
 
 
 ESCALATION = {
@@ -221,11 +221,30 @@ def test_the_ai_hands_off_with_the_reason_of_the_business_rule(monkeypatch, tmp_
     assert context.get("handoff") is True and context.get("handoff_reason") == reason
 
 
-def test_the_panel_previews_the_same_neutral_message_the_engine_sends():
+def test_the_panel_previews_the_same_platform_texts_the_engine_sends():
+    """Las vistas previas del panel muestran los textos de la plataforma como le llegan al cliente, de tú y de usted."""
     from app.application.pipeline.fallback import PLATFORM_FALLBACK_REPLY
+    from app.domain.business_config.attention import _TEAM_REPLIES
+    from app.domain.business_config.payment_catalog import DEFAULT_CASH_TEXT
+    from app.domain.business_config.payment_message import DEFAULT_PAYMENT_DETAILS
 
-    source = (ROOT_DIR / "apps" / "admin-web" / "src" / "domain" / "assistant" / "fallback.ts").read_text(encoding="utf-8")
-    assert f'PLATFORM_FALLBACK_REPLY = "{PLATFORM_FALLBACK_REPLY}";' in source
+    web = ROOT_DIR / "apps" / "admin-web" / "src"
+
+    def source(path: str) -> str:
+        return (web / path).read_text(encoding="utf-8").replace("\\n", "\n")
+
+    for path, phrase in (
+        ("domain/assistant/fallback.ts", PLATFORM_FALLBACK_REPLY),
+        ("domain/config/paymentMessage.ts", DEFAULT_CASH_TEXT),
+        ("domain/attention/types.ts", _TEAM_REPLIES),
+    ):
+        assert f'tu: "{phrase.tu}"' in source(path) and f'usted: "{phrase.usted}"' in source(path), path
+    # La plantilla de pago: el encabezado y el cierre de cada trato.
+    payment = source("domain/config/paymentMessage.ts")
+    head = DEFAULT_PAYMENT_DETAILS.tu[: DEFAULT_PAYMENT_DETAILS.tu.index("Cuando")]
+    assert f'const DETAILS = "{head}";' in payment
+    for text in (DEFAULT_PAYMENT_DETAILS.tu, DEFAULT_PAYMENT_DETAILS.usted):
+        assert text.startswith(head) and f"`${{DETAILS}}{text[len(head):]}`" in payment
 
 
 # ---------------------------------------------------------------------------

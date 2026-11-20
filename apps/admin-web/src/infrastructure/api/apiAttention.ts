@@ -15,6 +15,7 @@ interface AttentionPayload {
   email_available: boolean;
   team_available_now: boolean;
   next_opening: string | null;
+  formality?: "informal" | "neutral" | "formal" | null;
   options: { timezones: { id: string; label: string }[]; reply_minutes: number[]; resume_after_minutes: number[] };
 }
 
@@ -33,6 +34,7 @@ function toView(payload: AttentionPayload): AttentionView {
     emailAvailable: payload.email_available,
     teamAvailableNow: payload.team_available_now,
     nextOpening: payload.next_opening,
+    formality: payload.formality ?? null,
     options: {
       timezones: payload.options.timezones,
       replyMinutes: payload.options.reply_minutes,

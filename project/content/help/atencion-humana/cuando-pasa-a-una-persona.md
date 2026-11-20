@@ -33,7 +33,7 @@ atiende tu equipo» o «No logra avanzar con el asistente», además de los de s
 
 ## Qué pasa
 
-- **Dentro del horario del equipo**, la IA se pausa en ese chat y el cliente recibe «Una persona de nuestro equipo te responderá en unos 10 minutos» (tú eliges el tiempo, o que no se le diga).
+- **Dentro del horario del equipo**, la IA se pausa en ese chat y el cliente recibe «Una persona de nuestro equipo te responderá en unos 10 minutos» (tú eliges el tiempo, o que no se le diga). Si tu negocio trata a los clientes de usted, los avisos también: «le responderá».
 - **Fuera del horario**, la IA sigue ayudando y le dice al cliente tu horario y cuándo lo atienden. El chat queda marcado para que tu equipo lo vea al llegar.
 
 Ver [El horario del equipo](horario-del-equipo).

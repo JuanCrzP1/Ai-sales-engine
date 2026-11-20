@@ -17,6 +17,7 @@ from app.application.pipeline.conversation_summary import refresh_summary
 from app.application.pipeline.payment_delivery import already_sent, current_method, sent_label
 from app.application.pipeline.payment_names import named_option
 from app.application.pipeline.payment_reading import PaymentReading, read_customer_message
+from app.domain.business_config.formality import formality_of
 from app.domain.conversation.memory import MemoryDomainService
 from app.domain.memory.observability.audit import emit_memory_audit
 from app.domain.memory.salience.selector import select as select_commercial_memory
@@ -72,7 +73,7 @@ def prepare_turn(
     length, max_words = _response_length(safe_runtime_yaml)
     with_memory = dict(safe_runtime_yaml)
 
-    memory_context = build_memory_context(memory_service, tenant_slug=slug, user_id=user_key)
+    memory_context = build_memory_context(memory_service, tenant_slug=slug, user_id=user_key, formality=formality_of(safe_runtime_yaml))
     if memory_context:
         memory_context["conversation_state"] = str(safe_runtime_yaml.get("conversation_state") or "new").strip() or "new"
         with_memory["memory_context"] = memory_context
@@ -202,8 +203,9 @@ def _customer_data(memory_service: MemoryDomainService, *, tenant_slug: str, use
     return dict(data) if isinstance(data, dict) else {}
 
 
-def build_memory_context(memory_service: MemoryDomainService | None, *, tenant_slug: str, user_id: str) -> dict:
-    """Lo que la memoria sabe del cliente, como lo lee el prompt (`memory_context`). Vacío sin memoria."""
+def build_memory_context(memory_service: MemoryDomainService | None, *, tenant_slug: str, user_id: str, formality: str = "") -> dict:
+    """Lo que la memoria sabe del cliente, como lo lee el prompt (`memory_context`). Vacío sin memoria. `formality`: el trato del
+    negocio, para los ejemplos de la regla del paso en curso."""
     if memory_service is None:
         return {}
 
@@ -295,7 +297,7 @@ def build_memory_context(memory_service: MemoryDomainService | None, *, tenant_s
             stored = get_op(tenant_slug=tenant_slug, user_id=user_id)
             op_state = OperationalState.from_dict(stored) if stored else OperationalState()
             anchor = render_op_anchor(op_state)
-            rule = render_op_rule(op_state)
+            rule = render_op_rule(op_state, formality)
             if anchor:
                 result["operational_anchor"] = anchor
                 result["operational_rule"] = rule

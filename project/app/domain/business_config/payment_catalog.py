@@ -14,6 +14,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from app.domain.business_config.formality import Phrase
+
 # Dónde se guarda el dato de un medio (las tres casillas cifradas del contrato).
 SLOTS: tuple[str, ...] = ("number", "account_number", "reference")
 # Cómo se valida cada dato (`payment_data.payment_value_problem`): `mobile` es un celular de Colombia, `phone` uno de cualquier
@@ -75,8 +77,8 @@ PAYMENT_METHODS: tuple[PaymentMethodKind, ...] = (
 )
 PAYMENT_METHOD_IDS: tuple[str, ...] = tuple(kind.id for kind in PAYMENT_METHODS)
 _BY_ID = {kind.id: kind for kind in PAYMENT_METHODS}
-# Lo que sale si el negocio no escribe una instrucción para el efectivo.
-DEFAULT_CASH_TEXT = "Pagas en efectivo al recibir tu pedido."
+# Lo que sale si el negocio no escribe una instrucción para el efectivo, con su trato (`formality.py`).
+DEFAULT_CASH_TEXT = Phrase(tu="Pagas en efectivo al recibir tu pedido.", usted="Paga en efectivo al recibir su pedido.")
 
 
 def method_kind(method_id: str) -> PaymentMethodKind | None:

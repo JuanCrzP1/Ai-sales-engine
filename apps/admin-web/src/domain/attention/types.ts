@@ -3,6 +3,8 @@
  * que nadie atendió y adónde llegan los avisos. Se aplica al instante: no hay que publicar.
  */
 
+import { phraseFor, type Formality, type Phrase } from "../config/formality";
+
 export type Weekday = "lunes" | "martes" | "miercoles" | "jueves" | "viernes" | "sabado" | "domingo";
 /** De dónde sale el horario del equipo: el de «Mi negocio», uno propio o siempre hay alguien. */
 export type HoursMode = "business" | "custom" | "always";
@@ -61,6 +63,8 @@ export interface AttentionView extends AttentionSettings {
   emailAvailable: boolean;
   teamAvailableNow: boolean;
   nextOpening: string | null;
+  /** El trato con el cliente que eligió el negocio: el aviso de espera sale con él. */
+  formality: Formality;
   options: {
     timezones: { id: string; label: string }[];
     replyMinutes: number[];
@@ -99,9 +103,15 @@ export function waitText(minutes: number): string {
   return minutes % 60 === 0 ? `unas ${minutes / 60} horas` : `unos ${minutes} minutos`;
 }
 
-/** Lo que recibe el cliente cuando su chat pasa al equipo dentro del horario (null: no se le dice nada más). */
-export function waitNotice(replyMinutes: number): string | null {
-  return replyMinutes > 0 ? `Una persona de nuestro equipo te responderá en ${waitText(replyMinutes)}.` : null;
+/** El aviso de espera del motor (`attention.py`, `_TEAM_REPLIES`), de tú y de usted. Una prueba del motor comprueba que es el mismo. */
+export const TEAM_REPLIES: Phrase = {
+  tu: "Una persona de nuestro equipo te responderá en {wait}.",
+  usted: "Una persona de nuestro equipo le responderá en {wait}.",
+};
+
+/** Lo que recibe el cliente cuando su chat pasa al equipo dentro del horario (null: no se le dice nada más), con el trato del negocio. */
+export function waitNotice(replyMinutes: number, formality?: Formality): string | null {
+  return replyMinutes > 0 ? phraseFor(TEAM_REPLIES, formality).replace("{wait}", waitText(replyMinutes)) : null;
 }
 
 /** El horario que usa el equipo según lo elegido (vacío: siempre hay alguien). */

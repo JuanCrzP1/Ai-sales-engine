@@ -859,3 +859,29 @@ def test_every_delivery_row_belongs_to_one_alert_and_channel(platform):
     assert attention.claim_delivery(notification, "push")
     with engine.connect() as conn:
         assert conn.execute(select(notification_deliveries.c.channel).order_by(notification_deliveries.c.channel)).scalars().all() == ["email", "push"]
+
+
+# Un negocio que trata de usted: los avisos de la plataforma también (`domain/business_config/formality.py`).
+FORMAL_SECTIONS = {"config": {"profile": {"opening_hours": [{"days": list(WEEKDAYS), "opens": "08:00", "closes": "18:00"}], "formality": "formal"}}}
+
+
+def test_a_business_that_says_usted_gets_the_platform_notices_de_usted():
+    server, gateway = FakeServer(), FakeGateway()
+    inside = _inbound(server, gateway, clock=lambda: at("2026-11-11T10:00"), sections=FORMAL_SECTIONS)
+    inside.process(SECRETS, _customer("Quiero hablar con una persona"), AppendResult("chat-1", "entry-0", True, False))
+    assert server.sent[-1][1] == "Una persona de nuestro equipo le responderá en unos 10 minutos."
+    server, gateway = FakeServer(), FakeGateway()
+    outside = _inbound(server, gateway, clock=lambda: at("2026-11-11T21:00"), sections=FORMAL_SECTIONS)
+    outside.process(SECRETS, _customer("Quiero hablar con una persona"), AppendResult("chat-1", "entry-0", True, False))
+    assert server.sent[-1][1] == (
+        "Nuestro equipo atiende de lunes a viernes de 8:00 a. m. a 6:00 p. m. Una persona le escribirá mañana a las 8:00 a. m. "
+        "Mientras tanto, sigo aquí para ayudarle en lo que pueda."
+    )
+    server.sent.clear()
+    _inbound(server, gateway, sections=FORMAL_SECTIONS).continue_after_resume(SECRETS, "chat-1", PHONE, "")
+    assert [text for _phone, text in server.sent] == ["Disculpe la espera. Mientras alguien del equipo se libera, sigo ayudándole yo."]
+    # Lo que escribió el negocio sale tal cual, aunque trate de usted.
+    written = {"config": {**FORMAL_SECTIONS["config"], "attention_messages": {"ai_resumed": "Perdón la demora, sigo yo."}}}
+    server.sent.clear()
+    _inbound(server, gateway, sections=written).continue_after_resume(SECRETS, "chat-1", PHONE, "")
+    assert [text for _phone, text in server.sent] == ["Perdón la demora, sigo yo."]

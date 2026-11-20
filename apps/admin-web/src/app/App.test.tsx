@@ -725,7 +725,7 @@ describe("Secciones del negocio", () => {
     const { user, backend } = await renderWorkspace("/mensajes");
     const card = screen.getByRole("heading", { name: "Si el asistente no puede responder" }).closest("section") as HTMLElement;
     const preview = within(card).getByRole("figure", { name: "Vista previa de la conversación" });
-    expect(within(preview).getByText(PLATFORM_FALLBACK_REPLY)).toBeInTheDocument();
+    expect(within(preview).getByText(PLATFORM_FALLBACK_REPLY.tu)).toBeInTheDocument();
     await user.type(within(card).getByLabelText(/^Lo que recibe el cliente/), "Ahora no podemos responder. Llámanos al 300 123 4567.");
     expect(within(preview).getByText("Ahora no podemos responder. Llámanos al 300 123 4567.")).toBeInTheDocument();
     await saveAndWait(user);

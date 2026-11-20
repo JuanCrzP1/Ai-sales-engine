@@ -7,6 +7,7 @@ mensajes recientes y el resumen de lo anterior.
 """
 from __future__ import annotations
 
+from app.domain.business_config.formality import Phrase
 from app.domain.business_config.payment_catalog import method_kind
 from app.domain.operations.operational_state import OperationalState
 
@@ -19,6 +20,17 @@ _OPTION_LABELS: dict[str, str] = {
     "breb": "Bre-B",
 }
 _CASH = "cash"
+# Los ejemplos de la regla, con el trato del negocio: la IA copia los ejemplos tal cual (19 nov 2026).
+_EXPLAIN_CASH = Phrase(
+    tu="«Te explico: arriba te dejé cómo pagar en efectivo. Sigues esos pasos y con eso continuamos.»",
+    usted="«Le explico: arriba le dejé cómo pagar en efectivo. Sigue esos pasos y con eso continuamos.»",
+)
+_EXPLAIN_PAYMENT = Phrase(
+    tu="«Te explico: arriba, en este chat, te dejé los datos para pagar. Haces el pago con esos datos y me envías aquí la captura del "
+    "comprobante; con eso seguimos.»",
+    usted="«Le explico: arriba, en este chat, le dejé los datos para pagar. Hace el pago con esos datos y me envía aquí la captura "
+    "del comprobante; con eso seguimos.»",
+)
 
 
 def _sent_payment(state: OperationalState | None) -> bool:
@@ -39,8 +51,8 @@ def render_op_anchor(state: OperationalState | None) -> str:
     return f"Ya le enviaste los datos para pagar{by}: falta que pague y te envíe el comprobante."
 
 
-def render_op_rule(state: OperationalState | None) -> str:
-    """Qué hacer en ese paso, o "" si no hay un paso en curso."""
+def render_op_rule(state: OperationalState | None, formality: str = "") -> str:
+    """Qué hacer en ese paso, o "" si no hay un paso en curso. `formality`: el trato del negocio, para el ejemplo."""
     if not _sent_payment(state):
         return ""
     # Qué explicar, con todas las letras y con un ejemplo: con «explícaselo con tus palabras», un modelo pequeño respondía «¿te los
@@ -49,10 +61,9 @@ def render_op_rule(state: OperationalState | None) -> str:
     if str(state.active_option or "").strip().lower().split(":", 1)[0] == _CASH:
         return (
             "Si no entiende algo o pregunta qué sigue, explícale paso a paso cómo paga, con las indicaciones que ya tiene arriba "
-            "en el chat. Por ejemplo: «Te explico: arriba te dejé cómo pagar en efectivo. Sigues esos pasos y con eso continuamos.»"
+            f"en el chat. Por ejemplo: {_EXPLAIN_CASH.to(formality)}"
         )
     return (
-        "Si no entiende algo o pregunta qué sigue, explícale paso a paso qué hacer. Por ejemplo: «Te explico: arriba, en este chat, "
-        "te dejé los datos para pagar. Haces el pago con esos datos y me envías aquí la captura del comprobante; con eso seguimos.» "
+        f"Si no entiende algo o pregunta qué sigue, explícale paso a paso qué hacer. Por ejemplo: {_EXPLAIN_PAYMENT.to(formality)} "
         "Si te pide los datos otra vez, se le envían."
     )

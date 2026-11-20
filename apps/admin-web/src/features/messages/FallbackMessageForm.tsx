@@ -3,10 +3,12 @@ import { TextAreaField } from "../../components/ui/FormFields";
 import { Card } from "../../components/ui/Layout";
 import { PLATFORM_FALLBACK_REPLY } from "../../domain/assistant/fallback";
 import { optionalText } from "../../domain/config/document";
-import { useFieldIssue, useSection } from "../../state/useConfig";
+import { phraseFor } from "../../domain/config/formality";
+import { useConfig, useFieldIssue, useSection } from "../../state/useConfig";
 
 /** El mensaje que reciben los clientes si la IA no puede responder (sin clave, sin saldo o con el proveedor caído). */
 export function FallbackMessageForm() {
+  const { document } = useConfig();
   const [messages, update] = useSection("messages");
   const issue = useFieldIssue("messages.fallback");
 
@@ -31,7 +33,7 @@ export function FallbackMessageForm() {
           caption="Vista previa"
           lines={[
             { from: "customer", text: "¿Tienen disponibilidad para mañana?" },
-            { from: "assistant", text: messages.fallback?.trim() || PLATFORM_FALLBACK_REPLY },
+            { from: "assistant", text: messages.fallback?.trim() || phraseFor(PLATFORM_FALLBACK_REPLY, document.response_style?.formality) },
           ]}
         />
       </div>

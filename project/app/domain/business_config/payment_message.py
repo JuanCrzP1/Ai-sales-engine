@@ -15,29 +15,20 @@ from __future__ import annotations
 
 import re
 
+from app.domain.business_config.formality import Phrase
 from app.domain.business_config.payment_catalog import DEFAULT_CASH_TEXT, method_kind
 
 PLACEHOLDERS: tuple[str, ...] = ("medio", "datos", "titular", "instrucciones")
 REQUIRED_PLACEHOLDER = "datos"
-DEFAULT_PAYMENT_DETAILS = (
-    "💳 *Datos para pagar*\n"
-    "\n"
-    "*{medio}*\n"
-    "{datos}\n"
-    "A nombre de: {titular}\n"
-    "{instrucciones}\n"
-    "\n"
-    "Cuando pagues, envíame aquí la captura del comprobante y te confirmamos. ✅"
+_DETAILS = "💳 *Datos para pagar*\n\n*{medio}*\n{datos}\nA nombre de: {titular}\n{instrucciones}\n\n"
+# La plantilla de la plataforma, con el trato del negocio (`formality.py`). La del negocio, si la escribió, sale tal cual.
+DEFAULT_PAYMENT_DETAILS = Phrase(
+    tu=f"{_DETAILS}Cuando pagues, envíame aquí la captura del comprobante y te confirmamos. ✅",
+    usted=f"{_DETAILS}Cuando pague, envíeme aquí la captura del comprobante y le confirmamos. ✅",
 )
 # El efectivo no tiene comprobante: con la plantilla de la plataforma, el cliente recibe cómo pagar y que se le confirma por aquí.
-DEFAULT_CASH_DETAILS = (
-    "💵 *Cómo pagar*\n"
-    "\n"
-    "*{medio}*\n"
-    "{datos}\n"
-    "\n"
-    "Cualquier duda, escríbeme por aquí. ✅"
-)
+_CASH = "💵 *Cómo pagar*\n\n*{medio}*\n{datos}\n\n"
+DEFAULT_CASH_DETAILS = Phrase(tu=f"{_CASH}Cualquier duda, escríbeme por aquí. ✅", usted=f"{_CASH}Cualquier duda, escríbame por aquí. ✅")
 _PLACEHOLDER = re.compile(r"\{([^{}]*)\}")
 LINK_NAME = "Pago en línea"
 _ACCOUNT_TYPES = {"ahorros": "Cuenta de ahorros", "corriente": "Cuenta corriente"}
@@ -54,7 +45,7 @@ def template_problem(template: str) -> str | None:
     return None
 
 
-def method_parts(method_type: str, details: dict) -> tuple[str, str]:
+def method_parts(method_type: str, details: dict, formality: str = "") -> tuple[str, str]:
     """El medio y los datos de un método de pago ya resueltos (con los valores reales), o ("", "") si le falta algo. Lo arma el
     catálogo (`payment_catalog.py`): el nombre, y el dato como sale en el mensaje («Llave: …», «CLABE: …»)."""
     method = str(method_type or "").strip().lower()
@@ -65,7 +56,7 @@ def method_parts(method_type: str, details: dict) -> tuple[str, str]:
     if kind is None:
         return "", ""
     if kind.data is None:  # efectivo: la instrucción del negocio es lo que el cliente necesita saber
-        return kind.name, str(details.get("instructions") or "").strip() or DEFAULT_CASH_TEXT
+        return kind.name, str(details.get("instructions") or "").strip() or DEFAULT_CASH_TEXT.to(formality)
     value = str(details.get(kind.data.slot) or "").strip()
     if not value:
         return "", ""
@@ -81,10 +72,12 @@ def method_parts(method_type: str, details: dict) -> tuple[str, str]:
     return kind.name, kind.data.shown_as.format(value=value)
 
 
-def render_payment_details(template: str | None, *, medio: str, datos: str, titular: str = "", instrucciones: str = "") -> str:
-    """El mensaje para el cliente. Sin plantilla propia (o con una que no sirve), el de la plataforma. Si la plantilla del negocio no
-    tiene {instrucciones} y el medio tiene una, va al final: el cliente nunca se queda sin ella."""
-    chosen = template if template and template.strip() and template_problem(template) is None else DEFAULT_PAYMENT_DETAILS
+def render_payment_details(
+    template: str | None, *, medio: str, datos: str, titular: str = "", instrucciones: str = "", formality: str = ""
+) -> str:
+    """El mensaje para el cliente. Sin plantilla propia (o con una que no sirve), el de la plataforma, con el trato del negocio. Si
+    la plantilla del negocio no tiene {instrucciones} y el medio tiene una, va al final: el cliente nunca se queda sin ella."""
+    chosen = template if template and template.strip() and template_problem(template) is None else DEFAULT_PAYMENT_DETAILS.to(formality)
     values = {"medio": medio.strip(), "datos": datos.strip(), "titular": titular.strip(), "instrucciones": instrucciones.strip()}
     lines: list[str] = []
     for line in chosen.strip().split("\n"):

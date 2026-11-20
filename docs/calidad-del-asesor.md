@@ -496,8 +496,16 @@ Ninguno de los 9 negocios de ejemplo trata de usted, así que el laboratorio de 
 con la versión del prompt igualada) sale sin diferencias en los 9: su prompt y sus respuestas son los mismos. Por eso no se repitió
 la puerta de pagos. Gasto: unos USD 0,10.
 
-Pendiente: unos diez textos fijos de la plataforma están de tú (el mensaje con los datos de pago, «¿Quieres que te envíe los
-datos?», «te paso con una persona del equipo», el mensaje cuando la IA no responde) y salen así aunque el negocio trate de usted.
+**Los textos de la plataforma (20 de noviembre de 2026).** Lo que no escribe la IA también va con el trato: cada texto fijo tiene su
+versión de tú y de usted ([`formality.py`](../project/app/domain/business_config/formality.py)) y sale la de usted solo si el negocio
+eligió «formal». Son el mensaje con los datos de pago y el del efectivo, la pregunta de con qué medio paga y las frases cuando la IA
+no puede enviar los datos, el paso a una persona sin texto de la IA, el aviso de cuánto tarda el equipo, el de fuera del horario, la
+disculpa cuando la IA retoma el chat, el mensaje de respaldo y el de «Hubo un problema». También el ejemplo que lee la IA cuando el
+cliente no entiende qué sigue después de recibir los datos («Le explico: arriba le dejé los datos…»), porque la IA lo copia (prompt
+`v19`). Lo que el negocio escribió (su plantilla de pago, sus mensajes) sale tal cual. El panel muestra las vistas previas y los
+ejemplos con el trato del negocio, y una prueba compara sus textos con los del motor. Son textos fijos: se prueban sin IA
+([`test_platform_texts_formality.py`](../tests/test_platform_texts_formality.py); control negativo: con todo de tú, fallan las 7
+pruebas de usted). Laboratorio de regresión `textos_de_usted_misma_version_20261120`: sin diferencias en los 9 negocios.
 
 ## Lo que la puerta no cubre
 

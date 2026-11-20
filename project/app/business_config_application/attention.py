@@ -44,17 +44,28 @@ PLAYGROUND_CHANNEL = "prueba"
 REMEMBER_EVERY_SECONDS = 10 * 60
 
 
-def business_hours(configs: BusinessConfigService, tenant_slug: str) -> tuple[HoursRange, ...]:
-    """El horario de «Mi negocio» que ven los clientes: el publicado; si nunca se publicó, el del borrador."""
-    config = None
+def _customer_facing(configs: BusinessConfigService, tenant_slug: str):
+    """Lo que ven los clientes del negocio: lo publicado; si nunca se publicó, el borrador (None si no hay ninguno)."""
     try:
-        config = configs.get_published(tenant_slug)
+        return configs.get_published(tenant_slug)
     except BusinessConfigError:
         draft = configs.get_draft(tenant_slug)
-        config = draft.config if draft is not None else None
+        return draft.config if draft is not None else None
+
+
+def business_hours(configs: BusinessConfigService, tenant_slug: str) -> tuple[HoursRange, ...]:
+    """El horario de «Mi negocio» que ven los clientes: el publicado; si nunca se publicó, el del borrador."""
+    config = _customer_facing(configs, tenant_slug)
     if config is None:
         return ()
     return hours_from([hours.model_dump(mode="json") for hours in config.identity.opening_hours or []])
+
+
+def business_formality(configs: BusinessConfigService, tenant_slug: str) -> str:
+    """El trato con el cliente que ven los clientes («formal», «informal», «neutral» o ""), para mostrar los avisos como salen."""
+    config = _customer_facing(configs, tenant_slug)
+    style = getattr(config, "response_style", None) if config is not None else None
+    return str(getattr(style, "formality", None) or "")
 
 
 def conversation_path(business_slug: str, conversation_id: str | None) -> str:
@@ -73,6 +84,8 @@ class AttentionView:
     email_available: bool
     team_available_now: bool
     next_opening: datetime | None
+    # El trato con el cliente («formal»…): el panel muestra el aviso de espera como le llega al cliente.
+    formality: str = ""
 
 
 class AttentionService:
@@ -104,6 +117,7 @@ class AttentionService:
             email_available=bool(self._email is not None and self._email.configured),
             team_available_now=available,
             next_opening=None if available else next_opening(effective, zone, now),
+            formality=business_formality(self._configs, business),
         )
 
     def save(self, principal: Principal, business: str, payload: dict[str, Any], *, now: datetime | None = None) -> AttentionView:

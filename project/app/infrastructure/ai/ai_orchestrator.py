@@ -67,6 +67,7 @@ from __future__ import annotations
 import json
 import re
 
+from app.domain.business_config.formality import Phrase, formality_of
 from app.infrastructure.ai.prompting.history import recent_messages
 from app.infrastructure.ai.prompting.instructions import PROMPT_VERSION
 from app.infrastructure.ai.structured_output import parse_structured_output
@@ -74,11 +75,15 @@ from app.utils.logger import logger
 
 # Cuando el modelo no devuelve una respuesta utilizable. No se repite la llamada: repetirla duplicaba el gasto de tokens del
 # negocio por un formato, y el cliente recibe este mensaje en lugar de un JSON o un texto vacío.
-FAILED_REPLY = "Hubo un problema procesando el mensaje. Intenta de nuevo."
+FAILED_REPLY = Phrase(tu="Hubo un problema procesando el mensaje. Intenta de nuevo.", usted="Hubo un problema procesando el mensaje. Intente de nuevo.")
 # Cuando la IA decide pasar el chat a una persona (`metadata.handoff`) pero no escribe el mensaje: se respeta su decisión y el cliente
 # recibe esta frase (y, después, el aviso del horario del equipo). Con la IA real, al insistir el cliente en hablar con una persona,
 # a veces devolvía la decisión con el mensaje vacío (14 nov 2026), y el cliente recibía el error de arriba sin pasar al equipo.
-HANDOFF_WITHOUT_TEXT = "Claro, te paso con una persona del equipo por este mismo chat."
+# Las dos, con el trato del negocio (`domain/business_config/formality.py`).
+HANDOFF_WITHOUT_TEXT = Phrase(
+    tu="Claro, te paso con una persona del equipo por este mismo chat.",
+    usted="Claro, le paso con una persona del equipo por este mismo chat.",
+)
 # El valor de `response` en un JSON incompleto (por ejemplo, cortado por el límite de tokens).
 _RESPONSE_FIELD = re.compile(r'"response"\s*:\s*("(?:[^"\\]|\\.)*")')
 
@@ -149,11 +154,12 @@ class AIOrchestrator:
         legacy = result.get("_legacy_metadata") if isinstance(result.get("_legacy_metadata"), dict) else {}
         if not reply and str(legacy.get("handoff") or "").strip():
             logger.warning("paso_sin_mensaje", extra={"tenant": tenant_slug, "format": error})
-            reply = HANDOFF_WITHOUT_TEXT
+            reply = HANDOFF_WITHOUT_TEXT.to(formality_of(yaml_config))
         if reply:
             metadata = {**legacy, "intent": "", "intent_missing": True, "format_error": error, "prompt_version": PROMPT_VERSION}
             logger.warning("ai_reply", extra={"tenant": tenant_slug, "intent": "", "format": error, "prompt_version": PROMPT_VERSION})
             return reply, True, metadata
 
         logger.warning("ai_reply_unusable", extra={"tenant": tenant_slug, "format": error})
-        return FAILED_REPLY, False, {"intent": None, "response": FAILED_REPLY, "error": "invalid_llm_output"}
+        failed = FAILED_REPLY.to(formality_of(yaml_config))
+        return failed, False, {"intent": None, "response": failed, "error": "invalid_llm_output"}

@@ -95,7 +95,7 @@ export function AttentionSettingsPage() {
     await attention.save(form);
   };
   const accountEmail = view.accountEmails[0];
-  const notice = waitNotice(form.replyMinutes);
+  const notice = waitNotice(form.replyMinutes, view.formality);
   const businessHours = view.businessHours.length > 0 ? sentence(capitalize(hoursText(view.businessHours))) : "Tu negocio aún no tiene horario, así que por ahora siempre hay alguien. Escríbelo en Asistente IA → Mi negocio.";
 
   return (

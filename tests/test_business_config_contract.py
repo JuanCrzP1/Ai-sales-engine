@@ -966,7 +966,7 @@ def test_the_payment_message_drops_lines_left_empty_and_never_uses_a_broken_temp
     assert (medio, datos) == ("Bancolombia", "Cuenta de ahorros\n1234567890")
     message = render_payment_details(None, medio=medio, datos=datos)
     assert "*Bancolombia*\nCuenta de ahorros\n1234567890\n\nCuando pagues" in message and "A nombre de" not in message
-    assert render_payment_details("Sin datos", medio="Nequi", datos="300") == render_payment_details(DEFAULT_PAYMENT_DETAILS, medio="Nequi", datos="300")
+    assert render_payment_details("Sin datos", medio="Nequi", datos="300") == render_payment_details(DEFAULT_PAYMENT_DETAILS.tu, medio="Nequi", datos="300")
     assert method_parts("breb", {"reference": "@cafe"}) == ("Bre-B", "Llave: @cafe") and method_parts("nequi", {}) == ("", "")
 
 

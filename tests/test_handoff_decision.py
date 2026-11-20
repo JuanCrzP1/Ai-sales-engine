@@ -86,7 +86,7 @@ def test_a_decision_without_a_message_still_hands_off(caplog):
     empty = reply("", "info", handoff="persona")
     with caplog.at_level(logging.WARNING, logger="assistant"):
         answer, context = _turn("Ya te dije que quiero una persona", empty, "sin-mensaje")
-    assert answer.startswith(HANDOFF_WITHOUT_TEXT) and context.get("handoff") is True and context.get("handoff_reason") == "human_request"
+    assert answer.startswith(HANDOFF_WITHOUT_TEXT.tu) and context.get("handoff") is True and context.get("handoff_reason") == "human_request"
     assert "paso_sin_mensaje" in [record.message for record in caplog.records]
 
 
@@ -95,4 +95,4 @@ def test_an_empty_message_without_a_decision_is_still_an_error():
 
     turns = [("Necesito información", reply("Claro, te cuento.")), ("¿Y cuánto cuesta?", reply("", "info"))]
     (_first, (answer, context)) = run_conversation(SLUG, turns, user_id="vacio", with_context=True)
-    assert answer == FAILED_REPLY and not context.get("handoff")
+    assert answer == FAILED_REPLY.tu and not context.get("handoff")

@@ -311,6 +311,7 @@ def attention_payload(view) -> dict[str, Any]:
         "email_available": view.email_available,
         "team_available_now": view.team_available_now,
         "next_opening": _iso(view.next_opening),
+        "formality": view.formality or None,
         "options": {
             "timezones": [{"id": key, "label": label} for key, label in TIMEZONES.items()],
             "reply_minutes": list(REPLY_MINUTES),

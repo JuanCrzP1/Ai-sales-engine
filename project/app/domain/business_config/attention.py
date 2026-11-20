@@ -19,6 +19,7 @@ from datetime import date, datetime, time, timedelta, timezone
 from zoneinfo import ZoneInfo
 
 from app.domain.business_config.errors import FieldIssue, InvalidFieldsError
+from app.domain.business_config.formality import Phrase, formality_of
 
 WEEKDAYS = ("lunes", "martes", "miercoles", "jueves", "viernes", "sabado", "domingo")
 _WEEKDAY_NAMES = {"lunes": "lunes", "martes": "martes", "miercoles": "miércoles", "jueves": "jueves", "viernes": "viernes", "sabado": "sábado", "domingo": "domingo"}
@@ -286,15 +287,29 @@ def _sentence(text: str) -> str:
     return text if text.endswith(".") else f"{text}."
 
 
-def default_after_hours_notice(hours: tuple[HoursRange, ...], back: datetime | None, zone: ZoneInfo, now: datetime) -> str:
+# Los avisos de la plataforma al cliente, con el trato del negocio (`formality.py`). Los que escribe el negocio salen tal cual.
+_SOMEONE_WRITES = Phrase(tu="Una persona te escribirá {when}", usted="Una persona le escribirá {when}")
+_MEANWHILE = Phrase(tu="Mientras tanto, sigo aquí para ayudarte en lo que pueda.", usted="Mientras tanto, sigo aquí para ayudarle en lo que pueda.")
+_TEAM_REPLIES = Phrase(tu="Una persona de nuestro equipo te responderá en {wait}.", usted="Una persona de nuestro equipo le responderá en {wait}.")
+DEFAULT_RESUMED_NOTICE = Phrase(
+    tu="Disculpa la espera. Mientras alguien del equipo se libera, sigo ayudándote yo.",
+    usted="Disculpe la espera. Mientras alguien del equipo se libera, sigo ayudándole yo.",
+)
+
+
+def default_after_hours_notice(
+    hours: tuple[HoursRange, ...], back: datetime | None, zone: ZoneInfo, now: datetime, formality: str = ""
+) -> str:
     parts = [_sentence(f"Nuestro equipo atiende {hours_text(hours)}")]
     if back is not None:
-        parts.append(_sentence(f"Una persona te escribirá {when_text(back, zone, now)}"))
-    parts.append("Mientras tanto, sigo aquí para ayudarte en lo que pueda.")
+        parts.append(_sentence(_SOMEONE_WRITES.to(formality).format(when=when_text(back, zone, now))))
+    parts.append(_MEANWHILE.to(formality))
     return " ".join(parts)
 
 
-DEFAULT_RESUMED_NOTICE = "Disculpa la espera. Mientras alguien del equipo se libera, sigo ayudándote yo."
+def wait_notice(reply_minutes: int, formality: str = "") -> str | None:
+    """Lo que recibe el cliente cuando su chat pasa al equipo dentro del horario (None: no se le dice nada más)."""
+    return _TEAM_REPLIES.to(formality).format(wait=wait_text(reply_minutes)) if reply_minutes else None
 
 
 def handoff_plan(
@@ -303,15 +318,15 @@ def handoff_plan(
     now: datetime,
     *,
     after_hours_message: str | None = None,
+    formality: str = "",
 ) -> HandoffPlan:
     """Qué pasa al pasar un chat a una persona. Dentro del horario, la IA se pausa y el cliente sabe cuánto suele tardar el equipo;
     fuera de él, la IA sigue y le dice cuándo lo atienden (con el mensaje del negocio, si lo escribió)."""
     hours, zone = team_hours(settings, business_hours), _zone(settings)
     if is_open(hours, zone, now):
-        notice = f"Una persona de nuestro equipo te responderá en {wait_text(settings.reply_minutes)}." if settings.reply_minutes else None
-        return HandoffPlan(team_available=True, pause_ai=True, notice=notice)
+        return HandoffPlan(team_available=True, pause_ai=True, notice=wait_notice(settings.reply_minutes, formality))
     custom = str(after_hours_message or "").strip()
-    notice = custom or default_after_hours_notice(hours, next_opening(hours, zone, now), zone, now)
+    notice = custom or default_after_hours_notice(hours, next_opening(hours, zone, now), zone, now, formality)
     return HandoffPlan(team_available=False, pause_ai=False, notice=notice)
 
 
@@ -333,11 +348,13 @@ class PublishedAttention:
     business_hours: tuple[HoursRange, ...] = ()
     after_hours: str | None = None
     ai_resumed: str | None = None
+    # El trato con el cliente, para los avisos de la plataforma («formal», «informal», «neutral» o "").
+    formality: str = ""
 
 
 def published_attention(sections: dict) -> PublishedAttention:
-    """Lee lo compilado de la versión publicada (`compile_business_config`): `config.profile.opening_hours` y
-    `config.attention_messages`. Sin ellos, valores vacíos: la plataforma usa sus mensajes."""
+    """Lee lo compilado de la versión publicada (`compile_business_config`): `config.profile.opening_hours`, el trato
+    (`config.profile.formality`) y `config.attention_messages`. Sin ellos, valores vacíos: la plataforma usa sus mensajes."""
     config = sections.get("config") if isinstance(sections, dict) and isinstance(sections.get("config"), dict) else {}
     profile = config.get("profile") if isinstance(config.get("profile"), dict) else {}
     messages = config.get("attention_messages") if isinstance(config.get("attention_messages"), dict) else {}
@@ -345,4 +362,5 @@ def published_attention(sections: dict) -> PublishedAttention:
         business_hours=hours_from(profile.get("opening_hours")),
         after_hours=str(messages.get("after_hours") or "").strip() or None,
         ai_resumed=str(messages.get("ai_resumed") or "").strip() or None,
+        formality=formality_of(sections),
     )

@@ -19,8 +19,6 @@ from app.utils.logger import logger
 
 
 class LLMRuntime:
-    STRICT_FALLBACK_MESSAGE = "Se me paso tu mensaje, me cuentas otra vez que necesitas?"
-
     def __init__(self, prompt_path: str | None = None) -> None:
         self.settings = settings
         self.provider = settings.llm_provider or "openrouter"

@@ -58,6 +58,8 @@ Cuando pagues, envíame aquí la captura del comprobante y te confirmamos. ✅
 - **Preguntar no es pedirlos:** si solo pregunta «¿puedo transferir?» o «¿y Nequi no?», el asistente le responde que sí y lo sigue guiando, sin soltarle la cuenta.
 - **No se repiten solos:** si el cliente sigue hablando («¿y cuando pague qué hago?», «¿cómo así?»), el asistente le responde y le explica. Si los pide otra vez («se me borró el número»), le llegan otra vez.
 - **Cuando dice que ya pagó,** el chat pasa a tu equipo para verificar el pago.
+- **Con tu trato:** si en **Asistente IA → Estilo** elegiste tratar a los clientes de usted, el mensaje de la plataforma también va de
+  usted («Cuando pague, envíeme aquí la captura del comprobante y le confirmamos»). Si escribiste tu propio mensaje, sale tal cual.
 
 Puedes cambiar este mensaje en [Mensajes y canales](panel:mensajes), en **Cómo le llegan los datos de pago**.
 

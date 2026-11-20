@@ -33,6 +33,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 
 from app.application.pipeline.payment_names import named_option, refine, resolve
+from app.domain.business_config.formality import Phrase, formality_of
 from app.domain.business_config.payment_accounts import (
     inline_details,
     option_label,
@@ -51,22 +52,29 @@ AWAITING_PAYMENT = "report_payment"
 PAYMENT_STATE_HOURS = 6
 # La IA dijo que no podía enviar los datos (dos veces): su mensaje no sale; sale una de estas frases, que sí es verdad.
 REFUSED = "la_ia_dijo_que_no_podia"
+# Las frases de la plataforma van con el trato del negocio (`domain/business_config/formality.py`).
 # El cliente ya tiene los datos y no los pidió: no se repiten (un «cómo así» recibía el bloque otra vez, sin palabras; 13 nov 2026).
-ALREADY_HAS_DETAILS = "Arriba te dejé los datos para pagar por {method}. Si quieres, te los envío otra vez."
+ALREADY_HAS_DETAILS = Phrase(
+    tu="Arriba te dejé los datos para pagar por {method}. Si quieres, te los envío otra vez.",
+    usted="Arriba le dejé los datos para pagar por {method}. Si quiere, se los envío otra vez.",
+)
 # El cliente no los pidió y todavía no los tiene: se le ofrecen.
-OFFER_METHOD_DETAILS = "Claro, puedes pagar por {method}. ¿Quieres que te envíe los datos?"
+OFFER_METHOD_DETAILS = Phrase(
+    tu="Claro, puedes pagar por {method}. ¿Quieres que te envíe los datos?",
+    usted="Claro, puede pagar por {method}. ¿Quiere que le envíe los datos?",
+)
 # Si la IA insiste (dos veces) en que el negocio no recibe un medio que sí tiene, esa respuesta falsa no sale: sale esta.
 METHOD_AVAILABLE = "Sí, claro: también recibimos {method}."
-OFFER_DETAILS = "¿Quieres que te envíe los datos para pagar?"
+OFFER_DETAILS = Phrase(tu="¿Quieres que te envíe los datos para pagar?", usted="¿Quiere que le envíe los datos para pagar?")
 # Lo que dice el asesor encima de los datos cuando su mensaje no puede salir (dijo que no podía enviarlos), y lo que queda en la
 # memoria de la conversación cuando los datos salieron sin palabras suyas. El mensaje con los datos nunca va solo.
-PAYMENT_SENT_MEMORY = "Te dejo aquí los datos para pagar por {method}."
+PAYMENT_SENT_MEMORY = Phrase(tu="Te dejo aquí los datos para pagar por {method}.", usted="Le dejo aquí los datos para pagar por {method}.")
 
 
 def remembered_message(delivery: "PaymentDelivery", runtime_yaml: dict) -> str:
     """Lo que la IA verá en su historial de este mensaje: lo que dijo ella y, donde fueron los datos, su marcador («[dato de pago]»).
     No ve el mensaje con los datos (lo copiaría como si lo hubiera escrito) ni puede recordar un número (lo inventaría)."""
-    lead = delivery.lead.strip() or PAYMENT_SENT_MEMORY.format(method=sent_label(runtime_yaml, delivery.method))
+    lead = delivery.lead.strip() or PAYMENT_SENT_MEMORY.to(formality_of(runtime_yaml)).format(method=sent_label(runtime_yaml, delivery.method))
     return compose(lead, REDACTED_PAYMENT_VALUE, delivery.tail)
 
 
@@ -183,8 +191,8 @@ def deliver(
         label = sent_label(runtime_yaml, known)
         if asked is False:
             line = ALREADY_HAS_DETAILS if already_sent(state, known) else OFFER_METHOD_DETAILS
-            return PaymentDelivery(line.format(method=label), rescue=REFUSED)
-        return _send(runtime_yaml, known, PAYMENT_SENT_MEMORY.format(method=label), REFUSED)
+            return PaymentDelivery(line.to(formality_of(runtime_yaml)).format(method=label), rescue=REFUSED)
+        return _send(runtime_yaml, known, PAYMENT_SENT_MEMORY.to(formality_of(runtime_yaml)).format(method=label), REFUSED)
 
     if hold:
         return PaymentDelivery(_clean(response_text))

@@ -3,6 +3,16 @@
 Lo que cambió en AI Sales Engine, de lo más reciente a lo más antiguo. Cada entrada dice qué gana el negocio; el detalle técnico
 está en el historial de git y en `docs/plan-v1.md`.
 
+## 20 de noviembre de 2026
+
+**Los mensajes automáticos también tratan de usted si tu negocio lo hace**
+- Si en el panel elegiste tratar a los clientes de usted, los mensajes que envía la plataforma también van de usted: el de los datos
+  de pago («Cuando pague, envíeme aquí la captura…»), el del efectivo, «¿Quiere que le envíe los datos?», «Una persona de nuestro
+  equipo le responderá…», el aviso fuera del horario, la disculpa cuando la IA retoma el chat y el mensaje si la IA no puede
+  responder.
+- Las vistas previas y los ejemplos del panel también se muestran de usted, como le llegan a tu cliente.
+- Si escribiste tus propios mensajes, salen tal cual. Si tu negocio trata de tú o de forma neutral, nada cambia.
+
 ## 19 de noviembre de 2026
 
 **Si tu negocio trata a los clientes de usted, el asistente ya no los tutea**

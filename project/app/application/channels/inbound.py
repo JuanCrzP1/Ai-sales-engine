@@ -403,9 +403,10 @@ class ChannelInbound:
         slug = secrets.tenant_slug
         try:
             try:
-                notice = published_attention(self._sections(slug)).ai_resumed or DEFAULT_RESUMED_NOTICE
-            except Exception:  # noqa: BLE001 - sin lo publicado, el mensaje de la plataforma
-                notice = DEFAULT_RESUMED_NOTICE
+                published = published_attention(self._sections(slug))
+                notice = published.ai_resumed or DEFAULT_RESUMED_NOTICE.to(published.formality)
+            except Exception:  # noqa: BLE001 - sin lo publicado, el mensaje de la plataforma (sin saber el trato: de tú)
+                notice = DEFAULT_RESUMED_NOTICE.tu
             self._say(secrets, phone, notice)
             if pending_text.strip():
                 self._answer(secrets, phone, conversation_id, pending_text.strip())

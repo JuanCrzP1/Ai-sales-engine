@@ -5,18 +5,19 @@ import { TextAreaField } from "../../components/ui/FormFields";
 import { Card } from "../../components/ui/Layout";
 import { isMethodActive, optionalText } from "../../domain/config/document";
 import { dataFieldOf, methodKind, methodName } from "../../domain/config/paymentCatalog";
-import { ACCOUNT_TYPE_TEXT, DEFAULT_PAYMENT_DETAILS, renderPaymentDetails } from "../../domain/config/paymentMessage";
+import { phraseFor, type Formality } from "../../domain/config/formality";
+import { ACCOUNT_TYPE_TEXT, DEFAULT_CASH_TEXT, DEFAULT_PAYMENT_DETAILS, isDefaultPaymentDetails, renderPaymentDetails } from "../../domain/config/paymentMessage";
 import type { BusinessDocument } from "../../domain/config/types";
 import { useConfig, useFieldIssue, useSection } from "../../state/useConfig";
 
 /** Datos de ejemplo para la vista previa, con el primer medio activo del negocio: los reales están cifrados y nunca llegan al panel. */
-function sampleFor(document: BusinessDocument): { medio: string; datos: string; titular: string; instrucciones: string } {
+function sampleFor(document: BusinessDocument, formality: Formality): { medio: string; datos: string; titular: string; instrucciones: string } {
   for (const profile of document.payments ?? []) {
     const method = (profile.transfer_methods ?? []).find((item) => profile.transfer_enabled && isMethodActive(profile, item));
     if (!method) continue;
     const data = dataFieldOf(method.type);
     const instrucciones = method.instructions?.trim() ?? "";
-    if (!data) return { medio: methodName(method), datos: instrucciones || "Pagas en efectivo al recibir tu pedido.", titular: "", instrucciones: "" };
+    if (!data) return { medio: methodName(method), datos: instrucciones || phraseFor(DEFAULT_CASH_TEXT, formality), titular: "", instrucciones: "" };
     const example = data.placeholder || "1234567890";
     const datos = methodKind(method.type)?.needsBank
       ? `${ACCOUNT_TYPE_TEXT[method.account_type ?? "ahorros"] ?? "Cuenta"}\n${example}`
@@ -34,12 +35,16 @@ export function PaymentMessagesForm() {
   const detailsIssue = useFieldIssue("messages.payment_details");
   const reportedIssue = useFieldIssue("messages.payment_reported");
   const confirmedIssue = useFieldIssue("messages.payment_confirmed");
+  // El recomendado va con el trato del negocio (Asistente IA → Estilo), como le llega al cliente.
+  const formality = document.response_style?.formality;
+  const recommended = phraseFor(DEFAULT_PAYMENT_DETAILS, formality);
   // Lo que se ve en el campo: mientras se escribe puede quedar vacío (entonces se usa el recomendado), sin que el texto vuelva solo.
-  const [details, setDetails] = useState(messages.payment_details ?? DEFAULT_PAYMENT_DETAILS);
+  const [details, setDetails] = useState(messages.payment_details ?? recommended);
   const custom = Boolean(messages.payment_details);
   const changeDetails = (text: string) => {
     setDetails(text);
-    update({ payment_details: text.trim() === DEFAULT_PAYMENT_DETAILS ? null : optionalText(text) });
+    // El recomendado (de tú o de usted) no se guarda como propio: así sigue el trato si el negocio lo cambia.
+    update({ payment_details: isDefaultPaymentDetails(text) ? null : optionalText(text) });
   };
 
   return (
@@ -54,9 +59,9 @@ export function PaymentMessagesForm() {
             issue={detailsIssue}
             hint="Lo envía el sistema cuando el cliente elige cómo pagar, con los datos reales: la IA nunca los ve. Usa {medio} (Nequi, Yape, tu banco…), {datos} (el número o la cuenta, obligatorio), {titular} (a nombre de quién está) e {instrucciones} (la instrucción del medio, si la escribiste). Una línea con un dato vacío no se envía. Si lo dejas vacío, se usa el recomendado."
           />
-          {(custom || details !== DEFAULT_PAYMENT_DETAILS) && (
+          {(custom || details !== recommended) && (
             <div>
-              <Button size="small" variant="ghost" onClick={() => changeDetails(DEFAULT_PAYMENT_DETAILS)}>
+              <Button size="small" variant="ghost" onClick={() => changeDetails(recommended)}>
                 Volver al mensaje recomendado
               </Button>
             </div>
@@ -66,7 +71,7 @@ export function PaymentMessagesForm() {
           caption="Vista previa con datos de ejemplo"
           lines={[
             { from: "customer", text: "Quiero pagar por transferencia" },
-            { from: "assistant", text: renderPaymentDetails(messages.payment_details, sampleFor(document)) },
+            { from: "assistant", text: renderPaymentDetails(messages.payment_details, sampleFor(document, formality), formality) },
           ]}
         />
       </div>

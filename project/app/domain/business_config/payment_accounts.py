@@ -10,6 +10,7 @@ import re
 import unicodedata
 from dataclasses import dataclass
 
+from app.domain.business_config.formality import Phrase, formality_of
 from app.domain.business_config.payment_catalog import PAYMENT_METHODS, method_kind
 from app.domain.business_config.payment_data import iter_payment_blocks
 from app.domain.business_config.payment_message import DEFAULT_CASH_DETAILS, LINK_NAME, method_parts, render_payment_details
@@ -44,12 +45,12 @@ def option_of(key: str) -> str:
     return "bank" if str(key or "").startswith("bank:") else str(key or "")
 
 
-def _account(item: dict) -> Account | None:
+def _account(item: dict, formality: str = "") -> Account | None:
     kind = str(item.get("type") or "").strip().lower()
     catalog = method_kind(kind)
     if catalog is None:
         return None
-    medio, datos = method_parts(kind, item)
+    medio, datos = method_parts(kind, item, formality)
     if not datos:
         return None
     titular = str(item.get("holder") or "").strip()
@@ -71,6 +72,7 @@ def accounts(runtime_yaml: dict) -> list[Account]:
     link: list[Account] = []
     others: list[Account] = []
     seen: set[tuple[str, str]] = set()
+    formality = formality_of(runtime_yaml)
     for payment in iter_payment_blocks(pricing):
         url = str(payment.get("link") or "").strip()
         if url and not link:
@@ -79,7 +81,7 @@ def accounts(runtime_yaml: dict) -> list[Account]:
         if not bool(transfer.get("enabled", False)):
             continue
         for item in transfer.get("methods") if isinstance(transfer.get("methods"), list) else []:
-            account = _account(item) if isinstance(item, dict) else None
+            account = _account(item, formality) if isinstance(item, dict) else None
             if account is not None and (account.key, account.datos) not in seen:
                 seen.add((account.key, account.datos))
                 others.append(account)
@@ -103,15 +105,17 @@ def payment_message(runtime_yaml: dict, key: str, template: str | None = None) -
     if len(chosen) == 1:
         account = chosen[0]
         # El efectivo no tiene comprobante: si el negocio no escribió su plantilla, la de la plataforma para el efectivo.
-        chosen_template = template or (DEFAULT_CASH_DETAILS if account.kind == "cash" else None)
-        return render_payment_details(chosen_template, medio=account.medio, datos=account.datos, titular=account.titular, instrucciones=account.instrucciones)
+        formality = formality_of(runtime_yaml)
+        chosen_template = template or (DEFAULT_CASH_DETAILS.to(formality) if account.kind == "cash" else None)
+        return render_payment_details(chosen_template, medio=account.medio, datos=account.datos, titular=account.titular,
+                                      instrucciones=account.instrucciones, formality=formality)
     # Varias cuentas del mismo medio: cada una con su nombre, sus datos, su titular y su instrucción, en un solo mensaje.
     blocks = [
         "\n".join(filter(None, (f"*{account.medio}*", account.datos, f"A nombre de: {account.titular}" if account.titular else "", account.instrucciones)))
         for account in chosen
     ]
     medio = _PLURAL_NAMES.get(chosen[0].kind, chosen[0].medio)
-    return render_payment_details(template, medio=medio, datos="\n\n".join(blocks))
+    return render_payment_details(template, medio=medio, datos="\n\n".join(blocks), formality=formality_of(runtime_yaml))
 
 
 def inline_details(runtime_yaml: dict, key: str) -> str:
@@ -143,12 +147,19 @@ def option_label(runtime_yaml: dict, option: str) -> str:
     return kind.name[0].lower() + kind.name[1:] if kind.name.startswith(_COMMON_WORDS) else kind.name
 
 
+# La pregunta cuando no se sabe con qué medio quiere pagar el cliente, con el trato del negocio (`formality.py`).
+WHICH_METHOD = Phrase(tu="¿Con qué medio prefieres pagar{choices}?", usted="¿Con qué medio prefiere pagar{choices}?")
+ONLY_METHOD = Phrase(tu="¿Te envío los datos para pagar por {method}?", usted="¿Le envío los datos para pagar por {method}?")
+
+
 def which_method_question(runtime_yaml: dict) -> str:
     """La pregunta cuando no se sabe con qué medio quiere pagar el cliente, con los nombres de los medios del negocio."""
     labels = [option_label(runtime_yaml, option) for option in options(runtime_yaml)]
-    if len(labels) > 1:
-        return f"¿Con qué medio prefieres pagar: {', '.join(labels[:-1])} o {labels[-1]}?"
-    return f"¿Te envío los datos para pagar por {labels[0]}?" if labels else "¿Con qué medio prefieres pagar?"
+    formality = formality_of(runtime_yaml)
+    if len(labels) == 1:
+        return ONLY_METHOD.to(formality).format(method=labels[0])
+    choices = f": {', '.join(labels[:-1])} o {labels[-1]}" if labels else ""
+    return WHICH_METHOD.to(formality).format(choices=choices)
 
 
 def same_payment(first: str, second: str) -> bool:

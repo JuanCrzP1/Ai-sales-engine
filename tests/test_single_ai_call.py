@@ -98,7 +98,7 @@ def test_an_unusable_answer_never_reaches_the_customer_as_json_and_is_not_repeat
     pipeline, prompts = _pipeline(['{"intent": "info", "response": "Tenemos menú'])
     answer, ai_used, _metadata = _say(pipeline)
     assert len(prompts) == 1
-    assert answer == FAILED_REPLY and ai_used is False
+    assert answer == FAILED_REPLY.tu and ai_used is False
 
 
 def test_the_first_call_already_asks_for_the_format():

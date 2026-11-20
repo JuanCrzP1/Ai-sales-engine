@@ -24,6 +24,7 @@ from app.application.pipeline.payment_delivery import (
 )
 from app.application.pipeline.response_postprocessor import enforce_max_words
 from app.application.pipeline.turn_context import TurnContext
+from app.domain.business_config.formality import formality_of
 from app.domain.conversation.memory import MemoryDomainService
 from app.utils.logger import logger
 
@@ -52,7 +53,7 @@ def settle_payment(
     reading = turn.reading
     if problem.get("denied"):
         logger.error("pago_medio_negado", extra={"tenant": turn.tenant_slug})
-        offer = "" if reading is not None and reading.wants_details else OFFER_DETAILS
+        offer = "" if reading is not None and reading.wants_details else OFFER_DETAILS.to(formality_of(turn.runtime_yaml))
         response_text = f"{METHOD_AVAILABLE.format(method=problem['denied'])} {offer}".strip()
     payment_method = str(ai_metadata.get("payment_method") or "").strip().lower()
     payment_status = _payment_status(ai_metadata, turn, memory_service)

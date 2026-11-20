@@ -5,9 +5,14 @@ Es el mensaje que el negocio escribió en el panel (Mensajes → «Si el asisten
 """
 from __future__ import annotations
 
+from app.domain.business_config.formality import Phrase, formality_of
 from app.utils.logger import logger
 
-PLATFORM_FALLBACK_REPLY = "Gracias por escribirnos. En este momento no puedo responderte; por favor escríbenos de nuevo en unos minutos."
+# Con el trato del negocio (`domain/business_config/formality.py`).
+PLATFORM_FALLBACK_REPLY = Phrase(
+    tu="Gracias por escribirnos. En este momento no puedo responderte; por favor escríbenos de nuevo en unos minutos.",
+    usted="Gracias por escribirnos. En este momento no puedo responderle; por favor escríbanos de nuevo en unos minutos.",
+)
 
 
 def business_fallback_message(runtime_yaml: dict) -> str:
@@ -29,4 +34,4 @@ def build_fallback_response(user_message: str, tenant_config: dict) -> str:
             "configured": bool(message),
         },
     )
-    return message or PLATFORM_FALLBACK_REPLY
+    return message or PLATFORM_FALLBACK_REPLY.to(formality_of(runtime_yaml))
