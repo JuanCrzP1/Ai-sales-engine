@@ -71,7 +71,14 @@ def conversations(facts: dict) -> list[tuple[str, list[tuple[str, str]]]]:
 EXACT_RULES = {
     "respeta_el_largo": "Lo que escribe la IA no pasa del máximo de palabras del negocio, sin que el motor tenga que recortarlo.",
     "sin_emojis_si_no_van": "Si el negocio no quiere emojis, el asesor no usa ninguno (el mensaje con los datos de pago es de la plataforma).",
+    "respeta_el_trato": "Con trato formal el asesor no tutea («tú», «te», «ti», «contigo», «tu», «tus»); con informal no dice «usted».",
 }
+
+# Las palabras que delatan el trato sin duda: con usted nunca se dice «te» ni «tu», y con tú nunca «usted». Las formas del verbo
+# («quieres», «cuénteme») dependen de la frase: esas las revisa el juez (`trato_y_tono`). La primera medición (19 nov 2026) mostró
+# que el juez solo vio una parte: dejó pasar «¿Te gustaría…?» y «tu nombre» en conversaciones que dio por buenas.
+_TUTEO = re.compile(r"\b(tú|te|ti|contigo|tu|tus)\b", re.IGNORECASE)
+_USTED = re.compile(r"\busted\b", re.IGNORECASE)
 
 # Emojis: pictogramas, símbolos y banderas. No cuenta la puntuación ni las letras con tilde.
 _EMOJI = re.compile("[\U0001F000-\U0001FAFF\U00002600-\U000027BF\U0001F1E6-\U0001F1FF\U00002B00-\U00002BFF\U0000FE0F]")
@@ -98,15 +105,20 @@ def exact_failures(turns: list[dict], facts: dict) -> dict[str, list[dict]]:
             failures["respeta_el_largo"].append({"turn": turn["turn"], "why": f"la IA escribió {written} palabras y el máximo es {limit}"})
         if facts.get("emojis") is False and _EMOJI.search(said):
             failures["sin_emojis_si_no_van"].append({"turn": turn["turn"], "why": "usó un emoji y el negocio no los quiere"})
+        wrong = _TUTEO if facts.get("trato") == "formal" else _USTED if facts.get("trato") == "informal" else None
+        found = sorted({word.lower() for word in wrong.findall(said)}) if wrong else []
+        if found:
+            failures["respeta_el_trato"].append({"turn": turn["turn"], "why": f"el trato es {facts['trato']} y dijo «{'», «'.join(found)}»"})
     return failures
 
 
 JUDGE_RULES = {
     "trato_y_tono": (
-        "El asesor trata al cliente como dice «trato» en la ficha: «formal» es siempre de usted (nunca «tú», «te», «tu», «quieres», "
-        "«cuéntame»…); «informal» es de tú; «neutral», amable y respetuoso. Y habla con el «tono» de la ficha. No pasa si cambia el "
-        "trato en algún mensaje o si su tono contradice el de la ficha (por ejemplo, frío cuando debe ser alegre, o con jerga cuando debe "
-        "ser sobrio)."
+        "El asesor trata al cliente como dice «trato» en la ficha: «formal» es siempre de usted («usted», «su», «le», «cuénteme», "
+        "«compártame», «¿le gustaría…?»; nunca «tú», «te», «tu», «quieres», «cuéntame», «compárteme», ni mezclas como «compárteme su "
+        "nombre»); «informal» es de tú; «neutral», amable y respetuoso. Y habla con el «tono» de la ficha. No pasa si cambia el trato en "
+        "algún mensaje o si su tono contradice el de la ficha (por ejemplo, frío cuando debe ser alegre, o con jerga cuando debe ser "
+        "sobrio)."
     ),
     "horario_del_negocio": (
         "Cuando el cliente pregunta por el horario o por un día, el asesor da el de la ficha («horario»): los días y las horas correctos; "

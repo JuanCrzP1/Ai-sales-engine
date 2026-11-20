@@ -809,7 +809,8 @@ PHASE_3_CASES = {
         {"days": _WEEK, "opens": "11:00", "closes": "22:00"}, {"days": ["sabado", "domingo"], "opens": "12:00", "closes": "23:00"}]),
         "Horario de atención: lunes a viernes de 11:00 a 22:00; sábado y domingo de 12:00 a 23:00.", 0),
     "estilo": ("restaurant", lambda d: d["response_style"].update(voice="alegre y cercana", formality="formal", emojis=False, instructions=["Sin tecnicismos."]),
-               "Personalidad de la marca: alegre y cercana.\nTrata al cliente de usted.\nNo uses emojis.\nCómo te expresas:\n- Sin tecnicismos.", 0),
+               "Personalidad de la marca: alegre y cercana.\nTrata al cliente de usted en todo el mensaje («usted», «su», «le»: «¿le gustaría…?», "
+               "«cuénteme»), aunque él te hable de tú. Las frases y preguntas de ejemplo del negocio dilas también de usted.\nNo uses emojis.\nCómo te expresas:\n- Sin tecnicismos.", 0),
     "estilo_tuteo": ("restaurant", lambda d: d["response_style"].update(formality="informal", emojis=True),
                      "Trata al cliente de tú.\nPuedes usar algún emoji, con moderación.", 0),
     # «LO QUE VENDE»

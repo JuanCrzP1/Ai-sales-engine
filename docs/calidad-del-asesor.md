@@ -459,6 +459,46 @@ del lector: «nota fiel» dos veces (una es del juez: el cliente sí había dich
 viejo con el aviso de pago), y una de «responde lo que preguntan» y otra de «explica cuando no entienden», como antes. Gasto del
 arreglo, con las mediciones: unos USD 0,31.
 
+### El trato de usted (19 de noviembre de 2026)
+
+**Primero, la medición.** El juez daba «trato y tono» 14 a 16 de 18, pero dejaba pasar «¿Te gustaría…?» y «tu nombre» en
+conversaciones que daba por buenas. Ahora hay una regla exacta, «respeta el trato»: con trato formal el asesor no dice «tú», «te»,
+«ti», «contigo», «tu» ni «tus»; con informal no dice «usted». Esas palabras delatan el trato sin duda. Las formas del verbo
+(«compárteme» frente a «compártame») dependen de la frase y las sigue revisando el juez, que ahora tiene en su regla las formas
+correctas de usted: antes marcó «cuénteme» como tuteo. Con la regla exacta, las dos mediciones anteriores daban **8 de 18** en el
+perfil de usted; el de tú, 18 de 18.
+
+**Por qué tuteaba**, leyendo el prompt real del perfil de usted:
+
+- Las frases de ejemplo del negocio están de tú («¿Por dónde te entran más mensajes?», «Te entiendo, es una inversión importante»,
+  «Te muestro cómo sería en tu caso») y la IA las copia.
+- La orden era una sola línea, «Trata al cliente de usted.», a mitad del prompt.
+- El cliente le habla de tú («cuéntame todo…») y la IA lo imita.
+
+**El arreglo** (prompt `v18`; cambia solo para los negocios que tratan de usted):
+
+- La orden dice qué es tratar de usted, con las formas correctas, que se mantiene aunque el cliente tutee y que las frases de ejemplo
+  del negocio también van de usted.
+- Un recordatorio corto al final de «ESTA CONVERSACIÓN», lo último que lee la IA antes de escribir.
+- El ejemplo de cuando le llegan los datos de pago («Ahí abajo te dejo los datos…») va de usted: «le dejo».
+
+| Versión | Sin «te», «tu»… | Todo de usted (con el juez) | Medición |
+|---|---|---|---|
+| La anterior | 8 de 18 | — | `panel_obedece_20261119`, `panel_lector_v17_20261119` |
+| A: la orden clara | 23 de 24 | 22 de 24 | `trato_a_20261119`, `trato_a_confirma_20261119` |
+| **B: la orden clara y el recordatorio** | **30 de 30** | **28 de 30 (93 %)** | `trato_b_20261119`, revisada con el juez nuevo en `trato_b_juez_20261119` |
+
+Quedó la B. Lo que falla todavía: dos veces «compárteme su nombre» al pedir los datos para cerrar (mezcla tú y usted en un verbo).
+El largo no cambió: en la B, el 8 % de las respuestas pasa de 40 palabras (antes, 7 %), casi todas cuando el cliente pide que le
+cuenten todo; el motor las recorta. El perfil de tú no cambió (su prompt es el mismo).
+
+Ninguno de los 9 negocios de ejemplo trata de usted, así que el laboratorio de regresión (`trato_de_usted_misma_version_20261119`,
+con la versión del prompt igualada) sale sin diferencias en los 9: su prompt y sus respuestas son los mismos. Por eso no se repitió
+la puerta de pagos. Gasto: unos USD 0,10.
+
+Pendiente: unos diez textos fijos de la plataforma están de tú (el mensaje con los datos de pago, «¿Quieres que te envíe los
+datos?», «te paso con una persona del equipo», el mensaje cuando la IA no responde) y salen así aunque el negocio trate de usted.
+
 ## Lo que la puerta no cubre
 
 - Solo mira los momentos de pago y, con `--panel`, lo que configura el negocio. La oferta, los precios y las objeciones los mide

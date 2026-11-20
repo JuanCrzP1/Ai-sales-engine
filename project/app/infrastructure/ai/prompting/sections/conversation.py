@@ -9,6 +9,7 @@ from __future__ import annotations
 from app.domain.business_config.payment_catalog import method_kind
 from app.domain.conversation.customer_data import described
 from app.infrastructure.ai.prompting import instructions
+from app.infrastructure.ai.prompting.sections.business import formality
 from app.infrastructure.ai.prompting.text import as_dict, as_text, bullets, one_line, section
 from app.infrastructure.ai.prompting.view import PromptView
 
@@ -51,7 +52,8 @@ def _this_message(view: PromptView, status: str) -> list[str]:
         facts.append(instructions.PAYMENT_METHOD_AVAILABLE.format(method=named))
     if reading.get("wants_details"):
         method = one_line(reading.get("method"))
-        facts.append(instructions.PAYMENT_ASKED.format(method=method) if method else instructions.PAYMENT_ASKED_NO_METHOD)
+        leave = instructions.PAYMENT_ASKED_LEAVE.get(formality(view), instructions.PAYMENT_ASKED_LEAVE_DEFAULT)
+        facts.append(instructions.PAYMENT_ASKED.format(method=method, leave=leave) if method else instructions.PAYMENT_ASKED_NO_METHOD)
     elif reading.get("no_details_now"):
         facts.append(instructions.PAYMENT_HAS_DETAILS if reading.get("has_details") else instructions.PAYMENT_NOT_NOW)
     if reading.get("says_paid") and status != "reportado":
@@ -101,4 +103,6 @@ def render(view: PromptView) -> str:
     if hint:
         facts.append(f"Dato que contó antes: {hint}")
     facts += commercial_memory(view)
+    if formality(view) == "formal":
+        facts.append(instructions.FORMAL_REMINDER)
     return section(instructions.CONVERSATION_HEADER, [_moment(view), *bullets(facts)])

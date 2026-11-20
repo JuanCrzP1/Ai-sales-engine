@@ -253,3 +253,37 @@ def test_the_conversation_goes_as_messages_without_payment_data():
     assert [message["role"] for message in messages] == ["user", "assistant", "user"]
     assert secret not in str(messages) and REDACTED_PAYMENT_VALUE in messages[1]["content"]
     assert len(messages[2]["content"]) <= 701
+
+
+# ---------------------------------------------------------------------------
+# El trato del negocio
+# ---------------------------------------------------------------------------
+
+def _with_formality(formality: str | None, *, payment_method: str = "") -> PromptView:
+    runtime = load_tenant_runtime_yaml("saas")
+    profile = {k: v for k, v in (runtime["config"].get("profile") or {}).items() if k != "formality"}
+    if formality is not None:
+        profile["formality"] = formality
+    runtime["config"] = {**runtime["config"], "profile": profile}
+    if payment_method:
+        runtime["payment_reading"] = {"wants_details": True, "method": payment_method}
+    return PromptView(runtime)
+
+
+def test_a_formal_business_is_reminded_of_usted_at_the_end():
+    """19 nov 2026: con la orden de usted solo en «EL NEGOCIO», gpt-4o-mini tuteaba en 10 de 18 conversaciones formales; con la orden
+    clara y el recordatorio al final de lo último que lee, en 0 de 30 (puerta del panel, `trato_b_20261119`)."""
+    formal = composer.render_sections(_with_formality("formal"))
+    assert "Trata al cliente de usted en todo el mensaje" in formal["business"]
+    assert formal["conversation"].endswith(f"- {instructions.FORMAL_REMINDER}")
+    for other in ("informal", "neutral", None):
+        assert instructions.FORMAL_REMINDER not in composer.compose(_with_formality(other)), other
+
+
+def test_the_payment_example_speaks_like_the_business():
+    """La IA copia el ejemplo tal cual: con trato formal, «le dejo»; con cualquier otro, el de siempre («te dejo»)."""
+    formal = composer.render_sections(_with_formality("formal", payment_method="Nequi"))["conversation"]
+    assert "«¡Listo! Ahí abajo le dejo los datos para pagar por Nequi.»" in formal and "te dejo" not in formal
+    for other in ("informal", "neutral", None):
+        said = composer.render_sections(_with_formality(other, payment_method="Nequi"))["conversation"]
+        assert "«¡Listo! Ahí abajo te dejo los datos para pagar por Nequi.»" in said, other

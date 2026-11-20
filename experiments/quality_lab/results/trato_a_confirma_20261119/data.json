@@ -1,0 +1,847 @@
+{
+ "por_mensaje": {
+  "mensajes": 45,
+  "segundos_mediana": 3.0,
+  "segundos_p95": 4.1,
+  "usd_por_1000_mensajes": 0.4,
+  "fuera_de_formato": 0,
+  "sin_respuesta_de_la_ia": 0,
+  "tokens_de_razonamiento_por_mensaje": 0
+ },
+ "experiment": "trato_a_confirma_20261119",
+ "modo": "panel",
+ "candidate": "00df467 + cambios",
+ "model": "openai/gpt-4o-mini",
+ "judge_model": "google/gemini-2.5-flash",
+ "samples": 5,
+ "tenants": [
+  "asesor_ai_prod"
+ ],
+ "rows": [
+  {
+   "tenant": "asesor_ai_prod",
+   "conversation": "pregunta el horario",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "respeta_el_largo": [],
+    "sin_emojis_si_no_van": [],
+    "respeta_el_trato": [],
+    "trato_y_tono": [],
+    "horario_del_negocio": [],
+    "cierra_como_el_negocio": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Hola, me interesa Plan Basico",
+     "expect": "sin_datos",
+     "reply": "Excelente elección. El Plan Básico cuesta COP 100.000 de implementación y COP 110.000 mensuales. Incluye configuración inicial, guía de integración con WhatsApp y un asistente conversacional inteligente. ¿Me puede proporcionar su nombre y teléfono para continuar?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 36
+    },
+    {
+     "turn": 2,
+     "message": "¿En qué horario atienden?",
+     "expect": "sin_datos",
+     "reply": "Atendemos de lunes a viernes de 08:00 a 17:00. ¿Le gustaría avanzar con el Plan Básico?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 16
+    },
+    {
+     "turn": 3,
+     "message": "¿Y el sábado abren?",
+     "expect": "sin_datos",
+     "reply": "No, solo atendemos de lunes a viernes. ¿Le gustaría avanzar con el Plan Básico?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 14
+    }
+   ]
+  },
+  {
+   "tenant": "asesor_ai_prod",
+   "conversation": "decide comprar",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "respeta_el_largo": [],
+    "sin_emojis_si_no_van": [],
+    "respeta_el_trato": [],
+    "trato_y_tono": [],
+    "horario_del_negocio": [],
+    "cierra_como_el_negocio": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Hola, me interesa Plan Basico",
+     "expect": "sin_datos",
+     "reply": "Excelente elección. El Plan Básico incluye configuración inicial, guía de integración con WhatsApp y un asistente conversacional inteligente. Para avanzar, ¿me puede proporcionar su nombre y teléfono?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 27
+    },
+    {
+     "turn": 2,
+     "message": "¿Cuánto cuesta Plan Basico?",
+     "expect": "sin_datos",
+     "reply": "El Plan Básico cuesta COP 100.000 de implementación y COP 110.000 al mes. Este costo incluye la configuración inicial y el sistema mensual. ¿Le gustaría proceder con la activación?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 29
+    },
+    {
+     "turn": 3,
+     "message": "Me convence, lo quiero",
+     "expect": "sin_datos",
+     "reply": "Perfecto. Para proceder, por favor, compártame su nombre y número de teléfono.",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 12
+    },
+    {
+     "turn": 4,
+     "message": "Me llamo Ana",
+     "expect": "sin_datos",
+     "reply": "Gracias, Ana. Ahora necesito su número de teléfono para completar el proceso de activación.",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 14
+    }
+   ]
+  },
+  {
+   "tenant": "asesor_ai_prod",
+   "conversation": "pide que le cuente todo",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "respeta_el_largo": [],
+    "sin_emojis_si_no_van": [],
+    "respeta_el_trato": [],
+    "trato_y_tono": [],
+    "horario_del_negocio": [],
+    "cierra_como_el_negocio": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Hola, cuéntame todo sobre Plan Basico: qué incluye, cómo funciona y por qué me conviene",
+     "expect": "sin_datos",
+     "reply": "El Plan Básico incluye configuración inicial, guía de integración con WhatsApp y un asistente conversacional inteligente. Le conviene porque le permite responder rápidamente y mantener seguimiento constante, evitando que se enfríen las oportunidades de venta.",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 35
+    },
+    {
+     "turn": 2,
+     "message": "¿Y qué más tienen?",
+     "expect": "sin_datos",
+     "reply": "Además del Plan Básico, ofrecemos el Plan Pro, que incluye prioridad en soporte. Si desea, puedo ayudarle a determinar cuál se adapta mejor a sus necesidades.",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 26
+    }
+   ]
+  },
+  {
+   "tenant": "asesor_ai_prod",
+   "conversation": "pregunta el horario",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "respeta_el_largo": [],
+    "sin_emojis_si_no_van": [],
+    "respeta_el_trato": [],
+    "trato_y_tono": [],
+    "horario_del_negocio": [],
+    "cierra_como_el_negocio": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Hola, me interesa Plan Basico",
+     "expect": "sin_datos",
+     "reply": "Perfecto, el Plan Básico incluye configuración inicial, guía de integración con WhatsApp y un asistente conversacional inteligente por COP 210.000 el primer mes y luego COP 110.000 mensuales. ¿Me puede proporcionar su nombre y teléfono para continuar?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 37
+    },
+    {
+     "turn": 2,
+     "message": "¿En qué horario atienden?",
+     "expect": "sin_datos",
+     "reply": "Atendemos de lunes a viernes de 08:00 a 17:00. ¿Le gustaría avanzar con el Plan Básico?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 16
+    },
+    {
+     "turn": 3,
+     "message": "¿Y el sábado abren?",
+     "expect": "sin_datos",
+     "reply": "No atendemos los sábados, solo de lunes a viernes. ¿Le gustaría avanzar con el Plan Básico?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 16
+    }
+   ]
+  },
+  {
+   "tenant": "asesor_ai_prod",
+   "conversation": "decide comprar",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "respeta_el_largo": [],
+    "sin_emojis_si_no_van": [],
+    "respeta_el_trato": [
+     {
+      "turn": 4,
+      "why": "el trato es formal y dijo «tu»"
+     }
+    ],
+    "trato_y_tono": [
+     {
+      "turn": 4,
+      "why": "Cambia de trato formal a informal al usar 'tu'."
+     }
+    ],
+    "horario_del_negocio": [],
+    "cierra_como_el_negocio": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Hola, me interesa Plan Basico",
+     "expect": "sin_datos",
+     "reply": "Excelente elección. El Plan Básico incluye configuración inicial, guía de integración con WhatsApp y un asistente conversacional inteligente. Para continuar, por favor compárteme su nombre y teléfono.",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 27
+    },
+    {
+     "turn": 2,
+     "message": "¿Cuánto cuesta Plan Basico?",
+     "expect": "sin_datos",
+     "reply": "El Plan Básico cuesta COP 100.000 de implementación y COP 110.000 al mes. Incluye configuración inicial y un asistente conversacional inteligente. ¿Le gustaría avanzar con la activación?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 27
+    },
+    {
+     "turn": 3,
+     "message": "Me convence, lo quiero",
+     "expect": "sin_datos",
+     "reply": "Perfecto. Para proceder, por favor compárteme su nombre y teléfono.",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 10
+    },
+    {
+     "turn": 4,
+     "message": "Me llamo Ana",
+     "expect": "sin_datos",
+     "reply": "Gracias, Ana. Ahora, por favor, compárteme tu número de teléfono para completar el registro.",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 14
+    }
+   ]
+  },
+  {
+   "tenant": "asesor_ai_prod",
+   "conversation": "pide que le cuente todo",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "respeta_el_largo": [],
+    "sin_emojis_si_no_van": [],
+    "respeta_el_trato": [],
+    "trato_y_tono": [],
+    "horario_del_negocio": [],
+    "cierra_como_el_negocio": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Hola, cuéntame todo sobre Plan Basico: qué incluye, cómo funciona y por qué me conviene",
+     "expect": "sin_datos",
+     "reply": "El Plan Básico cuesta COP 100.000 de implementación y COP 110.000 al mes. Incluye configuración inicial, guía de integración con WhatsApp y un asistente conversacional inteligente. Le conviene porque automatiza respuestas y seguimiento, ayudando a no perder ventas.",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 38
+    },
+    {
+     "turn": 2,
+     "message": "¿Y qué más tienen?",
+     "expect": "sin_datos",
+     "reply": "Además del Plan Básico, tenemos el Plan Pro, que ofrece soporte prioritario. Si está interesado, puedo ayudarle a ver cuál se adapta mejor a sus necesidades.",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 26
+    }
+   ]
+  },
+  {
+   "tenant": "asesor_ai_prod",
+   "conversation": "pregunta el horario",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "respeta_el_largo": [],
+    "sin_emojis_si_no_van": [],
+    "respeta_el_trato": [],
+    "trato_y_tono": [],
+    "horario_del_negocio": [],
+    "cierra_como_el_negocio": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Hola, me interesa Plan Basico",
+     "expect": "sin_datos",
+     "reply": "Excelente elección. El Plan Básico incluye configuración inicial y un asistente conversacional inteligente por COP 210.000 el primer mes, y luego COP 110.000 mensuales. ¿Me puede proporcionar su nombre y teléfono para continuar?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 33
+    },
+    {
+     "turn": 2,
+     "message": "¿En qué horario atienden?",
+     "expect": "sin_datos",
+     "reply": "Atendemos de lunes a viernes, de 08:00 a 17:00. ¿Le gustaría avanzar con el Plan Básico?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 16
+    },
+    {
+     "turn": 3,
+     "message": "¿Y el sábado abren?",
+     "expect": "sin_datos",
+     "reply": "No atendemos los sábados. Solo de lunes a viernes. ¿Le gustaría avanzar con el Plan Básico?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 16
+    }
+   ]
+  },
+  {
+   "tenant": "asesor_ai_prod",
+   "conversation": "decide comprar",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "respeta_el_largo": [],
+    "sin_emojis_si_no_van": [],
+    "respeta_el_trato": [],
+    "trato_y_tono": [],
+    "horario_del_negocio": [],
+    "cierra_como_el_negocio": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Hola, me interesa Plan Basico",
+     "expect": "sin_datos",
+     "reply": "Perfecto, el Plan Básico incluye configuración inicial y un asistente conversacional inteligente por COP 100.000 de implementación y COP 110.000 al mes. ¿Me puede compartir su nombre y teléfono para continuar con la activación?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 34
+    },
+    {
+     "turn": 2,
+     "message": "¿Cuánto cuesta Plan Basico?",
+     "expect": "sin_datos",
+     "reply": "El Plan Básico cuesta COP 100.000 de implementación y COP 110.000 al mes. Incluye configuración inicial y un asistente conversacional inteligente. ¿Le gustaría proceder con la activación?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 27
+    },
+    {
+     "turn": 3,
+     "message": "Me convence, lo quiero",
+     "expect": "sin_datos",
+     "reply": "Excelente decisión. Por favor, compártame su nombre y teléfono para continuar con la activación del Plan Básico.",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 17
+    },
+    {
+     "turn": 4,
+     "message": "Me llamo Ana",
+     "expect": "sin_datos",
+     "reply": "Gracias, Ana. Por favor, también compártame su número de teléfono para completar el proceso de activación.",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 16
+    }
+   ]
+  },
+  {
+   "tenant": "asesor_ai_prod",
+   "conversation": "pide que le cuente todo",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "respeta_el_largo": [],
+    "sin_emojis_si_no_van": [],
+    "respeta_el_trato": [],
+    "trato_y_tono": [],
+    "horario_del_negocio": [],
+    "cierra_como_el_negocio": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Hola, cuéntame todo sobre Plan Basico: qué incluye, cómo funciona y por qué me conviene",
+     "expect": "sin_datos",
+     "reply": "El Plan Básico cuesta COP 100.000 de implementación y COP 110.000 al mes. Incluye configuración inicial, guía de integración con WhatsApp y un asistente conversacional inteligente. Le conviene porque automatiza respuestas y seguimiento, evitando que pierda clientes por demoras.",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 39
+    },
+    {
+     "turn": 2,
+     "message": "¿Y qué más tienen?",
+     "expect": "sin_datos",
+     "reply": "Además del Plan Básico, también ofrecemos el Plan Pro, que incluye soporte prioritario. Si está interesado, puedo ayudarle a ver cuál se adapta mejor a sus necesidades.",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 27
+    }
+   ]
+  },
+  {
+   "tenant": "asesor_ai_prod",
+   "conversation": "pregunta el horario",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "respeta_el_largo": [],
+    "sin_emojis_si_no_van": [],
+    "respeta_el_trato": [],
+    "trato_y_tono": [],
+    "horario_del_negocio": [],
+    "cierra_como_el_negocio": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Hola, me interesa Plan Basico",
+     "expect": "sin_datos",
+     "reply": "Perfecto, el Plan Básico cuesta COP 100.000 de implementación y COP 110.000 al mes. Incluye configuración inicial, guía de integración con WhatsApp y asistente conversacional inteligente. ¿Me puede dar su nombre y teléfono para continuar?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 35
+    },
+    {
+     "turn": 2,
+     "message": "¿En qué horario atienden?",
+     "expect": "sin_datos",
+     "reply": "Atendemos de lunes a viernes, de 08:00 a 17:00. ¿Le gustaría avanzar con el Plan Básico?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 16
+    },
+    {
+     "turn": 3,
+     "message": "¿Y el sábado abren?",
+     "expect": "sin_datos",
+     "reply": "No atendemos los sábados, solo de lunes a viernes. ¿Le gustaría avanzar con el Plan Básico?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 16
+    }
+   ]
+  },
+  {
+   "tenant": "asesor_ai_prod",
+   "conversation": "decide comprar",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "respeta_el_largo": [],
+    "sin_emojis_si_no_van": [],
+    "respeta_el_trato": [],
+    "trato_y_tono": [],
+    "horario_del_negocio": [],
+    "cierra_como_el_negocio": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Hola, me interesa Plan Basico",
+     "expect": "sin_datos",
+     "reply": "Perfecto, el Plan Básico cuesta COP 100.000 de implementación y COP 110.000 al mes. Incluye configuración inicial, guía de integración con WhatsApp y asistente conversacional inteligente. ¿Me puede dar su nombre y número de teléfono para continuar con el proceso?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 40
+    },
+    {
+     "turn": 2,
+     "message": "¿Cuánto cuesta Plan Basico?",
+     "expect": "sin_datos",
+     "reply": "El Plan Básico cuesta COP 100.000 de implementación y COP 110.000 al mes. Este plan incluye configuración inicial y asistente conversacional inteligente. ¿Le gustaría avanzar con la activación?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 28
+    },
+    {
+     "turn": 3,
+     "message": "Me convence, lo quiero",
+     "expect": "sin_datos",
+     "reply": "Excelente decisión. Por favor, indíqueme su nombre y número de teléfono para continuar con el proceso de activación.",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 18
+    },
+    {
+     "turn": 4,
+     "message": "Me llamo Ana",
+     "expect": "sin_datos",
+     "reply": "Gracias, Ana. ¿Cuál es su número de teléfono para completar el proceso de activación?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 14
+    }
+   ]
+  },
+  {
+   "tenant": "asesor_ai_prod",
+   "conversation": "pide que le cuente todo",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "respeta_el_largo": [],
+    "sin_emojis_si_no_van": [],
+    "respeta_el_trato": [],
+    "trato_y_tono": [],
+    "horario_del_negocio": [],
+    "cierra_como_el_negocio": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Hola, cuéntame todo sobre Plan Basico: qué incluye, cómo funciona y por qué me conviene",
+     "expect": "sin_datos",
+     "reply": "El Plan Básico cuesta COP 100.000 de implementación y COP 110.000 al mes. Incluye configuración inicial, guía de integración con WhatsApp y un asistente conversacional inteligente. Le conviene porque automatiza respuestas y seguimiento, ayudando a no perder clientes por demoras.",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 40
+    },
+    {
+     "turn": 2,
+     "message": "¿Y qué más tienen?",
+     "expect": "sin_datos",
+     "reply": "Además del Plan Básico, tenemos el Plan Pro, que ofrece prioridad en soporte y más funcionalidades. ¿Le gustaría saber más sobre cómo el Plan Pro puede ayudarle?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 27
+    }
+   ]
+  },
+  {
+   "tenant": "asesor_ai_prod",
+   "conversation": "pregunta el horario",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "respeta_el_largo": [],
+    "sin_emojis_si_no_van": [],
+    "respeta_el_trato": [],
+    "trato_y_tono": [],
+    "horario_del_negocio": [],
+    "cierra_como_el_negocio": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Hola, me interesa Plan Basico",
+     "expect": "sin_datos",
+     "reply": "Excelente elección. El Plan Básico incluye la configuración inicial y un asistente conversacional inteligente por COP 210.000 el primer mes. Para avanzar, por favor, indíqueme su nombre y teléfono.",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 29
+    },
+    {
+     "turn": 2,
+     "message": "¿En qué horario atienden?",
+     "expect": "sin_datos",
+     "reply": "Atendemos de lunes a viernes de 08:00 a 17:00. ¿Le gustaría avanzar con el Plan Básico?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 16
+    },
+    {
+     "turn": 3,
+     "message": "¿Y el sábado abren?",
+     "expect": "sin_datos",
+     "reply": "No atendemos los sábados. Solo de lunes a viernes. ¿Le gustaría avanzar con el Plan Básico?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 16
+    }
+   ]
+  },
+  {
+   "tenant": "asesor_ai_prod",
+   "conversation": "decide comprar",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "respeta_el_largo": [],
+    "sin_emojis_si_no_van": [],
+    "respeta_el_trato": [],
+    "trato_y_tono": [],
+    "horario_del_negocio": [],
+    "cierra_como_el_negocio": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Hola, me interesa Plan Basico",
+     "expect": "sin_datos",
+     "reply": "Excelente elección. El Plan Básico incluye configuración inicial, guía de integración con WhatsApp y un asistente conversacional inteligente. Para continuar, necesito su nombre y teléfono.",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 25
+    },
+    {
+     "turn": 2,
+     "message": "¿Cuánto cuesta Plan Basico?",
+     "expect": "sin_datos",
+     "reply": "El Plan Básico cuesta COP 100.000 de implementación y COP 110.000 al mes. Esto incluye la configuración inicial y el asistente conversacional inteligente. ¿Le gustaría proceder?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 26
+    },
+    {
+     "turn": 3,
+     "message": "Me convence, lo quiero",
+     "expect": "sin_datos",
+     "reply": "Perfecto. Para proceder, por favor, compártame su nombre y teléfono.",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 10
+    },
+    {
+     "turn": 4,
+     "message": "Me llamo Ana",
+     "expect": "sin_datos",
+     "reply": "Gracias, Ana. Ahora necesito su número de teléfono para continuar con el proceso de activación.",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 15
+    }
+   ]
+  },
+  {
+   "tenant": "asesor_ai_prod",
+   "conversation": "pide que le cuente todo",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "respeta_el_largo": [],
+    "sin_emojis_si_no_van": [],
+    "respeta_el_trato": [],
+    "trato_y_tono": [],
+    "horario_del_negocio": [],
+    "cierra_como_el_negocio": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Hola, cuéntame todo sobre Plan Basico: qué incluye, cómo funciona y por qué me conviene",
+     "expect": "sin_datos",
+     "reply": "El Plan Básico incluye configuración inicial, guía de integración con WhatsApp y un asistente conversacional inteligente. Le conviene porque automatiza respuestas y seguimiento, ayudando a recuperar ventas perdidas. ¿Cuántos mensajes recibe normalmente?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 32
+    },
+    {
+     "turn": 2,
+     "message": "¿Y qué más tienen?",
+     "expect": "sin_datos",
+     "reply": "Además del Plan Básico, ofrecemos el Plan Pro, que incluye prioridad en soporte. Si busca más funcionalidades, el Plan Pro podría ser una buena opción. ¿Le gustaría saber más sobre este plan?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 32
+    }
+   ]
+  }
+ ],
+ "gasto": {
+  "asesor_usd": 0.0182,
+  "juez_usd": 0.0047
+ },
+ "llamadas_por_mensaje": 2.0
+}

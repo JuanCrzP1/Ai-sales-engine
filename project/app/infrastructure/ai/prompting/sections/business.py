@@ -20,7 +20,10 @@ _DAY_NAMES = {"miercoles": "miércoles", "sabado": "sábado"}
 _FORMALITY = {
     "informal": "Trata al cliente de tú.",
     "neutral": "Usa un trato neutral: amable y respetuoso, sin demasiada confianza.",
-    "formal": "Trata al cliente de usted.",
+    "formal": (
+        "Trata al cliente de usted en todo el mensaje («usted», «su», «le»: «¿le gustaría…?», «cuénteme»), aunque él te hable de "
+        "tú. Las frases y preguntas de ejemplo del negocio dilas también de usted."
+    ),
 }
 _EMOJIS = {True: "Puedes usar algún emoji, con moderación.", False: "No uses emojis."}
 
@@ -28,6 +31,11 @@ _EMOJIS = {True: "Puedes usar algún emoji, con moderación.", False: "No uses e
 def profile(view: PromptView) -> dict:
     """El perfil comercial compilado desde el contrato."""
     return as_dict(view.config.get("profile"))
+
+
+def formality(view: PromptView) -> str:
+    """El trato que eligió el negocio: «informal», «neutral», «formal» o "" si no eligió."""
+    return as_text(profile(view).get("formality"))
 
 
 def tone(view: PromptView) -> str:
@@ -100,7 +108,7 @@ def _style(view: PromptView, data: dict) -> list[str]:
     return [
         f"Tono: {tone(view)}. Responde en máximo {max_words(view)} palabras.",
         sentence(f"Personalidad de la marca: {voice}") if voice else "",
-        _FORMALITY.get(as_text(data.get("formality")), ""),
+        _FORMALITY.get(formality(view), ""),
         _EMOJIS[emojis] if isinstance(emojis, bool) else "",
         *(["Cómo te expresas:", *bullets(instructions)] if instructions else []),
     ]

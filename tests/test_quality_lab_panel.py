@@ -38,7 +38,7 @@ def test_the_formal_profile_is_a_valid_config_and_reaches_the_prompt(monkeypatch
     assert (facts["trato"], facts["emojis"], facts["max_palabras"], facts["estrategia_de_cierre"]) == ("formal", False, 40, "lead_capture")
     assert facts["tono"] == "profesional, sobrio y respetuoso"
     assert facts["horario"] == [{"days": ["lunes", "martes", "miercoles", "jueves", "viernes"], "opens": "08:00", "closes": "17:00"}]
-    for said in ("Trata al cliente de usted.", "No uses emojis.", "Responde en máximo 40 palabras", "08:00 a 17:00", "el equipo lo contacta"):
+    for said in ("Trata al cliente de usted en todo el mensaje", "Recuerda: trata al cliente de usted", "No uses emojis.", "Responde en máximo 40 palabras", "08:00 a 17:00", "el equipo lo contacta"):
         assert said in prompt, said
 
 
@@ -95,6 +95,27 @@ def test_the_platform_payment_message_and_the_fixed_welcome_do_not_count():
     assert _broken([_turn("Hola 👋 soy Juan", words=80, source="initial_message")], FORMAL) == {}
     # Tildes, eñes y signos de español no son emojis.
     assert _broken([_turn("¿Señora? ¡Qué bien! Atención: «sí».", words=5)], FORMAL) == {}
+
+
+@pytest.mark.parametrize("reply", ["¿Te gustaría avanzar?", "Indícame tu nombre y teléfono.", "Tú decides.", "Tus datos quedan con el equipo."])
+def test_tuteo_fails_only_when_the_business_is_formal(reply):
+    """19 nov 2026: el juez dejó pasar «¿Te gustaría…?» y «tu nombre» con trato formal; la regla exacta no depende de su opinión."""
+    assert _broken([_turn(reply, words=5)], {**FORMAL, "trato": "formal"}) == {"respeta_el_trato": [2]}
+    assert _broken([_turn(reply, words=5)], {**FORMAL, "trato": "informal"}) == {}
+    assert _broken([_turn(reply, words=5)], {**FORMAL, "trato": "neutral"}) == {}
+
+
+def test_usted_fails_only_when_the_business_is_informal():
+    assert _broken([_turn("¿Usted ya tiene cuenta?", words=4)], {**FORMAL, "trato": "informal"}) == {"respeta_el_trato": [2]}
+    assert _broken([_turn("¿Usted ya tiene cuenta?", words=4)], {**FORMAL, "trato": "formal"}) == {}
+
+
+def test_the_trato_rule_ignores_lookalikes_and_the_platform_payment_message():
+    formal = {**FORMAL, "trato": "formal"}
+    # «té», «Tunja», «tutorial», «antes», «ustedes» no son tuteo; el mensaje con los datos de pago es de la plataforma.
+    assert _broken([_turn("Le recomiendo el té de Tunja; antes vea el tutorial.", words=9)], formal) == {}
+    assert _broken([_turn(f"Con gusto, aquí están los datos.\n\n{BLOCK} Te confirmamos.", words=6)], formal) == {}
+    assert _broken([_turn("¿Ustedes vienen juntos?", words=3)], {**FORMAL, "trato": "informal"}) == {}
 
 
 def test_the_judge_only_counts_failures_with_the_advisor_quote():

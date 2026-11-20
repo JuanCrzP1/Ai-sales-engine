@@ -5,6 +5,13 @@ está en el historial de git y en `docs/plan-v1.md`.
 
 ## 19 de noviembre de 2026
 
+**Si tu negocio trata a los clientes de usted, el asistente ya no los tutea**
+- Antes, aunque eligieras «formal» en el panel, el asistente se pasaba al tú en muchas respuestas («¿Te gustaría avanzar?», «tu
+  nombre»), sobre todo al usar tus frases de ejemplo escritas de tú o cuando el cliente le hablaba de tú.
+- Ahora trata de usted en todo el mensaje, también tus frases de ejemplo. Medido con 30 conversaciones: ninguna con «te» o «tu»
+  (antes, 10 de 18), y 28 enteras de usted.
+- Si tu negocio trata de tú o de forma neutral, nada cambia.
+
 **El asistente entiende cuando tu cliente se decide a comprar**
 - Si tu cliente dice «me convence, lo quiero» o «listo, avancemos», el asistente lo toma como lo que es: que quiere comprar. Antes lo
   confundía con que pedía los datos para pagar y le preguntaba con qué medio iba a pagar, aunque tu negocio cerrara tomando sus

@@ -1,0 +1,1010 @@
+{
+ "por_mensaje": {
+  "mensajes": 54,
+  "segundos_mediana": 2.8,
+  "segundos_p95": 4.0,
+  "usd_por_1000_mensajes": 0.37,
+  "fuera_de_formato": 0,
+  "sin_respuesta_de_la_ia": 0,
+  "tokens_de_razonamiento_por_mensaje": 0
+ },
+ "experiment": "trato_a_20261119",
+ "modo": "panel",
+ "candidate": "00df467 + cambios",
+ "model": "openai/gpt-4o-mini",
+ "judge_model": "google/gemini-2.5-flash",
+ "samples": 3,
+ "tenants": [
+  "asesor_ai_prod",
+  "restaurant"
+ ],
+ "rows": [
+  {
+   "tenant": "asesor_ai_prod",
+   "conversation": "pregunta el horario",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "respeta_el_largo": [],
+    "sin_emojis_si_no_van": [],
+    "respeta_el_trato": [],
+    "trato_y_tono": [],
+    "horario_del_negocio": [],
+    "cierra_como_el_negocio": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Hola, me interesa Plan Basico",
+     "expect": "sin_datos",
+     "reply": "Perfecto, el Plan Básico incluye configuración inicial y un asistente conversacional inteligente por COP 100.000 de implementación y COP 110.000 al mes. ¿Me puede proporcionar su nombre y teléfono para continuar con el proceso?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 34
+    },
+    {
+     "turn": 2,
+     "message": "¿En qué horario atienden?",
+     "expect": "sin_datos",
+     "reply": "Atendemos de lunes a viernes de 08:00 a 17:00. ¿Le gustaría avanzar con el Plan Básico?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 16
+    },
+    {
+     "turn": 3,
+     "message": "¿Y el sábado abren?",
+     "expect": "sin_datos",
+     "reply": "No atendemos los sábados, solo de lunes a viernes. ¿Le gustaría avanzar con el Plan Básico?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 16
+    }
+   ]
+  },
+  {
+   "tenant": "asesor_ai_prod",
+   "conversation": "decide comprar",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "respeta_el_largo": [],
+    "sin_emojis_si_no_van": [],
+    "respeta_el_trato": [],
+    "trato_y_tono": [],
+    "horario_del_negocio": [],
+    "cierra_como_el_negocio": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Hola, me interesa Plan Basico",
+     "expect": "sin_datos",
+     "reply": "Perfecto, el Plan Básico incluye configuración inicial y un asistente conversacional inteligente por COP 210.000 el primer mes y luego COP 110.000 mensuales. ¿Me puede proporcionar su nombre y teléfono para continuar?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 32
+    },
+    {
+     "turn": 2,
+     "message": "¿Cuánto cuesta Plan Basico?",
+     "expect": "sin_datos",
+     "reply": "El Plan Básico cuesta COP 210.000 el primer mes (que incluye la configuración inicial) y luego COP 110.000 mensuales. ¿Le gustaría avanzar con la activación?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 25
+    },
+    {
+     "turn": 3,
+     "message": "Me convence, lo quiero",
+     "expect": "sin_datos",
+     "reply": "Excelente decisión. Por favor, compártame su nombre y teléfono para que el equipo lo contacte y pueda activar el servicio.",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 20
+    },
+    {
+     "turn": 4,
+     "message": "Me llamo Ana",
+     "expect": "sin_datos",
+     "reply": "Gracias, Ana. ¿Me podría proporcionar su número de teléfono para continuar con la activación del Plan Básico?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 17
+    }
+   ]
+  },
+  {
+   "tenant": "asesor_ai_prod",
+   "conversation": "pide que le cuente todo",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "respeta_el_largo": [],
+    "sin_emojis_si_no_van": [],
+    "respeta_el_trato": [],
+    "trato_y_tono": [],
+    "horario_del_negocio": [],
+    "cierra_como_el_negocio": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Hola, cuéntame todo sobre Plan Basico: qué incluye, cómo funciona y por qué me conviene",
+     "expect": "sin_datos",
+     "reply": "El Plan Básico cuesta COP 100.000 de implementación y COP 110.000 al mes. Incluye configuración inicial, guía de integración con WhatsApp y un asistente conversacional inteligente. Le conviene porque automatiza respuestas y asegura seguimiento, evitando que pierda clientes.",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 38
+    },
+    {
+     "turn": 2,
+     "message": "¿Y qué más tienen?",
+     "expect": "sin_datos",
+     "reply": "Además del Plan Básico, ofrecemos el Plan Pro, que incluye soporte prioritario y más opciones de personalización. ¿Le gustaría saber cómo el Plan Pro podría beneficiarlo aún más?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 28
+    }
+   ]
+  },
+  {
+   "tenant": "asesor_ai_prod",
+   "conversation": "pregunta el horario",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "respeta_el_largo": [],
+    "sin_emojis_si_no_van": [],
+    "respeta_el_trato": [],
+    "trato_y_tono": [],
+    "horario_del_negocio": [],
+    "cierra_como_el_negocio": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Hola, me interesa Plan Basico",
+     "expect": "sin_datos",
+     "reply": "Perfecto, el Plan Básico incluye configuración inicial y un asistente conversacional inteligente por COP 210.000 el primer mes (implementación más mensual). ¿Me puede compartir su nombre y teléfono para continuar?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 30
+    },
+    {
+     "turn": 2,
+     "message": "¿En qué horario atienden?",
+     "expect": "sin_datos",
+     "reply": "Atendemos de lunes a viernes de 08:00 a 17:00. ¿Le gustaría avanzar con el Plan Básico?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 16
+    },
+    {
+     "turn": 3,
+     "message": "¿Y el sábado abren?",
+     "expect": "sin_datos",
+     "reply": "No atendemos los sábados. Solo estamos disponibles de lunes a viernes. ¿Le gustaría avanzar con el Plan Básico?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 18
+    }
+   ]
+  },
+  {
+   "tenant": "asesor_ai_prod",
+   "conversation": "decide comprar",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "respeta_el_largo": [],
+    "sin_emojis_si_no_van": [],
+    "respeta_el_trato": [],
+    "trato_y_tono": [],
+    "horario_del_negocio": [],
+    "cierra_como_el_negocio": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Hola, me interesa Plan Basico",
+     "expect": "sin_datos",
+     "reply": "Excelente elección con el Plan Básico. Incluye configuración inicial, guía de integración con WhatsApp y un asistente conversacional inteligente. Para avanzar, ¿me podría dar su nombre y número de teléfono?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 30
+    },
+    {
+     "turn": 2,
+     "message": "¿Cuánto cuesta Plan Basico?",
+     "expect": "sin_datos",
+     "reply": "El Plan Básico cuesta COP 100.000 de implementación y COP 110.000 al mes. Incluye la configuración inicial y el sistema mensual. ¿Le gustaría avanzar con la activación?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 27
+    },
+    {
+     "turn": 3,
+     "message": "Me convence, lo quiero",
+     "expect": "sin_datos",
+     "reply": "Perfecto. Para continuar, por favor proporcione su nombre y número de teléfono.",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 12
+    },
+    {
+     "turn": 4,
+     "message": "Me llamo Ana",
+     "expect": "sin_datos",
+     "reply": "Gracias, Ana. Solo necesito su número de teléfono para finalizar el proceso de activación.",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 14
+    }
+   ]
+  },
+  {
+   "tenant": "asesor_ai_prod",
+   "conversation": "pide que le cuente todo",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "respeta_el_largo": [],
+    "sin_emojis_si_no_van": [],
+    "respeta_el_trato": [],
+    "trato_y_tono": [],
+    "horario_del_negocio": [],
+    "cierra_como_el_negocio": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Hola, cuéntame todo sobre Plan Basico: qué incluye, cómo funciona y por qué me conviene",
+     "expect": "sin_datos",
+     "reply": "El Plan Básico incluye configuración inicial, guía de integración con WhatsApp y un asistente conversacional inteligente. Le conviene porque automatiza respuestas y el seguimiento, ayudando a no perder oportunidades de venta y a ahorrar tiempo.",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 35
+    },
+    {
+     "turn": 2,
+     "message": "¿Y qué más tienen?",
+     "expect": "sin_datos",
+     "reply": "Además del Plan Básico, tenemos el Plan Pro, que ofrece prioridad en soporte. Sin embargo, el Plan Básico es ideal si busca empezar con automatización de respuestas y seguimiento.",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 29
+    }
+   ]
+  },
+  {
+   "tenant": "asesor_ai_prod",
+   "conversation": "pregunta el horario",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "respeta_el_largo": [],
+    "sin_emojis_si_no_van": [],
+    "respeta_el_trato": [],
+    "trato_y_tono": [],
+    "horario_del_negocio": [],
+    "cierra_como_el_negocio": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Hola, me interesa Plan Basico",
+     "expect": "sin_datos",
+     "reply": "Excelente elección. El Plan Básico incluye configuración inicial y un asistente conversacional inteligente. Para avanzar, necesito su nombre y teléfono.",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 20
+    },
+    {
+     "turn": 2,
+     "message": "¿En qué horario atienden?",
+     "expect": "sin_datos",
+     "reply": "Atendemos de lunes a viernes, de 08:00 a 17:00. ¿Le gustaría avanzar con el Plan Básico? Para ello, necesito su nombre y teléfono.",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 23
+    },
+    {
+     "turn": 3,
+     "message": "¿Y el sábado abren?",
+     "expect": "sin_datos",
+     "reply": "No atendemos los sábados, solo de lunes a viernes. ¿Le gustaría avanzar con el Plan Básico? Para ello, necesito su nombre y teléfono.",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 23
+    }
+   ]
+  },
+  {
+   "tenant": "asesor_ai_prod",
+   "conversation": "decide comprar",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "respeta_el_largo": [],
+    "sin_emojis_si_no_van": [],
+    "respeta_el_trato": [],
+    "trato_y_tono": [],
+    "horario_del_negocio": [],
+    "cierra_como_el_negocio": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Hola, me interesa Plan Basico",
+     "expect": "sin_datos",
+     "reply": "Excelente elección. El Plan Básico incluye configuración inicial, guía de integración con WhatsApp y un asistente conversacional inteligente. ¿Podría darme su nombre y teléfono para que el equipo lo contacte y comencemos con la implementación?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 35
+    },
+    {
+     "turn": 2,
+     "message": "¿Cuánto cuesta Plan Basico?",
+     "expect": "sin_datos",
+     "reply": "El Plan Básico cuesta COP 100.000 de implementación y COP 110.000 al mes. Incluye configuración inicial, guía de integración con WhatsApp y asistente conversacional inteligente. ¿Le gustaría avanzar con la implementación?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 31
+    },
+    {
+     "turn": 3,
+     "message": "Me convence, lo quiero",
+     "expect": "sin_datos",
+     "reply": "Perfecto. Para continuar, por favor, proporcióname su nombre y teléfono para que el equipo lo contacte y arranquemos con la implementación.",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 21
+    },
+    {
+     "turn": 4,
+     "message": "Me llamo Ana",
+     "expect": "sin_datos",
+     "reply": "Gracias, Ana. Por favor, compártame su número de teléfono para que el equipo lo contacte y podamos iniciar con la implementación del Plan Básico.",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 24
+    }
+   ]
+  },
+  {
+   "tenant": "asesor_ai_prod",
+   "conversation": "pide que le cuente todo",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "respeta_el_largo": [
+     {
+      "turn": 1,
+      "why": "la IA escribió 42 palabras y el máximo es 40"
+     }
+    ],
+    "sin_emojis_si_no_van": [],
+    "respeta_el_trato": [],
+    "trato_y_tono": [],
+    "horario_del_negocio": [],
+    "cierra_como_el_negocio": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Hola, cuéntame todo sobre Plan Basico: qué incluye, cómo funciona y por qué me conviene",
+     "expect": "sin_datos",
+     "reply": "El Plan Básico cuesta COP 100.000 de implementación y COP 110.000 al mes. Incluye configuración inicial, guía de integración con WhatsApp y un asistente conversacional inteligente.",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 42
+    },
+    {
+     "turn": 2,
+     "message": "¿Y qué más tienen?",
+     "expect": "sin_datos",
+     "reply": "Además del Plan Básico, ofrecemos el Plan Pro, que incluye prioridad en soporte. Si está interesado, puedo ayudarle a ver cuál se adapta mejor a sus necesidades.",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 27
+    }
+   ]
+  },
+  {
+   "tenant": "restaurant",
+   "conversation": "pregunta el horario",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "respeta_el_largo": [],
+    "sin_emojis_si_no_van": [],
+    "respeta_el_trato": [],
+    "trato_y_tono": [],
+    "horario_del_negocio": [],
+    "cierra_como_el_negocio": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Hola, me interesa Hamburguesa Sencilla",
+     "expect": "",
+     "reply": "¡Genial elección! La Hamburguesa Sencilla cuesta COP 18.000. ¿Te gustaría agregar una gaseosa por COP 5.000 o un jugo natural por COP 7.000 para acompañarla?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 25
+    },
+    {
+     "turn": 2,
+     "message": "¿En qué horario atienden?",
+     "expect": "",
+     "reply": "Atendemos de martes a domingo, de 12:00 a 22:00. ¿Te gustaría hacer tu pedido ahora?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 15
+    },
+    {
+     "turn": 3,
+     "message": "¿Y el lunes abren?",
+     "expect": "",
+     "reply": "El lunes no abrimos, solo atendemos de martes a domingo. ¿Quieres hacer tu pedido para otro día?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 17
+    }
+   ]
+  },
+  {
+   "tenant": "restaurant",
+   "conversation": "decide comprar",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "respeta_el_largo": [],
+    "sin_emojis_si_no_van": [],
+    "respeta_el_trato": [],
+    "trato_y_tono": [],
+    "horario_del_negocio": [],
+    "cierra_como_el_negocio": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Hola, me interesa Hamburguesa Sencilla",
+     "expect": "",
+     "reply": "¡Genial elección! La Hamburguesa Sencilla cuesta COP 18.000. ¿Para cuántas personas es el pedido? También puedo sugerirte una gaseosa o un jugo natural para acompañar.",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 25
+    },
+    {
+     "turn": 2,
+     "message": "¿Cuánto cuesta Hamburguesa Sencilla?",
+     "expect": "",
+     "reply": "La Hamburguesa Sencilla cuesta COP 18.000. ¿Te gustaría pedir una o tal vez agregar una bebida para acompañar?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 18
+    },
+    {
+     "turn": 3,
+     "message": "Me convence, lo quiero",
+     "expect": "",
+     "reply": "¡Perfecto! Para confirmar tu pedido, necesito tu nombre, teléfono y dirección de entrega. ¿Me los puedes proporcionar?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 17
+    },
+    {
+     "turn": 4,
+     "message": "Me llamo Ana",
+     "expect": "",
+     "reply": "Gracias, Ana. Solo necesito tu teléfono y dirección de entrega para completar el pedido de la Hamburguesa Sencilla.",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 18
+    }
+   ]
+  },
+  {
+   "tenant": "restaurant",
+   "conversation": "pide que le cuente todo",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "respeta_el_largo": [],
+    "sin_emojis_si_no_van": [],
+    "respeta_el_trato": [],
+    "trato_y_tono": [],
+    "horario_del_negocio": [],
+    "cierra_como_el_negocio": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Hola, cuéntame todo sobre Hamburguesa Sencilla: qué incluye, cómo funciona y por qué me conviene",
+     "expect": "",
+     "reply": "La Hamburguesa Sencilla incluye carne artesanal, queso y vegetales frescos. Es una opción deliciosa y ligera, perfecta si no quieres algo muy pesado. Además, la hacemos al momento, así que siempre llega caliente a tu casa. Te conviene porque es una opción sabrosa y rápida para saciar tu hambre. ¿Te gustaría pedir una?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 53
+    },
+    {
+     "turn": 2,
+     "message": "¿Y qué más tienen?",
+     "expect": "",
+     "reply": "Además de la Hamburguesa Sencilla, tenemos la Hamburguesa Doble, que lleva doble carne y doble queso, y también ofrecemos bebidas como gaseosa y jugo natural. ¿Te gustaría probar alguna de estas opciones?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 32
+    }
+   ]
+  },
+  {
+   "tenant": "restaurant",
+   "conversation": "pregunta el horario",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "respeta_el_largo": [],
+    "sin_emojis_si_no_van": [],
+    "respeta_el_trato": [],
+    "trato_y_tono": [],
+    "horario_del_negocio": [],
+    "cierra_como_el_negocio": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Hola, me interesa Hamburguesa Sencilla",
+     "expect": "",
+     "reply": "Genial elección, la Hamburguesa Sencilla cuesta COP 18.000. ¿Te gustaría agregar una gaseosa por COP 5.000 o un jugo natural por COP 7.000 para acompañar tu pedido?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 27
+    },
+    {
+     "turn": 2,
+     "message": "¿En qué horario atienden?",
+     "expect": "",
+     "reply": "Atendemos de martes a domingo, de 12:00 a 22:00. ¿Te gustaría hacer tu pedido ahora?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 15
+    },
+    {
+     "turn": 3,
+     "message": "¿Y el lunes abren?",
+     "expect": "",
+     "reply": "No, el lunes estamos cerrados. Solo atendemos de martes a domingo. ¿Te gustaría hacer tu pedido para otro día?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 19
+    }
+   ]
+  },
+  {
+   "tenant": "restaurant",
+   "conversation": "decide comprar",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "respeta_el_largo": [],
+    "sin_emojis_si_no_van": [],
+    "respeta_el_trato": [],
+    "trato_y_tono": [],
+    "horario_del_negocio": [],
+    "cierra_como_el_negocio": [
+     {
+      "turn": 3,
+      "why": "No ofrece medios de pago ni indica cómo pagar."
+     }
+    ]
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Hola, me interesa Hamburguesa Sencilla",
+     "expect": "",
+     "reply": "¡Genial elección! La Hamburguesa Sencilla cuesta COP 18.000. ¿Para cuántas personas es el pedido y quieres agregar algo más, como una gaseosa o un jugo natural?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 26
+    },
+    {
+     "turn": 2,
+     "message": "¿Cuánto cuesta Hamburguesa Sencilla?",
+     "expect": "",
+     "reply": "La Hamburguesa Sencilla cuesta COP 18.000. ¿Te gustaría pedir una o necesitas ayuda con algo más?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 16
+    },
+    {
+     "turn": 3,
+     "message": "Me convence, lo quiero",
+     "expect": "",
+     "reply": "¡Perfecto! Solo necesito algunos datos para completar tu pedido: tu nombre, teléfono y dirección de entrega. ¿Me los puedes dar, por favor?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 22
+    },
+    {
+     "turn": 4,
+     "message": "Me llamo Ana",
+     "expect": "",
+     "reply": "Gracias, Ana. Ahora, ¿me puedes dar tu número de teléfono y la dirección de entrega para completar tu pedido de la Hamburguesa Sencilla?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 23
+    }
+   ]
+  },
+  {
+   "tenant": "restaurant",
+   "conversation": "pide que le cuente todo",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "respeta_el_largo": [],
+    "sin_emojis_si_no_van": [],
+    "respeta_el_trato": [],
+    "trato_y_tono": [],
+    "horario_del_negocio": [],
+    "cierra_como_el_negocio": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Hola, cuéntame todo sobre Hamburguesa Sencilla: qué incluye, cómo funciona y por qué me conviene",
+     "expect": "",
+     "reply": "La Hamburguesa Sencilla incluye carne artesanal, queso y vegetales frescos. Es perfecta si buscas algo delicioso y no muy pesado. Funciona así: la pides por chat y la recibes caliente en casa o la puedes recoger en nuestro local. Te conviene porque es una opción sabrosa y rápida para satisfacer tu hambre sin complicaciones. ¿Te gustaría pedir una?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 58
+    },
+    {
+     "turn": 2,
+     "message": "¿Y qué más tienen?",
+     "expect": "",
+     "reply": "Además de la Hamburguesa Sencilla, tenemos la Hamburguesa Doble, que lleva doble carne y doble queso por COP 24.000. También ofrecemos bebidas como gaseosa por COP 5.000 y jugo natural por COP 7.000. ¿Te interesa alguna de estas opciones?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 39
+    }
+   ]
+  },
+  {
+   "tenant": "restaurant",
+   "conversation": "pregunta el horario",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "respeta_el_largo": [],
+    "sin_emojis_si_no_van": [],
+    "respeta_el_trato": [],
+    "trato_y_tono": [],
+    "horario_del_negocio": [],
+    "cierra_como_el_negocio": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Hola, me interesa Hamburguesa Sencilla",
+     "expect": "",
+     "reply": "¡Genial elección! La Hamburguesa Sencilla cuesta COP 18.000. ¿Te gustaría agregar una gaseosa por COP 5.000 o un jugo natural por COP 7.000 para acompañar tu pedido?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 27
+    },
+    {
+     "turn": 2,
+     "message": "¿En qué horario atienden?",
+     "expect": "",
+     "reply": "Atendemos de martes a domingo, de 12:00 a 22:00. ¿Te gustaría hacer tu pedido ahora?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 15
+    },
+    {
+     "turn": 3,
+     "message": "¿Y el lunes abren?",
+     "expect": "",
+     "reply": "No, el lunes estamos cerrados. Pero estamos listos para atenderte de martes a domingo. ¿Te gustaría hacer tu pedido para otro día?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 22
+    }
+   ]
+  },
+  {
+   "tenant": "restaurant",
+   "conversation": "decide comprar",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "respeta_el_largo": [],
+    "sin_emojis_si_no_van": [],
+    "respeta_el_trato": [],
+    "trato_y_tono": [],
+    "horario_del_negocio": [],
+    "cierra_como_el_negocio": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Hola, me interesa Hamburguesa Sencilla",
+     "expect": "",
+     "reply": "¡Genial elección! La Hamburguesa Sencilla cuesta COP 18.000. ¿Te gustaría agregar una bebida, como una gaseosa por COP 5.000 o un jugo natural por COP 7.000?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 26
+    },
+    {
+     "turn": 2,
+     "message": "¿Cuánto cuesta Hamburguesa Sencilla?",
+     "expect": "",
+     "reply": "La Hamburguesa Sencilla cuesta COP 18.000. ¿Te gustaría pedirla ahora?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 10
+    },
+    {
+     "turn": 3,
+     "message": "Me convence, lo quiero",
+     "expect": "",
+     "reply": "¡Perfecto! Para completar tu pedido, necesito tu nombre, teléfono y dirección de entrega. 😊",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 14
+    },
+    {
+     "turn": 4,
+     "message": "Me llamo Ana",
+     "expect": "",
+     "reply": "Gracias, Ana. Ahora necesito tu número de teléfono y dirección de entrega para finalizar el pedido.",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 16
+    }
+   ]
+  },
+  {
+   "tenant": "restaurant",
+   "conversation": "pide que le cuente todo",
+   "failures": {
+    "el_asesor_habla": [],
+    "datos_cuando_los_necesita": [],
+    "sin_datos_sin_pedirlos": [],
+    "no_repite_el_bloque": [],
+    "sin_marcadores": [],
+    "pasa_al_equipo_cuando_debe": [],
+    "no_repite_la_respuesta": [],
+    "sin_numeros_de_pago_falsos": [],
+    "nota_para_el_equipo": [],
+    "respeta_el_largo": [],
+    "sin_emojis_si_no_van": [],
+    "respeta_el_trato": [],
+    "trato_y_tono": [],
+    "horario_del_negocio": [],
+    "cierra_como_el_negocio": []
+   },
+   "discarded": [],
+   "turns": [
+    {
+     "turn": 1,
+     "message": "Hola, cuéntame todo sobre Hamburguesa Sencilla: qué incluye, cómo funciona y por qué me conviene",
+     "expect": "",
+     "reply": "La Hamburguesa Sencilla incluye carne artesanal, queso y vegetales frescos. Es perfecta si buscas algo delicioso y rápido para saciar el hambre. Te conviene porque es una opción sabrosa y a un buen precio: solo COP 18.000. Además, llega caliente a tu casa si pides a domicilio. ¿Te gustaría ordenar una? 😊",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 52
+    },
+    {
+     "turn": 2,
+     "message": "¿Y qué más tienen?",
+     "expect": "",
+     "reply": "Además de la Hamburguesa Sencilla, tenemos la Hamburguesa Doble, que lleva doble carne, doble queso y salsa especial, por COP 24.000. También ofrecemos bebidas como Gaseosa a COP 5.000 y Jugo Natural a COP 7.000. ¿Te interesa alguna de estas opciones?",
+     "handoff": false,
+     "team_note": "",
+     "source": "ai_raw",
+     "ai_words": 41
+    }
+   ]
+  }
+ ],
+ "gasto": {
+  "asesor_usd": 0.0198,
+  "juez_usd": 0.0056
+ },
+ "llamadas_por_mensaje": 2.0
+}

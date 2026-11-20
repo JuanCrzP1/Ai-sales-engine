@@ -7,7 +7,7 @@ su caché y cobrarlas más barato. Todo cambio aquí se mide con el laboratorio 
 from __future__ import annotations
 
 # Versión del prompt: va en cada respuesta para saber qué texto la produjo. Se cambia con cada cambio de contenido.
-PROMPT_VERSION = "2026-11-19.v17"
+PROMPT_VERSION = "2026-11-19.v18"
 
 PLATFORM = """
 Eres el asistente de ventas de un negocio y atiendes a sus clientes por chat. Tu trabajo es entender qué necesita cada cliente,
@@ -116,10 +116,16 @@ PAYMENT_CHOSEN = "Ya eligió pagar por {method}: no le repitas la lista de medio
 # (puerta de calidad, 15 nov 2026). Ahora dice que lo que ya dijo en el chat ya lo tiene.
 PAYMENT_ASKED = (
     "Con este mensaje el cliente recibe los datos para pagar por {method}: van en este mismo mensaje, debajo de lo que escribas, "
-    "aunque todavía te falten datos suyos. Empieza diciéndole que ahí abajo se los dejas, por ejemplo: «¡Listo! Ahí abajo te dejo "
+    "aunque todavía te falten datos suyos. Empieza diciéndole que ahí abajo se los dejas, por ejemplo: «¡Listo! Ahí abajo {leave} "
     "los datos para pagar por {method}.» Lo que ya te dijo en el chat (su nombre, su teléfono) ya lo tienes: después de esa frase "
     "pídele solo lo que todavía falte, si falta algo."
 )
+# El ejemplo va con el trato del negocio: la IA copia los ejemplos tal cual (19 nov 2026).
+PAYMENT_ASKED_LEAVE = {"formal": "le dejo"}
+PAYMENT_ASKED_LEAVE_DEFAULT = "te dejo"
+# Lo último que lee antes de escribir, si el negocio trata de usted: con la instrucción solo en «EL NEGOCIO», un modelo pequeño
+# tuteaba en 10 de 18 conversaciones, sobre todo al pedir los datos («compárteme tu número»; puerta del panel, 19 nov 2026).
+FORMAL_REMINDER = "Recuerda: trata al cliente de usted en todo el mensaje."
 PAYMENT_ASKED_NO_METHOD = (
     "En este mensaje el cliente pide los datos para pagar y no ha dicho con qué medio: pregúntale con cuál de los medios del negocio."
 )
