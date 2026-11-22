@@ -17,9 +17,11 @@ plan (sección 6).
 | — | Eliminar un negocio en la nube: solo el dueño, escribiendo su nombre; WhatsApp primero y todo lo demás en una transacción | — (nuevo) | **Hecha** (12 nov) |
 | — | Revisión del 12 nov (ver «Hallazgos de la revisión del 12 de noviembre») | — (nuevo) | Hecha (12 nov) |
 | — | Terminar la plataforma antes de lanzar (decisión del 12 nov): **Respuestas rápidas** (hecha, 12 nov), **Centro de ayuda** con toda la documentación (hecho, 12 nov), Consola de soporte de la empresa (aparte, en Vercel + Neon, preparada para varias plataformas), **roles del equipo** (hecho, 12 nov: Dueño, Administrador y Asesor, con invitación por enlace), Telegram (Chat web descartado el 12 nov), proveedores de IA directos | — (nuevo) | En curso |
+| — | **Configuración guiada** (decisión del 21 nov): que un dueño de negocio, sin ayuda, tenga su asistente funcionando en menos de 15 minutos. Lo mínimo para arrancar son 4 o 5 datos (qué vende, precios, cómo cobra, horario) y el resto con valores por defecto; elige su tipo de negocio y le llega una plantilla; la IA arma la configuración desde su web, su menú o su catálogo y él revisa y publica; lo avanzado queda en «opciones avanzadas»; el panel le dice lo que falta. Se mide con un dueño real | — (nuevo) | Pendiente, antes del lanzamiento |
 | 4 | Lanzamiento: monitoreo de errores, copias de seguridad probadas, correo transaccional, términos y política de datos, Vercel Pro. Pagos y suscripciones, al final | Fases 7 y 8 | Cuando la plataforma esté terminada |
 | 5 | Retirar lo que queda del sistema anterior y partir los módulos grandes del motor | Fase 6 (resto) | Pendiente |
 | Integraciones | API del asistente para otras plataformas (Leona, una web) con claves de API: **hecha** (12 nov). Servidor MCP para que un agente de IA monte y configure negocios: **fase 1 hecha** (12 nov: claves de la cuenta con permisos por área, alcance y vencimiento; crear negocios y toda la configuración, revisar, probar y publicar; ver [mcp.md](mcp.md)). **Fase 2 hecha** (12 nov: conversaciones con respuesta al cliente, clientes, ventas, reportes, atención humana y modelo de IA; los datos de pago salen ocultos de los chats). **Fase 3 hecha** (12 nov: Claude web y app y ChatGPT se conectan con inicio de sesión, OAuth 2.1 con registro dinámico y PKCE; la conexión es una clave de la cuenta que se revoca en Claves de API) | — (nuevo) | Hecha |
+| Después del lanzamiento | Funciones nuevas del asistente (21 nov), en este orden: **herramientas en vivo** (consultar las horas libres de la agenda del negocio, sus existencias y el estado de un pedido; primero solo leer, después agendar o apartar confirmando con el cliente), **conocimiento en PDF** (el negocio sube sus documentos y el asistente responde con lo que dicen: búsqueda por significado, publicado como el resto de la configuración y medido con preguntas de prueba) y **respuestas con nota de voz** (la IA escribe y un servicio de voz la lee; los datos de pago siempre en texto). Hoy el asistente ya entiende las notas de voz y las fotos que recibe | — (nuevo) | Después del lanzamiento |
 | Al final | WhatsApp en un servidor de uazapi propio (hoy se usa el gratuito de pruebas, que puede borrar la instancia); después Telegram y la API oficial de Meta | Fase 5 (resto) | Mientras se construye, basta el de pruebas |
 
 **Fase 1, cómo quedó.** El chat se elimina desde Conversaciones (papelera del chat abierto) o desde Clientes, con una confirmación
@@ -416,7 +418,8 @@ laboratorio `dividir_ai_execution_20261114`, motor sin diferencias en los 9 nego
 
 ## 7. La versión 1 está terminada cuando
 
-1. Cualquier persona crea su cuenta, crea su negocio, lo configura, pega su clave y conecta un canal sin ayuda.
+1. Cualquier persona crea su cuenta, crea su negocio, lo configura, pega su clave y conecta un canal sin ayuda, en menos de 15
+   minutos (medido con un dueño de negocio real).
 2. Todo lo que se configura en el panel cambia lo que hace el asistente, y hay una prueba que lo demuestra.
 3. No queda ningún YAML de negocio ni código del sistema anterior (hecho lo primero; los ajustes de la plataforma en
    `project/config/system/` sí son YAML y se quedan).
