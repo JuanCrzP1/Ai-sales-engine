@@ -4,6 +4,7 @@ import unicodedata
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 
+from app.domain.conversation.answer_source import WELCOME_SOURCE
 from app.domain.conversation.memory import ConversationState
 from app.utils.logger import logger
 
@@ -354,7 +355,7 @@ class ConversationFlow:
                 stage="",
             )
             self._remember_reply(tenant_slug, user_id, initial_text)
-            return initial_text, "initial_message"
+            return initial_text, WELCOME_SOURCE
 
         last_user_message_at = self.memory.get_last_user_message_at(tenant_slug=tenant_slug, user_id=user_id)
         runtime_config = runtime_yaml.get("config") if isinstance(runtime_yaml.get("config"), dict) else {}
@@ -383,7 +384,7 @@ class ConversationFlow:
             stage="",
         )
         self._remember_reply(tenant_slug, user_id, initial_text)
-        return initial_text, "initial_message"
+        return initial_text, WELCOME_SOURCE
 
     def _remember_reply(self, tenant_slug: str, user_id: str, text: str) -> None:
         """El saludo que se envió queda en la conversación: la IA debe saber que ya se saludó al cliente y con qué palabras."""

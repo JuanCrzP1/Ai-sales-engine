@@ -12,6 +12,8 @@ export interface ChatTurn {
   intent?: string | null;
   /** Falso si respondió el motor sin la IA. */
   aiAnswered?: boolean;
+  /** La respuesta es el saludo del negocio (Mensajes → Bienvenida). */
+  welcome?: boolean;
 }
 
 export interface PlaygroundState {
@@ -62,7 +64,7 @@ export function usePlayground(): PlaygroundState {
         sessionId.current = answer.sessionId;
         setVersion(answer.version);
         setMissingKey(false);
-        setTurns((current) => [...current, { id: nextId.current++, from: "assistant", text: answer.reply, intent: answer.intent, aiAnswered: answer.aiAnswered }]);
+        setTurns((current) => [...current, { id: nextId.current++, from: "assistant", text: answer.reply, intent: answer.intent, aiAnswered: answer.aiAnswered, welcome: answer.welcome }]);
       } catch (reason) {
         const keyMissing = reason instanceof PersistenceError && reason.code === "ai_key_missing";
         setMissingKey(keyMissing);

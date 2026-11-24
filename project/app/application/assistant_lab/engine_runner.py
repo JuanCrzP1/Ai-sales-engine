@@ -17,6 +17,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from types import SimpleNamespace
 
+from app.domain.conversation.answer_source import is_welcome
 from app.application.ai_pipeline import AIPipeline
 from app.application.runtime import runtime_from_sections
 from app.domain.business_config.ai_settings import AICredentials, AssistantTurn
@@ -78,7 +79,8 @@ class EngineAssistantRunner:
         intent = str((metadata or {}).get("intent") or "").strip() or None
         metadata = metadata or {}
         return AssistantTurn(
-            reply=str(answer or ""), intent=intent, ai_answered=bool(ai_used), handoff=bool(metadata.get("handoff")),
+            reply=str(answer or ""), intent=intent, ai_answered=bool(ai_used), welcome=is_welcome(metadata),
+            handoff=bool(metadata.get("handoff")),
             handoff_reason=metadata.get("handoff_reason") or None, handoff_summary=metadata.get("handoff_summary") or None,
         )
 

@@ -117,17 +117,22 @@ export function PlaygroundPage() {
   );
 }
 
+/** Lo que se dice debajo de una respuesta del asistente: de dónde salió, o qué entendió la IA. */
+export function replyNote(turn: Pick<ChatTurn, "intent" | "aiAnswered" | "welcome">): string | null {
+  // El saludo del negocio sale sin la IA y está bien: no es una falla de la clave ni del modelo.
+  if (turn.welcome) return "Es el saludo de tu negocio (Mensajes → Bienvenida).";
+  if (turn.aiAnswered === false) return "Respondió sin la IA: revisa la clave o el modelo en Inteligencia artificial.";
+  return intentLabel(turn.intent);
+}
+
 function Bubble({ turn }: { turn: ChatTurn }) {
   const customer = turn.from === "customer";
+  const note = customer ? null : replyNote(turn);
   return (
     <div className={`playground__bubble playground__bubble--${turn.from}`}>
       <span className="visually-hidden">{customer ? "Tú: " : "Asistente: "}</span>
       {turn.text}
-      {!customer && (intentLabel(turn.intent) || turn.aiAnswered === false) && (
-        <span className="playground__meta">
-          {turn.aiAnswered === false ? "Respondió sin la IA: revisa la clave o el modelo en Inteligencia artificial." : intentLabel(turn.intent)}
-        </span>
-      )}
+      {note && <span className="playground__meta">{note}</span>}
     </div>
   );
 }

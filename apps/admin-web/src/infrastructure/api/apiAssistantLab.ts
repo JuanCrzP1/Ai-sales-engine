@@ -8,6 +8,7 @@ interface ReplyPayload {
   reply: string;
   intent: string | null;
   ai_answered: boolean;
+  welcome?: boolean;
 }
 
 interface UsagePayload {
@@ -77,6 +78,7 @@ export function createApiAssistantLab(http: HttpClient, slug: string): Assistant
         reply: payload.reply,
         intent: payload.intent,
         aiAnswered: payload.ai_answered,
+        welcome: Boolean(payload.welcome),
       };
     },
     resetConversation: (sessionId) => http.delete(`${base}/playground/${encodeURIComponent(sessionId)}`),

@@ -3,6 +3,14 @@
 Lo que cambió en AI Sales Engine, de lo más reciente a lo más antiguo. Cada entrada dice qué gana el negocio; el detalle técnico
 está en el historial de git y en `docs/plan-v1.md`.
 
+## 24 de noviembre de 2026
+
+**«Probar asistente» ya no confunde tu saludo con una falla**
+- Cuando probabas tu asistente y respondía con tu saludo de bienvenida, debajo salía «Respondió sin la IA: revisa la clave o el
+  modelo», como si algo estuviera mal. Ahora dice «Es el saludo de tu negocio». El aviso de la clave solo sale cuando la IA de
+  verdad no pudo responder.
+- La API para otras plataformas tampoco marca tu saludo como respaldo (`fallback`).
+
 ## 20 de noviembre de 2026
 
 **Tu asistente habla por sí mismo, sin frases de rescate**

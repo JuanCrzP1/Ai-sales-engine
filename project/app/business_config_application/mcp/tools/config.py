@@ -118,6 +118,7 @@ def config_tools(
             "handoff_reason": turn.handoff_reason,
             "intent": turn.intent,
             "ai_answered": turn.ai_answered,
+            "welcome": turn.welcome,
             "note": "Para seguir la misma conversación, manda el mismo conversation_id.",
         }
 

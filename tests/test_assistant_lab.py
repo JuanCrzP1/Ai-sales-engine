@@ -294,6 +294,33 @@ def test_a_business_created_in_the_panel_answers_in_the_test_area(store, monkeyp
     assert (turn.reply, turn.ai_answered) == ("Respuesta 1.", True)
 
 
+def test_the_business_welcome_is_not_reported_as_a_failure_of_the_ai(store):
+    """Hasta el 24 nov 2026 el área de pruebas ponía «Respondió sin la IA: revisa la clave o el modelo» debajo del saludo que el
+    negocio escribió en Mensajes → Bienvenida. El saludo sale sin la IA y está bien; la falla es el mensaje de respaldo."""
+    recorder = _Recorder()
+    runner = EngineAssistantRunner(pipeline_factory=recorder)
+    credentials = AICredentials("openrouter", None, KEY_A)
+    sections = _sections(store)
+    welcome = sections["config"]["initial_message"]["text"].strip()
+    turn = runner.reply(tenant_slug="restaurant", sections=sections, credentials=credentials, session_id="e" * 32, message="Hola")
+    assert turn.reply.strip() == welcome and recorder.prompts == []
+    assert (turn.ai_answered, turn.welcome, turn.fallback) == (False, True, False)
+    # Una respuesta de la IA: ni saludo ni falla.
+    answered = runner.reply(tenant_slug="restaurant", sections=sections, credentials=credentials, session_id="e" * 32, message="¿Qué venden?")
+    assert (answered.ai_answered, answered.welcome, answered.fallback) == (True, False, False)
+
+    # La IA responde algo que no sirve: sale el mensaje de respaldo, y eso sí es una falla.
+    def broken(**kwargs) -> AIPipeline:
+        pipeline = AIPipeline(**kwargs)
+        pipeline.runtime.generate = lambda prompt, **_kwargs: "esto no es una respuesta del asistente {"
+        return pipeline
+
+    failed = EngineAssistantRunner(pipeline_factory=broken).reply(
+        tenant_slug="restaurant", sections=sections, credentials=credentials, session_id="f" * 32, message="¿Qué venden?",
+    )
+    assert (failed.ai_answered, failed.welcome, failed.fallback) == (False, False, True)
+
+
 def test_each_conversation_has_its_own_memory(store):
     recorder = _Recorder()
     runner = EngineAssistantRunner(pipeline_factory=recorder)

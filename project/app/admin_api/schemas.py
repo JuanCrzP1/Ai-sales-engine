@@ -194,6 +194,8 @@ def playground_payload(reply: PlaygroundReply) -> dict[str, Any]:
         "reply": reply.turn.reply,
         "intent": reply.turn.intent,
         "ai_answered": reply.turn.ai_answered,
+        # El saludo del negocio no es una falla: el panel solo avisa de la clave o el modelo cuando salió el mensaje de respaldo.
+        "welcome": reply.turn.welcome,
     }
 
 

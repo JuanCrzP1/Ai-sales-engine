@@ -116,6 +116,6 @@ class IntegrationsService:
         return reply_payload(
             ApiReply(
                 conversation_id=TRY_CONVERSATION, reply=turn.reply, parts=parts, handoff=turn.handoff, handoff_reason=turn.handoff_reason,
-                attended_by="team" if turn.handoff else "assistant", intent=turn.intent, fallback=not turn.ai_answered,
+                attended_by="team" if turn.handoff else "assistant", intent=turn.intent, fallback=turn.fallback,
             )
         )

@@ -20,6 +20,7 @@ from datetime import datetime, timezone
 from typing import Any, Protocol
 
 from app.application.channels.handoff_plan import AttentionLoader, SectionsLoader, plan_handoff
+from app.domain.conversation.answer_source import is_fallback
 from app.domain.business_config.assistant_api import API_CHANNEL, ApiMessage, ApiReply, reply_from_payload, reply_payload
 from app.domain.business_config.conversations import AppendResult, NewMessage
 from app.domain.business_config.payment_data import redact_payment_values
@@ -130,7 +131,7 @@ class AssistantApi:
         logger.info("api_respuesta", extra={"tenant": slug, "handoff": handoff, "ai": bool(ai_used)})
         return ApiReply(
             conversation, "\n\n".join(parts), tuple(parts), handoff=handoff, handoff_reason=reason, attended_by=attended_by, intent=intent,
-            stage=self._conversations.stage(conversation), fallback=not ai_used,
+            stage=self._conversations.stage(conversation), fallback=is_fallback(bool(ai_used), metadata),
         )
 
     def _team(self, conversation: str) -> ApiReply:

@@ -58,8 +58,10 @@ export interface AssistantReply {
   version: number;
   reply: string;
   intent: string | null;
-  /** Falso si respondió el motor sin la IA, por ejemplo porque el proveedor rechazó la clave o el modelo. */
+  /** Falso si respondió el motor sin la IA: con el saludo del negocio (`welcome`) o porque la IA no pudo (clave, saldo, modelo). */
   aiAnswered: boolean;
+  /** La respuesta es el saludo que el negocio escribió en Mensajes → Bienvenida: no es una falla. */
+  welcome: boolean;
 }
 
 export interface AssistantLab {

@@ -286,6 +286,14 @@ def test_without_ai_it_answers_with_the_business_fallback_and_says_so(api):
     assert body["fallback"] is True and body["reply"].startswith("Gracias por escribirnos")
 
 
+def test_the_business_welcome_is_not_a_fallback(api):
+    """El saludo del negocio sale sin la IA y no es una falla: la plataforma que llama no debe tomar su camino de «fallo»."""
+    client, auth, _engine, _alerts = api
+    FakeAI.reply, FakeAI.ai_used, FakeAI.metadata = "Hola, ya estamos listos para ayudarte.", False, {"intent": "info", "source": "initial_message"}
+    body = client.post(URL, headers=auth, json={"contact": {"id": "1"}, "message": "Hola"}).json()
+    assert body["fallback"] is False and body["reply"] == "Hola, ya estamos listos para ayudarte."
+
+
 def test_errors_are_clear_and_never_reach_the_assistant(api, monkeypatch):
     client, auth, engine, _alerts = api
     assert client.post(URL, json={"message": "Hola"}).json()["code"] == "invalid_api_key"

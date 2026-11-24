@@ -52,12 +52,20 @@ class KeyCheck:
 
 @dataclass(frozen=True)
 class AssistantTurn:
-    """Una respuesta del asistente en el área de pruebas. `ai_answered` es falso si respondió el motor sin la IA (por ejemplo,
-    porque el proveedor rechazó la clave o el modelo)."""
+    """Una respuesta del asistente en el área de pruebas. `ai_answered` es falso si respondió el motor sin la IA: con el saludo
+    del negocio (`welcome`, lo normal al empezar) o con el mensaje de respaldo porque la IA no pudo (`fallback`: el proveedor
+    rechazó la clave o el modelo, por ejemplo)."""
 
     reply: str
     intent: str | None = None
     ai_answered: bool = True
+    # La respuesta es el saludo que el negocio escribió en Mensajes → Bienvenida.
+    welcome: bool = False
+
+    @property
+    def fallback(self) -> bool:
+        """La IA no pudo responder y salió el mensaje de respaldo."""
+        return not self.ai_answered and not self.welcome
     # El asistente pasó la conversación a una persona del equipo, y por qué (`conversations.HANDOFF_REASONS`).
     handoff: bool = False
     handoff_reason: str | None = None

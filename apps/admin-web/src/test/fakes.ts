@@ -357,7 +357,7 @@ export function createMemoryAssistantLabs(): MemoryAssistantLabs {
         if (!keys.has(slug)) throw missingKey();
         messages.push({ slug, message, source, sessionId });
         const session = sessionId ?? (++sessions).toString(16).padStart(32, "0");
-        return { sessionId: session, source, version: source === "published" ? 1 : 2, reply: `Respuesta a: ${message}`, intent: "info", aiAnswered: true };
+        return { sessionId: session, source, version: source === "published" ? 1 : 2, reply: `Respuesta a: ${message}`, intent: "info", aiAnswered: true, welcome: false };
       },
       async resetConversation(sessionId) {
         resets.push(sessionId);

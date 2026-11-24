@@ -156,6 +156,15 @@ describe("Probar asistente: lo que entendió la IA", () => {
     expect(intentLabel("buy")).toBe("Quiere comprar");
     expect([intentLabel(""), intentLabel(null), intentLabel("pricing")]).toEqual([null, null, null]);
   });
+
+  it("el saludo del negocio no se muestra como una falla de la IA", async () => {
+    // Hasta el 24 nov 2026, debajo del saludo del negocio salía «Respondió sin la IA: revisa la clave o el modelo».
+    const { replyNote } = await import("../features/playground/PlaygroundPage");
+    expect(replyNote({ intent: "info", aiAnswered: false, welcome: true })).toBe("Es el saludo de tu negocio (Mensajes → Bienvenida).");
+    expect(replyNote({ intent: null, aiAnswered: false, welcome: false })).toMatch(/^Respondió sin la IA: revisa la clave o el modelo/);
+    expect(replyNote({ intent: "buy", aiAnswered: true, welcome: false })).toBe("Quiere comprar");
+    expect(replyNote({ intent: null, aiAnswered: true })).toBeNull();
+  });
 });
 
 describe("Elegir el modelo", () => {

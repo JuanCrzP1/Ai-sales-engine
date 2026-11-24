@@ -28,3 +28,5 @@ Si tienes cambios sin guardar, guárdalos primero: el asistente responde con lo 
 Cada respuesta de tu asistente, también las de Probar, se cobra en tu cuenta de OpenRouter.
 
 > **Importante:** si ves «Respondió sin la IA: revisa la clave o el modelo», tu clave no está funcionando. Revísala en [Inteligencia artificial](clave-de-openrouter).
+>
+> Si ves «Es el saludo de tu negocio», todo está bien: es el mensaje que escribiste en Mensajes → Bienvenida, y sale sin gastar la IA.
