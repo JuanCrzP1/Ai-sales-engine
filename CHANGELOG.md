@@ -3,6 +3,13 @@
 Lo que cambió en AI Sales Engine, de lo más reciente a lo más antiguo. Cada entrada dice qué gana el negocio; el detalle técnico
 está en el historial de git y en `docs/plan-v1.md`.
 
+## 25 de noviembre de 2026
+
+**Si tu negocio no usa emojis, el mensaje de pago tampoco**
+- Aunque eligieras «sin emojis», el mensaje con los datos de pago salía con 💳 y ✅. Ahora sale sin ellos, también el del efectivo, y
+  la vista previa del panel lo muestra igual.
+- Si escribiste tu propio mensaje de pago, sale tal cual. Si usas emojis o no elegiste, nada cambia.
+
 ## 24 de noviembre de 2026
 
 **«Probar asistente» ya no confunde tu saludo con una falla**

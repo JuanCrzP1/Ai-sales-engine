@@ -6,7 +6,7 @@ import { Card } from "../../components/ui/Layout";
 import { isMethodActive, optionalText } from "../../domain/config/document";
 import { dataFieldOf, methodKind, methodName } from "../../domain/config/paymentCatalog";
 import { phraseFor, type Formality } from "../../domain/config/formality";
-import { ACCOUNT_TYPE_TEXT, DEFAULT_CASH_TEXT, DEFAULT_PAYMENT_DETAILS, isDefaultPaymentDetails, renderPaymentDetails } from "../../domain/config/paymentMessage";
+import { ACCOUNT_TYPE_TEXT, DEFAULT_CASH_TEXT, isDefaultPaymentDetails, recommendedPaymentDetails, renderPaymentDetails } from "../../domain/config/paymentMessage";
 import type { BusinessDocument } from "../../domain/config/types";
 import { useConfig, useFieldIssue, useSection } from "../../state/useConfig";
 
@@ -35,15 +35,15 @@ export function PaymentMessagesForm() {
   const detailsIssue = useFieldIssue("messages.payment_details");
   const reportedIssue = useFieldIssue("messages.payment_reported");
   const confirmedIssue = useFieldIssue("messages.payment_confirmed");
-  // El recomendado va con el trato del negocio (Asistente IA → Estilo), como le llega al cliente.
-  const formality = document.response_style?.formality;
-  const recommended = phraseFor(DEFAULT_PAYMENT_DETAILS, formality);
+  // El recomendado va con el trato y los emojis del negocio (Asistente IA → Estilo), como le llega al cliente.
+  const style = document.response_style;
+  const recommended = recommendedPaymentDetails(style);
   // Lo que se ve en el campo: mientras se escribe puede quedar vacío (entonces se usa el recomendado), sin que el texto vuelva solo.
   const [details, setDetails] = useState(messages.payment_details ?? recommended);
   const custom = Boolean(messages.payment_details);
   const changeDetails = (text: string) => {
     setDetails(text);
-    // El recomendado (de tú o de usted) no se guarda como propio: así sigue el trato si el negocio lo cambia.
+    // El recomendado (en cualquier estilo) no se guarda como propio: así sigue el trato y los emojis si el negocio los cambia.
     update({ payment_details: isDefaultPaymentDetails(text) ? null : optionalText(text) });
   };
 
@@ -71,7 +71,7 @@ export function PaymentMessagesForm() {
           caption="Vista previa con datos de ejemplo"
           lines={[
             { from: "customer", text: "Quiero pagar por transferencia" },
-            { from: "assistant", text: renderPaymentDetails(messages.payment_details, sampleFor(document, formality), formality) },
+            { from: "assistant", text: renderPaymentDetails(messages.payment_details, sampleFor(document, style?.formality), style) },
           ]}
         />
       </div>

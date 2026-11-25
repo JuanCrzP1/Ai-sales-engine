@@ -3,7 +3,7 @@
  * plantilla con `{medio}`, `{datos}` (obligatorio), `{titular}` e `{instrucciones}`. Una línea con un marcador vacío no sale. Aquí sirve para avisar
  * mientras se escribe y para la vista previa; quien manda es el servidor.
  */
-import { phraseFor, type Formality, type Phrase } from "./formality";
+import { phraseFor, type Phrase, type PlatformStyle } from "./formality";
 
 export const PAYMENT_PLACEHOLDERS = ["medio", "datos", "titular", "instrucciones"] as const;
 
@@ -16,9 +16,20 @@ export const DEFAULT_PAYMENT_DETAILS: Phrase = {
 /** Lo que sale en el efectivo si el negocio no escribe su instrucción (`payment_catalog.DEFAULT_CASH_TEXT` del motor). */
 export const DEFAULT_CASH_TEXT: Phrase = { tu: "Pagas en efectivo al recibir tu pedido.", usted: "Paga en efectivo al recibir su pedido." };
 
-/** Si un texto es la plantilla de la plataforma (en cualquiera de los dos tratos): entonces no se guarda como propia. */
+/** Los emojis de la plantilla, con el espacio que los separa del texto (los mismos del motor). */
+const EMOJIS = ["💳 ", "💵 ", " ✅"];
+const withoutEmojis = (text: string) => EMOJIS.reduce((plain, mark) => plain.split(mark).join(""), text);
+
+/** La plantilla recomendada con el estilo del negocio: su trato y, si no los quiere, sin emojis. */
+export function recommendedPaymentDetails(style?: PlatformStyle | null): string {
+  const text = phraseFor(DEFAULT_PAYMENT_DETAILS, style?.formality);
+  return style?.emojis === false ? withoutEmojis(text) : text;
+}
+
+/** Si un texto es la plantilla de la plataforma (en cualquier estilo): entonces no se guarda como propia. */
 export function isDefaultPaymentDetails(text: string): boolean {
-  return text.trim() === DEFAULT_PAYMENT_DETAILS.tu || text.trim() === DEFAULT_PAYMENT_DETAILS.usted;
+  const { tu, usted } = DEFAULT_PAYMENT_DETAILS;
+  return [tu, usted, withoutEmojis(tu), withoutEmojis(usted)].includes(text.trim());
 }
 
 const PLACEHOLDER = /\{([^{}]*)\}/g;
@@ -35,13 +46,13 @@ export function paymentTemplateProblem(template: string): string | null {
   return null;
 }
 
-/** El mensaje que recibe el cliente. Sin plantilla propia (o con una que no sirve), la de la plataforma, con el trato del negocio. */
+/** El mensaje que recibe el cliente. Sin plantilla propia (o con una que no sirve), la de la plataforma, con el estilo del negocio. */
 export function renderPaymentDetails(
   template: string | null | undefined,
   values: { medio: string; datos: string; titular?: string; instrucciones?: string },
-  formality?: Formality,
+  style?: PlatformStyle | null,
 ): string {
-  const chosen = template && template.trim() && paymentTemplateProblem(template) === null ? template : phraseFor(DEFAULT_PAYMENT_DETAILS, formality);
+  const chosen = template && template.trim() && paymentTemplateProblem(template) === null ? template : recommendedPaymentDetails(style);
   const filled: Record<string, string> = {
     medio: values.medio.trim(),
     datos: values.datos.trim(),

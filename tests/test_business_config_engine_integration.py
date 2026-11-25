@@ -226,7 +226,7 @@ def test_the_panel_previews_the_same_platform_texts_the_engine_sends():
     from app.application.pipeline.fallback import PLATFORM_FALLBACK_REPLY
     from app.domain.business_config.attention import _TEAM_REPLIES
     from app.domain.business_config.payment_catalog import DEFAULT_CASH_TEXT
-    from app.domain.business_config.payment_message import DEFAULT_PAYMENT_DETAILS
+    from app.domain.business_config.payment_message import _EMOJIS, DEFAULT_PAYMENT_DETAILS
 
     web = ROOT_DIR / "apps" / "admin-web" / "src"
 
@@ -243,6 +243,7 @@ def test_the_panel_previews_the_same_platform_texts_the_engine_sends():
     payment = source("domain/config/paymentMessage.ts")
     head = DEFAULT_PAYMENT_DETAILS.tu[: DEFAULT_PAYMENT_DETAILS.tu.index("Cuando")]
     assert f'const DETAILS = "{head}";' in payment
+    assert f"const EMOJIS = [{', '.join(json.dumps(mark, ensure_ascii=False) for mark in _EMOJIS)}];" in payment
     for text in (DEFAULT_PAYMENT_DETAILS.tu, DEFAULT_PAYMENT_DETAILS.usted):
         assert text.startswith(head) and f"`${{DETAILS}}{text[len(head):]}`" in payment
 

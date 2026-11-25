@@ -16,6 +16,7 @@ from app.application.pipeline.payment_delivery import deliver, remembered_messag
 from app.application.runtime import load_tenant_runtime_yaml
 from app.domain.business_config.formality import Phrase, formality_of
 from app.domain.business_config.payment_accounts import which_method_question
+from app.domain.business_config.payment_message import DEFAULT_CASH_DETAILS, DEFAULT_PAYMENT_DETAILS, platform_template
 from app.domain.conversation.memory import MemoryDomainService
 from app.domain.operations.operational_renderer import render_op_rule
 from app.domain.operations.operational_state import OperationalState
@@ -71,11 +72,56 @@ def test_cash_without_instructions_speaks_like_the_business(monkeypatch, tmp_pat
         assert "Pagas en efectivo al recibir tu pedido." in answer and answer.endswith("Cualquier duda, escríbeme por aquí. ✅")
 
 
+def _has_emoji(text: str) -> bool:
+    return any(mark in text for mark in "💳💵✅")
+
+
+@pytest.mark.parametrize("formality", ["formal", "informal"])
+def test_without_emojis_the_payment_details_have_none(monkeypatch, tmp_path, formality):
+    """Hasta el 25 nov 2026 un negocio «sin emojis» recibía el bloque de pago con 💳 y ✅ igual."""
+    def mutate(document: dict) -> None:
+        _with(formality)(document)
+        document["response_style"]["emojis"] = False
+    publish_document(monkeypatch, tmp_path, SLUG, mutate)
+    ((_prompts, answer),) = run_conversation(SLUG, [("Te pago por Nequi", reply("Listo.", "buy", send_payment="nequi"))], user_id=f"sin-{formality}")
+    assert answer.startswith("Listo.\n\n*Datos para pagar*\n\n*Nequi*\n") and not _has_emoji(answer)
+    assert answer.endswith("le confirmamos." if formality == "formal" else "te confirmamos.")
+
+    def cash(document: dict) -> None:
+        _cash_only(formality)(document)
+        document["response_style"]["emojis"] = False
+    publish_document(monkeypatch, tmp_path / "efectivo", SLUG, cash)
+    ((_prompts, answer),) = run_conversation(SLUG, [("Pago en efectivo", reply("Listo.", "buy", send_payment="efectivo"))], user_id=f"sin-efectivo-{formality}")
+    assert answer.startswith("Listo.\n\n*Cómo pagar*\n\n") and answer.endswith("por aquí.") and not _has_emoji(answer)
+
+
+@pytest.mark.parametrize("emojis", [True, None])
+def test_with_emojis_or_without_choosing_nothing_changes(monkeypatch, tmp_path, emojis):
+    def mutate(document: dict) -> None:
+        document["response_style"]["emojis"] = emojis
+    publish_document(monkeypatch, tmp_path, SLUG, mutate)
+    ((_prompts, answer),) = run_conversation(SLUG, [("Te pago por Nequi", reply("Listo.", "buy", send_payment="nequi"))], user_id=f"con-{emojis}")
+    assert "💳 *Datos para pagar*" in answer and answer.endswith("te confirmamos. ✅")
+
+
+def test_the_platform_templates_have_no_other_emoji():
+    """La lista de emojis que se quitan cubre todas las plantillas: si se agrega otro, esta prueba avisa."""
+    for phrase in (DEFAULT_PAYMENT_DETAILS, DEFAULT_CASH_DETAILS):
+        for formality in ("formal", "informal"):
+            plain = platform_template(phrase, formality, emojis=False)
+            assert all(ord(char) < 0x2600 for char in plain), plain
+            assert plain == plain.strip() and "  " not in plain
+
+
 def test_a_template_written_by_the_business_is_never_changed(monkeypatch, tmp_path):
-    own = "Datos: {datos}\nCuando pagues, avísame."
-    publish_document(monkeypatch, tmp_path, SLUG, _with("formal", payment_details=own))
+    own = "🎉 Datos: {datos}\nCuando pagues, avísame."
+
+    def mutate(document: dict) -> None:
+        _with("formal", payment_details=own)(document)
+        document["response_style"]["emojis"] = False
+    publish_document(monkeypatch, tmp_path, SLUG, mutate)
     ((_prompts, answer),) = run_conversation(SLUG, [("Te pago por Nequi", reply("Listo.", "buy", send_payment="nequi"))], user_id="propia")
-    assert answer.endswith("Cuando pagues, avísame.") and "envíeme" not in answer
+    assert "🎉 Datos: " in answer and answer.endswith("Cuando pagues, avísame.") and "envíeme" not in answer
 
 
 def test_the_payment_question_and_memory_speak_like_the_business(monkeypatch, tmp_path):

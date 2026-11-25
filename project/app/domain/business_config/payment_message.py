@@ -29,9 +29,21 @@ DEFAULT_PAYMENT_DETAILS = Phrase(
 # El efectivo no tiene comprobante: con la plantilla de la plataforma, el cliente recibe cómo pagar y que se le confirma por aquí.
 _CASH = "💵 *Cómo pagar*\n\n*{medio}*\n{datos}\n\n"
 DEFAULT_CASH_DETAILS = Phrase(tu=f"{_CASH}Cualquier duda, escríbeme por aquí. ✅", usted=f"{_CASH}Cualquier duda, escríbame por aquí. ✅")
+# Los emojis de las dos plantillas, con el espacio que los separa del texto: sin ellos si el negocio eligió no usar emojis.
+_EMOJIS = ("💳 ", "💵 ", " ✅")
 _PLACEHOLDER = re.compile(r"\{([^{}]*)\}")
 LINK_NAME = "Pago en línea"
 _ACCOUNT_TYPES = {"ahorros": "Cuenta de ahorros", "corriente": "Cuenta corriente"}
+
+
+def platform_template(phrase: Phrase, formality: str = "", emojis: bool = True) -> str:
+    """Una plantilla de la plataforma con el estilo del negocio: su trato y, si no los quiere, sin emojis."""
+    text = phrase.to(formality)
+    if emojis:
+        return text
+    for mark in _EMOJIS:
+        text = text.replace(mark, "")
+    return text
 
 
 def template_problem(template: str) -> str | None:
@@ -73,11 +85,12 @@ def method_parts(method_type: str, details: dict, formality: str = "") -> tuple[
 
 
 def render_payment_details(
-    template: str | None, *, medio: str, datos: str, titular: str = "", instrucciones: str = "", formality: str = ""
+    template: str | None, *, medio: str, datos: str, titular: str = "", instrucciones: str = "", formality: str = "", emojis: bool = True
 ) -> str:
-    """El mensaje para el cliente. Sin plantilla propia (o con una que no sirve), el de la plataforma, con el trato del negocio. Si
+    """El mensaje para el cliente. Sin plantilla propia (o con una que no sirve), el de la plataforma, con el estilo del negocio. Si
     la plantilla del negocio no tiene {instrucciones} y el medio tiene una, va al final: el cliente nunca se queda sin ella."""
-    chosen = template if template and template.strip() and template_problem(template) is None else DEFAULT_PAYMENT_DETAILS.to(formality)
+    own = template if template and template.strip() and template_problem(template) is None else None
+    chosen = own or platform_template(DEFAULT_PAYMENT_DETAILS, formality, emojis)
     values = {"medio": medio.strip(), "datos": datos.strip(), "titular": titular.strip(), "instrucciones": instrucciones.strip()}
     lines: list[str] = []
     for line in chosen.strip().split("\n"):

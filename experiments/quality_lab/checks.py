@@ -36,7 +36,8 @@ PAYMENT_DATA_TURNS = ("metodo", "reenvio_pago")
 NO_PAYMENT_DATA_TURNS = ("pregunta_medio", "aclaracion_pago")
 ENGINE_DATA = "[dato entregado por el motor]"
 # Así empieza el mensaje con los datos de pago (la plantilla de la plataforma).
-_DETAILS_START = ("💳", "💵")
+# Sin emojis si el negocio eligió no usarlos.
+_DETAILS_START = ("💳", "💵", "*Datos para pagar*", "*Cómo pagar*")
 
 
 def check_turn(reply: str, *, facts: dict, previous_reply: str, ai_used: bool, format_error: str, kind: str = "") -> dict:

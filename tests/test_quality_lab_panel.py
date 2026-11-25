@@ -91,7 +91,10 @@ def test_an_emoji_fails_when_the_business_does_not_want_them(reply):
 
 
 def test_the_platform_payment_message_and_the_fixed_welcome_do_not_count():
-    assert _broken([_turn(f"Con gusto, aquí están los datos.\n\n{BLOCK}", words=6)], FORMAL) == {}
+    plain = BLOCK.replace("💳 ", "")
+    assert _broken([_turn(f"Con gusto, aquí están los datos.\n\n{plain}", words=6)], FORMAL) == {}
+    # Desde el 25 nov 2026 el mensaje con los datos de pago tampoco lleva emojis si el negocio no los quiere.
+    assert _broken([_turn(f"Con gusto, aquí están los datos.\n\n{BLOCK}", words=6)], FORMAL) == {"sin_emojis_si_no_van": [2]}
     assert _broken([_turn("Hola 👋 soy Juan", words=80, source="initial_message")], FORMAL) == {}
     # Tildes, eñes y signos de español no son emojis.
     assert _broken([_turn("¿Señora? ¡Qué bien! Atención: «sí».", words=5)], FORMAL) == {}
@@ -114,7 +117,9 @@ def test_the_trato_rule_ignores_lookalikes_and_the_platform_payment_message():
     formal = {**FORMAL, "trato": "formal"}
     # «té», «Tunja», «tutorial», «antes», «ustedes» no son tuteo; el mensaje con los datos de pago es de la plataforma.
     assert _broken([_turn("Le recomiendo el té de Tunja; antes vea el tutorial.", words=9)], formal) == {}
-    assert _broken([_turn(f"Con gusto, aquí están los datos.\n\n{BLOCK} Te confirmamos.", words=6)], formal) == {}
+    assert _broken([_turn(f"Con gusto, aquí están los datos.\n\n{BLOCK} Te confirmamos.", words=6)], {**formal, "emojis": True}) == {}
+    plain = BLOCK.replace("💳 ", "")
+    assert _broken([_turn(f"Con gusto, aquí están los datos.\n\n{plain} Te confirmamos.", words=6)], formal) == {}
     assert _broken([_turn("¿Ustedes vienen juntos?", words=3)], {**FORMAL, "trato": "informal"}) == {}
 
 

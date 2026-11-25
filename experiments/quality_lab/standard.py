@@ -19,7 +19,8 @@ from escalation_standard import HANDOFF_BY_NOW, JUDGE_RULE as ESCALATION_RULE, M
 # Con lo que el laboratorio oculta el dato de pago real que entregó el motor (`capture.py`).
 ENGINE_DATA = "[dato entregado por el motor]"
 # Así empieza el mensaje con los datos de pago (la plantilla de la plataforma).
-_DETAILS_START = ("💳", "💵")
+# Sin emojis si el negocio eligió no usarlos.
+_DETAILS_START = ("💳", "💵", "*Datos para pagar*", "*Cómo pagar*")
 _PLACEHOLDER = re.compile(r"\[[^\[\]\n]{1,60}\](?!\()")
 # Un número largo justo después del nombre de un medio o de hablar de pagar: el asesor lo está dando como dato de pago. (13 nov 2026:
 # «Nequi: 3157778899», el teléfono del cliente.) Los datos reales ya aparecen como `ENGINE_DATA`.
@@ -311,7 +312,8 @@ def exact_failures(turns: list[dict]) -> dict[str, list[dict]]:
         elif expect != MAY_HANDOFF and bool(turn.get("handoff")) != (expect in (REPORTED, HANDOFF)):
             why = "debía pasar al equipo y no pasó" if expect in (REPORTED, HANDOFF) else "el chat pasó al equipo sin motivo"
             fail("pasa_al_equipo_cuando_debe", turn, why + (" (primero debía ofrecerle ayuda)" if expect == OFFERS_HELP else ""))
-        said = reply[: reply.find("💳")] if "💳" in reply else reply
+        block = details_of(reply)
+        said = reply[: reply.find("💳")] if "💳" in reply else reply[: reply.find(block.splitlines()[0])] if block else reply
         if _PAYMENT_NUMBER.search(said.replace(ENGINE_DATA, "")):
             fail("sin_numeros_de_pago_falsos", turn, "el asesor escribió un número como dato de pago")
         note = str(turn.get("team_note") or "")

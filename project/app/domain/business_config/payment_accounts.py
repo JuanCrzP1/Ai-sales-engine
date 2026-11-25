@@ -10,10 +10,10 @@ import re
 import unicodedata
 from dataclasses import dataclass
 
-from app.domain.business_config.formality import Phrase, formality_of
+from app.domain.business_config.formality import Phrase, allows_emojis, formality_of
 from app.domain.business_config.payment_catalog import PAYMENT_METHODS, method_kind
 from app.domain.business_config.payment_data import iter_payment_blocks
-from app.domain.business_config.payment_message import DEFAULT_CASH_DETAILS, LINK_NAME, method_parts, render_payment_details
+from app.domain.business_config.payment_message import DEFAULT_CASH_DETAILS, LINK_NAME, method_parts, platform_template, render_payment_details
 
 # Cómo se nombra cada medio en una frase («¿Con qué medio prefieres pagar: pago en línea, Nequi o …?»).
 _COMMON_WORDS = ("Transferencia", "Depósito", "Efectivo", "Cuenta")
@@ -102,20 +102,21 @@ def payment_message(runtime_yaml: dict, key: str, template: str | None = None) -
     chosen = [account for account in accounts(runtime_yaml) if wanted and wanted in (account.key, account.option)]
     if not chosen:
         return ""
+    # El estilo del negocio para la plantilla de la plataforma: su trato y si usa emojis.
+    formality, emojis = formality_of(runtime_yaml), allows_emojis(runtime_yaml)
     if len(chosen) == 1:
         account = chosen[0]
         # El efectivo no tiene comprobante: si el negocio no escribió su plantilla, la de la plataforma para el efectivo.
-        formality = formality_of(runtime_yaml)
-        chosen_template = template or (DEFAULT_CASH_DETAILS.to(formality) if account.kind == "cash" else None)
+        chosen_template = template or (platform_template(DEFAULT_CASH_DETAILS, formality, emojis) if account.kind == "cash" else None)
         return render_payment_details(chosen_template, medio=account.medio, datos=account.datos, titular=account.titular,
-                                      instrucciones=account.instrucciones, formality=formality)
+                                      instrucciones=account.instrucciones, formality=formality, emojis=emojis)
     # Varias cuentas del mismo medio: cada una con su nombre, sus datos, su titular y su instrucción, en un solo mensaje.
     blocks = [
         "\n".join(filter(None, (f"*{account.medio}*", account.datos, f"A nombre de: {account.titular}" if account.titular else "", account.instrucciones)))
         for account in chosen
     ]
     medio = _PLURAL_NAMES.get(chosen[0].kind, chosen[0].medio)
-    return render_payment_details(template, medio=medio, datos="\n\n".join(blocks), formality=formality_of(runtime_yaml))
+    return render_payment_details(template, medio=medio, datos="\n\n".join(blocks), formality=formality, emojis=emojis)
 
 
 def inline_details(runtime_yaml: dict, key: str) -> str:

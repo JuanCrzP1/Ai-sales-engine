@@ -70,7 +70,7 @@ def conversations(facts: dict) -> list[tuple[str, list[tuple[str, str]]]]:
 
 EXACT_RULES = {
     "respeta_el_largo": "Lo que escribe la IA no pasa del máximo de palabras del negocio, sin que el motor tenga que recortarlo.",
-    "sin_emojis_si_no_van": "Si el negocio no quiere emojis, el asesor no usa ninguno (el mensaje con los datos de pago es de la plataforma).",
+    "sin_emojis_si_no_van": "Si el negocio no quiere emojis, no le llega ninguno al cliente: ni del asesor ni en el mensaje con los datos de pago.",
     "respeta_el_trato": "Con trato formal el asesor no tutea («tú», «te», «ti», «contigo», «tu», «tus»); con informal no dice «usted».",
 }
 
@@ -103,7 +103,7 @@ def exact_failures(turns: list[dict], facts: dict) -> dict[str, list[dict]]:
         written = turn.get("ai_words")
         if isinstance(limit, int) and isinstance(written, int) and written > limit:
             failures["respeta_el_largo"].append({"turn": turn["turn"], "why": f"la IA escribió {written} palabras y el máximo es {limit}"})
-        if facts.get("emojis") is False and _EMOJI.search(said):
+        if facts.get("emojis") is False and _EMOJI.search(str(turn.get("reply") or "")):
             failures["sin_emojis_si_no_van"].append({"turn": turn["turn"], "why": "usó un emoji y el negocio no los quiere"})
         wrong = _TUTEO if facts.get("trato") == "formal" else _USTED if facts.get("trato") == "informal" else None
         found = sorted({word.lower() for word in wrong.findall(said)}) if wrong else []
