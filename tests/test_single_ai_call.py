@@ -197,7 +197,11 @@ def test_every_answer_of_the_engine_adds_to_its_business_usage(provider):
         usage_recorder=lambda slug: (lambda *usage: seen.append((slug, *usage))),
     )
     _say(pipeline)
-    # La lectura corta del pago y la respuesta del asesor: las dos van al consumo del negocio.
+    # El primer mensaje: la lectura del saludo (el negocio tiene uno), la del pago y la respuesta del asesor; las tres van al
+    # consumo del negocio. Desde el segundo, ya no se pregunta por el saludo.
+    assert seen == [("restaurant", "openai/gpt-4o-mini", 1200, 80, 0.0004)] * 3
+    seen.clear()
+    _say(pipeline)
     assert seen == [("restaurant", "openai/gpt-4o-mini", 1200, 80, 0.0004)] * 2
 
 

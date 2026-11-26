@@ -547,6 +547,29 @@ asistente no puede responder») o, sin él, el de la plataforma, en vez de «Hub
 Laboratorio de regresión `sin_reglas_y_causa_20261120`: sin diferencias en los 9 negocios (sus prompts de muestra no incluyen el
 momento después de enviar los datos; ese cambio lo cubren las pruebas y la puerta). Gasto: unos USD 0,42.
 
+### El saludo lo reconoce la IA (26 de noviembre de 2026)
+
+Si el negocio escribió su saludo (Mensajes → Bienvenida) y el cliente solo saluda, le llega ese saludo tal cual. Hasta hoy lo decidía
+una lista de saludos colombianos («parce», «qué más», «qlq»). Ahora lo decide el **lector del saludo**
+([`greeting_reading.py`](../project/app/application/pipeline/greeting_reading.py)), una llamada corta y exacta como el lector de
+pagos, que solo se hace en el primer mensaje y si hay saludo configurado. Si el lector no responde, no sale el saludo fijo: responde
+la IA, que también saluda.
+
+Se mide con [`run_greeting_eval.py`](../experiments/quality_lab/run_greeting_eval.py) sobre los casos de
+[`greeting_cases.py`](../experiments/quality_lab/greeting_cases.py): 36 primeros mensajes de varios países, los que solo saludan y los
+que saludan y además piden algo. El error grave es mandarle el saludo fijo a quien preguntó algo; el leve, que responda la IA a un
+saludo.
+
+| | Acierta | Errores graves |
+|---|---|---|
+| La lista de palabras de antes | 24 de 36 casos | 0 (fallaba «holaaa», «quiubo», «qué onda», «épale», 👋, «saludos», «hi»…) |
+| Lector, primera redacción (`saludo_lector_a_20261126`) | 155 de 180 lecturas | 0: tomaba «¿qué tal?» y «¿cómo están?» por preguntas |
+| **Lector, con «preguntar por cortesía es parte del saludo»** (`saludo_lector_b_20261126`) | **178 de 180** | **0**: falla 2 de 5 «Hola, ¿qué tal?» (responde la IA) |
+
+Gasto: USD 0,011. El laboratorio de regresión responde el lector con los saludos de sus guiones como los lee la IA real
+(`LAB_GREETINGS`) y sale sin diferencias (`saludo_lo_decide_la_ia_c_20261126`); con el lector respondiendo mal a propósito
+(`saludo_lo_decide_la_ia_b_20261126`), detecta la diferencia.
+
 ## Lo que la puerta no cubre
 
 - Solo mira los momentos de pago y, con `--panel`, lo que configura el negocio. La oferta, los precios y las objeciones los mide

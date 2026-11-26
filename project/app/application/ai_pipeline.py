@@ -54,6 +54,7 @@ from collections.abc import Callable
 
 from app.application.pipeline import AIExecution, ConversationFlow, SalesFlow, log_trace, tenant_slug
 from app.application.pipeline.fallback import PLATFORM_FALLBACK_REPLY
+from app.application.pipeline.greeting_reading import reads_as_greeting
 from app.application.runtime import BusinessUnavailableError, business_usage_recorder, load_business_ai, load_tenant_runtime_yaml, message_ai
 from app.application.runtime.business_ai import UsageCallback
 from app.domain.business_config.ai_settings import AICredentials
@@ -159,6 +160,10 @@ class AIPipeline:
         include_metadata: bool,
     ) -> tuple[str, bool] | tuple[str, bool, dict]:
         """La respuesta a un mensaje, dentro del turno de la memoria del cliente."""
+        # La IA del negocio (su clave y su modelo), y su consumo anotado en su cuenta: la usan el lector del saludo y el asesor.
+        load_ai = self._ai_loader or load_business_ai
+        record_usage = (self._usage_recorder or business_usage_recorder)(tenant_slug_value)
+        ai_config = message_ai(bot_config, load_ai(tenant_slug_value), on_usage=record_usage)
         conversation = self.conversation_flow.process(
             tenant=tenant,
             tenant_slug=tenant_slug_value,
@@ -166,6 +171,7 @@ class AIPipeline:
             user_message=user_message,
             conversation_history=conversation_history,
             runtime_yaml=runtime_yaml,
+            greets_only=lambda message: reads_as_greeting(self.runtime, bot_config=ai_config, user_message=message, tenant=tenant_slug_value),
         )
         if conversation.early_response:
             log_trace(
@@ -196,12 +202,10 @@ class AIPipeline:
             "has_pricing": bool(runtime_yaml_for_ai.get("pricing")),
             "has_business": bool(runtime_yaml_for_ai.get("business")),
         })
-        load_ai = self._ai_loader or load_business_ai
-        record_usage = (self._usage_recorder or business_usage_recorder)(tenant_slug_value)
         final_response, ai_used, route_context = self.ai_execution.run(
             runtime=self.runtime,
             tenant=tenant,
-            bot_config=message_ai(bot_config, load_ai(tenant_slug_value), on_usage=record_usage),
+            bot_config=ai_config,
             user_message=user_message,
             conversation_history=conversation_history,
             faq_results=faq_results,

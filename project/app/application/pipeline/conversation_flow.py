@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import unicodedata
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 
@@ -32,7 +32,16 @@ def is_chat_active(last_user_message_at: datetime | None, now: datetime, window_
     return delta.total_seconds() < max(0, window_minutes) * 60
 
 
-def should_send_initial_message(*, message: str, last_user_message_at: datetime | None, config: dict) -> bool:
+# Si el primer mensaje es solo un saludo: lo decide la IA (`greeting_reading.reads_as_greeting`). True, False o None si no hubo lectura.
+GreetingReader = Callable[[str], "bool | None"]
+
+
+def should_send_initial_message(
+    *, message: str, last_user_message_at: datetime | None, config: dict, greets_only: GreetingReader | None = None
+) -> bool:
+    """Si sale el saludo del negocio: lo tiene activo, el chat no está en curso y el cliente solo saluda. Lo último es lo único que
+    cuesta (una llamada corta a la IA), así que se pregunta al final. Sin lector o sin lectura, no sale: responde la IA, que también
+    saluda. Hasta el 26 nov 2026 lo decidía una lista de saludos colombianos."""
     payload = config if isinstance(config, dict) else {}
     initial_cfg = payload.get("initial_message") if isinstance(payload.get("initial_message"), dict) else {}
 
@@ -42,9 +51,6 @@ def should_send_initial_message(*, message: str, last_user_message_at: datetime 
     mode = str(initial_cfg.get("mode") or "smart").strip().lower() or "smart"
 
     if mode == "off":
-        return False
-
-    if not is_greeting_only(message):
         return False
 
     conversation_cfg = payload.get("conversation") if isinstance(payload.get("conversation"), dict) else {}
@@ -57,133 +63,7 @@ def should_send_initial_message(*, message: str, last_user_message_at: datetime 
     if is_chat_active(last_user_message_at, now, active_window_minutes):
         return False
 
-    return True
-
-
-def normalize_text(text: str) -> str:
-    value = str(text or "").strip().lower()
-
-    value = unicodedata.normalize("NFD", value)
-    value = "".join(char for char in value if unicodedata.category(char) != "Mn")
-
-    translator = str.maketrans("", "", "¡!¿?.,;:")
-    value = value.translate(translator)
-
-    return " ".join(value.split())
-
-
-def is_greeting_only(message: str) -> bool:
-    normalized = normalize_text(message)
-
-    if not normalized:
-        return False
-
-    greetings = {
-        "hola",
-        "holaa",
-        "hola amigo",
-        "hola parce",
-        "hola parcero",
-        "hola como estas",
-        "buenas",
-        "buenas tardes",
-        "buenas noches",
-        "hey",
-        "holi",
-        "que mas",
-        "que mas parcero",
-        "q mas",
-        "qlq",
-        "parce",
-        "parce que mas",
-        "amigo",
-        "bro",
-        "como vas",
-        "todo bien",
-        "buen dia",
-        "buenos dias",
-    }
-
-    greeting_starters = {
-        "hola",
-        "holaa",
-        "buenas",
-        "hey",
-        "holi",
-        "que mas",
-        "q mas",
-        "qlq",
-        "parce",
-        "amigo",
-        "bro",
-        "buen dia",
-        "buenos dias",
-        "buenas tardes",
-        "buenas noches",
-    }
-
-    intent_tokens = {
-        "precio",
-        "vale",
-        "cuanto",
-        "cuesta",
-        "info",
-        "informacion",
-        "informaciono",
-        "necesito",
-        "quiero",
-        "interesa",
-        "empezar",
-        "contratar",
-        "funciona",
-        "venden",
-        "vendes",
-        "pedido",
-        "comprar",
-        "comprarlo",
-        "ayuda",
-    }
-
-    soft_tokens = {
-        "hola",
-        "holaa",
-        "buenas",
-        "hey",
-        "holi",
-        "que",
-        "q",
-        "mas",
-        "como",
-        "estas",
-        "vas",
-        "todo",
-        "bien",
-        "parce",
-        "parcero",
-        "amigo",
-        "bro",
-        "buen",
-        "dia",
-        "dias",
-        "tardes",
-        "noches",
-    }
-
-    if normalized in greetings:
-        return True
-
-    words = normalized.split()
-
-    if len(words) > 4:
-        return False
-
-    if any(word in intent_tokens for word in words):
-        return False
-
-    if any(normalized.startswith(greeting) for greeting in greeting_starters):
-        return all(word in soft_tokens for word in words)
-
-    return False
+    return greets_only is not None and greets_only(message) is True
 
 
 def get_conversation_state(last_message_at, config) -> str:
@@ -237,10 +117,6 @@ class ConversationFlow:
     def _normalize_user_id(user_id: str | None) -> str:
         normalized = str(user_id or "").strip().lower()
         return normalized or "anonymous"
-
-    @staticmethod
-    def is_greeting_only(message: str) -> bool:
-        return is_greeting_only(message)
 
     @staticmethod
     def _load_initial_config(tenant_slug: str, runtime_yaml: dict) -> dict:
@@ -325,37 +201,13 @@ class ConversationFlow:
         user_message: str,
         runtime_yaml: dict,
         *,
-        force_send: bool = False,
+        greets_only: GreetingReader | None = None,
     ) -> tuple[str, str] | None:
+        """El saludo del negocio, si corresponde (`should_send_initial_message`), o None: entonces responde la IA."""
         initial_cfg = self._load_initial_config(tenant_slug, runtime_yaml)
         initial_text = str(initial_cfg.get("text") or "").strip()
         if not initial_text:
             return None
-
-        if force_send:
-            if not bool(initial_cfg.get("enabled", False)):
-                return None
-
-            initial_sent_at = self.memory.get_initial_message_last_sent_at(tenant_slug=tenant_slug, user_id=user_id)
-            if isinstance(initial_sent_at, datetime):
-                return None
-
-            now = datetime.now(timezone.utc)
-            self.memory.set_initial_message_last_sent_at(
-                tenant_slug=tenant_slug,
-                user_id=user_id,
-                sent_at=now,
-            )
-            self._set_stage(runtime_yaml, "connection")
-            self._save_runtime_memory(
-                tenant_slug=tenant_slug,
-                user_id=user_id,
-                user_message=user_message,
-                intent="",
-                stage="",
-            )
-            self._remember_reply(tenant_slug, user_id, initial_text)
-            return initial_text, WELCOME_SOURCE
 
         last_user_message_at = self.memory.get_last_user_message_at(tenant_slug=tenant_slug, user_id=user_id)
         runtime_config = runtime_yaml.get("config") if isinstance(runtime_yaml.get("config"), dict) else {}
@@ -364,6 +216,7 @@ class ConversationFlow:
             message=user_message,
             last_user_message_at=last_user_message_at,
             config={"initial_message": initial_cfg, "conversation": conversation_cfg},
+            greets_only=greets_only,
         ):
             return None
 
@@ -399,6 +252,7 @@ class ConversationFlow:
         user_message: str,
         conversation_history: list,
         runtime_yaml: dict,
+        greets_only: GreetingReader | None = None,
     ) -> ConversationResult:
         normalized_user_id = self._normalize_user_id(user_id)
         runtime_config = runtime_yaml.get("config") if isinstance(runtime_yaml.get("config"), dict) else {}
@@ -460,12 +314,13 @@ class ConversationFlow:
         )
 
         initial_message = None
-        if str(runtime_yaml.get("conversation_state") or "").strip().lower() == "new" and is_greeting_only(user_message):
+        if str(runtime_yaml.get("conversation_state") or "").strip().lower() == "new":
             initial_message = self.handle_initial_message(
                 user_id=normalized_user_id,
                 tenant_slug=tenant_slug,
                 user_message=user_message,
                 runtime_yaml=runtime_yaml,
+                greets_only=greets_only,
             )
         if initial_message:
             initial_text, initial_source = initial_message

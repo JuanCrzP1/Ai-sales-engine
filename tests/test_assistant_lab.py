@@ -294,7 +294,7 @@ def test_a_business_created_in_the_panel_answers_in_the_test_area(store, monkeyp
     assert (turn.reply, turn.ai_answered) == ("Respuesta 1.", True)
 
 
-def test_the_business_welcome_is_not_reported_as_a_failure_of_the_ai(store):
+def test_the_business_welcome_is_not_reported_as_a_failure_of_the_ai(store, greeting_reader):
     """Hasta el 24 nov 2026 el área de pruebas ponía «Respondió sin la IA: revisa la clave o el modelo» debajo del saludo que el
     negocio escribió en Mensajes → Bienvenida. El saludo sale sin la IA y está bien; la falla es el mensaje de respaldo."""
     recorder = _Recorder()

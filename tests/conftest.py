@@ -217,3 +217,19 @@ def _isolate_last_message_timestamps(request):
         patch.object(_shared, "get_last_user_message_at", _fake_get),
     ):
         yield
+
+
+@pytest.fixture
+def greeting_reader(monkeypatch):
+    """El lector del saludo simulado para las pruebas que usan el motor real sin IA (`AIService()`): responde la llamada del lector
+    del saludo (`pipeline_harness.TEST_GREETINGS`); cualquier otra llamada corta falla, como sin clave."""
+    from app.infrastructure.ai.llm_runtime import LLMRuntime
+    from pipeline_harness import greeting_reading
+
+    def classify(self, prompt, *, user_message, bot_config=None, max_tokens=120):
+        answer = greeting_reading(prompt, user_message)
+        if answer is None:
+            raise RuntimeError("sin lector en esta prueba")
+        return answer
+
+    monkeypatch.setattr(LLMRuntime, "classify", classify)

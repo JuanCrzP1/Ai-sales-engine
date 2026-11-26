@@ -13,6 +13,8 @@
 
 from __future__ import annotations
 
+import pytest
+
 import os
 import sys
 from datetime import datetime, timedelta, timezone
@@ -51,6 +53,9 @@ class _MemoryStub:
     def set_last_user_message_at(self, *, tenant_slug: str, user_id: str, sent_at) -> None:
         del tenant_slug, user_id
         self.last_user_message_at = sent_at
+
+# El saludo del negocio lo decide el lector de la IA (`greeting_reading.py`): aquí, el lector simulado (`conftest.greeting_reader`).
+pytestmark = pytest.mark.usefixtures("greeting_reader")
 
 
 def _tenant(slug: str) -> SimpleNamespace:
@@ -183,6 +188,10 @@ def test_greeting_plus_intent_routes_to_ai_with_micro_greeting() -> None:
 ## ----------------------------------------
 def test_initial_message_recency_policy_blocks_recent_repeats() -> None:
     now = datetime.now(timezone.utc)
+
+    def yes(_message: str) -> bool:
+        return True
+
     cfg = {
         "initial_message": {
             "enabled": True,
@@ -194,19 +203,22 @@ def test_initial_message_recency_policy_blocks_recent_repeats() -> None:
         },
     }
 
-    assert should_send_initial_message(message="hola", last_user_message_at=None, config=cfg) is True
+    assert should_send_initial_message(message="hola", last_user_message_at=None, config=cfg, greets_only=yes) is True
     assert should_send_initial_message(
         message="hola",
+        greets_only=yes,
         last_user_message_at=now - timedelta(minutes=10),
         config=cfg,
     ) is False
     assert should_send_initial_message(
         message="hola",
+        greets_only=yes,
         last_user_message_at=now - timedelta(minutes=30),
         config=cfg,
     ) is True
     assert should_send_initial_message(
         message="hola",
+        greets_only=yes,
         last_user_message_at=now - timedelta(hours=5),
         config=cfg,
     ) is True
@@ -250,29 +262,29 @@ def test_multi_tenant_initial_messages_remain_isolated() -> None:
 ## QUÉ PROTEGE:
 ## Clasificación de entrada inicial en ConversationFlow.
 ## ----------------------------------------
-def test_greeting_gate_identifies_first_message_only_inputs() -> None:
-    assert ConversationFlow.is_greeting_only("hola") is True
-    assert ConversationFlow.is_greeting_only("hola amigo") is True
-    assert ConversationFlow.is_greeting_only("hola como estas") is True
-    assert ConversationFlow.is_greeting_only("buenas tardes") is True
-    assert ConversationFlow.is_greeting_only("hola parcero") is True
-    assert ConversationFlow.is_greeting_only("qué más") is True
-    assert ConversationFlow.is_greeting_only("parce") is True
-    assert ConversationFlow.is_greeting_only("q mas") is True
-    assert ConversationFlow.is_greeting_only("buenas") is True
-    assert ConversationFlow.is_greeting_only("buenos días") is True
-    assert ConversationFlow.is_greeting_only("buenos dias") is True
-    assert ConversationFlow.is_greeting_only("hey") is True
-    assert ConversationFlow.is_greeting_only("👋") is False
-    assert ConversationFlow.is_greeting_only("hola precio") is False
-    assert ConversationFlow.is_greeting_only("hola necesito info") is False
-    assert ConversationFlow.is_greeting_only("hola quiero información") is False
-    assert ConversationFlow.is_greeting_only("hola cuánto cuesta") is False
-    assert ConversationFlow.is_greeting_only("buenas tardes me interesa") is False
-    assert ConversationFlow.is_greeting_only("qué más, cómo funciona") is False
-    assert ConversationFlow.is_greeting_only("dame info") is False
-    assert ConversationFlow.is_greeting_only("quiero informacion") is False
-    assert ConversationFlow.is_greeting_only("precio") is False
+def test_the_greeting_is_decided_by_the_reader_not_by_words() -> None:
+    """Desde el 26 nov 2026 no hay lista de saludos: si el cliente solo saluda lo dice el lector de la IA (`greeting_reading.py`).
+    Sin lector o sin lectura no sale el saludo fijo: responde la IA. Y el lector solo se consulta si todo lo demás aplica."""
+    cfg = {"initial_message": {"enabled": True, "mode": "smart"}, "conversation": {"active_window_minutes": 15}}
+    asked: list[str] = []
+
+    def reader(answer):
+        def read(message: str):
+            asked.append(message)
+            return answer
+        return read
+
+    assert should_send_initial_message(message="qué onda", last_user_message_at=None, config=cfg, greets_only=reader(True)) is True
+    assert should_send_initial_message(message="hola, ¿precio?", last_user_message_at=None, config=cfg, greets_only=reader(False)) is False
+    assert should_send_initial_message(message="hola", last_user_message_at=None, config=cfg, greets_only=reader(None)) is False
+    assert should_send_initial_message(message="hola", last_user_message_at=None, config=cfg) is False
+    asked.clear()
+    # Saludo apagado o chat en curso: no se gasta la llamada al lector.
+    off = {**cfg, "initial_message": {"enabled": False}}
+    assert should_send_initial_message(message="hola", last_user_message_at=None, config=off, greets_only=reader(True)) is False
+    recent = datetime.now(timezone.utc) - timedelta(minutes=5)
+    assert should_send_initial_message(message="hola", last_user_message_at=recent, config=cfg, greets_only=reader(True)) is False
+    assert asked == []
 
 
 ## ----------------------------------------
@@ -318,6 +330,7 @@ def test_the_initial_message_comes_from_the_published_config() -> None:
         tenant_slug="asesor_ai_prod",
         user_message="hola",
         runtime_yaml=runtime_yaml,
+        greets_only=lambda _message: True,
     )
 
     assert result == ("Hola, este saludo viene de la config del tenant.", "initial_message")

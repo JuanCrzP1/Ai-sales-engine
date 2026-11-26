@@ -32,6 +32,9 @@ from app.infrastructure.ai.prompting.view import validate_runtime_yaml as valida
 from app.application.assistant_service import AIService
 from pipeline_harness import forbid_examples_folder
 
+# El saludo del negocio lo decide el lector de la IA (`greeting_reading.py`): aquí, el lector simulado (`conftest.greeting_reader`).
+pytestmark = pytest.mark.usefixtures("greeting_reader")
+
 
 def _tenant(slug: str) -> SimpleNamespace:
     return SimpleNamespace(name=slug, slug=slug, id=slug)

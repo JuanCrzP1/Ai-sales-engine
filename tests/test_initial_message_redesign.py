@@ -13,6 +13,8 @@
 
 from __future__ import annotations
 
+import pytest
+
 import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -25,6 +27,9 @@ if str(PROJECT_DIR) not in sys.path:
 
 from app.application.runtime import load_tenant_runtime_yaml
 from app.application.assistant_service import AIService
+
+# El saludo del negocio lo decide el lector de la IA (`greeting_reading.py`): aquí, el lector simulado (`conftest.greeting_reader`).
+pytestmark = pytest.mark.usefixtures("greeting_reader")
 
 
 def _normalize_text(value: str) -> str:

@@ -355,12 +355,19 @@ class ModelTransport:
         self.real_post = real_post
         self.calls: list[dict] = []
         self.reply: dict | None = None
+        self.greeting_reads = 0
 
     def start_turn(self, reply: dict | None) -> None:
         self.calls = []
         self.reply = reply
 
     def post(self, url, headers=None, json=None, timeout=None, **kwargs):  # noqa: A002 - misma firma que requests.post
+        if self.real_post is None and _is_greeting_reader(json):
+            # El lector del saludo (desde el 26 nov 2026) responde como la IA real lee los saludos de estos guiones
+            # (`LAB_GREETINGS`, medidos en `experiments/quality_lab/run_greeting_eval.py`). Se cuenta aparte: el asesor se compara
+            # igual que siempre.
+            self.greeting_reads += 1
+            return _RecordedResponse(_dumps({"solo_saluda": _customer_text(json) in LAB_GREETINGS}))
         call = {"url": url, "payload": json}
         self.calls.append(call)
         if self.real_post is not None:
@@ -370,6 +377,26 @@ class ModelTransport:
         if self.reply is None:
             raise RuntimeError("El motor pidió al modelo un turno sin respuesta preparada.")
         return _RecordedResponse(_dumps(self.reply))
+
+
+# Los mensajes de los guiones del laboratorio que son solo un saludo: así los lee la IA real («hola» y sus variantes, 5 de 5 en la
+# evaluación del lector del saludo). Los demás turnos piden o cuentan algo.
+LAB_GREETINGS = frozenset({"Hola amigo.", "Hola amigo", "Hola"})
+# Así empiezan las instrucciones del lector del saludo (`project/app/infrastructure/ai/prompting/greeting_reader.py`).
+_GREETING_READER_START = "Lees el primer mensaje de un cliente en el chat de ventas de un negocio y dices si solo saluda."
+
+
+def _is_greeting_reader(payload: object) -> bool:
+    messages = payload.get("messages") if isinstance(payload, dict) else None
+    system = next((str(item.get("content") or "") for item in messages or [] if item.get("role") == "system"), "")
+    return system.startswith(_GREETING_READER_START)
+
+
+def _customer_text(payload: object) -> str:
+    """El mensaje del cliente tal como lo lee el lector del saludo («Mensaje del cliente: «Hola»»)."""
+    messages = payload.get("messages") if isinstance(payload, dict) else None
+    said = next((str(item.get("content") or "") for item in messages or [] if item.get("role") == "user"), "")
+    return said.removeprefix("Mensaje del cliente: «").removesuffix("»").strip()
 
 
 def _dumps(value: object) -> str:

@@ -63,6 +63,21 @@ def reads(wants: bool = False, method: str = "", paid: bool = False) -> dict:
     return {"recibe_datos_de_pago": wants, "medio": method, "dice_que_ya_pago": paid}
 
 
+# Lo que la IA simulada de las pruebas entiende como «solo saluda». En producción lo decide la IA real (`greeting_reading.py`) y se
+# mide con `experiments/quality_lab/run_greeting_eval.py`; aquí, los saludos que escriben las pruebas.
+TEST_GREETINGS = frozenset({"hola", "hola amigo", "hola, ¿cómo estás?", "buenas", "buenas tardes", "buenos días"})
+
+
+def greeting_reading(prompt: str, user_message: str) -> str | None:
+    """La respuesta del lector del saludo simulado, o None si la llamada no es la del lector del saludo."""
+    from app.infrastructure.ai.prompting.greeting_reader import GREETING_READER, greeting_turn
+
+    if prompt != GREETING_READER:
+        return None
+    said = next((text for text in TEST_GREETINGS if greeting_turn(text).lower() == str(user_message).lower()), None)
+    return json.dumps({"solo_saluda": said is not None})
+
+
 def run_conversation(slug: str, turns: list[tuple], *, user_id: str, with_context: bool = False) -> list[tuple]:
     """Ejecuta el pipeline real turno a turno; devuelve (prompts enviados al asesor, respuesta final) por turno, o con `with_context`
     (respuesta final, lo que el motor decide del chat).
@@ -82,6 +97,9 @@ def run_conversation(slug: str, turns: list[tuple], *, user_id: str, with_contex
             return _replies[min(len(_prompts), len(_replies)) - 1]
 
         def _classify(prompt, *, user_message, bot_config=None, _reading=reading, **_kwargs):
+            greeting = greeting_reading(prompt, user_message)
+            if greeting is not None:
+                return greeting
             if _reading is None:
                 raise RuntimeError("sin lector de pagos")
             return json.dumps(_reading, ensure_ascii=False)

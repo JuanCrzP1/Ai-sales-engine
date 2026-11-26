@@ -467,7 +467,7 @@ Calidad con la IA real (`experiments/quality_lab`, gpt-4o-mini con juez deepseek
   pagar, los dos le responden.
 
 Lo demás llega al motor y cada opción cambia lo que hace. Las combinaciones que el contrato rechaza son reglas a propósito (el largo
-de las respuestas va con su máximo de palabras; Nequi pide número y no cuenta). La bienvenida fija solo responde a un saludo solo.
+de las respuestas va con su máximo de palabras; Nequi pide número y no cuenta). La bienvenida fija solo responde a un saludo solo (desde el 26 nov 2026 lo reconoce la IA, no una lista de palabras).
 
 Arquitectura: las capas se respetan (pruebas de arquitectura del motor y del panel). Las piezas del sistema anterior (`app/models`,
 `app/database`, `app/repositories`) se retiraron el 18 de noviembre de 2026 (ver Fase 6).

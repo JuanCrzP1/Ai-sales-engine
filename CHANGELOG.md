@@ -3,6 +3,15 @@
 Lo que cambió en AI Sales Engine, de lo más reciente a lo más antiguo. Cada entrada dice qué gana el negocio; el detalle técnico
 está en el historial de git y en `docs/plan-v1.md`.
 
+## 26 de noviembre de 2026
+
+**Tu saludo de bienvenida le llega a quien salude, venga de donde venga**
+- Antes el asistente reconocía solo saludos de Colombia («hola», «buenas», «qué más»). Un «qué onda», un «buen día, ¿cómo están?» o un
+  👋 no recibían tu bienvenida. Ahora lo entiende la IA, en cualquier forma de saludar.
+- Si el cliente saluda y además pregunta algo («hola, ¿cuánto cuesta?»), le responde el asistente, como siempre.
+- Medido con 36 tipos de primer mensaje, cinco veces cada uno: acierta 178 de 180 (la lista de antes, 24 de 36), y nunca le mandó el
+  saludo fijo a quien preguntaba algo.
+
 ## 25 de noviembre de 2026
 
 **Si tu negocio no usa emojis, el mensaje de pago tampoco**

@@ -1,0 +1,1450 @@
+{
+ "experiment": "saludo_lector_a_20261126",
+ "model": "openai/gpt-4o-mini",
+ "samples": 5,
+ "rows": [
+  {
+   "message": "hola",
+   "sample": 0,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "message": "hola",
+   "sample": 1,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "message": "hola",
+   "sample": 2,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "message": "hola",
+   "sample": 3,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "message": "hola",
+   "sample": 4,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "message": "Hola",
+   "sample": 0,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "message": "Hola",
+   "sample": 1,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "message": "Hola",
+   "sample": 2,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "message": "Hola",
+   "sample": 3,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "message": "Hola",
+   "sample": 4,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "message": "holaaa",
+   "sample": 0,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "message": "holaaa",
+   "sample": 1,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "message": "holaaa",
+   "sample": 2,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "message": "holaaa",
+   "sample": 3,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "message": "holaaa",
+   "sample": 4,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "message": "buenas",
+   "sample": 0,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "message": "buenas",
+   "sample": 1,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "message": "buenas",
+   "sample": 2,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "message": "buenas",
+   "sample": 3,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "message": "buenas",
+   "sample": 4,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "message": "Buenas tardes",
+   "sample": 0,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "message": "Buenas tardes",
+   "sample": 1,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "message": "Buenas tardes",
+   "sample": 2,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "message": "Buenas tardes",
+   "sample": 3,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "message": "Buenas tardes",
+   "sample": 4,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "message": "Buenos días",
+   "sample": 0,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "message": "Buenos días",
+   "sample": 1,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "message": "Buenos días",
+   "sample": 2,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "message": "Buenos días",
+   "sample": 3,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "message": "Buenos días",
+   "sample": 4,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "message": "buen día",
+   "sample": 0,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "message": "buen día",
+   "sample": 1,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "message": "buen día",
+   "sample": 2,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "message": "buen día",
+   "sample": 3,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "message": "buen día",
+   "sample": 4,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "message": "qué más pues",
+   "sample": 0,
+   "expected": true,
+   "read": false,
+   "verdict": "respondió la IA a un saludo"
+  },
+  {
+   "message": "qué más pues",
+   "sample": 1,
+   "expected": true,
+   "read": false,
+   "verdict": "respondió la IA a un saludo"
+  },
+  {
+   "message": "qué más pues",
+   "sample": 2,
+   "expected": true,
+   "read": false,
+   "verdict": "respondió la IA a un saludo"
+  },
+  {
+   "message": "qué más pues",
+   "sample": 3,
+   "expected": true,
+   "read": false,
+   "verdict": "respondió la IA a un saludo"
+  },
+  {
+   "message": "qué más pues",
+   "sample": 4,
+   "expected": true,
+   "read": false,
+   "verdict": "respondió la IA a un saludo"
+  },
+  {
+   "message": "quiubo",
+   "sample": 0,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "message": "quiubo",
+   "sample": 1,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "message": "quiubo",
+   "sample": 2,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "message": "quiubo",
+   "sample": 3,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "message": "quiubo",
+   "sample": 4,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "message": "¿Qué onda?",
+   "sample": 0,
+   "expected": true,
+   "read": false,
+   "verdict": "respondió la IA a un saludo"
+  },
+  {
+   "message": "¿Qué onda?",
+   "sample": 1,
+   "expected": true,
+   "read": false,
+   "verdict": "respondió la IA a un saludo"
+  },
+  {
+   "message": "¿Qué onda?",
+   "sample": 2,
+   "expected": true,
+   "read": false,
+   "verdict": "respondió la IA a un saludo"
+  },
+  {
+   "message": "¿Qué onda?",
+   "sample": 3,
+   "expected": true,
+   "read": false,
+   "verdict": "respondió la IA a un saludo"
+  },
+  {
+   "message": "¿Qué onda?",
+   "sample": 4,
+   "expected": true,
+   "read": false,
+   "verdict": "respondió la IA a un saludo"
+  },
+  {
+   "message": "Hola, ¿qué tal?",
+   "sample": 0,
+   "expected": true,
+   "read": false,
+   "verdict": "respondió la IA a un saludo"
+  },
+  {
+   "message": "Hola, ¿qué tal?",
+   "sample": 1,
+   "expected": true,
+   "read": false,
+   "verdict": "respondió la IA a un saludo"
+  },
+  {
+   "message": "Hola, ¿qué tal?",
+   "sample": 2,
+   "expected": true,
+   "read": false,
+   "verdict": "respondió la IA a un saludo"
+  },
+  {
+   "message": "Hola, ¿qué tal?",
+   "sample": 3,
+   "expected": true,
+   "read": false,
+   "verdict": "respondió la IA a un saludo"
+  },
+  {
+   "message": "Hola, ¿qué tal?",
+   "sample": 4,
+   "expected": true,
+   "read": false,
+   "verdict": "respondió la IA a un saludo"
+  },
+  {
+   "message": "Hola, buenas tardes, ¿cómo están?",
+   "sample": 0,
+   "expected": true,
+   "read": false,
+   "verdict": "respondió la IA a un saludo"
+  },
+  {
+   "message": "Hola, buenas tardes, ¿cómo están?",
+   "sample": 1,
+   "expected": true,
+   "read": false,
+   "verdict": "respondió la IA a un saludo"
+  },
+  {
+   "message": "Hola, buenas tardes, ¿cómo están?",
+   "sample": 2,
+   "expected": true,
+   "read": false,
+   "verdict": "respondió la IA a un saludo"
+  },
+  {
+   "message": "Hola, buenas tardes, ¿cómo están?",
+   "sample": 3,
+   "expected": true,
+   "read": false,
+   "verdict": "respondió la IA a un saludo"
+  },
+  {
+   "message": "Hola, buenas tardes, ¿cómo están?",
+   "sample": 4,
+   "expected": true,
+   "read": false,
+   "verdict": "respondió la IA a un saludo"
+  },
+  {
+   "message": "Buenas noches",
+   "sample": 0,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "message": "Buenas noches",
+   "sample": 1,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "message": "Buenas noches",
+   "sample": 2,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "message": "Buenas noches",
+   "sample": 3,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "message": "Buenas noches",
+   "sample": 4,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "message": "épale",
+   "sample": 0,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "message": "épale",
+   "sample": 1,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "message": "épale",
+   "sample": 2,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "message": "épale",
+   "sample": 3,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "message": "épale",
+   "sample": 4,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "message": "Hola, cómo estái",
+   "sample": 0,
+   "expected": true,
+   "read": false,
+   "verdict": "respondió la IA a un saludo"
+  },
+  {
+   "message": "Hola, cómo estái",
+   "sample": 1,
+   "expected": true,
+   "read": false,
+   "verdict": "respondió la IA a un saludo"
+  },
+  {
+   "message": "Hola, cómo estái",
+   "sample": 2,
+   "expected": true,
+   "read": false,
+   "verdict": "respondió la IA a un saludo"
+  },
+  {
+   "message": "Hola, cómo estái",
+   "sample": 3,
+   "expected": true,
+   "read": false,
+   "verdict": "respondió la IA a un saludo"
+  },
+  {
+   "message": "Hola, cómo estái",
+   "sample": 4,
+   "expected": true,
+   "read": false,
+   "verdict": "respondió la IA a un saludo"
+  },
+  {
+   "message": "👋",
+   "sample": 0,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "message": "👋",
+   "sample": 1,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "message": "👋",
+   "sample": 2,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "message": "👋",
+   "sample": 3,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "message": "👋",
+   "sample": 4,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "message": "hola 😊",
+   "sample": 0,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "message": "hola 😊",
+   "sample": 1,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "message": "hola 😊",
+   "sample": 2,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "message": "hola 😊",
+   "sample": 3,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "message": "hola 😊",
+   "sample": 4,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "message": "Saludos",
+   "sample": 0,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "message": "Saludos",
+   "sample": 1,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "message": "Saludos",
+   "sample": 2,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "message": "Saludos",
+   "sample": 3,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "message": "Saludos",
+   "sample": 4,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "message": "hi",
+   "sample": 0,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "message": "hi",
+   "sample": 1,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "message": "hi",
+   "sample": 2,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "message": "hi",
+   "sample": 3,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "message": "hi",
+   "sample": 4,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "message": "hey",
+   "sample": 0,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "message": "hey",
+   "sample": 1,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "message": "hey",
+   "sample": 2,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "message": "hey",
+   "sample": 3,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "message": "hey",
+   "sample": 4,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "message": "hola, ¿cuánto cuesta?",
+   "sample": 0,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "message": "hola, ¿cuánto cuesta?",
+   "sample": 1,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "message": "hola, ¿cuánto cuesta?",
+   "sample": 2,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "message": "hola, ¿cuánto cuesta?",
+   "sample": 3,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "message": "hola, ¿cuánto cuesta?",
+   "sample": 4,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "message": "Buenas, quiero hacer un pedido",
+   "sample": 0,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "message": "Buenas, quiero hacer un pedido",
+   "sample": 1,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "message": "Buenas, quiero hacer un pedido",
+   "sample": 2,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "message": "Buenas, quiero hacer un pedido",
+   "sample": 3,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "message": "Buenas, quiero hacer un pedido",
+   "sample": 4,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "message": "hola me interesa",
+   "sample": 0,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "message": "hola me interesa",
+   "sample": 1,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "message": "hola me interesa",
+   "sample": 2,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "message": "hola me interesa",
+   "sample": 3,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "message": "hola me interesa",
+   "sample": 4,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "message": "hola precio",
+   "sample": 0,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "message": "hola precio",
+   "sample": 1,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "message": "hola precio",
+   "sample": 2,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "message": "hola precio",
+   "sample": 3,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "message": "hola precio",
+   "sample": 4,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "message": "Qué onda, ¿tienen envíos a Monterrey?",
+   "sample": 0,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "message": "Qué onda, ¿tienen envíos a Monterrey?",
+   "sample": 1,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "message": "Qué onda, ¿tienen envíos a Monterrey?",
+   "sample": 2,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "message": "Qué onda, ¿tienen envíos a Monterrey?",
+   "sample": 3,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "message": "Qué onda, ¿tienen envíos a Monterrey?",
+   "sample": 4,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "message": "Buenos días, necesito una cita para mañana",
+   "sample": 0,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "message": "Buenos días, necesito una cita para mañana",
+   "sample": 1,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "message": "Buenos días, necesito una cita para mañana",
+   "sample": 2,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "message": "Buenos días, necesito una cita para mañana",
+   "sample": 3,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "message": "Buenos días, necesito una cita para mañana",
+   "sample": 4,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "message": "Hola, ¿están abiertos hoy?",
+   "sample": 0,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "message": "Hola, ¿están abiertos hoy?",
+   "sample": 1,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "message": "Hola, ¿están abiertos hoy?",
+   "sample": 2,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "message": "Hola, ¿están abiertos hoy?",
+   "sample": 3,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "message": "Hola, ¿están abiertos hoy?",
+   "sample": 4,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "message": "Hola, soy Laura de la tienda Bella",
+   "sample": 0,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "message": "Hola, soy Laura de la tienda Bella",
+   "sample": 1,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "message": "Hola, soy Laura de la tienda Bella",
+   "sample": 2,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "message": "Hola, soy Laura de la tienda Bella",
+   "sample": 3,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "message": "Hola, soy Laura de la tienda Bella",
+   "sample": 4,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "message": "hola vi su anuncio en Instagram",
+   "sample": 0,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "message": "hola vi su anuncio en Instagram",
+   "sample": 1,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "message": "hola vi su anuncio en Instagram",
+   "sample": 2,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "message": "hola vi su anuncio en Instagram",
+   "sample": 3,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "message": "hola vi su anuncio en Instagram",
+   "sample": 4,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "message": "buenas tardes, ¿hacen domicilios?",
+   "sample": 0,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "message": "buenas tardes, ¿hacen domicilios?",
+   "sample": 1,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "message": "buenas tardes, ¿hacen domicilios?",
+   "sample": 2,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "message": "buenas tardes, ¿hacen domicilios?",
+   "sample": 3,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "message": "buenas tardes, ¿hacen domicilios?",
+   "sample": 4,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "message": "Hola, ¿tienen Nequi?",
+   "sample": 0,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "message": "Hola, ¿tienen Nequi?",
+   "sample": 1,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "message": "Hola, ¿tienen Nequi?",
+   "sample": 2,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "message": "Hola, ¿tienen Nequi?",
+   "sample": 3,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "message": "Hola, ¿tienen Nequi?",
+   "sample": 4,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "message": "qué más parce, ¿cómo funciona eso?",
+   "sample": 0,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "message": "qué más parce, ¿cómo funciona eso?",
+   "sample": 1,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "message": "qué más parce, ¿cómo funciona eso?",
+   "sample": 2,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "message": "qué más parce, ¿cómo funciona eso?",
+   "sample": 3,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "message": "qué más parce, ¿cómo funciona eso?",
+   "sample": 4,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "message": "¿Cuánto cuesta el plan?",
+   "sample": 0,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "message": "¿Cuánto cuesta el plan?",
+   "sample": 1,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "message": "¿Cuánto cuesta el plan?",
+   "sample": 2,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "message": "¿Cuánto cuesta el plan?",
+   "sample": 3,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "message": "¿Cuánto cuesta el plan?",
+   "sample": 4,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "message": "Quiero comprar",
+   "sample": 0,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "message": "Quiero comprar",
+   "sample": 1,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "message": "Quiero comprar",
+   "sample": 2,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "message": "Quiero comprar",
+   "sample": 3,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "message": "Quiero comprar",
+   "sample": 4,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "message": "precio",
+   "sample": 0,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "message": "precio",
+   "sample": 1,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "message": "precio",
+   "sample": 2,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "message": "precio",
+   "sample": 3,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "message": "precio",
+   "sample": 4,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "message": "me pasas el menú",
+   "sample": 0,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "message": "me pasas el menú",
+   "sample": 1,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "message": "me pasas el menú",
+   "sample": 2,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "message": "me pasas el menú",
+   "sample": 3,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "message": "me pasas el menú",
+   "sample": 4,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  }
+ ],
+ "old_rule": [
+  {
+   "message": "hola",
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "message": "Hola",
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "message": "holaaa",
+   "read": false,
+   "verdict": "respondió la IA a un saludo"
+  },
+  {
+   "message": "buenas",
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "message": "Buenas tardes",
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "message": "Buenos días",
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "message": "buen día",
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "message": "qué más pues",
+   "read": false,
+   "verdict": "respondió la IA a un saludo"
+  },
+  {
+   "message": "quiubo",
+   "read": false,
+   "verdict": "respondió la IA a un saludo"
+  },
+  {
+   "message": "¿Qué onda?",
+   "read": false,
+   "verdict": "respondió la IA a un saludo"
+  },
+  {
+   "message": "Hola, ¿qué tal?",
+   "read": false,
+   "verdict": "respondió la IA a un saludo"
+  },
+  {
+   "message": "Hola, buenas tardes, ¿cómo están?",
+   "read": false,
+   "verdict": "respondió la IA a un saludo"
+  },
+  {
+   "message": "Buenas noches",
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "message": "épale",
+   "read": false,
+   "verdict": "respondió la IA a un saludo"
+  },
+  {
+   "message": "Hola, cómo estái",
+   "read": false,
+   "verdict": "respondió la IA a un saludo"
+  },
+  {
+   "message": "👋",
+   "read": false,
+   "verdict": "respondió la IA a un saludo"
+  },
+  {
+   "message": "hola 😊",
+   "read": false,
+   "verdict": "respondió la IA a un saludo"
+  },
+  {
+   "message": "Saludos",
+   "read": false,
+   "verdict": "respondió la IA a un saludo"
+  },
+  {
+   "message": "hi",
+   "read": false,
+   "verdict": "respondió la IA a un saludo"
+  },
+  {
+   "message": "hey",
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "message": "hola, ¿cuánto cuesta?",
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "message": "Buenas, quiero hacer un pedido",
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "message": "hola me interesa",
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "message": "hola precio",
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "message": "Qué onda, ¿tienen envíos a Monterrey?",
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "message": "Buenos días, necesito una cita para mañana",
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "message": "Hola, ¿están abiertos hoy?",
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "message": "Hola, soy Laura de la tienda Bella",
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "message": "hola vi su anuncio en Instagram",
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "message": "buenas tardes, ¿hacen domicilios?",
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "message": "Hola, ¿tienen Nequi?",
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "message": "qué más parce, ¿cómo funciona eso?",
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "message": "¿Cuánto cuesta el plan?",
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "message": "Quiero comprar",
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "message": "precio",
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "message": "me pasas el menú",
+   "read": false,
+   "verdict": "bien"
+  }
+ ],
+ "gasto_usd": 0.0055
+}
