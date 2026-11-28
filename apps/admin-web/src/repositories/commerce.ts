@@ -1,4 +1,5 @@
 import type { CardChange, CustomerCard, CustomerNote } from "../domain/commerce/customerCard";
+import type { CustomerField, FieldChange, FieldRawValue, FieldValue, NewFieldInput } from "../domain/commerce/customerFields";
 import type { Label, LabelChange, LabelColor } from "../domain/commerce/labels";
 import type { Pipeline } from "../domain/commerce/pipeline";
 import type { NewReminderInput, Reminder } from "../domain/commerce/reminders";
@@ -26,6 +27,15 @@ export interface Commerce {
   deleteLabel(labelId: string): Promise<void>;
   /** Deja al cliente con esas etiquetas (y solo esas). */
   setCustomerLabels(conversationId: string, labelIds: string[]): Promise<Customer>;
+  /** Los campos del cliente del negocio, en el orden en que se crearon, con cuántos clientes tienen lleno cada uno. */
+  customerFields(): Promise<CustomerField[]>;
+  createCustomerField(input: NewFieldInput): Promise<CustomerField>;
+  /** Cambia el nombre y/o las opciones (solo lo que trae `change`): quien tenía una opción que se quita queda sin valor. */
+  updateCustomerField(fieldId: string, change: FieldChange): Promise<CustomerField>;
+  /** Borra el campo y su valor en todos los clientes. */
+  deleteCustomerField(fieldId: string): Promise<void>;
+  /** Cambia los valores que trae `values` (por id de campo; null o vacío lo deja vacío), todos o ninguno. */
+  setCustomerFieldValues(conversationId: string, values: Record<string, FieldRawValue>): Promise<FieldValue[]>;
   /** Los recordatorios pendientes por fecha (o los hechos, el último primero); con `mine`, solo los de quien mira. */
   reminders(filter?: { done?: boolean; mine?: boolean }): Promise<Reminder[]>;
   createReminder(conversationId: string, input: NewReminderInput): Promise<Reminder>;

@@ -38,7 +38,7 @@ lleva hacia la compra; cuando hace falta una persona, se la pasa al equipo y le 
 | **WhatsApp en un minuto** | El negocio toca «Conectar WhatsApp» y escanea un código QR. El servidor y los tokens los pone la plataforma. |
 | **Conversaciones en vivo** | Como WhatsApp Web: escribiendo…, chulos de enviado y leído, no leídos, fotos y notas de voz que la IA entiende. |
 | **Paso a una persona** | Si el cliente pide hablar con alguien, reclama o reporta un pago, el chat pasa al equipo según su horario. El equipo recibe aviso en la campana, por correo y en el celular, y si nadie responde a tiempo la IA retoma el chat. |
-| **Clientes y ventas** | Un tablero como el de un CRM: una columna por etapa (nuevo, interesado, listo, pagó, cliente) que el asistente avanza solo y el equipo mueve arrastrando, «no compró» con su motivo y los números del embudo. Cada cliente tiene su ficha: valor, responsable, recordatorios del equipo (que le avisan al responsable cuando llega la hora), etiquetas, notas, compras e historial. Las ventas se registran desde el chat. |
+| **Clientes y ventas** | Un tablero como el de un CRM: una columna por etapa (nuevo, interesado, listo, pagó, cliente) que el asistente avanza solo y el equipo mueve arrastrando, «no compró» con su motivo y los números del embudo. Cada cliente tiene su ficha: valor, responsable, los campos propios del negocio (ciudad, cumpleaños, tipo de cliente…), recordatorios del equipo (que le avisan al responsable cuando llega la hora), etiquetas, notas, compras e historial. Las ventas se registran desde el chat. |
 | **Reportes** | Embudo, conversaciones por día, quién respondió y cuánto costó la IA, comparados con el periodo anterior. |
 | **Su propia IA** | Cada negocio usa su clave de OpenRouter y elige el modelo. Ve su consumo; la plataforma no tiene una clave general. |
 | **Integraciones** | Conecta el asistente a cualquier plataforma con su API: guía probada para Leona, una general y ejemplos de código, con claves que se revocan en un clic. Y agentes de IA por MCP: Claude, Cursor o n8n montan y configuran tus negocios con los permisos que les des. |
@@ -47,7 +47,7 @@ lleva hacia la compra; cuando hace falta una persona, se la pasa al equipo y le 
 <table>
   <tr>
     <td width="50%"><img src="docs/images/clientes.jpg" alt="El tablero de clientes por etapa"/><br/><sub><b>Clientes, como un CRM.</b> Una columna por etapa: el asistente avanza a cada cliente solo y el equipo lo mueve arrastrando. Arriba, cuánto hay por cerrar.</sub></td>
-    <td width="50%"><img src="docs/images/ficha-cliente.jpg" alt="La ficha de un cliente"/><br/><sub><b>La ficha de cada cliente.</b> Su etapa, su valor, quién lo atiende, sus etiquetas, las notas del equipo, sus compras y el historial de lo que le ha pasado.</sub></td>
+    <td width="50%"><img src="docs/images/ficha-cliente.jpg" alt="La ficha de un cliente"/><br/><sub><b>La ficha de cada cliente.</b> Su etapa, su valor, quién lo atiende y los datos propios del negocio (ciudad, tipo de cliente, cumpleaños…); más abajo, sus recordatorios, etiquetas, notas, compras e historial.</sub></td>
   </tr>
   <tr>
     <td width="50%"><img src="docs/images/conversaciones.jpg" alt="Conversaciones en vivo con paso a una persona"/><br/><sub><b>Conversaciones en vivo.</b> Un cliente reportó un pago: el equipo lo verifica y lo confirma desde el chat, y el cliente recibe su mensaje.</sub></td>

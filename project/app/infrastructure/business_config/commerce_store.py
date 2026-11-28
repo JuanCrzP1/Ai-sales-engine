@@ -18,6 +18,7 @@ from sqlalchemy.engine import Connection, Engine
 
 from app.domain.business_config.commerce import ALL_STAGES, STAGES, Customer, NewSale, ReportDay, ReportTotals, Sale, SaleError, reached
 from app.domain.business_config.customer_card import SOURCE_SALE, CustomerCard, CustomerNote, DealChange, money_text
+from app.domain.business_config.customer_fields import CustomerField, FieldChange, FieldValue, FieldValues, NewField
 from app.domain.business_config.customer_labels import Label, LabelChange
 from app.domain.business_config.errors import ConversationNotFoundError
 from app.domain.business_config.reminders import NewReminder, Reminder
@@ -25,6 +26,7 @@ from app.domain.business_config.pipeline import Pipeline, StageMove
 from app.infrastructure.business_config.commerce_queries import MAX_CUSTOMERS, TEST_CHANNEL, bounds, customers_of, day_of, real_customers, sale_of
 from app.infrastructure.business_config.customer_card_store import add_note, delete_note, read_card, update_deal
 from app.infrastructure.business_config.customer_events import record_stage_change
+from app.infrastructure.business_config.field_store import create_field, delete_field, list_fields, set_field_values, update_field
 from app.infrastructure.business_config.label_store import create_label, delete_label, list_labels, set_customer_labels, update_label
 from app.infrastructure.business_config.pipeline_store import move_customer, read_pipeline
 from app.infrastructure.business_config.reminder_store import create_reminder, delete_reminder, list_reminders, set_reminder_done
@@ -89,6 +91,23 @@ class CommerceStore:
 
     def set_customer_labels(self, tenant_slug: str, conversation_id: str, label_ids: list[str]) -> Customer:
         return set_customer_labels(self._engine, tenant_slug, conversation_id, label_ids)
+
+    # ------------------------------------------------------------------ los campos del cliente (las consultas están en `field_store.py`)
+
+    def customer_fields(self, tenant_slug: str) -> list[CustomerField]:
+        return list_fields(self._engine, tenant_slug)
+
+    def create_customer_field(self, tenant_slug: str, new: NewField, *, created_by: str | None = None) -> CustomerField:
+        return create_field(self._engine, tenant_slug, new, created_by=created_by)
+
+    def update_customer_field(self, tenant_slug: str, field_id: str, change: FieldChange) -> CustomerField:
+        return update_field(self._engine, tenant_slug, field_id, change)
+
+    def delete_customer_field(self, tenant_slug: str, field_id: str) -> None:
+        delete_field(self._engine, tenant_slug, field_id)
+
+    def set_customer_field_values(self, tenant_slug: str, conversation_id: str, values: FieldValues, *, by: str | None) -> list[FieldValue]:
+        return set_field_values(self._engine, tenant_slug, conversation_id, values, by=by)
 
     # ------------------------------------------------------------------ los recordatorios (las consultas están en `reminder_store.py`)
 

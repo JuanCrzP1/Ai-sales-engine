@@ -62,7 +62,7 @@ interface TextFieldProps extends Omit<FieldProps, "children" | "footer"> {
   wordLimit?: number;
   /** Largo máximo en caracteres: no deja escribir más y muestra un contador. */
   maxLength?: number;
-  inputMode?: "text" | "numeric" | "tel" | "url" | "email";
+  inputMode?: "text" | "numeric" | "decimal" | "tel" | "url" | "email";
   autoComplete?: string;
   /** Id de un <datalist> con sugerencias. */
   list?: string;

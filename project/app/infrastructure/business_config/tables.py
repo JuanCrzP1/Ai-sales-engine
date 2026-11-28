@@ -331,6 +331,35 @@ conversation_labels = Table(
     Index("conversation_labels_label_idx", "label_id"),
 )
 
+# Los campos del cliente (migración 0030): el catálogo de cada negocio (nombre que no se repite, tipo y opciones de una lista) y el
+# valor de cada campo en cada cliente, en su forma única, con quién lo puso y cuándo.
+customer_fields = Table(
+    "customer_fields",
+    metadata,
+    Column("id", Uuid, primary_key=True, default=uuid.uuid4),
+    Column("tenant_id", Uuid, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False),
+    Column("name", Text, nullable=False),
+    Column("name_key", Text, nullable=False),
+    Column("kind", Text, nullable=False),
+    Column("options", JSON().with_variant(JSONB(), "postgresql"), nullable=False, default=list),
+    Column("created_by", Text),
+    Column("created_at", DateTime(timezone=True), nullable=False, default=_now),
+    UniqueConstraint("tenant_id", "name_key", name="customer_fields_name_key"),
+    CheckConstraint("kind IN ('text', 'number', 'date', 'yes_no', 'choice')", name="customer_fields_kind_check"),
+)
+
+customer_field_values = Table(
+    "customer_field_values",
+    metadata,
+    Column("conversation_id", Uuid, ForeignKey("conversations.id", ondelete="CASCADE"), primary_key=True),
+    Column("field_id", Uuid, ForeignKey("customer_fields.id", ondelete="CASCADE"), primary_key=True),
+    Column("tenant_id", Uuid, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False),
+    Column("value", Text, nullable=False),
+    Column("updated_by", Text),
+    Column("updated_at", DateTime(timezone=True), nullable=False, default=_now),
+    Index("customer_field_values_field_idx", "field_id"),
+)
+
 # Los recordatorios del equipo (migración 0028): qué hacer con un cliente y cuándo, para quién, y si ya se hizo.
 customer_reminders = Table(
     "customer_reminders",

@@ -18,6 +18,7 @@ import type { BusinessDirectory } from "../repositories/businessDirectory";
 import type { Channels, TelegramChannel, WhatsAppChannel } from "../repositories/channels";
 import type { Commerce } from "../repositories/commerce";
 import type { Assignee, CustomerCard, CustomerEvent, CustomerNote } from "../domain/commerce/customerCard";
+import type { CustomerField, FieldValue } from "../domain/commerce/customerFields";
 import { labelKey, type Label } from "../domain/commerce/labels";
 import type { Pipeline } from "../domain/commerce/pipeline";
 import type { Reminder } from "../domain/commerce/reminders";
@@ -476,7 +477,7 @@ export function emptyReport(days = 30): Report {
 
 /** Clientes, ventas y reportes en memoria: registrar una venta convierte al cliente, como el servidor. */
 export function createMemoryCommerce(
-  seed: { customers?: Customer[]; sales?: Sale[]; report?: Report; cardsPerStage?: number; assignees?: Assignee[]; labels?: Label[]; reminders?: Reminder[]; viewerId?: string | null } = {},
+  seed: { customers?: Customer[]; sales?: Sale[]; report?: Report; cardsPerStage?: number; assignees?: Assignee[]; labels?: Label[]; reminders?: Reminder[]; viewerId?: string | null; fields?: CustomerField[]; fieldValues?: Record<string, Record<string, string | boolean>> } = {},
 ): Commerce & {
   customerList: Customer[];
   saleList: Sale[];
@@ -485,6 +486,9 @@ export function createMemoryCommerce(
   noteList: (CustomerNote & { conversationId: string })[];
   labelList: Label[];
   reminderList: Reminder[];
+  fieldList: CustomerField[];
+  /** Por cliente, el valor de cada campo (por id). */
+  fieldValues: Record<string, Record<string, string | boolean>>;
 } {
   const customerList = (seed.customers ?? []).map((item) => ({ ...item }));
   const saleList = (seed.sales ?? []).map((item) => ({ ...item }));
@@ -493,6 +497,15 @@ export function createMemoryCommerce(
   const assignees = seed.assignees ?? [];
   const labelList = (seed.labels ?? []).map((item) => ({ ...item }));
   const reminderList = (seed.reminders ?? []).map((item) => ({ ...item }));
+  const fieldList = (seed.fields ?? []).map((item) => ({ ...item, options: [...item.options] }));
+  const fieldValues: Record<string, Record<string, string | boolean>> = Object.fromEntries(Object.entries(seed.fieldValues ?? {}).map(([id, values]) => [id, { ...values }]));
+  const countedField = (item: CustomerField): CustomerField => ({ ...item, options: [...item.options], filled: Object.values(fieldValues).filter((values) => item.id in values).length });
+  const fieldsOf = (conversationId: string): FieldValue[] =>
+    fieldList.map((item) => {
+      const value = fieldValues[conversationId]?.[item.id];
+      return { field: countedField(item), value: value ?? null, updatedBy: value === undefined ? null : "operador@ejemplo.com", updatedAt: value === undefined ? null : new Date().toISOString() };
+    });
+  const fieldProblem = (path: string, message: string) => new PersistenceError("invalid", { message, problems: [{ path, message }] });
   // El pendiente más próximo de cada cliente, como lo calcula el servidor para su tarjeta.
   const withNext = (customer: Customer): Customer => {
     const next = reminderList.filter((item) => item.conversationId === customer.conversationId && !item.doneAt).sort((a, b) => a.dueAt.localeCompare(b.dueAt))[0];
@@ -519,6 +532,7 @@ export function createMemoryCommerce(
       customer: withNext(customer),
       reminders: [...own.filter((item) => !item.doneAt).sort((a, b) => a.dueAt.localeCompare(b.dueAt)), ...own.filter((item) => item.doneAt)].map((item) => ({ ...item })),
       viewerId: seed.viewerId ?? null,
+      fields: fieldsOf(conversationId),
       stageSince: events.find((item) => item.kind === "stage")?.createdAt ?? null,
       owner: assignees.find((member) => member.userId === customer.owner?.userId) ?? null,
       assignees: assignees.map((member) => ({ ...member })),
@@ -546,6 +560,8 @@ export function createMemoryCommerce(
     noteList,
     labelList,
     reminderList,
+    fieldList,
+    fieldValues,
     customers: async (filter = {}) =>
       matching(filter.query, filter.label)
         .filter((item) => !filter.stage || item.stage === filter.stage)
@@ -633,6 +649,47 @@ export function createMemoryCommerce(
       if (index < 0) throw new PersistenceError("not_found", { message: "Esa etiqueta no existe." });
       labelList.splice(index, 1);
       for (const customer of customerList) customer.labels = customer.labels.filter((own) => own.id !== labelId);
+    },
+    // Los campos, como el servidor: sin dos que se lean igual; quitar una opción vacía a quien la tenía; un número debe serlo.
+    customerFields: async () => fieldList.map(countedField),
+    createCustomerField: async (input) => {
+      if (fieldList.some((item) => labelKey(item.name) === labelKey(input.name))) throw fieldProblem("name", "Ya tienes un campo con ese nombre.");
+      const created: CustomerField = { id: `campo-${fieldList.length + 1}`, name: input.name.trim(), kind: input.kind, options: input.kind === "choice" ? [...(input.options ?? [])] : [], filled: 0 };
+      fieldList.push(created);
+      return countedField(created);
+    },
+    updateCustomerField: async (fieldId, change) => {
+      const item = fieldList.find((field) => field.id === fieldId);
+      if (!item) throw new PersistenceError("not_found", { message: "Ese campo no existe." });
+      if (change.name !== undefined && fieldList.some((field) => field.id !== fieldId && labelKey(field.name) === labelKey(change.name!))) throw fieldProblem("name", "Ya tienes un campo con ese nombre.");
+      if (change.name !== undefined) item.name = change.name.trim();
+      if (change.options !== undefined) {
+        item.options = [...change.options];
+        for (const values of Object.values(fieldValues)) {
+          const kept = item.options.find((option) => labelKey(option) === labelKey(String(values[fieldId] ?? "")));
+          if (fieldId in values) kept === undefined ? delete values[fieldId] : (values[fieldId] = kept);
+        }
+      }
+      return countedField(item);
+    },
+    deleteCustomerField: async (fieldId) => {
+      const index = fieldList.findIndex((item) => item.id === fieldId);
+      if (index < 0) throw new PersistenceError("not_found", { message: "Ese campo no existe." });
+      fieldList.splice(index, 1);
+      for (const values of Object.values(fieldValues)) delete values[fieldId];
+    },
+    setCustomerFieldValues: async (conversationId, values) => {
+      found(conversationId);
+      const next = { ...(fieldValues[conversationId] ?? {}) };
+      for (const [fieldId, raw] of Object.entries(values)) {
+        const item = fieldList.find((field) => field.id === fieldId);
+        if (!item) throw fieldProblem(`values.${fieldId}`, "Ese campo ya no existe: vuelve a abrir la ficha.");
+        if (raw === null || raw === "") delete next[fieldId];
+        else if (item.kind === "number" && !Number.isFinite(Number(String(raw).replace(/\./g, "").replace(",", ".")))) throw fieldProblem(`values.${fieldId}`, "Escribe un número.");
+        else next[fieldId] = item.kind === "number" ? String(Number(String(raw).replace(/\./g, "").replace(",", "."))) : raw;
+      }
+      fieldValues[conversationId] = next;
+      return fieldsOf(conversationId);
     },
     // Los recordatorios, como el servidor: «míos» son los de quien mira (`viewerId`), y sin responsable elegido quedan para él.
     reminders: async ({ done = false, mine = false } = {}) =>

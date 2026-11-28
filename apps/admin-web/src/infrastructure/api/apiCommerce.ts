@@ -1,4 +1,5 @@
 import type { CustomerCard, CustomerEvent, CustomerNote } from "../../domain/commerce/customerCard";
+import { toFieldKind, type CustomerField, type FieldRawValue, type FieldValue } from "../../domain/commerce/customerFields";
 import { toLabelColor, type Label } from "../../domain/commerce/labels";
 import type { Pipeline } from "../../domain/commerce/pipeline";
 import type { Reminder } from "../../domain/commerce/reminders";
@@ -46,6 +47,21 @@ interface ApiLabel {
   customers: number;
 }
 
+interface ApiField {
+  id: string;
+  name: string;
+  kind: string;
+  options: string[];
+  filled: number;
+}
+
+interface ApiFieldValue {
+  field: ApiField;
+  value: FieldRawValue;
+  updated_by: string | null;
+  updated_at: string | null;
+}
+
 interface ApiNote {
   id: string;
   body: string;
@@ -68,6 +84,7 @@ interface ApiCard {
   notes: ApiNote[];
   reminders?: ApiReminder[];
   viewer_id?: string | null;
+  fields?: ApiFieldValue[];
   events: { id: string; kind: CustomerEvent["kind"]; source: CustomerEvent["source"]; from_stage: BoardStage | null; to_stage: BoardStage | null; detail: string | null; actor: string | null; created_at: string }[];
 }
 
@@ -184,6 +201,21 @@ const toSale = (item: ApiSale): Sale => ({
   conversationId: item.conversation_id,
 });
 
+const toField = (item: ApiField): CustomerField => ({
+  id: item.id,
+  name: item.name,
+  kind: toFieldKind(item.kind),
+  options: item.options ?? [],
+  filled: item.filled ?? 0,
+});
+
+const toFieldValue = (item: ApiFieldValue): FieldValue => ({
+  field: toField(item.field),
+  value: item.value ?? null,
+  updatedBy: item.updated_by,
+  updatedAt: item.updated_at,
+});
+
 const toCard = (item: ApiCard): CustomerCard => ({
   customer: toCustomer(item.customer),
   stageSince: item.stage_since,
@@ -203,6 +235,7 @@ const toCard = (item: ApiCard): CustomerCard => ({
   })),
   reminders: (item.reminders ?? []).map(toReminder),
   viewerId: item.viewer_id ?? null,
+  fields: (item.fields ?? []).map(toFieldValue),
 });
 
 const toTotals = (item: ApiTotals): ReportTotals => ({
@@ -252,6 +285,12 @@ export function createApiCommerce(http: HttpClient, slug: string): Commerce {
     deleteLabel: (labelId) => http.delete(`${base}/labels/${encodeURIComponent(labelId)}`),
     setCustomerLabels: async (conversationId, labelIds) =>
       toCustomer(await http.put<ApiCustomer>(`${base}/customers/${encodeURIComponent(conversationId)}/labels`, { label_ids: labelIds })),
+    customerFields: async () => (await http.get<{ fields: ApiField[] }>(`${base}/customer-fields`)).fields.map(toField),
+    createCustomerField: async (input) => toField(await http.post<ApiField>(`${base}/customer-fields`, input)),
+    updateCustomerField: async (fieldId, change) => toField(await http.patch<ApiField>(`${base}/customer-fields/${encodeURIComponent(fieldId)}`, change)),
+    deleteCustomerField: (fieldId) => http.delete(`${base}/customer-fields/${encodeURIComponent(fieldId)}`),
+    setCustomerFieldValues: async (conversationId, values) =>
+      (await http.patch<{ fields: ApiFieldValue[] }>(`${base}/customers/${encodeURIComponent(conversationId)}/fields`, { values })).fields.map(toFieldValue),
     reminders: async ({ done = false, mine = false } = {}) => {
       const search = new URLSearchParams();
       if (done) search.set("done", "true");

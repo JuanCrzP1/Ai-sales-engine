@@ -13,6 +13,7 @@ import "./styles/commerce.css";
 import "./styles/customers.css";
 import "./styles/customer-card.css";
 import "./styles/customer-labels.css";
+import "./styles/customer-fields.css";
 import "./styles/help.css";
 import "./styles/team.css";
 

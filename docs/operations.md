@@ -378,6 +378,9 @@ tiene pantallas y su raíz redirige a `PANEL_URL`, o al panel publicado si no es
   la campana y al celular de su responsable (sin responsable, o si ya no es del equipo, a todo el equipo), sin correo. Los revisa
   la misma tarea de la atención humana (`/api/v1/internal/attention/run`, cada 15 minutos con `CRON_SECRET`) y el tráfico del
   motor y del panel, como mucho una vez por minuto por proceso; uno que venció hace más de 3 días sin avisar ya no avisa.
+- Los campos del cliente (migración 0030): un catálogo por negocio (texto, número, fecha, sí o no, lista de opciones; hasta 30,
+  sin dos que se lean igual) y el valor de cada uno en cada cliente, en su forma única y con quién lo puso. Crearlos, cambiarlos y
+  borrarlos es de quien configura el negocio; llenarlos, de todo el que atiende. Los agentes (MCP) y el asistente aún no los ven.
 - Canales: WhatsApp por código QR con uazapi. El negocio toca «Conectar WhatsApp» y escanea el QR; el servidor, los tokens y el
   webhook los pone la plataforma. La API oficial de Meta, Telegram y el chat web aparecen como «Próximamente».
 - En la nube no se importan los negocios de ejemplo ni se eliminan negocios. El dominio del panel debe estar en Neon Auth →

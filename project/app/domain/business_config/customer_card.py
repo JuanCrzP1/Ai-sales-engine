@@ -17,6 +17,7 @@ from datetime import datetime
 from decimal import Decimal, InvalidOperation
 
 from app.domain.business_config.commerce import Customer, Sale
+from app.domain.business_config.customer_fields import FieldValue
 from app.domain.business_config.reminders import Reminder
 
 MAX_NOTE = 2000
@@ -148,6 +149,8 @@ class CustomerCard:
     events: list[CustomerEvent] = field(default_factory=list)
     # Sus recordatorios: los pendientes por fecha y los últimos hechos (`reminders.py`).
     reminders: list[Reminder] = field(default_factory=list)
+    # Todos los campos del negocio con el valor de este cliente, o vacío (`customer_fields.py`).
+    fields: list[FieldValue] = field(default_factory=list)
     # Quien mira, si es del equipo: el responsable que el panel propone para un recordatorio nuevo.
     viewer_id: str | None = None
 

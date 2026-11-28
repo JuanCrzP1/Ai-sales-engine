@@ -5,6 +5,13 @@ está en el historial de git y en `docs/plan-v1.md`.
 
 ## 28 de noviembre de 2026
 
+**Campos del cliente**
+- Guarda los datos propios que quieras de cada cliente: su ciudad, su cumpleaños, qué tipo de cliente es, cuánto quiere invertir.
+- Cada campo es de un tipo: texto, número, fecha, sí o no, o una lista de opciones que tú defines.
+- Tu equipo los llena desde la ficha, en **Datos del cliente**, y debajo de cada dato ve quién lo puso y cuándo.
+- Crearlos, cambiarlos y borrarlos es del dueño o de un administrador, en **Clientes → Campos**. Antes de quitar una opción o borrar
+  un campo te decimos a cuántos clientes afecta.
+
 **Los recordatorios te avisan cuando llega la hora**
 - Te avisamos una vez en la campana y, si activaste las notificaciones, en tu celular o computador. Al tocar el aviso se abre la
   ficha del cliente en Clientes → Recordatorios.

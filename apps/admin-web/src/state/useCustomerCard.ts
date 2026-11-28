@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import type { CardChange, CustomerCard } from "../domain/commerce/customerCard";
+import type { FieldRawValue } from "../domain/commerce/customerFields";
 import type { LabelColor } from "../domain/commerce/labels";
 import type { NewReminderInput } from "../domain/commerce/reminders";
 import type { Commerce } from "../repositories/commerce";
@@ -64,6 +65,11 @@ export function useCustomerCard(conversationId: string, version: number, onChang
     addReminder: useCallback((input: NewReminderInput) => run((api) => api.createReminder(conversationId, input).then(() => undefined), true), [run, conversationId]),
     markReminder: useCallback((reminderId: string, done: boolean) => run((api) => api.setReminderDone(reminderId, done).then(() => undefined), true), [run]),
     deleteReminder: useCallback((reminderId: string) => run((api) => api.deleteReminder(reminderId), true), [run]),
+    /** Cambia los valores de sus campos (todos o ninguno): Clientes vuelve a contar cuántos tienen cada campo lleno. */
+    setFieldValues: useCallback(
+      (values: Record<string, FieldRawValue>) => run((api) => api.setCustomerFieldValues(conversationId, values).then(() => undefined), true),
+      [run, conversationId],
+    ),
     /** Crea una etiqueta nueva y se la pone al cliente, además de las que ya tiene (`current`). */
     createLabel: useCallback(
       (name: string, color: LabelColor, current: string[]) =>

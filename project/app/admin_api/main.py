@@ -28,6 +28,7 @@ from app.admin_api.oauth_routes import router as oauth_router
 from app.admin_api.channel_routes import router as channel_router
 from app.admin_api.commerce_routes import router as commerce_router
 from app.admin_api.customer_card_routes import router as customer_card_router
+from app.admin_api.field_routes import router as field_router
 from app.admin_api.label_routes import router as label_router
 from app.admin_api.reminder_routes import router as reminder_router
 from app.admin_api.conversation_routes import router as conversation_router
@@ -47,6 +48,7 @@ from app.business_config_application.channels import TelegramChannelService, Wha
 from app.business_config_application.business_deletion import BusinessDeletionService
 from app.business_config_application.commerce import CommerceService
 from app.business_config_application.customer_card import CustomerCardService
+from app.business_config_application.customer_fields import CustomerFieldService
 from app.business_config_application.customer_labels import CustomerLabelService
 from app.business_config_application.reminders import ReminderService
 from app.business_config_application.conversations import ConversationsService, NotificationsService
@@ -161,6 +163,7 @@ def create_app(
     app.state.customer_cards = CustomerCardService(commerce, app.state.access) if commerce is not None else None
     app.state.customer_labels = CustomerLabelService(commerce, app.state.access) if commerce is not None else None
     app.state.reminders = ReminderService(commerce, app.state.access) if commerce is not None else None
+    app.state.customer_fields = CustomerFieldService(commerce, app.state.access) if commerce is not None else None
     # «Confirmar pago» en el chat: el cliente recibe el mensaje de pago confirmado de lo publicado; con `commerce`, la venta queda
     # registrada; con `contact_memory`, el asistente sabe que el pago quedó confirmado.
     app.state.payments = (
@@ -249,6 +252,7 @@ def create_app(
     app.include_router(customer_card_router)
     app.include_router(label_router)
     app.include_router(reminder_router)
+    app.include_router(field_router)
     app.include_router(attention_router)
     app.include_router(quick_reply_router)
     app.include_router(help_router)

@@ -14,11 +14,13 @@ import { useWorkspacePath } from "../../navigation/useWorkspacePath";
 import { useAuth } from "../../state/auth/useAuth";
 import { useCan } from "../../state/roleContext";
 import { useCommerceData } from "../../state/useCommerceData";
+import { useCustomerFields } from "../../state/useCustomerFields";
 import { useLabels } from "../../state/useLabels";
 import { useReminders } from "../../state/useReminders";
 import { BoardView } from "./customers/BoardView";
 import { CustomerDrawer } from "./customers/card/CustomerDrawer";
 import { CustomersList } from "./customers/CustomersList";
+import { FieldsDialog } from "./customers/fields/FieldsDialog";
 import { LabelsDialog } from "./customers/labels/LabelsDialog";
 import { LostReasonDialog } from "./customers/LostReasonDialog";
 import { PipelineStats } from "./customers/PipelineStats";
@@ -68,6 +70,8 @@ export function CustomersPage() {
   const moves = useCustomerMoves(refresh);
   const [deleting, setDeleting] = useState<Customer | null>(null);
   const [managingLabels, setManagingLabels] = useState(false);
+  const [managingFields, setManagingFields] = useState(false);
+  const fields = useCustomerFields(version);
   // «Míos» solo existe con cuentas: sin ellas (este equipo) todos los recordatorios son de todos.
   const [mine, setMine] = useState(verifiesCredentials);
   const reminders = useReminders(version, { mine });
@@ -135,6 +139,11 @@ export function CustomersPage() {
             <Button size="small" variant="secondary" onClick={() => setManagingLabels(true)}>
               <Icon name="tag" size={14} /> Etiquetas
             </Button>
+            {canManageLabels && (
+              <Button size="small" variant="secondary" onClick={() => setManagingFields(true)}>
+                <Icon name="toggles" size={14} /> Campos
+              </Button>
+            )}
             <div className="view-switch" role="group" aria-label="Cómo ver los clientes">
               {VIEWS.map((item) => (
                 <button key={item.view} type="button" className="view-switch__option" aria-pressed={place.view === item.view} onClick={() => go({ view: item.view, stage: null, customerId: null })}>
@@ -211,19 +220,22 @@ export function CustomersPage() {
         <CustomerDrawer
           conversationId={place.customerId}
           version={version}
-          locked={moves.asking !== null || managingLabels}
+          locked={moves.asking !== null || managingLabels || managingFields}
           busy={moves.busyId === place.customerId}
           labels={labels.list}
           chatPath={chatPath}
           onMove={moves.request}
           onSell={moves.sell}
           onManageLabels={() => setManagingLabels(true)}
+          canManageFields={canManageLabels}
+          onManageFields={() => setManagingFields(true)}
           onChanged={refresh}
           onClose={() => openCard(null)}
         />
       )}
 
       {managingLabels && <LabelsDialog labels={labels.list} canManage={canManageLabels} onChanged={refresh} onClose={() => setManagingLabels(false)} />}
+      {managingFields && <FieldsDialog fields={fields.list} onChanged={refresh} onClose={() => setManagingFields(false)} />}
 
       {moves.asking?.kind === "reason" && (
         <LostReasonDialog

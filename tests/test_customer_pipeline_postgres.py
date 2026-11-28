@@ -1,14 +1,15 @@
 """El tablero de Clientes y la ficha contra un PostgreSQL de verdad (`TEST_POSTGRES_URL`, como `test_follow_up_postgres.py`).
 
-Las migraciones 0025 a 0029 se aplican como las aplica la nube (se pueden repetir): la etapa admite «no compró», el tablero cuenta,
+Las migraciones 0025 a 0030 se aplican como las aplica la nube (se pueden repetir): la etapa admite «no compró», el tablero cuenta,
 lista y mueve con las consultas reales de PostgreSQL (agrupar por etapa y sumar por moneda), la ficha guarda el valor, las notas
 y el historial, que se borran con la conversación, las etiquetas (0027) no se repiten y filtran el tablero, los recordatorios
-(0028) salen por fecha y en la tarjeta, y avisan una sola vez al llegar su hora aunque dos revisiones corran a la vez (0029).
+(0028) salen por fecha y en la tarjeta, y avisan una sola vez al llegar su hora aunque dos revisiones corran a la vez (0029), y los campos del cliente (0030) no se repiten, guardan sus opciones y sus valores.
 """
 from __future__ import annotations
 
 import os
 import threading
+import uuid
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from pathlib import Path
@@ -20,6 +21,7 @@ from sqlalchemy.exc import IntegrityError
 from app.domain.business_config.commerce import NewSale
 from app.domain.business_config.conversations import NewMessage
 from app.domain.business_config.customer_card import DealChange
+from app.domain.business_config.customer_fields import FieldChange, FieldError, FieldValues, NewField
 from app.domain.business_config.reminders import NewReminder
 from app.domain.business_config.pipeline import StageMove
 from app.infrastructure.business_config import reminder_store
@@ -27,7 +29,7 @@ from app.infrastructure.business_config.commerce_store import CommerceStore
 from app.infrastructure.business_config.conversation_store import ConversationStore
 from app.infrastructure.business_config.migrations import MIGRATIONS, run_sql_file
 from app.infrastructure.business_config.notification_store import NotificationStore
-from app.infrastructure.business_config.tables import conversations, customer_events, customer_notes, notifications
+from app.infrastructure.business_config.tables import conversations, customer_events, customer_field_values, customer_notes, notifications
 
 URL = os.getenv("TEST_POSTGRES_URL", "").strip()
 pytestmark = pytest.mark.skipif(not URL, reason="requiere TEST_POSTGRES_URL (una base PostgreSQL vacía para pruebas)")
@@ -172,4 +174,22 @@ def test_a_due_reminder_alerts_once_even_with_two_checks_at_the_same_time_on_pos
     assert unread == 2 and {item.kind for item in items} == {"reminder"}
     with engine.connect() as conn:
         assert conn.execute(select(func.count()).select_from(notifications).where(notifications.c.recipient_id.is_not(None))).scalar_one() == 0
+
+
+def test_customer_fields_keep_their_options_and_values_on_postgres(engine, stores):
+    chats, commerce = stores
+    ana = _chat(chats, "573001", "Ana")
+    kind = commerce.create_customer_field(SLUG, NewField.checked(name="Tipo de cliente", kind="choice", options=["Mayorista", "Al detal"]))
+    budget = commerce.create_customer_field(SLUG, NewField.checked(name="Presupuesto", kind="number"))
+    with pytest.raises(FieldError):
+        commerce.create_customer_field(SLUG, NewField.checked(name="tipo de cliente", kind="text"))  # (0030) no se repiten
+    values = commerce.set_customer_field_values(SLUG, ana, FieldValues.checked({kind.id: "al detal", budget.id: "1.500.000"}), by="pruebas")
+    assert [(item.field.name, item.value) for item in values] == [("Tipo de cliente", "Al detal"), ("Presupuesto", "1500000")]
+    # Las opciones viven en JSONB: quitar una deja sin valor a quien la tenía.
+    commerce.update_customer_field(SLUG, kind.id, FieldChange.checked({"options": ["Mayorista", "VIP"]}))
+    assert [(item.field.options, item.value) for item in commerce.customer_card(SLUG, ana).fields][0] == (("Mayorista", "VIP"), None)
+    assert [item.filled for item in commerce.customer_fields(SLUG)] == [0, 1]
+    commerce.delete_customer_field(SLUG, budget.id)
+    with engine.connect() as conn:
+        assert conn.execute(select(func.count()).select_from(customer_field_values).where(customer_field_values.c.field_id == uuid.UUID(budget.id))).scalar_one() == 0
 

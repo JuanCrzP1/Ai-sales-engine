@@ -24,6 +24,7 @@ from app.domain.business_config.team import Invitation, Member
 from app.domain.business_config.ai_usage import AIUsageSummary
 from app.domain.business_config.commerce import Customer, NewSale, ReportDay, ReportTotals, Sale
 from app.domain.business_config.customer_card import CustomerCard, CustomerNote, DealChange
+from app.domain.business_config.customer_fields import CustomerField, FieldChange, FieldValue, FieldValues, NewField
 from app.domain.business_config.customer_labels import Label, LabelChange
 from app.domain.business_config.pipeline import Pipeline, StageMove
 from app.domain.business_config.reminders import NewReminder, Reminder
@@ -325,6 +326,27 @@ class CustomerLabelStorage(Protocol):
         ...
 
     def set_customer_labels(self, tenant_slug: str, conversation_id: str, label_ids: list[str]) -> Customer: ...
+
+
+class CustomerFieldStorage(Protocol):
+    """Los campos del cliente: el catálogo de cada negocio y el valor de cada campo en cada cliente. Un campo o un cliente de otro
+    negocio no existen (`ConversationNotFoundError`)."""
+
+    def customer_fields(self, tenant_slug: str) -> list[CustomerField]: ...
+
+    def create_customer_field(self, tenant_slug: str, new: NewField, *, created_by: str | None = None) -> CustomerField:
+        """`FieldError` si ya hay uno que se lee igual o el negocio llegó al máximo."""
+        ...
+
+    def update_customer_field(self, tenant_slug: str, field_id: str, change: FieldChange) -> CustomerField: ...
+
+    def delete_customer_field(self, tenant_slug: str, field_id: str) -> None:
+        """Se borra su valor en todos los clientes."""
+        ...
+
+    def set_customer_field_values(self, tenant_slug: str, conversation_id: str, values: FieldValues, *, by: str | None) -> list[FieldValue]:
+        """`FieldError` si un valor no es del tipo de su campo: entonces no cambia ninguno."""
+        ...
 
 
 class ReminderStorage(Protocol):

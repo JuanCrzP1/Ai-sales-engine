@@ -1093,7 +1093,9 @@ def test_postgres_schema_comes_from_the_reviewed_migration():
             # Migración 0027: las etiquetas de los clientes.
             "customer_labels", "conversation_labels",
             # Migración 0028: los recordatorios del equipo.
-            "customer_reminders"} == set(metadata.tables)
+            "customer_reminders",
+            # Migración 0030: los campos del cliente.
+            "customer_fields", "customer_field_values"} == set(metadata.tables)
 
 
 @pytest.mark.parametrize("scheme", ["postgresql", "postgres"])

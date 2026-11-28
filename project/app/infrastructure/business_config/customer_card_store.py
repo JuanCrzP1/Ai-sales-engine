@@ -30,6 +30,7 @@ from app.domain.business_config.customer_card import (
 from app.domain.business_config.errors import ConversationNotFoundError
 from app.infrastructure.business_config.commerce_queries import customers_of, real_customers, sale_of, utc
 from app.infrastructure.business_config.customer_events import record_event
+from app.infrastructure.business_config.field_store import fields_of_customer
 from app.infrastructure.business_config.reminder_store import reminders_of_customer
 from app.infrastructure.business_config.tables import business_members, conversations, customer_events, customer_notes, sales
 from app.infrastructure.business_config.tenancy import tenant_of
@@ -86,6 +87,7 @@ def _card(conn: Connection, tenant_id: Any, key: uuid.UUID) -> CustomerCard:
             for event in events
         ],
         reminders=reminders_of_customer(conn, tenant_id, key),
+        fields=fields_of_customer(conn, tenant_id, key),
     )
 
 

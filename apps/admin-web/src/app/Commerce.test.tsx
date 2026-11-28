@@ -1,6 +1,7 @@
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it } from "vitest";
+import type { CustomerField } from "../domain/commerce/customerFields";
 import type { Reminder } from "../domain/commerce/reminders";
 import type { Customer, Report, Sale } from "../domain/commerce/types";
 import { MEMORY_PAYMENT_CONFIRMED, createMemoryBackend, createMemoryCommerce, createMemoryInbox, createTestServices, emptyReport } from "../test/fakes";
@@ -595,6 +596,99 @@ describe("Los recordatorios del equipo", () => {
     await openAt("clientes?vista=recordatorios", { customers: CUSTOMERS, reminders: [REMINDERS[1]!] });
     const when = await screen.findByRole("group", { name: "Cuándo" });
     await waitFor(() => expect(within(when).getByRole("button", { name: /Hoy/ })).toHaveAttribute("aria-pressed", "true"));
+  });
+});
+
+describe("Los campos del cliente", () => {
+  const FIELDS: CustomerField[] = [
+    { id: "f-ciudad", name: "Ciudad", kind: "text", options: [], filled: 0 },
+    { id: "f-tipo", name: "Tipo de cliente", kind: "choice", options: ["Mayorista", "Al detal"], filled: 0 },
+    { id: "f-presupuesto", name: "Presupuesto", kind: "number", options: [], filled: 0 },
+  ];
+
+  it("el dueño crea campos de texto y de lista; quien atiende no ve «Campos»", async () => {
+    const { user, commerce } = await openAt("clientes", { customers: CUSTOMERS });
+    await user.click(await screen.findByRole("button", { name: "Campos" }));
+    const dialog = screen.getByRole("dialog", { name: "Campos del cliente" });
+    const form = within(dialog).getByRole("form", { name: "Campo nuevo" });
+    await user.type(within(form).getByLabelText("Nombre del campo"), "Ciudad");
+    await user.click(within(form).getByRole("button", { name: "Crear campo" }));
+    await waitFor(() => expect(commerce.fieldList.map((item) => item.name)).toEqual(["Ciudad"]));
+
+    // Una lista necesita al menos dos opciones, y no se repiten nombres.
+    await user.type(within(form).getByLabelText("Nombre del campo"), "Tipo de cliente");
+    await user.selectOptions(within(form).getByLabelText(/Tipo de dato/), "choice");
+    await user.type(within(form).getByLabelText(/Opciones/), "Mayorista");
+    await user.click(within(form).getByRole("button", { name: "Crear campo" }));
+    expect(within(form).getByText("Una lista necesita al menos 2 opciones, una por línea.")).toBeInTheDocument();
+    await user.type(within(form).getByLabelText(/Opciones/), "{Enter}Al detal");
+    await user.click(within(form).getByRole("button", { name: "Crear campo" }));
+    await waitFor(() => expect(commerce.fieldList[1]).toMatchObject({ name: "Tipo de cliente", kind: "choice", options: ["Mayorista", "Al detal"] }));
+    await user.type(within(form).getByLabelText("Nombre del campo"), "ciudad");
+    await user.click(within(form).getByRole("button", { name: "Crear campo" }));
+    expect(within(form).getByText("Ya tienes un campo con ese nombre.")).toBeInTheDocument();
+    expect(within(within(dialog).getByRole("list", { name: "Tus campos" })).getByText(/Lista de opciones: Mayorista, Al detal/)).toBeInTheDocument();
+
+    cleanup();
+    await openAt("clientes", { customers: CUSTOMERS, fields: FIELDS }, "agent");
+    expect(await screen.findByRole("button", { name: "Etiquetas" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Campos" })).not.toBeInTheDocument();
+  });
+
+  it("en la ficha se llenan los datos, se ven escritos como en Colombia y un error queda en su campo", async () => {
+    const { user, commerce } = await openAt("clientes?cliente=c1", { customers: CUSTOMERS, fields: FIELDS }, "agent");
+    const section = within(await screen.findByRole("dialog", { name: "Laura Gómez" })).getByRole("region", { name: "Datos del cliente" });
+    expect(within(section).getByText("Ciudad")).toBeInTheDocument();
+    expect(within(section).getAllByText("—")).toHaveLength(3);
+
+    await user.click(within(section).getByRole("button", { name: "Editar" }));
+    const form = within(section).getByRole("form", { name: "Editar los datos del cliente" });
+    await user.type(within(form).getByLabelText("Ciudad"), "Medellín");
+    await user.selectOptions(within(form).getByLabelText("Tipo de cliente"), "Mayorista");
+    await user.type(within(form).getByLabelText("Presupuesto"), "mucho");
+    await user.click(within(form).getByRole("button", { name: "Guardar" }));
+    expect(await within(form).findByText("Escribe un número.")).toBeInTheDocument();
+    expect(commerce.fieldValues.c1).toBeUndefined(); // todos o ninguno
+
+    await user.clear(within(form).getByLabelText("Presupuesto"));
+    await user.type(within(form).getByLabelText("Presupuesto"), "1.500.000");
+    await user.click(within(form).getByRole("button", { name: "Guardar" }));
+    await waitFor(() => expect(commerce.fieldValues.c1).toEqual({ "f-ciudad": "Medellín", "f-tipo": "Mayorista", "f-presupuesto": "1500000" }));
+    expect(await within(section).findByText("1.500.000")).toBeInTheDocument();
+    expect(within(section).getByText("Mayorista")).toBeInTheDocument();
+    expect(within(section).queryByRole("button", { name: "Administrar campos" })).not.toBeInTheDocument(); // quien atiende no los cambia
+  });
+
+  it("sin campos, el dueño los crea desde la ficha y quien atiende sabe a quién pedírselos", async () => {
+    const { user } = await openAt("clientes?cliente=c1", { customers: CUSTOMERS });
+    const section = within(await screen.findByRole("dialog", { name: "Laura Gómez" })).getByRole("region", { name: "Datos del cliente" });
+    await user.click(within(section).getByRole("button", { name: "Crear campos" }));
+    expect(screen.getByRole("dialog", { name: "Campos del cliente" })).toBeInTheDocument();
+
+    cleanup();
+    await openAt("clientes?cliente=c1", { customers: CUSTOMERS }, "agent");
+    const agentSection = within(await screen.findByRole("dialog", { name: "Laura Gómez" })).getByRole("region", { name: "Datos del cliente" });
+    expect(within(agentSection).getByText(/El dueño o un administrador los crea en Clientes → Campos/)).toBeInTheDocument();
+  });
+
+  it("antes de quitar una opción avisa quién la pierde, y antes de borrar un campo en cuántos clientes se borra", async () => {
+    const fieldValues = { c1: { "f-tipo": "Mayorista" }, c2: { "f-tipo": "Al detal" } };
+    const { user, commerce } = await openAt("clientes", { customers: CUSTOMERS, fields: FIELDS, fieldValues });
+    await user.click(await screen.findByRole("button", { name: "Campos" }));
+    const dialog = screen.getByRole("dialog", { name: "Campos del cliente" });
+    await user.click(within(dialog).getByRole("button", { name: "Editar el campo Tipo de cliente" }));
+    const edit = within(dialog).getByRole("form", { name: "Editar Tipo de cliente" });
+    await user.clear(within(edit).getByLabelText(/Opciones/));
+    await user.type(within(edit).getByLabelText(/Opciones/), "Al detal{Enter}Distribuidor");
+    expect(within(edit).getByText(/Se quita «Mayorista»: los clientes que la tienen quedan sin valor/)).toBeInTheDocument();
+    await user.click(within(edit).getByRole("button", { name: "Guardar" }));
+    await waitFor(() => expect(commerce.fieldList[1]!.options).toEqual(["Al detal", "Distribuidor"]));
+    expect(commerce.fieldValues.c1).toEqual({});
+
+    await user.click(within(dialog).getByRole("button", { name: "Borrar el campo Tipo de cliente" }));
+    expect(within(dialog).getByText("Se borra este dato en 1 cliente.")).toBeInTheDocument();
+    await user.click(within(dialog).getByRole("button", { name: "Sí, borrar" }));
+    await waitFor(() => expect(commerce.fieldList.map((item) => item.id)).toEqual(["f-ciudad", "f-presupuesto"]));
   });
 });
 

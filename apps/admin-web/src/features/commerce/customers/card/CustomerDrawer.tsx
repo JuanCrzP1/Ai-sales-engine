@@ -9,6 +9,7 @@ import type { BoardStage, Customer } from "../../../../domain/commerce/types";
 import { CHANNEL_LABELS, type Channel } from "../../../../domain/inbox/types";
 import { ContactAvatar } from "../../../../layout/ContactAvatar";
 import { DealSection } from "./DealSection";
+import { FieldsSection } from "./FieldsSection";
 import { HistorySection } from "./HistorySection";
 import { LabelsSection } from "./LabelsSection";
 import { NotesSection } from "./NotesSection";
@@ -19,7 +20,7 @@ import { useCustomerCard } from "../../../../state/useCustomerCard";
 
 /**
  * La ficha de un cliente: un panel que entra por la derecha, sobre el tablero, con todo lo suyo. De arriba abajo: quién es y su
- * chat, en qué etapa va (y cómo moverlo), cuánto vale y quién lo atiende, qué hay que hacer con él (recordatorios), sus etiquetas,
+ * chat, en qué etapa va (y cómo moverlo), cuánto vale y quién lo atiende, sus datos propios (los campos del negocio), qué hay que hacer con él (recordatorios), sus etiquetas,
  * las notas del equipo, sus compras y su historial.
  *
  * `version` cambia cuando el tablero mueve algo (la ficha se vuelve a pedir) y `onChanged` avisa al tablero cuando la ficha cambia
@@ -35,6 +36,8 @@ export function CustomerDrawer({
   onMove,
   onSell,
   onManageLabels,
+  canManageFields,
+  onManageFields,
   onChanged,
   onClose,
 }: {
@@ -48,6 +51,9 @@ export function CustomerDrawer({
   onMove: (customer: Customer, stage: BoardStage) => void;
   onSell: (customer: Customer) => void;
   onManageLabels: () => void;
+  /** Quien mira configura el negocio: puede crear y cambiar los campos del cliente. */
+  canManageFields: boolean;
+  onManageFields: () => void;
   onChanged: () => void;
   onClose: () => void;
 }) {
@@ -112,6 +118,7 @@ export function CustomerDrawer({
             <>
               <StageSection customer={data.customer} stageSince={data.stageSince} busy={busy} onMove={(stage) => onMove(data.customer, stage)} />
               <DealSection card={data} saving={card.saving} onUpdate={card.update} />
+              <FieldsSection fields={data.fields} saving={card.saving} canManage={canManageFields} onSave={card.setFieldValues} onManage={onManageFields} />
               <RemindersSection
                 reminders={data.reminders}
                 assignees={data.assignees}
