@@ -61,9 +61,10 @@
 }
 
 .sidebar__brand-name {
-  font-weight: 700;
-  font-size: var(--text-md);
-  letter-spacing: -0.01em;
+  font-weight: 800;
+  font-size: 21px;
+  line-height: 1.15;
+  letter-spacing: -0.03em;
   color: var(--sidebar-text-strong);
 }
 

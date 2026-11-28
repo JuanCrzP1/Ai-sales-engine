@@ -10,18 +10,9 @@
   margin-left: auto;
 }
 
-/* Con dos botones junto a la marca, el nombre sigue en una línea. */
+/* En el menú van abajo, al lado de la cuenta. */
 .sidebar__actions {
   gap: 6px;
-}
-
-.sidebar__brand:has(.sidebar__actions) {
-  gap: var(--space-2);
-}
-
-.sidebar__brand:has(.sidebar__actions) .sidebar__brand-name {
-  white-space: nowrap;
-  font-size: var(--text-sm);
 }
 
 .sidebar__actions .bell__button,

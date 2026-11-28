@@ -41,8 +41,8 @@ interface SidebarProps {
 const SWIPE_TO_CLOSE = 60;
 
 /**
- * Menú del negocio: primero atender y vender; después, su configuración. Como en Slack o Linear, los avisos van junto a la marca y
- * la cuenta abajo: el contenido no pierde alto con una barra superior.
+ * Menú del negocio: primero atender y vender; después, su configuración. Arriba va solo la marca; abajo, la cuenta con la ayuda y
+ * los avisos a su lado: el contenido no pierde alto con una barra superior.
  */
 export function Sidebar({ id, open, compact = false, onClose, onOpenHelp }: SidebarProps) {
   const { progress, publication } = useConfig();
@@ -79,15 +79,10 @@ export function Sidebar({ id, open, compact = false, onClose, onOpenHelp }: Side
           <span className="sidebar__brand-name">{BRAND_NAME}</span>
           <span className="sidebar__brand-sub">Tu asistente de ventas</span>
         </div>
-        {compact ? (
+        {compact && (
           <button type="button" className="sidebar__close" aria-label="Cerrar menú" onClick={onClose}>
             <Icon name="close" size={18} />
           </button>
-        ) : (
-          <span className="sidebar__actions">
-            {onOpenHelp && <HelpButton onOpen={onOpenHelp} />}
-            <NotificationBell />
-          </span>
         )}
       </div>
 
@@ -122,9 +117,16 @@ export function Sidebar({ id, open, compact = false, onClose, onOpenHelp }: Side
         </div>
       </nav>
 
-      {verifiesCredentials && (
+      {/* Abajo, en una fila: la cuenta y, a su lado, la ayuda de la pantalla y los avisos (en el celular van en la barra superior). */}
+      {(verifiesCredentials || !compact) && (
         <div className="sidebar__footer">
-          <UserMenu />
+          {verifiesCredentials && <UserMenu />}
+          {!compact && (
+            <span className="sidebar__actions">
+              {onOpenHelp && <HelpButton onOpen={onOpenHelp} />}
+              <NotificationBell />
+            </span>
+          )}
         </div>
       )}
     </aside>
