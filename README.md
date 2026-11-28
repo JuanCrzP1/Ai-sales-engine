@@ -6,7 +6,8 @@
 
 <p align="center">
   <strong>Un asistente de ventas con IA para WhatsApp, como servicio.</strong><br/>
-  Cada negocio crea su cuenta, enseña a su asistente lo que vende, conecta su WhatsApp y atiende desde un solo panel.
+  Cada negocio crea su cuenta, enseña a su asistente lo que vende, conecta su WhatsApp y atiende desde un solo panel.<br/>
+  <sub>Con <strong>AI Sales Engine</strong>, nuestro motor de ventas.</sub>
 </p>
 
 <p align="center">
@@ -56,10 +57,14 @@ lleva hacia la compra; cuando hace falta una persona, se la pasa al equipo y le 
 
 ## Cómo funciona
 
+**Merceam** es la plataforma: las cuentas, el panel, los canales y los reportes. Por dentro la mueve **AI Sales Engine**, el motor de
+ventas con el que nació este proyecto: es la pieza que lee cada mensaje, piensa con la información publicada del negocio y responde
+para llevar la conversación hacia la compra.
+
 ```mermaid
 flowchart LR
     cliente(["Cliente en WhatsApp"]) -->|escribe| uazapi["uazapi<br/>(WhatsApp por QR)"]
-    uazapi -->|aviso con el token<br/>de la instancia| motor["Motor<br/>FastAPI en Vercel"]
+    uazapi -->|aviso con el token<br/>de la instancia| motor["AI Sales Engine<br/>el motor · FastAPI en Vercel"]
     motor -->|lee lo publicado| neon[("Neon<br/>PostgreSQL")]
     motor -->|con la clave del negocio| ia["OpenRouter<br/>(modelo elegido)"]
     motor -->|responde| uazapi
@@ -79,7 +84,7 @@ Más detalle: [arquitectura del motor](docs/architecture.md) y [negocios y aisla
 
 | Parte | Con qué |
 |---|---|
-| Motor y API | Python, FastAPI, SQLAlchemy |
+| Motor (AI Sales Engine) y API | Python, FastAPI, SQLAlchemy |
 | Base de datos y cuentas | Neon (PostgreSQL) con Neon Auth; SQLite en este equipo |
 | Panel | React, TypeScript, Vite |
 | Inteligencia artificial | OpenRouter, con la clave y el modelo de cada negocio |

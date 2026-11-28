@@ -1,6 +1,6 @@
-# Motor y API del panel (`project/`)
+# AI Sales Engine: el motor y la API del panel (`project/`)
 
-El backend de Merceam (FastAPI). En la nube corre en Vercel con Neon; en este equipo, con `run_local`.
+AI Sales Engine es el motor de ventas de Merceam (FastAPI). En la nube corre en Vercel con Neon; en este equipo, con `run_local`.
 
 ## Qué hace
 

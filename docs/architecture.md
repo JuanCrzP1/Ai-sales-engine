@@ -1,5 +1,8 @@
 # Arquitectura Del Sistema
 
+> **Merceam** es la plataforma (cuentas, panel, canales y reportes). **AI Sales Engine** es su motor de ventas: lo que este documento
+> describe.
+
 ## Propósito De Este Documento
 
 Este documento describe la arquitectura activa del sistema según el código actual del repositorio. No documenta módulos eliminados ni capas teóricas no presentes en el runtime.

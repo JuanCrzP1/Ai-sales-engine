@@ -8,6 +8,7 @@ está en el historial de git y en `docs/plan-v1.md`.
 **La plataforma ahora se llama Merceam**
 - El panel, la pantalla de entrada, las invitaciones al equipo, los correos y avisos, el Centro de ayuda y la app instalada en el
   celular muestran el nombre nuevo. El logo es el mismo.
+- El motor de ventas conserva su nombre de siempre, **AI Sales Engine**: Merceam es la plataforma y AI Sales Engine la mueve por dentro.
 - La dirección del panel pasa a `merceam.vercel.app` y la del motor (la API del asistente) a `merceam-api.vercel.app`. Quien tenga
   encendidas las notificaciones del navegador debe encenderlas otra vez en la dirección nueva, y los agentes conectados (Claude,
   ChatGPT, Cursor) se conectan de nuevo con ella.
