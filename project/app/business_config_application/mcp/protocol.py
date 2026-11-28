@@ -32,7 +32,7 @@ logger = logging.getLogger("mcp")
 
 SUPPORTED_PROTOCOL_VERSIONS = ("2025-06-18", "2025-03-26", "2024-11-05")
 SERVER_INSTRUCTIONS = (
-    "Servidor MCP de AI Sales Engine: asistentes de ventas con IA para negocios que venden por WhatsApp. Todo ocurre en los "
+    "Servidor MCP de Merceam: asistentes de ventas con IA para negocios que venden por WhatsApp. Todo ocurre en los "
     "negocios de la cuenta dueña de la clave y solo con sus permisos. ANTES de cambiar algo lee la guía (read_platform_guide) y, "
     "para cada sección, su guía de campos (get_config_guide). Si la persona pregunta cómo hacer algo en el panel, búscalo en la ayuda (search_help, read_help_article). Lee antes de escribir (get_business_config) y usa los ids que "
     "devuelve. Nunca inventes precios, datos de pago ni políticas: pídeselos a la persona. Lo que guardas queda en BORRADOR: tus "
@@ -106,7 +106,7 @@ class McpProtocol:
         self,
         tools: Sequence[McpTool],
         *,
-        server_name: str = "ai-sales-engine",
+        server_name: str = "merceam",
         server_version: str = "1.0.0",
         on_tool_call: Callable[[McpAccess, ToolCallReport], None] = lambda access, report: None,
         clock: Callable[[], float] = time.monotonic,

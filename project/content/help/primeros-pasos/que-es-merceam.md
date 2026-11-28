@@ -1,5 +1,5 @@
 ---
-title: Qué es AI Sales Engine
+title: Qué es Merceam
 module: primeros-pasos
 summary: Un asistente de ventas con IA que atiende a tus clientes por WhatsApp con la información de tu negocio, y un panel para atender con tu equipo.
 order: 1
@@ -8,7 +8,7 @@ keywords: qué es, cómo funciona, asistente, plataforma, introducción
 related: empieza-aqui, como-aprende-tu-asistente
 ---
 
-AI Sales Engine le da a tu negocio un **asistente de ventas con inteligencia artificial** que responde a tus clientes por WhatsApp, a cualquier hora. Les cuenta lo que vendes, resuelve sus dudas, los lleva hasta el pago y le pasa el chat a tu equipo cuando hace falta una persona.
+Merceam le da a tu negocio un **asistente de ventas con inteligencia artificial** que responde a tus clientes por WhatsApp, a cualquier hora. Les cuenta lo que vendes, resuelve sus dudas, los lleva hasta el pago y le pasa el chat a tu equipo cuando hace falta una persona.
 
 ## Cómo funciona
 

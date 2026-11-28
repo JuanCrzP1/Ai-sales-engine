@@ -179,7 +179,7 @@ def test_the_help_needs_a_session(client):
 
 def test_the_api_gives_the_topics_the_search_and_an_article(client):
     index = client.get("/api/help", headers=SESSION).json()
-    assert index["modules"][0]["id"] == "primeros-pasos" and index["modules"][0]["articles"][0]["slug"] == "que-es-ai-sales-engine"
+    assert index["modules"][0]["id"] == "primeros-pasos" and index["modules"][0]["articles"][0]["slug"] == "que-es-merceam"
     found = client.get("/api/help/search", params={"q": "conectar whatsapp"}, headers=SESSION).json()
     assert found["query"] == "conectar whatsapp" and found["results"][0]["slug"] == "conectar-whatsapp"
     article = client.get("/api/help/articles/conectar-whatsapp", headers=SESSION).json()

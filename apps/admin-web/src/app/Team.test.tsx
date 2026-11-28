@@ -27,7 +27,7 @@ describe("Reglas del equipo en el panel", () => {
   it("arma el enlace y el mensaje para WhatsApp", () => {
     const url = invitationUrl("https://panel.example.com/", "inv_abc");
     expect(url).toBe("https://panel.example.com/invitacion/inv_abc");
-    expect(invitationMessage("Café Aroma", "agent", url)).toBe(`Te invito a Café Aroma en AI Sales Engine como Asesor. Entra con este enlace (vence en 7 días): ${url}`);
+    expect(invitationMessage("Café Aroma", "agent", url)).toBe(`Te invito a Café Aroma en Merceam como Asesor. Entra con este enlace (vence en 7 días): ${url}`);
     const now = new Date("2026-11-12T12:00:00Z");
     expect(expiryText("2026-11-19T13:00:00Z", now)).toBe("Vence en 7 días");
     expect(expiryText("2026-11-13T13:00:00Z", now)).toBe("Vence mañana");

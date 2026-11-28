@@ -250,7 +250,7 @@ def alert_email(
     )
     body = (
         '<div style="font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;color:#111827">'
-        '<p style="margin:0 0 16px;font-size:13px;color:#6b7280;letter-spacing:.02em">AI SALES ENGINE</p>'
+        '<p style="margin:0 0 16px;font-size:13px;color:#6b7280;letter-spacing:.02em">MERCEAM</p>'
         f'<h1 style="margin:0 0 8px;font-size:20px;line-height:1.3">{esc(title)}</h1>'
         f'<p style="margin:0;color:#4b5563">{esc(business_name)}</p>'
         f"{summary_block}{quote_block}{button}"

@@ -4,7 +4,7 @@ import requests
 
 response = requests.post(
     "{{URL}}",
-    headers={"Authorization": f"Bearer {os.environ['AI_SALES_ENGINE_KEY']}"},
+    headers={"Authorization": f"Bearer {os.environ['MERCEAM_KEY']}"},
     json={"contact": {"id": "573001112233", "name": "Laura"}, "message": "Hola, ¿qué precios tienen?"},
     timeout=30,
 )

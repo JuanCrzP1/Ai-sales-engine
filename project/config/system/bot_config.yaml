@@ -15,7 +15,7 @@
 # Sistema inteligente de ventas automatizadas para negocios
 
 app:
-  name: "AI Sales Engine multicanal para WhatsApp, Instagram y web"
+  name: "Merceam"
   version: "1.0.0"
   mode: "production"
   environment: "production"

@@ -109,9 +109,9 @@ Lo que hace cada negocio está en Configuración → Atención humana (ver `docs
 | Variable (proyecto del motor) | Para qué | Si falta |
 |---|---|---|
 | `RESEND_API_KEY` (*Sensitive*) | La clave de [Resend](https://resend.com) para los correos de aviso | No salen correos; el panel dice «El correo de avisos aún no está activado en la plataforma». Todo lo demás funciona |
-| `EMAIL_FROM` | El remitente, p. ej. `AI Sales Engine <avisos@tudominio.com>`, con el dominio verificado en Resend | Se usa `onboarding@resend.dev`, el de pruebas de Resend, que **solo entrega al correo de la cuenta de Resend** |
+| `EMAIL_FROM` | El remitente, p. ej. `Merceam <avisos@tudominio.com>`, con el dominio verificado en Resend | Se usa `onboarding@resend.dev`, el de pruebas de Resend, que **solo entrega al correo de la cuenta de Resend** |
 | `CRON_SECRET` (*Sensitive*, 16 caracteres o más) | Protege `/api/v1/internal/attention/run` y `/api/v1/internal/follow-up/run`, que Vercel llama cada 15 minutos (`project/vercel.json`) | Las rutas responden 503: la IA retoma los chats y salen los seguimientos solo con el tráfico del motor y del panel |
-| `PANEL_URL` | La dirección del panel para los enlaces de los correos y la raíz del motor | `https://ai-sales-engine-panel.vercel.app` |
+| `PANEL_URL` | La dirección del panel para los enlaces de los correos y la raíz del motor | `https://merceam.vercel.app` |
 
 - **Notificaciones (Web Push):** no llevan variables. Las claves VAPID se crean solas la primera vez (tabla `platform_keys`, la parte
   secreta cifrada con `BUSINESS_CONFIG_SECRETS_KEY`). Cada persona las activa en cada navegador desde Configuración → Atención humana o la
@@ -343,12 +343,12 @@ La IA no lleva variable: cada negocio guarda su clave de OpenRouter en el panel,
 
 **3. Volver a desplegar** y comprobar `/health`.
 
-**4. El panel en la nube.** Es otro proyecto de Vercel, `ai-sales-engine-panel` (carpeta `apps/admin-web`, Vite), con
+**4. El panel en la nube.** Es otro proyecto de Vercel, `merceam` (carpeta `apps/admin-web`, Vite), con
 `VITE_NEON_AUTH_URL` = la dirección de Neon Auth de la rama `production` (Neon → la rama → Better Auth → Configure Auth →
 *Auth URL*; es pública, no un secreto). Llama a la API por `/api`, que `apps/admin-web/vercel.json` reescribe hacia el motor
 (`/panel/api`). El motor publica esa API solo si tiene `NEON_AUTH_URL` (la misma dirección) en sus variables.
 
-Quien abre la dirección del motor (`ai-sales-engine-mocha.vercel.app`, por ejemplo desde Vercel) llega al panel: el motor no
+Quien abre la dirección del motor (`merceam-api.vercel.app`, por ejemplo desde Vercel) llega al panel: el motor no
 tiene pantallas y su raíz redirige a `PANEL_URL`, o al panel publicado si no está. En este equipo los lanzadores ponen
 `PANEL_URL` en el panel local. El enlace de GitHub («About») también apunta al panel.
 

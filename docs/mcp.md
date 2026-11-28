@@ -28,8 +28,8 @@ sesión»). Con los demás agentes:
 
 | Agente | Cómo |
 |---|---|
-| Claude Code | `claude mcp add --transport http ai-sales-engine https://ai-sales-engine-panel.vercel.app/api/mcp --header "Authorization: Bearer <tu clave>"` |
-| Cursor, Claude Desktop, Windsurf, Gemini CLI | En su `mcp.json`: `{"mcpServers": {"ai-sales-engine": {"url": "…/api/mcp", "headers": {"Authorization": "Bearer <tu clave>"}}}}` |
+| Claude Code | `claude mcp add --transport http merceam https://merceam.vercel.app/api/mcp --header "Authorization: Bearer <tu clave>"` |
+| Cursor, Claude Desktop, Windsurf, Gemini CLI | En su `mcp.json`: `{"mcpServers": {"merceam": {"url": "…/api/mcp", "headers": {"Authorization": "Bearer <tu clave>"}}}}` |
 | n8n | Nodo «MCP Client»: transporte HTTP Streamable y encabezado `Authorization: Bearer <tu clave>` |
 | Claude (web y app) y ChatGPT | **Sin clave:** se pega la dirección como conector personalizado; el agente abre el panel, la persona inicia sesión, elige negocios y permisos y autoriza (OAuth, ver abajo) |
 

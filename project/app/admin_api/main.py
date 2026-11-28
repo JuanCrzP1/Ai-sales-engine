@@ -139,7 +139,7 @@ def create_app(
     if cloud and usage is None:
         raise ValueError("la API de la nube necesita contadores de uso compartidos (`rate_limits`)")
     # Sin /docs ni /openapi.json: el único cliente es el panel y no hace falta anunciar las rutas.
-    app = FastAPI(title="AI Sales Engine: API del panel", docs_url=None, redoc_url=None, openapi_url=None)
+    app = FastAPI(title="Merceam: API del panel", docs_url=None, redoc_url=None, openapi_url=None)
     app.state.service = service
     app.state.assistant_lab = assistant_lab
     app.state.access = access or BusinessAccess(service)

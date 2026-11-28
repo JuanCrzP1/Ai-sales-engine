@@ -12,7 +12,7 @@ self.addEventListener("push", (event) => {
   } catch {
     data = { body: event.data ? event.data.text() : "" };
   }
-  const title = typeof data.title === "string" && data.title ? data.title : "AI Sales Engine";
+  const title = typeof data.title === "string" && data.title ? data.title : "Merceam";
   event.waitUntil(
     self.registration.showNotification(title, {
       body: typeof data.body === "string" ? data.body : "",

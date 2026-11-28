@@ -1,6 +1,6 @@
 # WhatsApp simulado
 
-Un WhatsApp falso para probar AI Sales Engine completo en tu equipo, sin números reales: hace de **servidor de uazapi** para el panel
+Un WhatsApp falso para probar Merceam completo en tu equipo, sin números reales: hace de **servidor de uazapi** para el panel
 y el motor, y trae un **teléfono de prueba** en el navegador para escribir como cliente.
 
 Solo para desarrollo: no arranca en producción ni en Vercel, vive fuera de `project/` (lo único que se publica) y nada sale a WhatsApp.

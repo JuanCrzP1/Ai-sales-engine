@@ -1,5 +1,5 @@
 app:
-  name: AI Sales Engine multicanal para WhatsApp, Instagram y web
+  name: Merceam
   version: 1.0.0
   environment: development
   api_prefix: /api/v1

@@ -36,7 +36,7 @@ POST {motor}/api/v1/assistant/messages
 Content-Type: application/json
 ```
 
-En producción, `{motor}` es `https://ai-sales-engine-mocha.vercel.app`.
+En producción, `{motor}` es `https://merceam-api.vercel.app`.
 
 ### Cuerpo
 
@@ -181,8 +181,8 @@ el nombre exacto para el teléfono o id del cliente, su nombre y su mensaje.
 ### Desarrolladores
 
 ```bash
-curl -X POST "https://ai-sales-engine-mocha.vercel.app/api/v1/assistant/messages" \
-  -H "Authorization: Bearer $AI_SALES_ENGINE_KEY" \
+curl -X POST "https://merceam-api.vercel.app/api/v1/assistant/messages" \
+  -H "Authorization: Bearer $MERCEAM_KEY" \
   -H "Content-Type: application/json" \
   -H "Idempotency-Key: prueba-1" \
   -d '{"contact": {"id": "573001112233", "name": "Laura"}, "message": "Hola, ¿qué precios tienen?"}'

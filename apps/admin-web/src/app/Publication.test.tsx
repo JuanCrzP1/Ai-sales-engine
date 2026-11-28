@@ -33,7 +33,7 @@ const status = () => screen.getByRole("status", { name: "Estado del guardado y l
 
 describe("Cambios sin publicar", () => {
   it("guardado no es publicado: el editor y el menú avisan, y Revisar dice exactamente qué cambia", async () => {
-    const user = await open("negocio", await business({ savedBrand: "Ai sales engine" }));
+    const user = await open("negocio", await business({ savedBrand: "Tienda Luna" }));
     await waitFor(() => expect(status()).toHaveTextContent(/^Guardado · .+ · Cambios sin publicar$/));
     const menu = screen.getByRole("navigation", { name: "Menú del negocio" });
     expect(within(menu).getByRole("img", { name: "Cambios sin publicar" })).toBeInTheDocument();
@@ -44,7 +44,7 @@ describe("Cambios sin publicar", () => {
     expect(within(changes).getByText("Mi negocio")).toBeInTheDocument();
     expect(within(changes).getByText("Marca")).toBeInTheDocument();
     expect(within(changes).getByText("Nuevo")).toBeInTheDocument();
-    expect(within(changes).getByText("Ai sales engine")).toBeInTheDocument();
+    expect(within(changes).getByText("Tienda Luna")).toBeInTheDocument();
 
     const publish = await screen.findByRole("button", { name: "Publicar versión 2" });
     await waitFor(() => expect(publish).toBeEnabled());
@@ -72,7 +72,7 @@ describe("Cambios sin publicar", () => {
   });
 
   it("al probar avisa que se prueban cambios que los clientes todavía no ven", async () => {
-    await open("probar", await business({ savedBrand: "Ai sales engine" }));
+    await open("probar", await business({ savedBrand: "Tienda Luna" }));
     expect(await screen.findByText("Estás probando cambios que tus clientes todavía no ven")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Revisar y publicar" })).toHaveAttribute("href", `/negocios/${CAFE}/revision`);
   });

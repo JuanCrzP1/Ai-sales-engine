@@ -216,7 +216,7 @@ function DevelopersGuide({ url, docsUrl }: { url: string; docsUrl: string }) {
       <CopyField label="Encabezado de autorización" value={AUTHORIZATION_HEADER} />
       <ul className="guide-list">
         <li>
-          Guarda la clave en una variable de entorno (<code>AI_SALES_ENGINE_KEY</code>). Nunca en el código de una página web: cualquiera podría verla.
+          Guarda la clave en una variable de entorno (<code>MERCEAM_KEY</code>). Nunca en el código de una página web: cualquiera podría verla.
         </li>
         <li>
           Si tu sistema puede repetir un pedido, manda <code>Idempotency-Key</code> con un id por mensaje: durante 24 horas devuelve la misma respuesta

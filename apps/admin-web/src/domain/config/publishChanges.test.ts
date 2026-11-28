@@ -22,12 +22,12 @@ describe("lo que cambia al publicar", () => {
 
   it("dice qué campo cambió, en su sección y con cómo estaba y cómo queda", () => {
     const draft = edited((document) => {
-      document.identity.brand_name = "Ai sales engine";
+      document.identity.brand_name = "Tienda Luna";
       document.identity.name = "Café Aroma Centro";
     });
     expect(differsFromPublished(SAMPLE_DOCUMENT, draft)).toBe(true);
     const changes = documentChanges(SAMPLE_DOCUMENT, draft, NAME);
-    expect(changes).toContainEqual({ section: "business", label: "Marca", kind: "added", before: null, after: "Ai sales engine" });
+    expect(changes).toContainEqual({ section: "business", label: "Marca", kind: "added", before: null, after: "Tienda Luna" });
     expect(changes).toContainEqual({ section: "business", label: "Nombre", kind: "changed", before: SAMPLE_DOCUMENT.identity.name, after: "Café Aroma Centro" });
   });
 

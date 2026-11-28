@@ -178,7 +178,7 @@ def read_authorization_request(params: dict[str, str], client: OAuthClient | Non
         raise OAuthError("invalid_request", "Falta PKCE (code_challenge con S256).", redirectable=True)
     asked = params.get("resource") or None
     if asked is not None and not same_resource(asked, resource):
-        raise OAuthError("invalid_target", "Ese recurso no es el servidor MCP de AI Sales Engine.", redirectable=True)
+        raise OAuthError("invalid_target", "Ese recurso no es el servidor MCP de Merceam.", redirectable=True)
     return AuthorizationRequest(client.client_id, redirect_uri, challenge, params.get("state") or None, asked)
 
 
@@ -216,7 +216,7 @@ def protected_resource_metadata(addresses: OAuthAddresses) -> dict[str, Any]:
         "resource": addresses.resource,
         "authorization_servers": [addresses.issuer],
         "bearer_methods_supported": ["header"],
-        "resource_name": "AI Sales Engine",
+        "resource_name": "Merceam",
     }
 
 

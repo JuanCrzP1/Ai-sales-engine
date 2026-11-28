@@ -21,7 +21,7 @@ from app.business_config_application.ports import PushOutcome
 from app.domain.business_config.push import PUSH_TTL_SECONDS, PushMessage, PushSubscription, VapidKeys, allowed_endpoint
 
 TIMEOUT = httpx.Timeout(10.0, connect=5.0)
-DEFAULT_SUBJECT = "https://ai-sales-engine-panel.vercel.app"
+DEFAULT_SUBJECT = "https://merceam.vercel.app"
 # La firma vale 12 horas (los servicios aceptan hasta 24).
 SIGNATURE_SECONDS = 12 * 60 * 60
 

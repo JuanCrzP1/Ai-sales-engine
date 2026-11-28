@@ -141,13 +141,13 @@ export function mcpSnippets(url: string, secret: string = KEY_PLACEHOLDER): McpS
       id: "claude-code",
       label: "Claude Code",
       hint: "Pégalo en tu terminal.",
-      code: `claude mcp add --transport http ai-sales-engine ${url} --header "Authorization: Bearer ${secret}"`,
+      code: `claude mcp add --transport http merceam ${url} --header "Authorization: Bearer ${secret}"`,
     },
     {
       id: "json",
       label: "Cursor y otros",
       hint: "En la configuración de servidores MCP del programa (mcp.json). Sirve también para Claude Desktop, Windsurf y Gemini CLI.",
-      code: JSON.stringify({ mcpServers: { "ai-sales-engine": { url, headers: { Authorization: `Bearer ${secret}` } } } }, null, 2),
+      code: JSON.stringify({ mcpServers: { merceam: { url, headers: { Authorization: `Bearer ${secret}` } } } }, null, 2),
     },
     {
       id: "n8n",

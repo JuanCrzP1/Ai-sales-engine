@@ -1,9 +1,16 @@
 # Cambios
 
-Lo que cambió en AI Sales Engine, de lo más reciente a lo más antiguo. Cada entrada dice qué gana el negocio; el detalle técnico
+Lo que cambió en Merceam, de lo más reciente a lo más antiguo. Cada entrada dice qué gana el negocio; el detalle técnico
 está en el historial de git y en `docs/plan-v1.md`.
 
 ## 28 de noviembre de 2026
+
+**La plataforma ahora se llama Merceam**
+- El panel, la pantalla de entrada, las invitaciones al equipo, los correos y avisos, el Centro de ayuda y la app instalada en el
+  celular muestran el nombre nuevo. El logo es el mismo.
+- La dirección del panel pasa a `merceam.vercel.app` y la del motor (la API del asistente) a `merceam-api.vercel.app`. Quien tenga
+  encendidas las notificaciones del navegador debe encenderlas otra vez en la dirección nueva, y los agentes conectados (Claude,
+  ChatGPT, Cursor) se conectan de nuevo con ella.
 
 **Seguimiento automático: le volvemos a escribir a quien dejó de responder**
 - En Mensajes → **Seguimiento** lo enciendes y ya viene armado con tres mensajes recomendados (a la hora, al día siguiente y a los

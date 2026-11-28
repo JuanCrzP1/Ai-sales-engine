@@ -4,9 +4,9 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "rewrites": [
-    { "source": "/api/:path*", "destination": "https://ai-sales-engine-mocha.vercel.app/panel/api/:path*" },
-    { "source": "/.well-known/oauth-protected-resource/:path*", "destination": "https://ai-sales-engine-mocha.vercel.app/panel/api/.well-known/oauth-protected-resource/:path*" },
-    { "source": "/.well-known/oauth-authorization-server/:path*", "destination": "https://ai-sales-engine-mocha.vercel.app/panel/api/.well-known/oauth-authorization-server/:path*" },
+    { "source": "/api/:path*", "destination": "https://merceam-api.vercel.app/panel/api/:path*" },
+    { "source": "/.well-known/oauth-protected-resource/:path*", "destination": "https://merceam-api.vercel.app/panel/api/.well-known/oauth-protected-resource/:path*" },
+    { "source": "/.well-known/oauth-authorization-server/:path*", "destination": "https://merceam-api.vercel.app/panel/api/.well-known/oauth-authorization-server/:path*" },
     { "source": "/(.*)", "destination": "/index.html" }
   ],
   "headers": [

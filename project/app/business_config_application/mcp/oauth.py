@@ -163,7 +163,7 @@ class McpOAuthService:
         """El endpoint de tokens. Falla con `OAuthError` y el código estándar si algo no cuadra."""
         resource = _text(form, "resource")
         if resource and not same_resource(resource, self.addresses.resource):
-            raise OAuthError("invalid_target", "Ese recurso no es el servidor MCP de AI Sales Engine.")
+            raise OAuthError("invalid_target", "Ese recurso no es el servidor MCP de Merceam.")
         grant = _text(form, "grant_type")
         now = self._now()
         if grant == "authorization_code":

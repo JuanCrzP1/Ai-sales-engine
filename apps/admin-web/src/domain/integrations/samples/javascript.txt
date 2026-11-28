@@ -2,7 +2,7 @@
 const response = await fetch("{{URL}}", {
   method: "POST",
   headers: {
-    Authorization: `Bearer ${process.env.AI_SALES_ENGINE_KEY}`,
+    Authorization: `Bearer ${process.env.MERCEAM_KEY}`,
     "Content-Type": "application/json",
   },
   body: JSON.stringify({ contact: { id: "573001112233", name: "Laura" }, message: "Hola, ¿qué precios tienen?" }),

@@ -1,4 +1,4 @@
-# Desplegar AI Sales Engine
+# Desplegar Merceam
 
 Qué necesita el proyecto para funcionar, en Vercel (como hoy) o en cualquier otro lugar: las piezas, los servicios externos y cada
 variable, con dónde va. La plantilla con todas las variables es [`project/.env.example`](../project/.env.example); una prueba
@@ -8,8 +8,8 @@ variable, con dónde va. La plantilla con todas las variables es [`project/.env.
 
 | Pieza | Qué es | Hoy | Si se mueve a otra parte, necesita |
 |---|---|---|---|
-| **Motor** | La API en Python (FastAPI): webhooks de WhatsApp, la IA, la API del asistente para otras plataformas, la API del panel (`/panel/api`) y la revisión de la atención humana | Vercel, proyecto `ai-sales-engine` (carpeta raíz `project`) | Python 3.11 o más; `pip install -r project/requirements.txt`; arrancar `uvicorn app.main:app` desde `project/`. Que las tareas en segundo plano terminen después de responder (en un servidor propio, siempre) |
-| **Panel** | La aplicación web (React + Vite): archivos estáticos | Vercel, proyecto `ai-sales-engine-panel` (carpeta `apps/admin-web`) | `npm ci && npm run build` → servir `dist/`. Dos reglas: `/api/*` → `{motor}/panel/api/*`, y todo lo demás → `index.html`. Servir `sw.js` sin caché |
+| **Motor** | La API en Python (FastAPI): webhooks de WhatsApp, la IA, la API del asistente para otras plataformas, la API del panel (`/panel/api`) y la revisión de la atención humana | Vercel, proyecto `merceam-api` (carpeta raíz `project`) | Python 3.11 o más; `pip install -r project/requirements.txt`; arrancar `uvicorn app.main:app` desde `project/`. Que las tareas en segundo plano terminen después de responder (en un servidor propio, siempre) |
+| **Panel** | La aplicación web (React + Vite): archivos estáticos | Vercel, proyecto `merceam` (carpeta `apps/admin-web`) | `npm ci && npm run build` → servir `dist/`. Dos reglas: `/api/*` → `{motor}/panel/api/*`, y todo lo demás → `index.html`. Servir `sw.js` sin caché |
 | **Base de datos** | PostgreSQL con las tablas del motor y del panel | Neon (rama `production`; `pruebas` para Preview) | Cualquier PostgreSQL. Las migraciones se aplican solas al arrancar la API del panel (`project/db/migrations`) |
 | **Cuentas** | Inicio de sesión de los dueños de negocio | Neon Auth (Better Auth), de la misma base | Neon Auth u otro Better Auth compatible: el motor verifica sus tokens con sus claves públicas (`NEON_AUTH_URL`) |
 | **Revisión periódica** | La IA retoma los chats que nadie atendió y salen los seguimientos a quien dejó de responder | Vercel Schedules cada 15 min (`project/vercel.json`) | Cualquier cron que llame `POST {motor}/api/v1/internal/attention/run` y `POST {motor}/api/v1/internal/follow-up/run` con `Authorization: Bearer <CRON_SECRET>` (cada 1 a 15 min) |
@@ -42,9 +42,9 @@ solas en la base.
 | `UAZAPI_ADMIN_TOKEN` | Su token de administrador | Sí | Para WhatsApp |
 | `ENGINE_PUBLIC_URL` | La dirección pública del motor. En Vercel no hace falta (usa `VERCEL_PROJECT_PRODUCTION_URL`) | No | Fuera de Vercel, para WhatsApp |
 | `RESEND_API_KEY` | La clave de Resend | Sí | Para los correos |
-| `EMAIL_FROM` | El remitente, con el dominio verificado en Resend (`AI Sales Engine <avisos@tudominio.com>`). Sin él: `onboarding@resend.dev`, que solo entrega al correo de la cuenta de Resend | No | Para correos a cualquiera |
+| `EMAIL_FROM` | El remitente, con el dominio verificado en Resend (`Merceam <avisos@tudominio.com>`). Sin él: `onboarding@resend.dev`, que solo entrega al correo de la cuenta de Resend | No | Para correos a cualquiera |
 | `CRON_SECRET` | Un texto largo inventado (16 o más caracteres) | Sí | Para la revisión periódica |
-| `PANEL_URL` | La dirección del panel, si no es `ai-sales-engine-panel.vercel.app` | No | Si el panel cambia de dirección |
+| `PANEL_URL` | La dirección del panel, si no es `merceam.vercel.app` | No | Si el panel cambia de dirección |
 | `LLM_PROVIDER`, `OPENROUTER_BASE_URL`, `OPENROUTER_MODEL` | `openrouter`, `https://openrouter.ai/api/v1` y el modelo por defecto (`openai/gpt-4o-mini`) | No | Recomendadas |
 | `MEDIA_AI_MODEL` | El modelo que entiende fotos y audios (por defecto `google/gemini-2.5-flash-lite`) | No | No |
 

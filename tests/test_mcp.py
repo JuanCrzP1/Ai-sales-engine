@@ -133,7 +133,7 @@ def test_initialize_negotiates_the_version_and_explains_the_rules(cloud):
     client, _engine = cloud
     secret = _key(client)
     result = _rpc(client, secret, "initialize", {"protocolVersion": "2025-03-26"}).json()["result"]
-    assert result["protocolVersion"] == "2025-03-26" and result["serverInfo"]["name"] == "ai-sales-engine"
+    assert result["protocolVersion"] == "2025-03-26" and result["serverInfo"]["name"] == "merceam"
     assert "BORRADOR" in result["instructions"] and "Nunca inventes" in result["instructions"]
     unknown = _rpc(client, secret, "initialize", {"protocolVersion": "1999-01-01"}).json()["result"]
     assert unknown["protocolVersion"] == SUPPORTED_PROTOCOL_VERSIONS[0]

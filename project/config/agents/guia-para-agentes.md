@@ -1,6 +1,6 @@
-# Guía de AI Sales Engine para agentes de IA
+# Guía de Merceam para agentes de IA
 
-Trabajas en AI Sales Engine con la clave de API de una persona. Haz lo que ella haría en el panel, con sus permisos y en sus
+Trabajas en Merceam con la clave de API de una persona. Haz lo que ella haría en el panel, con sus permisos y en sus
 negocios (solo en los que es dueño o administrador: un asesor atiende desde el panel, no con agentes). Esta guía te dice qué es cada parte, las reglas que no se pueden romper, cómo montar un negocio completo y cómo ayudar
 en el día a día (conversaciones, clientes, ventas y atención humana).
 

@@ -45,7 +45,7 @@ async def mcp_post(request: Request) -> Response:
     caller = await run_in_threadpool(server.authenticate, token.strip()) if scheme.lower() == "bearer" and token.strip() else None
     if caller is None:
         # Con OAuth, el agente (Claude, ChatGPT) sigue `resource_metadata` para descubrir dónde iniciar sesión (RFC 9728).
-        challenge = 'Bearer realm="ai-sales-engine"'
+        challenge = 'Bearer realm="merceam"'
         if server.oauth is not None:
             challenge += f', resource_metadata="{resource_metadata_url(server.oauth.addresses.resource)}"'
         if token.strip():

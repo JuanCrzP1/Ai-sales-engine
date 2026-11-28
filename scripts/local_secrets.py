@@ -42,7 +42,7 @@ from app.infrastructure.business_config.tables import business_config_secrets, b
 
 ENV_FILE = REPO_ROOT / ".env"
 HEADER = """\
-# Secretos locales de AI Sales Engine. NO SUBIR A GITHUB: está en .gitignore y contiene valores reales.
+# Secretos locales de Merceam. NO SUBIR A GITHUB: está en .gitignore y contiene valores reales.
 # Traslado entre equipos e instalación: docs/operations.md, «Trabajar Desde Windows Y macOS».
 # La clave de cifrado debe conservarse exacta, incluido el = final: sin ella, los datos de pago guardados no se pueden leer.
 

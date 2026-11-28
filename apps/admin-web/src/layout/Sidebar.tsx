@@ -2,6 +2,7 @@ import { useRef, type ReactNode, type TouchEvent } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { BrandMark } from "../components/brand/BrandMark";
 import { Icon } from "../components/ui/Icon";
+import { BRAND_NAME } from "../lib/brand";
 import {
   ASSISTANT_HUB_ITEM,
   CHANNELS_ITEM,
@@ -75,7 +76,7 @@ export function Sidebar({ id, open, compact = false, onClose, onOpenHelp }: Side
       <div className="sidebar__brand">
         <BrandMark />
         <div className="sidebar__brand-text">
-          <span className="sidebar__brand-name">AI Sales Engine</span>
+          <span className="sidebar__brand-name">{BRAND_NAME}</span>
           <span className="sidebar__brand-sub">Tu asistente de ventas</span>
         </div>
         {compact ? (

@@ -8,7 +8,7 @@ este índice.
 
 ## Primeros pasos
 
-- [Qué es AI Sales Engine](../project/content/help/primeros-pasos/que-es-ai-sales-engine.md): Un asistente de ventas con IA que atiende a tus clientes por WhatsApp con la información de tu negocio, y un panel para atender con tu equipo.
+- [Qué es Merceam](../project/content/help/primeros-pasos/que-es-merceam.md): Un asistente de ventas con IA que atiende a tus clientes por WhatsApp con la información de tu negocio, y un panel para atender con tu equipo.
 - [Empieza aquí: tu asistente vendiendo en 5 pasos](../project/content/help/primeros-pasos/empieza-aqui.md): Los pasos para dejar a tu asistente atendiendo por WhatsApp, en el orden que más ayuda. El Centro de ayuda marca solos los que ya hiciste.
 - [Crea tu cuenta y tu negocio](../project/content/help/primeros-pasos/crear-cuenta-y-negocio.md): Crear la cuenta, crear tu negocio de cero o con una plantilla, y cambiar entre varios negocios.
 - [Usa el panel desde el celular](../project/content/help/primeros-pasos/desde-el-celular.md): El panel funciona como una aplicación en tu celular. Instálalo en la pantalla de inicio para abrirlo con un toque y recibir avisos.

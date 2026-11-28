@@ -3,6 +3,8 @@
  * quien decide de verdad: aquí solo sirve para mostrar a cada persona lo que puede usar y para explicar por qué no.
  */
 
+import { BRAND_NAME } from "../../lib/brand";
+
 export type Role = "owner" | "admin" | "agent";
 export type Capability = "attend" | "reports" | "configure" | "team" | "deleteBusiness";
 
@@ -89,7 +91,7 @@ export function invitationUrl(origin: string, token: string): string {
 
 /** Un mensaje listo para mandar por WhatsApp con el enlace. */
 export function invitationMessage(businessName: string, role: Role, url: string): string {
-  return `Te invito a ${businessName} en AI Sales Engine como ${ROLE_LABELS[role]}. Entra con este enlace (vence en 7 días): ${url}`;
+  return `Te invito a ${businessName} en ${BRAND_NAME} como ${ROLE_LABELS[role]}. Entra con este enlace (vence en 7 días): ${url}`;
 }
 
 /** Lo que el dueño o el administrador puede hacer con alguien del equipo, y por qué no cuando no puede (como el servidor). */

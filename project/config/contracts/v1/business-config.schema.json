@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://ai-sales-engine/contracts/business-config/v1.0",
+  "$id": "https://merceam/contracts/business-config/v1.0",
   "$defs": {
     "BuyingMotivation": {
       "additionalProperties": false,

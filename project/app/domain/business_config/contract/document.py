@@ -134,6 +134,6 @@ def business_config_json_schema() -> dict:
     """El esquema publicado del contrato. Única definición: lo usan la API del panel y `scripts/export_business_config_schema.py`."""
     return {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
-        "$id": f"https://ai-sales-engine/contracts/business-config/v{SCHEMA_VERSION}",
+        "$id": f"https://merceam/contracts/business-config/v{SCHEMA_VERSION}",
         **BusinessConfig.model_json_schema(),
     }

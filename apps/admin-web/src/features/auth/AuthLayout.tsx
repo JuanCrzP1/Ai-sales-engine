@@ -2,6 +2,7 @@ import { Outlet } from "react-router-dom";
 import { BrandLogo } from "../../components/brand/BrandLogo";
 import { BrandMark } from "../../components/brand/BrandMark";
 import { Icon, type IconName } from "../../components/ui/Icon";
+import { BRAND_NAME } from "../../lib/brand";
 
 const HIGHLIGHTS: { icon: IconName; title: string; text: string }[] = [
   { icon: "chat", title: "Vende por chat", text: "Tu asistente responde, recomienda y cierra ventas por ti." },
@@ -20,7 +21,7 @@ export function AuthLayout({ wide = false }: { wide?: boolean }) {
         <div className="auth__showcase-inner">
           <span className="auth__brand">
             <BrandMark size={44} />
-            AI Sales Engine
+            {BRAND_NAME}
           </span>
           <h2 className="auth__headline">Convierte cada conversación en una venta.</h2>
           <ul className="auth__highlights">
@@ -42,7 +43,7 @@ export function AuthLayout({ wide = false }: { wide?: boolean }) {
       <main className="auth__panel" id="contenido">
         <div className={wide ? "auth__card auth__card--wide" : "auth__card"}>
           <div className="auth__logo">
-            <BrandLogo width={200} />
+            <BrandLogo />
           </div>
           <Outlet />
         </div>

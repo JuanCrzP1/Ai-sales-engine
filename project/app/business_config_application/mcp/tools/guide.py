@@ -66,7 +66,7 @@ def guide_tools(guide_text: Callable[[], str], schema: dict[str, Any], templates
     return [
         McpTool(
             name="read_platform_guide",
-            title="Leer la guía de AI Sales Engine",
+            title="Leer la guía de Merceam",
             description=(
                 "Léela ANTES de actuar: qué es la plataforma, cómo se arma la configuración de un negocio, las reglas que no se "
                 "pueden romper (no inventar precios ni datos de pago, borrador y publicar) y la receta paso a paso para montar un "

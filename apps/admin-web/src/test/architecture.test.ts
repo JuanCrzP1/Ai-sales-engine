@@ -41,7 +41,7 @@ const ALLOWED: Record<string, string[]> = {
   repositories: ["domain", "lib"],
   infrastructure: ["repositories", "domain", "lib"],
   ui: ["lib"],
-  brand: [],
+  brand: ["lib"],
   "config-ui": ["ui", "domain", "lib", "navigation"],
   navigation: ["domain", "lib"],
   state: ["repositories", "domain", "lib"],

@@ -1,7 +1,7 @@
 """Correo con Resend (https://resend.com): implementa `EmailSender`.
 
 La clave de Resend es de la plataforma (`RESEND_API_KEY`, en Vercel como *Sensitive*); el negocio nunca la ve. El remitente es
-`EMAIL_FROM` (por ejemplo `AI Sales Engine <avisos@tudominio.com>`, con el dominio verificado en Resend). Sin dominio propio, Resend
+`EMAIL_FROM` (por ejemplo `Merceam <avisos@tudominio.com>`, con el dominio verificado en Resend). Sin dominio propio, Resend
 solo permite su remitente de pruebas, `onboarding@resend.dev`, y solo entrega al correo de la cuenta de Resend.
 
 Cada envío lleva una clave de idempotencia: si se reintenta el mismo aviso, Resend no manda el correo dos veces.
@@ -15,7 +15,7 @@ import httpx
 from app.business_config_application.ports import EmailNotSent
 
 RESEND_URL = "https://api.resend.com/emails"
-DEFAULT_SENDER = "AI Sales Engine <onboarding@resend.dev>"
+DEFAULT_SENDER = "Merceam <onboarding@resend.dev>"
 TIMEOUT = httpx.Timeout(15.0, connect=5.0)
 
 

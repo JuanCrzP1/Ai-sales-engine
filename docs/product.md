@@ -11,7 +11,7 @@ Los problemas típicos son:
 - se habla mucho y se vende poco
 - el cliente pregunta precio, duda o muestra interés, y la conversación no avanza
 
-AI Sales Engine existe para resolver ese cuello de botella comercial.
+Merceam existe para resolver ese cuello de botella comercial.
 
 No es una herramienta de respuestas automáticas genéricas. Es un sistema para operar conversaciones de venta con contexto, dirección y continuidad.
 
@@ -109,7 +109,7 @@ Una automatización rígida suele fallar por tres razones:
 - no entiende el contexto del negocio
 - no conserva continuidad comercial entre mensajes
 
-AI Sales Engine se diferencia porque:
+Merceam se diferencia porque:
 
 - opera con contexto real del tenant
 - usa pricing y capacidades reales del negocio
@@ -163,7 +163,7 @@ Los precios, planes, catálogos, enlaces de pago y transferencias que aparecen e
 
 ## Resumen De Posicionamiento
 
-AI Sales Engine no compite por “sonar inteligente”. Compite por convertir mejor.
+Merceam no compite por “sonar inteligente”. Compite por convertir mejor.
 
 Es un producto para negocios que necesitan que cada conversación tenga continuidad, grounding y dirección comercial.
 

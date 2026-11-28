@@ -25,7 +25,7 @@ Arriba del editor ves el estado:
 En [Publicar](panel:revision) ves:
 
 - Si faltan datos obligatorios (no se puede publicar hasta completarlos) y los avisos que conviene revisar.
-- **Lo que cambia al publicar**, sección por sección; por ejemplo, «Mi negocio · Marca: Asesor Comercial → Ai sales engine».
+- **Lo que cambia al publicar**, sección por sección; por ejemplo, «Mi negocio · Marca: Asesor Comercial → Café Aroma».
 - Los datos de pago aparecen como «actualizado», nunca su valor.
 
 ## Volver atrás

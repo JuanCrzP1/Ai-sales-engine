@@ -10,7 +10,7 @@ import os
 # La ruta del webhook en el motor (`app/api/controllers/whatsapp_qr_webhook.py`), sin el prefijo de la API.
 WEBHOOK_PATH = "/channels/whatsapp"
 # El panel publicado. `PANEL_URL` lo cambia (en este equipo, los lanzadores ponen el panel local).
-PUBLIC_PANEL_URL = "https://ai-sales-engine-panel.vercel.app"
+PUBLIC_PANEL_URL = "https://merceam.vercel.app"
 
 
 def panel_url() -> str:

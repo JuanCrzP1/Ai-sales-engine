@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="assets/logo.jpg" alt="AI Sales Engine" width="260"/>
+  <img src="apps/admin-web/src/assets/brand/logo-mark.png" alt="" width="120"/>
 </p>
 
-<h1 align="center">AI Sales Engine</h1>
+<h1 align="center">Merceam</h1>
 
 <p align="center">
   <strong>Un asistente de ventas con IA para WhatsApp, como servicio.</strong><br/>
@@ -28,7 +28,7 @@
 ## Qué hace
 
 La mayoría de los negocios no pierde ventas por falta de clientes: las pierde porque nadie responde a tiempo, o se responde sin
-contexto y la conversación no avanza. AI Sales Engine atiende cada chat al instante, con la información real del negocio, y lo
+contexto y la conversación no avanza. Merceam atiende cada chat al instante, con la información real del negocio, y lo
 lleva hacia la compra; cuando hace falta una persona, se la pasa al equipo y le avisa.
 
 | Para el negocio | Cómo funciona |

@@ -196,7 +196,7 @@ describe("Integraciones", () => {
     });
     const shown = await screen.findByRole("dialog", { name: "Clave «Claude de Juan» creada" });
     const secret = integrations.state.secrets.get("clave-1")!;
-    expect(within(shown).getByText(`claude mcp add --transport http ai-sales-engine https://panel.example.com/api/mcp --header "Authorization: Bearer ${secret}"`)).toBeInTheDocument();
+    expect(within(shown).getByText(`claude mcp add --transport http merceam https://panel.example.com/api/mcp --header "Authorization: Bearer ${secret}"`)).toBeInTheDocument();
     await user.click(within(shown).getByRole("button", { name: "Ya la copié" }));
     const row = (await screen.findByText("Claude de Juan")).closest("tr") as HTMLElement;
     expect(within(row).getByText("Negocios: ver y editar · Asistente IA: ver y editar · Datos de pago: escribir")).toBeInTheDocument();
