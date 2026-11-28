@@ -1,0 +1,201 @@
+/* ================================================================
+   Las etiquetas de los clientes: la etiqueta con su color, el selector de color, el catálogo y el filtro de Clientes.
+   Cada color tiene un tono oscuro para el texto y uno claro para el fondo (contraste legible), y siempre va con su nombre.
+   ================================================================ */
+
+.label-tone--slate { --label: #475569; --label-soft: #eef1f5; }
+.label-tone--blue { --label: #1d4ed8; --label-soft: #e6efff; }
+.label-tone--violet { --label: #6d28d9; --label-soft: #f1eaff; }
+.label-tone--pink { --label: #be185d; --label-soft: #fde8f1; }
+.label-tone--red { --label: #b91c1c; --label-soft: #fde8e8; }
+.label-tone--amber { --label: #92400e; --label-soft: #fff1cf; }
+.label-tone--green { --label: #047857; --label-soft: #e1f6ec; }
+.label-tone--teal { --label: #0f766e; --label-soft: #dcf5f2; }
+
+.label-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+}
+
+.label-chip {
+  display: inline-block;
+  max-width: 100%;
+  padding: 1px 9px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  border-radius: 999px;
+  background: var(--label-soft, var(--color-surface-muted));
+  color: var(--label, var(--color-text-muted));
+  font-size: 11.5px;
+  font-weight: 650;
+  line-height: 18px;
+}
+
+.label-chip--more {
+  background: var(--color-surface-muted);
+  color: var(--color-text-muted);
+}
+
+/* En la ficha, cada etiqueta del catálogo es un botón: puesta se ve llena y con su chulo; sin poner, apagada. */
+.label-chip--pick {
+  padding: 4px 12px;
+  border: 1px solid var(--color-border-strong);
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  font-size: 12.5px;
+  cursor: pointer;
+}
+
+.label-chip--pick:hover:not(:disabled) {
+  border-color: var(--label);
+  color: var(--label);
+}
+
+.label-chip--pick[aria-pressed="true"] {
+  border-color: var(--label);
+  background: var(--label-soft);
+  color: var(--label);
+}
+
+.label-chip--pick[aria-pressed="true"]::before {
+  content: "✓ ";
+}
+
+.label-chip--pick:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.label-chip--pick:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+/* ---------------------------------------------------------------- elegir el color */
+.label-colors {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.label-colors__option {
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--label);
+  cursor: pointer;
+}
+
+.label-colors__option[aria-checked="true"] {
+  box-shadow:
+    0 0 0 2px var(--color-surface),
+    0 0 0 4px var(--label);
+}
+
+.label-colors__option:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 3px;
+}
+
+.label-colors__option:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* ---------------------------------------------------------------- crear y administrar */
+.label-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.label-form__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.labels-dialog {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.labels-list {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.labels-list__item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-4);
+  padding: var(--space-3) 0;
+  border-top: 1px solid var(--color-border);
+}
+
+.labels-list__main {
+  flex: 1;
+  min-width: 140px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.labels-list__count {
+  font-size: var(--text-xs);
+  color: var(--color-text-subtle);
+}
+
+.labels-list__actions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: var(--text-sm);
+}
+
+.labels-list__rename {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  width: 100%;
+}
+
+/* ---------------------------------------------------------------- en la barra de Clientes */
+.customers-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.label-filter__select {
+  width: auto;
+  max-width: 210px;
+  padding: 6px 30px 6px 10px;
+  font-size: var(--text-sm);
+}
+
+/* En la lista, las etiquetas van bajo el número del cliente. */
+.person__text .label-row {
+  margin-top: 4px;
+}
+
+@media (max-width: 640px) {
+  .label-filter__select {
+    max-width: 160px;
+  }
+}

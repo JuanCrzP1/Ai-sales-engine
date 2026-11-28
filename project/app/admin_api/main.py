@@ -27,6 +27,8 @@ from app.admin_api.mcp_routes import audit_tool_call, router as mcp_router
 from app.admin_api.oauth_routes import router as oauth_router
 from app.admin_api.channel_routes import router as channel_router
 from app.admin_api.commerce_routes import router as commerce_router
+from app.admin_api.customer_card_routes import router as customer_card_router
+from app.admin_api.label_routes import router as label_router
 from app.admin_api.conversation_routes import router as conversation_router
 from app.admin_api.errors import register_error_handlers
 from app.admin_api.routes import router
@@ -43,6 +45,8 @@ from app.business_config_application.mcp.server import build_mcp_server
 from app.business_config_application.channels import TelegramChannelService, WhatsAppChannelService
 from app.business_config_application.business_deletion import BusinessDeletionService
 from app.business_config_application.commerce import CommerceService
+from app.business_config_application.customer_card import CustomerCardService
+from app.business_config_application.customer_labels import CustomerLabelService
 from app.business_config_application.conversations import ConversationsService, NotificationsService
 from app.business_config_application.payment_confirmation import PaymentConfirmationService
 from app.business_config_application.ports import (
@@ -151,6 +155,9 @@ def create_app(
     app.state.notifications = NotificationsService(notifications, app.state.access) if notifications is not None else None
     # Clientes, ventas y reportes; con `ai_usage`, los reportes suman el costo de la IA.
     app.state.commerce = CommerceService(commerce, app.state.access, ai_usage) if commerce is not None else None
+    # La ficha de cada cliente (valor, responsable, notas e historial): sale del mismo almacén que los clientes y las ventas.
+    app.state.customer_cards = CustomerCardService(commerce, app.state.access) if commerce is not None else None
+    app.state.customer_labels = CustomerLabelService(commerce, app.state.access) if commerce is not None else None
     # «Confirmar pago» en el chat: el cliente recibe el mensaje de pago confirmado de lo publicado; con `commerce`, la venta queda
     # registrada; con `contact_memory`, el asistente sabe que el pago quedó confirmado.
     app.state.payments = (
@@ -236,6 +243,8 @@ def create_app(
     app.include_router(conversation_router)
     app.include_router(channel_router)
     app.include_router(commerce_router)
+    app.include_router(customer_card_router)
+    app.include_router(label_router)
     app.include_router(attention_router)
     app.include_router(quick_reply_router)
     app.include_router(help_router)

@@ -2,7 +2,7 @@
 title: Reportes: cómo le va a tu negocio
 module: clientes-y-ventas
 summary: Conversaciones, ventas, ingresos, el embudo, quién respondió y cuánto costó la IA, comparado con el periodo anterior.
-order: 3
+order: 4
 updated: 2026-11-12
 keywords: reportes, estadísticas, métricas, ingresos, embudo, costo de la ia, periodo, 7 días, 30 días, 90 días
 related: etapas-de-clientes, registrar-una-venta, elegir-el-modelo

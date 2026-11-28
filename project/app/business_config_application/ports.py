@@ -23,6 +23,8 @@ from app.domain.business_config.quick_replies import QuickReply, QuickReplyDraft
 from app.domain.business_config.team import Invitation, Member
 from app.domain.business_config.ai_usage import AIUsageSummary
 from app.domain.business_config.commerce import Customer, NewSale, ReportDay, ReportTotals, Sale
+from app.domain.business_config.customer_card import CustomerCard, CustomerNote, DealChange
+from app.domain.business_config.customer_labels import Label, LabelChange
 from app.domain.business_config.pipeline import Pipeline, StageMove
 from app.domain.business_config.channels import ChannelSecrets, ConnectionStatus, ProviderStatus, TelegramBot, TelegramConnection, WhatsAppConnection
 from app.domain.business_config.contract import BusinessConfig, SecretRef
@@ -220,7 +222,7 @@ class ConversationStorage(Protocol):
         """El pago vuelve a estar por confirmar, como estaba antes de `claim_payment`."""
         ...
 
-    def finish_payment(self, conversation_id: str, claim: PaymentClaim) -> None:
+    def finish_payment(self, conversation_id: str, claim: PaymentClaim, *, by: str | None = None) -> None:
         """El cliente recibió la confirmación: si esperaba a una persona solo por el pago, ya no espera y la IA vuelve a atender."""
         ...
 
@@ -269,14 +271,16 @@ class ContactMemory(Protocol):
 class CommerceStorage(Protocol):
     """Clientes (las conversaciones de canales reales con su etapa), ventas y los datos de los reportes de cada negocio."""
 
-    def customers(self, tenant_slug: str, *, stage: str | None = None, query: str | None = None) -> list[Customer]: ...
-
-    def pipeline(self, tenant_slug: str, *, query: str | None = None, today: date) -> Pipeline:
-        """El tablero: una columna por etapa (con `query`, solo quienes coinciden) y los números del embudo."""
+    def customers(self, tenant_slug: str, *, stage: str | None = None, query: str | None = None, label: str | None = None) -> list[Customer]:
+        """Con `label` (el id de una etiqueta), solo quienes la llevan."""
         ...
 
-    def move_customer(self, tenant_slug: str, conversation_id: str, move: StageMove) -> Customer:
-        """Pasa al cliente a otra etapa. `ConversationNotFoundError` si no es un cliente de ese negocio."""
+    def pipeline(self, tenant_slug: str, *, query: str | None = None, label: str | None = None, today: date) -> Pipeline:
+        """El tablero: una columna por etapa (con `query` o `label`, solo quienes coinciden) y los números del embudo."""
+        ...
+
+    def move_customer(self, tenant_slug: str, conversation_id: str, move: StageMove, *, by: str | None = None) -> Customer:
+        """Pasa al cliente a otra etapa, a nombre de `by`. `ConversationNotFoundError` si no es un cliente de ese negocio."""
         ...
 
     def record_sale(self, tenant_slug: str, sale: NewSale, *, created_by: str | None) -> Sale: ...
@@ -286,6 +290,40 @@ class CommerceStorage(Protocol):
     def sales(self, tenant_slug: str, *, since: date) -> list[Sale]: ...
 
     def report_data(self, tenant_slug: str, *, since: date, until: date) -> tuple[list[ReportDay], ReportTotals, dict[str, int], dict[str, int]]: ...
+
+
+class CustomerCardStorage(Protocol):
+    """La ficha de cada cliente: su valor, su responsable, sus notas y su historial. `ConversationNotFoundError` si no es un cliente
+    de ese negocio."""
+
+    def customer_card(self, tenant_slug: str, conversation_id: str) -> CustomerCard: ...
+
+    def update_customer_deal(self, tenant_slug: str, conversation_id: str, change: DealChange, *, by: str | None = None) -> CustomerCard:
+        """Cambia el valor y/o el responsable (solo alguien del negocio). Cada cambio queda en el historial, a nombre de `by`."""
+        ...
+
+    def add_customer_note(self, tenant_slug: str, conversation_id: str, body: str, *, author: str | None = None) -> CustomerNote: ...
+
+    def delete_customer_note(self, tenant_slug: str, conversation_id: str, note_id: str) -> None: ...
+
+
+class CustomerLabelStorage(Protocol):
+    """Las etiquetas de los clientes: el catálogo de cada negocio y las que lleva cada cliente. Una etiqueta o un cliente de otro
+    negocio no existen (`ConversationNotFoundError`)."""
+
+    def labels(self, tenant_slug: str) -> list[Label]: ...
+
+    def create_label(self, tenant_slug: str, name: str, color: str, *, created_by: str | None = None) -> Label:
+        """`LabelError` si ya hay una que se lee igual o el negocio llegó al máximo."""
+        ...
+
+    def update_label(self, tenant_slug: str, label_id: str, change: LabelChange) -> Label: ...
+
+    def delete_label(self, tenant_slug: str, label_id: str) -> None:
+        """Sus clientes solo la pierden."""
+        ...
+
+    def set_customer_labels(self, tenant_slug: str, conversation_id: str, label_ids: list[str]) -> Customer: ...
 
 
 class OutboundMessenger(Protocol):

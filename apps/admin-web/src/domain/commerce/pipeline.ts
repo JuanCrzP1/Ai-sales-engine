@@ -9,11 +9,14 @@ export interface StageColumn {
   /** Cuántos clientes hay en la etapa; `customers` trae solo las tarjetas más recientes. */
   count: number;
   customers: Customer[];
+  /** Lo que suman los valores de todos los clientes de la etapa, por moneda. */
+  value: Record<string, string>;
 }
 
 export interface PipelineStats {
-  /** Clientes que siguen en el embudo sin comprar. */
+  /** Clientes que siguen en el embudo sin comprar, y lo que suman sus valores por moneda («por cerrar»). */
   openCount: number;
+  openValue: Record<string, string>;
   lostCount: number;
   /** Las ventas de los últimos 30 días: cuántas y cuánto suman por moneda. */
   wonCount: number;

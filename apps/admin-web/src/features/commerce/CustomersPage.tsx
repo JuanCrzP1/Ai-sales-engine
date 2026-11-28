@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Button } from "../../components/ui/Button";
 import { Alert, EmptyState } from "../../components/ui/Feedback";
@@ -10,9 +10,13 @@ import { DeleteChatDialog } from "../../layout/DeleteChatDialog";
 import { useDebounced } from "../../lib/useDebounced";
 import { CONVERSATIONS_ITEM } from "../../navigation/navItems";
 import { useWorkspacePath } from "../../navigation/useWorkspacePath";
+import { useCan } from "../../state/roleContext";
 import { useCommerceData } from "../../state/useCommerceData";
+import { useLabels } from "../../state/useLabels";
 import { BoardView } from "./customers/BoardView";
+import { CustomerDrawer } from "./customers/card/CustomerDrawer";
 import { CustomersList } from "./customers/CustomersList";
+import { LabelsDialog } from "./customers/labels/LabelsDialog";
 import { LostReasonDialog } from "./customers/LostReasonDialog";
 import { PipelineStats } from "./customers/PipelineStats";
 import { useCustomerMoves } from "./customers/useCustomerMoves";
@@ -23,33 +27,63 @@ const VIEWS: { view: View; label: string; icon: "layers" | "menu" }[] = [
   { view: "board", label: "Tablero", icon: "layers" },
   { view: "list", label: "Lista", icon: "menu" },
 ];
+const ALL_LABELS = "";
+
+/** Lo que se está viendo en Clientes; viaja en la dirección. */
+interface Place {
+  view: View;
+  stage: BoardStage | null;
+  labelId: string | null;
+  customerId: string | null;
+}
 
 /**
  * Clientes: cada persona que le escribió al negocio, por etapa. Arriba, los números del embudo; debajo, el tablero (una columna por
- * etapa) o la lista. La vista y la etapa filtrada viajan en la dirección (`?vista=lista&etapa=ready`), para poder compartirla.
+ * etapa) o la lista, que se filtran por una etiqueta; tocar a un cliente abre su ficha. La vista, los filtros y la ficha abierta
+ * viajan en la dirección (`?vista=lista&etapa=ready&etiqueta=…&cliente=…`), para poder compartirla.
  */
 export function CustomersPage() {
   const pathTo = useWorkspacePath();
+  const canManageLabels = useCan("configure");
   const [params, setParams] = useSearchParams();
-  const view: View = params.get("vista") === "lista" ? "list" : "board";
-  const stage = BOARD_STAGES.find((item) => item === params.get("etapa")) ?? null;
+  const place: Place = {
+    view: params.get("vista") === "lista" ? "list" : "board",
+    stage: BOARD_STAGES.find((item) => item === params.get("etapa")) ?? null,
+    labelId: params.get("etiqueta"),
+    customerId: params.get("cliente"),
+  };
   const [query, setQuery] = useState("");
   const search = useDebounced(query.trim());
   const [version, setVersion] = useState(0);
   const refresh = useCallback(() => setVersion((count) => count + 1), []);
-  const { state } = useCommerceData((commerce) => commerce.pipeline(search), [search, version]);
+  const labels = useLabels(version);
+  const { state } = useCommerceData((commerce) => commerce.pipeline(search, place.labelId), [search, place.labelId, version]);
   const moves = useCustomerMoves(refresh);
   const [deleting, setDeleting] = useState<Customer | null>(null);
+  const [managingLabels, setManagingLabels] = useState(false);
 
-  const show = (next: View, filter: BoardStage | null = null) => {
-    const search = new URLSearchParams();
-    if (next === "list") search.set("vista", "lista");
-    if (next === "list" && filter) search.set("etapa", filter);
-    setParams(search, { replace: true });
+  const go = (change: Partial<Place>) => {
+    const next = { ...place, ...change };
+    const target = new URLSearchParams();
+    if (next.view === "list") target.set("vista", "lista");
+    if (next.view === "list" && next.stage) target.set("etapa", next.stage);
+    if (next.labelId) target.set("etiqueta", next.labelId);
+    if (next.customerId) target.set("cliente", next.customerId);
+    setParams(target, { replace: true });
   };
+  const openCard = (customer: Customer | null) => go({ customerId: customer?.conversationId ?? null });
   const chatPath = (customer: Customer) => `${pathTo(CONVERSATIONS_ITEM.path)}?c=${customer.conversationId}`;
+
+  // Si la etiqueta del filtro ya no existe (la borraron), el filtro se suelta.
+  const staleLabel = labels.loaded && place.labelId !== null && !labels.list.some((label) => label.id === place.labelId);
+  useEffect(() => {
+    if (staleLabel) go({ labelId: null });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [staleLabel]);
+
   const pipeline = state.status === "ready" ? state.data : null;
-  const nobody = pipeline !== null && !search && pipeline.columns.every((column) => column.count === 0);
+  const filtering = Boolean(search) || place.labelId !== null;
+  const nobody = pipeline !== null && !filtering && pipeline.columns.every((column) => column.count === 0);
 
   return (
     <>
@@ -68,13 +102,31 @@ export function CustomersPage() {
             <span className="visually-hidden">Buscar cliente</span>
             <input className="search-field__input" type="search" placeholder="Buscar por nombre o teléfono" value={query} onChange={(event) => setQuery(event.target.value)} />
           </label>
-          <div className="view-switch" role="group" aria-label="Cómo ver los clientes">
-            {VIEWS.map((item) => (
-              <button key={item.view} type="button" className="view-switch__option" aria-pressed={view === item.view} onClick={() => show(item.view)}>
-                <Icon name={item.icon} size={15} />
-                {item.label}
-              </button>
-            ))}
+          <div className="customers-tools">
+            {labels.list.length > 0 && (
+              <label className="label-filter">
+                <span className="visually-hidden">Filtrar por etiqueta</span>
+                <select className="select label-filter__select" value={place.labelId ?? ALL_LABELS} onChange={(event) => go({ labelId: event.target.value || null })}>
+                  <option value={ALL_LABELS}>Todas las etiquetas</option>
+                  {labels.list.map((label) => (
+                    <option key={label.id} value={label.id}>
+                      {label.name} ({label.customers})
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
+            <Button size="small" variant="secondary" onClick={() => setManagingLabels(true)}>
+              <Icon name="tag" size={14} /> Etiquetas
+            </Button>
+            <div className="view-switch" role="group" aria-label="Cómo ver los clientes">
+              {VIEWS.map((item) => (
+                <button key={item.view} type="button" className="view-switch__option" aria-pressed={place.view === item.view} onClick={() => go({ view: item.view, stage: null, customerId: null })}>
+                  <Icon name={item.icon} size={15} />
+                  {item.label}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
@@ -96,23 +148,50 @@ export function CustomersPage() {
           </div>
         )}
         {nobody && <EmptyState title="Aún no hay clientes" description="Cuando alguien le escriba a tu negocio por un canal conectado, aparece aquí con su etapa. Las pruebas del panel no cuentan." />}
-        {pipeline && !nobody && view === "board" && (
-          <BoardView columns={pipeline.columns} advance={pipeline.stats.advance} busyId={moves.busyId} chatPath={chatPath} onMove={moves.request} onShowStage={(target) => show("list", target)} />
+        {pipeline && !nobody && place.view === "board" && (
+          <BoardView
+            columns={pipeline.columns}
+            advance={pipeline.stats.advance}
+            busyId={moves.busyId}
+            onOpen={openCard}
+            onMove={moves.request}
+            onShowStage={(target) => go({ view: "list", stage: target, customerId: null })}
+          />
         )}
-        {pipeline && !nobody && view === "list" && (
+        {pipeline && !nobody && place.view === "list" && (
           <CustomersList
             version={version}
             query={query}
-            stage={stage}
+            stage={place.stage}
+            labelId={place.labelId}
             busyId={moves.busyId}
             chatPath={chatPath}
-            onStage={(target) => show("list", target)}
+            onOpen={openCard}
+            onStage={(target) => go({ stage: target, customerId: null })}
             onMove={moves.request}
             onSell={moves.sell}
             onDelete={setDeleting}
           />
         )}
       </section>
+
+      {place.customerId && (
+        <CustomerDrawer
+          conversationId={place.customerId}
+          version={version}
+          locked={moves.asking !== null || managingLabels}
+          busy={moves.busyId === place.customerId}
+          labels={labels.list}
+          chatPath={chatPath}
+          onMove={moves.request}
+          onSell={moves.sell}
+          onManageLabels={() => setManagingLabels(true)}
+          onChanged={refresh}
+          onClose={() => openCard(null)}
+        />
+      )}
+
+      {managingLabels && <LabelsDialog labels={labels.list} canManage={canManageLabels} onChanged={refresh} onClose={() => setManagingLabels(false)} />}
 
       {moves.asking?.kind === "reason" && (
         <LostReasonDialog

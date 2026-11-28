@@ -17,20 +17,17 @@ from sqlalchemy import and_, insert, select, update
 from sqlalchemy.engine import Connection, Engine
 
 from app.domain.business_config.commerce import ALL_STAGES, STAGES, Customer, NewSale, ReportDay, ReportTotals, Sale, SaleError, reached
+from app.domain.business_config.customer_card import SOURCE_SALE, CustomerCard, CustomerNote, DealChange, money_text
+from app.domain.business_config.customer_labels import Label, LabelChange
 from app.domain.business_config.errors import ConversationNotFoundError
 from app.domain.business_config.pipeline import Pipeline, StageMove
-from app.infrastructure.business_config.commerce_queries import MAX_CUSTOMERS, TEST_CHANNEL, bounds, customers_of, day_of, real_customers, utc
+from app.infrastructure.business_config.commerce_queries import MAX_CUSTOMERS, TEST_CHANNEL, bounds, customers_of, day_of, real_customers, sale_of
+from app.infrastructure.business_config.customer_card_store import add_note, delete_note, read_card, update_deal
+from app.infrastructure.business_config.customer_events import record_stage_change
+from app.infrastructure.business_config.label_store import create_label, delete_label, list_labels, set_customer_labels, update_label
 from app.infrastructure.business_config.pipeline_store import move_customer, read_pipeline
 from app.infrastructure.business_config.tables import conversation_entries, conversations, sales
 from app.infrastructure.business_config.tenancy import tenant_of
-
-
-def _sale(row: Any) -> Sale:
-    return Sale(
-        id=str(row.id), customer_name=row.customer_name, description=row.description, amount=Decimal(row.amount), currency=row.currency,
-        status=row.status, created_at=utc(row.created_at), created_by=row.created_by,
-        conversation_id=str(row.conversation_id) if row.conversation_id else None,
-    )
 
 
 class CommerceStore:
@@ -39,10 +36,12 @@ class CommerceStore:
 
     # ------------------------------------------------------------------ clientes
 
-    def customers(self, tenant_slug: str, *, stage: str | None = None, query: str | None = None, limit: int = MAX_CUSTOMERS) -> list[Customer]:
+    def customers(
+        self, tenant_slug: str, *, stage: str | None = None, query: str | None = None, label: str | None = None, limit: int = MAX_CUSTOMERS,
+    ) -> list[Customer]:
         with self._engine.connect() as conn:
             tenant = tenant_of(conn, tenant_slug)
-            where = real_customers(tenant.id, query)
+            where = real_customers(tenant.id, query, label)
             if stage in ALL_STAGES:
                 where.append(conversations.c.stage == stage)
             rows = conn.execute(
@@ -52,11 +51,42 @@ class CommerceStore:
 
     # ------------------------------------------------------------------ el tablero (las consultas están en `pipeline_store.py`)
 
-    def pipeline(self, tenant_slug: str, *, query: str | None = None, today: date) -> Pipeline:
-        return read_pipeline(self._engine, tenant_slug, query=query, today=today)
+    def pipeline(self, tenant_slug: str, *, query: str | None = None, label: str | None = None, today: date) -> Pipeline:
+        return read_pipeline(self._engine, tenant_slug, query=query, label=label, today=today)
 
-    def move_customer(self, tenant_slug: str, conversation_id: str, move: StageMove) -> Customer:
-        return move_customer(self._engine, tenant_slug, conversation_id, move)
+    def move_customer(self, tenant_slug: str, conversation_id: str, move: StageMove, *, by: str | None = None) -> Customer:
+        return move_customer(self._engine, tenant_slug, conversation_id, move, by=by)
+
+    # ------------------------------------------------------------------ la ficha (las consultas están en `customer_card_store.py`)
+
+    def customer_card(self, tenant_slug: str, conversation_id: str) -> CustomerCard:
+        return read_card(self._engine, tenant_slug, conversation_id)
+
+    def update_customer_deal(self, tenant_slug: str, conversation_id: str, change: DealChange, *, by: str | None = None) -> CustomerCard:
+        return update_deal(self._engine, tenant_slug, conversation_id, change, by=by)
+
+    def add_customer_note(self, tenant_slug: str, conversation_id: str, body: str, *, author: str | None = None) -> CustomerNote:
+        return add_note(self._engine, tenant_slug, conversation_id, body, author=author)
+
+    def delete_customer_note(self, tenant_slug: str, conversation_id: str, note_id: str) -> None:
+        delete_note(self._engine, tenant_slug, conversation_id, note_id)
+
+    # ------------------------------------------------------------------ las etiquetas (las consultas están en `label_store.py`)
+
+    def labels(self, tenant_slug: str) -> list[Label]:
+        return list_labels(self._engine, tenant_slug)
+
+    def create_label(self, tenant_slug: str, name: str, color: str, *, created_by: str | None = None) -> Label:
+        return create_label(self._engine, tenant_slug, name, color, created_by=created_by)
+
+    def update_label(self, tenant_slug: str, label_id: str, change: LabelChange) -> Label:
+        return update_label(self._engine, tenant_slug, label_id, change)
+
+    def delete_label(self, tenant_slug: str, label_id: str) -> None:
+        delete_label(self._engine, tenant_slug, label_id)
+
+    def set_customer_labels(self, tenant_slug: str, conversation_id: str, label_ids: list[str]) -> Customer:
+        return set_customer_labels(self._engine, tenant_slug, conversation_id, label_ids)
 
     # ------------------------------------------------------------------ ventas
 
@@ -75,14 +105,21 @@ class CommerceStore:
                 )
             )
             if conversation_id is not None:
-                conn.execute(update(conversations).where(conversations.c.id == conversation_id).values(stage="customer", updated_at=now))
+                before = conn.execute(select(conversations.c.stage).where(conversations.c.id == conversation_id)).scalar_one()
+                changes: dict[str, Any] = {"stage": "customer", "updated_at": now}
+                if record_stage_change(
+                    conn, tenant_id=tenant.id, conversation_id=conversation_id, from_stage=before, to_stage="customer", source=SOURCE_SALE,
+                    detail=f"{sale.description} · {money_text(sale.amount, sale.currency)}", actor=created_by, at=now,
+                ):
+                    changes["stage_changed_at"] = now
+                conn.execute(update(conversations).where(conversations.c.id == conversation_id).values(**changes))
                 conn.execute(
                     update(conversations)
                     .where(conversations.c.id == conversation_id, conversations.c.handoff_reason == "payment_review")
                     .values(needs_human=False)
                 )
             row = conn.execute(select(sales).where(sales.c.id == sale_id)).one()
-        return _sale(row)
+        return sale_of(row)
 
     @staticmethod
     def _conversation_of(conn: Connection, tenant_id: Any, conversation_id: str) -> Any:
@@ -106,7 +143,7 @@ class CommerceStore:
             if conn.execute(select(sales.c.id).where(mine)).first() is None:
                 raise SaleError("sale", "Esa venta no existe.")
             conn.execute(update(sales).where(mine, sales.c.status == "confirmed").values(status="cancelled", cancelled_at=datetime.now(timezone.utc)))
-            return _sale(conn.execute(select(sales).where(mine)).one())
+            return sale_of(conn.execute(select(sales).where(mine)).one())
 
     def sales(self, tenant_slug: str, *, since: date, limit: int = 500) -> list[Sale]:
         start, _end = bounds(since, since)
@@ -115,7 +152,7 @@ class CommerceStore:
             rows = conn.execute(
                 select(sales).where(sales.c.tenant_id == tenant.id, sales.c.created_at >= start).order_by(sales.c.created_at.desc()).limit(limit)
             ).all()
-        return [_sale(row) for row in rows]
+        return [sale_of(row) for row in rows]
 
     # ------------------------------------------------------------------ reportes
 

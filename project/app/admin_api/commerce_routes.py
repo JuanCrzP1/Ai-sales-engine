@@ -57,6 +57,9 @@ def customer_payload(item: Customer) -> dict[str, Any]:
         "conversation_id": item.conversation_id, "name": item.name, "contact": item.contact_ref, "channel": item.channel, "stage": item.stage,
         "first_contact_at": _iso(item.first_contact_at), "last_message_at": _iso(item.last_message_at), "message_count": item.message_count,
         "needs_human": item.needs_human, "purchases": item.purchases, "spent": _money(item.spent), "lost_reason": item.lost_reason,
+        "deal": {"amount": f"{item.deal_amount:.2f}", "currency": item.deal_currency} if item.deal_amount is not None else None,
+        "owner": {"user_id": item.owner_id, "label": item.owner_label} if item.owner_id else None,
+        "labels": [{"id": label.id, "name": label.name, "color": label.color} for label in item.labels],
     }
 
 
@@ -64,11 +67,14 @@ def pipeline_payload(pipeline: Pipeline) -> dict[str, Any]:
     stats = pipeline.stats
     return {
         "columns": [
-            {"stage": column.stage, "count": column.count, "customers": [customer_payload(item) for item in column.customers]}
+            {
+                "stage": column.stage, "count": column.count, "value": _money(column.value),
+                "customers": [customer_payload(item) for item in column.customers],
+            }
             for column in pipeline.columns
         ],
         "stats": {
-            "open_count": stats.open_count, "lost_count": stats.lost_count, "won_count": stats.won_count, "won": _money(stats.won),
+            "open_count": stats.open_count, "open_value": _money(stats.open_value), "lost_count": stats.lost_count, "won_count": stats.won_count, "won": _money(stats.won),
             "close_rate": stats.close_rate, "days_to_buy": stats.days_to_buy, "advance": stats.advance,
         },
     }
@@ -110,14 +116,19 @@ def _invalid(exc: SaleError) -> ApiError:
 def customers(
     slug: BusinessSlug, user: CurrentUser, commerce: Commerce,
     stage: Annotated[str | None, Query(max_length=20)] = None, q: Annotated[str | None, Query(max_length=80)] = None,
+    label: Annotated[str | None, Query(max_length=40)] = None,
 ) -> list[dict[str, Any]]:
-    return [customer_payload(item) for item in commerce.customers(user, slug, stage=stage, query=q)]
+    return [customer_payload(item) for item in commerce.customers(user, slug, stage=stage, query=q, label=label)]
 
 
 @router.get("/pipeline")
-def pipeline(slug: BusinessSlug, user: CurrentUser, commerce: Commerce, q: Annotated[str | None, Query(max_length=80)] = None) -> dict[str, Any]:
-    """El tablero de Clientes: una columna por etapa con sus tarjetas más recientes, y los números del embudo."""
-    return pipeline_payload(commerce.pipeline(user, slug, query=q))
+def pipeline(
+    slug: BusinessSlug, user: CurrentUser, commerce: Commerce, q: Annotated[str | None, Query(max_length=80)] = None,
+    label: Annotated[str | None, Query(max_length=40)] = None,
+) -> dict[str, Any]:
+    """El tablero de Clientes: una columna por etapa con sus tarjetas más recientes, y los números del embudo. Con `q` o `label`
+    (el id de una etiqueta), las columnas traen solo a quienes coinciden."""
+    return pipeline_payload(commerce.pipeline(user, slug, query=q, label=label))
 
 
 @router.post("/customers/{conversation_id}/stage")

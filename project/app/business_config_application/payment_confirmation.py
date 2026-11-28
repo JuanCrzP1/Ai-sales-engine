@@ -134,7 +134,7 @@ class PaymentConfirmationService:
                 logger.warning("pago_confirmado_no_enviado", extra={"tenant": business, "channel": target.channel})
                 raise ReplyNotSentError(f"{exc} El pago sigue por confirmar: inténtalo de nuevo.") from exc
             self._conversations.update_entry(saved.entry_id, status="sent", provider_message_id=provider_id)
-        self._conversations.finish_payment(conversation_id, claim)
+        self._conversations.finish_payment(conversation_id, claim, by=principal.label)
 
         warnings = []
         if self._memory is not None:

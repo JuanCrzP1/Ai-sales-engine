@@ -5,6 +5,21 @@ está en el historial de git y en `docs/plan-v1.md`.
 
 ## 28 de noviembre de 2026
 
+**Etiquetas para organizar a tus clientes**
+- Crea las etiquetas que quieras, con su color («Mayorista», «VIP», «Llamar el lunes»), y pónselas a cada cliente desde su ficha.
+- Se ven en la tarjeta del tablero, en la lista y en la ficha, y el tablero y la lista se filtran por una.
+- Con el botón **Etiquetas** las administras: ves cuántos clientes tiene cada una, les cambias el color o el nombre y las borras
+  (sus clientes solo la pierden). No se pueden repetir: «VIP» y «vip» son la misma.
+- Todo tu equipo las usa y las crea; renombrarlas y borrarlas es del dueño o de un administrador. Lo siguiente: recordatorios.
+
+**La ficha de cada cliente**
+- Toca a un cliente en el tablero o en la lista y se abre su ficha, con todo lo suyo en un solo lugar.
+- **Valor:** cuánto vale lo que podría comprar. Aparece en su tarjeta, suma en su columna y arriba ves cuánto tienes **por cerrar**.
+- **Responsable:** asignas el cliente a alguien de tu equipo; sus iniciales salen en la tarjeta.
+- **Notas:** lo que tu equipo quiera recordar de ese cliente. El cliente nunca las ve.
+- **Historial:** cada cambio de etapa, de valor y de responsable, con quién lo hizo: el asistente, alguien de tu equipo o una venta.
+- También están sus compras y el botón para pasarlo a la etapa siguiente. Lo siguiente: etiquetas.
+
 **Clientes ahora es un tablero, como el de un CRM**
 - Cada etapa es una columna y cada cliente una tarjeta. El asistente lo sigue avanzando solo; tú lo mueves cuando quieras:
   arrastrando la tarjeta o con «Mover a…» (también en el celular).

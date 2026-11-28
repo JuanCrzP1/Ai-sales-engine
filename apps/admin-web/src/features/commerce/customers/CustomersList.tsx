@@ -8,6 +8,7 @@ import { relativeTime } from "../../../domain/inbox/format";
 import { CHANNEL_LABELS, type Channel } from "../../../domain/inbox/types";
 import { ContactAvatar } from "../../../layout/ContactAvatar";
 import { useCommerceData } from "../../../state/useCommerceData";
+import { LabelChip } from "./labels/LabelChip";
 import { MoveMenu } from "./MoveMenu";
 
 /**
@@ -18,8 +19,10 @@ export function CustomersList({
   version,
   query,
   stage,
+  labelId,
   busyId,
   chatPath,
+  onOpen,
   onStage,
   onMove,
   onSell,
@@ -28,15 +31,19 @@ export function CustomersList({
   version: number;
   query: string;
   stage: BoardStage | null;
+  /** Solo quienes llevan esa etiqueta. */
+  labelId: string | null;
   busyId: string | null;
   chatPath: (customer: Customer) => string;
+  onOpen: (customer: Customer) => void;
   onStage: (stage: BoardStage | null) => void;
   onMove: (customer: Customer, stage: BoardStage) => void;
   onSell: (customer: Customer) => void;
   onDelete: (customer: Customer) => void;
 }) {
   const { state, reload } = useCommerceData((commerce) => commerce.customers(), [version]);
-  const all = state.status === "ready" ? state.data : [];
+  const loaded = state.status === "ready" ? state.data : [];
+  const all = labelId ? loaded.filter((customer) => customer.labels.some((label) => label.id === labelId)) : loaded;
   const counts = useMemo(() => Object.fromEntries(BOARD_STAGES.map((item) => [item, all.filter((customer) => customer.stage === item).length])) as Record<BoardStage, number>, [all]);
   const text = query.trim().toLowerCase();
   const shown = all.filter((customer) => (!stage || customer.stage === stage) && (!text || `${customer.name ?? ""} ${customer.contact}`.toLowerCase().includes(text)));
@@ -97,8 +104,17 @@ export function CustomersList({
                       <span className="person">
                         <ContactAvatar name={name} channel={customer.channel as Channel} size="sm" />
                         <span className="person__text">
-                          <strong>{name}</strong>
+                          <button type="button" className="person__open" onClick={() => onOpen(customer)} aria-label={`Abrir la ficha de ${name}`}>
+                            {name}
+                          </button>
                           <span>+{customer.contact}</span>
+                          {customer.labels.length > 0 && (
+                            <span className="label-row">
+                              {customer.labels.map((label) => (
+                                <LabelChip key={label.id} label={label} />
+                              ))}
+                            </span>
+                          )}
                         </span>
                       </span>
                     </td>

@@ -369,6 +369,10 @@ tiene pantallas y su raíz redirige a `PANEL_URL`, o al panel publicado si no es
   se registran desde el panel y los reportes cuentan por día en la hora de Colombia.
 - El tablero de Clientes (migración 0025): una columna por etapa; el equipo mueve a cada cliente a mano y lo saca del embudo como
   «no compró» con su motivo. A «cliente» solo se llega registrando la venta.
+- La ficha del cliente (migración 0026): su valor, su responsable (alguien del equipo), las notas del equipo y el historial de cada
+  cambio de etapa, de valor y de responsable.
+- Las etiquetas de los clientes (migración 0027): un catálogo por negocio, sin dos que se lean igual; cada cliente lleva las que
+  quiera, y el tablero y la lista se filtran por una.
 - Canales: WhatsApp por código QR con uazapi. El negocio toca «Conectar WhatsApp» y escanea el QR; el servidor, los tokens y el
   webhook los pone la plataforma. La API oficial de Meta, Telegram y el chat web aparecen como «Próximamente».
 - En la nube no se importan los negocios de ejemplo ni se eliminan negocios. El dominio del panel debe estar en Neon Auth →

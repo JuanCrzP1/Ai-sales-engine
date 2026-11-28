@@ -1,4 +1,5 @@
 /** Clientes, ventas y reportes de un negocio. Los valores de dinero llegan como texto con dos decimales. */
+import type { LabelRef } from "./labels";
 
 /** Una etapa del embudo. El asistente solo la avanza; el equipo puede mover al cliente a cualquiera desde el tablero. */
 export type Stage = "new" | "interested" | "ready" | "payment" | "customer";
@@ -40,6 +41,18 @@ export interface Customer {
   spent: Record<string, string>;
   /** Por qué no compró, mientras esté en «No compró». */
   lostReason: string | null;
+  /** Cuánto vale lo que podría comprar (lo pone el equipo en su ficha). */
+  deal: Money | null;
+  /** Quién del equipo lo atiende. */
+  owner: { userId: string; label: string } | null;
+  /** Sus etiquetas, por nombre. */
+  labels: LabelRef[];
+}
+
+/** Un monto con su moneda. El monto llega como texto con dos decimales. */
+export interface Money {
+  amount: string;
+  currency: string;
 }
 
 export interface Sale {
@@ -95,6 +108,8 @@ export interface Report {
 
 export interface CustomerFilter {
   stage?: BoardStage;
+  /** El id de una etiqueta: solo quienes la llevan. */
+  label?: string;
   query?: string;
 }
 

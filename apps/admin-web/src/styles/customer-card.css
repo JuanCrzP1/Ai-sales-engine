@@ -1,0 +1,397 @@
+/* ================================================================
+   La ficha de un cliente: un panel que entra por la derecha con su etapa, su valor y responsable, las notas del equipo, sus compras
+   y su historial. Va por debajo de los diálogos (80), que se abren encima de ella, y por encima de todo lo demás.
+   ================================================================ */
+
+.customer-drawer__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 75;
+  background: rgba(11, 16, 32, 0.36);
+  animation: help-fade 0.2s var(--ease-out) both;
+}
+
+.customer-drawer {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(480px, 100vw);
+  display: flex;
+  flex-direction: column;
+  background: var(--color-bg);
+  color: var(--color-text);
+  box-shadow: -24px 0 48px -24px rgba(15, 23, 42, 0.4);
+  animation: help-slide 0.25s var(--ease-out) both;
+}
+
+.customer-drawer:focus {
+  outline: none;
+}
+
+.customer-drawer__head {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: calc(env(safe-area-inset-top) + var(--space-4)) var(--space-5) var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.customer-drawer__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.customer-drawer__kicker {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-accent);
+}
+
+.customer-drawer__close {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--color-surface-muted);
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
+.customer-drawer__close:hover {
+  color: var(--color-text);
+}
+
+.customer-drawer__close:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.customer-drawer__who {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.customer-drawer__identity {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.customer-drawer__identity h2 {
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 20px;
+  font-weight: 750;
+  letter-spacing: -0.02em;
+}
+
+.customer-drawer__identity span {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+.customer-drawer__body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-4) calc(env(safe-area-inset-bottom) + var(--space-6));
+  overflow-y: auto;
+}
+
+/* ---------------------------------------------------------------- una sección de la ficha */
+.card-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  background: var(--color-surface);
+}
+
+.card-section__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.card-section__head h3 {
+  margin: 0;
+  font-size: var(--text-sm);
+  font-weight: 700;
+}
+
+.card-section__aside,
+.card-section__empty {
+  margin: 0;
+  font-size: var(--text-xs);
+  color: var(--color-text-subtle);
+}
+
+/* Los enlaces de una sección («Cambiar», «Listo», «Administrar etiquetas») van del tamaño del texto, a la izquierda. */
+.card-section .link-button {
+  align-self: flex-start;
+  font-size: var(--text-sm);
+}
+
+.card-section__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* ---------------------------------------------------------------- la barra del embudo */
+.stage-bar {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.stage-bar__step {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.stage-bar__line {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--color-border);
+}
+
+.stage-bar__step--done .stage-bar__line {
+  background: var(--stage);
+}
+
+.stage-bar__name {
+  font-size: 10.5px;
+  line-height: 1.25;
+  color: var(--color-text-subtle);
+}
+
+.stage-bar__step--current .stage-bar__name {
+  font-weight: 700;
+  color: var(--stage);
+}
+
+.stage-lost {
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: var(--stage-soft);
+  color: var(--stage);
+  font-size: var(--text-sm);
+}
+
+/* ---------------------------------------------------------------- valor y responsable */
+.deal-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+.deal-box {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-width: 0;
+}
+
+.deal-box > .field {
+  width: 100%;
+}
+
+.deal-box__label {
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.deal-box__value {
+  font-size: 22px;
+  font-weight: 750;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+}
+
+.deal-box__value--empty {
+  font-size: var(--text-md);
+  font-weight: 500;
+  color: var(--color-text-subtle);
+}
+
+.deal-box__hint {
+  font-size: var(--text-xs);
+  color: var(--color-text-subtle);
+}
+
+.deal-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  width: 100%;
+}
+
+/* ---------------------------------------------------------------- notas */
+.note-form {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+}
+
+.note-form > .field {
+  width: 100%;
+}
+
+.note-list,
+.purchase-list,
+.history {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.note {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #fffbea;
+  border: 1px solid #f3e7b3;
+}
+
+.note__body {
+  margin: 0;
+  font-size: var(--text-sm);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.note__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+.link-button--danger {
+  color: var(--color-danger);
+}
+
+/* ---------------------------------------------------------------- compras */
+.purchase {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: 8px 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.purchase:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.purchase__what {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  font-size: var(--text-sm);
+}
+
+.purchase__what span {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+.purchase__money {
+  flex-shrink: 0;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-success);
+}
+
+.purchase--cancelled .purchase__money,
+.purchase--cancelled strong {
+  color: var(--color-text-subtle);
+  text-decoration: line-through;
+}
+
+/* ---------------------------------------------------------------- historial */
+.history__item {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+/* El color del punto: el de la etapa a la que llegó, o uno propio para los cambios de valor y de responsable. */
+.history__item--value { --stage: #0d9488; }
+.history__item--owner { --stage: #4f46e5; }
+
+.history__dot {
+  width: 9px;
+  height: 9px;
+  margin-top: 5px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--stage);
+}
+
+.history__text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  font-size: var(--text-sm);
+  overflow-wrap: anywhere;
+}
+
+.history__text span {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+@media (max-width: 640px) {
+  .customer-drawer__head {
+    padding-inline: var(--space-4);
+  }
+
+  .customer-drawer__body {
+    padding-inline: var(--space-3);
+  }
+
+  .deal-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .stage-bar__name {
+    font-size: 10px;
+  }
+}

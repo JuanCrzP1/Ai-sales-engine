@@ -2,7 +2,7 @@
 title: Registra, verifica y anula ventas
 module: clientes-y-ventas
 summary: Registrar lo que compró un cliente, revisar los pagos por verificar y anular una venta.
-order: 2
+order: 3
 updated: 2026-11-27
 keywords: ventas, registrar venta, pagos por verificar, confirmar pago, pago confirmado, comprobante, anular, ingresos
 related: etapas-de-clientes, reportes, pagos-y-cierre

@@ -14,6 +14,7 @@ from sqlalchemy import func, select, update
 from sqlalchemy.engine import Connection, Engine
 
 from app.domain.business_config.commerce import ALL_STAGES, LOST, Customer
+from app.domain.business_config.customer_card import SOURCE_TEAM
 from app.domain.business_config.errors import ConversationNotFoundError
 from app.domain.business_config.pipeline import (
     CARDS_PER_STAGE,
@@ -28,28 +29,37 @@ from app.domain.business_config.pipeline import (
     close_rate,
 )
 from app.infrastructure.business_config.commerce_queries import TEST_CHANNEL, bounds, customers_of, real_customers, utc
+from app.infrastructure.business_config.customer_events import record_stage_change
 from app.infrastructure.business_config.tables import conversations, sales
 from app.infrastructure.business_config.tenancy import tenant_of
 
 
-def read_pipeline(engine: Engine, tenant_slug: str, *, query: str | None, today: date) -> Pipeline:
-    """Las columnas (con `query`, solo quienes coinciden) y los números del embudo, que cuentan a todos."""
+def read_pipeline(engine: Engine, tenant_slug: str, *, query: str | None, label: str | None = None, today: date) -> Pipeline:
+    """Las columnas (con `query` o `label`, solo quienes coinciden) y los números del embudo, que cuentan a todos."""
     with engine.connect() as conn:
         tenant = tenant_of(conn, tenant_slug)
-        shown = _counts(conn, real_customers(tenant.id, query))
+        shown = _counts(conn, real_customers(tenant.id, query, label))
+        values = _values(conn, real_customers(tenant.id, query, label))
         columns = []
         for stage in ALL_STAGES:
             rows = conn.execute(
                 select(conversations)
-                .where(*real_customers(tenant.id, query), conversations.c.stage == stage)
+                .where(*real_customers(tenant.id, query, label), conversations.c.stage == stage)
                 .order_by(conversations.c.last_message_at.desc())
                 .limit(CARDS_PER_STAGE)
             ).all() if shown.get(stage) else []
-            columns.append(StageColumn(stage, shown.get(stage, 0), customers_of(conn, rows)))
-        everyone = _counts(conn, real_customers(tenant.id)) if query and str(query).strip() else shown
+            columns.append(StageColumn(stage, shown.get(stage, 0), customers_of(conn, rows), value=values.get(stage, {})))
+        searching = bool(query and str(query).strip()) or bool(label)
+        everyone = _counts(conn, real_customers(tenant.id)) if searching else shown
+        all_values = _values(conn, real_customers(tenant.id)) if searching else values
+        open_value: dict[str, Decimal] = {}
+        for stage in OPEN_STAGES:
+            for currency, amount in all_values.get(stage, {}).items():
+                open_value[currency] = open_value.get(currency, Decimal(0)) + amount
         won_count, won = _won(conn, tenant.id, today)
         stats = PipelineStats(
             open_count=sum(everyone.get(stage, 0) for stage in OPEN_STAGES),
+            open_value=open_value,
             lost_count=everyone.get(LOST, 0),
             won_count=won_count,
             won=won,
@@ -63,6 +73,19 @@ def read_pipeline(engine: Engine, tenant_slug: str, *, query: str | None, today:
 def _counts(conn: Connection, where: list[Any]) -> dict[str, int]:
     rows = conn.execute(select(conversations.c.stage, func.count().label("n")).where(*where).group_by(conversations.c.stage))
     return {(row.stage or "new"): int(row.n) for row in rows}
+
+
+def _values(conn: Connection, where: list[Any]) -> dict[str, dict[str, Decimal]]:
+    """Lo que suman los valores de los clientes de cada etapa, por moneda."""
+    rows = conn.execute(
+        select(conversations.c.stage, conversations.c.deal_currency, func.sum(conversations.c.deal_amount).label("total"))
+        .where(*where, conversations.c.deal_amount.is_not(None), conversations.c.deal_currency.is_not(None))
+        .group_by(conversations.c.stage, conversations.c.deal_currency)
+    )
+    totals: dict[str, dict[str, Decimal]] = {}
+    for row in rows:
+        totals.setdefault(row.stage or "new", {})[row.deal_currency] = Decimal(row.total)
+    return totals
 
 
 def _won(conn: Connection, tenant_id: Any, today: date) -> tuple[int, dict[str, Decimal]]:
@@ -94,8 +117,9 @@ def _days_to_buy(conn: Connection, tenant_id: Any, today: date) -> float | None:
     return round(sum(spans) / len(spans), 1) if spans else None
 
 
-def move_customer(engine: Engine, tenant_slug: str, conversation_id: str, move: StageMove) -> Customer:
-    """El equipo pasa al cliente a otra etapa. En «no compró» quedan el motivo y la fecha; al salir de ahí, se borran."""
+def move_customer(engine: Engine, tenant_slug: str, conversation_id: str, move: StageMove, *, by: str | None = None) -> Customer:
+    """El equipo pasa al cliente a otra etapa. En «no compró» quedan el motivo y la fecha; al salir de ahí, se borran. El cambio
+    queda en el historial de su ficha, a nombre de `by`."""
     try:
         key = uuid.UUID(str(conversation_id))
     except ValueError as exc:
@@ -104,13 +128,16 @@ def move_customer(engine: Engine, tenant_slug: str, conversation_id: str, move: 
     with engine.begin() as conn:
         tenant = tenant_of(conn, tenant_slug)
         mine = [conversations.c.id == key, *real_customers(tenant.id)]
-        if conn.execute(select(conversations.c.id).where(*mine)).first() is None:
+        before = conn.execute(select(conversations.c.stage).where(*mine)).first()
+        if before is None:
             raise ConversationNotFoundError("ese cliente no existe o es de otro negocio")
         lost = move.stage == LOST
-        conn.execute(
-            update(conversations)
-            .where(*mine)
-            .values(stage=move.stage, lost_reason=move.lost_reason if lost else None, lost_at=now if lost else None, updated_at=now)
-        )
+        changes: dict[str, Any] = {"stage": move.stage, "lost_reason": move.lost_reason if lost else None, "lost_at": now if lost else None, "updated_at": now}
+        if record_stage_change(
+            conn, tenant_id=tenant.id, conversation_id=key, from_stage=before.stage, to_stage=move.stage, source=SOURCE_TEAM,
+            detail=move.lost_reason, actor=by, at=now,
+        ):
+            changes["stage_changed_at"] = now
+        conn.execute(update(conversations).where(*mine).values(**changes))
         row = conn.execute(select(conversations).where(*mine)).one()
         return customers_of(conn, [row])[0]

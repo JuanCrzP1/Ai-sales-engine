@@ -229,7 +229,8 @@ def test_an_empty_board_has_its_columns_and_no_numbers(platform):
     _engine, _store, client = platform
     board = client.get(BOARD, headers=_as("ana")).json()
     assert [column["count"] for column in board["columns"]] == [0] * 6 and all(column["customers"] == [] for column in board["columns"])
+    assert all(column["value"] == {} for column in board["columns"])
     assert board["stats"] == {
-        "open_count": 0, "lost_count": 0, "won_count": 0, "won": {}, "close_rate": None, "days_to_buy": None,
+        "open_count": 0, "open_value": {}, "lost_count": 0, "won_count": 0, "won": {}, "close_rate": None, "days_to_buy": None,
         "advance": {"new": None, "interested": None, "ready": None, "payment": None},
     }

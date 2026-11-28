@@ -92,6 +92,10 @@ _ADDED_COLUMNS = {
         "follow_up_stopped_by": "TEXT",
         "lost_reason": "TEXT",
         "lost_at": "DATETIME",
+        "deal_amount": "NUMERIC(14, 2)",
+        "deal_currency": "TEXT",
+        "owner_id": "TEXT",
+        "stage_changed_at": "DATETIME",
     },
     "business_members": {
         "email": "TEXT",

@@ -58,12 +58,15 @@ class StageColumn:
     count: int
     # Las tarjetas más recientes de la etapa (hasta `CARDS_PER_STAGE`); `count` dice cuántos hay en total.
     customers: list[Customer] = field(default_factory=list)
+    # Lo que suman los valores de todos los clientes de la etapa, por moneda.
+    value: dict[str, Decimal] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
 class PipelineStats:
-    # Clientes que siguen en el embudo sin comprar.
+    # Clientes que siguen en el embudo sin comprar, y lo que suman sus valores por moneda («por cerrar»).
     open_count: int = 0
+    open_value: dict[str, Decimal] = field(default_factory=dict)
     lost_count: int = 0
     # Lo vendido en los últimos `WON_DAYS` días, por moneda (nunca se mezclan).
     won_count: int = 0

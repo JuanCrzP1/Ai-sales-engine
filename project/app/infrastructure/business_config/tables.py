@@ -171,6 +171,12 @@ conversations = Table(
     # Migración 0025: el equipo lo sacó del embudo como «no compró» (etapa `lost`): por qué y cuándo. Solo valen mientras siga ahí.
     Column("lost_reason", Text),
     Column("lost_at", DateTime(timezone=True)),
+    # Migración 0026: la ficha del cliente. Cuánto vale lo que podría comprar, quién del equipo lo atiende (su `user_id`) y desde
+    # cuándo está en su etapa.
+    Column("deal_amount", Numeric(14, 2)),
+    Column("deal_currency", Text),
+    Column("owner_id", Text),
+    Column("stage_changed_at", DateTime(timezone=True)),
     CheckConstraint("channel IN ('whatsapp', 'instagram', 'telegram', 'web', 'api', 'prueba')", name="conversations_channel_check"),
     CheckConstraint(
         "follow_up_stopped_by IS NULL OR follow_up_stopped_by IN ('team', 'customer')", name="conversations_follow_up_stopped_by_check"
@@ -266,6 +272,63 @@ sales = Table(
     Column("cancelled_at", DateTime(timezone=True)),
     CheckConstraint("status IN ('confirmed', 'cancelled')", name="sales_status_check"),
     Index("sales_tenant_recent_idx", "tenant_id", "created_at"),
+)
+
+# El historial de la ficha de cada cliente (migración 0026): cada cambio de etapa, de valor y de responsable, con quién lo hizo.
+customer_events = Table(
+    "customer_events",
+    metadata,
+    Column("id", Uuid, primary_key=True, default=uuid.uuid4),
+    Column("tenant_id", Uuid, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False),
+    Column("conversation_id", Uuid, ForeignKey("conversations.id", ondelete="CASCADE"), nullable=False),
+    Column("kind", Text, nullable=False),
+    Column("source", Text, nullable=False),
+    Column("from_stage", Text),
+    Column("to_stage", Text),
+    Column("detail", Text),
+    Column("actor", Text),
+    Column("created_at", DateTime(timezone=True), nullable=False, default=_now),
+    CheckConstraint("kind IN ('stage', 'value', 'owner')", name="customer_events_kind_check"),
+    CheckConstraint("source IN ('assistant', 'team', 'sale')", name="customer_events_source_check"),
+    Index("customer_events_conversation_idx", "conversation_id", "created_at"),
+)
+
+# Las notas del equipo sobre cada cliente (migración 0026). El cliente nunca las ve.
+customer_notes = Table(
+    "customer_notes",
+    metadata,
+    Column("id", Uuid, primary_key=True, default=uuid.uuid4),
+    Column("tenant_id", Uuid, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False),
+    Column("conversation_id", Uuid, ForeignKey("conversations.id", ondelete="CASCADE"), nullable=False),
+    Column("body", Text, nullable=False),
+    Column("author", Text),
+    Column("created_at", DateTime(timezone=True), nullable=False, default=_now),
+    Index("customer_notes_conversation_idx", "conversation_id", "created_at"),
+)
+
+# Las etiquetas de los clientes (migración 0027): el catálogo de cada negocio y cuáles lleva cada cliente. `name_key` es cómo se lee
+# el nombre (sin mayúsculas ni acentos): no hay dos etiquetas con la misma en un negocio.
+customer_labels = Table(
+    "customer_labels",
+    metadata,
+    Column("id", Uuid, primary_key=True, default=uuid.uuid4),
+    Column("tenant_id", Uuid, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False),
+    Column("name", Text, nullable=False),
+    Column("name_key", Text, nullable=False),
+    Column("color", Text, nullable=False, default="slate"),
+    Column("created_by", Text),
+    Column("created_at", DateTime(timezone=True), nullable=False, default=_now),
+    UniqueConstraint("tenant_id", "name_key", name="customer_labels_name_key"),
+)
+
+conversation_labels = Table(
+    "conversation_labels",
+    metadata,
+    Column("conversation_id", Uuid, ForeignKey("conversations.id", ondelete="CASCADE"), primary_key=True),
+    Column("label_id", Uuid, ForeignKey("customer_labels.id", ondelete="CASCADE"), primary_key=True),
+    Column("tenant_id", Uuid, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False),
+    Column("created_at", DateTime(timezone=True), nullable=False, default=_now),
+    Index("conversation_labels_label_idx", "label_id"),
 )
 
 # Avisos para el equipo de cada negocio (migración 0005). Cada persona marca como leídos los suyos en `notification_reads`.

@@ -48,7 +48,9 @@ from app.domain.business_config.conversations import (
     preview,
 )
 from app.domain.business_config.commerce import LOST, advanced, stage_for_intent
+from app.domain.business_config.customer_card import SOURCE_ASSISTANT, SOURCE_TEAM
 from app.domain.business_config.errors import ConversationNotFoundError
+from app.infrastructure.business_config.customer_events import record_stage_change
 from app.infrastructure.business_config.tables import conversation_entries, conversation_media, conversations, notifications, tenants
 from app.infrastructure.business_config.tenancy import tenant_of
 
@@ -332,10 +334,15 @@ class ConversationStore:
         # Lo que reconoció el asistente hace avanzar la etapa del cliente (nunca retrocede).
         reached = [stage for message in added if message.author == "assistant" for stage in [stage_for_intent(message.intent)] if stage]
         if reached:
-            current = conn.execute(select(conversations.c.stage).where(conversations.c.id == conversation_id)).scalar_one()
+            before = conn.execute(select(conversations.c.stage, conversations.c.tenant_id).where(conversations.c.id == conversation_id)).one()
+            current = before.stage
             for stage in reached:
                 current = advanced(current, stage) or current
-            changes["stage"] = current
+            if record_stage_change(
+                conn, tenant_id=before.tenant_id, conversation_id=conversation_id, from_stage=before.stage, to_stage=current,
+                source=SOURCE_ASSISTANT, at=now,
+            ):
+                changes.update(stage=current, stage_changed_at=now)
         conn.execute(update(conversations).where(conversations.c.id == conversation_id).values(**changes))
 
     def update_entry(
@@ -479,7 +486,11 @@ class ConversationStore:
             if row.customer_waiting_since is None:
                 changes["customer_waiting_since"] = now
         if reason == "payment_review" and advanced(row.stage, "payment"):
-            changes["stage"] = "payment"
+            changes.update(stage="payment", stage_changed_at=now)
+            record_stage_change(
+                conn, tenant_id=row.tenant_id, conversation_id=conversation_id, from_stage=row.stage, to_stage="payment",
+                source=SOURCE_ASSISTANT, detail="Avisó un pago", at=now,
+            )
         notification_id = None
         if not row.needs_human:
             changes.update(needs_human=True, handoff_requested_at=now)
@@ -558,9 +569,18 @@ class ConversationStore:
             values["handoff_reason"] = "payment_review"
         self._update(conversation_id, **values)
 
-    def finish_payment(self, conversation_id: str, claim: PaymentClaim) -> None:
+    def finish_payment(self, conversation_id: str, claim: PaymentClaim, *, by: str | None = None) -> None:
         """El cliente ya recibió la confirmación. Si esperaba a una persona solo por el pago, ya nadie tiene que atenderlo y la IA
-        vuelve a atender el chat (sabe que el pago quedó confirmado). Si esperaba por otra cosa, esa espera sigue igual."""
+        vuelve a atender el chat (sabe que el pago quedó confirmado). Si esperaba por otra cosa, esa espera sigue igual. El paso a
+        «cliente» queda en el historial de su ficha, a nombre de `by` (quien lo confirmó)."""
+        key, now = self._key(conversation_id), _now()
+        with self._engine.begin() as conn:
+            tenant_id = conn.execute(select(conversations.c.tenant_id).where(conversations.c.id == key)).scalar_one_or_none()
+            if tenant_id is not None and record_stage_change(
+                conn, tenant_id=tenant_id, conversation_id=key, from_stage=claim.stage, to_stage="customer", source=SOURCE_TEAM,
+                detail="Pago confirmado", actor=by, at=now,
+            ):
+                conn.execute(update(conversations).where(conversations.c.id == key).values(stage_changed_at=now))
         if claim.waited_for_payment:
             self._update(
                 conversation_id, needs_human=False, handoff_summary=None, customer_waiting_since=None, ai_paused=False, ai_resumed_at=None,

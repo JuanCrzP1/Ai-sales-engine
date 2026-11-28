@@ -3,17 +3,19 @@ import { daysText, moneyTotals, percent, type PipelineStats as Stats } from "../
 const plural = (count: number, one: string, many: string) => `${count} ${count === 1 ? one : many}`;
 
 /**
- * Los números del embudo, dichos como los diría el dueño: cuántos siguen abiertos, cuánto se vendió, de cada 100 cuántos compran y
- * cuánto tardan. Con varias monedas, la principal va en grande y las demás debajo: nunca se suman entre sí.
+ * Los números del embudo, dichos como los diría el dueño: cuánto falta por cerrar (lo que suman los valores de quienes aún no
+ * compran), cuánto se vendió, de cada 100 cuántos compran y cuánto tardan. Con varias monedas, la principal va en grande y las demás
+ * debajo: nunca se suman entre sí.
  */
 export function PipelineStats({ stats }: { stats: Stats | null }) {
   const won = stats ? moneyTotals(stats.won) : { main: null, rest: [] };
+  const open = stats ? moneyTotals(stats.openValue) : { main: null, rest: [] };
   const rate = stats ? percent(stats.closeRate) : null;
   const cards: { label: string; value: string; meta: string; tone?: "won" }[] = [
     {
-      label: "En el embudo",
-      value: stats ? String(stats.openCount) : "—",
-      meta: stats ? (stats.openCount === 1 ? "cliente que aún no compra" : "clientes que aún no compran") : "",
+      label: "Por cerrar",
+      value: open.main ?? (stats && stats.openCount > 0 ? "Sin valor" : "—"),
+      meta: stats ? [plural(stats.openCount, "cliente que aún no compra", "clientes que aún no compran"), ...open.rest.map((money) => `+ ${money}`)].join(" · ") : "",
     },
     {
       label: "Vendido · 30 días",

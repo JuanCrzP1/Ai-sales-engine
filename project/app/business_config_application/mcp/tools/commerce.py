@@ -48,6 +48,7 @@ def _customer(item: Customer) -> dict[str, Any]:
         "purchases": item.purchases,
         "spent": _money(item.spent),
         "lost_reason": item.lost_reason,
+        "labels": [label.name for label in item.labels],
     }
 
 

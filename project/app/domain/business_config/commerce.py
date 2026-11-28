@@ -16,6 +16,8 @@ from dataclasses import dataclass, field
 from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
 
+from app.domain.business_config.customer_labels import LabelRef
+
 STAGES = ("new", "interested", "ready", "payment", "customer")
 # Fuera del embudo: el equipo lo marcó como «no compró». No es una etapa a la que se llega avanzando.
 LOST = "lost"
@@ -69,6 +71,13 @@ class Customer:
     spent: dict[str, Decimal] = field(default_factory=dict)
     # Por qué no compró, mientras esté en «no compró».
     lost_reason: str | None = None
+    # La ficha (`customer_card.py`): cuánto vale lo que podría comprar y quién del equipo lo atiende.
+    deal_amount: Decimal | None = None
+    deal_currency: str | None = None
+    owner_id: str | None = None
+    owner_label: str | None = None
+    # Sus etiquetas (`customer_labels.py`), por nombre.
+    labels: tuple[LabelRef, ...] = ()
 
 
 @dataclass(frozen=True)

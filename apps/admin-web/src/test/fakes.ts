@@ -17,6 +17,8 @@ import type { AuthService } from "../repositories/authService";
 import type { BusinessDirectory } from "../repositories/businessDirectory";
 import type { Channels, TelegramChannel, WhatsAppChannel } from "../repositories/channels";
 import type { Commerce } from "../repositories/commerce";
+import type { Assignee, CustomerCard, CustomerEvent, CustomerNote } from "../domain/commerce/customerCard";
+import { labelKey, type Label } from "../domain/commerce/labels";
 import type { Pipeline } from "../domain/commerce/pipeline";
 import { BOARD_STAGES, STAGES, type BoardStage, type Customer, type Report, type Sale } from "../domain/commerce/types";
 import type { ConfigRepository, StoredConfig } from "../repositories/configRepository";
@@ -473,27 +475,71 @@ export function emptyReport(days = 30): Report {
 
 /** Clientes, ventas y reportes en memoria: registrar una venta convierte al cliente, como el servidor. */
 export function createMemoryCommerce(
-  seed: { customers?: Customer[]; sales?: Sale[]; report?: Report; cardsPerStage?: number } = {},
-): Commerce & { customerList: Customer[]; saleList: Sale[]; reportDays: number[]; moves: { conversationId: string; stage: BoardStage; reason: string | null }[] } {
+  seed: { customers?: Customer[]; sales?: Sale[]; report?: Report; cardsPerStage?: number; assignees?: Assignee[]; labels?: Label[] } = {},
+): Commerce & {
+  customerList: Customer[];
+  saleList: Sale[];
+  reportDays: number[];
+  moves: { conversationId: string; stage: BoardStage; reason: string | null }[];
+  noteList: (CustomerNote & { conversationId: string })[];
+  labelList: Label[];
+} {
   const customerList = (seed.customers ?? []).map((item) => ({ ...item }));
   const saleList = (seed.sales ?? []).map((item) => ({ ...item }));
   const reportDays: number[] = [];
   const moves: { conversationId: string; stage: BoardStage; reason: string | null }[] = [];
-  const matching = (query = "") => {
+  const assignees = seed.assignees ?? [];
+  const labelList = (seed.labels ?? []).map((item) => ({ ...item }));
+  const repeated = (name: string, exceptId?: string) => labelList.some((item) => item.id !== exceptId && labelKey(item.name) === labelKey(name));
+  const nameTaken = () => new PersistenceError("invalid", { message: "Ya tienes una etiqueta con ese nombre.", problems: [{ path: "name", message: "Ya tienes una etiqueta con ese nombre." }] });
+  const counted = (label: Label): Label => ({ ...label, customers: customerList.filter((item) => item.labels.some((own) => own.id === label.id)).length });
+  const byName = (a: { name: string }, b: { name: string }) => labelKey(a.name).localeCompare(labelKey(b.name));
+  const noteList: (CustomerNote & { conversationId: string })[] = [];
+  const eventList: (CustomerEvent & { conversationId: string })[] = [];
+  const log = (conversationId: string, event: Partial<CustomerEvent>) =>
+    eventList.unshift({ id: `evento-${eventList.length + 1}`, kind: "stage", source: "team", fromStage: null, toStage: null, detail: null, actor: "operador@ejemplo.com", createdAt: new Date().toISOString(), conversationId, ...event });
+  const found = (conversationId: string) => {
+    const customer = customerList.find((item) => item.conversationId === conversationId);
+    if (!customer) throw new PersistenceError("not_found", { message: "Ese cliente no existe." });
+    return customer;
+  };
+  const cardOf = (conversationId: string): CustomerCard => {
+    const customer = found(conversationId);
+    const events = eventList.filter((item) => item.conversationId === conversationId);
+    return {
+      customer: { ...customer },
+      stageSince: events.find((item) => item.kind === "stage")?.createdAt ?? null,
+      owner: assignees.find((member) => member.userId === customer.owner?.userId) ?? null,
+      assignees: assignees.map((member) => ({ ...member })),
+      purchases: saleList.filter((sale) => sale.conversationId === conversationId).map((sale) => ({ ...sale })),
+      notes: noteList.filter((note) => note.conversationId === conversationId).map(({ conversationId: _id, ...note }) => note),
+      events: events.map(({ conversationId: _id, ...event }) => event),
+    };
+  };
+  const sumOf = (customers: Customer[]) => {
+    const totals: Record<string, string> = {};
+    for (const item of customers) if (item.deal) totals[item.deal.currency] = (Number(totals[item.deal.currency] ?? 0) + Number(item.deal.amount)).toFixed(2);
+    return totals;
+  };
+  const matching = (query = "", labelId?: string | null) => {
     const text = query.trim().toLowerCase();
-    return customerList.filter((item) => !text || `${item.name ?? ""} ${item.contact}`.toLowerCase().includes(text));
+    return customerList.filter(
+      (item) => (!text || `${item.name ?? ""} ${item.contact}`.toLowerCase().includes(text)) && (!labelId || item.labels.some((label) => label.id === labelId)),
+    );
   };
   return {
     customerList,
     saleList,
     reportDays,
     moves,
+    noteList,
+    labelList,
     customers: async (filter = {}) =>
-      matching(filter.query)
+      matching(filter.query, filter.label)
         .filter((item) => !filter.stage || item.stage === filter.stage)
         .map((item) => ({ ...item })),
     // El tablero, como el servidor: las columnas con `query`, y los números contando a todos.
-    pipeline: async (query = ""): Promise<Pipeline> => {
+    pipeline: async (query = "", labelId = null): Promise<Pipeline> => {
       const count = (stage: BoardStage) => customerList.filter((item) => item.stage === stage).length;
       const reached = STAGES.map((_, index) => STAGES.slice(index).reduce((sum, stage) => sum + count(stage), 0));
       const confirmed = saleList.filter((sale) => sale.status === "confirmed");
@@ -501,11 +547,12 @@ export function createMemoryCommerce(
       for (const sale of confirmed) won[sale.currency] = (Number(won[sale.currency] ?? 0) + Number(sale.amount)).toFixed(2);
       return {
         columns: BOARD_STAGES.map((stage) => {
-          const inStage = matching(query).filter((item) => item.stage === stage);
-          return { stage, count: inStage.length, customers: inStage.slice(0, seed.cardsPerStage ?? 30).map((item) => ({ ...item })) };
+          const inStage = matching(query, labelId).filter((item) => item.stage === stage);
+          return { stage, count: inStage.length, value: sumOf(inStage), customers: inStage.slice(0, seed.cardsPerStage ?? 30).map((item) => ({ ...item })) };
         }),
         stats: {
           openCount: customerList.filter((item) => item.stage !== "customer" && item.stage !== "lost").length,
+          openValue: sumOf(customerList.filter((item) => item.stage !== "customer" && item.stage !== "lost")),
           lostCount: count("lost"),
           wonCount: confirmed.length,
           won,
@@ -516,12 +563,68 @@ export function createMemoryCommerce(
       };
     },
     moveCustomer: async (conversationId, stage, reason) => {
-      const customer = customerList.find((item) => item.conversationId === conversationId);
-      if (!customer) throw new PersistenceError("not_found", { message: "Ese cliente no existe." });
+      const customer = found(conversationId);
       if (stage === "customer") throw new PersistenceError("invalid", { message: "Para pasarlo a «Cliente», registra su venta.", problems: [{ path: "stage", message: "Para pasarlo a «Cliente», registra su venta." }] });
       const kept = stage === "lost" ? reason?.trim() || null : null;
       moves.push({ conversationId, stage, reason: kept });
+      if (customer.stage !== stage) log(conversationId, { fromStage: customer.stage, toStage: stage, detail: kept });
       Object.assign(customer, { stage, lostReason: kept });
+      return { ...customer };
+    },
+    // La ficha, como el servidor: el valor y el responsable quedan en el historial, y el responsable debe ser del equipo.
+    customerCard: async (conversationId) => cardOf(conversationId),
+    updateCustomerCard: async (conversationId, change) => {
+      const customer = found(conversationId);
+      if (change.amount !== undefined) {
+        if (change.amount !== null && !(Number(change.amount) > 0)) throw new PersistenceError("invalid", { message: "El valor debe ser mayor que cero.", problems: [{ path: "amount", message: "El valor debe ser mayor que cero." }] });
+        customer.deal = change.amount === null ? null : { amount: Number(change.amount).toFixed(2), currency: change.currency ?? "COP" };
+        log(conversationId, { kind: "value", detail: customer.deal ? `${customer.deal.currency} ${Number(customer.deal.amount).toLocaleString("es-CO")}` : null });
+      }
+      if (change.ownerId !== undefined) {
+        const member = assignees.find((item) => item.userId === change.ownerId);
+        if (change.ownerId !== null && !member) throw new PersistenceError("invalid", { message: "Esa persona no es del equipo de este negocio.", problems: [{ path: "owner_id", message: "Esa persona no es del equipo de este negocio." }] });
+        customer.owner = member ? { userId: member.userId, label: member.email ?? "Alguien del equipo" } : null;
+        log(conversationId, { kind: "owner", detail: customer.owner?.label ?? null });
+      }
+      return cardOf(conversationId);
+    },
+    addCustomerNote: async (conversationId, body) => {
+      found(conversationId);
+      if (!body.trim()) throw new PersistenceError("invalid", { message: "Escribe la nota.", problems: [{ path: "body", message: "Escribe la nota." }] });
+      const note = { id: `nota-${noteList.length + 1}`, body: body.trim(), author: "operador@ejemplo.com", createdAt: new Date().toISOString(), conversationId };
+      noteList.unshift(note);
+      return { id: note.id, body: note.body, author: note.author, createdAt: note.createdAt };
+    },
+    deleteCustomerNote: async (conversationId, noteId) => {
+      const index = noteList.findIndex((note) => note.id === noteId && note.conversationId === conversationId);
+      if (index < 0) throw new PersistenceError("not_found", { message: "Esa nota no existe." });
+      noteList.splice(index, 1);
+    },
+    // Las etiquetas, como el servidor: sin dos que se lean igual, y al borrar una sus clientes solo la pierden.
+    labels: async () => labelList.map(counted).sort(byName),
+    createLabel: async (name, color) => {
+      if (repeated(name)) throw nameTaken();
+      const created: Label = { id: `etiqueta-${labelList.length + 1}`, name: name.trim(), color, customers: 0 };
+      labelList.push(created);
+      return { ...created };
+    },
+    updateLabel: async (labelId, change) => {
+      const label = labelList.find((item) => item.id === labelId);
+      if (!label) throw new PersistenceError("not_found", { message: "Esa etiqueta no existe." });
+      if (change.name !== undefined && repeated(change.name, labelId)) throw nameTaken();
+      Object.assign(label, { name: change.name?.trim() ?? label.name, color: change.color ?? label.color });
+      for (const customer of customerList) customer.labels = customer.labels.map((own) => (own.id === labelId ? { id: label.id, name: label.name, color: label.color } : own));
+      return counted(label);
+    },
+    deleteLabel: async (labelId) => {
+      const index = labelList.findIndex((item) => item.id === labelId);
+      if (index < 0) throw new PersistenceError("not_found", { message: "Esa etiqueta no existe." });
+      labelList.splice(index, 1);
+      for (const customer of customerList) customer.labels = customer.labels.filter((own) => own.id !== labelId);
+    },
+    setCustomerLabels: async (conversationId, labelIds) => {
+      const customer = found(conversationId);
+      customer.labels = labelList.filter((item) => labelIds.includes(item.id)).map((item) => ({ id: item.id, name: item.name, color: item.color })).sort(byName);
       return { ...customer };
     },
     sales: async () => saleList.map((item) => ({ ...item })),
@@ -541,7 +644,10 @@ export function createMemoryCommerce(
       };
       saleList.unshift(created);
       const customer = customerList.find((item) => item.conversationId === sale.conversationId);
-      if (customer) Object.assign(customer, { stage: "customer", needsHuman: false, purchases: customer.purchases + 1, lostReason: null });
+      if (customer) {
+        if (customer.stage !== "customer") log(customer.conversationId, { source: "sale", fromStage: customer.stage, toStage: "customer", detail: created.description });
+        Object.assign(customer, { stage: "customer", needsHuman: false, purchases: customer.purchases + 1, lostReason: null });
+      }
       return { ...created };
     },
     cancelSale: async (saleId) => {

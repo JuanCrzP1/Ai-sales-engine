@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { customerName, percent, type PipelineStats, type StageColumn } from "../../../domain/commerce/pipeline";
+import { customerName, moneyTotals, percent, type PipelineStats, type StageColumn } from "../../../domain/commerce/pipeline";
 import { STAGES, STAGE_HINTS, STAGE_LABELS, type BoardStage, type Customer } from "../../../domain/commerce/types";
 import { CustomerCard } from "./CustomerCard";
 
@@ -15,20 +15,21 @@ function columnNote(stage: BoardStage, advance: PipelineStats["advance"]): { tex
 
 /**
  * El tablero: una columna por etapa del embudo y, al final, «No compró». Una tarjeta se arrastra a otra columna (la que la recibe se
- * ilumina) o se mueve con «Mover a…». Cada columna trae sus clientes más recientes; si hay más, lleva a verlos en la lista.
+ * ilumina) o se mueve con «Mover a…». Cada columna dice cuánto suman los valores de sus clientes y trae los más recientes; si hay
+ * más, lleva a verlos en la lista.
  */
 export function BoardView({
   columns,
   advance,
   busyId,
-  chatPath,
+  onOpen,
   onMove,
   onShowStage,
 }: {
   columns: StageColumn[];
   advance: PipelineStats["advance"];
   busyId: string | null;
-  chatPath: (customer: Customer) => string;
+  onOpen: (customer: Customer) => void;
   onMove: (customer: Customer, stage: BoardStage) => void;
   onShowStage: (stage: BoardStage) => void;
 }) {
@@ -45,6 +46,7 @@ export function BoardView({
         const receiving = dragged !== null && over === column.stage && dragged.stage !== column.stage;
         const hidden = column.count - column.customers.length;
         const note = columnNote(column.stage, advance);
+        const worth = moneyTotals(column.value);
         return (
           <section
             key={column.stage}
@@ -71,13 +73,14 @@ export function BoardView({
               <span className="board__note" title={note.title}>
                 {note.text}
               </span>
+              {worth.main && <span className="board__worth">{[worth.main, ...worth.rest].join(" + ")}</span>}
             </header>
             {receiving && <p className="board__drop">Suelta aquí para pasar a {customerName(dragged)} a «{STAGE_LABELS[column.stage]}»</p>}
             {column.customers.map((customer) => (
               <CustomerCard
                 key={customer.conversationId}
                 customer={customer}
-                chatPath={chatPath(customer)}
+                onOpen={() => onOpen(customer)}
                 dragging={dragged?.conversationId === customer.conversationId}
                 busy={busyId === customer.conversationId}
                 onMove={(stage) => onMove(customer, stage)}

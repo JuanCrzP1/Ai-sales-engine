@@ -9,6 +9,8 @@ export interface HttpClient {
   get<T>(path: string): Promise<T>;
   post<T>(path: string, body?: unknown): Promise<T>;
   put<T>(path: string, body: unknown): Promise<T>;
+  /** Cambia solo lo que trae `body`. */
+  patch<T>(path: string, body: unknown): Promise<T>;
   delete(path: string): Promise<void>;
   /** Sube un archivo tal cual (su tipo en `Content-Type`), con encabezados propios. */
   upload<T>(path: string, file: Blob, headers: Record<string, string>): Promise<T>;
@@ -77,6 +79,7 @@ export function createHttpClient(baseUrl = "/api", options: HttpClientOptions = 
     get: (path) => request("GET", path),
     post: (path, body) => request("POST", path, body),
     put: (path, body) => request("PUT", path, body),
+    patch: (path, body) => request("PATCH", path, body),
     delete: (path) => request<void>("DELETE", path),
     blob: async (path) => (await send("GET", path)).blob(),
     upload: async <T,>(path: string, file: Blob, headers: Record<string, string>) => (await (await send("POST", path, undefined, { file, headers })).json()) as T,
