@@ -98,7 +98,7 @@ ni repetir el mensaje en la bandeja. Si el primero todavía se está respondiend
 | `handoff_reason` | Por qué: `human_request` (pidió una persona), `complaint` (reclamo), `payment_review` (reportó un pago) o `assistant` |
 | `attended_by` | Quién atiende ahora: `assistant` o `team`. Con `team`, la IA está pausada en ese chat y no responde |
 | `intent` | Lo que quiere el cliente: `info`, `pain`, `objection` o `buy` (puede ser `null`) |
-| `stage` | La etapa del cliente: `new`, `interested`, `ready`, `payment` o `customer` |
+| `stage` | La etapa del cliente: `new`, `interested`, `ready`, `payment` o `customer`; o `lost` si el equipo lo marcó como «no compró» en el panel |
 | `fallback` | `true` si respondió con el mensaje de respaldo del negocio porque la IA no pudo (sin clave, sin saldo o el proveedor caído). El saludo del negocio (Mensajes → Bienvenida) no es un respaldo: llega con `false` |
 | `duplicate` | `true` si es la respuesta guardada de un pedido repetido (`Idempotency-Key`) |
 | `conversation_id` | El chat en la bandeja del panel |

@@ -1,160 +1,140 @@
-import { useMemo, useState } from "react";
-import { Button, LinkButton } from "../../components/ui/Button";
+import { useCallback, useState } from "react";
+import { useSearchParams } from "react-router-dom";
+import { Button } from "../../components/ui/Button";
 import { Alert, EmptyState } from "../../components/ui/Feedback";
 import { Icon } from "../../components/ui/Icon";
 import { PageHeader } from "../../components/ui/Layout";
-import { STAGE_HINTS, STAGE_LABELS, STAGES, formatMoney, type Customer, type Stage } from "../../domain/commerce/types";
-import { relativeTime } from "../../domain/inbox/format";
-import { CHANNEL_LABELS, type Channel } from "../../domain/inbox/types";
-import { ContactAvatar } from "../../layout/ContactAvatar";
+import { customerName } from "../../domain/commerce/pipeline";
+import { BOARD_STAGES, type BoardStage, type Customer } from "../../domain/commerce/types";
 import { DeleteChatDialog } from "../../layout/DeleteChatDialog";
+import { useDebounced } from "../../lib/useDebounced";
 import { CONVERSATIONS_ITEM } from "../../navigation/navItems";
 import { useWorkspacePath } from "../../navigation/useWorkspacePath";
 import { useCommerceData } from "../../state/useCommerceData";
+import { BoardView } from "./customers/BoardView";
+import { CustomersList } from "./customers/CustomersList";
+import { LostReasonDialog } from "./customers/LostReasonDialog";
+import { PipelineStats } from "./customers/PipelineStats";
+import { useCustomerMoves } from "./customers/useCustomerMoves";
 import { RecordSaleDialog } from "./RecordSaleDialog";
 
-/** Cada persona que le escribió al negocio, en qué etapa va y qué ha comprado. */
+type View = "board" | "list";
+const VIEWS: { view: View; label: string; icon: "layers" | "menu" }[] = [
+  { view: "board", label: "Tablero", icon: "layers" },
+  { view: "list", label: "Lista", icon: "menu" },
+];
+
+/**
+ * Clientes: cada persona que le escribió al negocio, por etapa. Arriba, los números del embudo; debajo, el tablero (una columna por
+ * etapa) o la lista. La vista y la etapa filtrada viajan en la dirección (`?vista=lista&etapa=ready`), para poder compartirla.
+ */
 export function CustomersPage() {
   const pathTo = useWorkspacePath();
-  const { state, reload } = useCommerceData((commerce) => commerce.customers(), []);
-  const [stage, setStage] = useState<Stage | null>(null);
+  const [params, setParams] = useSearchParams();
+  const view: View = params.get("vista") === "lista" ? "list" : "board";
+  const stage = BOARD_STAGES.find((item) => item === params.get("etapa")) ?? null;
   const [query, setQuery] = useState("");
-  const [selling, setSelling] = useState<Customer | null>(null);
+  const search = useDebounced(query.trim());
+  const [version, setVersion] = useState(0);
+  const refresh = useCallback(() => setVersion((count) => count + 1), []);
+  const { state } = useCommerceData((commerce) => commerce.pipeline(search), [search, version]);
+  const moves = useCustomerMoves(refresh);
   const [deleting, setDeleting] = useState<Customer | null>(null);
 
-  const all = state.status === "ready" ? state.data : [];
-  const counts = useMemo(() => Object.fromEntries(STAGES.map((item) => [item, all.filter((customer) => customer.stage === item).length])) as Record<Stage, number>, [all]);
-  const text = query.trim().toLowerCase();
-  const shown = all.filter((customer) => (!stage || customer.stage === stage) && (!text || `${customer.name ?? ""} ${customer.contact}`.toLowerCase().includes(text)));
+  const show = (next: View, filter: BoardStage | null = null) => {
+    const search = new URLSearchParams();
+    if (next === "list") search.set("vista", "lista");
+    if (next === "list" && filter) search.set("etapa", filter);
+    setParams(search, { replace: true });
+  };
+  const chatPath = (customer: Customer) => `${pathTo(CONVERSATIONS_ITEM.path)}?c=${customer.conversationId}`;
+  const pipeline = state.status === "ready" ? state.data : null;
+  const nobody = pipeline !== null && !search && pipeline.columns.every((column) => column.count === 0);
 
   return (
     <>
-      <PageHeader eyebrow="Atención" title="Clientes" description="Cada persona que le escribió a tu negocio, en qué etapa va y qué ha comprado. La etapa avanza sola con lo que el asistente reconoce en la conversación." />
+      <PageHeader
+        eyebrow="Atención"
+        title="Clientes"
+        description="Cada persona que le escribió a tu negocio, por etapa. El asistente la avanza solo con lo que reconoce en el chat, y tú la puedes mover cuando quieras."
+      />
 
-      <div className="pipeline" role="group" aria-label="Etapas">
-        {STAGES.map((item) => (
-          <button key={item} type="button" className={`pipeline__stage stage-tone--${item}`} aria-pressed={stage === item} onClick={() => setStage(stage === item ? null : item)} title={STAGE_HINTS[item]}>
-            <span className="pipeline__count">{state.status === "ready" ? counts[item] : "—"}</span>
-            <span className="pipeline__label">{STAGE_LABELS[item]}</span>
-          </button>
-        ))}
-      </div>
+      <PipelineStats stats={pipeline?.stats ?? null} />
 
-      <section className="data-panel" aria-label="Lista de clientes">
+      <section className="data-panel customers-panel" aria-label="Clientes por etapa">
         <div className="data-panel__toolbar">
           <label className="search-field">
-            <Icon name="users" size={16} />
+            <Icon name="search" size={16} />
             <span className="visually-hidden">Buscar cliente</span>
             <input className="search-field__input" type="search" placeholder="Buscar por nombre o teléfono" value={query} onChange={(event) => setQuery(event.target.value)} />
           </label>
-          <span className="data-panel__count">
-            {state.status === "ready" ? `${shown.length} ${shown.length === 1 ? "cliente" : "clientes"}` : ""}
-            {stage && (
-              <button type="button" className="link-button" onClick={() => setStage(null)}>
-                Quitar filtro
+          <div className="view-switch" role="group" aria-label="Cómo ver los clientes">
+            {VIEWS.map((item) => (
+              <button key={item.view} type="button" className="view-switch__option" aria-pressed={view === item.view} onClick={() => show(item.view)}>
+                <Icon name={item.icon} size={15} />
+                {item.label}
               </button>
-            )}
-          </span>
+            ))}
+          </div>
         </div>
+
+        {moves.notice && (
+          <p className={`move-notice move-notice--${moves.notice.tone}`} role={moves.notice.tone === "danger" ? "alert" : "status"}>
+            {moves.notice.text}
+          </p>
+        )}
 
         {state.status === "loading" && <p className="data-panel__status" role="status">Cargando clientes…</p>}
         {state.status === "error" && (
           <div className="data-panel__status">
             <Alert tone="danger" title="No se pudieron cargar los clientes">
               <p>{state.message}</p>
-              <Button size="small" variant="secondary" onClick={reload}>
+              <Button size="small" variant="secondary" onClick={refresh}>
                 Reintentar
               </Button>
             </Alert>
           </div>
         )}
-        {state.status === "ready" && all.length === 0 && (
-          <EmptyState title="Aún no hay clientes" description="Cuando alguien le escriba a tu negocio por un canal conectado, aparece aquí con su etapa. Las pruebas del panel no cuentan." />
+        {nobody && <EmptyState title="Aún no hay clientes" description="Cuando alguien le escriba a tu negocio por un canal conectado, aparece aquí con su etapa. Las pruebas del panel no cuentan." />}
+        {pipeline && !nobody && view === "board" && (
+          <BoardView columns={pipeline.columns} advance={pipeline.stats.advance} busyId={moves.busyId} chatPath={chatPath} onMove={moves.request} onShowStage={(target) => show("list", target)} />
         )}
-        {state.status === "ready" && all.length > 0 && shown.length === 0 && <p className="data-panel__status">Nadie coincide con ese filtro.</p>}
-        {shown.length > 0 && (
-          <div className="table-wrap">
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th scope="col">Cliente</th>
-                  <th scope="col">Etapa</th>
-                  <th scope="col">Canal</th>
-                  <th scope="col">Último mensaje</th>
-                  <th scope="col" className="numeric">Compras</th>
-                  <th scope="col">
-                    <span className="visually-hidden">Acciones</span>
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {shown.map((customer) => {
-                  const name = customer.name || `+${customer.contact}`;
-                  return (
-                    <tr key={customer.conversationId}>
-                      <td>
-                        <span className="person">
-                          <ContactAvatar name={name} channel={customer.channel as Channel} size="sm" />
-                          <span className="person__text">
-                            <strong>{name}</strong>
-                            <span>+{customer.contact}</span>
-                          </span>
-                        </span>
-                      </td>
-                      <td>
-                        <span className={`stage-pill stage-tone--${customer.stage}`}>{STAGE_LABELS[customer.stage]}</span>
-                        {customer.needsHuman && <span className="handoff-badge">Espera a una persona</span>}
-                      </td>
-                      <td>{CHANNEL_LABELS[customer.channel as Channel] ?? customer.channel}</td>
-                      <td>
-                        <time dateTime={customer.lastMessageAt}>{relativeTime(customer.lastMessageAt)}</time>
-                        <span className="cell-sub">{customer.messageCount} mensajes</span>
-                      </td>
-                      <td className="numeric">
-                        {Object.keys(customer.spent).length === 0
-                          ? "—"
-                          : Object.entries(customer.spent).map(([currency, amount]) => <span key={currency} className="money">{formatMoney(amount, currency)}</span>)}
-                      </td>
-                      <td className="row-actions">
-                        <LinkButton variant="ghost" size="small" to={`${pathTo(CONVERSATIONS_ITEM.path)}?c=${customer.conversationId}`}>
-                          Ver chat
-                        </LinkButton>
-                        <Button size="small" variant="secondary" onClick={() => setSelling(customer)}>
-                          Registrar venta
-                        </Button>
-                        <button type="button" className="row-delete" aria-label={`Eliminar a ${name}`} title="Eliminar" onClick={() => setDeleting(customer)}>
-                          <Icon name="trash" size={16} />
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+        {pipeline && !nobody && view === "list" && (
+          <CustomersList
+            version={version}
+            query={query}
+            stage={stage}
+            busyId={moves.busyId}
+            chatPath={chatPath}
+            onStage={(target) => show("list", target)}
+            onMove={moves.request}
+            onSell={moves.sell}
+            onDelete={setDeleting}
+          />
         )}
       </section>
+
+      {moves.asking?.kind === "reason" && (
+        <LostReasonDialog
+          customerName={customerName(moves.asking.customer)}
+          saving={moves.busyId === moves.asking.customer.conversationId}
+          onClose={moves.cancel}
+          onConfirm={(reason) => void moves.confirmLost(reason)}
+        />
+      )}
+
+      {moves.asking?.kind === "sale" && (
+        <RecordSaleDialog customerName={moves.asking.customer.name ?? ""} conversationId={moves.asking.customer.conversationId} onClose={moves.cancel} onSaved={() => moves.sold()} />
+      )}
 
       {deleting && (
         <DeleteChatDialog
           conversationId={deleting.conversationId}
-          contactName={deleting.name || `+${deleting.contact}`}
+          contactName={customerName(deleting)}
           onClose={() => setDeleting(null)}
           onDeleted={() => {
             setDeleting(null);
-            reload();
-          }}
-        />
-      )}
-
-      {selling && (
-        <RecordSaleDialog
-          customerName={selling.name ?? ""}
-          conversationId={selling.conversationId}
-          onClose={() => setSelling(null)}
-          onSaved={() => {
-            setSelling(null);
-            reload();
+            refresh();
           }}
         />
       )}

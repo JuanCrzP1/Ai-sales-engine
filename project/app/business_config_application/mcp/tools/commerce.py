@@ -14,12 +14,15 @@ from app.business_config_application.access import BusinessAccess
 from app.business_config_application.commerce import CommerceService
 from app.business_config_application.mcp.access import McpAccess, McpBusinesses
 from app.business_config_application.mcp.tool import McpTool, obj, text
-from app.domain.business_config.commerce import MAX_REPORT_DAYS, STAGES, Customer, ReportTotals, Sale, SaleError
+from app.domain.business_config.commerce import ALL_STAGES, MAX_REPORT_DAYS, Customer, ReportTotals, Sale, SaleError
 from app.domain.business_config.errors import FieldIssue, InvalidFieldsError
 from app.domain.business_config.key_permissions import SCOPE_SALES_READ, SCOPE_SALES_WRITE
 
 BUSINESS = {"business": text("Identificador del negocio (de list_businesses).")}
-STAGE_NAMES = {"new": "nuevo", "interested": "interesado", "ready": "listo para comprar", "payment": "pagando", "customer": "cliente"}
+STAGE_NAMES = {
+    "new": "nuevo", "interested": "interesado", "ready": "listo para comprar", "payment": "pagando", "customer": "cliente",
+    "lost": "no compró",
+}
 MAX_CUSTOMERS = 100
 
 
@@ -44,6 +47,7 @@ def _customer(item: Customer) -> dict[str, Any]:
         "waiting_human": item.needs_human,
         "purchases": item.purchases,
         "spent": _money(item.spent),
+        "lost_reason": item.lost_reason,
     }
 
 
@@ -135,7 +139,7 @@ def commerce_tools(commerce: CommerceService, access: BusinessAccess) -> list[Mc
             "Ver los clientes",
             "Los clientes de un negocio (cada conversación es uno), con su etapa (nuevo → interesado → listo para comprar → pagando → cliente), si espera a una persona y lo que ha comprado. Filtra por etapa o busca por nombre o teléfono.",
             SCOPE_SALES_READ,
-            obj({**BUSINESS, "stage": text("Solo de esta etapa (opcional).", enum=list(STAGES)), "query": text("Buscar por nombre o teléfono (opcional).")}, ("business",)),
+            obj({**BUSINESS, "stage": text("Solo de esta etapa (opcional).", enum=list(ALL_STAGES)), "query": text("Buscar por nombre o teléfono (opcional).")}, ("business",)),
             customers,
             read_only=True,
         ),

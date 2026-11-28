@@ -7,8 +7,9 @@ from datetime import date, datetime, timedelta
 from app.business_config_application.access import BusinessAccess
 from app.business_config_application.ports import AIUsageStorage, CommerceStorage
 from app.domain.business_config.access import Principal
-from app.domain.business_config.commerce import MAX_REPORT_DAYS, STAGES, Customer, NewSale, Report, Sale
+from app.domain.business_config.commerce import ALL_STAGES, MAX_REPORT_DAYS, Customer, NewSale, Report, Sale
 from app.domain.business_config.errors import FieldIssue, InvalidFieldsError
+from app.domain.business_config.pipeline import Pipeline, StageMove
 from app.domain.business_config.team import REPORTS
 
 try:
@@ -34,9 +35,19 @@ class CommerceService:
 
     def customers(self, principal: Principal, business: str, *, stage: str | None = None, query: str | None = None) -> list[Customer]:
         self._access.require(principal, business)
-        if stage is not None and stage not in STAGES:
+        if stage is not None and stage not in ALL_STAGES:
             raise InvalidFieldsError("Revisa el filtro.", [FieldIssue("stage", "Esa etapa no existe.")])
         return self._storage.customers(business, stage=stage, query=query)
+
+    def pipeline(self, principal: Principal, business: str, *, query: str | None = None) -> Pipeline:
+        """El tablero de Clientes: las columnas por etapa y los números del embudo."""
+        self._access.require(principal, business)
+        return self._storage.pipeline(business, query=query, today=self._today())
+
+    def move_customer(self, principal: Principal, business: str, conversation_id: str, *, stage: object, reason: object = None) -> Customer:
+        """Quien atiende mueve al cliente de etapa (a «cliente» no: se llega registrando su venta). `StageMoveError` si el dato no sirve."""
+        self._access.require(principal, business)
+        return self._storage.move_customer(business, conversation_id, StageMove.checked(stage=stage, reason=reason))
 
     def sales(self, principal: Principal, business: str, *, days: int = 90) -> list[Sale]:
         self._access.require(principal, business)

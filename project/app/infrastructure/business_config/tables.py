@@ -157,7 +157,7 @@ conversations = Table(
     Column("unread_count", Integer, nullable=False, default=0),
     Column("assistant_typing_until", DateTime(timezone=True)),
     Column("updated_at", DateTime(timezone=True), nullable=False, default=_now),
-    # Migración 0010: la etapa a la que llegó el cliente (solo avanza).
+    # Migración 0010: la etapa a la que llegó el cliente. El asistente solo la avanza; el equipo la mueve en el tablero (0025).
     Column("stage", Text, nullable=False, default="new"),
     # Migración 0011: desde cuándo el cliente espera a una persona sin respuesta, y cuándo la IA retomó sola el chat.
     Column("customer_waiting_since", DateTime(timezone=True)),
@@ -168,14 +168,18 @@ conversations = Table(
     Column("follow_up_sent", Integer, nullable=False, default=0, server_default="0"),
     Column("follow_up_stopped_at", DateTime(timezone=True)),
     Column("follow_up_stopped_by", Text),
+    # Migración 0025: el equipo lo sacó del embudo como «no compró» (etapa `lost`): por qué y cuándo. Solo valen mientras siga ahí.
+    Column("lost_reason", Text),
+    Column("lost_at", DateTime(timezone=True)),
     CheckConstraint("channel IN ('whatsapp', 'instagram', 'telegram', 'web', 'api', 'prueba')", name="conversations_channel_check"),
     CheckConstraint(
         "follow_up_stopped_by IS NULL OR follow_up_stopped_by IN ('team', 'customer')", name="conversations_follow_up_stopped_by_check"
     ),
-    CheckConstraint("stage IN ('new', 'interested', 'ready', 'payment', 'customer')", name="conversations_stage_check"),
+    CheckConstraint("stage IN ('new', 'interested', 'ready', 'payment', 'customer', 'lost')", name="conversations_stage_check"),
     CheckConstraint("status IN ('open', 'closed')", name="conversations_status_check"),
     UniqueConstraint("tenant_id", "channel", "contact_ref", name="conversations_contact_key"),
     Index("conversations_tenant_recent_idx", "tenant_id", "last_message_at"),
+    Index("conversations_stage_recent_idx", "tenant_id", "stage", "last_message_at"),
     Index(
         "conversations_follow_up_idx",
         "last_message_at",

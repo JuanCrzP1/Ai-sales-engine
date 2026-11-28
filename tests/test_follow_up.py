@@ -196,6 +196,7 @@ def test_a_follow_up_message_is_marked_in_the_inbox(store):
         "needs_human",  # espera a una persona
         "payment",  # avisó un pago
         "customer",  # ya compró
+        "lost",  # el equipo lo marcó como «no compró»
         "stopped",  # el equipo lo detuvo
     ],
 )
@@ -206,6 +207,7 @@ def test_never_to_someone_the_team_handles_who_paid_or_whose_follow_up_was_stopp
         "needs_human": {"needs_human": True},
         "payment": {"stage": "payment"},
         "customer": {"stage": "customer"},
+        "lost": {"stage": "lost"},
         "stopped": {"follow_up_stopped_at": NOW, "follow_up_stopped_by": "team"},
     }[change]
     with store._engine.begin() as conn:

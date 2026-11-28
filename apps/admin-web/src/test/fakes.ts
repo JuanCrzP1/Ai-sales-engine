@@ -17,7 +17,8 @@ import type { AuthService } from "../repositories/authService";
 import type { BusinessDirectory } from "../repositories/businessDirectory";
 import type { Channels, TelegramChannel, WhatsAppChannel } from "../repositories/channels";
 import type { Commerce } from "../repositories/commerce";
-import type { Customer, Report, Sale } from "../domain/commerce/types";
+import type { Pipeline } from "../domain/commerce/pipeline";
+import { BOARD_STAGES, STAGES, type BoardStage, type Customer, type Report, type Sale } from "../domain/commerce/types";
 import type { ConfigRepository, StoredConfig } from "../repositories/configRepository";
 import type { ChatMessage, ConversationSummary, ConversationThread, InboxFilter, Notification, PaymentSale } from "../domain/inbox/types";
 import type { Inbox } from "../repositories/inbox";
@@ -471,19 +472,57 @@ export function emptyReport(days = 30): Report {
 }
 
 /** Clientes, ventas y reportes en memoria: registrar una venta convierte al cliente, como el servidor. */
-export function createMemoryCommerce(seed: { customers?: Customer[]; sales?: Sale[]; report?: Report } = {}): Commerce & { customerList: Customer[]; saleList: Sale[]; reportDays: number[] } {
+export function createMemoryCommerce(
+  seed: { customers?: Customer[]; sales?: Sale[]; report?: Report; cardsPerStage?: number } = {},
+): Commerce & { customerList: Customer[]; saleList: Sale[]; reportDays: number[]; moves: { conversationId: string; stage: BoardStage; reason: string | null }[] } {
   const customerList = (seed.customers ?? []).map((item) => ({ ...item }));
   const saleList = (seed.sales ?? []).map((item) => ({ ...item }));
   const reportDays: number[] = [];
+  const moves: { conversationId: string; stage: BoardStage; reason: string | null }[] = [];
+  const matching = (query = "") => {
+    const text = query.trim().toLowerCase();
+    return customerList.filter((item) => !text || `${item.name ?? ""} ${item.contact}`.toLowerCase().includes(text));
+  };
   return {
     customerList,
     saleList,
     reportDays,
-    customers: async (filter = {}) => {
-      const text = (filter.query ?? "").trim().toLowerCase();
-      return customerList
-        .filter((item) => (!filter.stage || item.stage === filter.stage) && (!text || `${item.name ?? ""} ${item.contact}`.toLowerCase().includes(text)))
-        .map((item) => ({ ...item }));
+    moves,
+    customers: async (filter = {}) =>
+      matching(filter.query)
+        .filter((item) => !filter.stage || item.stage === filter.stage)
+        .map((item) => ({ ...item })),
+    // El tablero, como el servidor: las columnas con `query`, y los números contando a todos.
+    pipeline: async (query = ""): Promise<Pipeline> => {
+      const count = (stage: BoardStage) => customerList.filter((item) => item.stage === stage).length;
+      const reached = STAGES.map((_, index) => STAGES.slice(index).reduce((sum, stage) => sum + count(stage), 0));
+      const confirmed = saleList.filter((sale) => sale.status === "confirmed");
+      const won: Record<string, string> = {};
+      for (const sale of confirmed) won[sale.currency] = (Number(won[sale.currency] ?? 0) + Number(sale.amount)).toFixed(2);
+      return {
+        columns: BOARD_STAGES.map((stage) => {
+          const inStage = matching(query).filter((item) => item.stage === stage);
+          return { stage, count: inStage.length, customers: inStage.slice(0, seed.cardsPerStage ?? 30).map((item) => ({ ...item })) };
+        }),
+        stats: {
+          openCount: customerList.filter((item) => item.stage !== "customer" && item.stage !== "lost").length,
+          lostCount: count("lost"),
+          wonCount: confirmed.length,
+          won,
+          closeRate: customerList.length ? count("customer") / customerList.length : null,
+          daysToBuy: confirmed.length ? 3 : null,
+          advance: Object.fromEntries(STAGES.slice(0, -1).map((stage, index) => [stage, reached[index] ? reached[index + 1]! / reached[index]! : null])),
+        },
+      };
+    },
+    moveCustomer: async (conversationId, stage, reason) => {
+      const customer = customerList.find((item) => item.conversationId === conversationId);
+      if (!customer) throw new PersistenceError("not_found", { message: "Ese cliente no existe." });
+      if (stage === "customer") throw new PersistenceError("invalid", { message: "Para pasarlo a «Cliente», registra su venta.", problems: [{ path: "stage", message: "Para pasarlo a «Cliente», registra su venta." }] });
+      const kept = stage === "lost" ? reason?.trim() || null : null;
+      moves.push({ conversationId, stage, reason: kept });
+      Object.assign(customer, { stage, lostReason: kept });
+      return { ...customer };
     },
     sales: async () => saleList.map((item) => ({ ...item })),
     recordSale: async (sale) => {
@@ -502,7 +541,7 @@ export function createMemoryCommerce(seed: { customers?: Customer[]; sales?: Sal
       };
       saleList.unshift(created);
       const customer = customerList.find((item) => item.conversationId === sale.conversationId);
-      if (customer) Object.assign(customer, { stage: "customer", needsHuman: false, purchases: customer.purchases + 1 });
+      if (customer) Object.assign(customer, { stage: "customer", needsHuman: false, purchases: customer.purchases + 1, lostReason: null });
       return { ...created };
     },
     cancelSale: async (saleId) => {

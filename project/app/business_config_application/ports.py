@@ -23,6 +23,7 @@ from app.domain.business_config.quick_replies import QuickReply, QuickReplyDraft
 from app.domain.business_config.team import Invitation, Member
 from app.domain.business_config.ai_usage import AIUsageSummary
 from app.domain.business_config.commerce import Customer, NewSale, ReportDay, ReportTotals, Sale
+from app.domain.business_config.pipeline import Pipeline, StageMove
 from app.domain.business_config.channels import ChannelSecrets, ConnectionStatus, ProviderStatus, TelegramBot, TelegramConnection, WhatsAppConnection
 from app.domain.business_config.contract import BusinessConfig, SecretRef
 from app.domain.business_config.conversations import (
@@ -269,6 +270,14 @@ class CommerceStorage(Protocol):
     """Clientes (las conversaciones de canales reales con su etapa), ventas y los datos de los reportes de cada negocio."""
 
     def customers(self, tenant_slug: str, *, stage: str | None = None, query: str | None = None) -> list[Customer]: ...
+
+    def pipeline(self, tenant_slug: str, *, query: str | None = None, today: date) -> Pipeline:
+        """El tablero: una columna por etapa (con `query`, solo quienes coinciden) y los números del embudo."""
+        ...
+
+    def move_customer(self, tenant_slug: str, conversation_id: str, move: StageMove) -> Customer:
+        """Pasa al cliente a otra etapa. `ConversationNotFoundError` si no es un cliente de ese negocio."""
+        ...
 
     def record_sale(self, tenant_slug: str, sale: NewSale, *, created_by: str | None) -> Sale: ...
 

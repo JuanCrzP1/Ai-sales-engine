@@ -1105,6 +1105,8 @@ def test_the_api_only_has_the_routes_of_the_panel(api):
         ("POST", f"{business}/channels/whatsapp/connect"),
         ("POST", f"{business}/channels/whatsapp/new-code"),
         ("GET", f"{business}/customers"),
+        ("GET", f"{business}/pipeline"),
+        ("POST", f"{business}/customers/{{conversation_id}}/stage"),
         ("GET", f"{business}/sales"),
         ("POST", f"{business}/sales"),
         ("POST", f"{business}/sales/{{sale_id}}/cancel"),

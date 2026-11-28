@@ -194,12 +194,12 @@ def test_the_migration_matches_the_tables():
         # La 0005 agregó a `conversations` las columnas del traspaso a una persona; la 0009, las de la bandeja en vivo; la 0010, la
         # etapa; la 0011, la espera del cliente y cuándo retomó la IA; la 0020, la nota de la IA para el equipo; la 0022, lo que lee el
         # asistente de cada mensaje y cuándo lo atendió una respuesta (esperar a que el cliente termine de escribir); la 0024, el
-        # seguimiento a quien dejó de responder.
+        # seguimiento a quien dejó de responder; la 0025, por qué y cuándo el equipo lo marcó como «no compró».
         added_later = (
             {
                 "needs_human", "handoff_requested_at", "ai_paused", "handoff_reason", "unread_count", "assistant_typing_until", "updated_at",
                 "stage", "customer_waiting_since", "ai_resumed_at", "handoff_summary", "follow_up_anchor", "follow_up_sent",
-                "follow_up_stopped_at", "follow_up_stopped_by",
+                "follow_up_stopped_at", "follow_up_stopped_by", "lost_reason", "lost_at",
             }
             if table is conversations
             else {"kind", "status", "provider_message_id", "media_id", "media_note", "updated_at", "reads_as", "answered_at"}

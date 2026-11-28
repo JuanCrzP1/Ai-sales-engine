@@ -1,4 +1,5 @@
-import type { Report, ReportTotals, Sale, Stage } from "../../domain/commerce/types";
+import type { Pipeline } from "../../domain/commerce/pipeline";
+import type { BoardStage, Customer, Report, ReportTotals, Sale, Stage } from "../../domain/commerce/types";
 import type { Commerce } from "../../repositories/commerce";
 import type { HttpClient } from "./httpClient";
 
@@ -7,13 +8,27 @@ interface ApiCustomer {
   name: string | null;
   contact: string;
   channel: string;
-  stage: Stage;
+  stage: BoardStage;
   first_contact_at: string;
   last_message_at: string;
   message_count: number;
   needs_human: boolean;
   purchases: number;
   spent: Record<string, string>;
+  lost_reason?: string | null;
+}
+
+interface ApiPipeline {
+  columns: { stage: BoardStage; count: number; customers: ApiCustomer[] }[];
+  stats: {
+    open_count: number;
+    lost_count: number;
+    won_count: number;
+    won: Record<string, string>;
+    close_rate: number | null;
+    days_to_buy: number | null;
+    advance: Partial<Record<Stage, number | null>>;
+  };
 }
 
 interface ApiSale {
@@ -50,6 +65,34 @@ interface ApiReport {
   ai_replies: number;
 }
 
+const toCustomer = (item: ApiCustomer): Customer => ({
+  conversationId: item.conversation_id,
+  name: item.name,
+  contact: item.contact,
+  channel: item.channel,
+  stage: item.stage,
+  firstContactAt: item.first_contact_at,
+  lastMessageAt: item.last_message_at,
+  messageCount: item.message_count,
+  needsHuman: item.needs_human,
+  purchases: item.purchases,
+  spent: item.spent,
+  lostReason: item.lost_reason ?? null,
+});
+
+const toPipeline = (item: ApiPipeline): Pipeline => ({
+  columns: item.columns.map((column) => ({ stage: column.stage, count: column.count, customers: column.customers.map(toCustomer) })),
+  stats: {
+    openCount: item.stats.open_count,
+    lostCount: item.stats.lost_count,
+    wonCount: item.stats.won_count,
+    won: item.stats.won,
+    closeRate: item.stats.close_rate,
+    daysToBuy: item.stats.days_to_buy,
+    advance: item.stats.advance,
+  },
+});
+
 const toSale = (item: ApiSale): Sale => ({
   id: item.id,
   customerName: item.customer_name,
@@ -72,7 +115,7 @@ const toTotals = (item: ApiTotals): ReportTotals => ({
   revenue: item.revenue,
 });
 
-/** `Commerce` sobre la API del panel: `/api/businesses/{slug}/customers`, `/sales` y `/reports`. */
+/** `Commerce` sobre la API del panel: `/api/businesses/{slug}/customers`, `/pipeline`, `/sales` y `/reports`. */
 export function createApiCommerce(http: HttpClient, slug: string): Commerce {
   const base = `/businesses/${encodeURIComponent(slug)}`;
   return {
@@ -81,20 +124,14 @@ export function createApiCommerce(http: HttpClient, slug: string): Commerce {
       if (filter.stage) query.set("stage", filter.stage);
       if (filter.query?.trim()) query.set("q", filter.query.trim());
       const suffix = query.toString() ? `?${query.toString()}` : "";
-      return (await http.get<ApiCustomer[]>(`${base}/customers${suffix}`)).map((item) => ({
-        conversationId: item.conversation_id,
-        name: item.name,
-        contact: item.contact,
-        channel: item.channel,
-        stage: item.stage,
-        firstContactAt: item.first_contact_at,
-        lastMessageAt: item.last_message_at,
-        messageCount: item.message_count,
-        needsHuman: item.needs_human,
-        purchases: item.purchases,
-        spent: item.spent,
-      }));
+      return (await http.get<ApiCustomer[]>(`${base}/customers${suffix}`)).map(toCustomer);
     },
+    pipeline: async (query = "") => {
+      const text = query.trim();
+      return toPipeline(await http.get<ApiPipeline>(`${base}/pipeline${text ? `?q=${encodeURIComponent(text)}` : ""}`));
+    },
+    moveCustomer: async (conversationId, stage, reason) =>
+      toCustomer(await http.post<ApiCustomer>(`${base}/customers/${encodeURIComponent(conversationId)}/stage`, { stage, reason: reason?.trim() || null })),
     sales: async (days = 90) => (await http.get<ApiSale[]>(`${base}/sales?days=${days}`)).map(toSale),
     recordSale: async (sale) =>
       toSale(

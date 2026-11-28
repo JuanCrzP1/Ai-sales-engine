@@ -10,6 +10,7 @@ import "./styles/businesses.css";
 import "./styles/workspace.css";
 import "./styles/settings.css";
 import "./styles/commerce.css";
+import "./styles/customers.css";
 import "./styles/help.css";
 import "./styles/team.css";
 

@@ -35,7 +35,7 @@ este índice.
 
 ## Clientes, ventas y reportes
 
-- [Tus clientes y sus etapas](../project/content/help/clientes-y-ventas/etapas-de-clientes.md): Cada persona que te escribió, la etapa en la que va y cómo avanza sola con lo que pasa en la conversación.
+- [Tus clientes y sus etapas](../project/content/help/clientes-y-ventas/etapas-de-clientes.md): El tablero de Clientes, con una columna por etapa. El asistente avanza a cada cliente solo y tú lo mueves cuando quieras.
 - [Registra, verifica y anula ventas](../project/content/help/clientes-y-ventas/registrar-una-venta.md): Registrar lo que compró un cliente, revisar los pagos por verificar y anular una venta.
 - [Reportes: cómo le va a tu negocio](../project/content/help/clientes-y-ventas/reportes.md): Conversaciones, ventas, ingresos, el embudo, quién respondió y cuánto costó la IA, comparado con el periodo anterior.
 

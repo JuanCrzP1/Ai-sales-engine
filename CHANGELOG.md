@@ -5,6 +5,16 @@ está en el historial de git y en `docs/plan-v1.md`.
 
 ## 28 de noviembre de 2026
 
+**Clientes ahora es un tablero, como el de un CRM**
+- Cada etapa es una columna y cada cliente una tarjeta. El asistente lo sigue avanzando solo; tú lo mueves cuando quieras:
+  arrastrando la tarjeta o con «Mover a…» (también en el celular).
+- **No compró:** saca del embudo a quien ya no va a comprar y anota por qué. Deja de recibir seguimientos automáticos y, si vuelve a
+  escribir con interés, regresa solo.
+- A «Cliente» se pasa registrando la venta, para que el tablero y Ventas digan lo mismo.
+- Arriba, los números del embudo: cuántos siguen abiertos, lo vendido en 30 días, de cada 100 cuántos compran y cuánto tardan. Cada
+  columna dice qué parte avanza a la siguiente etapa.
+- La lista de siempre sigue ahí, con el botón **Lista**. Lo siguiente: la ficha de cada cliente, con notas, responsable e historial.
+
 **La plataforma ahora se llama Merceam**
 - El panel, la pantalla de entrada, las invitaciones al equipo, los correos y avisos, el Centro de ayuda y la app instalada en el
   celular muestran el nombre nuevo. El logo es el mismo.

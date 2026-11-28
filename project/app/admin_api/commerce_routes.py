@@ -14,6 +14,7 @@ from app.admin_api.routes import BusinessSlug, CurrentUser
 from app.business_config_application.commerce import CommerceService
 from app.domain.business_config.commerce import Customer, Report, ReportTotals, Sale, SaleError
 from app.domain.business_config.errors import AssistantUnavailableError
+from app.domain.business_config.pipeline import Pipeline, StageMoveError
 
 router = APIRouter(prefix="/api/businesses/{slug}")
 
@@ -26,6 +27,12 @@ def _commerce(request: Request) -> CommerceService:
 
 
 Commerce = Annotated[CommerceService, Depends(_commerce)]
+
+
+class MoveCustomer(BaseModel):
+    model_config = ConfigDict(extra="forbid", hide_input_in_errors=True)
+    stage: str = Field(max_length=20)
+    reason: str | None = Field(default=None, max_length=400)
 
 
 class RecordSale(BaseModel):
@@ -49,7 +56,21 @@ def customer_payload(item: Customer) -> dict[str, Any]:
     return {
         "conversation_id": item.conversation_id, "name": item.name, "contact": item.contact_ref, "channel": item.channel, "stage": item.stage,
         "first_contact_at": _iso(item.first_contact_at), "last_message_at": _iso(item.last_message_at), "message_count": item.message_count,
-        "needs_human": item.needs_human, "purchases": item.purchases, "spent": _money(item.spent),
+        "needs_human": item.needs_human, "purchases": item.purchases, "spent": _money(item.spent), "lost_reason": item.lost_reason,
+    }
+
+
+def pipeline_payload(pipeline: Pipeline) -> dict[str, Any]:
+    stats = pipeline.stats
+    return {
+        "columns": [
+            {"stage": column.stage, "count": column.count, "customers": [customer_payload(item) for item in column.customers]}
+            for column in pipeline.columns
+        ],
+        "stats": {
+            "open_count": stats.open_count, "lost_count": stats.lost_count, "won_count": stats.won_count, "won": _money(stats.won),
+            "close_rate": stats.close_rate, "days_to_buy": stats.days_to_buy, "advance": stats.advance,
+        },
     }
 
 
@@ -91,6 +112,21 @@ def customers(
     stage: Annotated[str | None, Query(max_length=20)] = None, q: Annotated[str | None, Query(max_length=80)] = None,
 ) -> list[dict[str, Any]]:
     return [customer_payload(item) for item in commerce.customers(user, slug, stage=stage, query=q)]
+
+
+@router.get("/pipeline")
+def pipeline(slug: BusinessSlug, user: CurrentUser, commerce: Commerce, q: Annotated[str | None, Query(max_length=80)] = None) -> dict[str, Any]:
+    """El tablero de Clientes: una columna por etapa con sus tarjetas más recientes, y los números del embudo."""
+    return pipeline_payload(commerce.pipeline(user, slug, query=q))
+
+
+@router.post("/customers/{conversation_id}/stage")
+def move_customer(slug: BusinessSlug, conversation_id: str, body: MoveCustomer, user: CurrentUser, commerce: Commerce) -> dict[str, Any]:
+    """Pasa al cliente a otra etapa del tablero; a «no compró», con su motivo."""
+    try:
+        return customer_payload(commerce.move_customer(user, slug, conversation_id, stage=body.stage, reason=body.reason))
+    except StageMoveError as exc:
+        raise ApiError(status.HTTP_422_UNPROCESSABLE_ENTITY, str(exc), code="invalid", issues=[{"path": exc.field, "message": str(exc)}]) from None
 
 
 @router.get("/sales")

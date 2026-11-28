@@ -33,6 +33,7 @@ Nunca le escribe a quien no debe. El seguimiento se detiene cuando el cliente:
 - **Responde:** el asistente sigue la conversación. Si después vuelve a quedarse callado, la secuencia empieza de nuevo desde el primer mensaje.
 - **Compra o avisa un pago.**
 - **Pide hablar con una persona,** o tu equipo está atendiendo el chat (la IA pausada).
+- **Queda en «No compró»:** si tu equipo lo sacó del embudo en [Clientes](panel:clientes), no se le escribe más.
 - **Dice que no le interesa:** antes de cada mensaje, la IA lee el final del chat. Si el cliente la cerró («no me interesa», «ya compré en otro lado», «no me escriban»), no se le escribe más.
 
 Además, nunca salen dos mensajes seguidos ni mensajes viejos: si se juntan varios (por ejemplo, tu negocio estuvo cerrado), sale solo el más reciente, y uno que debía salir hace más de 3 días ya no sale. Por eso, al encenderlo no se les escribe a los clientes que dejaron de responder hace semanas.

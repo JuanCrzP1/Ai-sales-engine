@@ -90,6 +90,8 @@ _ADDED_COLUMNS = {
         "follow_up_sent": "INTEGER NOT NULL DEFAULT 0",
         "follow_up_stopped_at": "DATETIME",
         "follow_up_stopped_by": "TEXT",
+        "lost_reason": "TEXT",
+        "lost_at": "DATETIME",
     },
     "business_members": {
         "email": "TEXT",
@@ -139,7 +141,8 @@ def create_local_schema(engine: Engine) -> None:
 
 # Restricciones que una migración amplió en una tabla que ya existía: (tabla, lo que trae su definición nueva).
 _WIDENED_CHECKS = (
-    (notifications, "ai_resumed"), (conversations, "'api'"), (conversations, "follow_up_stopped_by_check"), (api_keys, "api_keys_kind_check"),
+    (notifications, "ai_resumed"), (conversations, "'api'"), (conversations, "follow_up_stopped_by_check"), (conversations, "'lost'"),
+    (api_keys, "api_keys_kind_check"),
 )
 
 

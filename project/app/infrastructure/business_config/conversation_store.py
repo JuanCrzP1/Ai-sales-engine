@@ -47,7 +47,7 @@ from app.domain.business_config.conversations import (
     message_preview,
     preview,
 )
-from app.domain.business_config.commerce import advanced, stage_for_intent
+from app.domain.business_config.commerce import LOST, advanced, stage_for_intent
 from app.domain.business_config.errors import ConversationNotFoundError
 from app.infrastructure.business_config.tables import conversation_entries, conversation_media, conversations, notifications, tenants
 from app.infrastructure.business_config.tenancy import tenant_of
@@ -111,13 +111,13 @@ def _utc(value: datetime | None) -> datetime | None:
     return value if value.tzinfo else value.replace(tzinfo=timezone.utc)
 
 
-# Los chats que pueden recibir un seguimiento: WhatsApp o Telegram, la IA atendiendo, nadie esperando a una persona, sin un pago avisado
-# ni ya cliente, y el seguimiento sin detener.
+# Los chats que pueden recibir un seguimiento: WhatsApp o Telegram, la IA atendiendo, nadie esperando a una persona, sin un pago avisado,
+# ni ya cliente, ni marcado por el equipo como «no compró», y el seguimiento sin detener.
 _FOLLOW_UP_OPEN = and_(
     conversations.c.channel.in_(("whatsapp", "telegram")),
     conversations.c.ai_paused.is_(False),
     conversations.c.needs_human.is_(False),
-    conversations.c.stage.not_in(("payment", "customer")),
+    conversations.c.stage.not_in(("payment", "customer", LOST)),
     conversations.c.follow_up_stopped_at.is_(None),
 )
 

@@ -3,6 +3,8 @@
 - **Clientes**: cada persona que escribió por un canal real (no las pruebas del panel), con la etapa a la que llegó. La etapa solo
   avanza: nuevo → interesado (preguntó, contó un problema o dudó) → listo para comprar (quiso comprar) → pagó (reportó un pago que
   el equipo debe verificar) → cliente (el equipo registró su venta). La marca el asistente con lo que reconoce en cada mensaje.
+  El equipo también puede moverlo a mano en el tablero (`pipeline.py`), y sacarlo del embudo como «no compró» (`LOST`) con su
+  motivo. Si quien no compró vuelve a escribir con interés, el asistente lo regresa al embudo.
 - **Ventas**: las registra el equipo (qué compró, cuánto y en qué moneda), atadas a la conversación cuando la hay. Una venta anulada
   queda marcada y no suma.
 - **Reportes**: lo que pasó en un periodo, por día y en total, comparado con el periodo anterior.
@@ -15,6 +17,9 @@ from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
 
 STAGES = ("new", "interested", "ready", "payment", "customer")
+# Fuera del embudo: el equipo lo marcó como «no compró». No es una etapa a la que se llega avanzando.
+LOST = "lost"
+ALL_STAGES = (*STAGES, LOST)
 _ORDER = {stage: index for index, stage in enumerate(STAGES)}
 # Lo que reconoce el asistente en cada mensaje → la etapa a la que llega el cliente.
 _INTENT_STAGE = {"pain": "interested", "info": "interested", "objection": "interested", "buy": "ready"}
@@ -36,7 +41,8 @@ def stage_for_intent(intent: str | None) -> str | None:
 
 
 def advanced(current: str | None, new: str | None) -> str | None:
-    """La etapa nueva si avanza sobre la actual; si no, None (nunca retrocede)."""
+    """La etapa nueva si avanza sobre la actual; si no, None (nunca retrocede). Quien «no compró» cuenta como recién llegado:
+    cualquier interés que reconozca el asistente lo regresa al embudo."""
     if new not in _ORDER:
         return None
     return new if _ORDER[new] > _ORDER.get(current or "new", 0) else None
@@ -61,6 +67,8 @@ class Customer:
     needs_human: bool
     purchases: int = 0
     spent: dict[str, Decimal] = field(default_factory=dict)
+    # Por qué no compró, mientras esté en «no compró».
+    lost_reason: str | None = None
 
 
 @dataclass(frozen=True)
