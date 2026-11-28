@@ -2,6 +2,7 @@
  * La ficha de un cliente: su valor, su responsable, sus notas, sus compras y el historial de lo que le ha pasado, como la arma el
  * servidor (`project/app/domain/business_config/customer_card.py`).
  */
+import type { Reminder } from "./reminders";
 import { STAGES, STAGE_LABELS, type BoardStage, type Customer, type Sale, type Stage } from "./types";
 
 /** Alguien del equipo que puede ser responsable de un cliente. */
@@ -39,6 +40,10 @@ export interface CustomerCard {
   purchases: Sale[];
   notes: CustomerNote[];
   events: CustomerEvent[];
+  /** Sus recordatorios: los pendientes por fecha y los últimos hechos. */
+  reminders: Reminder[];
+  /** Quien mira, si es del equipo: el responsable que se propone para un recordatorio nuevo. */
+  viewerId: string | null;
 }
 
 /** Lo que cambia en la ficha: solo lo que viene. `amount` null quita el valor; `ownerId` null deja al cliente sin responsable. */

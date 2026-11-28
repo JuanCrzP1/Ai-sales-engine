@@ -1,6 +1,7 @@
 import type { CardChange, CustomerCard, CustomerNote } from "../domain/commerce/customerCard";
 import type { Label, LabelChange, LabelColor } from "../domain/commerce/labels";
 import type { Pipeline } from "../domain/commerce/pipeline";
+import type { NewReminderInput, Reminder } from "../domain/commerce/reminders";
 import type { BoardStage, Customer, CustomerFilter, NewSale, Report, Sale } from "../domain/commerce/types";
 
 /** Clientes, ventas y reportes de un negocio. Los fallos se rechazan con `PersistenceError` (un dato rechazado trae su campo). */
@@ -25,6 +26,12 @@ export interface Commerce {
   deleteLabel(labelId: string): Promise<void>;
   /** Deja al cliente con esas etiquetas (y solo esas). */
   setCustomerLabels(conversationId: string, labelIds: string[]): Promise<Customer>;
+  /** Los recordatorios pendientes por fecha (o los hechos, el último primero); con `mine`, solo los de quien mira. */
+  reminders(filter?: { done?: boolean; mine?: boolean }): Promise<Reminder[]>;
+  createReminder(conversationId: string, input: NewReminderInput): Promise<Reminder>;
+  /** Lo marca hecho o lo vuelve a abrir. */
+  setReminderDone(reminderId: string, done: boolean): Promise<Reminder>;
+  deleteReminder(reminderId: string): Promise<void>;
   sales(days?: number): Promise<Sale[]>;
   recordSale(sale: NewSale): Promise<Sale>;
   cancelSale(saleId: string): Promise<Sale>;

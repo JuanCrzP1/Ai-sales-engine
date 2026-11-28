@@ -5,27 +5,32 @@ import { Alert, EmptyState } from "../../components/ui/Feedback";
 import { Icon } from "../../components/ui/Icon";
 import { PageHeader } from "../../components/ui/Layout";
 import { customerName } from "../../domain/commerce/pipeline";
+import { bucketOf } from "../../domain/commerce/reminders";
 import { BOARD_STAGES, type BoardStage, type Customer } from "../../domain/commerce/types";
 import { DeleteChatDialog } from "../../layout/DeleteChatDialog";
 import { useDebounced } from "../../lib/useDebounced";
 import { CONVERSATIONS_ITEM } from "../../navigation/navItems";
 import { useWorkspacePath } from "../../navigation/useWorkspacePath";
+import { useAuth } from "../../state/auth/useAuth";
 import { useCan } from "../../state/roleContext";
 import { useCommerceData } from "../../state/useCommerceData";
 import { useLabels } from "../../state/useLabels";
+import { useReminders } from "../../state/useReminders";
 import { BoardView } from "./customers/BoardView";
 import { CustomerDrawer } from "./customers/card/CustomerDrawer";
 import { CustomersList } from "./customers/CustomersList";
 import { LabelsDialog } from "./customers/labels/LabelsDialog";
 import { LostReasonDialog } from "./customers/LostReasonDialog";
 import { PipelineStats } from "./customers/PipelineStats";
+import { RemindersView } from "./customers/reminders/RemindersView";
 import { useCustomerMoves } from "./customers/useCustomerMoves";
 import { RecordSaleDialog } from "./RecordSaleDialog";
 
-type View = "board" | "list";
-const VIEWS: { view: View; label: string; icon: "layers" | "menu" }[] = [
-  { view: "board", label: "Tablero", icon: "layers" },
-  { view: "list", label: "Lista", icon: "menu" },
+type View = "board" | "list" | "reminders";
+const VIEWS: { view: View; label: string; icon: "layers" | "menu" | "clock"; param: string | null }[] = [
+  { view: "board", label: "Tablero", icon: "layers", param: null },
+  { view: "list", label: "Lista", icon: "menu", param: "lista" },
+  { view: "reminders", label: "Recordatorios", icon: "clock", param: "recordatorios" },
 ];
 const ALL_LABELS = "";
 
@@ -39,15 +44,17 @@ interface Place {
 
 /**
  * Clientes: cada persona que le escribió al negocio, por etapa. Arriba, los números del embudo; debajo, el tablero (una columna por
- * etapa) o la lista, que se filtran por una etiqueta; tocar a un cliente abre su ficha. La vista, los filtros y la ficha abierta
- * viajan en la dirección (`?vista=lista&etapa=ready&etiqueta=…&cliente=…`), para poder compartirla.
+ * etapa) o la lista, que se filtran por una etiqueta, o los recordatorios del equipo (con cuántos están vencidos); tocar a un cliente
+ * abre su ficha. La vista, los filtros y la ficha abierta viajan en la dirección (`?vista=lista&etapa=ready&etiqueta=…&cliente=…`),
+ * para poder compartirla.
  */
 export function CustomersPage() {
   const pathTo = useWorkspacePath();
   const canManageLabels = useCan("configure");
+  const { verifiesCredentials } = useAuth();
   const [params, setParams] = useSearchParams();
   const place: Place = {
-    view: params.get("vista") === "lista" ? "list" : "board",
+    view: VIEWS.find((item) => item.param !== null && item.param === params.get("vista"))?.view ?? "board",
     stage: BOARD_STAGES.find((item) => item === params.get("etapa")) ?? null,
     labelId: params.get("etiqueta"),
     customerId: params.get("cliente"),
@@ -61,11 +68,16 @@ export function CustomersPage() {
   const moves = useCustomerMoves(refresh);
   const [deleting, setDeleting] = useState<Customer | null>(null);
   const [managingLabels, setManagingLabels] = useState(false);
+  // «Míos» solo existe con cuentas: sin ellas (este equipo) todos los recordatorios son de todos.
+  const [mine, setMine] = useState(verifiesCredentials);
+  const reminders = useReminders(version, { mine });
+  const overdue = reminders.status === "ready" ? reminders.data.filter((item) => bucketOf(item.dueAt) === "overdue").length : 0;
 
   const go = (change: Partial<Place>) => {
     const next = { ...place, ...change };
     const target = new URLSearchParams();
-    if (next.view === "list") target.set("vista", "lista");
+    const param = VIEWS.find((item) => item.view === next.view)?.param;
+    if (param) target.set("vista", param);
     if (next.view === "list" && next.stage) target.set("etapa", next.stage);
     if (next.labelId) target.set("etiqueta", next.labelId);
     if (next.customerId) target.set("cliente", next.customerId);
@@ -97,13 +109,17 @@ export function CustomersPage() {
 
       <section className="data-panel customers-panel" aria-label="Clientes por etapa">
         <div className="data-panel__toolbar">
-          <label className="search-field">
-            <Icon name="search" size={16} />
-            <span className="visually-hidden">Buscar cliente</span>
-            <input className="search-field__input" type="search" placeholder="Buscar por nombre o teléfono" value={query} onChange={(event) => setQuery(event.target.value)} />
-          </label>
+          {place.view === "reminders" ? (
+            <p className="customers-panel__lead">Lo que tu equipo tiene que hacer con cada cliente, y cuándo.</p>
+          ) : (
+            <label className="search-field">
+              <Icon name="search" size={16} />
+              <span className="visually-hidden">Buscar cliente</span>
+              <input className="search-field__input" type="search" placeholder="Buscar por nombre o teléfono" value={query} onChange={(event) => setQuery(event.target.value)} />
+            </label>
+          )}
           <div className="customers-tools">
-            {labels.list.length > 0 && (
+            {labels.list.length > 0 && place.view !== "reminders" && (
               <label className="label-filter">
                 <span className="visually-hidden">Filtrar por etiqueta</span>
                 <select className="select label-filter__select" value={place.labelId ?? ALL_LABELS} onChange={(event) => go({ labelId: event.target.value || null })}>
@@ -124,6 +140,11 @@ export function CustomersPage() {
                 <button key={item.view} type="button" className="view-switch__option" aria-pressed={place.view === item.view} onClick={() => go({ view: item.view, stage: null, customerId: null })}>
                   <Icon name={item.icon} size={15} />
                   {item.label}
+                  {item.view === "reminders" && overdue > 0 && (
+                    <span className="view-switch__badge" aria-label={`${overdue} ${overdue === 1 ? "vencido" : "vencidos"}`}>
+                      {overdue}
+                    </span>
+                  )}
                 </button>
               ))}
             </div>
@@ -147,7 +168,7 @@ export function CustomersPage() {
             </Alert>
           </div>
         )}
-        {nobody && <EmptyState title="Aún no hay clientes" description="Cuando alguien le escriba a tu negocio por un canal conectado, aparece aquí con su etapa. Las pruebas del panel no cuentan." />}
+        {nobody && place.view !== "reminders" && <EmptyState title="Aún no hay clientes" description="Cuando alguien le escriba a tu negocio por un canal conectado, aparece aquí con su etapa. Las pruebas del panel no cuentan." />}
         {pipeline && !nobody && place.view === "board" && (
           <BoardView
             columns={pipeline.columns}
@@ -156,6 +177,17 @@ export function CustomersPage() {
             onOpen={openCard}
             onMove={moves.request}
             onShowStage={(target) => go({ view: "list", stage: target, customerId: null })}
+          />
+        )}
+        {place.view === "reminders" && (
+          <RemindersView
+            open={reminders}
+            version={version}
+            mine={mine}
+            canChooseMine={verifiesCredentials}
+            onMine={setMine}
+            onOpenCustomer={(conversationId) => go({ customerId: conversationId })}
+            onChanged={refresh}
           />
         )}
         {pipeline && !nobody && place.view === "list" && (

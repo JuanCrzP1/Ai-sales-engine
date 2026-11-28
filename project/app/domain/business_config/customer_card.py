@@ -7,6 +7,7 @@
 - **Historial**: cada cambio de etapa, de valor y de responsable, con quién lo hizo y cuándo. La etapa la cambian el asistente (con
   lo que reconoce en el chat), el equipo (a mano, o al confirmar un pago) o una venta registrada.
 - **Compras**: sus ventas, también las anuladas.
+- **Recordatorios**: qué hay que hacer con él y cuándo (`reminders.py`).
 """
 from __future__ import annotations
 
@@ -16,6 +17,7 @@ from datetime import datetime
 from decimal import Decimal, InvalidOperation
 
 from app.domain.business_config.commerce import Customer, Sale
+from app.domain.business_config.reminders import Reminder
 
 MAX_NOTE = 2000
 MAX_NOTES = 200
@@ -144,6 +146,10 @@ class CustomerCard:
     purchases: list[Sale] = field(default_factory=list)
     notes: list[CustomerNote] = field(default_factory=list)
     events: list[CustomerEvent] = field(default_factory=list)
+    # Sus recordatorios: los pendientes por fecha y los últimos hechos (`reminders.py`).
+    reminders: list[Reminder] = field(default_factory=list)
+    # Quien mira, si es del equipo: el responsable que el panel propone para un recordatorio nuevo.
+    viewer_id: str | None = None
 
 
 def money_text(amount: Decimal, currency: str) -> str:

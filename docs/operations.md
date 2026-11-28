@@ -373,6 +373,8 @@ tiene pantallas y su raíz redirige a `PANEL_URL`, o al panel publicado si no es
   cambio de etapa, de valor y de responsable.
 - Las etiquetas de los clientes (migración 0027): un catálogo por negocio, sin dos que se lean igual; cada cliente lleva las que
   quiera, y el tablero y la lista se filtran por una.
+- Los recordatorios del equipo (migración 0028): qué hacer con un cliente, cuándo y para quién; se marcan hechos. Se ven en la
+  ficha, en la tarjeta (el más próximo) y en Clientes → Recordatorios. Todavía no avisan por la campana ni al celular.
 - Canales: WhatsApp por código QR con uazapi. El negocio toca «Conectar WhatsApp» y escanea el QR; el servidor, los tokens y el
   webhook los pone la plataforma. La API oficial de Meta, Telegram y el chat web aparecen como «Próximamente».
 - En la nube no se importan los negocios de ejemplo ni se eliminan negocios. El dominio del panel debe estar en Neon Auth →

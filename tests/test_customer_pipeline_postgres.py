@@ -1,8 +1,9 @@
 """El tablero de Clientes y la ficha contra un PostgreSQL de verdad (`TEST_POSTGRES_URL`, como `test_follow_up_postgres.py`).
 
-Las migraciones 0025, 0026 y 0027 se aplican como las aplica la nube (se pueden repetir): la etapa admite «no compró», el tablero cuenta,
+Las migraciones 0025 a 0028 se aplican como las aplica la nube (se pueden repetir): la etapa admite «no compró», el tablero cuenta,
 lista y mueve con las consultas reales de PostgreSQL (agrupar por etapa y sumar por moneda), la ficha guarda el valor, las notas
-y el historial, que se borran con la conversación, y las etiquetas (0027) no se repiten y filtran el tablero.
+y el historial, que se borran con la conversación, las etiquetas (0027) no se repiten y filtran el tablero, y los recordatorios
+(0028) salen por fecha y en la tarjeta.
 """
 from __future__ import annotations
 
@@ -18,6 +19,7 @@ from sqlalchemy.exc import IntegrityError
 from app.domain.business_config.commerce import NewSale
 from app.domain.business_config.conversations import NewMessage
 from app.domain.business_config.customer_card import DealChange
+from app.domain.business_config.reminders import NewReminder
 from app.domain.business_config.pipeline import StageMove
 from app.infrastructure.business_config.commerce_store import CommerceStore
 from app.infrastructure.business_config.conversation_store import ConversationStore
@@ -126,4 +128,19 @@ def test_labels_do_not_repeat_and_filter_the_board_on_postgres(stores):
     assert [customer.name for customer in commerce.customers(SLUG, label=vip.id)] == ["Ana"]
     commerce.delete_label(SLUG, vip.id)
     assert commerce.customers(SLUG)[0].labels == () and commerce.labels(SLUG) == []
+
+
+def test_reminders_go_by_date_and_show_on_the_card_on_postgres(stores):
+    chats, commerce = stores
+    ana = _chat(chats, "573001", "Ana")
+    now = datetime.now(timezone.utc)
+    later = NewReminder.checked(title="Enviar propuesta", due_at=(now + timedelta(days=2)).isoformat(), now=now)
+    soon = NewReminder.checked(title="Llamar para cerrar", due_at=(now + timedelta(hours=2)).isoformat(), now=now)
+    commerce.create_reminder(SLUG, ana, later, by_user=None, by="pruebas")
+    first = commerce.create_reminder(SLUG, ana, soon, by_user=None, by="pruebas")
+    assert [item.title for item in commerce.reminders(SLUG, done=False)] == ["Llamar para cerrar", "Enviar propuesta"]
+    assert commerce.customers(SLUG)[0].next_reminder.title == "Llamar para cerrar"
+    commerce.set_reminder_done(SLUG, first.id, True, by="pruebas")
+    assert [item.title for item in commerce.reminders(SLUG, done=True)] == ["Llamar para cerrar"]
+    assert commerce.customer_card(SLUG, ana).customer.next_reminder.title == "Enviar propuesta"
 

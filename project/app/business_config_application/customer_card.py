@@ -4,6 +4,7 @@ Quien atiende (también un asesor) puede cambiarla: es su herramienta de trabajo
 """
 from __future__ import annotations
 
+from dataclasses import replace
 from typing import Any
 
 from app.business_config_application.access import BusinessAccess
@@ -18,8 +19,11 @@ class CustomerCardService:
         self._access = access
 
     def card(self, principal: Principal, business: str, conversation_id: str) -> CustomerCard:
+        """La ficha, y quién la mira si es del equipo (el panel lo propone como responsable de un recordatorio nuevo)."""
         self._access.require(principal, business)
-        return self._storage.customer_card(business, conversation_id)
+        card = self._storage.customer_card(business, conversation_id)
+        viewer = principal.user_id if any(member.user_id == principal.user_id for member in card.assignees) else None
+        return replace(card, viewer_id=viewer)
 
     def update(self, principal: Principal, business: str, conversation_id: str, changes: dict[str, Any]) -> CustomerCard:
         """`changes` trae solo lo que cambia: `amount` y `currency`, y/o `owner_id`. `CustomerCardError` si un dato no sirve."""

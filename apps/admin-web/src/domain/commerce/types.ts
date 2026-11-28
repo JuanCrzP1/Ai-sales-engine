@@ -1,5 +1,6 @@
 /** Clientes, ventas y reportes de un negocio. Los valores de dinero llegan como texto con dos decimales. */
 import type { LabelRef } from "./labels";
+import type { NextReminder } from "./reminders";
 
 /** Una etapa del embudo. El asistente solo la avanza; el equipo puede mover al cliente a cualquiera desde el tablero. */
 export type Stage = "new" | "interested" | "ready" | "payment" | "customer";
@@ -47,6 +48,8 @@ export interface Customer {
   owner: { userId: string; label: string } | null;
   /** Sus etiquetas, por nombre. */
   labels: LabelRef[];
+  /** Su recordatorio pendiente más próximo. */
+  nextReminder: NextReminder | null;
 }
 
 /** Un monto con su moneda. El monto llega como texto con dos decimales. */

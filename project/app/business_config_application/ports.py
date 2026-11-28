@@ -26,6 +26,7 @@ from app.domain.business_config.commerce import Customer, NewSale, ReportDay, Re
 from app.domain.business_config.customer_card import CustomerCard, CustomerNote, DealChange
 from app.domain.business_config.customer_labels import Label, LabelChange
 from app.domain.business_config.pipeline import Pipeline, StageMove
+from app.domain.business_config.reminders import NewReminder, Reminder
 from app.domain.business_config.channels import ChannelSecrets, ConnectionStatus, ProviderStatus, TelegramBot, TelegramConnection, WhatsAppConnection
 from app.domain.business_config.contract import BusinessConfig, SecretRef
 from app.domain.business_config.conversations import (
@@ -324,6 +325,21 @@ class CustomerLabelStorage(Protocol):
         ...
 
     def set_customer_labels(self, tenant_slug: str, conversation_id: str, label_ids: list[str]) -> Customer: ...
+
+
+class ReminderStorage(Protocol):
+    """Los recordatorios del equipo. Un recordatorio o un cliente de otro negocio no existen (`ConversationNotFoundError`)."""
+
+    def reminders(self, tenant_slug: str, *, done: bool, assignee_id: str | None = None) -> list[Reminder]: ...
+
+    def create_reminder(self, tenant_slug: str, conversation_id: str, reminder: NewReminder, *, by_user: str | None, by: str | None) -> Reminder:
+        """Sin responsable elegido, queda para `by_user` si es del equipo. `ReminderError` si el responsable no es del equipo o el
+        cliente ya tiene el máximo pendiente."""
+        ...
+
+    def set_reminder_done(self, tenant_slug: str, reminder_id: str, done: bool, *, by: str | None) -> Reminder: ...
+
+    def delete_reminder(self, tenant_slug: str, reminder_id: str) -> None: ...
 
 
 class OutboundMessenger(Protocol):

@@ -395,3 +395,304 @@
     font-size: 10px;
   }
 }
+
+/* ================================================================
+   Recordatorios: cada uno con su círculo para marcarlo hecho, el formulario con atajos de fecha, la vista de Clientes y el más próximo
+   en la tarjeta del tablero. Vencido en rojo, de hoy en ámbar, los demás en gris; siempre con el texto, nunca solo el color.
+   ================================================================ */
+
+.reminder-list {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.reminder {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.reminder:last-child {
+  border-bottom: 0;
+}
+
+.reminder__check {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  margin-top: 1px;
+  flex-shrink: 0;
+  padding: 0;
+  border: 2px solid var(--color-border-strong);
+  border-radius: 50%;
+  background: var(--color-surface);
+  color: #fff;
+  cursor: pointer;
+}
+
+.reminder__check:hover:not(:disabled) {
+  border-color: var(--color-success);
+}
+
+.reminder__check[aria-pressed="true"] {
+  border-color: var(--color-success);
+  background: var(--color-success);
+}
+
+.reminder__check:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.reminder__text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.reminder__title {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.reminder--done .reminder__title {
+  color: var(--color-text-subtle);
+  text-decoration: line-through;
+}
+
+.reminder__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 6px;
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+.reminder__meta .link-button {
+  font-size: var(--text-xs);
+}
+
+.reminder__customer {
+  font-weight: 650;
+}
+
+.reminder__due {
+  flex-shrink: 0;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.reminder__due--overdue {
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
+}
+
+.reminder__due--today {
+  background: var(--color-warning-soft);
+  color: var(--color-warning);
+}
+
+.reminder__due--upcoming {
+  background: var(--color-surface-muted);
+  color: var(--color-text-muted);
+}
+
+/* ---------------------------------------------------------------- el formulario */
+.reminder-composer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-top: var(--space-2);
+}
+
+.reminder-composer__when {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.reminder-composer__chip {
+  padding: 4px 10px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 999px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.reminder-composer__chip[aria-pressed="true"] {
+  border-color: var(--color-accent);
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+  font-weight: 650;
+}
+
+.reminder-composer__chip:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.reminder-composer__date {
+  width: auto;
+  padding: 4px 8px;
+  font-size: var(--text-xs);
+}
+
+.reminder-composer__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.reminder-composer__row > .field {
+  flex: 1;
+  min-width: 180px;
+}
+
+/* ---------------------------------------------------------------- la vista «Recordatorios» de Clientes */
+.reminders-view {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-top: 1px solid var(--color-border);
+}
+
+.reminders-view__bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.reminders-view__empty {
+  margin: 0;
+  padding: var(--space-6) var(--space-4);
+  text-align: center;
+  color: var(--color-text-subtle);
+}
+
+.reminder-list--wide .reminder {
+  padding: 12px 4px;
+}
+
+.segmented-tabs {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-surface-muted);
+}
+
+.segmented-tabs__option {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.segmented-tabs__option[aria-pressed="true"] {
+  background: var(--color-surface);
+  color: var(--color-text);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.12);
+}
+
+.segmented-tabs__option:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.segmented-tabs__count {
+  padding: 0 7px;
+  border-radius: 999px;
+  background: var(--color-border);
+  color: var(--color-text-muted);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.segmented-tabs__option--alert .segmented-tabs__count {
+  background: var(--color-danger);
+  color: #fff;
+}
+
+.customers-panel__lead {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+/* Cuántos recordatorios están vencidos, en el botón de la vista. */
+.view-switch__badge {
+  min-width: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--color-danger);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 18px;
+  text-align: center;
+}
+
+/* ---------------------------------------------------------------- en la tarjeta del tablero */
+.next-reminder {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 100%;
+  padding: 2px 8px;
+  border-radius: 8px;
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.next-reminder__text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.next-reminder--overdue {
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
+}
+
+.next-reminder--today {
+  background: var(--color-warning-soft);
+  color: var(--color-warning);
+}
+
+.next-reminder--upcoming {
+  background: var(--color-surface-muted);
+  color: var(--color-text-muted);
+}

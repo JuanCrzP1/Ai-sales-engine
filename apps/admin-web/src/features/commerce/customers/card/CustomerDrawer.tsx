@@ -13,13 +13,14 @@ import { HistorySection } from "./HistorySection";
 import { LabelsSection } from "./LabelsSection";
 import { NotesSection } from "./NotesSection";
 import { PurchasesSection } from "./PurchasesSection";
+import { RemindersSection } from "./RemindersSection";
 import { StageSection } from "./StageSection";
 import { useCustomerCard } from "../../../../state/useCustomerCard";
 
 /**
  * La ficha de un cliente: un panel que entra por la derecha, sobre el tablero, con todo lo suyo. De arriba abajo: quién es y su
- * chat, en qué etapa va (y cómo moverlo), cuánto vale y quién lo atiende, sus etiquetas, las notas del equipo, sus compras y su
- * historial.
+ * chat, en qué etapa va (y cómo moverlo), cuánto vale y quién lo atiende, qué hay que hacer con él (recordatorios), sus etiquetas,
+ * las notas del equipo, sus compras y su historial.
  *
  * `version` cambia cuando el tablero mueve algo (la ficha se vuelve a pedir) y `onChanged` avisa al tablero cuando la ficha cambia
  * el valor o el responsable. `locked`: hay una ventana encima (el motivo de «No compró» o la venta) y Escape es de ella.
@@ -111,6 +112,15 @@ export function CustomerDrawer({
             <>
               <StageSection customer={data.customer} stageSince={data.stageSince} busy={busy} onMove={(stage) => onMove(data.customer, stage)} />
               <DealSection card={data} saving={card.saving} onUpdate={card.update} />
+              <RemindersSection
+                reminders={data.reminders}
+                assignees={data.assignees}
+                viewerId={data.viewerId}
+                saving={card.saving}
+                onAdd={card.addReminder}
+                onMark={card.markReminder}
+                onDelete={card.deleteReminder}
+              />
               <LabelsSection own={data.customer.labels} catalog={labels} saving={card.saving} onSet={card.setLabels} onCreate={card.createLabel} onManage={onManageLabels} />
               <NotesSection notes={data.notes} saving={card.saving} onAdd={card.addNote} onDelete={card.deleteNote} />
               <PurchasesSection purchases={data.purchases} onSell={() => onSell(data.customer)} />

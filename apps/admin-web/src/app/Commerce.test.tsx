@@ -1,6 +1,7 @@
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it } from "vitest";
+import type { Reminder } from "../domain/commerce/reminders";
 import type { Customer, Report, Sale } from "../domain/commerce/types";
 import { MEMORY_PAYMENT_CONFIRMED, createMemoryBackend, createMemoryCommerce, createMemoryInbox, createTestServices, emptyReport } from "../test/fakes";
 import { SAMPLE_DOCUMENT } from "../test/fixtures/sampleDocument";
@@ -13,7 +14,7 @@ const ago = (minutes: number) => new Date(Date.now() - minutes * 60_000).toISOSt
 
 const customer = (overrides: Partial<Customer>): Customer => ({
   conversationId: "c1", name: "Laura Gómez", contact: "573001112233", channel: "whatsapp", stage: "interested", firstContactAt: ago(90),
-  lastMessageAt: ago(5), messageCount: 6, needsHuman: false, purchases: 0, spent: {}, lostReason: null, deal: null, owner: null, labels: [], ...overrides,
+  lastMessageAt: ago(5), messageCount: 6, needsHuman: false, purchases: 0, spent: {}, lostReason: null, deal: null, owner: null, labels: [], nextReminder: null, ...overrides,
 });
 
 const CUSTOMERS: Customer[] = [
@@ -448,6 +449,119 @@ describe("Las etiquetas de los clientes", () => {
 
     await waitFor(() => expect(window.location.search).toBe(""));
     expect(await screen.findByRole("article", { name: "Pedro Ruiz" })).toBeInTheDocument();
+  });
+});
+
+describe("Los recordatorios del equipo", () => {
+  const hoursFromNow = (hours: number) => new Date(Date.now() + hours * 3_600_000).toISOString();
+  const TEAM = [
+    { userId: "u-ana", email: "ana@negocio.com", role: "owner" },
+    { userId: "u-caro", email: "caro@negocio.com", role: "agent" },
+  ];
+  const reminder = (overrides: Partial<Reminder>): Reminder => ({
+    id: "r1", conversationId: "c1", customerName: "Laura Gómez", customerContact: "573001112233", title: "Llamarla para cerrar", dueAt: hoursFromNow(-2),
+    assignee: { userId: "u-ana", label: "ana@negocio.com" }, createdBy: "ana@negocio.com", createdAt: hoursFromNow(-30), doneAt: null, doneBy: null, ...overrides,
+  });
+  const REMINDERS = [
+    reminder({}),
+    reminder({ id: "r2", conversationId: "c2", customerName: "Pedro Ruiz", customerContact: "573009998877", title: "Revisar su comprobante", dueAt: hoursFromNow(30), assignee: { userId: "u-caro", label: "caro@negocio.com" } }),
+  ];
+
+  it("la tarjeta muestra el más próximo y la vista agrupa vencidos, hoy y próximos", async () => {
+    const { user } = await openAt("clientes", { customers: CUSTOMERS, reminders: REMINDERS });
+    const laura = await screen.findByRole("article", { name: "Laura Gómez" });
+    expect(await within(laura).findByLabelText("Recordatorio. Vencido · hace 2 h: Llamarla para cerrar")).toHaveTextContent("Vencido");
+    const view = screen.getByRole("button", { name: /Recordatorios/ });
+    expect(within(view).getByLabelText("1 vencido")).toHaveTextContent("1");
+
+    await user.click(view);
+    expect(window.location.search).toBe("?vista=recordatorios");
+    const when = screen.getByRole("group", { name: "Cuándo" });
+    await user.click(within(when).getByRole("button", { name: /Vencidos/ }));
+    const overdue = screen.getByRole("list", { name: "Vencidos" });
+    expect(within(overdue).getByText("Llamarla para cerrar")).toBeInTheDocument();
+    expect(overdue).toHaveTextContent("ana@negocio.com");
+    await user.click(within(when).getByRole("button", { name: /Próximos/ }));
+    expect(within(screen.getByRole("list", { name: "Próximos" })).getByText("Revisar su comprobante")).toBeInTheDocument();
+    await user.click(within(when).getByRole("button", { name: /Hoy/ }));
+    expect(screen.getByText("Nada para hoy. Agrega recordatorios desde la ficha de cada cliente.")).toBeInTheDocument();
+  });
+
+  it("marcar uno hecho lo saca de los pendientes y aparece en «Hechos»", async () => {
+    const { user, commerce } = await openAt("clientes?vista=recordatorios", { customers: CUSTOMERS, reminders: REMINDERS });
+    await user.click(within(await screen.findByRole("group", { name: "Cuándo" })).getByRole("button", { name: /Vencidos/ }));
+    await user.click(screen.getByRole("button", { name: "Marcar «Llamarla para cerrar» como hecho" }));
+
+    await waitFor(() => expect(commerce.reminderList[0]!.doneAt).not.toBeNull());
+    expect(await screen.findByText("Nada vencido. ¡Vas al día!")).toBeInTheDocument();
+    expect(screen.queryByLabelText("1 vencido")).not.toBeInTheDocument();
+    await user.click(within(screen.getByRole("group", { name: "Cuándo" })).getByRole("button", { name: "Hechos" }));
+    const done = await screen.findByRole("list", { name: "Hechos" });
+    expect(within(done).getByText("Llamarla para cerrar")).toBeInTheDocument();
+    expect(done).toHaveTextContent("por operador@ejemplo.com");
+  });
+
+  it("el nombre del cliente abre su ficha", async () => {
+    const { user } = await openAt("clientes?vista=recordatorios", { customers: CUSTOMERS, reminders: REMINDERS });
+    await user.click(within(await screen.findByRole("group", { name: "Cuándo" })).getByRole("button", { name: /Próximos/ }));
+    await user.click(screen.getByRole("button", { name: "Pedro Ruiz" }));
+    expect(await screen.findByRole("dialog", { name: "Pedro Ruiz" })).toBeInTheDocument();
+    expect(window.location.search).toBe("?vista=recordatorios&cliente=c2");
+  });
+
+  it("desde la ficha se crea con un atajo de fecha y para alguien del equipo", async () => {
+    const { user, commerce } = await openAt("clientes", { customers: CUSTOMERS, assignees: TEAM, viewerId: "u-ana" });
+    await user.click(await screen.findByRole("button", { name: "Abrir la ficha de Pedro Ruiz" }));
+    const section = within(await screen.findByRole("dialog", { name: "Pedro Ruiz" })).getByRole("region", { name: "Recordatorios" });
+    expect(section).toHaveTextContent("nada pendiente");
+    expect(within(section).getByLabelText("Para")).toHaveValue("u-ana"); // propone a quien mira
+    await user.click(within(section).getByRole("button", { name: "Agregar recordatorio" }));
+    expect(within(section).getByText("Escribe qué hay que hacer.")).toBeInTheDocument();
+
+    await user.type(within(section).getByLabelText(/^Nuevo recordatorio/), "Revisar su comprobante");
+    await user.click(within(section).getByRole("button", { name: "En 3 días" }));
+    await user.selectOptions(within(section).getByLabelText("Para"), "u-caro");
+    await user.click(within(section).getByRole("button", { name: "Agregar recordatorio" }));
+
+    await waitFor(() => expect(commerce.reminderList).toHaveLength(1));
+    const created = commerce.reminderList[0]!;
+    expect(created.assignee?.userId).toBe("u-caro");
+    expect(created.title).toBe("Revisar su comprobante");
+    const inThreeDays = new Date();
+    inThreeDays.setDate(inThreeDays.getDate() + 3);
+    expect(new Date(created.dueAt).getDate()).toBe(inThreeDays.getDate());
+    expect(new Date(created.dueAt).getHours()).toBe(9);
+    expect(await within(section).findByText("Revisar su comprobante")).toBeInTheDocument();
+    expect(section).toHaveTextContent("1 pendiente");
+    expect(within(section).getByLabelText(/^Nuevo recordatorio/)).toHaveValue("");
+    // La tarjeta del tablero ya lo muestra.
+    await waitFor(() => expect(within(screen.getByRole("article", { name: "Pedro Ruiz" })).getByLabelText(/^Recordatorio\. .*: Revisar su comprobante$/)).toBeInTheDocument());
+  });
+
+  it("desde la ficha se marca hecho, se vuelve a abrir y se borra", async () => {
+    const { user, commerce } = await openAt("clientes", { customers: CUSTOMERS, reminders: REMINDERS });
+    await user.click(await screen.findByRole("button", { name: "Abrir la ficha de Laura Gómez" }));
+    const section = within(await screen.findByRole("dialog", { name: "Laura Gómez" })).getByRole("region", { name: "Recordatorios" });
+    await user.click(within(section).getByRole("button", { name: "Marcar «Llamarla para cerrar» como hecho" }));
+    await waitFor(() => expect(commerce.reminderList[0]!.doneAt).not.toBeNull());
+    expect(await within(section).findByText("nada pendiente")).toBeInTheDocument();
+
+    await user.click(within(section).getByRole("button", { name: "Ver los hechos (1)" }));
+    await user.click(within(section).getByRole("button", { name: "Volver a abrir «Llamarla para cerrar»" }));
+    await waitFor(() => expect(commerce.reminderList[0]!.doneAt).toBeNull());
+    expect(await within(section).findByText("1 pendiente")).toBeInTheDocument();
+
+    await user.click(within(section).getByRole("button", { name: "Borrar «Llamarla para cerrar»" }));
+    await waitFor(() => expect(commerce.reminderList.map((item) => item.id)).toEqual(["r2"]));
+  });
+
+  it("«Míos» muestra solo los de quien mira; sin cuentas no se pregunta", async () => {
+    const { user } = await openAt("clientes?vista=recordatorios", { customers: CUSTOMERS, reminders: REMINDERS, viewerId: "u-ana" });
+    // Este equipo no tiene cuentas: todos los recordatorios son de todos.
+    expect(await screen.findByRole("group", { name: "Cuándo" })).toBeInTheDocument();
+    expect(screen.queryByRole("group", { name: "De quién" })).not.toBeInTheDocument();
+    await user.click(within(screen.getByRole("group", { name: "Cuándo" })).getByRole("button", { name: /Próximos/ }));
+    expect(within(screen.getByRole("list", { name: "Próximos" })).getByText("Revisar su comprobante")).toBeInTheDocument();
   });
 });
 

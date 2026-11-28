@@ -1,6 +1,8 @@
+import { Icon } from "../../../components/ui/Icon";
 import { initialsOf } from "../../../domain/commerce/customerCard";
 import { shownLabels } from "../../../domain/commerce/labels";
 import { boughtText, customerName } from "../../../domain/commerce/pipeline";
+import { dueShort, dueText } from "../../../domain/commerce/reminders";
 import { formatMoney, type BoardStage, type Customer } from "../../../domain/commerce/types";
 import { relativeTime } from "../../../domain/inbox/format";
 import { CHANNEL_LABELS, type Channel } from "../../../domain/inbox/types";
@@ -32,6 +34,8 @@ export function CustomerCard({
   const name = customerName(customer);
   const bought = boughtText(customer);
   const labels = shownLabels(customer.labels);
+  const next = customer.nextReminder ? dueShort(customer.nextReminder.dueAt) : null;
+  const nextFull = customer.nextReminder ? `${dueText(customer.nextReminder.dueAt).text}: ${customer.nextReminder.title}` : "";
   return (
     <article
       className={`customer-card${dragging ? " customer-card--dragging" : ""}${busy ? " customer-card--busy" : ""}`}
@@ -64,6 +68,12 @@ export function CustomerCard({
         </span>
       )}
       {customer.needsHuman && <span className="handoff-badge">Espera a una persona</span>}
+      {customer.nextReminder && next && (
+        <span className={`next-reminder next-reminder--${next.tone}`} title={nextFull} aria-label={`Recordatorio. ${nextFull}`}>
+          <Icon name="clock" size={13} />
+          <span className="next-reminder__text">{next.text}</span>
+        </span>
+      )}
       {bought && <span className="customer-card__bought">{bought}</span>}
       {customer.stage === "lost" && <span className="customer-card__reason">{customer.lostReason ? `«${customer.lostReason}»` : "Sin motivo anotado"}</span>}
       <span className="customer-card__footer">

@@ -60,6 +60,7 @@ def customer_payload(item: Customer) -> dict[str, Any]:
         "deal": {"amount": f"{item.deal_amount:.2f}", "currency": item.deal_currency} if item.deal_amount is not None else None,
         "owner": {"user_id": item.owner_id, "label": item.owner_label} if item.owner_id else None,
         "labels": [{"id": label.id, "name": label.name, "color": label.color} for label in item.labels],
+        "next_reminder": {"title": item.next_reminder.title, "due_at": _iso(item.next_reminder.due_at)} if item.next_reminder else None,
     }
 
 

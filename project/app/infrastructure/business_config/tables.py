@@ -331,6 +331,24 @@ conversation_labels = Table(
     Index("conversation_labels_label_idx", "label_id"),
 )
 
+# Los recordatorios del equipo (migración 0028): qué hacer con un cliente y cuándo, para quién, y si ya se hizo.
+customer_reminders = Table(
+    "customer_reminders",
+    metadata,
+    Column("id", Uuid, primary_key=True, default=uuid.uuid4),
+    Column("tenant_id", Uuid, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False),
+    Column("conversation_id", Uuid, ForeignKey("conversations.id", ondelete="CASCADE"), nullable=False),
+    Column("title", Text, nullable=False),
+    Column("due_at", DateTime(timezone=True), nullable=False),
+    Column("assignee_id", Text),
+    Column("created_by", Text),
+    Column("created_at", DateTime(timezone=True), nullable=False, default=_now),
+    Column("done_at", DateTime(timezone=True)),
+    Column("done_by", Text),
+    Index("customer_reminders_open_idx", "tenant_id", "done_at", "due_at"),
+    Index("customer_reminders_conversation_idx", "conversation_id", "due_at"),
+)
+
 # Avisos para el equipo de cada negocio (migración 0005). Cada persona marca como leídos los suyos en `notification_reads`.
 notifications = Table(
     "notifications",

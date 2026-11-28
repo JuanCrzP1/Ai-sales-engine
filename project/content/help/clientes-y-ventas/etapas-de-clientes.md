@@ -5,7 +5,7 @@ summary: El tablero de Clientes, con una columna por etapa, y la ficha de cada c
 order: 1
 updated: 2026-11-28
 keywords: clientes, etapas, embudo, tablero, crm, ficha, valor, por cerrar, responsable, asignar, notas, historial, nuevo, interesado, listo para comprar, pagó, por verificar, no compró, mover, arrastrar, motivo, contactos
-related: etiquetas-de-clientes, registrar-una-venta, reportes, eliminar-un-chat, seguimiento-automatico
+related: etiquetas-de-clientes, recordatorios, registrar-una-venta, reportes, eliminar-un-chat, seguimiento-automatico
 ---
 
 En [Clientes](panel:clientes) está cada persona que te escribió, en un **tablero** con una columna por **etapa**.
@@ -42,6 +42,7 @@ Toca a un cliente, en el tablero o en la lista, y se abre su **ficha**:
 - **Etapa:** en qué paso va, hace cuánto, y un botón para pasarlo al siguiente o a «No compró».
 - **Valor:** cuánto vale lo que podría comprar. Lo pones tú; aparece en su tarjeta y suma en «Por cerrar».
 - **Responsable:** quién de tu equipo lo atiende. Sus iniciales salen en la tarjeta. Si todavía no tienes equipo, invita a alguien en [Equipo](panel:configuracion/equipo).
+- **Recordatorios:** qué hay que hacer con él y cuándo, para quién de tu equipo. Ver [Recordatorios del equipo](recordatorios).
 - **Etiquetas:** las que tú quieras, para organizarlo a tu manera. Ver [Etiquetas de clientes](etiquetas-de-clientes).
 - **Notas:** lo que tu equipo quiera recordar de ese cliente. Solo las ve tu equipo, nunca el cliente.
 - **Compras:** sus ventas, con el botón para registrar otra.

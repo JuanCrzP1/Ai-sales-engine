@@ -1,6 +1,7 @@
 import type { CustomerCard, CustomerEvent, CustomerNote } from "../../domain/commerce/customerCard";
 import { toLabelColor, type Label } from "../../domain/commerce/labels";
 import type { Pipeline } from "../../domain/commerce/pipeline";
+import type { Reminder } from "../../domain/commerce/reminders";
 import type { BoardStage, Customer, Report, ReportTotals, Sale, Stage } from "../../domain/commerce/types";
 import type { Commerce } from "../../repositories/commerce";
 import type { HttpClient } from "./httpClient";
@@ -21,6 +22,21 @@ interface ApiCustomer {
   deal?: { amount: string; currency: string } | null;
   owner?: { user_id: string; label: string } | null;
   labels?: { id: string; name: string; color: string }[];
+  next_reminder?: { title: string; due_at: string } | null;
+}
+
+interface ApiReminder {
+  id: string;
+  conversation_id: string;
+  customer_name: string | null;
+  customer_contact: string;
+  title: string;
+  due_at: string;
+  assignee: { user_id: string; label: string } | null;
+  created_by: string | null;
+  created_at: string | null;
+  done_at: string | null;
+  done_by: string | null;
 }
 
 interface ApiLabel {
@@ -50,6 +66,8 @@ interface ApiCard {
   assignees: ApiAssignee[];
   purchases: ApiSale[];
   notes: ApiNote[];
+  reminders?: ApiReminder[];
+  viewer_id?: string | null;
   events: { id: string; kind: CustomerEvent["kind"]; source: CustomerEvent["source"]; from_stage: BoardStage | null; to_stage: BoardStage | null; detail: string | null; actor: string | null; created_at: string }[];
 }
 
@@ -117,6 +135,21 @@ const toCustomer = (item: ApiCustomer): Customer => ({
   deal: item.deal ?? null,
   owner: item.owner ? { userId: item.owner.user_id, label: item.owner.label } : null,
   labels: (item.labels ?? []).map((label) => ({ id: label.id, name: label.name, color: toLabelColor(label.color) })),
+  nextReminder: item.next_reminder ? { title: item.next_reminder.title, dueAt: item.next_reminder.due_at } : null,
+});
+
+const toReminder = (item: ApiReminder): Reminder => ({
+  id: item.id,
+  conversationId: item.conversation_id,
+  customerName: item.customer_name,
+  customerContact: item.customer_contact,
+  title: item.title,
+  dueAt: item.due_at,
+  assignee: item.assignee ? { userId: item.assignee.user_id, label: item.assignee.label } : null,
+  createdBy: item.created_by,
+  createdAt: item.created_at,
+  doneAt: item.done_at,
+  doneBy: item.done_by,
 });
 
 const toLabel = (item: ApiLabel): Label => ({ id: item.id, name: item.name, color: toLabelColor(item.color), customers: item.customers });
@@ -168,6 +201,8 @@ const toCard = (item: ApiCard): CustomerCard => ({
     actor: event.actor,
     createdAt: event.created_at,
   })),
+  reminders: (item.reminders ?? []).map(toReminder),
+  viewerId: item.viewer_id ?? null,
 });
 
 const toTotals = (item: ApiTotals): ReportTotals => ({
@@ -217,6 +252,20 @@ export function createApiCommerce(http: HttpClient, slug: string): Commerce {
     deleteLabel: (labelId) => http.delete(`${base}/labels/${encodeURIComponent(labelId)}`),
     setCustomerLabels: async (conversationId, labelIds) =>
       toCustomer(await http.put<ApiCustomer>(`${base}/customers/${encodeURIComponent(conversationId)}/labels`, { label_ids: labelIds })),
+    reminders: async ({ done = false, mine = false } = {}) => {
+      const search = new URLSearchParams();
+      if (done) search.set("done", "true");
+      if (mine) search.set("mine", "true");
+      return (await http.get<ApiReminder[]>(`${base}/reminders${search.toString() ? `?${search.toString()}` : ""}`)).map(toReminder);
+    },
+    createReminder: async (conversationId, input) => {
+      // Sin responsable elegido no viaja: el servidor lo deja para quien lo crea. Vacío: sin responsable.
+      const body: Record<string, string | null> = { title: input.title, due_at: input.dueAt };
+      if (input.assigneeId !== undefined) body.assignee_id = input.assigneeId ?? "";
+      return toReminder(await http.post<ApiReminder>(`${base}/customers/${encodeURIComponent(conversationId)}/reminders`, body));
+    },
+    setReminderDone: async (reminderId, done) => toReminder(await http.patch<ApiReminder>(`${base}/reminders/${encodeURIComponent(reminderId)}`, { done })),
+    deleteReminder: (reminderId) => http.delete(`${base}/reminders/${encodeURIComponent(reminderId)}`),
     sales: async (days = 90) => (await http.get<ApiSale[]>(`${base}/sales?days=${days}`)).map(toSale),
     recordSale: async (sale) =>
       toSale(

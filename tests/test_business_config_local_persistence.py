@@ -1091,7 +1091,9 @@ def test_postgres_schema_comes_from_the_reviewed_migration():
             # Migración 0026: el historial y las notas de la ficha de cada cliente.
             "customer_events", "customer_notes",
             # Migración 0027: las etiquetas de los clientes.
-            "customer_labels", "conversation_labels"} == set(metadata.tables)
+            "customer_labels", "conversation_labels",
+            # Migración 0028: los recordatorios del equipo.
+            "customer_reminders"} == set(metadata.tables)
 
 
 @pytest.mark.parametrize("scheme", ["postgresql", "postgres"])

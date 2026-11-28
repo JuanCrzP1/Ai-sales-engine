@@ -20,6 +20,7 @@ import type { Commerce } from "../repositories/commerce";
 import type { Assignee, CustomerCard, CustomerEvent, CustomerNote } from "../domain/commerce/customerCard";
 import { labelKey, type Label } from "../domain/commerce/labels";
 import type { Pipeline } from "../domain/commerce/pipeline";
+import type { Reminder } from "../domain/commerce/reminders";
 import { BOARD_STAGES, STAGES, type BoardStage, type Customer, type Report, type Sale } from "../domain/commerce/types";
 import type { ConfigRepository, StoredConfig } from "../repositories/configRepository";
 import type { ChatMessage, ConversationSummary, ConversationThread, InboxFilter, Notification, PaymentSale } from "../domain/inbox/types";
@@ -475,7 +476,7 @@ export function emptyReport(days = 30): Report {
 
 /** Clientes, ventas y reportes en memoria: registrar una venta convierte al cliente, como el servidor. */
 export function createMemoryCommerce(
-  seed: { customers?: Customer[]; sales?: Sale[]; report?: Report; cardsPerStage?: number; assignees?: Assignee[]; labels?: Label[] } = {},
+  seed: { customers?: Customer[]; sales?: Sale[]; report?: Report; cardsPerStage?: number; assignees?: Assignee[]; labels?: Label[]; reminders?: Reminder[]; viewerId?: string | null } = {},
 ): Commerce & {
   customerList: Customer[];
   saleList: Sale[];
@@ -483,6 +484,7 @@ export function createMemoryCommerce(
   moves: { conversationId: string; stage: BoardStage; reason: string | null }[];
   noteList: (CustomerNote & { conversationId: string })[];
   labelList: Label[];
+  reminderList: Reminder[];
 } {
   const customerList = (seed.customers ?? []).map((item) => ({ ...item }));
   const saleList = (seed.sales ?? []).map((item) => ({ ...item }));
@@ -490,6 +492,12 @@ export function createMemoryCommerce(
   const moves: { conversationId: string; stage: BoardStage; reason: string | null }[] = [];
   const assignees = seed.assignees ?? [];
   const labelList = (seed.labels ?? []).map((item) => ({ ...item }));
+  const reminderList = (seed.reminders ?? []).map((item) => ({ ...item }));
+  // El pendiente más próximo de cada cliente, como lo calcula el servidor para su tarjeta.
+  const withNext = (customer: Customer): Customer => {
+    const next = reminderList.filter((item) => item.conversationId === customer.conversationId && !item.doneAt).sort((a, b) => a.dueAt.localeCompare(b.dueAt))[0];
+    return { ...customer, nextReminder: next ? { title: next.title, dueAt: next.dueAt } : null };
+  };
   const repeated = (name: string, exceptId?: string) => labelList.some((item) => item.id !== exceptId && labelKey(item.name) === labelKey(name));
   const nameTaken = () => new PersistenceError("invalid", { message: "Ya tienes una etiqueta con ese nombre.", problems: [{ path: "name", message: "Ya tienes una etiqueta con ese nombre." }] });
   const counted = (label: Label): Label => ({ ...label, customers: customerList.filter((item) => item.labels.some((own) => own.id === label.id)).length });
@@ -506,8 +514,11 @@ export function createMemoryCommerce(
   const cardOf = (conversationId: string): CustomerCard => {
     const customer = found(conversationId);
     const events = eventList.filter((item) => item.conversationId === conversationId);
+    const own = reminderList.filter((item) => item.conversationId === conversationId);
     return {
-      customer: { ...customer },
+      customer: withNext(customer),
+      reminders: [...own.filter((item) => !item.doneAt).sort((a, b) => a.dueAt.localeCompare(b.dueAt)), ...own.filter((item) => item.doneAt)].map((item) => ({ ...item })),
+      viewerId: seed.viewerId ?? null,
       stageSince: events.find((item) => item.kind === "stage")?.createdAt ?? null,
       owner: assignees.find((member) => member.userId === customer.owner?.userId) ?? null,
       assignees: assignees.map((member) => ({ ...member })),
@@ -534,10 +545,11 @@ export function createMemoryCommerce(
     moves,
     noteList,
     labelList,
+    reminderList,
     customers: async (filter = {}) =>
       matching(filter.query, filter.label)
         .filter((item) => !filter.stage || item.stage === filter.stage)
-        .map((item) => ({ ...item })),
+        .map(withNext),
     // El tablero, como el servidor: las columnas con `query`, y los números contando a todos.
     pipeline: async (query = "", labelId = null): Promise<Pipeline> => {
       const count = (stage: BoardStage) => customerList.filter((item) => item.stage === stage).length;
@@ -548,7 +560,7 @@ export function createMemoryCommerce(
       return {
         columns: BOARD_STAGES.map((stage) => {
           const inStage = matching(query, labelId).filter((item) => item.stage === stage);
-          return { stage, count: inStage.length, value: sumOf(inStage), customers: inStage.slice(0, seed.cardsPerStage ?? 30).map((item) => ({ ...item })) };
+          return { stage, count: inStage.length, value: sumOf(inStage), customers: inStage.slice(0, seed.cardsPerStage ?? 30).map(withNext) };
         }),
         stats: {
           openCount: customerList.filter((item) => item.stage !== "customer" && item.stage !== "lost").length,
@@ -621,6 +633,45 @@ export function createMemoryCommerce(
       if (index < 0) throw new PersistenceError("not_found", { message: "Esa etiqueta no existe." });
       labelList.splice(index, 1);
       for (const customer of customerList) customer.labels = customer.labels.filter((own) => own.id !== labelId);
+    },
+    // Los recordatorios, como el servidor: «míos» son los de quien mira (`viewerId`), y sin responsable elegido quedan para él.
+    reminders: async ({ done = false, mine = false } = {}) =>
+      reminderList
+        .filter((item) => Boolean(item.doneAt) === done && (!mine || item.assignee?.userId === seed.viewerId))
+        .sort((a, b) => (done ? (b.doneAt ?? "").localeCompare(a.doneAt ?? "") : a.dueAt.localeCompare(b.dueAt)))
+        .map((item) => ({ ...item })),
+    createReminder: async (conversationId, input) => {
+      const customer = found(conversationId);
+      if (!input.title.trim()) throw new PersistenceError("invalid", { message: "Escribe qué hay que hacer.", problems: [{ path: "title", message: "Escribe qué hay que hacer." }] });
+      const ownerId = input.assigneeId === undefined ? (seed.viewerId ?? null) : input.assigneeId;
+      const member = assignees.find((item) => item.userId === ownerId);
+      const created: Reminder = {
+        id: `recordatorio-${reminderList.length + 1}`,
+        conversationId,
+        customerName: customer.name,
+        customerContact: customer.contact,
+        title: input.title.trim(),
+        dueAt: input.dueAt,
+        assignee: member ? { userId: member.userId, label: member.email ?? "Alguien del equipo" } : null,
+        createdBy: "operador@ejemplo.com",
+        createdAt: new Date().toISOString(),
+        doneAt: null,
+        doneBy: null,
+      };
+      reminderList.push(created);
+      return { ...created };
+    },
+    setReminderDone: async (reminderId, done) => {
+      const reminder = reminderList.find((item) => item.id === reminderId);
+      if (!reminder) throw new PersistenceError("not_found", { message: "Ese recordatorio no existe." });
+      if (done && !reminder.doneAt) Object.assign(reminder, { doneAt: new Date().toISOString(), doneBy: "operador@ejemplo.com" });
+      if (!done) Object.assign(reminder, { doneAt: null, doneBy: null });
+      return { ...reminder };
+    },
+    deleteReminder: async (reminderId) => {
+      const index = reminderList.findIndex((item) => item.id === reminderId);
+      if (index < 0) throw new PersistenceError("not_found", { message: "Ese recordatorio no existe." });
+      reminderList.splice(index, 1);
     },
     setCustomerLabels: async (conversationId, labelIds) => {
       const customer = found(conversationId);

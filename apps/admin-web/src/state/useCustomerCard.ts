@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import type { CardChange, CustomerCard } from "../domain/commerce/customerCard";
 import type { LabelColor } from "../domain/commerce/labels";
+import type { NewReminderInput } from "../domain/commerce/reminders";
 import type { Commerce } from "../repositories/commerce";
 import { useCommerce } from "./commerceContext";
 import { PersistenceError, persistenceErrorMessage } from "../repositories/persistenceError";
@@ -59,6 +60,10 @@ export function useCustomerCard(conversationId: string, version: number, onChang
     deleteNote: useCallback((noteId: string) => run((api) => api.deleteCustomerNote(conversationId, noteId), false), [run, conversationId]),
     /** Deja al cliente con esas etiquetas: el tablero también las muestra. */
     setLabels: useCallback((labelIds: string[]) => run((api) => api.setCustomerLabels(conversationId, labelIds).then(() => undefined), true), [run, conversationId]),
+    /** Los recordatorios del cliente: el tablero muestra el más próximo en su tarjeta. */
+    addReminder: useCallback((input: NewReminderInput) => run((api) => api.createReminder(conversationId, input).then(() => undefined), true), [run, conversationId]),
+    markReminder: useCallback((reminderId: string, done: boolean) => run((api) => api.setReminderDone(reminderId, done).then(() => undefined), true), [run]),
+    deleteReminder: useCallback((reminderId: string) => run((api) => api.deleteReminder(reminderId), true), [run]),
     /** Crea una etiqueta nueva y se la pone al cliente, además de las que ya tiene (`current`). */
     createLabel: useCallback(
       (name: string, color: LabelColor, current: string[]) =>

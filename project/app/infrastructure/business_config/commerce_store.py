@@ -20,12 +20,14 @@ from app.domain.business_config.commerce import ALL_STAGES, STAGES, Customer, Ne
 from app.domain.business_config.customer_card import SOURCE_SALE, CustomerCard, CustomerNote, DealChange, money_text
 from app.domain.business_config.customer_labels import Label, LabelChange
 from app.domain.business_config.errors import ConversationNotFoundError
+from app.domain.business_config.reminders import NewReminder, Reminder
 from app.domain.business_config.pipeline import Pipeline, StageMove
 from app.infrastructure.business_config.commerce_queries import MAX_CUSTOMERS, TEST_CHANNEL, bounds, customers_of, day_of, real_customers, sale_of
 from app.infrastructure.business_config.customer_card_store import add_note, delete_note, read_card, update_deal
 from app.infrastructure.business_config.customer_events import record_stage_change
 from app.infrastructure.business_config.label_store import create_label, delete_label, list_labels, set_customer_labels, update_label
 from app.infrastructure.business_config.pipeline_store import move_customer, read_pipeline
+from app.infrastructure.business_config.reminder_store import create_reminder, delete_reminder, list_reminders, set_reminder_done
 from app.infrastructure.business_config.tables import conversation_entries, conversations, sales
 from app.infrastructure.business_config.tenancy import tenant_of
 
@@ -87,6 +89,20 @@ class CommerceStore:
 
     def set_customer_labels(self, tenant_slug: str, conversation_id: str, label_ids: list[str]) -> Customer:
         return set_customer_labels(self._engine, tenant_slug, conversation_id, label_ids)
+
+    # ------------------------------------------------------------------ los recordatorios (las consultas están en `reminder_store.py`)
+
+    def reminders(self, tenant_slug: str, *, done: bool, assignee_id: str | None = None) -> list[Reminder]:
+        return list_reminders(self._engine, tenant_slug, done=done, assignee_id=assignee_id)
+
+    def create_reminder(self, tenant_slug: str, conversation_id: str, reminder: NewReminder, *, by_user: str | None, by: str | None) -> Reminder:
+        return create_reminder(self._engine, tenant_slug, conversation_id, reminder, by_user=by_user, by=by)
+
+    def set_reminder_done(self, tenant_slug: str, reminder_id: str, done: bool, *, by: str | None) -> Reminder:
+        return set_reminder_done(self._engine, tenant_slug, reminder_id, done, by=by)
+
+    def delete_reminder(self, tenant_slug: str, reminder_id: str) -> None:
+        delete_reminder(self._engine, tenant_slug, reminder_id)
 
     # ------------------------------------------------------------------ ventas
 

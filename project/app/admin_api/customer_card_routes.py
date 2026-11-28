@@ -8,6 +8,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from app.admin_api.commerce_routes import _iso, customer_payload, sale_payload
 from app.admin_api.errors import ApiError
+from app.admin_api.reminder_routes import reminder_payload
 from app.admin_api.routes import BusinessSlug, CurrentUser
 from app.business_config_application.customer_card import CustomerCardService
 from app.domain.business_config.customer_card import Assignee, CustomerCard, CustomerCardError, CustomerNote
@@ -63,6 +64,8 @@ def card_payload(card: CustomerCard) -> dict[str, Any]:
             }
             for event in card.events
         ],
+        "reminders": [reminder_payload(item) for item in card.reminders],
+        "viewer_id": card.viewer_id,
     }
 
 

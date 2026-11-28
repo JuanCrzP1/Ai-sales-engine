@@ -17,6 +17,7 @@ from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
 
 from app.domain.business_config.customer_labels import LabelRef
+from app.domain.business_config.reminders import NextReminder
 
 STAGES = ("new", "interested", "ready", "payment", "customer")
 # Fuera del embudo: el equipo lo marcó como «no compró». No es una etapa a la que se llega avanzando.
@@ -78,6 +79,8 @@ class Customer:
     owner_label: str | None = None
     # Sus etiquetas (`customer_labels.py`), por nombre.
     labels: tuple[LabelRef, ...] = ()
+    # Su recordatorio pendiente más próximo (`reminders.py`).
+    next_reminder: NextReminder | None = None
 
 
 @dataclass(frozen=True)

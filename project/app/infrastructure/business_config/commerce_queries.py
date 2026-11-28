@@ -17,6 +17,7 @@ from sqlalchemy.engine import Connection
 
 from app.domain.business_config.commerce import LOST, Customer, Sale
 from app.domain.business_config.customer_labels import LabelRef
+from app.infrastructure.business_config.reminder_store import next_reminders
 from app.infrastructure.business_config.tables import business_members, conversation_labels, conversations, customer_labels, sales
 
 REPORT_TIMEZONE = ZoneInfo("America/Bogota")
@@ -77,6 +78,7 @@ def customers_of(conn: Connection, rows: list[Any]) -> list[Customer]:
             counts[sale.conversation_id] += int(sale.n)
     owners = owner_labels(conn, rows)
     tagged = labels_by_customer(conn, ids)
+    upcoming = next_reminders(conn, ids)
     return [
         Customer(
             conversation_id=str(row.id), name=row.contact_name, contact_ref=row.contact_ref, channel=row.channel, stage=row.stage or "new",
@@ -88,6 +90,7 @@ def customers_of(conn: Connection, rows: list[Any]) -> list[Customer]:
             # Si esa persona ya no es del equipo, el cliente queda sin responsable.
             owner_id=row.owner_id if row.owner_id in owners else None, owner_label=owners.get(row.owner_id),
             labels=tuple(tagged.get(row.id, ())),
+            next_reminder=upcoming.get(row.id),
         )
         for row in rows
     ]
