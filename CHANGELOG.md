@@ -13,6 +13,8 @@ está en el historial de git y en `docs/plan-v1.md`.
   ChatGPT, Cursor) se conectan de nuevo con ella.
 - En el menú, el nombre se ve más grande y completo: la ayuda de la pantalla y la campana de avisos pasan abajo, al lado de tu
   nombre y tu correo.
+- La pantalla de entrada es nueva: a un lado, un chat de ejemplo muestra al asistente atendiendo y cerrando una venta; al otro,
+  solo el formulario, con campos y botón más grandes. El logo y el nombre aparecen una sola vez.
 
 **Seguimiento automático: le volvemos a escribir a quien dejó de responder**
 - En Mensajes → **Seguimiento** lo enciendes y ya viene armado con tres mensajes recomendados (a la hora, al día siguiente y a los
