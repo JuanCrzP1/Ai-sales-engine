@@ -369,8 +369,8 @@ def test_the_handoff_migration_matches_the_tables():
     for table in (notifications, notification_reads):
         body = re.search(rf"CREATE TABLE IF NOT EXISTS {table.name} \((.*?)\n\);", sql, re.S).group(1)
         columns = {match.group(1) for match in re.finditer(r"^\s+([a-z_]+)\s+[A-Z]+", body, re.M)} - {"constraint", "primary"}
-        # La 0021 agregó si el texto del aviso es la nota de la IA para el equipo.
-        assert columns == {column.name for column in table.columns} - {"body_is_note"}, table.name
+        # La 0021 agregó si el texto del aviso es la nota de la IA para el equipo, y la 0029 para quién es.
+        assert columns == {column.name for column in table.columns} - {"body_is_note", "recipient_id"}, table.name
     assert "ADD COLUMN IF NOT EXISTS needs_human" in sql and "ADD COLUMN IF NOT EXISTS handoff_requested_at" in sql
 
 

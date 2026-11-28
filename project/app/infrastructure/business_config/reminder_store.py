@@ -2,7 +2,7 @@
 
 `CommerceStore` lo expone (`reminders`, `create_reminder`, `set_reminder_done`, `delete_reminder`); aquí están sus consultas, y
 también las que usan la ficha (`reminders_of_customer`) y el tablero (`next_reminders`). Solo alcanzan los clientes de canales
-reales del negocio que reciben.
+reales del negocio que reciben. `alert_due_reminders` crea el aviso de los que ya llegaron a su hora.
 """
 from __future__ import annotations
 
@@ -15,7 +15,10 @@ from sqlalchemy.engine import Connection, Engine
 
 from app.domain.business_config.errors import ConversationNotFoundError
 from app.domain.business_config.reminders import (
+    ALERT_KIND,
+    ALERT_TOO_LATE,
     FOR_ME,
+    MAX_ALERTS_PER_RUN,
     MAX_LISTED_DONE,
     MAX_LISTED_OPEN,
     MAX_OPEN_PER_CUSTOMER,
@@ -23,8 +26,9 @@ from app.domain.business_config.reminders import (
     NextReminder,
     Reminder,
     ReminderError,
+    alert_text,
 )
-from app.infrastructure.business_config.tables import business_members, conversations, customer_reminders
+from app.infrastructure.business_config.tables import business_members, conversations, customer_reminders, notifications
 from app.infrastructure.business_config.tenancy import tenant_of
 
 TEST_CHANNEL = "prueba"
@@ -172,3 +176,56 @@ def delete_reminder(engine: Engine, tenant_slug: str, reminder_id: str) -> None:
     with engine.begin() as conn:
         tenant = tenant_of(conn, tenant_slug)
         conn.execute(delete(customer_reminders).where(customer_reminders.c.id == _mine(conn, tenant.id, reminder_id)))
+
+
+# ------------------------------------------------------------------ el aviso cuando llega la hora
+
+
+def alert_due_reminders(engine: Engine, *, now: datetime, limit: int = MAX_ALERTS_PER_RUN) -> list[str]:
+    """Crea el aviso de cada recordatorio pendiente al que ya le llegó la hora y devuelve sus ids (para la notificación al celular).
+
+    Cada recordatorio avisa una sola vez: se reserva (`notified_at`) en la misma transacción que crea su aviso, y si otra revisión ya lo
+    tomó, o alguien lo marcó hecho justo antes, no hace nada. El aviso es para su responsable; sin responsable, o si ya no es del
+    equipo, para todo el equipo. Uno que venció hace más de `ALERT_TOO_LATE` ya no avisa.
+    """
+    due = (
+        select(
+            customer_reminders.c.id, customer_reminders.c.tenant_id, customer_reminders.c.conversation_id, customer_reminders.c.title,
+            customer_reminders.c.assignee_id, conversations.c.contact_name, conversations.c.contact_ref,
+        )
+        .join(conversations, conversations.c.id == customer_reminders.c.conversation_id)
+        .where(
+            customer_reminders.c.done_at.is_(None),
+            customer_reminders.c.notified_at.is_(None),
+            customer_reminders.c.due_at <= now,
+            customer_reminders.c.due_at >= now - ALERT_TOO_LATE,
+            conversations.c.channel != TEST_CHANNEL,
+        )
+        .order_by(customer_reminders.c.due_at)
+        .limit(max(1, limit))
+    )
+    with engine.connect() as conn:
+        rows = conn.execute(due).all()
+    teams: dict[Any, set[str]] = {}
+    created: list[str] = []
+    for row in rows:
+        with engine.begin() as conn:
+            claimed = conn.execute(
+                update(customer_reminders)
+                .where(customer_reminders.c.id == row.id, customer_reminders.c.notified_at.is_(None), customer_reminders.c.done_at.is_(None))
+                .values(notified_at=now)
+            ).rowcount
+            if claimed != 1:
+                continue
+            if row.tenant_id not in teams:
+                teams[row.tenant_id] = set(_members(conn, row.tenant_id))
+            title, body = alert_text(row.title, row.contact_name, row.contact_ref)
+            notification_id = uuid.uuid4()
+            conn.execute(
+                insert(notifications).values(
+                    id=notification_id, tenant_id=row.tenant_id, conversation_id=row.conversation_id, kind=ALERT_KIND, title=title,
+                    body=body, recipient_id=row.assignee_id if row.assignee_id in teams[row.tenant_id] else None, created_at=now,
+                )
+            )
+        created.append(str(notification_id))
+    return created

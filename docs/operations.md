@@ -374,7 +374,10 @@ tiene pantallas y su raíz redirige a `PANEL_URL`, o al panel publicado si no es
 - Las etiquetas de los clientes (migración 0027): un catálogo por negocio, sin dos que se lean igual; cada cliente lleva las que
   quiera, y el tablero y la lista se filtran por una.
 - Los recordatorios del equipo (migración 0028): qué hacer con un cliente, cuándo y para quién; se marcan hechos. Se ven en la
-  ficha, en la tarjeta (el más próximo) y en Clientes → Recordatorios. Todavía no avisan por la campana ni al celular.
+  ficha, en la tarjeta (el más próximo) y en Clientes → Recordatorios. Al llegar la hora avisan una sola vez (migración 0029) en
+  la campana y al celular de su responsable (sin responsable, o si ya no es del equipo, a todo el equipo), sin correo. Los revisa
+  la misma tarea de la atención humana (`/api/v1/internal/attention/run`, cada 15 minutos con `CRON_SECRET`) y el tráfico del
+  motor y del panel, como mucho una vez por minuto por proceso; uno que venció hace más de 3 días sin avisar ya no avisa.
 - Canales: WhatsApp por código QR con uazapi. El negocio toca «Conectar WhatsApp» y escanea el QR; el servidor, los tokens y el
   webhook los pone la plataforma. La API oficial de Meta, Telegram y el chat web aparecen como «Próximamente».
 - En la nube no se importan los negocios de ejemplo ni se eliminan negocios. El dominio del panel debe estar en Neon Auth →

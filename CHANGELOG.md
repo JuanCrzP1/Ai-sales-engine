@@ -5,12 +5,18 @@ está en el historial de git y en `docs/plan-v1.md`.
 
 ## 28 de noviembre de 2026
 
+**Los recordatorios te avisan cuando llega la hora**
+- Te avisamos una vez en la campana y, si activaste las notificaciones, en tu celular o computador. Al tocar el aviso se abre la
+  ficha del cliente en Clientes → Recordatorios.
+- El aviso le llega solo al responsable. Sin responsable, o si esa persona ya no está en el equipo, le llega a todo el equipo.
+- Si lo marcas hecho antes de la hora, no avisa.
+
 **Recordatorios del equipo**
 - Desde la ficha de un cliente anotas qué hay que hacer y cuándo («llamarlo para cerrar», mañana a las 9), con atajos de fecha y
   para quién de tu equipo.
 - En **Clientes → Recordatorios** los ves todos en vencidos, de hoy, próximos y hechos; los tuyos o los de todo el equipo. El botón
   dice cuántos tienes vencidos, y la tarjeta de cada cliente muestra el más próximo.
-- Un toque los marca hechos, a tu nombre. Lo siguiente: que avisen en la campana y en el celular cuando llega la hora.
+- Un toque los marca hechos, a tu nombre.
 
 **Etiquetas para organizar a tus clientes**
 - Crea las etiquetas que quieras, con su color («Mayorista», «VIP», «Llamar el lunes»), y pónselas a cada cliente desde su ficha.

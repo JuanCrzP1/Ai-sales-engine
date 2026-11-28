@@ -3,7 +3,8 @@
 - `AttentionService`: los ajustes de Configuración → Atención humana de cada negocio (solo los de quien pregunta), con el horario de «Mi
   negocio» para mostrarlo, si hay alguien del equipo ahora, y el correo de prueba.
 - `PushService`: activar y desactivar las notificaciones en cada navegador o celular, y enviar una de prueba.
-- `TeamAlerts`: entrega un aviso (un chat pasó a una persona, la IA retomó un chat) por correo y como notificación. Cada aviso sale
+- `TeamAlerts`: entrega un aviso (un chat pasó a una persona, la IA retomó un chat, llegó la hora de un recordatorio) por correo y
+  como notificación (el recordatorio, sin correo y solo a su responsable). Cada aviso sale
   una sola vez por canal aunque dos procesos lo intenten a la vez, y nunca lanza: un correo que no sale no puede tumbar la atención.
 
 Las pruebas («Probar asistente») nunca mandan correos ni notificaciones: la campana del panel ya las muestra.
@@ -35,6 +36,7 @@ from app.domain.business_config.attention import (
 )
 from app.domain.business_config.errors import BusinessConfigError, FieldIssue, InvalidFieldsError
 from app.domain.business_config.push import PushMessage, validated_subscription
+from app.domain.business_config.reminders import ALERT_KIND as REMINDER_KIND
 from app.domain.business_config.team import CONFIGURE
 
 logger = logging.getLogger("attention")
@@ -72,6 +74,12 @@ def conversation_path(business_slug: str, conversation_id: str | None) -> str:
     """La ruta del panel que abre ese chat (la misma que usa la campana)."""
     base = f"/negocios/{quote(business_slug)}/conversaciones"
     return f"{base}?c={quote(conversation_id)}" if conversation_id else base
+
+
+def reminder_path(business_slug: str, conversation_id: str | None) -> str:
+    """La ruta del panel de un recordatorio: Clientes → Recordatorios, con la ficha de su cliente abierta (la misma que usa la campana)."""
+    base = f"/negocios/{quote(business_slug)}/clientes?vista=recordatorios"
+    return f"{base}&cliente={quote(conversation_id)}" if conversation_id else base
 
 
 @dataclass(frozen=True)
@@ -278,7 +286,8 @@ class TeamAlerts:
         self._panel_url = panel_url.rstrip("/")
 
     def deliver(self, notification_id: str | None) -> None:
-        """Avisa al equipo por correo (solo cuando un chat pasa a una persona) y por notificación. Nunca lanza."""
+        """Avisa al equipo por correo (solo cuando un chat pasa a una persona) y por notificación (un recordatorio, solo a su
+        responsable). Nunca lanza."""
         if not notification_id:
             return
         try:
@@ -287,6 +296,9 @@ class TeamAlerts:
             logger.exception("aviso_no_encontrado")
             return
         if alert.channel == PLAYGROUND_CHANNEL:
+            return
+        if alert.kind == REMINDER_KIND:
+            self._send_push(alert, reminder_path(alert.business_slug, alert.conversation_id), tag=alert.notification_id)
             return
         path = conversation_path(alert.business_slug, alert.conversation_id)
         if alert.kind == "handoff":
@@ -323,16 +335,21 @@ class TeamAlerts:
         except Exception as exc:  # noqa: BLE001 - el correo nunca tumba la atención
             logger.error("aviso_por_correo_error", extra={"tenant": alert.business_slug, "error": type(exc).__name__})
 
-    def _send_push(self, alert: Any, path: str) -> None:
+    def _send_push(self, alert: Any, path: str, *, tag: str | None = None) -> None:
+        """A los celulares y navegadores del equipo; si el aviso es para una persona (y sigue en el equipo), solo a los suyos.
+        `tag`: los avisos con el mismo se reemplazan en el celular (por defecto, los de un mismo chat)."""
         if self._push is None or self._push_storage is None:
             return
         try:
-            subscriptions = self._push_storage.subscriptions_for(self._storage.member_ids(alert.business_slug))
+            team = self._storage.member_ids(alert.business_slug)
+            recipient = getattr(alert, "recipient_id", None)
+            people = [recipient] if recipient and recipient in team else team
+            subscriptions = self._push_storage.subscriptions_for(people)
             if not subscriptions or not self._storage.claim_delivery(alert.notification_id, "push"):
                 return
             body = f"{alert.business_name}: {alert.body}" if alert.body else alert.business_name
             body = body if len(body) <= PUSH_BODY_CHARS else f"{body[: PUSH_BODY_CHARS - 1].rstrip()}…"
-            message = PushMessage(title=alert.title, body=body, url=path, tag=alert.conversation_id or alert.notification_id)
+            message = PushMessage(title=alert.title, body=body, url=path, tag=tag or alert.conversation_id or alert.notification_id)
             sent = 0
             for subscription in subscriptions:
                 outcome = self._push.send(subscription, message)

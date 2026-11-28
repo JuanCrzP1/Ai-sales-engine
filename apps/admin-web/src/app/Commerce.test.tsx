@@ -563,6 +563,39 @@ describe("Los recordatorios del equipo", () => {
     await user.click(within(screen.getByRole("group", { name: "Cuándo" })).getByRole("button", { name: /Próximos/ }));
     expect(within(screen.getByRole("list", { name: "Próximos" })).getByText("Revisar su comprobante")).toBeInTheDocument();
   });
+
+  it("cuando llega la hora, el aviso de la campana abre la ficha del cliente en Recordatorios", async () => {
+    window.history.pushState({}, "", `/negocios/${CAFE}`);
+    const user = userEvent.setup();
+    const inbox = createMemoryInbox([], [
+      {
+        id: "n1", business: { slug: CAFE, name: "Café Aroma" }, conversationId: "c1", kind: "reminder", title: "Recordatorio: Llamarla para cerrar",
+        body: "Cliente: Laura Gómez", createdAt: ago(1), read: false,
+      },
+    ]);
+    const commerce = createMemoryCommerce({ customers: CUSTOMERS, reminders: REMINDERS });
+    render(<App services={createTestServices(createMemoryBackend([SAMPLE_DOCUMENT]), { inbox, createCommerce: () => commerce })} />);
+    await user.click(await screen.findByRole("button", { name: /Notificaciones: 1 sin leer/ }));
+    const panel = screen.getByRole("dialog", { name: "Notificaciones" });
+    // Su texto es del equipo, no del cliente: sin comillas.
+    expect(within(panel).getByText("Cliente: Laura Gómez")).toBeInTheDocument();
+    await user.click(within(panel).getByRole("button", { name: /Recordatorio: Llamarla para cerrar/ }));
+
+    expect(window.location.pathname).toBe(`/negocios/${CAFE}/clientes`);
+    expect(window.location.search).toBe("?vista=recordatorios&cliente=c1");
+    const card = await screen.findByRole("dialog", { name: "Laura Gómez" });
+    expect(within(within(card).getByRole("region", { name: "Recordatorios" })).getByText("Llamarla para cerrar")).toBeInTheDocument();
+    await waitFor(() => expect(inbox.notificationList[0]!.read).toBe(true));
+    // Detrás de la ficha, la vista abre en los vencidos: ahí está el que avisó (el otro «Cuándo» son los atajos de la ficha).
+    const when = screen.getAllByRole("group", { name: "Cuándo", hidden: true }).find((group) => group.closest(".reminders-view"))!;
+    expect(within(when).getByRole("button", { name: /Vencidos/, hidden: true })).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("la vista abre en «Hoy» cuando no hay nada vencido", async () => {
+    await openAt("clientes?vista=recordatorios", { customers: CUSTOMERS, reminders: [REMINDERS[1]!] });
+    const when = await screen.findByRole("group", { name: "Cuándo" });
+    await waitFor(() => expect(within(when).getByRole("button", { name: /Hoy/ })).toHaveAttribute("aria-pressed", "true"));
+  });
 });
 
 describe("Ventas", () => {

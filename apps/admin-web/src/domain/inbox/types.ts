@@ -132,12 +132,17 @@ export interface BusinessActivity {
   waitingHuman: number;
 }
 
-/** Un aviso para el equipo: un chat pasó a una persona (`handoff`) o la IA retomó uno que nadie atendió (`ai_resumed`). `read` es de quien lo ve. */
+/**
+ * Un aviso para el equipo: un chat pasó a una persona (`handoff`), la IA retomó uno que nadie atendió (`ai_resumed`) o llegó la hora
+ * de un recordatorio (`reminder`, solo para su responsable; `conversationId` es su cliente). `read` es de quien lo ve.
+ */
+export type NotificationKind = "handoff" | "ai_resumed" | "reminder";
+
 export interface Notification {
   id: string;
   business: { slug: string; name: string };
   conversationId: string | null;
-  kind: "handoff" | "ai_resumed";
+  kind: NotificationKind;
   title: string;
   body: string | null;
   /** El texto es la nota de la IA para el equipo, no lo que escribió el cliente: no va entre comillas. */

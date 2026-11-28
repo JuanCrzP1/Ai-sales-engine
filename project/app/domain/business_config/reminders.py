@@ -5,6 +5,8 @@
 - Se marca hecho (y se puede volver a abrir) o se borra. Todo el que atiende puede crearlos, marcarlos y borrarlos.
 - El panel los agrupa en vencidos, de hoy y próximos con la hora de quien mira; los hechos aparte. Se ven en la ficha del cliente, en
   su tarjeta del tablero (el más próximo) y en la vista «Recordatorios» de Clientes, los míos o los de todo el equipo.
+- Cuando llega la hora avisa una sola vez, en la campana y en el celular de su responsable (sin responsable, o si ya no es del
+  equipo, a todo el equipo). Ver `application/attention/reminder_sweep.py`.
 - Se llaman recordatorios, no seguimientos: «Seguimiento» ya es el mensaje automático al cliente que deja de responder.
 """
 from __future__ import annotations
@@ -19,6 +21,13 @@ MAX_LISTED_DONE = 100
 # Una fecha un poco en el pasado se acepta (el reloj de quien la elige puede ir atrás); una de hace más, no.
 PAST_TOLERANCE = timedelta(minutes=10)
 MAX_AHEAD = timedelta(days=366 * 2)
+
+# El aviso cuando llega la hora (el tipo de aviso de la campana).
+ALERT_KIND = "reminder"
+# Cuántos avisos salen en cada revisión, como mucho: los demás, en la siguiente.
+MAX_ALERTS_PER_RUN = 100
+# Uno que venció hace más que esto sin avisar (la revisión no corrió) ya no avisa: se ve en Clientes → Recordatorios.
+ALERT_TOO_LATE = timedelta(days=3)
 
 
 class ReminderError(ValueError):
@@ -91,3 +100,8 @@ class NextReminder:
 
     title: str
     due_at: datetime
+
+
+def alert_text(title: str, customer_name: str | None, customer_contact: str) -> tuple[str, str]:
+    """El título y el texto del aviso: qué hay que hacer y con qué cliente."""
+    return f"Recordatorio: {title}", f"Cliente: {(customer_name or '').strip() or customer_contact}"

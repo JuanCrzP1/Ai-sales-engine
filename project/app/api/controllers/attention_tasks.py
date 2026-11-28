@@ -1,4 +1,5 @@
-"""`/internal/attention/run`: la revisión periódica de la atención humana (la IA retoma los chats que nadie atendió a tiempo).
+"""`/internal/attention/run`: la revisión periódica de la atención humana (la IA retoma los chats que nadie atendió a tiempo) y de los
+recordatorios del equipo que llegan a su hora.
 
 No es de usuarios: la llama Vercel cada 15 minutos (`project/vercel.json`, «schedules») con `Authorization: Bearer <CRON_SECRET>`.
 Sin `CRON_SECRET` configurado no atiende a nadie (503): la revisión sigue corriendo con el tráfico del motor y del panel.
@@ -30,6 +31,7 @@ def _authorized(request: Request) -> None:
 def run_attention(request: Request) -> dict[str, int | str]:
     _authorized(request)
     result = whatsapp_qr_webhook.run_resume_sweep()
+    reminded = whatsapp_qr_webhook.run_reminder_sweep()
     if result is None:
         return {"status": "busy"}
-    return {"status": "ok", "checked": result.checked, "resumed": result.resumed}
+    return {"status": "ok", "checked": result.checked, "resumed": result.resumed, "reminded": reminded or 0}

@@ -4,7 +4,7 @@ El motor lee la misma base que escribe el panel (`database_url()`: `BUSINESS_CON
 clave de cifrado (`find_secrets_key()`): lo publicado, los datos de pago, la clave de IA y la conexión de WhatsApp y de Telegram de cada negocio.
 Lo único que escribe es el consumo de cada respuesta (`record_ai_usage`), el estado de la conexión de WhatsApp que avisa su servidor y
 la bandeja de conversaciones: cada mensaje de un canal apenas llega o sale, sus archivos y recibos, el «escribiendo…» y el paso a una
-persona. Nunca crea la base, las tablas ni la clave: si algo falta, lo informa con
+persona, y el aviso de los recordatorios que llegan a su hora. Nunca crea la base, las tablas ni la clave: si algo falta, lo informa con
 una excepción y el llamador decide.
 
 Es la única puerta del motor hacia este almacén: el motor no conoce tablas, conexiones ni cifrado.
@@ -27,6 +27,7 @@ from app.domain.business_config.api_keys import ApiKeyIdentity
 from app.domain.business_config.attention import AttentionSettings
 from app.domain.business_config.conversations import AppendResult, FollowUpCandidate, MediaFile, NewMessage, PendingMessage, WaitingChat
 from app.domain.business_config.errors import BusinessConfigError
+from app.infrastructure.business_config import reminder_store
 from app.infrastructure.business_config.ai_settings_store import AISettingsStore
 from app.infrastructure.business_config.ai_usage_store import AIUsageStore
 from app.infrastructure.business_config.api_key_store import ApiKeyStore
@@ -57,6 +58,7 @@ __all__ = [
     "mark_conversation_delivery",
     "record_ai_usage",
     "request_conversation_handoff",
+    "alert_due_reminders",
     "alert_stores",
     "attention_settings",
     "pending_customer_text",
@@ -235,6 +237,11 @@ def channel_for_webhook(webhook_id: str, channel: str) -> ChannelSecrets | None:
 def set_channel_status(tenant_slug: str, channel: str, status: ConnectionStatus) -> None:
     """El estado de un canal que descubre el motor (en Telegram: que el código del bot ya no sirve)."""
     ChannelStore(_store_engine(), find_secrets_key()).set_channel_status(tenant_slug, channel, status)
+
+
+def alert_due_reminders(*, now: datetime) -> list[str]:
+    """Crea el aviso de cada recordatorio que llegó a su hora (una sola vez) y devuelve sus ids (`reminder_store.alert_due_reminders`)."""
+    return reminder_store.alert_due_reminders(_store_engine(), now=now)
 
 
 def alert_stores() -> tuple[AttentionStore, PushStore]:

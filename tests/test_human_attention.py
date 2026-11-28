@@ -829,8 +829,10 @@ def test_the_periodic_check_needs_the_cron_secret(monkeypatch):
     from app.application.attention.resume_sweep import SweepResult
 
     monkeypatch.setattr(whatsapp_qr_webhook, "run_resume_sweep", lambda: SweepResult(checked=4, resumed=1))
+    # La misma revisión avisa los recordatorios que llegaron a su hora.
+    monkeypatch.setattr(whatsapp_qr_webhook, "run_reminder_sweep", lambda: 2)
     ok = client.get("/internal/attention/run", headers={"Authorization": "Bearer una-llave-larga-de-la-revision"})
-    assert ok.json() == {"status": "ok", "checked": 4, "resumed": 1}
+    assert ok.json() == {"status": "ok", "checked": 4, "resumed": 1, "reminded": 2}
 
 
 def test_vercel_runs_the_checks_every_fifteen_minutes():

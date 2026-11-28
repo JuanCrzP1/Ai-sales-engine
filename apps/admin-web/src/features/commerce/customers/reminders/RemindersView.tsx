@@ -24,7 +24,7 @@ const EMPTY: Record<Tab, string> = {
 
 /**
  * Los recordatorios del equipo en un solo lugar: vencidos, de hoy, próximos y hechos, los míos o los de todo el equipo (`mine`, solo
- * con cuentas). Marcar uno lo saca de la lista; el nombre del cliente abre su ficha. `open` son los pendientes, que la página ya
+ * con cuentas). Abre en los vencidos si hay; si no, en los de hoy. Marcar uno lo saca de la lista; el nombre del cliente abre su ficha. `open` son los pendientes, que la página ya
  * cargó (también cuenta los vencidos para su insignia).
  */
 export function RemindersView({
@@ -45,11 +45,13 @@ export function RemindersView({
   onChanged: () => void;
 }) {
   const commerce = useCommerce();
-  const [tab, setTab] = useState<Tab>("today");
+  const [chosen, setTab] = useState<Tab | null>(null);
+  const groups = byBucket(open.status === "ready" ? open.data : []);
+  // Mientras no se elija otra, abre en «Vencidos» si hay alguno (así se llega desde el aviso de la campana); si no, en «Hoy».
+  const tab: Tab = chosen ?? (groups.overdue.length > 0 ? "overdue" : "today");
   const done = useReminders(version, { done: true, mine, enabled: tab === "done" });
   const [busyId, setBusyId] = useState<string | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
-  const groups = byBucket(open.status === "ready" ? open.data : []);
   const shown = tab === "done" ? done : open;
   const items = tab === "done" ? (done.status === "ready" ? done.data : []) : groups[tab];
 

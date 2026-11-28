@@ -37,7 +37,7 @@ este índice.
 
 - [Tus clientes y sus etapas](../project/content/help/clientes-y-ventas/etapas-de-clientes.md): El tablero de Clientes, con una columna por etapa, y la ficha de cada cliente con su valor, su responsable, tus notas y su historial.
 - [Etiquetas de clientes](../project/content/help/clientes-y-ventas/etiquetas-de-clientes.md): Organiza a tus clientes a tu manera con etiquetas de colores, pónselas desde su ficha y filtra el tablero y la lista por una.
-- [Recordatorios del equipo](../project/content/help/clientes-y-ventas/recordatorios.md): Anota qué hay que hacer con cada cliente y cuándo, para quién de tu equipo, y míralos todos en vencidos, de hoy y próximos.
+- [Recordatorios del equipo](../project/content/help/clientes-y-ventas/recordatorios.md): Anota qué hay que hacer con cada cliente y cuándo, para quién de tu equipo; te avisamos cuando llega la hora.
 - [Registra, verifica y anula ventas](../project/content/help/clientes-y-ventas/registrar-una-venta.md): Registrar lo que compró un cliente, revisar los pagos por verificar y anular una venta.
 - [Reportes: cómo le va a tu negocio](../project/content/help/clientes-y-ventas/reportes.md): Conversaciones, ventas, ingresos, el embudo, quién respondió y cuánto costó la IA, comparado con el periodo anterior.
 

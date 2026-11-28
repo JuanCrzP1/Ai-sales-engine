@@ -1,11 +1,11 @@
 """Los avisos de cada negocio en `notifications`, con lo leído por cada persona en `notification_reads` (implementa
-`NotificationStorage`)."""
+`NotificationStorage`). Un aviso con `recipient_id` (un recordatorio) solo lo ve esa persona."""
 from __future__ import annotations
 
 from collections.abc import Collection
 from datetime import datetime, timezone
 
-from sqlalchemy import and_, func, insert, select
+from sqlalchemy import and_, func, insert, or_, select
 from sqlalchemy.engine import Engine
 
 from app.domain.business_config.conversations import Notification
@@ -20,8 +20,10 @@ class NotificationStore:
     def __init__(self, engine: Engine) -> None:
         self._engine = engine
 
-    def _mine(self, tenant_slugs: Collection[str]):
-        return tenants.c.slug.in_(list(tenant_slugs))
+    def _mine(self, tenant_slugs: Collection[str], user_id: str):
+        """Los de sus negocios que son para todo el equipo o para esta persona (un recordatorio avisa solo a su responsable)."""
+        for_me = or_(notifications.c.recipient_id.is_(None), notifications.c.recipient_id == user_id)
+        return and_(tenants.c.slug.in_(list(tenant_slugs)), for_me)
 
     def recent(self, tenant_slugs: Collection[str], user_id: str, *, limit: int) -> tuple[list[Notification], int]:
         """Los más recientes primero, con lo que esta persona ya leyó, y cuántos le faltan por leer."""
@@ -34,11 +36,11 @@ class NotificationStore:
                 notification_reads.c.read_at,
             )
             .select_from(base)
-            .where(self._mine(tenant_slugs))
+            .where(self._mine(tenant_slugs, user_id))
             .order_by(notifications.c.created_at.desc())
             .limit(limit)
         )
-        unread = select(func.count()).select_from(base).where(self._mine(tenant_slugs), notification_reads.c.read_at.is_(None))
+        unread = select(func.count()).select_from(base).where(self._mine(tenant_slugs, user_id), notification_reads.c.read_at.is_(None))
         with self._engine.connect() as conn:
             rows = conn.execute(query).all()
             pending = conn.execute(unread).scalar_one()
@@ -58,7 +60,7 @@ class NotificationStore:
         query = (
             select(notifications.c.id)
             .select_from(notifications.join(tenants, tenants.c.id == notifications.c.tenant_id).outerjoin(notification_reads, read))
-            .where(self._mine(tenant_slugs), notification_reads.c.read_at.is_(None))
+            .where(self._mine(tenant_slugs, user_id), notification_reads.c.read_at.is_(None))
         )
         now = datetime.now(timezone.utc)
         with self._engine.begin() as conn:

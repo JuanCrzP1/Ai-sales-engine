@@ -345,8 +345,16 @@ customer_reminders = Table(
     Column("created_at", DateTime(timezone=True), nullable=False, default=_now),
     Column("done_at", DateTime(timezone=True)),
     Column("done_by", Text),
+    # Cuándo avisó a su responsable al llegar la hora (migración 0029): cada recordatorio avisa una sola vez.
+    Column("notified_at", DateTime(timezone=True)),
     Index("customer_reminders_open_idx", "tenant_id", "done_at", "due_at"),
     Index("customer_reminders_conversation_idx", "conversation_id", "due_at"),
+    Index(
+        "customer_reminders_due_idx",
+        "due_at",
+        postgresql_where=text("done_at IS NULL AND notified_at IS NULL"),
+        sqlite_where=text("done_at IS NULL AND notified_at IS NULL"),
+    ),
 )
 
 # Avisos para el equipo de cada negocio (migración 0005). Cada persona marca como leídos los suyos en `notification_reads`.
@@ -361,8 +369,10 @@ notifications = Table(
     Column("body", Text),
     # Si `body` es la nota de la IA para el equipo (`handoff_brief.py`) y no lo que escribió el cliente: solo esto último va entre comillas.
     Column("body_is_note", Boolean, nullable=False, default=False, server_default=false()),
+    # Para quién es (su user_id; migración 0029): un recordatorio avisa solo a su responsable. Vacío, para todo el equipo.
+    Column("recipient_id", Text),
     Column("created_at", DateTime(timezone=True), nullable=False, default=_now),
-    CheckConstraint("kind IN ('handoff', 'ai_resumed')", name="notifications_kind_check"),
+    CheckConstraint("kind IN ('handoff', 'ai_resumed', 'reminder')", name="notifications_kind_check"),
     Index("notifications_tenant_recent_idx", "tenant_id", "created_at"),
 )
 

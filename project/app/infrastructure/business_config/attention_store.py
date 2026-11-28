@@ -55,6 +55,8 @@ class AlertDetails:
     created_at: datetime
     # Si el cuerpo es la nota de la IA para el equipo (y no lo que escribió el cliente): el correo la presenta distinto.
     body_is_summary: bool = False
+    # Para quién es (un recordatorio, para su responsable); None, para todo el equipo.
+    recipient_id: str | None = None
 
 
 class AttentionStore:
@@ -149,6 +151,7 @@ class AttentionStore:
             select(
                 notifications.c.id, tenants.c.slug, tenants.c.name, notifications.c.kind, notifications.c.title, notifications.c.body,
                 notifications.c.conversation_id, conversations.c.channel, notifications.c.created_at, notifications.c.body_is_note,
+                notifications.c.recipient_id,
             )
             .select_from(
                 notifications.join(tenants, tenants.c.id == notifications.c.tenant_id).outerjoin(
@@ -164,7 +167,7 @@ class AttentionStore:
         return AlertDetails(
             notification_id=str(row.id), business_slug=row.slug, business_name=row.name, kind=row.kind, title=row.title, body=row.body,
             conversation_id=str(row.conversation_id) if row.conversation_id else None, channel=row.channel, created_at=_utc(row.created_at),
-            body_is_summary=bool(row.body_is_note),
+            body_is_summary=bool(row.body_is_note), recipient_id=row.recipient_id,
         )
 
     def claim_delivery(self, notification_id: str, channel: str) -> bool:

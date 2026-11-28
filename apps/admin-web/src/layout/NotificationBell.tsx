@@ -1,13 +1,29 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Icon } from "../components/ui/Icon";
+import { Icon, type IconName } from "../components/ui/Icon";
 import { relativeTime } from "../domain/inbox/format";
-import type { Notification } from "../domain/inbox/types";
-import { CONVERSATIONS_ITEM, workspacePath } from "../navigation/navItems";
+import type { Notification, NotificationKind } from "../domain/inbox/types";
+import { CONVERSATIONS_ITEM, CUSTOMERS_ITEM, workspacePath } from "../navigation/navItems";
 import { useDevicePush } from "../state/useDevicePush";
 import { useNotifications } from "../state/useNotifications";
 
-/** Campana de avisos: cuántos faltan por leer y la lista. Abrir uno lleva a su conversación y lo marca como leído. */
+const KIND_ICON: Record<NotificationKind, IconName> = { handoff: "headset", ai_resumed: "robot", reminder: "clock" };
+
+/**
+ * Adónde lleva un aviso: el de un recordatorio, a Clientes → Recordatorios con la ficha de su cliente abierta; los demás, a su chat.
+ * Es la misma dirección que abre la notificación del celular (`reminder_path` y `conversation_path` del motor).
+ */
+function notificationPath(item: Notification): string {
+  const id = item.conversationId ? encodeURIComponent(item.conversationId) : null;
+  if (item.kind === "reminder") {
+    const customers = `${workspacePath(item.business.slug, CUSTOMERS_ITEM.path)}?vista=recordatorios`;
+    return id ? `${customers}&cliente=${id}` : customers;
+  }
+  const conversations = workspacePath(item.business.slug, CONVERSATIONS_ITEM.path);
+  return id ? `${conversations}?c=${id}` : conversations;
+}
+
+/** Campana de avisos: cuántos faltan por leer y la lista. Abrir uno lleva a su chat (o a la ficha, si es un recordatorio) y lo marca como leído. */
 export function NotificationBell() {
   const { feed, markRead } = useNotifications();
   const push = useDevicePush();
@@ -34,8 +50,7 @@ export function NotificationBell() {
   const openNotification = (item: Notification) => {
     setOpen(false);
     if (!item.read) void markRead([item.id]);
-    const conversations = workspacePath(item.business.slug, CONVERSATIONS_ITEM.path);
-    navigate(item.conversationId ? `${conversations}?c=${encodeURIComponent(item.conversationId)}` : conversations);
+    navigate(notificationPath(item));
   };
 
   return (
@@ -75,14 +90,17 @@ export function NotificationBell() {
           )}
           {push.notice && !push.notice.ok && <p className="bell__push bell__push--error">{push.notice.message}</p>}
           {items.length === 0 ? (
-            <p className="bell__empty">No tienes avisos. Cuando el asistente pase un chat a una persona de tu equipo, te avisamos aquí.</p>
+            <p className="bell__empty">
+              No tienes avisos. Te avisamos aquí cuando el asistente pase un chat a una persona de tu equipo o llegue la hora de uno de tus
+              recordatorios.
+            </p>
           ) : (
             <ul className="bell__list">
               {items.map((item) => (
                 <li key={item.id}>
                   <button type="button" className={`bell__item${item.read ? "" : " bell__item--unread"}`} onClick={() => openNotification(item)}>
                     <span className="bell__icon" aria-hidden="true">
-                      <Icon name={item.kind === "ai_resumed" ? "robot" : "headset"} size={16} />
+                      <Icon name={KIND_ICON[item.kind] ?? "bell"} size={16} />
                     </span>
                     <span className="bell__text">
                       <span className="bell__title">{item.title}</span>

@@ -1,10 +1,10 @@
 ---
 title: Recordatorios del equipo
 module: clientes-y-ventas
-summary: Anota qué hay que hacer con cada cliente y cuándo, para quién de tu equipo, y míralos todos en vencidos, de hoy y próximos.
+summary: Anota qué hay que hacer con cada cliente y cuándo, para quién de tu equipo; te avisamos cuando llega la hora.
 order: 3
 updated: 2026-11-28
-keywords: recordatorios, tareas, pendientes, llamar, agenda, vencidos, hoy, próximos, hecho, responsable, crm
+keywords: recordatorios, tareas, pendientes, llamar, agenda, vencidos, hoy, próximos, hecho, responsable, crm, aviso, notificación, campana
 related: etapas-de-clientes, etiquetas-de-clientes
 ---
 
@@ -24,6 +24,17 @@ Un **recordatorio** es algo que tu equipo tiene que hacer con un cliente, y cuá
 - En **Clientes → Recordatorios**, los de todos tus clientes, en **Vencidos**, **Hoy**, **Próximos** y **Hechos**. El botón dice cuántos tienes vencidos. Con **Míos** ves solo los tuyos; con **De todo el equipo**, los de todos.
 
 Las horas se ven en la hora de tu celular o tu computador.
+
+## Cuando llega la hora
+
+Te avisamos una vez en la **campana** del panel y, si activaste las notificaciones, también en tu **celular** o computador. Al tocar el aviso se abre la ficha del cliente.
+
+- El aviso le llega **solo al responsable** del recordatorio.
+- Si no tiene responsable, o esa persona ya no está en tu equipo, le llega a **todo el equipo**.
+- Puede llegar unos minutos después de la hora. Si tienes el panel abierto, llega casi a tiempo.
+- Si lo marcas hecho antes de la hora, no te avisa.
+
+Para recibirlos en el celular, abre la campana y toca **Activar notificaciones**.
 
 ## Marcarlos
 

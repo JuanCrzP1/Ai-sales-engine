@@ -7,8 +7,8 @@ La ruta solo recibe y contesta enseguida; lo que pasa con cada mensaje (guardarl
 persona) está en `app/application/channels/inbound.py`. Lo lento (entender un archivo y responder) se hace después de contestarle
 a uazapi.
 
-Aquí también se arma ese flujo para Telegram (`build_inbound` sirve a los dos canales; su ruta está en `telegram_webhook.py`) y la
-revisión que retoma los chats que nadie atendió.
+Aquí también se arma ese flujo para Telegram (`build_inbound` sirve a los dos canales; su ruta está en `telegram_webhook.py`), la
+revisión que retoma los chats que nadie atendió y la que avisa los recordatorios que llegan a su hora.
 """
 from __future__ import annotations
 
@@ -21,6 +21,7 @@ from types import SimpleNamespace
 
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Request, status
 
+from app.application.attention.reminder_sweep import ReminderSweep
 from app.application.attention.resume_sweep import ResumeSweep, SweepResult, Throttle
 from app.application.follow_up.follow_up_reading import reads_follow_up
 from app.application.follow_up.follow_up_sweep import FollowUpResult, FollowUpSweep
@@ -163,6 +164,29 @@ def sweep_after_message() -> None:
         run_resume_sweep()
 
 
+# --------------------------------------------------------------------------- los recordatorios que llegan a su hora
+
+
+_REMINDING = threading.Lock()
+
+
+def build_reminder_sweep() -> ReminderSweep:
+    return ReminderSweep(alert_due=runtime_access.alert_due_reminders, alerts=deliver_alert, clock=lambda: now())
+
+
+def run_reminder_sweep() -> int | None:
+    """Una revisión de los recordatorios. Nunca dos a la vez en el mismo proceso; nunca lanza."""
+    if not _REMINDING.acquire(blocking=False):
+        return None
+    try:
+        return build_reminder_sweep().run()
+    except Exception as exc:  # noqa: BLE001 - la revisión nunca tumba a quien la disparó
+        logger.error("revision_de_recordatorios_fallida", extra={"error": type(exc).__name__})
+        return None
+    finally:
+        _REMINDING.release()
+
+
 # --------------------------------------------------------------------------- el seguimiento a quien dejó de responder
 
 
@@ -226,6 +250,7 @@ def sweep_on_traffic() -> None:
         return
     if _ON_TRAFFIC.acquire():
         run_resume_sweep()
+        run_reminder_sweep()
     if _FOLLOW_UP_ON_TRAFFIC.acquire():
         run_follow_up_sweep()
 

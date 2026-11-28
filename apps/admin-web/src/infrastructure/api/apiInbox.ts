@@ -10,6 +10,7 @@ import type {
   HandoffReason,
   MessageKind,
   Notification,
+  NotificationKind,
   PaymentConfirmationPreview,
   PaymentConfirmed,
 } from "../../domain/inbox/types";
@@ -64,7 +65,7 @@ interface ApiNotification {
   id: string;
   business: { slug: string; name: string };
   conversation_id: string | null;
-  kind: "handoff" | "ai_resumed";
+  kind: NotificationKind;
   title: string;
   body: string | null;
   body_is_note?: boolean;

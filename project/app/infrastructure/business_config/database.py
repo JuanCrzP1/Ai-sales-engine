@@ -100,6 +100,12 @@ _ADDED_COLUMNS = {
     "business_members": {
         "email": "TEXT",
     },
+    "notifications": {
+        "recipient_id": "TEXT",
+    },
+    "customer_reminders": {
+        "notified_at": "DATETIME",
+    },
     "business_channels": {
         "account_id": "TEXT",
         "account_username": "TEXT",
@@ -145,7 +151,7 @@ def create_local_schema(engine: Engine) -> None:
 
 # Restricciones que una migración amplió en una tabla que ya existía: (tabla, lo que trae su definición nueva).
 _WIDENED_CHECKS = (
-    (notifications, "ai_resumed"), (conversations, "'api'"), (conversations, "follow_up_stopped_by_check"), (conversations, "'lost'"),
+    (notifications, "'reminder'"), (conversations, "'api'"), (conversations, "follow_up_stopped_by_check"), (conversations, "'lost'"),
     (api_keys, "api_keys_kind_check"),
 )
 
