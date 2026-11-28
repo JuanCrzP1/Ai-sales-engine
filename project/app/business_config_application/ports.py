@@ -34,6 +34,7 @@ from app.domain.business_config.conversations import (
     MediaFile,
     NewMessage,
     Notification,
+    PaymentClaim,
 )
 from app.domain.business_config.push import PushMessage, PushSubscription
 from app.domain.business_config.records import BusinessSummary, ConfigVersion, StoredConfig
@@ -209,6 +210,19 @@ class ConversationStorage(Protocol):
 
     def resolve_handoff(self, conversation_id: str) -> None: ...
 
+    def claim_payment(self, conversation_id: str) -> PaymentClaim | None:
+        """Toma el pago por confirmar (deja de estar por confirmar y el cliente pasa a «cliente») y dice cómo estaba; None si no
+        había uno, o si otro lo tomó primero."""
+        ...
+
+    def release_payment(self, conversation_id: str, claim: PaymentClaim) -> None:
+        """El pago vuelve a estar por confirmar, como estaba antes de `claim_payment`."""
+        ...
+
+    def finish_payment(self, conversation_id: str, claim: PaymentClaim) -> None:
+        """El cliente recibió la confirmación: si esperaba a una persona solo por el pago, ya no espera y la IA vuelve a atender."""
+        ...
+
     def delete(self, conversation_id: str) -> ConversationTarget:
         """Borra la conversación con sus mensajes, archivos y avisos (las ventas se conservan sin el enlace) y dice de quién era."""
         ...
@@ -237,6 +251,11 @@ class ContactMemory(Protocol):
 
     def forget_playground(self, business_slug: str, session_id: str | None = None) -> None:
         """Lo que el motor recuerda de «Probar»: de una sesión, o de todas las del negocio. Si no puede, lanza la excepción."""
+        ...
+
+    def payment_confirmed(self, business_slug: str, contact_ref: str, *, playground: bool = False) -> None:
+        """El equipo confirmó el pago de ese cliente: el asistente lo sabe y ya no le dice que el equipo lo está verificando. Con
+        `playground`, `contact_ref` es la sesión de «Probar». Si no puede, lanza la excepción."""
         ...
 
 

@@ -570,6 +570,22 @@ Gasto: USD 0,011. El laboratorio de regresión responde el lector con los saludo
 (`LAB_GREETINGS`) y sale sin diferencias (`saludo_lo_decide_la_ia_c_20261126`); con el lector respondiendo mal a propósito
 (`saludo_lo_decide_la_ia_b_20261126`), detecta la diferencia.
 
+### El pago confirmado (27 de noviembre de 2026)
+
+Hasta hoy, después de que el cliente avisaba un pago, la IA solo sabía «el equipo lo verifica», aunque el equipo ya lo hubiera
+verificado. Ahora el equipo lo confirma desde el chat («Confirmar pago») y, desde ese momento, la IA ve un hecho nuevo:
+«El equipo ya verificó su pago y le avisó que quedó confirmado: no le pidas que pague otra vez» (`instructions.PAYMENT_CONFIRMED`,
+prompt `v21`), junto con el mensaje para después de la compra (`messages.after_sale`), si el negocio lo escribió. Es un hecho, no
+una regla de palabras: la IA responde con lo suyo.
+
+Si el asesor marca por error un pago nuevo que el lector de pagos no ve, el estado vuelve al de antes: un pago confirmado sigue
+confirmado (`payment_outcome._payment_status`; antes quedaba en «sin pago»). Con un pago de verdad nuevo, el lector lo ve y el chat
+pasa otra vez al equipo.
+
+Laboratorio de regresión `pago_confirmado_misma_version_20261127`, con la misma versión de prompt en los dos lados: 19 de 19
+prompts idénticos, 10 de 10 respuestas idénticas y el webhook igual. Ninguna conversación grabada llega a «confirmado»: el hecho
+nuevo solo aparece después de que el equipo confirma, y eso lo cubren las pruebas (`test_payment_confirmation.py`). Sin gasto de IA.
+
 ## Lo que la puerta no cubre
 
 - Solo mira los momentos de pago y, con `--panel`, lo que configura el negocio. La oferta, los precios y las objeciones los mide

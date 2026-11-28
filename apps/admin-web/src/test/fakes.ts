@@ -19,7 +19,7 @@ import type { Channels, TelegramChannel, WhatsAppChannel } from "../repositories
 import type { Commerce } from "../repositories/commerce";
 import type { Customer, Report, Sale } from "../domain/commerce/types";
 import type { ConfigRepository, StoredConfig } from "../repositories/configRepository";
-import type { ChatMessage, ConversationSummary, ConversationThread, InboxFilter, Notification } from "../domain/inbox/types";
+import type { ChatMessage, ConversationSummary, ConversationThread, InboxFilter, Notification, PaymentSale } from "../domain/inbox/types";
 import type { Inbox } from "../repositories/inbox";
 import type { AgentAuthorization, AuthorizationDecision } from "../repositories/agentAuthorization";
 import type { ApiKey, Integrations, NewKeyRequest } from "../repositories/integrations";
@@ -1013,9 +1013,14 @@ export interface MemoryInboxControls {
   update(conversationId: string, conversation: Partial<ConversationSummary>): void;
   /** La próxima respuesta del equipo no sale por el canal. */
   failNextReply(message: string): void;
+  /** Los pagos que confirmó el equipo, en orden, con la venta que anotó (o null). */
+  confirmations: { conversationId: string; sale: PaymentSale | null }[];
   /** Los archivos que devuelve `media`, por su id. */
   files: Map<string, Blob>;
 }
+
+/** El mensaje de pago confirmado del negocio de las pruebas (el servidor lo toma de lo publicado). */
+export const MEMORY_PAYMENT_CONFIRMED = "¡Listo! Tu pago quedó confirmado. Gracias por tu compra. ✅";
 
 /** Bandeja en memoria: hilos y avisos sembrados por la prueba; filtra, marca y responde como el servidor, en vivo. */
 export function createMemoryInbox(seededThreads: ConversationThread[] = [], seededNotifications: Notification[] = []): Inbox & MemoryInboxControls {
@@ -1025,6 +1030,7 @@ export function createMemoryInbox(seededThreads: ConversationThread[] = [], seed
   const resolved: string[] = [];
   const removed: string[] = [];
   const replies: { conversationId: string; text: string }[] = [];
+  const confirmations: MemoryInboxControls["confirmations"] = [];
   const attachments: MemoryInboxControls["attachments"] = [];
   const readMarks: string[] = [];
   const files = new Map<string, Blob>();
@@ -1050,6 +1056,7 @@ export function createMemoryInbox(seededThreads: ConversationThread[] = [], seed
     removed,
     notificationList,
     replies,
+    confirmations,
     attachments,
     readMarks,
     files,
@@ -1170,6 +1177,28 @@ export function createMemoryInbox(seededThreads: ConversationThread[] = [], seed
       resolved.push(id);
       thread.conversation = { ...thread.conversation, needsHuman: false };
       return thread.conversation;
+    },
+    paymentConfirmation: async (id) => {
+      const thread = find(id);
+      return { message: MEMORY_PAYMENT_CONFIRMED, pending: Boolean(thread.conversation.paymentPending), test: thread.conversation.channel === "prueba" };
+    },
+    confirmPayment: async (id, sale) => {
+      const thread = find(id);
+      if (!thread.conversation.paymentPending) throw new PersistenceError("conflict", { message: "Este pago ya está confirmado: el cliente ya recibió el mensaje." });
+      if (replyFailure) {
+        const message = replyFailure;
+        replyFailure = null;
+        throw new PersistenceError("unavailable", { message });
+      }
+      confirmations.push({ conversationId: id, sale });
+      const sent: ChatMessage = { id: `pago-${confirmations.length}`, author: "agent", body: MEMORY_PAYMENT_CONFIRMED, intent: null, createdAt: new Date().toISOString(), kind: "text", status: "sent" };
+      thread.messages = [...thread.messages, sent];
+      touch(sent);
+      thread.conversation = {
+        ...thread.conversation, paymentPending: false, needsHuman: false, aiPaused: false, handoffReason: null, handoffSummary: null,
+        lastMessagePreview: sent.body, messageCount: thread.messages.length,
+      };
+      return { message: sent, conversation: { ...thread.conversation }, saleRecorded: sale !== null, warnings: [] };
     },
     remove: async (id) => {
       find(id);

@@ -1149,6 +1149,8 @@ def test_the_api_only_has_the_routes_of_the_panel(api):
         ("GET", "/conversations/{conversation_id}/media/{media_id}"),
         ("GET", f"{business}/activity"),
         ("POST", "/conversations/{conversation_id}/handoff/resolve"),
+        ("GET", "/conversations/{conversation_id}/payment-confirmation"),
+        ("POST", "/conversations/{conversation_id}/payment-confirmation"),
         ("GET", "/notifications"),
         ("POST", "/notifications/read"),
         # Atención humana y notificaciones del navegador (`attention_routes.py`).

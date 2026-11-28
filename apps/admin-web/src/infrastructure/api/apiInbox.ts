@@ -10,6 +10,8 @@ import type {
   HandoffReason,
   MessageKind,
   Notification,
+  PaymentConfirmationPreview,
+  PaymentConfirmed,
 } from "../../domain/inbox/types";
 import type { Inbox } from "../../repositories/inbox";
 import type { HttpClient } from "./httpClient";
@@ -34,6 +36,7 @@ interface ApiConversation {
   can_reply?: boolean;
   customer_waiting_since?: string | null;
   ai_resumed_at?: string | null;
+  payment_pending?: boolean;
 }
 
 interface ApiMessage {
@@ -100,6 +103,7 @@ const toConversation = (item: ApiConversation): ConversationSummary => ({
   canReply: item.can_reply ?? false,
   customerWaitingSince: item.customer_waiting_since ?? null,
   aiResumedAt: item.ai_resumed_at ?? null,
+  paymentPending: item.payment_pending ?? false,
 });
 
 const toMessage = (item: ApiMessage): ChatMessage => ({
@@ -157,6 +161,12 @@ export function createApiInbox(http: HttpClient): Inbox {
       };
     },
     resolveHandoff: async (conversationId) => toConversation(await http.post<ApiConversation>(`${path(conversationId)}/handoff/resolve`)),
+    paymentConfirmation: async (conversationId) => http.get<PaymentConfirmationPreview>(`${path(conversationId)}/payment-confirmation`),
+    confirmPayment: async (conversationId, sale): Promise<PaymentConfirmed> => {
+      const body = sale ? { sale: { customer_name: sale.customerName, description: sale.description, amount: sale.amount, currency: sale.currency } } : { sale: null };
+      const done = await http.post<{ message: ApiMessage; conversation: ApiConversation; sale: unknown; warnings: string[] }>(`${path(conversationId)}/payment-confirmation`, body);
+      return { message: toMessage(done.message), conversation: toConversation(done.conversation), saleRecorded: done.sale != null, warnings: done.warnings ?? [] };
+    },
     remove: (conversationId) => http.delete(path(conversationId)),
     removeTestChats: (slug) => http.delete(`/businesses/${encodeURIComponent(slug)}/conversations/tests`),
     notifications: async () => {

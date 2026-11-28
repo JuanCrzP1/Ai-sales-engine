@@ -3,6 +3,17 @@
 Lo que cambió en AI Sales Engine, de lo más reciente a lo más antiguo. Cada entrada dice qué gana el negocio; el detalle técnico
 está en el historial de git y en `docs/plan-v1.md`.
 
+## 27 de noviembre de 2026
+
+**«Confirmar pago»: tu cliente se entera de que su pago llegó**
+- Antes escribías en el panel el mensaje de pago confirmado, pero nunca se enviaba. Ahora, cuando verificas el pago, tocas
+  **Confirmar pago** en el chat (o en Ventas → Pagos por verificar) y tu cliente recibe ese mensaje. Si no escribiste uno, le llega
+  uno corto de la plataforma, con tu trato y con o sin emojis.
+- En el mismo paso el chat queda atendido, el cliente pasa a «Cliente» y, si anotas lo que compró y el valor, la venta queda en Ventas.
+- La IA sabe que el pago quedó confirmado: si el cliente vuelve a escribir, ya no le dice que el equipo lo está verificando.
+- El mensaje sale una sola vez, aunque toquen dos veces o lo confirmen dos personas a la vez. Si WhatsApp no lo entrega, el panel lo
+  dice y el pago sigue por confirmar.
+
 ## 26 de noviembre de 2026
 
 **Tu saludo de bienvenida le llega a quien salude, venga de donde venga**

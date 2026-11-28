@@ -97,6 +97,31 @@ class FakeMessenger:
 MESSENGER = FakeMessenger()
 
 
+class FakeMemory:
+    """Lo que recuerda el asistente de cada cliente (el motor): aquí, lo que le dijo el panel."""
+
+    def __init__(self) -> None:
+        self.confirmed: list[tuple[str, str, bool]] = []
+        self.fail = False
+
+    def forget(self, business_slug, contact_ref):
+        return None
+
+    def forget_playground(self, business_slug, session_id=None):
+        return None
+
+    def forget_business(self, business_slug):
+        return None
+
+    def payment_confirmed(self, business_slug, contact_ref, *, playground=False):
+        if self.fail:
+            raise RuntimeError("la base no responde")
+        self.confirmed.append((business_slug, contact_ref, playground))
+
+
+MEMORY = FakeMemory()
+
+
 @pytest.fixture
 def platform(tmp_path):
     engine = create_business_config_engine(f"sqlite:///{(tmp_path / 'plataforma.sqlite3').as_posix()}")
@@ -120,6 +145,7 @@ def platform(tmp_path):
         notifications=NotificationStore(engine),
         usage=UsageCounterStore(engine),
         messenger=MESSENGER,
+        contact_memory=MEMORY,
         commerce=CommerceStore(engine),
         ai_usage=AIUsageStore(engine),
         quick_replies=QuickReplyStore(engine),
@@ -127,6 +153,8 @@ def platform(tmp_path):
     MESSENGER.sent.clear()
     MESSENGER.files.clear()
     MESSENGER.fail = False
+    MEMORY.confirmed.clear()
+    MEMORY.fail = False
     yield engine, store, lab, TestClient(app)
     engine.dispose()
 
@@ -464,6 +492,136 @@ def test_test_chats_and_empty_replies_cannot_be_sent(platform):
     chat = _whatsapp_chat(store)
     assert client.post(f"/api/conversations/{chat.conversation_id}/messages", json={"text": ""}, headers=_as("ana")).status_code == 422
     assert MESSENGER.sent == []
+
+
+# ---------------------------------------------------------------------------
+# Confirmar un pago desde el chat
+# ---------------------------------------------------------------------------
+
+SALE = {"customer_name": "Ana", "description": "2 hamburguesas", "amount": "40000", "currency": "COP"}
+
+
+def _reported_payment(store: ConversationStore):
+    chat = _whatsapp_chat(store, text="Ya te pagué")
+    store.request_handoff(chat.conversation_id, "payment_review", "Ya te pagué", summary="Ana pagó 2 hamburguesas por Nequi.")
+    return chat.conversation_id
+
+
+def _confirm(client, conversation_id, sale=None, user="ana"):
+    return client.post(f"/api/conversations/{conversation_id}/payment-confirmation", json={"sale": sale}, headers=_as(user))
+
+
+def test_confirming_a_payment_sends_the_business_message_once_and_the_chat_is_attended(platform):
+    _engine, store, _lab, client = platform
+    chat = _reported_payment(store)
+    written = "Listo, ya quedó confirmado. Ahora seguimos con el siguiente paso."  # Mensajes → Pagos del restaurante de ejemplo
+    preview = client.get(f"/api/conversations/{chat}/payment-confirmation", headers=_as("ana")).json()
+    assert preview == {"message": written, "pending": True, "test": False}
+    assert client.get(f"/api/conversations/{chat}/live", headers=_as("ana")).json()["conversation"]["payment_pending"] is True
+
+    done = _confirm(client, chat, SALE)
+    assert done.status_code == 200
+    body = done.json()
+    assert (body["message"]["author"], body["message"]["body"], body["message"]["status"], body["warnings"]) == ("agent", written, "sent", [])
+    assert (body["sale"]["amount"], body["sale"]["description"], body["sale"]["conversation_id"]) == ("40000.00", "2 hamburguesas", chat)
+    assert MESSENGER.sent == [("restaurant", "whatsapp", "573009998877", written)]
+    assert MEMORY.confirmed == [("restaurant", "573009998877", False)]
+    summary = client.get(f"/api/conversations/{chat}/live", headers=_as("ana")).json()["conversation"]
+    assert body["conversation"] == summary
+    # El chat quedó atendido y la IA vuelve a atenderlo: sabe que el pago quedó confirmado.
+    assert (summary["needs_human"], summary["ai_paused"], summary["handoff_reason"], summary["handoff_summary"]) == (False, False, None, None)
+    assert (summary["stage"], summary["payment_pending"], summary["customer_waiting_since"]) == ("customer", False, None)
+
+    # Un doble clic (u otra persona del equipo) no se lo envía dos veces ni registra otra venta.
+    again = _confirm(client, chat, SALE)
+    assert again.status_code == 409 and again.json()["code"] == "payment_not_pending"
+    assert len(MESSENGER.sent) == 1 and len(client.get("/api/businesses/restaurant/sales", headers=_as("ana")).json()) == 1
+    assert client.get(f"/api/conversations/{chat}/payment-confirmation", headers=_as("ana")).json()["pending"] is False
+
+
+def test_without_writing_the_sale_the_payment_is_confirmed_and_no_sale_is_recorded(platform):
+    _engine, store, _lab, client = platform
+    chat = _reported_payment(store)
+    assert _confirm(client, chat).json()["sale"] is None
+    assert client.get("/api/businesses/restaurant/sales", headers=_as("ana")).json() == []
+    assert len(MESSENGER.sent) == 1
+
+
+def test_if_the_channel_does_not_deliver_the_confirmation_the_payment_stays_pending_as_it_was(platform):
+    _engine, store, _lab, client = platform
+    chat = _reported_payment(store)
+    MESSENGER.fail = True
+    failed = _confirm(client, chat, SALE)
+    assert failed.status_code == 502 and "El pago sigue por confirmar" in failed.json()["message"]
+    summary = client.get(f"/api/conversations/{chat}/live", headers=_as("ana")).json()["conversation"]
+    assert (summary["payment_pending"], summary["handoff_reason"], summary["stage"], summary["needs_human"], summary["ai_paused"]) == (
+        True, "payment_review", "payment", True, True,
+    )
+    assert store.thread(chat)[1][-1].status == "failed"
+    assert MEMORY.confirmed == [] and client.get("/api/businesses/restaurant/sales", headers=_as("ana")).json() == []
+    # Con el canal de vuelta, se confirma.
+    MESSENGER.fail = False
+    assert _confirm(client, chat, SALE).status_code == 200 and len(MESSENGER.sent) == 1
+
+
+@pytest.mark.parametrize(("change", "field"), [({"amount": "-5"}, "amount"), ({"description": " "}, "description"), ({"currency": "1"}, "currency")])
+def test_a_sale_with_bad_data_is_refused_before_anything_is_sent(platform, change, field):
+    _engine, store, _lab, client = platform
+    chat = _reported_payment(store)
+    refused = _confirm(client, chat, {**SALE, **change})
+    assert refused.status_code == 422 and refused.json()["issues"][0]["path"] == f"sale.{field}"
+    assert MESSENGER.sent == [] and client.get(f"/api/conversations/{chat}/payment-confirmation", headers=_as("ana")).json()["pending"] is True
+
+
+def test_if_the_customer_also_waits_for_something_else_that_wait_stays(platform):
+    _engine, store, _lab, client = platform
+    chat = _reported_payment(store)
+    store.request_handoff(chat, "complaint", "Y además llegó frío")
+    assert _confirm(client, chat).status_code == 200
+    summary = client.get(f"/api/conversations/{chat}/live", headers=_as("ana")).json()["conversation"]
+    assert (summary["needs_human"], summary["ai_paused"], summary["handoff_reason"], summary["stage"]) == (True, True, "complaint", "customer")
+
+
+def test_a_test_chat_is_confirmed_in_the_inbox_without_channel_or_sales(platform):
+    _engine, store, _lab, client = platform
+    chat = store.record("restaurant", channel="prueba", contact_ref="sesion-1", contact_name="Prueba", messages=[NewMessage("customer", "Ya pagué")],
+                        handoff=True, handoff_reason="payment_review")
+    assert client.get(f"/api/conversations/{chat}/payment-confirmation", headers=_as("ana")).json()["test"] is True
+    refused = _confirm(client, chat, SALE)
+    assert refused.status_code == 422 and refused.json()["message"] == "En las pruebas no se registran ventas."
+    done = _confirm(client, chat)
+    assert done.status_code == 200 and done.json()["message"]["status"] == "sent"
+    assert MESSENGER.sent == [] and MEMORY.confirmed == [("restaurant", "sesion-1", True)]
+
+
+def test_only_a_pending_payment_of_my_own_business_can_be_confirmed(platform):
+    _engine, store, _lab, client = platform
+    chat = _whatsapp_chat(store)
+    nothing = _confirm(client, chat.conversation_id)
+    assert nothing.status_code == 409 and "ya está confirmado" in nothing.json()["message"]
+    paid = _reported_payment(store)
+    assert _confirm(client, paid, user="beto").status_code == 404
+    assert client.get(f"/api/conversations/{paid}/payment-confirmation", headers=_as("beto")).status_code == 404
+    assert MESSENGER.sent == []
+
+
+def test_if_the_assistant_memory_fails_the_team_is_told_and_the_confirmation_stands(platform):
+    _engine, store, _lab, client = platform
+    chat = _reported_payment(store)
+    MEMORY.fail = True
+    body = _confirm(client, chat).json()
+    assert body["warnings"] == ["El cliente ya recibió la confirmación, pero el asistente no alcanzó a enterarse. Si el cliente escribe, revisa su respuesta."]
+    assert len(MESSENGER.sent) == 1 and client.get(f"/api/conversations/{chat}/payment-confirmation", headers=_as("ana")).json()["pending"] is False
+
+
+def test_taking_a_payment_is_one_operation_so_two_clicks_cannot_both_take_it(platform):
+    _engine, store, _lab, _client = platform
+    chat = _reported_payment(store)
+    first = store.claim_payment(chat)
+    assert first is not None and (first.handoff_reason, first.stage, first.waited_for_payment) == ("payment_review", "payment", True)
+    assert store.claim_payment(chat) is None
+    store.release_payment(chat, first)
+    assert store.claim_payment(chat) is not None
 
 
 PDF = b"%PDF-1.7\n catalogo"

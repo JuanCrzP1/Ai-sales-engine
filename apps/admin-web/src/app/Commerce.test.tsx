@@ -2,7 +2,7 @@ import { cleanup, render, screen, waitFor, within } from "@testing-library/react
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it } from "vitest";
 import type { Customer, Report, Sale } from "../domain/commerce/types";
-import { createMemoryBackend, createMemoryCommerce, createMemoryInbox, createTestServices, emptyReport } from "../test/fakes";
+import { MEMORY_PAYMENT_CONFIRMED, createMemoryBackend, createMemoryCommerce, createMemoryInbox, createTestServices, emptyReport } from "../test/fakes";
 import { SAMPLE_DOCUMENT } from "../test/fixtures/sampleDocument";
 import { App } from "./App";
 
@@ -101,18 +101,36 @@ describe("Ventas", () => {
     expect(await within(screen.getByRole("table")).findByText("Anulada")).toBeInTheDocument();
   });
 
-  it("confirma un pago reportado registrando su venta, y avisa en el campo si falta un dato", async () => {
-    const { user, commerce } = await openAt("ventas", { customers: CUSTOMERS });
-    await user.click(await screen.findByRole("button", { name: "Confirmar y registrar venta" }));
-    const dialog = screen.getByRole("dialog", { name: "Registrar venta" });
-    await user.click(within(dialog).getByRole("button", { name: "Registrar venta" }));
-    expect(within(dialog).getByText("Escribe qué compró.")).toBeInTheDocument();
-    expect(within(dialog).getByText("Escribe el valor de la venta.")).toBeInTheDocument();
+  it("confirma un pago reportado: el cliente recibe el mensaje y la venta se registra; avisa en el campo si falta un dato", async () => {
+    window.history.pushState({}, "", `/negocios/${CAFE}/ventas`);
+    const user = userEvent.setup();
+    const commerce = createMemoryCommerce({ customers: CUSTOMERS });
+    const pedro = {
+      conversation: {
+        id: "c2", business: { slug: CAFE, name: "Café Aroma" }, channel: "whatsapp" as const, contactName: "Pedro Ruiz", status: "open" as const,
+        startedAt: ago(90), lastMessageAt: ago(5), lastMessagePreview: "Ya pagué", messageCount: 1, needsHuman: true, handoffRequestedAt: ago(5),
+        handoffReason: "payment_review" as const, paymentPending: true,
+      },
+      messages: [],
+    };
+    const inbox = createMemoryInbox([pedro]);
+    render(<App services={createTestServices(createMemoryBackend([SAMPLE_DOCUMENT]), { createCommerce: () => commerce, inbox })} />);
+    await user.click(await screen.findByRole("button", { name: "Confirmar pago" }));
+    const dialog = screen.getByRole("dialog", { name: "Confirmar pago" });
+    expect(await within(dialog).findByText(MEMORY_PAYMENT_CONFIRMED)).toBeInTheDocument();
+    expect(within(dialog).getByLabelText(/^Cliente/)).toHaveValue("Pedro Ruiz");
+
+    // La venta es opcional, pero si se empieza a escribir, se completa.
     await user.type(within(dialog).getByLabelText(/^Qué compró/), "Plan Básico");
-    await user.type(within(dialog).getByLabelText(/^Valor/), "210000");
-    await user.click(within(dialog).getByRole("button", { name: "Registrar venta" }));
-    await waitFor(() => expect(commerce.saleList).toHaveLength(1));
-    expect(commerce.saleList[0]).toMatchObject({ customerName: "Pedro Ruiz", conversationId: "c2" });
+    await user.click(within(dialog).getByRole("button", { name: "Confirmar y enviar" }));
+    expect(within(dialog).getByText("Escribe el valor, o deja la venta en blanco.")).toBeInTheDocument();
+    expect(inbox.confirmations).toEqual([]);
+    await user.type(within(dialog).getByLabelText(/^Valor/), "210.000");
+    await user.click(within(dialog).getByRole("button", { name: "Confirmar y enviar" }));
+
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    expect(inbox.confirmations).toEqual([{ conversationId: "c2", sale: { customerName: "Pedro Ruiz", description: "Plan Básico", amount: "210000", currency: "COP" } }]);
+    expect(screen.getByText("El cliente ya recibió tu mensaje y la venta quedó registrada.")).toBeInTheDocument();
   });
 });
 

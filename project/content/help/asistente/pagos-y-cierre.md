@@ -3,7 +3,7 @@ title: "Pagos y cierre: cómo te pagan, con tus datos protegidos"
 module: asistente
 summary: Los medios de pago que ofrece el asistente, por qué tus datos de pago están protegidos, promociones, políticas y cómo cierra una venta.
 order: 4
-updated: 2026-11-13
+updated: 2026-11-27
 keywords: pagos, datos de pago, plantilla, titular, a nombre de, otro medio, efectivo, contraentrega, yape, plin, spei, clabe, oxxo, mercado pago, bizum, iban, zelle, paypal, nequi, daviplata, bre-b, transferencia, cuenta bancaria, enlace de pago, promociones, garantía, devoluciones, políticas, cerrar venta
 related: productos-y-servicios, como-atiende, registrar-una-venta
 ---
@@ -57,7 +57,7 @@ Cuando pagues, envíame aquí la captura del comprobante y te confirmamos. ✅
 - **Le llegan cuando los necesita:** cuando los pide («pásame el número», «¿a qué cuenta te consigno?») o cuando dice con qué medio va a pagar. Funciona con cualquier medio que tengas activo.
 - **Preguntar no es pedirlos:** si solo pregunta «¿puedo transferir?» o «¿y Nequi no?», el asistente le responde que sí y lo sigue guiando, sin soltarle la cuenta.
 - **No se repiten solos:** si el cliente sigue hablando («¿y cuando pague qué hago?», «¿cómo así?»), el asistente le responde y le explica. Si los pide otra vez («se me borró el número»), le llegan otra vez.
-- **Cuando dice que ya pagó,** el chat pasa a tu equipo para verificar el pago.
+- **Cuando dice que ya pagó,** el chat pasa a tu equipo para verificar el pago. Cuando lo verificas, toca **Confirmar pago** en el chat: le llega tu mensaje de pago confirmado. Ver [Confirmar un pago](responder-y-pausar-la-ia).
 - **Con tu trato:** si en **Asistente IA → Estilo** elegiste tratar a los clientes de usted, el mensaje de la plataforma también va de
   usted («Cuando pague, envíeme aquí la captura del comprobante y le confirmamos»). Si escribiste tu propio mensaje, sale tal cual.
 - **Con o sin emojis:** si en **Asistente IA → Estilo** elegiste no usar emojis, este mensaje tampoco los lleva.

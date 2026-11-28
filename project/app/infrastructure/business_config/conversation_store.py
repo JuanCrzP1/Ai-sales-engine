@@ -18,7 +18,7 @@ from collections.abc import Collection
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
-from sqlalchemy import and_, delete, func, insert, select, update
+from sqlalchemy import and_, case, delete, func, insert, or_, select, update
 from sqlalchemy.engine import Connection, Engine
 from sqlalchemy.exc import IntegrityError
 
@@ -38,6 +38,7 @@ from app.domain.business_config.conversations import (
     MediaFile,
     MediaInfo,
     NewMessage,
+    PaymentClaim,
     PendingMessage,
     advances,
     handoff_title,
@@ -502,6 +503,44 @@ class ConversationStore:
     def resolve_handoff(self, conversation_id: str) -> None:
         """Alguien del equipo ya atendió a quien pidió una persona (desde aquí o desde su celular): el cliente deja de esperar."""
         self._update(conversation_id, needs_human=False, customer_waiting_since=None, ai_resumed_at=None)
+
+    # ------------------------------------------------------------------ confirmar un pago
+
+    def claim_payment(self, conversation_id: str) -> PaymentClaim | None:
+        """Toma el pago por confirmar de la conversación, si tiene uno: el cliente avisó un pago (`payment_review`) o va en la etapa
+        «pago». En una sola operación deja de estar por confirmar y el cliente pasa a «cliente», así que dos clics (o dos personas
+        del equipo a la vez) no lo confirman dos veces: el segundo recibe None. Devuelve cómo estaba, para `release_payment`."""
+        key = self._key(conversation_id)
+        pending = or_(conversations.c.handoff_reason == "payment_review", conversations.c.stage == "payment")
+        with self._engine.begin() as conn:
+            row = conn.execute(
+                select(conversations.c.handoff_reason, conversations.c.stage).where(conversations.c.id == key, pending).with_for_update()
+            ).first()
+            if row is None:
+                return None
+            # Solo se quita el motivo del pago: si después pidió una persona por otra cosa, esa espera sigue.
+            reason = case((conversations.c.handoff_reason == "payment_review", None), else_=conversations.c.handoff_reason)
+            taken = conn.execute(
+                update(conversations).where(conversations.c.id == key, pending).values(handoff_reason=reason, stage="customer", updated_at=_now())
+            )
+            if taken.rowcount == 0:
+                return None
+        return PaymentClaim(row.handoff_reason, row.stage)
+
+    def release_payment(self, conversation_id: str, claim: PaymentClaim) -> None:
+        """El mensaje no salió: el pago vuelve a estar por confirmar, como estaba."""
+        values: dict[str, Any] = {"stage": claim.stage}
+        if claim.handoff_reason == "payment_review":
+            values["handoff_reason"] = "payment_review"
+        self._update(conversation_id, **values)
+
+    def finish_payment(self, conversation_id: str, claim: PaymentClaim) -> None:
+        """El cliente ya recibió la confirmación. Si esperaba a una persona solo por el pago, ya nadie tiene que atenderlo y la IA
+        vuelve a atender el chat (sabe que el pago quedó confirmado). Si esperaba por otra cosa, esa espera sigue igual."""
+        if claim.waited_for_payment:
+            self._update(
+                conversation_id, needs_human=False, handoff_summary=None, customer_waiting_since=None, ai_paused=False, ai_resumed_at=None,
+            )
 
     # ------------------------------------------------------------------ la IA retoma lo que nadie atendió
 

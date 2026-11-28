@@ -344,7 +344,7 @@ recibe lo mismo que con los YAML. Si los YAML de un negocio no coinciden, la imp
 | `config.initial_message.recency.active_minutes` | demo | Ventanas del mensaje inicial (antiguas) | E | ajustes técnicos: `legacy` (misma ruta) | — | no | no | Solo demo: ubicación antigua de las ventanas de conversación, con los mismos valores por defecto del motor (15 min, 4 h). | — |
 | `config.initial_message.recency.reset_hours` | demo | Ventanas del mensaje inicial (antiguas) | E | ajustes técnicos: `legacy` (misma ruta) | — | no | no | Solo demo: ubicación antigua de las ventanas de conversación, con los mismos valores por defecto del motor (15 min, 4 h). | — |
 | `config.initial_message.text` | todos | Texto de bienvenida | A | `messages.welcome.text` | — | pantalla | sí: primer mensaje | — | `test_welcome_message_toggle` |
-| `config.post_payment.on_payment_confirmed.message` | todos | Mensaje de pago confirmado | A | `messages.payment_confirmed` | renombrado | pantalla | no: se guarda; lo enviará la plataforma cuando el equipo confirme el pago | — | — |
+| `config.post_payment.on_payment_confirmed.message` | todos | Mensaje de pago confirmado | A | `messages.payment_confirmed` | renombrado | pantalla | sí: lo envía la plataforma cuando el equipo toca «Confirmar pago» en el chat | — | `test_the_payment_confirmed_message_written_in_the_panel_reaches_the_customer_and_the_ai_knows` |
 | `config.post_payment.on_user_report.message` | todos | Respuesta al reportar un pago | A | `messages.payment_reported` | renombrado | pantalla | sí: respuesta exacta | — | `test_payment_report_message_is_optional` |
 | `config.response.length` | todos | Largo de las respuestas | A | `response_style.length` | — | pantalla | sí: prompt y recorte | — | `test_each_response_length_option_controls_prompt_and_truncation` |
 | `config.response.max_words` | todos | Límite avanzado de palabras | B | `response_style.max_words` | — | modelo | sí: prompt y recorte | — | `test_changing_the_contract_changes_response_length` |
@@ -363,10 +363,10 @@ si el motor actual lo usa y de dónde viene.
 
 | Audiencia | Conectados | Programados | Solo panel | Pendientes |
 |---|---|---|---|---|
-| cliente | 144 | 2 | 2 | 0 |
+| cliente | 145 | 1 | 2 | 0 |
 | avanzado | 50 | 0 | 0 | 0 |
 | sistema | 2 | 0 | 0 | 0 |
-| **Total** | 196 | 2 | 2 | 0 |
+| **Total** | 197 | 1 | 2 | 0 |
 
 | Campo | Audiencia | Motor | Origen | Interfaz | Descripción |
 |---|---|---|---|---|---|
@@ -444,7 +444,7 @@ si el motor actual lo usa y de dónde viene.
 | `messages.fallback` | cliente | conectado | nuevo | pantalla | Mensaje exacto cuando la IA no puede responder (sin clave, sin saldo o con el proveedor caído). Si falta, uno neutro de la plataforma. |
 | `messages.follow_up` | cliente | programado | nuevo | pantalla | Mensaje de seguimiento a un cliente que no respondió. Se guarda; lo enviará la plataforma cuando los canales puedan escribir primero. |
 | `messages.human_handoff` | cliente | conectado | nuevo | pantalla | Mensaje al pasar la conversación a una persona. |
-| `messages.payment_confirmed` | cliente | programado | `config.post_payment.on_payment_confirmed.message` | pantalla | Mensaje cuando el equipo confirma el pago. Se guarda; lo enviará la plataforma cuando el equipo pueda confirmar pagos desde el panel. |
+| `messages.payment_confirmed` | cliente | conectado | `config.post_payment.on_payment_confirmed.message` | pantalla | Mensaje que recibe el cliente cuando el equipo toca «Confirmar pago» en el chat. Si falta, sale uno corto de la plataforma. |
 | `messages.payment_details` | cliente | conectado | nuevo | pantalla | Plantilla del mensaje con los datos de pago que el sistema (nunca la IA) envía cuando el cliente elige cómo pagar. Marcadores: {medio}, {datos} (obligatorio) y {titular}. Si falta, la de la plataforma. |
 | `messages.payment_reported` | cliente | conectado | `config.post_payment.on_user_report.message` | pantalla | Respuesta exacta cuando el cliente reporta un pago. |
 | `messages.welcome.enabled` | cliente | conectado | `config.initial_message.enabled` | pantalla | true: envía el mensaje inicial fijo, sin IA. false: no lo envía y responde la IA. |

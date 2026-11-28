@@ -109,8 +109,8 @@ class Messages(ContractModel):
     payment_reported: MessageText | None = Field(default=None, description="Respuesta exacta cuando el cliente reporta un pago.", json_schema_extra=CONNECTED)
     payment_confirmed: MessageText | None = Field(
         default=None,
-        description="Mensaje cuando el equipo confirma el pago. Se guarda; lo enviará la plataforma cuando el equipo pueda confirmar pagos desde el panel.",
-        json_schema_extra=SCHEDULED,
+        description="Mensaje que recibe el cliente cuando el equipo toca «Confirmar pago» en el chat. Si falta, sale uno corto de la plataforma.",
+        json_schema_extra=CONNECTED,
     )
     after_sale: MessageText | None = Field(
         default=None, description="Mensaje después de una compra: la IA lo usa cuando el cliente escribe después de pagar.", json_schema_extra=CONNECTED

@@ -78,14 +78,17 @@ def greeting_reading(prompt: str, user_message: str) -> str | None:
     return json.dumps({"solo_saluda": said is not None})
 
 
-def run_conversation(slug: str, turns: list[tuple], *, user_id: str, with_context: bool = False) -> list[tuple]:
+def run_conversation(
+    slug: str, turns: list[tuple], *, user_id: str, with_context: bool = False, memory: MemoryDomainService | None = None
+) -> list[tuple]:
     """Ejecuta el pipeline real turno a turno; devuelve (prompts enviados al asesor, respuesta final) por turno, o con `with_context`
     (respuesta final, lo que el motor decide del chat).
 
     Cada turno es (mensaje del cliente, respuesta del asesor simulado) y, opcional, lo que entiende el lector de pagos simulado
     (`reads(...)`). Sin lector, el motor confía en la acción del asesor, como cuando la llamada del lector falla. La respuesta del
-    asesor puede ser una lista: la primera respuesta y la que da cuando el motor le pide otra."""
-    pipeline = AIPipeline(memory_service=MemoryDomainService(MemoryRepository()))
+    asesor puede ser una lista: la primera respuesta y la que da cuando el motor le pide otra. Con `memory`, sigue la conversación
+    con esa memoria (para cambiarla entre dos llamadas, como lo haría el panel)."""
+    pipeline = AIPipeline(memory_service=memory or MemoryDomainService(MemoryRepository()))
     results = []
     for message, llm_reply, *rest in turns:
         prompts: list[str] = []

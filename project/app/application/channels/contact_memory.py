@@ -1,4 +1,5 @@
-"""Lo que el asistente recuerda de cada cliente, visto desde el panel: al eliminar un chat, el motor lo olvida todo.
+"""Lo que el asistente recuerda de cada cliente, visto desde el panel: al eliminar un chat, el motor lo olvida todo; al confirmar
+el equipo un pago, el motor lo sabe.
 
 El motor guarda su memoria aparte de la bandeja (`clients`, `conversation_messages` y `conversation_memory`, por negocio y número
 del cliente) y una copia en RAM. Este adaptador implementa `ContactMemory` para la API del panel, que no conoce el motor.
@@ -34,6 +35,15 @@ class EngineContactMemory:
         except Exception as exc:  # noqa: BLE001 - se informa al panel
             logger.error("memoria_de_pruebas_no_borrada", extra={"tenant": business_slug, "error": type(exc).__name__})
             raise AssistantUnavailableError("No se pudo borrar lo que el asistente recuerda de las pruebas, así que no se borraron. Intenta de nuevo") from exc
+
+    def payment_confirmed(self, business_slug: str, contact_ref: str, *, playground: bool = False) -> None:
+        """El equipo confirmó el pago de ese cliente (o de esa sesión de «Probar»): el asistente lo sabe en el próximo mensaje."""
+        from app.application.assistant_lab.engine_runner import playground_contact
+        from app.application.assistant_service import GLOBAL_MEMORY_SERVICE
+        from app.application.pipeline.payment_outcome import remember_confirmed_payment
+
+        user_id = playground_contact(contact_ref) if playground else contact_ref
+        remember_confirmed_payment(GLOBAL_MEMORY_SERVICE, tenant_slug=business_slug, user_id=user_id)
 
     def forget_business(self, business_slug: str) -> None:
         """Al eliminar un negocio: lo que el motor tiene en memoria de sus clientes (en la base se borra con el negocio)."""

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { hasNews, liveTiming, mergeMessages, pollDelay } from "../domain/inbox/live";
-import type { BusinessActivity, ChatMessage, ConversationSummary, ConversationThread, InboxFilter, MediaInfo } from "../domain/inbox/types";
+import type { BusinessActivity, ChatMessage, ConversationSummary, ConversationThread, InboxFilter, MediaInfo, PaymentSale } from "../domain/inbox/types";
 import { persistenceErrorMessage } from "../repositories/persistenceError";
 import { useInbox } from "./inboxContext";
 import { attachmentKind } from "../domain/inbox/attachments";
@@ -144,6 +144,17 @@ export function useConversations(initialFilter: InboxFilter, initialSelected: st
     [inbox, patchConversation],
   );
 
+  /** El equipo verificó el pago: el mensaje de pago confirmado aparece en el chat y el chat queda como lo dejó el servidor. */
+  const confirmPayment = useCallback(
+    async (conversationId: string, sale: PaymentSale | null) => {
+      const done = await inbox.confirmPayment(conversationId, sale);
+      patchMessages((messages) => mergeMessages(messages, [done.message]));
+      patchConversation(done.conversation);
+      return done;
+    },
+    [inbox, patchMessages, patchConversation],
+  );
+
   /** Reanuda (`true`) o pausa (`false`) la IA en el chat. */
   const setAssistant = useCallback(
     async (conversationId: string, active: boolean) => {
@@ -228,7 +239,7 @@ export function useConversations(initialFilter: InboxFilter, initialSelected: st
     [inbox, selectedId],
   );
 
-  return { filter, setFilter, list, selectedId, select: setSelectedId, thread, reload, resolveHandoff, setAssistant, reply, sendAttachment, sendQuickReplyFile, forget, removeTestChats };
+  return { filter, setFilter, list, selectedId, select: setSelectedId, thread, reload, resolveHandoff, confirmPayment, setAssistant, reply, sendAttachment, sendQuickReplyFile, forget, removeTestChats };
 }
 
 /** Una URL local para mostrar un archivo de la conversación (se descarga con la sesión del usuario y se libera al salir). */

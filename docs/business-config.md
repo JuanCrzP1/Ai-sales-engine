@@ -165,8 +165,8 @@ y en los comentarios de los tipos TypeScript:
 - `x-engine` (si el motor actual lo usa): `conectado` solo con una prueba en
   `tests/test_business_config_engine_integration.py` que demuestra que cambiarlo cambia el prompt, la
   respuesta o la acción del motor (`CONNECTED_EVIDENCE`; una prueba exige que la lista coincida con las
-  marcas); `programado` si lo enviará la plataforma cuando exista el evento que lo dispara (pago confirmado por el
-  equipo, seguimiento a quien no respondió); `solo panel` si es solo para el equipo y nunca va a la IA (la etiqueta de
+  marcas); `programado` si lo enviará la plataforma cuando exista el evento que lo dispara (hoy, el seguimiento a quien
+  no respondió; el pago confirmado ya sale cuando el equipo toca «Confirmar pago» en el chat); `solo panel` si es solo para el equipo y nunca va a la IA (la etiqueta de
   una cuenta, el código de una variante); `pendiente` si está representado y conservado pero el motor no lo usa (hoy,
   ninguno).
 

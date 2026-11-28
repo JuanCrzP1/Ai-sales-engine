@@ -45,7 +45,7 @@ lleva hacia la compra; cuando hace falta una persona, se la pasa al equipo y le 
 
 <table>
   <tr>
-    <td width="50%"><img src="docs/images/conversaciones.jpg" alt="Conversaciones en vivo con paso a una persona"/><br/><sub><b>Conversaciones en vivo.</b> Un cliente reportó un pago: la IA se pausa y el equipo lo atiende desde aquí.</sub></td>
+    <td width="50%"><img src="docs/images/conversaciones.jpg" alt="Conversaciones en vivo con paso a una persona"/><br/><sub><b>Conversaciones en vivo.</b> Un cliente reportó un pago: el equipo lo verifica y lo confirma desde el chat, y el cliente recibe su mensaje.</sub></td>
     <td width="50%"><img src="docs/images/reportes.jpg" alt="Reportes del negocio"/><br/><sub><b>Reportes.</b> Conversaciones, ventas, embudo, quién respondió y el costo de la IA.</sub></td>
   </tr>
   <tr>

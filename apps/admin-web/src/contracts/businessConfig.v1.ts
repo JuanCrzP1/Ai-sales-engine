@@ -285,7 +285,7 @@ export interface Messages {
   payment_details?: string | null;
   /** Respuesta exacta cuando el cliente reporta un pago. [motor: conectado] */
   payment_reported?: string | null;
-  /** Mensaje cuando el equipo confirma el pago. Se guarda; lo enviará la plataforma cuando el equipo pueda confirmar pagos desde el panel. [motor: programado] */
+  /** Mensaje que recibe el cliente cuando el equipo toca «Confirmar pago» en el chat. Si falta, sale uno corto de la plataforma. [motor: conectado] */
   payment_confirmed?: string | null;
   /** Mensaje después de una compra: la IA lo usa cuando el cliente escribe después de pagar. [motor: conectado] */
   after_sale?: string | null;

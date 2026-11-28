@@ -7,7 +7,7 @@ su caché y cobrarlas más barato. Todo cambio aquí se mide con el laboratorio 
 from __future__ import annotations
 
 # Versión del prompt: va en cada respuesta para saber qué texto la produjo. Se cambia con cada cambio de contenido.
-PROMPT_VERSION = "2026-11-20.v20"
+PROMPT_VERSION = "2026-11-27.v21"
 
 PLATFORM = """
 Eres el asistente de ventas de un negocio y atiendes a sus clientes por chat. Tu trabajo es entender qué necesita cada cliente,
@@ -161,5 +161,7 @@ ANSWER_AGAIN_REPEATED = (
     "pidió. Responde otra vez a lo que dijo en este mensaje, sin enviarlos ni decir que se los dejas."
 )
 PAYMENT_REPORTED = "Dijo que ya pagó: no le pidas que pague otra vez y no confirmes el pago; el equipo lo verifica."
+# El equipo verificó el pago y se lo confirmó al cliente desde el chat («Confirmar pago», 27 nov 2026).
+PAYMENT_CONFIRMED = "El equipo ya verificó su pago y le avisó que quedó confirmado: no le pidas que pague otra vez."
 # El mensaje del negocio para después de una compra (`messages.after_sale`), cuando el cliente sigue escribiendo después de pagar.
 AFTER_SALE = "Después de la compra, el negocio quiere decirle esto (con tus palabras y una sola vez): «{message}»"

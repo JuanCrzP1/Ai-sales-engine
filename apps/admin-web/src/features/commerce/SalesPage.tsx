@@ -7,9 +7,11 @@ import { Icon } from "../../components/ui/Icon";
 import { PageHeader } from "../../components/ui/Layout";
 import { formatMoney, type Customer, type Sale } from "../../domain/commerce/types";
 import { fullDate, relativeTime } from "../../domain/inbox/format";
-import type { Channel } from "../../domain/inbox/types";
+import type { Channel, PaymentConfirmed } from "../../domain/inbox/types";
+import { ConfirmPaymentDialog } from "../../layout/ConfirmPaymentDialog";
 import { ContactAvatar } from "../../layout/ContactAvatar";
 import { persistenceErrorMessage } from "../../state/directoryContext";
+import { useInbox } from "../../state/inboxContext";
 import { useCommerceData } from "../../state/useCommerceData";
 import { RecordSaleDialog } from "./RecordSaleDialog";
 import { useCan } from "../../state/roleContext";
@@ -20,7 +22,11 @@ const PERIOD_DAYS = 30;
 export function SalesPage() {
   const sales = useCommerceData((commerce) => commerce.sales(90), []);
   const pending = useCommerceData((commerce) => commerce.customers({ stage: "payment" }), []);
+  const inbox = useInbox();
   const [selling, setSelling] = useState<{ name: string; conversationId: string | null } | null>(null);
+  // Un pago por verificar se confirma igual que desde el chat: el cliente recibe el mensaje de pago confirmado.
+  const [confirming, setConfirming] = useState<Customer | null>(null);
+  const [confirmed, setConfirmed] = useState<PaymentConfirmed | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
   const refresh = () => {
     sales.reload();
@@ -62,17 +68,27 @@ export function SalesPage() {
         <KpiTile label="Pagos por verificar" icon="headset" value={pending.state.status === "ready" ? waiting.length : "—"} hint={waiting.length ? "Revísalos abajo" : undefined} />
       </div>
 
+      {confirmed && (
+        <Alert tone={confirmed.warnings.length ? "warning" : "success"} title="Pago confirmado">
+          {confirmed.warnings.length ? (
+            confirmed.warnings.map((warning) => <p key={warning}>{warning}</p>)
+          ) : (
+            <p>El cliente ya recibió tu mensaje{confirmed.saleRecorded ? " y la venta quedó registrada" : ""}.</p>
+          )}
+        </Alert>
+      )}
+
       {waiting.length > 0 && (
         <section className="data-panel data-panel--attention" aria-labelledby="por-verificar">
           <header className="data-panel__header">
             <h2 id="por-verificar" className="data-panel__title">
               <Icon name="headset" size={18} /> Pagos por verificar
             </h2>
-            <p className="data-panel__description">Estos clientes reportaron un pago. Verifícalo en tu cuenta y registra la venta.</p>
+            <p className="data-panel__description">Estos clientes reportaron un pago. Verifícalo en tu cuenta y confírmalo: le llega tu mensaje de pago confirmado.</p>
           </header>
           <ul className="pending-list">
             {waiting.map((customer) => (
-              <PendingPayment key={customer.conversationId} customer={customer} onConfirm={() => setSelling({ name: customer.name ?? "", conversationId: customer.conversationId })} />
+              <PendingPayment key={customer.conversationId} customer={customer} onConfirm={() => setConfirming(customer)} />
             ))}
           </ul>
         </section>
@@ -138,6 +154,21 @@ export function SalesPage() {
         )}
       </section>
 
+      {confirming && (
+        <ConfirmPaymentDialog
+          conversationId={confirming.conversationId}
+          channel={confirming.channel as Channel}
+          customerName={confirming.name ?? ""}
+          onConfirm={(sale) => inbox.confirmPayment(confirming.conversationId, sale)}
+          onClose={() => setConfirming(null)}
+          onDone={(done) => {
+            setConfirming(null);
+            setConfirmed(done);
+            refresh();
+          }}
+        />
+      )}
+
       {selling && (
         <RecordSaleDialog
           customerName={selling.name}
@@ -172,7 +203,7 @@ function PendingPayment({ customer, onConfirm }: { customer: Customer; onConfirm
         </span>
       </span>
       <Button size="small" onClick={onConfirm}>
-        Confirmar y registrar venta
+        <Icon name="check" size={14} /> Confirmar pago
       </Button>
     </li>
   );

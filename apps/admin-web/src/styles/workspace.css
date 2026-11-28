@@ -1276,9 +1276,51 @@
   line-height: 1.45;
 }
 
+.handoff-banner__actions {
+  flex: none;
+  display: flex;
+  gap: var(--space-2);
+}
+
+/* El pago sigue por confirmar, pero el chat ya está atendido: el mismo aviso, más discreto. */
+.handoff-banner--quiet {
+  background: var(--color-surface-muted);
+  border-bottom-color: var(--color-border);
+}
+
+/* Lo que pasó al confirmar un pago (y lo que falta, si algo no se pudo). */
+.thread__notice {
+  position: relative;
+  padding: var(--space-3) var(--space-5) 0;
+}
+
+.thread__notice .alert {
+  padding-right: 40px;
+}
+
+.thread__notice-close {
+  position: absolute;
+  top: calc(var(--space-3) + 8px);
+  right: calc(var(--space-5) + 8px);
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
 @media (max-width: 560px) {
   .handoff-banner {
     flex-wrap: wrap;
+  }
+
+  .handoff-banner__actions {
+    width: 100%;
+    justify-content: flex-end;
   }
 }
 

@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { liveTiming } from "../domain/inbox/live";
 import type { ConversationThread, Notification } from "../domain/inbox/types";
-import { createMemoryBackend, createMemoryInbox, createTestServices } from "../test/fakes";
+import { MEMORY_PAYMENT_CONFIRMED, createMemoryBackend, createMemoryInbox, createTestServices } from "../test/fakes";
 import { SAMPLE_DOCUMENT, SAMPLE_PLANS_DOCUMENT } from "../test/fixtures/sampleDocument";
 import { App } from "./App";
 
@@ -122,6 +122,18 @@ const WAITING: ConversationThread = {
     { id: "m10", author: "assistant", body: "Te paso con un asesor.", intent: "info", createdAt: minutesAgo(2) },
   ],
 };
+/** Un cliente que avisó un pago en Café Aroma: el equipo lo verifica y lo confirma desde el chat. */
+const PAID: ConversationThread = {
+  conversation: {
+    id: "c10", business: { slug: CAFE, name: "Café Aroma" }, channel: "whatsapp", contactName: "Jorge Peña", status: "open",
+    startedAt: minutesAgo(20), lastMessageAt: minutesAgo(2), lastMessagePreview: "Ya te pagué", messageCount: 2, needsHuman: true,
+    handoffRequestedAt: minutesAgo(2), handoffReason: "payment_review", paymentPending: true, aiPaused: true, canReply: true,
+  },
+  messages: [
+    { id: "m11", author: "customer", body: "Ya te pagué", intent: null, createdAt: minutesAgo(3) },
+    { id: "m12", author: "assistant", body: "Gracias, el equipo lo verifica.", intent: "buy", createdAt: minutesAgo(2) },
+  ],
+};
 const HANDOFF_NOTICE: Notification = {
   id: "n1", business: { slug: CAFE, name: "Café Aroma" }, conversationId: "c9", kind: "handoff",
   title: "Marta Ríos pidió hablar con una persona", body: "Quiero hablar con alguien", createdAt: minutesAgo(2), read: false,
@@ -158,6 +170,46 @@ describe("Pasar a una persona", () => {
     await user.click(await within(thread).findByRole("button", { name: "Ya lo atendí" }));
     expect(inbox.resolved).toEqual(["c9"]);
     await waitFor(() => expect(within(thread).queryByText("Este cliente pidió hablar con una persona")).not.toBeInTheDocument());
+  });
+
+  it("confirma un pago reportado desde el chat: el cliente recibe el mensaje una sola vez y el chat queda atendido", async () => {
+    const { user, inbox } = await openAt(`/negocios/${CAFE}/conversaciones?c=c10`, [...THREADS, PAID]);
+    const thread = await screen.findByRole("region", { name: "Conversación abierta" });
+    expect(await within(thread).findByText("Reportó un pago: verifícalo")).toBeInTheDocument();
+    await user.click(within(thread).getByRole("button", { name: "Confirmar pago" }));
+    const dialog = screen.getByRole("dialog", { name: "Confirmar pago" });
+    expect(await within(dialog).findByText(MEMORY_PAYMENT_CONFIRMED)).toBeInTheDocument();
+    expect(within(dialog).getByText("El cliente recibe este mensaje por WhatsApp:")).toBeInTheDocument();
+    await user.click(within(dialog).getByRole("button", { name: "Confirmar y enviar" }));
+
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    expect(inbox.confirmations).toEqual([{ conversationId: "c10", sale: null }]);
+    expect(within(thread).getByText("Pago confirmado: el cliente ya recibió tu mensaje.")).toBeInTheDocument();
+    expect(within(screen.getByRole("log", { name: "Mensajes con Jorge Peña" })).getByText(MEMORY_PAYMENT_CONFIRMED)).toBeInTheDocument();
+    expect(within(thread).queryByText("Reportó un pago: verifícalo")).not.toBeInTheDocument();
+    expect(within(thread).queryByRole("button", { name: "Confirmar pago" })).not.toBeInTheDocument();
+  });
+
+  it("después de «Ya lo atendí», el pago sigue por confirmar hasta que lo confirmen", async () => {
+    const { user } = await openAt(`/negocios/${CAFE}/conversaciones?c=c10`, [...THREADS, PAID]);
+    const thread = await screen.findByRole("region", { name: "Conversación abierta" });
+    await user.click(await within(thread).findByRole("button", { name: "Ya lo atendí" }));
+    expect(await within(thread).findByText("Pago por confirmar")).toBeInTheDocument();
+    expect(within(thread).getByRole("button", { name: "Confirmar pago" })).toBeInTheDocument();
+  });
+
+  it("si el canal no entrega la confirmación, lo dice y deja intentarlo otra vez", async () => {
+    const { user, inbox } = await openAt(`/negocios/${CAFE}/conversaciones?c=c10`, [...THREADS, PAID]);
+    const thread = await screen.findByRole("region", { name: "Conversación abierta" });
+    inbox.failNextReply("WhatsApp no está conectado en este negocio. El pago sigue por confirmar: inténtalo de nuevo.");
+    await user.click(await within(thread).findByRole("button", { name: "Confirmar pago" }));
+    const dialog = screen.getByRole("dialog", { name: "Confirmar pago" });
+    await within(dialog).findByText(MEMORY_PAYMENT_CONFIRMED);
+    await user.click(within(dialog).getByRole("button", { name: "Confirmar y enviar" }));
+    expect(await within(dialog).findByText(/El pago sigue por confirmar: inténtalo de nuevo/)).toBeInTheDocument();
+    expect(inbox.confirmations).toEqual([]);
+    await user.click(within(dialog).getByRole("button", { name: "Confirmar y enviar" }));
+    await waitFor(() => expect(inbox.confirmations).toHaveLength(1));
   });
 
   it("marcar todo como leído deja la campana sin pendientes", async () => {

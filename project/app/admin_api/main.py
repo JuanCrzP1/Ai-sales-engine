@@ -44,6 +44,7 @@ from app.business_config_application.channels import TelegramChannelService, Wha
 from app.business_config_application.business_deletion import BusinessDeletionService
 from app.business_config_application.commerce import CommerceService
 from app.business_config_application.conversations import ConversationsService, NotificationsService
+from app.business_config_application.payment_confirmation import PaymentConfirmationService
 from app.business_config_application.ports import (
     AccessTokenVerifier,
     AIUsageStorage,
@@ -150,6 +151,15 @@ def create_app(
     app.state.notifications = NotificationsService(notifications, app.state.access) if notifications is not None else None
     # Clientes, ventas y reportes; con `ai_usage`, los reportes suman el costo de la IA.
     app.state.commerce = CommerceService(commerce, app.state.access, ai_usage) if commerce is not None else None
+    # «Confirmar pago» en el chat: el cliente recibe el mensaje de pago confirmado de lo publicado; con `commerce`, la venta queda
+    # registrada; con `contact_memory`, el asistente sabe que el pago quedó confirmado.
+    app.state.payments = (
+        PaymentConfirmationService(
+            conversations, app.state.conversations, service.get_published, messenger=messenger, commerce=commerce, memory=contact_memory,
+        )
+        if conversations is not None
+        else None
+    )
     app.state.contract_schema = business_config_json_schema()
     # Las plantillas para empezar un negocio: se validan aquí, al arrancar.
     app.state.templates = templates if templates is not None else BusinessTemplateCatalog.from_directory()

@@ -1,10 +1,10 @@
 ---
 title: Responde tú y pausa la IA
 module: conversaciones
-summary: Escribirle a un cliente desde el panel, enviarle fotos y documentos, pausar y reanudar la IA en un chat y marcarlo como atendido.
+summary: Escribirle a un cliente desde el panel, enviarle fotos y documentos, confirmar su pago, pausar y reanudar la IA en un chat y marcarlo como atendido.
 order: 2
-updated: 2026-11-12
-keywords: responder, escribir, pausar ia, reanudar ia, ya lo atendí, humano, tomar el chat, celular del negocio, enviar foto, enviar pdf, adjuntar, archivo, documento
+updated: 2026-11-27
+keywords: responder, escribir, pausar ia, reanudar ia, ya lo atendí, confirmar pago, pago confirmado, verificar pago, humano, tomar el chat, celular del negocio, enviar foto, enviar pdf, adjuntar, archivo, documento
 related: bandeja-en-vivo, usar-respuestas-rapidas, cuando-pasa-a-una-persona
 ---
 
@@ -42,3 +42,21 @@ Pausar afecta solo a ese chat: tu asistente sigue atendiendo a todos los demás.
 Si el asistente le pasó el chat a tu equipo, arriba del chat lo ves. Atiéndelo y toca **Ya lo atendí**. Ver [Cuándo un chat pasa a tu equipo](cuando-pasa-a-una-persona).
 
 En los chats que llegan por la API, la IA queda pausada: atiéndelo desde la plataforma conectada y toca **Reanudar IA** cuando el asistente pueda seguir.
+
+## Confirmar un pago
+
+Cuando un cliente dice que ya pagó, arriba del chat ves **Reportó un pago: verifícalo**. Revisa en tu cuenta que el dinero llegó y toca **Confirmar pago**:
+
+1. Ves el mensaje que le va a llegar al cliente: el que escribiste en [Mensajes y canales](panel:mensajes), en **Cuando tu equipo confirma el pago**. Si no escribiste uno, sale uno corto de la plataforma, con tu trato (de tú o de usted) y con o sin emojis, como elegiste en el estilo.
+2. Si quieres, anota lo que compró y el valor: la venta queda en [Ventas](panel:ventas) y suma en los reportes. Si lo dejas en blanco, no se registra ninguna venta.
+3. Toca **Confirmar y enviar**.
+
+El cliente recibe el mensaje, pasa a la etapa «Cliente» y el chat queda atendido. La IA vuelve a atender ese chat y ya sabe que el pago quedó confirmado: si el cliente escribe, no le dice que el equipo lo está verificando.
+
+- **Una sola vez:** si tocas dos veces, o alguien más del equipo lo confirma al mismo tiempo, el mensaje no sale repetido.
+- **Si no se envía** (por ejemplo, WhatsApp está desconectado), el panel te lo dice y el pago sigue por confirmar: inténtalo de nuevo.
+- **Si ya tocaste «Ya lo atendí»,** el pago sigue por confirmar: lo ves arriba del chat como **Pago por confirmar**.
+- **En las pruebas** de «Probar asistente» también puedes confirmarlo, para ver cómo sigue la IA: el mensaje queda en el chat y no se registran ventas.
+
+También puedes confirmarlo desde **Ventas → Pagos por verificar**.
+

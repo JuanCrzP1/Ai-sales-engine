@@ -378,6 +378,33 @@ Si el negocio no existe, no tiene versión publicada o el almacén falla, el mot
 un mensaje neutro y queda la alerta `business_config_unavailable`. Los datos de pago se descifran solo al compilar y nunca llegan
 a la IA: el prompt nombra los medios y el motor entrega los datos cuando el cliente elige uno.
 
+## Confirmar Un Pago
+
+Cuando el cliente avisa que pagó, el chat pasa al equipo (`payment_review`). Quien lo verifica toca «Confirmar pago» en el chat o en
+Ventas → Pagos por verificar: el panel pide el mensaje con `GET /api/conversations/{id}/payment-confirmation` y confirma con
+`POST` a la misma ruta (con la venta, opcional).
+
+```text
+panel (aviso del chat o Ventas)   layout/ConfirmPaymentDialog.tsx
+-> project/app/admin_api/conversation_routes.py
+-> project/app/business_config_application/payment_confirmation.py   PaymentConfirmationService.confirm
+   -> project/app/domain/business_config/payment_confirmation.py    el mensaje: el del negocio o el de la plataforma con su trato
+   -> project/app/infrastructure/business_config/conversation_store.py   claim_payment → finish_payment (o release_payment)
+   -> el canal del cliente (ChannelMessenger)
+   -> project/app/application/channels/contact_memory.py   EngineContactMemory.payment_confirmed
+      -> project/app/application/pipeline/payment_outcome.py   remember_confirmed_payment: «confirmado» y fin del paso de pago
+   -> project/app/infrastructure/business_config/commerce_store.py   CommerceStore.record_sale (si se anotó la venta)
+```
+
+- **Una sola vez:** `claim_payment` toma el pago en una sola operación (`UPDATE … WHERE` el pago sigue por confirmar); un doble clic
+  o dos personas a la vez reciben 409 y el cliente no recibe el mensaje dos veces.
+- **Primero lo que puede fallar:** el acceso, el canal y los datos de la venta se revisan antes de tomar el pago. Si el canal no
+  entrega el mensaje, queda «no enviado» y `release_payment` deja el pago por confirmar como estaba (502).
+- **Después del envío:** el chat queda atendido y la IA vuelve a atenderlo si esperaba solo por el pago; si también esperaba por
+  otra cosa (un reclamo), esa espera sigue. La IA ve «el equipo ya verificó su pago» (`instructions.PAYMENT_CONFIRMED`). Si la
+  memoria o la venta fallan, el pago no se deshace: la respuesta trae el aviso para el equipo.
+- Los chats de «Probar asistente» también se confirman (el mensaje queda en la bandeja), sin ventas.
+
 ## Eliminar Un Chat
 
 El panel elimina un chat con `DELETE /api/conversations/{id}` (o todos los de «Probar asistente» con

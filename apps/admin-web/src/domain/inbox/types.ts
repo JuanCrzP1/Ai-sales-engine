@@ -58,6 +58,32 @@ export interface ConversationSummary {
   customerWaitingSince?: string | null;
   /** Cuándo la IA retomó sola el chat porque nadie del equipo respondió a tiempo. */
   aiResumedAt?: string | null;
+  /** El cliente avisó un pago que nadie del equipo ha confirmado: el chat muestra «Confirmar pago». */
+  paymentPending?: boolean;
+}
+
+/** Antes de confirmar un pago: el mensaje que le llegará al cliente, si hay un pago por confirmar y si es una prueba. */
+export interface PaymentConfirmationPreview {
+  message: string;
+  pending: boolean;
+  /** Un chat de «Probar asistente»: el mensaje queda en la bandeja y no se registran ventas. */
+  test: boolean;
+}
+
+/** La venta que el equipo anota al confirmar el pago (opcional). */
+export interface PaymentSale {
+  customerName: string;
+  description: string;
+  amount: string;
+  currency: string;
+}
+
+/** El pago quedó confirmado: el mensaje que recibió el cliente, cómo quedó el chat y lo que falta, dicho para el equipo. */
+export interface PaymentConfirmed {
+  message: ChatMessage;
+  conversation: ConversationSummary;
+  saleRecorded: boolean;
+  warnings: string[];
 }
 
 /** Un archivo de la conversación (sin su contenido: se descarga aparte). */

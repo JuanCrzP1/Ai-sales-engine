@@ -1,4 +1,15 @@
-import type { BusinessActivity, ConversationChanges, ChatMessage, ConversationSummary, ConversationThread, InboxFilter, NotificationFeed } from "../domain/inbox/types";
+import type {
+  BusinessActivity,
+  ChatMessage,
+  ConversationChanges,
+  ConversationSummary,
+  ConversationThread,
+  InboxFilter,
+  NotificationFeed,
+  PaymentConfirmationPreview,
+  PaymentConfirmed,
+  PaymentSale,
+} from "../domain/inbox/types";
 
 /** La bandeja de conversaciones del usuario: solo trae chats de sus negocios. Los fallos se rechazan con `PersistenceError`. */
 export interface Inbox {
@@ -21,6 +32,13 @@ export interface Inbox {
   activity(slug: string): Promise<BusinessActivity>;
   /** Alguien del equipo ya atendió a quien pidió una persona. */
   resolveHandoff(conversationId: string): Promise<ConversationSummary>;
+  /** Antes de confirmar un pago: el mensaje que le llegará al cliente (el del negocio en Mensajes → Pagos, o el de la plataforma). */
+  paymentConfirmation(conversationId: string): Promise<PaymentConfirmationPreview>;
+  /**
+   * El equipo verificó el pago: el cliente recibe el mensaje de pago confirmado (una sola vez: una segunda vez se rechaza con
+   * `conflict`), el chat queda atendido, la IA lo sabe y, con `sale`, la venta queda registrada.
+   */
+  confirmPayment(conversationId: string, sale: PaymentSale | null): Promise<PaymentConfirmed>;
   /**
    * Elimina el chat: sus mensajes, fotos y audios, sus avisos y lo que el asistente recuerda de ese cliente (si vuelve a escribir,
    * empieza de cero). Las ventas registradas se conservan.

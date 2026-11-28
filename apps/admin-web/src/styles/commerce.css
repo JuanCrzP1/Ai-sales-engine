@@ -759,6 +759,51 @@
   justify-content: flex-end;
 }
 
+/* «Confirmar pago»: el mensaje que recibirá el cliente, como una burbuja del chat, y la venta opcional. */
+.payment-confirmation {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.payment-confirmation__label,
+.payment-confirmation__after {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--color-text);
+}
+
+.payment-confirmation__message {
+  margin: 0;
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.payment-confirmation__hint {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+.payment-confirmation__sale {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: 0;
+  padding: var(--space-3) 0 0;
+  border: 0;
+  border-top: 1px solid var(--color-border);
+}
+
+.payment-confirmation__sale legend {
+  padding: 0;
+  font-weight: 650;
+}
+
 /* ---------------------------------------------------------------- pantallas angostas */
 @media (max-width: 1100px) {
   .kpi-grid {

@@ -6,11 +6,22 @@ import { Alert, EmptyState } from "../../components/ui/Feedback";
 import { Icon, type IconName } from "../../components/ui/Icon";
 import { contactLabel, fullDate, messageTime, relativeTime } from "../../domain/inbox/format";
 import { DELIVERY_LABELS, fileSize } from "../../domain/inbox/live";
-import { CHANNEL_LABELS, CHANNELS, HANDOFF_LABELS, type Channel, type ChatMessage, type ConversationSummary, type ConversationThread } from "../../domain/inbox/types";
+import {
+  CHANNEL_LABELS,
+  CHANNELS,
+  HANDOFF_LABELS,
+  type Channel,
+  type ChatMessage,
+  type ConversationSummary,
+  type ConversationThread,
+  type PaymentConfirmed,
+  type PaymentSale,
+} from "../../domain/inbox/types";
 import { ContactAvatar } from "../../layout/ContactAvatar";
 import { DeleteChatDialog } from "../../layout/DeleteChatDialog";
 import { useConversations, useMediaUrl } from "../../state/useConversations";
 import { Composer } from "./Composer";
+import { ConfirmPaymentDialog } from "../../layout/ConfirmPaymentDialog";
 import { useCan } from "../../state/roleContext";
 
 const AUTHOR_LABELS: Record<ChatMessage["author"], string> = { customer: "Cliente", assistant: "Asistente IA", agent: "Equipo" };
@@ -21,7 +32,7 @@ export function ConversationsPage() {
   const { slug = "" } = useParams();
   // Desde un aviso se llega con `?c=` y la conversación se abre directo.
   const [params] = useSearchParams();
-  const { filter, setFilter, list, selectedId, select, thread, reload, resolveHandoff, setAssistant, reply, sendAttachment, sendQuickReplyFile, forget, removeTestChats } = useConversations(
+  const { filter, setFilter, list, selectedId, select, thread, reload, resolveHandoff, confirmPayment, setAssistant, reply, sendAttachment, sendQuickReplyFile, forget, removeTestChats } = useConversations(
     { business: slug },
     params.get("c"),
   );
@@ -151,6 +162,7 @@ export function ConversationsPage() {
               onBack={() => select(null)}
               onDeleted={forget}
               onResolve={resolveHandoff}
+              onConfirmPayment={confirmPayment}
               onAssistant={setAssistant}
               onReply={reply}
               onSendFile={sendAttachment}
@@ -213,6 +225,7 @@ function ThreadView({
   onBack,
   onDeleted,
   onResolve,
+  onConfirmPayment,
   onAssistant,
   onReply,
   onSendFile,
@@ -222,6 +235,7 @@ function ThreadView({
   onBack: () => void;
   onDeleted: (id: string) => void;
   onResolve: (id: string) => Promise<void>;
+  onConfirmPayment: (id: string, sale: PaymentSale | null) => Promise<PaymentConfirmed>;
   onAssistant: (id: string, active: boolean) => Promise<void>;
   onReply: (id: string, text: string) => Promise<void>;
   onSendFile: (id: string, file: File, caption: string) => Promise<void>;
@@ -235,6 +249,11 @@ function ThreadView({
   const isTest = conversation.channel === "prueba";
   const canReply = Boolean(conversation.canReply);
   const [deleting, setDeleting] = useState(false);
+  const [confirmingPayment, setConfirmingPayment] = useState(false);
+  // Después de confirmar un pago: qué pasó (y qué falta, si algo no se pudo).
+  const [paymentNotice, setPaymentNotice] = useState<PaymentConfirmed | null>(null);
+  // Confirmar pagos es de quien atiende el chat: donde se le puede escribir al cliente, y en las pruebas.
+  const canConfirmPayment = Boolean(conversation.paymentPending) && (canReply || isTest);
 
   // Baja al último mensaje al abrir y cuando llega uno nuevo, salvo que la persona esté leyendo más arriba.
   const lastId = messages.at(-1)?.id;
@@ -265,6 +284,19 @@ function ThreadView({
           isTest={isTest}
           onClose={() => setDeleting(false)}
           onDeleted={() => onDeleted(conversation.id)}
+        />
+      )}
+      {confirmingPayment && (
+        <ConfirmPaymentDialog
+          conversationId={conversation.id}
+          channel={conversation.channel}
+          customerName={conversation.contactName ?? ""}
+          onConfirm={(sale) => onConfirmPayment(conversation.id, sale)}
+          onClose={() => setConfirmingPayment(false)}
+          onDone={(done) => {
+            setConfirmingPayment(false);
+            setPaymentNotice(done);
+          }}
         />
       )}
       <header className="thread__header">
@@ -317,9 +349,54 @@ function ThreadView({
                 : handoffStatus(conversation, canReply)}
             </span>
           </div>
-          <Button size="small" onClick={() => void act(() => onResolve(conversation.id), "No se pudo marcar como atendida. Vuelve a intentarlo.")} disabled={busy}>
-            Ya lo atendí
+          <div className="handoff-banner__actions">
+            {canConfirmPayment && (
+              <Button size="small" onClick={() => setConfirmingPayment(true)} disabled={busy}>
+                <Icon name="check" size={14} /> Confirmar pago
+              </Button>
+            )}
+            <Button
+              size="small"
+              variant={canConfirmPayment ? "secondary" : "primary"}
+              onClick={() => void act(() => onResolve(conversation.id), "No se pudo marcar como atendida. Vuelve a intentarlo.")}
+              disabled={busy}
+            >
+              Ya lo atendí
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Un pago avisado sigue por confirmar aunque el chat ya esté atendido: el cliente todavía no sabe que llegó. */}
+      {!conversation.needsHuman && canConfirmPayment && (
+        <div className="handoff-banner handoff-banner--quiet" role="status">
+          <div className="handoff-banner__text">
+            <strong>Pago por confirmar</strong>
+            <span>Cuando verifiques que llegó, confírmalo: el cliente recibe tu mensaje de pago confirmado.</span>
+          </div>
+          <Button size="small" onClick={() => setConfirmingPayment(true)} disabled={busy}>
+            <Icon name="check" size={14} /> Confirmar pago
           </Button>
+        </div>
+      )}
+
+      {paymentNotice && (
+        <div className="thread__notice">
+          {paymentNotice.warnings.length > 0 ? (
+            <Alert tone="warning" title="El pago quedó confirmado">
+              {paymentNotice.warnings.map((warning) => (
+                <p key={warning}>{warning}</p>
+              ))}
+            </Alert>
+          ) : (
+            <Alert tone="success">
+              Pago confirmado: {isTest ? "el mensaje quedó en el chat" : "el cliente ya recibió tu mensaje"}
+              {paymentNotice.saleRecorded ? " y la venta quedó en Ventas." : "."}
+            </Alert>
+          )}
+          <button type="button" className="thread__notice-close" aria-label="Cerrar aviso" onClick={() => setPaymentNotice(null)}>
+            <Icon name="close" size={14} />
+          </button>
         </div>
       )}
 

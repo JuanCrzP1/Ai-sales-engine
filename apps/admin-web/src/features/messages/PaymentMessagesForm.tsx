@@ -98,7 +98,7 @@ export function PaymentMessagesForm() {
         onChange={(text) => update({ payment_confirmed: optionalText(text) })}
         placeholder="Ej.: Listo, tu pago quedó confirmado."
         issue={confirmedIssue}
-        hint="Se guarda para cuando tu equipo pueda confirmar pagos desde el panel: entonces se enviará al cliente. El asistente nunca confirma pagos."
+        hint="Le llega al cliente cuando alguien de tu equipo toca «Confirmar pago» en el chat. Si lo dejas vacío, sale uno corto de la plataforma. El asistente nunca confirma pagos."
       />
     </Card>
   );

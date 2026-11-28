@@ -77,8 +77,8 @@ def render(view: PromptView) -> str:
         facts.append(instructions.CUSTOMER_DATA_KNOWN.format(data=one_line(known)))
     method = as_text(memory.get("metodo_pago_elegido")).lower()
     status = as_text(memory.get("estado_pago")).lower()
-    if status == "reportado":
-        facts.append(instructions.PAYMENT_REPORTED)
+    if status in ("reportado", "confirmado"):
+        facts.append(instructions.PAYMENT_REPORTED if status == "reportado" else instructions.PAYMENT_CONFIRMED)
         after_sale = one_line(as_dict(view.config.get("messages")).get("after_sale"))
         if after_sale:
             facts.append(instructions.AFTER_SALE.format(message=after_sale))

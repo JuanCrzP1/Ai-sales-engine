@@ -180,6 +180,20 @@ class ConversationTarget:
 
 
 @dataclass(frozen=True)
+class PaymentClaim:
+    """Cómo estaba la conversación antes de confirmar su pago: por qué esperaba a una persona y en qué etapa iba el cliente. Sirve
+    para dejarla igual si el mensaje no sale, y para saber si esperaba solo por el pago."""
+
+    handoff_reason: str | None
+    stage: str
+
+    @property
+    def waited_for_payment(self) -> bool:
+        """Si esperaba a una persona por el pago (o por nada más): al confirmarlo, ya nadie tiene que atenderla."""
+        return self.handoff_reason in (None, "payment_review")
+
+
+@dataclass(frozen=True)
 class BusinessActivity:
     """El resumen de actividad de un negocio para su inicio. `since` es el comienzo del día."""
 

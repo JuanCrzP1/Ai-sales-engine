@@ -19,6 +19,8 @@ export interface HttpClient {
 const CODES: Record<string, PersistenceErrorCode> = {
   invalid: "invalid",
   conflict: "conflict",
+  // «Confirmar pago» cuando ya estaba confirmado.
+  payment_not_pending: "conflict",
   duplicate: "duplicate",
   not_found: "not_found",
   payment_key: "payment_key",

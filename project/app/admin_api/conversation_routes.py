@@ -5,7 +5,8 @@ conversación ajena responde igual que una inexistente.
 
 En vivo: el panel pide `GET /conversations/{id}/live?since=<cursor>` cada pocos segundos y recibe solo lo nuevo o lo que cambió,
 con el `cursor` para la próxima vez (la hora del servidor, no la del navegador). El equipo responde con `POST .../messages`: el
-mensaje sale por el canal del cliente y la IA se pausa en ese chat; `POST .../assistant` la reanuda o la pausa.
+mensaje sale por el canal del cliente y la IA se pausa en ese chat; `POST .../assistant` la reanuda o la pausa. Con un pago por
+verificar, `POST .../payment-confirmation` lo confirma: el cliente recibe el mensaje de pago confirmado (una sola vez).
 """
 from __future__ import annotations
 
@@ -19,7 +20,9 @@ from app.admin_api.errors import ApiError
 from app.admin_api.files import file_response, read_upload
 from app.admin_api.quick_reply_routes import QuickReplies
 from app.admin_api.routes import BusinessSlug, CurrentUser
+from app.admin_api.commerce_routes import sale_payload
 from app.admin_api.schemas import (
+    ConfirmPayment,
     MarkNotificationsRead,
     SendQuickReplyFile,
     SendReply,
@@ -30,7 +33,9 @@ from app.admin_api.schemas import (
     notification_payload,
 )
 from app.business_config_application.conversations import ConversationsService, NotificationsService, ReplyNotSentError
+from app.business_config_application.payment_confirmation import PaymentConfirmationService, SaleDraft
 from app.business_config_application.usage_limits import UsageGuard
+from app.domain.business_config.commerce import SaleError
 from app.domain.business_config.errors import AssistantUnavailableError
 
 router = APIRouter(prefix="/api")
@@ -50,6 +55,13 @@ def _notifications(request: Request) -> NotificationsService:
     return service
 
 
+def _payments(request: Request) -> PaymentConfirmationService:
+    service = getattr(request.app.state, "payments", None)
+    if service is None:
+        raise AssistantUnavailableError("confirmar pagos no está disponible en este servidor")
+    return service
+
+
 def _usage(request: Request) -> UsageGuard:
     return request.app.state.usage
 
@@ -57,6 +69,7 @@ def _usage(request: Request) -> UsageGuard:
 Conversations = Annotated[ConversationsService, Depends(_conversations)]
 Notifications = Annotated[NotificationsService, Depends(_notifications)]
 Usage = Annotated[UsageGuard, Depends(_usage)]
+Payments = Annotated[PaymentConfirmationService, Depends(_payments)]
 
 def _since(value: str | None) -> datetime | None:
     if not value:
@@ -180,6 +193,34 @@ def activity(slug: BusinessSlug, user: CurrentUser, conversations: Conversations
 def resolve_handoff(conversation_id: str, user: CurrentUser, conversations: Conversations) -> dict[str, Any]:
     """Alguien del equipo ya atendió a quien pidió una persona."""
     return conversation_payload(conversations.resolve_handoff(user, conversation_id))
+
+
+@router.get("/conversations/{conversation_id}/payment-confirmation")
+def payment_confirmation(conversation_id: str, user: CurrentUser, payments: Payments) -> dict[str, Any]:
+    """Antes de confirmar: el mensaje que le llegará al cliente y si hay un pago por confirmar."""
+    preview = payments.preview(user, conversation_id)
+    return {"message": preview.message, "pending": preview.pending, "test": preview.test}
+
+
+@router.post("/conversations/{conversation_id}/payment-confirmation")
+def confirm_payment(conversation_id: str, body: ConfirmPayment, user: CurrentUser, payments: Payments, usage: Usage) -> dict[str, Any]:
+    """El equipo verificó el pago: el cliente recibe el mensaje de pago confirmado, el chat queda atendido, la IA lo sabe y, con
+    `sale`, la venta queda registrada. Una segunda vez responde 409: el mensaje no sale dos veces."""
+    usage.conversation_reply(user)
+    sale = SaleDraft(**body.sale.model_dump()) if body.sale is not None else None
+    try:
+        done = payments.confirm(user, conversation_id, sale)
+    except ReplyNotSentError as exc:
+        raise ApiError(status.HTTP_502_BAD_GATEWAY, str(exc), code="reply_not_sent") from None
+    except SaleError as exc:
+        message = str(exc)
+        raise ApiError(status.HTTP_422_UNPROCESSABLE_ENTITY, message, code="invalid", issues=[{"path": f"sale.{exc.field}", "message": message}]) from None
+    return {
+        "message": chat_message_payload(done.message),
+        "conversation": conversation_payload(done.conversation),
+        "sale": sale_payload(done.sale) if done.sale is not None else None,
+        "warnings": list(done.warnings),
+    }
 
 
 @router.get("/notifications")

@@ -1411,9 +1411,9 @@
             }
           ],
           "default": null,
-          "description": "Mensaje cuando el equipo confirma el pago. Se guarda; lo enviará la plataforma cuando el equipo pueda confirmar pagos desde el panel.",
+          "description": "Mensaje que recibe el cliente cuando el equipo toca «Confirmar pago» en el chat. Si falta, sale uno corto de la plataforma.",
           "title": "Payment Confirmed",
-          "x-engine": "programado"
+          "x-engine": "conectado"
         },
         "after_sale": {
           "anyOf": [

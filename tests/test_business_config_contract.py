@@ -128,7 +128,6 @@ def test_every_contract_field_has_an_audience_and_an_engine_status():
     assert {path: field.engine for path, field in fields.items() if field.engine != "conectado"} == {
         "payments[].transfer_methods[].label": "solo panel",
         "inventory.items[].variants[].sku": "solo panel",
-        "messages.payment_confirmed": "programado",
         "messages.follow_up": "programado",
     }
     # Los interruptores y el flujo de conversación son decisiones comerciales.

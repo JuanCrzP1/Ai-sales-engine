@@ -24,6 +24,7 @@ from sqlalchemy.exc import OperationalError
 
 from app.application.ai_pipeline import UNAVAILABLE_REPLY, AIPipeline
 from app.application.pipeline.conversation_flow import get_conversation_state
+from app.application.pipeline.payment_outcome import remember_confirmed_payment
 from app.application.pipeline.response_postprocessor import enforce_max_words
 from app.application.runtime import BusinessUnavailableError, load_tenant_runtime_yaml, published_sections, runtime_from_sections
 from app.application.runtime import tenant_runtime_loader as loader
@@ -31,7 +32,9 @@ from app.domain.business_config.attention import AttentionSettings, handoff_plan
 from app.domain.business_config.compiler import compile_business_config
 from app.domain.business_config.contract import BusinessConfig
 from app.domain.business_config.engine_policy import MAX_INDUSTRY_CHARS, MAX_VALUE_PROPOSITION_CHARS, RESPONSE_LENGTH_MAX_WORDS
+from app.domain.business_config.payment_confirmation import DEFAULT_PAYMENT_CONFIRMED, payment_confirmed_message
 from app.domain.business_config.payment_data import iter_payment_blocks
+from app.infrastructure.ai.prompting import instructions
 from app.domain.conversation.memory import MemoryDomainService
 from app.infrastructure.ai.prompting.builder.prompt_builder import PromptBuilderService
 from app.infrastructure.ai.prompting.sections import business as business_section, guidance as guidance_section
@@ -977,8 +980,31 @@ def test_the_after_sale_message_reaches_the_ai_once_the_customer_paid(monkeypatc
     assert "Después de la compra, el negocio quiere decirle" not in without[0]
 
 
+def test_the_payment_confirmed_message_written_in_the_panel_reaches_the_customer_and_the_ai_knows(monkeypatch, tmp_path):
+    """«Confirmar pago» en el chat: el cliente recibe el mensaje del negocio tal cual (sin uno, el de la plataforma con su trato) y,
+    desde ahí, la IA sabe que el pago quedó confirmado y ya no dice que el equipo lo está verificando."""
+    written = "Pago recibido, ya preparamos tu pedido."
+    publish_document(monkeypatch, tmp_path, "restaurant", lambda d: d["messages"].update(payment_confirmed=written))
+    assert payment_confirmed_message(open_published_reader().published("restaurant")) == written
+
+    def _without(document):
+        document["messages"]["payment_confirmed"] = None
+        document.setdefault("response_style", {}).update(formality="formal", emojis=True)
+
+    publish_document(monkeypatch, tmp_path / "sin", "restaurant", _without)
+    assert payment_confirmed_message(open_published_reader().published("restaurant")) == DEFAULT_PAYMENT_CONFIRMED.usted
+
+    memory = MemoryDomainService(MemoryRepository())
+    [(reported, _)] = run_conversation("restaurant", [("Ya pagué", reply("Gracias, lo verificamos.", "buy", payment_status="reportado"))], user_id="laura", memory=memory)
+    remember_confirmed_payment(memory, tenant_slug="restaurant", user_id="laura")
+    [(confirmed, _)] = run_conversation("restaurant", [("¿Cuándo me llega?", reply("Hoy mismo."))], user_id="laura", memory=memory)
+    assert instructions.PAYMENT_CONFIRMED in confirmed[0] and instructions.PAYMENT_REPORTED not in confirmed[0]
+    assert instructions.PAYMENT_CONFIRMED not in reported[0]
+
+
 def test_what_only_the_team_sees_or_the_platform_sends_later_never_reaches_the_ai(monkeypatch, tmp_path):
-    """La etiqueta de una cuenta y el código de una variante son del equipo; el pago confirmado y el seguimiento los enviará la plataforma."""
+    """La etiqueta de una cuenta y el código de una variante son del equipo; el pago confirmado (lo envía la plataforma cuando el
+    equipo lo confirma) y el seguimiento (lo enviará la plataforma) no van a la IA."""
     def _team_only(document):
         document["payments"][0]["transfer_methods"][0]["label"] = "Cuenta de Laura"
         document["inventory"]["items"][0]["variants"][0]["sku"] = "CODIGO-INTERNO-9"
@@ -1188,6 +1214,7 @@ CONNECTED_EVIDENCE: dict[str, str] = {
     "terms.price_note": "test_connected_fields_change_the_prompt",
     "terms.roi_break_even_bookings": "test_connected_fields_change_the_prompt",
     "messages.after_sale": "test_the_after_sale_message_reaches_the_ai_once_the_customer_paid",
+    "messages.payment_confirmed": "test_the_payment_confirmed_message_written_in_the_panel_reaches_the_customer_and_the_ai_knows",
     "messages.after_hours": "test_the_attention_messages_reach_the_platform_from_what_was_published",
     "messages.ai_resumed": "test_the_attention_messages_reach_the_platform_from_what_was_published",
 }

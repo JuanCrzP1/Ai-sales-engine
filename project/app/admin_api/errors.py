@@ -22,6 +22,7 @@ from app.domain.business_config.errors import (
     NotAllowedError,
     QuickReplyNotFoundError,
     PaymentDataUnavailableError,
+    PaymentNotPendingError,
     PublicationError,
     SecretResolutionError,
     UsageLimitExceededError,
@@ -93,6 +94,8 @@ def _api_error(request: Request, exc: BusinessConfigError) -> ApiError:
         return ApiError(status.HTTP_409_CONFLICT, str(exc), code="conflict")
     if isinstance(exc, HelpArticleNotFoundError):
         return ApiError(status.HTTP_404_NOT_FOUND, "Ese artículo de ayuda no existe.", code="not_found")
+    if isinstance(exc, PaymentNotPendingError):
+        return ApiError(status.HTTP_409_CONFLICT, str(exc), code="payment_not_pending")
     if isinstance(exc, QuickReplyNotFoundError):
         return ApiError(status.HTTP_404_NOT_FOUND, "Esa respuesta rápida no existe.", code="not_found")
     if isinstance(exc, NotAllowedError):

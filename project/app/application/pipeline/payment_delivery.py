@@ -53,6 +53,8 @@ from app.utils.logger import logger
 
 # El paso de la conversación después de enviar los datos: el cliente paga y envía el comprobante.
 AWAITING_PAYMENT = "report_payment"
+# El equipo confirmó el pago (`payment_outcome.remember_confirmed_payment`): ya no falta nada del cliente.
+PAYMENT_CONFIRMED = "payment_confirmed"
 PAYMENT_STATE_HOURS = 6
 # Lo que queda en la memoria de la conversación cuando los datos salieron sin palabras del asesor, con el trato del negocio
 # (`domain/business_config/formality.py`): la IA lo ve en su historial. Al cliente nunca le llega solo.
@@ -103,6 +105,14 @@ def sent_state(method: str, now: datetime | None = None) -> OperationalState:
     """El paso de la conversación después de enviar los datos de `method`: falta que el cliente pague y envíe el comprobante."""
     moment = now or datetime.now(timezone.utc)
     return OperationalState(active_process="payment", active_option=method, pending_action=AWAITING_PAYMENT, expires_at=moment + timedelta(hours=PAYMENT_STATE_HOURS))
+
+
+def confirmed_state(method: str, now: datetime | None = None) -> OperationalState:
+    """El paso de la conversación cuando el equipo confirmó el pago: ya no falta que el cliente pague (reemplaza a `sent_state`)."""
+    moment = now or datetime.now(timezone.utc)
+    return OperationalState(
+        active_process="payment", active_option=method, pending_action=PAYMENT_CONFIRMED, expires_at=moment + timedelta(hours=PAYMENT_STATE_HOURS)
+    )
 
 
 def already_sent(state: OperationalState | None, method: str) -> bool:

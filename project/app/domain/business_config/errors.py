@@ -86,6 +86,11 @@ class ConversationNotFoundError(BusinessConfigError):
     """La conversación no existe o es de un negocio al que este usuario no llega."""
 
 
+class PaymentNotPendingError(BusinessConfigError):
+    """La conversación no tiene un pago por confirmar: ya se confirmó (por ejemplo, otra persona del equipo o un doble clic) o el
+    cliente no ha avisado un pago. El mensaje es para el negocio."""
+
+
 class QuickReplyNotFoundError(BusinessConfigError):
     """La respuesta rápida no existe o es de otro negocio."""
 

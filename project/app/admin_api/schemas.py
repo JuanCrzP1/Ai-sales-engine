@@ -17,6 +17,7 @@ from app.domain.business_config.ai_models import ModelCatalog
 from app.domain.business_config.ai_usage import AIUsageSummary
 from app.domain.business_config.conversations import MAX_CAPTION_CHARS, MAX_REPLY_CHARS, REPLYABLE_CHANNELS, BusinessActivity, ChatMessage, ConversationSummary, Notification
 from app.domain.business_config.key_permissions import KEY_AREAS, permissions_of
+from app.domain.business_config.payment_confirmation import payment_pending
 from app.domain.business_config.records import BusinessSummary, ConfigVersion
 from app.domain.business_config.templates import BusinessTemplate
 
@@ -221,6 +222,8 @@ def conversation_payload(summary: ConversationSummary) -> dict[str, Any]:
         "stage": summary.stage,
         "customer_waiting_since": _iso(summary.customer_waiting_since),
         "ai_resumed_at": _iso(summary.ai_resumed_at),
+        # Un pago avisado que nadie del equipo ha confirmado: el chat muestra «Confirmar pago».
+        "payment_pending": payment_pending(summary),
     }
 
 
@@ -250,6 +253,21 @@ class SendReply(_Request):
     """Lo que el equipo responde desde la bandeja: sale por el canal del cliente."""
 
     text: str = Field(min_length=1, max_length=MAX_REPLY_CHARS)
+
+
+class ConfirmSale(_Request):
+    """La venta que el equipo anota al confirmar un pago (opcional)."""
+
+    customer_name: str = Field(max_length=200)
+    description: str = Field(max_length=400)
+    amount: str = Field(max_length=20)
+    currency: str = Field(max_length=3)
+
+
+class ConfirmPayment(_Request):
+    """«Confirmar pago» en el chat: el cliente recibe el mensaje de pago confirmado; con `sale`, la venta queda registrada."""
+
+    sale: ConfirmSale | None = None
 
 
 class SetAssistant(_Request):

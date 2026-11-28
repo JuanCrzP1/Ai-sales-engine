@@ -3,6 +3,7 @@
 - Si el cliente avisó en este mensaje que ya pagó, lo dice el lector de pagos (`payment_reading.py`), no el asesor: una pregunta
   enfocada acierta más que el asesor, que a veces lo marca sin que el cliente lo diga o se le pasa. Un pago avisado sale con el mensaje
   del negocio para ese momento y pasa al equipo, porque solo el equipo puede verificarlo. Un pago avisado antes sigue avisado.
+  Cuando el equipo lo verifica y toca «Confirmar pago» en el panel, queda «confirmado» (`remember_confirmed_payment`).
 - Si no, los datos de pago: el asesor (la IA) decide con su acción y habla, y el sistema pone los datos reales debajo de su mensaje
   (`payment_delivery.deliver`). El medio queda anotado, y el paso de la conversación sale de ese hecho, no de palabras.
 - El largo máximo del negocio es para lo que dice el asesor. Los datos de pago van completos debajo.
@@ -14,6 +15,7 @@ from dataclasses import dataclass
 from app.application.pipeline.payment_delivery import (
     PaymentDelivery,
     compose,
+    confirmed_state,
     deliver,
     remembered_message,
     sent_state,
@@ -24,6 +26,8 @@ from app.domain.conversation.memory import MemoryDomainService
 from app.utils.logger import logger
 
 REPORTED = "reportado"
+# El equipo verificó el pago y se lo confirmó al cliente desde el chat (`remember_confirmed_payment`).
+CONFIRMED = "confirmado"
 
 
 @dataclass(frozen=True)
@@ -90,7 +94,8 @@ def _payment_status(ai_metadata: dict, turn: TurnContext, memory_service: Memory
     corrige en la memoria."""
     status = str(ai_metadata.get("payment_status") or "").strip().lower()
     reading = turn.reading
-    already_reported = str(turn.memory_context.get("estado_pago") or "").strip().lower() == REPORTED
+    before = str(turn.memory_context.get("estado_pago") or "").strip().lower()
+    already_reported = before == REPORTED
     corrected = None
     if reading is not None and reading.says_paid and status != REPORTED:
         corrected = REPORTED
@@ -100,8 +105,21 @@ def _payment_status(ai_metadata: dict, turn: TurnContext, memory_service: Memory
         return status
     set_status = getattr(memory_service, "set_payment_status", None)
     if callable(set_status):
-        set_status(tenant_slug=turn.tenant_slug, user_id=turn.user_id, status=corrected or "none")
+        # Si el asesor marcó un pago que el cliente no avisó, el estado vuelve a ser el de antes: un pago ya confirmado sigue confirmado.
+        set_status(tenant_slug=turn.tenant_slug, user_id=turn.user_id, status=corrected or (before if before == CONFIRMED else "none"))
     return corrected
+
+
+def remember_confirmed_payment(memory_service: MemoryDomainService, *, tenant_slug: str, user_id: str) -> None:
+    """El equipo confirmó el pago del cliente (desde el chat del panel): la IA lo sabe, ya no le dice que el equipo lo está verificando
+    y el paso «falta que pague y envíe el comprobante» termina. Una sola escritura en la memoria. Si la memoria no lo guardó (la base
+    no respondió: el motor sigue sin avisar), lanza `RuntimeError`, para que el panel se lo diga al equipo."""
+    with memory_service.turn(tenant_slug=tenant_slug, user_id=user_id):
+        memory_service.set_payment_status(tenant_slug=tenant_slug, user_id=user_id, status=CONFIRMED)
+        method = memory_service.get_payment_method(tenant_slug=tenant_slug, user_id=user_id)
+        memory_service.set_op_state(tenant_slug=tenant_slug, user_id=user_id, state_dict=confirmed_state(method).to_dict())
+    if memory_service.get_payment_status(tenant_slug=tenant_slug, user_id=user_id) != CONFIRMED:
+        raise RuntimeError("la memoria del asistente no guardó el pago confirmado")
 
 
 def _remember_sent_method(delivery: PaymentDelivery, turn: TurnContext, memory_service: MemoryDomainService | None) -> None:
