@@ -23,6 +23,8 @@ export interface Inbox {
   sendAttachment(conversationId: string, file: File, caption: string): Promise<ChatMessage>;
   /** Envía el archivo guardado de una respuesta rápida (sale desde el servidor, sin bajarlo), con su texto ya con el nombre. */
   sendQuickReplyFile(conversationId: string, fileId: string, caption: string): Promise<ChatMessage>;
+  /** Reanuda el seguimiento automático en el chat (`true`) o lo detiene para este cliente (`false`). */
+  setFollowUp(conversationId: string, active: boolean): Promise<ConversationSummary>;
   /** Reanuda la IA en la conversación (`true`) o la pausa para atenderla el equipo (`false`). */
   setAssistant(conversationId: string, active: boolean): Promise<ConversationSummary>;
   /** Alguien del equipo abrió la conversación: no quedan mensajes sin leer. */

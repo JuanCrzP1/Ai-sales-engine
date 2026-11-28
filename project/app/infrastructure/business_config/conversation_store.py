@@ -37,6 +37,8 @@ from app.domain.business_config.conversations import (
     ConversationTarget,
     MediaFile,
     MediaInfo,
+    FOLLOW_UP_STOPPERS,
+    FollowUpCandidate,
     NewMessage,
     PaymentClaim,
     PendingMessage,
@@ -77,6 +79,7 @@ _SUMMARY = (
     conversations.c.stage,
     conversations.c.customer_waiting_since,
     conversations.c.ai_resumed_at,
+    conversations.c.follow_up_stopped_by,
 )
 
 # El hilo sin el contenido de los archivos: solo sus datos.
@@ -108,6 +111,26 @@ def _utc(value: datetime | None) -> datetime | None:
     return value if value.tzinfo else value.replace(tzinfo=timezone.utc)
 
 
+# Los chats que pueden recibir un seguimiento: WhatsApp o Telegram, la IA atendiendo, nadie esperando a una persona, sin un pago avisado
+# ni ya cliente, y el seguimiento sin detener.
+_FOLLOW_UP_OPEN = and_(
+    conversations.c.channel.in_(("whatsapp", "telegram")),
+    conversations.c.ai_paused.is_(False),
+    conversations.c.needs_human.is_(False),
+    conversations.c.stage.not_in(("payment", "customer")),
+    conversations.c.follow_up_stopped_at.is_(None),
+)
+
+
+def _last_customer_message():
+    """El último mensaje del cliente en la conversación (una subconsulta por conversación)."""
+    return (
+        select(func.max(conversation_entries.c.created_at))
+        .where(conversation_entries.c.conversation_id == conversations.c.id, conversation_entries.c.author == "customer")
+        .scalar_subquery()
+    )
+
+
 def _summary(row: Any, now: datetime | None = None) -> ConversationSummary:
     typing_until = _utc(row.assistant_typing_until)
     return ConversationSummary(
@@ -132,6 +155,7 @@ def _summary(row: Any, now: datetime | None = None) -> ConversationSummary:
         stage=row.stage or "new",
         customer_waiting_since=_utc(row.customer_waiting_since),
         ai_resumed_at=_utc(row.ai_resumed_at),
+        follow_up_stopped_by=row.follow_up_stopped_by,
     )
 
 
@@ -541,6 +565,77 @@ class ConversationStore:
             self._update(
                 conversation_id, needs_human=False, handoff_summary=None, customer_waiting_since=None, ai_paused=False, ai_resumed_at=None,
             )
+
+    # ------------------------------------------------------------------ el seguimiento a quien dejó de responder
+
+    def follow_up_candidates(self, *, active_since: datetime, quiet_before: datetime, limit: int = 200) -> list[FollowUpCandidate]:
+        """Los chats de WhatsApp y Telegram en los que el cliente dejó de responder: lo último del chat es del negocio, su último
+        mensaje es de antes de `quiet_before` y hubo actividad después de `active_since`. Sin los que no deben recibir seguimiento: la
+        IA pausada o esperando a una persona (lo atiende el equipo), un pago avisado o ya cliente, o el seguimiento detenido. Los más
+        antiguos primero."""
+        last_customer = _last_customer_message()
+        query = (
+            select(
+                conversations.c.id, tenants.c.slug, conversations.c.channel, conversations.c.contact_ref, conversations.c.follow_up_anchor,
+                conversations.c.follow_up_sent, last_customer.label("last_customer_at"),
+            )
+            .join(tenants, tenants.c.id == conversations.c.tenant_id)
+            .where(
+                _FOLLOW_UP_OPEN,
+                conversations.c.last_message_at >= active_since,
+                last_customer.is_not(None),
+                last_customer < conversations.c.last_message_at,
+                last_customer <= quiet_before,
+            )
+            .order_by(conversations.c.last_message_at)
+            .limit(limit)
+        )
+        with self._engine.connect() as conn:
+            rows = conn.execute(query).all()
+        return [
+            FollowUpCandidate(
+                str(row.id), row.slug, row.channel, row.contact_ref, _utc(row.last_customer_at), _utc(row.follow_up_anchor), int(row.follow_up_sent or 0),
+            )
+            for row in rows
+        ]
+
+    def claim_follow_up(self, candidate: FollowUpCandidate, sent: int) -> bool:
+        """Toma el seguimiento que toca, en una sola operación: queda anotado que pasaron `sent` desde el último mensaje del cliente.
+        Solo si el chat sigue como lo leyó la revisión: el cliente no volvió a escribir, nadie tomó este seguimiento antes, no lo
+        atiende el equipo y no se detuvo. Si no, False: otra revisión lo tomó o algo cambió."""
+        key = self._key(candidate.id)
+        anchor = conversations.c.follow_up_anchor
+        same_progress = (
+            and_(anchor == candidate.last_customer_at, conversations.c.follow_up_sent == candidate.sent)
+            if candidate.sent_since_last_message
+            else or_(anchor.is_(None), anchor != candidate.last_customer_at)
+        )
+        with self._engine.begin() as conn:
+            taken = conn.execute(
+                update(conversations)
+                .where(conversations.c.id == key, _FOLLOW_UP_OPEN, same_progress, _last_customer_message() == candidate.last_customer_at)
+                .values(follow_up_anchor=candidate.last_customer_at, follow_up_sent=sent)
+            )
+        return taken.rowcount == 1
+
+    def release_follow_up(self, candidate: FollowUpCandidate) -> None:
+        """No se pudo decidir si enviarlo (la IA no respondió): queda como estaba, para la próxima revisión."""
+        with self._engine.begin() as conn:
+            conn.execute(
+                update(conversations)
+                .where(conversations.c.id == self._key(candidate.id))
+                .values(follow_up_anchor=candidate.anchor, follow_up_sent=candidate.sent)
+            )
+
+    def stop_follow_up(self, conversation_id: str, by: str) -> None:
+        """Detiene el seguimiento en este chat: lo detuvo el equipo («team») o el cliente dijo que no le interesa («customer»)."""
+        if by not in FOLLOW_UP_STOPPERS:
+            raise ValueError(f"quién lo detuvo no es válido: {by}")
+        self._update(conversation_id, follow_up_stopped_at=_now(), follow_up_stopped_by=by)
+
+    def resume_follow_up(self, conversation_id: str) -> None:
+        """El equipo reanuda el seguimiento en este chat: vuelve a contar desde el próximo silencio del cliente."""
+        self._update(conversation_id, follow_up_stopped_at=None, follow_up_stopped_by=None)
 
     # ------------------------------------------------------------------ la IA retoma lo que nadie atendió
 

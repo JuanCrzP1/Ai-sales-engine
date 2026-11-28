@@ -210,6 +210,23 @@ export interface Financing {
   options?: string[];
 }
 
+/** El seguimiento a un cliente que dejó de responder: una secuencia de mensajes que envía la plataforma (no la IA). Cada mensaje sale `after_minutes` después del último mensaje del cliente, solo si no ha vuelto a escribir. Se detiene solo cuando el cliente responde, compra o avisa un pago, pide una persona, el equipo lo atiende o dice que no le interesa (lo lee la IA antes de cada envío). Ver `domain/business_config/follow_up.py`. */
+export interface FollowUp {
+  /** true: la plataforma envía los seguimientos. false: no envía ninguno (se conservan). */
+  enabled?: boolean;
+  /** true: solo salen dentro del horario del negocio (Mi negocio). false: a cualquier hora. */
+  business_hours_only?: boolean;
+  /** Los mensajes, del primero al último, cada uno con su tiempo. */
+  steps?: FollowUpStep[];
+}
+
+export interface FollowUpStep {
+  /** Cuántos minutos después del último mensaje del cliente sale. */
+  after_minutes: number;
+  /** Lo que recibe el cliente, tal cual. */
+  message: string;
+}
+
 /** Cómo recibe el cliente lo que compra. Los modos que no aplican se omiten. */
 export interface Fulfillment {
   delivery?: Delivery | null;
@@ -291,8 +308,8 @@ export interface Messages {
   after_sale?: string | null;
   /** Mensaje para pedir los datos del cliente. [motor: conectado] */
   data_request?: string | null;
-  /** Mensaje de seguimiento a un cliente que no respondió. Se guarda; lo enviará la plataforma cuando los canales puedan escribir primero. [motor: programado] */
-  follow_up?: string | null;
+  /** Seguimiento a un cliente que dejó de responder: los mensajes que envía la plataforma y cuándo. Sin él, ninguno. [motor: conectado] */
+  follow_up?: FollowUp | null;
   /** Mensaje al pasar la conversación a una persona. [motor: conectado] */
   human_handoff?: string | null;
   /** Mensaje cuando un chat pasa a una persona fuera del horario del equipo. Si falta, uno con el horario y cuándo lo atienden. [motor: conectado] */

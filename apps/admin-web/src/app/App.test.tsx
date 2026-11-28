@@ -721,6 +721,40 @@ describe("Secciones del negocio", () => {
     expect(preview.textContent).toContain("Datos para pagar");
   });
 
+  it("el seguimiento viene armado: al encenderlo trae los tres recomendados, se ajusta y se guarda", async () => {
+    const { user, backend } = await renderWorkspace("/mensajes");
+    const card = screen.getByRole("heading", { name: /^Seguimiento/ }).closest("section") as HTMLElement;
+    expect(within(card).getByText("Apagado")).toBeInTheDocument();
+    await user.click(within(card).getByRole("switch", { name: /Enviar seguimientos/ }));
+    const preview = within(card).getByRole("figure", { name: "Vista previa de la conversación" });
+    expect(preview.textContent).toContain("1 hora después: ¿Pudiste ver la información?");
+    expect(preview.textContent).toContain("1 día después: Hola de nuevo");
+    expect(preview.textContent).toContain("3 días después: Te escribo por última vez");
+
+    // Se cambia el primero a 2 horas, se quita el tercero y se agrega uno al final (un día después del último).
+    const first = within(card).getAllByRole("listitem")[0]!;
+    await user.selectOptions(within(first).getByLabelText(/^Unidad/), "hours");
+    await user.clear(within(first).getByLabelText(/^Sale después de/));
+    await user.type(within(first).getByLabelText(/^Sale después de/), "2");
+    await user.click(within(card).getByRole("button", { name: "Quitar el mensaje 3" }));
+    await user.click(within(card).getByRole("button", { name: /Agregar mensaje/ }));
+    const added = within(card).getAllByRole("listitem")[2]!;
+    await user.type(within(added).getByLabelText(/^Mensaje/), "¿Te ayudo con algo más?");
+    // Un mensaje que sale antes que el anterior se señala en su campo.
+    await user.clear(within(added).getByLabelText(/^Sale después de/));
+    await user.type(within(added).getByLabelText(/^Sale después de/), "1");
+    expect(within(added).getByText("Debe salir después del mensaje anterior.")).toBeInTheDocument();
+    await user.clear(within(added).getByLabelText(/^Sale después de/));
+    await user.type(within(added).getByLabelText(/^Sale después de/), "2");
+    await user.click(within(card).getByRole("switch", { name: /Solo en el horario de mi negocio/ }));
+    await saveAndWait(user);
+    const saved = storedOf(backend).messages.follow_up!;
+    expect(saved.enabled).toBe(true);
+    expect(saved.business_hours_only).toBe(false);
+    expect(saved.steps!.map((step) => step.after_minutes)).toEqual([120, 1440, 2880]);
+    expect(saved.steps![2]!.message).toBe("¿Te ayudo con algo más?");
+  });
+
   it("el mensaje para cuando la IA no puede responder se ve en la vista previa y se guarda", async () => {
     const { user, backend } = await renderWorkspace("/mensajes");
     const card = screen.getByRole("heading", { name: "Si el asistente no puede responder" }).closest("section") as HTMLElement;

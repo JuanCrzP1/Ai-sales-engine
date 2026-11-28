@@ -195,6 +195,11 @@ def _zone(settings: AttentionSettings) -> ZoneInfo:
     return ZoneInfo(settings.timezone if settings.timezone in TIMEZONES else DEFAULT_TIMEZONE)
 
 
+def zone_of(settings: AttentionSettings) -> ZoneInfo:
+    """La zona horaria del negocio (Configuración → Atención humana): la de su horario."""
+    return _zone(settings)
+
+
 def _clock(value: str) -> time:
     hours, minutes = value.split(":")
     return time(int(hours), int(minutes))

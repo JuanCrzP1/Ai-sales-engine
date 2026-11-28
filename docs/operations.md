@@ -110,7 +110,7 @@ Lo que hace cada negocio está en Configuración → Atención humana (ver `docs
 |---|---|---|
 | `RESEND_API_KEY` (*Sensitive*) | La clave de [Resend](https://resend.com) para los correos de aviso | No salen correos; el panel dice «El correo de avisos aún no está activado en la plataforma». Todo lo demás funciona |
 | `EMAIL_FROM` | El remitente, p. ej. `AI Sales Engine <avisos@tudominio.com>`, con el dominio verificado en Resend | Se usa `onboarding@resend.dev`, el de pruebas de Resend, que **solo entrega al correo de la cuenta de Resend** |
-| `CRON_SECRET` (*Sensitive*, 16 caracteres o más) | Protege `/api/v1/internal/attention/run`, que Vercel llama cada 15 minutos (`project/vercel.json`) | La ruta responde 503 y la IA retoma los chats solo con el tráfico del motor y del panel |
+| `CRON_SECRET` (*Sensitive*, 16 caracteres o más) | Protege `/api/v1/internal/attention/run` y `/api/v1/internal/follow-up/run`, que Vercel llama cada 15 minutos (`project/vercel.json`) | Las rutas responden 503: la IA retoma los chats y salen los seguimientos solo con el tráfico del motor y del panel |
 | `PANEL_URL` | La dirección del panel para los enlaces de los correos y la raíz del motor | `https://ai-sales-engine-panel.vercel.app` |
 
 - **Notificaciones (Web Push):** no llevan variables. Las claves VAPID se crean solas la primera vez (tabla `platform_keys`, la parte

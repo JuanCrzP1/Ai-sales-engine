@@ -41,8 +41,9 @@ def healthcheck() -> dict[str, str]:
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
 	response = await call_next(request)
-	# Con el tráfico (como mucho una vez por minuto por proceso), la IA retoma los chats que nadie atendió a tiempo.
-	if traffic_sweep_enabled() and not request.url.path.endswith("/internal/attention/run"):
+	# Con el tráfico (como mucho una vez por minuto por proceso), la IA retoma los chats que nadie atendió a tiempo y salen los
+	# seguimientos que tocan (como mucho cada 5 minutos).
+	if traffic_sweep_enabled() and not request.url.path.endswith(("/internal/attention/run", "/internal/follow-up/run")):
 		tasks = BackgroundTasks()
 		if response.background is not None:
 			tasks.add_task(response.background)

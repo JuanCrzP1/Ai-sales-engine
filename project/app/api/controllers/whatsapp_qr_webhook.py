@@ -22,10 +22,15 @@ from types import SimpleNamespace
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Request, status
 
 from app.application.attention.resume_sweep import ResumeSweep, SweepResult, Throttle
+from app.application.follow_up.follow_up_reading import reads_follow_up
+from app.application.follow_up.follow_up_sweep import FollowUpResult, FollowUpSweep
 from app.api.controllers.team_alerts import deliver_alert
 from app.application.channels.inbound import ChannelInbound
 from app.application.runtime import published_sections
-from app.application.runtime.business_ai import business_usage_recorder, load_business_ai
+from app.application.runtime.business_ai import business_usage_recorder, load_business_ai, message_ai
+from app.domain.business_config.attention import zone_of
+from app.domain.business_config.follow_up import published_follow_up
+from app.infrastructure.ai.llm_runtime import LLMRuntime
 from app.domain.business_config.channels import TELEGRAM, ChannelSecrets
 from app.domain.business_config.errors import BusinessConfigError
 from app.domain.conversation.business import BusinessRef
@@ -34,7 +39,7 @@ from app.infrastructure.business_config import runtime_access
 from app.infrastructure.channels import uazapi
 from app.infrastructure.channels.telegram import TelegramClient
 from app.infrastructure.channels.uazapi import UazapiClient
-from app.application.assistant_service import AIService
+from app.application.assistant_service import GLOBAL_MEMORY_SERVICE, AIService
 from app.utils.logger import logger
 
 router = APIRouter(prefix="/channels", tags=["WhatsApp QR"])
@@ -158,14 +163,71 @@ def sweep_after_message() -> None:
         run_resume_sweep()
 
 
+# --------------------------------------------------------------------------- el seguimiento a quien dejó de responder
+
+
+def _follow_up_decision(slug: str, messages: list[tuple[str, str]], message: str) -> bool | None:
+    """La IA del negocio decide si conviene escribirle (`follow_up_reading.py`). Sin su clave, no hay lectura: no se envía."""
+    credentials = load_business_ai(slug)
+    if credentials is None:
+        return None
+    config = message_ai(None, credentials, on_usage=business_usage_recorder(slug))
+    return reads_follow_up(LLMRuntime(), bot_config=config, messages=messages, message=message, tenant=slug)
+
+
+def _remember_follow_up(slug: str, contact_ref: str, text: str) -> None:
+    """El seguimiento queda en el historial que lee la IA: si el cliente responde, el asistente sabe qué se le escribió."""
+    GLOBAL_MEMORY_SERVICE.save_message(tenant_slug=slug, user_id=contact_ref, message_text=text, role="assistant")
+
+
+def build_follow_up_sweep() -> FollowUpSweep:
+    inbound = build_inbound()
+    return FollowUpSweep(
+        candidates=runtime_access.follow_up_candidates,
+        plan=lambda slug: published_follow_up(published_sections(slug)),
+        zone=lambda slug: zone_of(runtime_access.attention_settings(slug)),
+        claim=runtime_access.claim_follow_up,
+        release=runtime_access.release_follow_up,
+        stop=runtime_access.stop_follow_up,
+        recent=runtime_access.recent_conversation_messages,
+        read=_follow_up_decision,
+        secrets=runtime_access.channel_secrets,
+        send=inbound.send_follow_up,
+        remember=_remember_follow_up,
+        clock=lambda: now(),
+    )
+
+
+_FOLLOWING_UP = threading.Lock()
+# Con el tráfico, como mucho una revisión del seguimiento cada 5 minutos por proceso (los tiempos son de media hora o más).
+_FOLLOW_UP_ON_TRAFFIC = Throttle(300)
+
+
+def run_follow_up_sweep() -> FollowUpResult | None:
+    """Una revisión del seguimiento. Nunca dos a la vez en el mismo proceso; nunca lanza."""
+    if not _FOLLOWING_UP.acquire(blocking=False):
+        return None
+    try:
+        return build_follow_up_sweep().run()
+    except Exception as exc:  # noqa: BLE001 - la revisión nunca tumba a quien la disparó
+        logger.error("revision_de_seguimiento_fallida", extra={"error": type(exc).__name__})
+        return None
+    finally:
+        _FOLLOWING_UP.release()
+
+
 def traffic_sweep_enabled() -> bool:
     """En Vercel siempre; en este equipo, si el lanzador lo pide (`ATTENTION_SWEEP_ON_TRAFFIC=1`). En las pruebas, no."""
     return bool(os.getenv("VERCEL")) or str(os.getenv("ATTENTION_SWEEP_ON_TRAFFIC") or "").strip() == "1"
 
 
 def sweep_on_traffic() -> None:
-    if traffic_sweep_enabled() and _ON_TRAFFIC.acquire():
+    if not traffic_sweep_enabled():
+        return
+    if _ON_TRAFFIC.acquire():
         run_resume_sweep()
+    if _FOLLOW_UP_ON_TRAFFIC.acquire():
+        run_follow_up_sweep()
 
 
 # Los lectores de los avisos de uazapi: la ruta los pasa para que el flujo no dependa de cómo los manda uazapi.

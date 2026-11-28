@@ -6,6 +6,7 @@ import { SectionPager } from "../../layout/SectionPager";
 import { stepLabel } from "../../navigation/navItems";
 import { ChannelsForm } from "./ChannelsForm";
 import { FallbackMessageForm } from "./FallbackMessageForm";
+import { FollowUpForm } from "./FollowUpForm";
 import { OtherMessagesForm } from "./OtherMessagesForm";
 import { PaymentMessagesForm } from "./PaymentMessagesForm";
 import { WelcomeMessageForm } from "./WelcomeMessageForm";
@@ -17,6 +18,7 @@ export function MessagesPage() {
       <SettingsGroup title="Mensajes" description="Los que se envían tal cual en momentos clave de la conversación.">
         <WelcomeMessageForm />
         <PaymentMessagesForm />
+        <FollowUpForm />
         <OtherMessagesForm />
         <FallbackMessageForm />
       </SettingsGroup>

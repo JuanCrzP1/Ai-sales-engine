@@ -155,6 +155,14 @@ export function useConversations(initialFilter: InboxFilter, initialSelected: st
     [inbox, patchMessages, patchConversation],
   );
 
+  /** Reanuda (`true`) o detiene (`false`) el seguimiento automático para el cliente de este chat. */
+  const setFollowUp = useCallback(
+    async (conversationId: string, active: boolean) => {
+      patchConversation(await inbox.setFollowUp(conversationId, active));
+    },
+    [inbox, patchConversation],
+  );
+
   /** Reanuda (`true`) o pausa (`false`) la IA en el chat. */
   const setAssistant = useCallback(
     async (conversationId: string, active: boolean) => {
@@ -239,7 +247,7 @@ export function useConversations(initialFilter: InboxFilter, initialSelected: st
     [inbox, selectedId],
   );
 
-  return { filter, setFilter, list, selectedId, select: setSelectedId, thread, reload, resolveHandoff, confirmPayment, setAssistant, reply, sendAttachment, sendQuickReplyFile, forget, removeTestChats };
+  return { filter, setFilter, list, selectedId, select: setSelectedId, thread, reload, resolveHandoff, confirmPayment, setFollowUp, setAssistant, reply, sendAttachment, sendQuickReplyFile, forget, removeTestChats };
 }
 
 /** Una URL local para mostrar un archivo de la conversación (se descarga con la sesión del usuario y se libera al salir). */

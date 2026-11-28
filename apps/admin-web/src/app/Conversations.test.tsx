@@ -212,6 +212,40 @@ describe("Pasar a una persona", () => {
     await waitFor(() => expect(inbox.confirmations).toHaveLength(1));
   });
 
+  it("muestra los seguimientos que salieron y deja detenerlo o reanudarlo para ese cliente", async () => {
+    const quiet: ConversationThread = {
+      conversation: { ...THREADS[0]!.conversation, id: "c11", contactName: "Rosa Díaz", canReply: true },
+      messages: [
+        { id: "m20", author: "customer", body: "¿Cuánto vale la mesa para 6?", intent: null, createdAt: minutesAgo(120) },
+        { id: "m21", author: "assistant", body: "Para 6 personas no tiene costo.", intent: "info", createdAt: minutesAgo(119) },
+        { id: "m22", author: "assistant", body: "¿Pudiste ver la información?", intent: "follow_up", createdAt: minutesAgo(30) },
+      ],
+    };
+    const { user } = await openAt(`/negocios/${CAFE}/conversaciones?c=c11`, [...THREADS, quiet]);
+    const thread = await screen.findByRole("region", { name: "Conversación abierta" });
+    const log = await within(thread).findByRole("log", { name: "Mensajes con Rosa Díaz" });
+    expect(within(log).getByText("¿Pudiste ver la información?").closest(".chat-bubble")!.textContent).toContain("Seguimiento ·");
+    expect(within(log).getByText("Para 6 personas no tiene costo.").closest(".chat-bubble")!.textContent).toContain("IA ·");
+    expect(within(thread).getByText(/Se le envió 1 seguimiento/)).toBeInTheDocument();
+
+    await user.click(within(thread).getByRole("button", { name: "Detener seguimiento" }));
+    expect(await within(thread).findByText("Seguimiento detenido")).toBeInTheDocument();
+    expect(within(thread).getByText(/Tu equipo lo detuvo/)).toBeInTheDocument();
+    await user.click(within(thread).getByRole("button", { name: "Reanudar seguimiento" }));
+    expect(await within(thread).findByText("Seguimiento automático")).toBeInTheDocument();
+  });
+
+  it("si el cliente dijo que no le interesa, el chat lo dice", async () => {
+    const declined: ConversationThread = {
+      conversation: { ...THREADS[0]!.conversation, id: "c12", contactName: "Luis Mora", canReply: true, followUpStoppedBy: "customer" },
+      messages: [{ id: "m30", author: "customer", body: "No gracias, ya compré en otro lado", intent: null, createdAt: minutesAgo(60) }],
+    };
+    await openAt(`/negocios/${CAFE}/conversaciones?c=c12`, [...THREADS, declined]);
+    const thread = await screen.findByRole("region", { name: "Conversación abierta" });
+    expect(await within(thread).findByText(/El cliente dijo que no le interesa/)).toBeInTheDocument();
+    expect(within(thread).getByRole("button", { name: "Reanudar seguimiento" })).toBeInTheDocument();
+  });
+
   it("marcar todo como leído deja la campana sin pendientes", async () => {
     const { user, inbox } = await openAt(`/negocios/${CAFE}`, [...THREADS, WAITING], [HANDOFF_NOTICE, { ...HANDOFF_NOTICE, id: "n2" }]);
     await user.click(await screen.findByRole("button", { name: "Notificaciones: 2 sin leer" }));

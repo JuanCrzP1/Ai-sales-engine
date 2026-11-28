@@ -982,6 +982,59 @@
       "title": "Financing",
       "type": "object"
     },
+    "FollowUp": {
+      "additionalProperties": false,
+      "description": "El seguimiento a un cliente que dejó de responder: una secuencia de mensajes que envía la plataforma (no la IA).\n\nCada mensaje sale `after_minutes` después del último mensaje del cliente, solo si no ha vuelto a escribir. Se detiene solo cuando\nel cliente responde, compra o avisa un pago, pide una persona, el equipo lo atiende o dice que no le interesa (lo lee la IA antes\nde cada envío). Ver `domain/business_config/follow_up.py`.",
+      "properties": {
+        "enabled": {
+          "default": false,
+          "description": "true: la plataforma envía los seguimientos. false: no envía ninguno (se conservan).",
+          "title": "Enabled",
+          "type": "boolean"
+        },
+        "business_hours_only": {
+          "default": true,
+          "description": "true: solo salen dentro del horario del negocio (Mi negocio). false: a cualquier hora.",
+          "title": "Business Hours Only",
+          "type": "boolean"
+        },
+        "steps": {
+          "description": "Los mensajes, del primero al último, cada uno con su tiempo.",
+          "items": {
+            "$ref": "#/$defs/FollowUpStep"
+          },
+          "maxItems": 5,
+          "title": "Steps",
+          "type": "array"
+        }
+      },
+      "title": "FollowUp",
+      "type": "object"
+    },
+    "FollowUpStep": {
+      "additionalProperties": false,
+      "properties": {
+        "after_minutes": {
+          "description": "Cuántos minutos después del último mensaje del cliente sale.",
+          "maximum": 43200,
+          "minimum": 30,
+          "title": "After Minutes",
+          "type": "integer"
+        },
+        "message": {
+          "description": "Lo que recibe el cliente, tal cual.",
+          "maxLength": 800,
+          "title": "Message",
+          "type": "string"
+        }
+      },
+      "required": [
+        "after_minutes",
+        "message"
+      ],
+      "title": "FollowUpStep",
+      "type": "object"
+    },
     "Fulfillment": {
       "additionalProperties": false,
       "description": "Cómo recibe el cliente lo que compra. Los modos que no aplican se omiten.",
@@ -1448,17 +1501,15 @@
         "follow_up": {
           "anyOf": [
             {
-              "maxLength": 800,
-              "type": "string"
+              "$ref": "#/$defs/FollowUp"
             },
             {
               "type": "null"
             }
           ],
           "default": null,
-          "description": "Mensaje de seguimiento a un cliente que no respondió. Se guarda; lo enviará la plataforma cuando los canales puedan escribir primero.",
-          "title": "Follow Up",
-          "x-engine": "programado"
+          "description": "Seguimiento a un cliente que dejó de responder: los mensajes que envía la plataforma y cuándo. Sin él, ninguno.",
+          "x-engine": "conectado"
         },
         "human_handoff": {
           "anyOf": [

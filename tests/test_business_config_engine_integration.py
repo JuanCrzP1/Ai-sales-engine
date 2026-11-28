@@ -16,6 +16,7 @@ import functools
 import json
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 import pytest
 
@@ -32,6 +33,7 @@ from app.domain.business_config.attention import AttentionSettings, handoff_plan
 from app.domain.business_config.compiler import compile_business_config
 from app.domain.business_config.contract import BusinessConfig
 from app.domain.business_config.engine_policy import MAX_INDUSTRY_CHARS, MAX_VALUE_PROPOSITION_CHARS, RESPONSE_LENGTH_MAX_WORDS
+from app.domain.business_config.follow_up import due_step, published_follow_up
 from app.domain.business_config.payment_confirmation import DEFAULT_PAYMENT_CONFIRMED, payment_confirmed_message
 from app.domain.business_config.payment_data import iter_payment_blocks
 from app.infrastructure.ai.prompting import instructions
@@ -1002,9 +1004,36 @@ def test_the_payment_confirmed_message_written_in_the_panel_reaches_the_customer
     assert instructions.PAYMENT_CONFIRMED not in reported[0]
 
 
+def test_the_follow_up_written_in_the_panel_is_what_the_platform_sends(monkeypatch, tmp_path):
+    """Mensajes → Seguimiento: lo publicado decide si sale, a qué hora y qué dice cada mensaje (la plataforma lo envía tal cual)."""
+    hours = [{"days": ["lunes", "martes", "miercoles", "jueves", "viernes"], "opens": "08:00", "closes": "18:00"}]
+    steps = [{"after_minutes": 60, "message": "¿Pudiste revisar el menú?"}, {"after_minutes": 1440, "message": "¿Te reservo la mesa?"}]
+
+    def mutate(document: dict) -> None:
+        document["identity"]["opening_hours"] = hours
+        document["messages"]["follow_up"] = {"enabled": True, "business_hours_only": True, "steps": steps}
+
+    publish_document(monkeypatch, tmp_path, "restaurant", mutate)
+    plan = published_follow_up(published_sections("restaurant"))
+    assert (plan.enabled, plan.business_hours_only, [(s.after.total_seconds() // 60, s.message) for s in plan.steps]) == (
+        True, True, [(60, "¿Pudiste revisar el menú?"), (1440, "¿Te reservo la mesa?")],
+    )
+    bogota = ZoneInfo("America/Bogota")
+    quiet_since = datetime(2026, 11, 10, 15, 0, tzinfo=timezone.utc)  # un martes a las 10 a. m. en Bogotá
+    later = quiet_since + timedelta(minutes=61)
+    assert plan.may_send_now(bogota, later) and due_step(plan, last_customer_at=quiet_since, sent=0, now=later).message == "¿Pudiste revisar el menú?"
+    # Un martes a las 11 p. m. en Bogotá el negocio está cerrado: con «solo en mi horario», no sale.
+    assert not plan.may_send_now(bogota, datetime(2026, 11, 11, 4, 0, tzinfo=timezone.utc))
+
+    publish_document(monkeypatch, tmp_path / "apagado", "restaurant", lambda d: d["messages"].update(follow_up={"enabled": False, "steps": steps}))
+    assert not published_follow_up(published_sections("restaurant")).active
+    publish_document(monkeypatch, tmp_path / "sin", "restaurant", lambda d: None)
+    assert not published_follow_up(published_sections("restaurant")).active
+
+
 def test_what_only_the_team_sees_or_the_platform_sends_later_never_reaches_the_ai(monkeypatch, tmp_path):
-    """La etiqueta de una cuenta y el código de una variante son del equipo; el pago confirmado (lo envía la plataforma cuando el
-    equipo lo confirma) y el seguimiento (lo enviará la plataforma) no van a la IA."""
+    """La etiqueta de una cuenta y el código de una variante son del equipo; el pago confirmado y el seguimiento los envía la
+    plataforma: no van a la IA."""
     def _team_only(document):
         document["payments"][0]["transfer_methods"][0]["label"] = "Cuenta de Laura"
         document["inventory"]["items"][0]["variants"][0]["sku"] = "CODIGO-INTERNO-9"
@@ -1215,6 +1244,10 @@ CONNECTED_EVIDENCE: dict[str, str] = {
     "terms.roi_break_even_bookings": "test_connected_fields_change_the_prompt",
     "messages.after_sale": "test_the_after_sale_message_reaches_the_ai_once_the_customer_paid",
     "messages.payment_confirmed": "test_the_payment_confirmed_message_written_in_the_panel_reaches_the_customer_and_the_ai_knows",
+    "messages.follow_up.enabled": "test_the_follow_up_written_in_the_panel_is_what_the_platform_sends",
+    "messages.follow_up.business_hours_only": "test_the_follow_up_written_in_the_panel_is_what_the_platform_sends",
+    "messages.follow_up.steps[].after_minutes": "test_the_follow_up_written_in_the_panel_is_what_the_platform_sends",
+    "messages.follow_up.steps[].message": "test_the_follow_up_written_in_the_panel_is_what_the_platform_sends",
     "messages.after_hours": "test_the_attention_messages_reach_the_platform_from_what_was_published",
     "messages.ai_resumed": "test_the_attention_messages_reach_the_platform_from_what_was_published",
 }

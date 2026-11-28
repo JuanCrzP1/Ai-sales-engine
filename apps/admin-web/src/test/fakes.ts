@@ -1172,6 +1172,11 @@ export function createMemoryInbox(seededThreads: ConversationThread[] = [], seed
         waitingHuman: mine.filter((thread) => thread.conversation.needsHuman).length,
       };
     },
+    setFollowUp: async (id, active) => {
+      const thread = find(id);
+      thread.conversation = { ...thread.conversation, followUpStoppedBy: active ? null : "team" };
+      return thread.conversation;
+    },
     resolveHandoff: async (id) => {
       const thread = find(id);
       resolved.push(id);

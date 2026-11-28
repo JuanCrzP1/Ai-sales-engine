@@ -37,6 +37,7 @@ interface ApiConversation {
   customer_waiting_since?: string | null;
   ai_resumed_at?: string | null;
   payment_pending?: boolean;
+  follow_up_stopped_by?: "team" | "customer" | null;
 }
 
 interface ApiMessage {
@@ -104,6 +105,7 @@ const toConversation = (item: ApiConversation): ConversationSummary => ({
   customerWaitingSince: item.customer_waiting_since ?? null,
   aiResumedAt: item.ai_resumed_at ?? null,
   paymentPending: item.payment_pending ?? false,
+  followUpStoppedBy: item.follow_up_stopped_by ?? null,
 });
 
 const toMessage = (item: ApiMessage): ChatMessage => ({
@@ -145,6 +147,7 @@ export function createApiInbox(http: HttpClient): Inbox {
     // El nombre y el texto van en encabezados (codificados como en una URL): el cuerpo es el archivo tal cual.
     sendAttachment: async (conversationId, file, caption) =>
       toMessage(await http.upload<ApiMessage>(`${path(conversationId)}/attachments`, file, { "X-File-Name": encodeURIComponent(file.name), "X-Caption": encodeURIComponent(caption) })),
+    setFollowUp: async (conversationId, active) => toConversation(await http.post<ApiConversation>(`${path(conversationId)}/follow-up`, { active })),
     setAssistant: async (conversationId, active) => toConversation(await http.post<ApiConversation>(`${path(conversationId)}/assistant`, { active })),
     markRead: async (conversationId) => {
       await http.post(`${path(conversationId)}/read`);

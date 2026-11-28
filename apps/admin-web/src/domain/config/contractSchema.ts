@@ -132,7 +132,7 @@ const FIELD_LABELS: Record<string, string> = {
   payment_reported: "Mensaje al reportar un pago",
   payment_confirmed: "Mensaje al confirmar un pago",
   data_request: "Mensaje al pedir datos",
-  follow_up: "Mensaje de seguimiento",
+  follow_up: "Seguimiento",
   warranty: "Garantía",
   returns: "Cambios y devoluciones",
   cancellation: "Cancelaciones y reembolsos",

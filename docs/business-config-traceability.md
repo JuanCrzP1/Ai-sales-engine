@@ -112,7 +112,10 @@ Finalidad comercial, sin origen en los YAML. No se compilan salvo los marcados `
 | messages | `messages.ai_resumed` | Mensaje cuando la IA retoma un chat que nadie del equipo respondió a tiempo. Si falta, uno de la plataforma. | texto | cliente | conectado | pantalla |
 | messages | `messages.data_request` | Mensaje para pedir los datos del cliente. | texto | cliente | conectado | pantalla |
 | messages | `messages.fallback` | Mensaje exacto cuando la IA no puede responder (sin clave, sin saldo o con el proveedor caído). Si falta, uno neutro de la plataforma. | texto | cliente | conectado | pantalla |
-| messages | `messages.follow_up` | Mensaje de seguimiento a un cliente que no respondió. Se guarda; lo enviará la plataforma cuando los canales puedan escribir primero. | texto | cliente | programado | pantalla |
+| messages | `messages.follow_up.business_hours_only` | true: solo salen dentro del horario del negocio (Mi negocio). false: a cualquier hora. | interruptor true/false | cliente | conectado | pantalla |
+| messages | `messages.follow_up.enabled` | true: la plataforma envía los seguimientos. false: no envía ninguno (se conservan). | interruptor true/false | cliente | conectado | pantalla |
+| messages | `messages.follow_up.steps[].after_minutes` | Cuántos minutos después del último mensaje del cliente sale. | entero (mínimo 30) | cliente | conectado | pantalla |
+| messages | `messages.follow_up.steps[].message` | Lo que recibe el cliente, tal cual. | texto | cliente | conectado | pantalla |
 | messages | `messages.human_handoff` | Mensaje al pasar la conversación a una persona. | texto | cliente | conectado | pantalla |
 | messages | `messages.payment_details` | Plantilla del mensaje con los datos de pago que el sistema (nunca la IA) envía cuando el cliente elige cómo pagar. Marcadores: {medio}, {datos} (obligatorio) y {titular}. Si falta, la de la plataforma. | texto | cliente | conectado | pantalla |
 | offer | `offer.catalog.items[].available` | Si es false, el producto se conserva pero no se ofrece (ni su categoría, si se queda sin productos). | interruptor true/false | cliente | conectado | pantalla |
@@ -357,16 +360,16 @@ si el motor actual lo usa y de dónde viene.
 - **Audiencia:** `cliente` (lo configura el negocio), `avanzado` (estrategia comercial detallada, opcional)
   o `sistema`.
 - **Motor:** `conectado` (el motor actual lo usa; prueba en `tests/test_business_config_engine_integration.py`),
-  `programado` (lo enviará la plataforma cuando exista el evento que lo dispara; no va a la IA), `solo panel`
+  `solo panel`
   (es solo para el equipo; nunca va a la IA) o `pendiente` (representado y conservado, sin uso en el motor actual).
 - **Origen:** campo de los YAML, `nuevo` (solo existe en el contrato) o `derivado` (lo crea la importación).
 
-| Audiencia | Conectados | Programados | Solo panel | Pendientes |
-|---|---|---|---|---|
-| cliente | 145 | 1 | 2 | 0 |
-| avanzado | 50 | 0 | 0 | 0 |
-| sistema | 2 | 0 | 0 | 0 |
-| **Total** | 197 | 1 | 2 | 0 |
+| Audiencia | Conectados | Solo panel | Pendientes |
+|---|---|---|---|
+| cliente | 149 | 2 | 0 |
+| avanzado | 50 | 0 | 0 |
+| sistema | 2 | 0 | 0 |
+| **Total** | 201 | 2 | 0 |
 
 | Campo | Audiencia | Motor | Origen | Interfaz | Descripción |
 |---|---|---|---|---|---|
@@ -442,7 +445,10 @@ si el motor actual lo usa y de dónde viene.
 | `messages.ai_resumed` | cliente | conectado | nuevo | pantalla | Mensaje cuando la IA retoma un chat que nadie del equipo respondió a tiempo. Si falta, uno de la plataforma. |
 | `messages.data_request` | cliente | conectado | nuevo | pantalla | Mensaje para pedir los datos del cliente. |
 | `messages.fallback` | cliente | conectado | nuevo | pantalla | Mensaje exacto cuando la IA no puede responder (sin clave, sin saldo o con el proveedor caído). Si falta, uno neutro de la plataforma. |
-| `messages.follow_up` | cliente | programado | nuevo | pantalla | Mensaje de seguimiento a un cliente que no respondió. Se guarda; lo enviará la plataforma cuando los canales puedan escribir primero. |
+| `messages.follow_up.business_hours_only` | cliente | conectado | nuevo | pantalla | true: solo salen dentro del horario del negocio (Mi negocio). false: a cualquier hora. |
+| `messages.follow_up.enabled` | cliente | conectado | nuevo | pantalla | true: la plataforma envía los seguimientos. false: no envía ninguno (se conservan). |
+| `messages.follow_up.steps[].after_minutes` | cliente | conectado | nuevo | pantalla | Cuántos minutos después del último mensaje del cliente sale. |
+| `messages.follow_up.steps[].message` | cliente | conectado | nuevo | pantalla | Lo que recibe el cliente, tal cual. |
 | `messages.human_handoff` | cliente | conectado | nuevo | pantalla | Mensaje al pasar la conversación a una persona. |
 | `messages.payment_confirmed` | cliente | conectado | `config.post_payment.on_payment_confirmed.message` | pantalla | Mensaje que recibe el cliente cuando el equipo toca «Confirmar pago» en el chat. Si falta, sale uno corto de la plataforma. |
 | `messages.payment_details` | cliente | conectado | nuevo | pantalla | Plantilla del mensaje con los datos de pago que el sistema (nunca la IA) envía cuando el cliente elige cómo pagar. Marcadores: {medio}, {datos} (obligatorio) y {titular}. Si falta, la de la plataforma. |

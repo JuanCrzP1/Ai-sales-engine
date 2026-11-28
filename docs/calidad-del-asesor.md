@@ -586,6 +586,25 @@ Laboratorio de regresión `pago_confirmado_misma_version_20261127`, con la misma
 prompts idénticos, 10 de 10 respuestas idénticas y el webhook igual. Ninguna conversación grabada llega a «confirmado»: el hecho
 nuevo solo aparece después de que el equipo confirma, y eso lo cubren las pruebas (`test_payment_confirmation.py`). Sin gasto de IA.
 
+### El lector del seguimiento (28 de noviembre de 2026)
+
+Antes de cada mensaje de seguimiento (Mensajes → Seguimiento), una llamada corta y exacta a la IA del negocio lee el final del chat y
+dice si el cliente dejó la conversación abierta o la cerró
+([`follow_up_reading.py`](../project/app/application/follow_up/follow_up_reading.py)). Si la cerró («no me interesa», «ya compré en
+otro lado», «no me escriban», lo que pedía quedó resuelto), el seguimiento se detiene en ese chat. Sin lectura no sale nada. No cambia
+el prompt del asesor: solo se llama cuando ya toca un seguimiento.
+
+Se mide con [`run_follow_up_eval.py`](../experiments/quality_lab/run_follow_up_eval.py) sobre
+[`follow_up_cases.py`](../experiments/quality_lab/follow_up_cases.py): 28 finales de conversación, 15 abiertos y 13 cerrados. El
+error grave es escribirle a quien cerró la conversación (se ve como spam); el leve, no escribirle a quien la dejó abierta.
+
+| | Acierta | Errores graves |
+|---|---|---|
+| Lector, primera redacción (`seguimiento_lector_a_20261128`, gpt-4o-mini, 5 veces cada caso) | **140 de 140** | **0** |
+
+Gasto: USD 0,006. El laboratorio de regresión (`seguimiento_20261128`) sale con los mismos prompts, respuestas y webhook; la única
+diferencia es la ruta nueva de la revisión periódica.
+
 ## Lo que la puerta no cubre
 
 - Solo mira los momentos de pago y, con `--panel`, lo que configura el negocio. La oferta, los precios y las objeciones los mide

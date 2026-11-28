@@ -9,6 +9,7 @@ import { DELIVERY_LABELS, fileSize } from "../../domain/inbox/live";
 import {
   CHANNEL_LABELS,
   CHANNELS,
+  FOLLOW_UP_INTENT,
   HANDOFF_LABELS,
   type Channel,
   type ChatMessage,
@@ -32,7 +33,7 @@ export function ConversationsPage() {
   const { slug = "" } = useParams();
   // Desde un aviso se llega con `?c=` y la conversación se abre directo.
   const [params] = useSearchParams();
-  const { filter, setFilter, list, selectedId, select, thread, reload, resolveHandoff, confirmPayment, setAssistant, reply, sendAttachment, sendQuickReplyFile, forget, removeTestChats } = useConversations(
+  const { filter, setFilter, list, selectedId, select, thread, reload, resolveHandoff, confirmPayment, setFollowUp, setAssistant, reply, sendAttachment, sendQuickReplyFile, forget, removeTestChats } = useConversations(
     { business: slug },
     params.get("c"),
   );
@@ -163,6 +164,7 @@ export function ConversationsPage() {
               onDeleted={forget}
               onResolve={resolveHandoff}
               onConfirmPayment={confirmPayment}
+              onFollowUp={setFollowUp}
               onAssistant={setAssistant}
               onReply={reply}
               onSendFile={sendAttachment}
@@ -226,6 +228,7 @@ function ThreadView({
   onDeleted,
   onResolve,
   onConfirmPayment,
+  onFollowUp,
   onAssistant,
   onReply,
   onSendFile,
@@ -236,6 +239,7 @@ function ThreadView({
   onDeleted: (id: string) => void;
   onResolve: (id: string) => Promise<void>;
   onConfirmPayment: (id: string, sale: PaymentSale | null) => Promise<PaymentConfirmed>;
+  onFollowUp: (id: string, active: boolean) => Promise<void>;
   onAssistant: (id: string, active: boolean) => Promise<void>;
   onReply: (id: string, text: string) => Promise<void>;
   onSendFile: (id: string, file: File, caption: string) => Promise<void>;
@@ -254,6 +258,9 @@ function ThreadView({
   const [paymentNotice, setPaymentNotice] = useState<PaymentConfirmed | null>(null);
   // Confirmar pagos es de quien atiende el chat: donde se le puede escribir al cliente, y en las pruebas.
   const canConfirmPayment = Boolean(conversation.paymentPending) && (canReply || isTest);
+  // El seguimiento automático de este cliente: se ve cuando ya salió alguno o cuando está detenido, y ahí se detiene o se reanuda.
+  const followUps = messages.filter((message) => message.intent === FOLLOW_UP_INTENT).length;
+  const followUpStopped = conversation.followUpStoppedBy ?? null;
 
   // Baja al último mensaje al abrir y cuando llega uno nuevo, salvo que la persona esté leyendo más arriba.
   const lastId = messages.at(-1)?.id;
@@ -380,6 +387,32 @@ function ThreadView({
         </div>
       )}
 
+      {canReply && (followUpStopped || followUps > 0) && (
+        <div className="handoff-banner handoff-banner--quiet" role="status">
+          <span className="handoff-banner__icon" aria-hidden="true">
+            <Icon name="clock" size={18} />
+          </span>
+          <div className="handoff-banner__text">
+            <strong>{followUpStopped ? "Seguimiento detenido" : "Seguimiento automático"}</strong>
+            <span>
+              {followUpStopped === "customer"
+                ? "El cliente dijo que no le interesa: no se le envían más seguimientos."
+                : followUpStopped === "team"
+                  ? "Tu equipo lo detuvo: no se le envían más seguimientos."
+                  : `Se le ${followUps === 1 ? "envió 1 seguimiento" : `enviaron ${followUps} seguimientos`}. Si vuelve a escribir, empieza de nuevo cuando deje de responder.`}
+            </span>
+          </div>
+          <Button
+            size="small"
+            variant="secondary"
+            disabled={busy}
+            onClick={() => void act(() => onFollowUp(conversation.id, Boolean(followUpStopped)), "No se pudo cambiar el seguimiento. Vuelve a intentarlo.")}
+          >
+            {followUpStopped ? "Reanudar seguimiento" : "Detener seguimiento"}
+          </Button>
+        </div>
+      )}
+
       {paymentNotice && (
         <div className="thread__notice">
           {paymentNotice.warnings.length > 0 ? (
@@ -469,7 +502,12 @@ function MessageBubble({ conversationId, message }: { conversationId: string; me
       {kind !== "text" && <MediaContent conversationId={conversationId} message={message} />}
       {message.body && <p className="chat-bubble__text">{message.body}</p>}
       <span className="chat-bubble__meta">
-        {message.author === "assistant" && (
+        {message.author === "assistant" && message.intent === FOLLOW_UP_INTENT && (
+          <>
+            <Icon name="clock" size={12} /> Seguimiento ·{" "}
+          </>
+        )}
+        {message.author === "assistant" && message.intent !== FOLLOW_UP_INTENT && (
           <>
             <Icon name="robot" size={12} /> IA ·{" "}
           </>

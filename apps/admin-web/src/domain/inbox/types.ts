@@ -60,7 +60,12 @@ export interface ConversationSummary {
   aiResumedAt?: string | null;
   /** El cliente avisó un pago que nadie del equipo ha confirmado: el chat muestra «Confirmar pago». */
   paymentPending?: boolean;
+  /** El seguimiento automático está detenido en este chat: lo detuvo el equipo o el cliente dijo que no le interesa. */
+  followUpStoppedBy?: "team" | "customer" | null;
 }
+
+/** Cómo marca el motor un mensaje de seguimiento (Mensajes → Seguimiento) en la bandeja. */
+export const FOLLOW_UP_INTENT = "follow_up";
 
 /** Antes de confirmar un pago: el mensaje que le llegará al cliente, si hay un pago por confirmar y si es una prueba. */
 export interface PaymentConfirmationPreview {

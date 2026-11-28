@@ -1,6 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "schedules": {
-    "atencion-humana": { "schedule": "*/15 * * * *", "path": "/api/v1/internal/attention/run" }
+    "atencion-humana": { "schedule": "*/15 * * * *", "path": "/api/v1/internal/attention/run" },
+    "seguimiento": { "schedule": "*/15 * * * *", "path": "/api/v1/internal/follow-up/run" }
   }
 }

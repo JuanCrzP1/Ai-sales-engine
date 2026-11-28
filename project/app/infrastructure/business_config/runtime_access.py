@@ -25,7 +25,7 @@ from app.domain.business_config.contract import BusinessConfig, SecretRef
 from app.business_config_application.usage_limits import UsageGuard
 from app.domain.business_config.api_keys import ApiKeyIdentity
 from app.domain.business_config.attention import AttentionSettings
-from app.domain.business_config.conversations import AppendResult, MediaFile, NewMessage, PendingMessage, WaitingChat
+from app.domain.business_config.conversations import AppendResult, FollowUpCandidate, MediaFile, NewMessage, PendingMessage, WaitingChat
 from app.domain.business_config.errors import BusinessConfigError
 from app.infrastructure.business_config.ai_settings_store import AISettingsStore
 from app.infrastructure.business_config.ai_usage_store import AIUsageStore
@@ -191,6 +191,30 @@ def resume_waiting_chat(conversation_id: str, *, waiting_before: datetime, minut
 def pending_customer_text(conversation_id: str, *, since: datetime) -> str:
     """Lo que escribió el cliente desde `since` sin respuesta, en un solo texto."""
     return ConversationStore(_store_engine()).pending_customer_text(conversation_id, since=since)
+
+
+def follow_up_candidates(*, active_since: datetime, quiet_before: datetime, limit: int = 200) -> list[FollowUpCandidate]:
+    """Los chats de WhatsApp y Telegram en los que el cliente dejó de responder (`ConversationStore.follow_up_candidates`)."""
+    return ConversationStore(_store_engine()).follow_up_candidates(active_since=active_since, quiet_before=quiet_before, limit=limit)
+
+
+def claim_follow_up(candidate: FollowUpCandidate, sent: int) -> bool:
+    """Toma el seguimiento que toca (una sola vez): False si otra revisión lo tomó o el chat cambió."""
+    return ConversationStore(_store_engine()).claim_follow_up(candidate, sent)
+
+
+def release_follow_up(candidate: FollowUpCandidate) -> None:
+    ConversationStore(_store_engine()).release_follow_up(candidate)
+
+
+def stop_follow_up(conversation_id: str, by: str) -> None:
+    ConversationStore(_store_engine()).stop_follow_up(conversation_id, by)
+
+
+def recent_conversation_messages(conversation_id: str) -> list[tuple[str, str]]:
+    """Los mensajes de texto del chat (autor, texto), del más antiguo al más reciente, para el lector del seguimiento."""
+    _summary, messages = ConversationStore(_store_engine()).thread(conversation_id)
+    return [(message.author, message.body) for message in messages if str(message.body or "").strip()]
 
 
 def whatsapp_secrets(tenant_slug: str) -> ChannelSecrets | None:

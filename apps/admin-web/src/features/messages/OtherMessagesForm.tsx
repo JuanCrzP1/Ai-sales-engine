@@ -5,7 +5,7 @@ import { phraseFor, type Phrase } from "../../domain/config/formality";
 import { useConfig, useFieldIssue, useSection } from "../../state/useConfig";
 
 // Los ejemplos van con el trato del negocio (Asistente IA → Estilo): un negocio que trata de usted ve ejemplos de usted.
-const FIELDS: { key: "data_request" | "human_handoff" | "after_hours" | "ai_resumed" | "after_sale" | "follow_up"; label: string; placeholder: Phrase; hint?: string }[] = [
+const FIELDS: { key: "data_request" | "human_handoff" | "after_hours" | "ai_resumed" | "after_sale"; label: string; placeholder: Phrase; hint?: string }[] = [
   {
     key: "data_request",
     label: "Al pedir los datos del cliente",
@@ -39,12 +39,6 @@ const FIELDS: { key: "data_request" | "human_handoff" | "after_hours" | "ai_resu
     label: "Después de una compra",
     placeholder: { tu: "Ej.: ¡Gracias por tu compra!", usted: "Ej.: ¡Gracias por su compra!" },
     hint: "El asistente lo usa cuando el cliente vuelve a escribir después de pagar.",
-  },
-  {
-    key: "follow_up",
-    label: "Seguimiento a un cliente que no respondió",
-    placeholder: { tu: "Ej.: Hola, ¿pudiste revisar la información?", usted: "Ej.: Hola, ¿pudo revisar la información?" },
-    hint: "Se guarda para cuando los canales puedan escribirle primero al cliente: entonces se enviará a quien no respondió.",
   },
 ];
 

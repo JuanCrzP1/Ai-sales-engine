@@ -10,6 +10,7 @@ from fastapi import APIRouter
 
 from app.api.controllers.assistant_api import router as assistant_api_router
 from app.api.controllers.attention_tasks import router as attention_router
+from app.api.controllers.follow_up_tasks import router as follow_up_router
 from app.api.controllers.telegram_webhook import router as telegram_router
 from app.api.controllers.whatsapp_qr_webhook import router as whatsapp_qr_router
 
@@ -19,6 +20,7 @@ def build_router() -> APIRouter:
     api.include_router(whatsapp_qr_router)
     api.include_router(telegram_router)
     api.include_router(attention_router)
+    api.include_router(follow_up_router)
     api.include_router(assistant_api_router)
     return api
 

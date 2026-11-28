@@ -96,6 +96,9 @@ class ConversationSummary:
     customer_waiting_since: datetime | None = None
     # Cuándo la IA retomó sola el chat porque nadie del equipo respondió a tiempo.
     ai_resumed_at: datetime | None = None
+    # El seguimiento automático está detenido en este chat: lo detuvo el equipo («team») o el cliente dijo que no le interesa
+    # («customer»). None: sigue activo (si el negocio lo encendió).
+    follow_up_stopped_by: str | None = None
 
 
 @dataclass(frozen=True)
@@ -177,6 +180,29 @@ class ConversationTarget:
     business_slug: str
     channel: str
     contact_ref: str
+
+
+FOLLOW_UP_STOPPERS = ("team", "customer")
+
+
+@dataclass(frozen=True)
+class FollowUpCandidate:
+    """Un chat de WhatsApp o Telegram en el que el cliente dejó de responder, para la revisión del seguimiento."""
+
+    id: str
+    business_slug: str
+    channel: str
+    contact_ref: str
+    # Su último mensaje: los tiempos del seguimiento se cuentan desde aquí.
+    last_customer_at: datetime
+    # A qué mensaje del cliente se refieren los seguimientos que ya pasaron, y cuántos.
+    anchor: datetime | None
+    sent: int
+
+    @property
+    def sent_since_last_message(self) -> int:
+        """Cuántos seguimientos pasaron desde su último mensaje: si volvió a escribir después, ninguno (la secuencia empieza de nuevo)."""
+        return self.sent if self.anchor is not None and self.anchor == self.last_customer_at else 0
 
 
 @dataclass(frozen=True)

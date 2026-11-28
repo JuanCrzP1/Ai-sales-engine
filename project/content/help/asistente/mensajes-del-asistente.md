@@ -1,11 +1,11 @@
 ---
 title: "Mensajes y canales: la bienvenida y los mensajes fijos"
 module: asistente
-summary: La bienvenida, lo que dice al recibir un pago, al pasar a una persona, fuera del horario, al retomar un chat y si no puede responder.
+summary: La bienvenida, lo que dice al recibir un pago, el seguimiento a quien deja de responder, al pasar a una persona, fuera del horario, al retomar un chat y si no puede responder.
 order: 6
-updated: 2026-11-27
-keywords: bienvenida, saludo, mensajes, pago recibido, pasar a una persona, fuera del horario, la ia retoma, si no puede responder, canales, restricciones
-related: como-atiende, horario-del-equipo, si-la-ia-falla
+updated: 2026-11-28
+keywords: bienvenida, saludo, mensajes, seguimiento, pago recibido, pasar a una persona, fuera del horario, la ia retoma, si no puede responder, canales, restricciones
+related: como-atiende, seguimiento-automatico, horario-del-equipo, si-la-ia-falla
 ---
 
 En [Mensajes y canales](panel:mensajes) escribes los mensajes que el asistente envía **tal cual** en momentos clave.
@@ -15,6 +15,7 @@ En [Mensajes y canales](panel:mensajes) escribes los mensajes que el asistente e
 - **Mensaje de bienvenida:** se envía tal cual cuando un cliente nuevo solo saluda. La IA reconoce cualquier forma de saludar («hola», «buen día», «qué onda», un 👋); si además pregunta o pide algo («hola, ¿cuánto cuesta?»), le responde el asistente. Si lo desactivas, responde el asistente.
 - **Cómo le llegan los datos de pago:** el mensaje que recibe el cliente cuando elige cómo pagar. Ya viene escrito y ordenado: el medio, el número en su propia línea (se copia con un toque), a nombre de quién está y que envíe el comprobante. Puedes cambiarlo con los marcadores `{medio}`, `{datos}` (obligatorio) y `{titular}`. Lo envía el sistema con tus datos reales: la IA nunca los ve. Ver [Pagos y cierre](pagos-y-cierre).
 - **Mensajes de pago:** lo que dice cuando el cliente dice que ya pagó y lo que le llega cuando tu equipo toca **Confirmar pago** en el chat. El asistente no verifica pagos: solo tu equipo los confirma. Ver [Confirmar un pago](responder-y-pausar-la-ia).
+- **Seguimiento:** si un cliente deja de responder, el asistente le vuelve a escribir. Viene armado con tres mensajes recomendados: solo lo enciendes. Ver [Seguimiento automático](seguimiento-automatico).
 - **Si el asistente no puede responder:** lo que recibe el cliente si la IA falla (por ejemplo, si se acabó el saldo de tu clave). Ver [Si la IA falla](si-la-ia-falla).
 
 ### Otros mensajes
@@ -25,7 +26,6 @@ Son opcionales: si no los escribes, el asistente responde con sus propias palabr
 - **Fuera del horario del equipo:** cuando un chat pasa a una persona fuera del horario. Si lo dejas vacío, el asistente dice tu horario y cuándo lo atienden. Ver [El horario del equipo](horario-del-equipo).
 - **Cuando la IA retoma el chat:** si nadie de tu equipo responde a tiempo, la IA vuelve a atender y envía este mensaje primero. Ver [Si nadie responde](si-nadie-responde).
 - **Después de una compra:** lo usa cuando el cliente vuelve a escribir después de pagar.
-- **Seguimiento a un cliente que no respondió:** se guarda para cuando los canales puedan escribirle primero al cliente.
 
 ## Canales
 

@@ -24,7 +24,7 @@ retiraron el 11 de noviembre de 2026.
 | Esquema JSON, tipos TypeScript, matriz y referencia de campos | **Terminados**, generados desde el modelo canónico |
 | Nueve negocios de ejemplo (documento, ajustes técnicos y datos de pago ficticios) | **Terminados**: válidos, sin pérdida; compilan exactamente a su referencia congelada (`tests/golden/`) |
 | Pruebas del contrato y de su integración con el motor actual | **Pasan** |
-| Integración con el motor | **Terminada** (Fase 3): los 184 campos que el panel deja configurar llegan al motor, cada uno con su prueba. Fuera, a propósito: lo que es solo del equipo (`solo panel`) y lo que enviará la plataforma ante un evento (`programado`) |
+| Integración con el motor | **Terminada** (Fase 3): los 184 campos que el panel deja configurar llegan al motor, cada uno con su prueba. Fuera, a propósito, solo lo que es del equipo (`solo panel`). El pago confirmado y el seguimiento ya los envía la plataforma (27 nov 2026) |
 | Persistencia (Neon en la nube, SQLite en este equipo) | **Terminada**; las migraciones se aplican solas al desplegar |
 | API y panel de administración | **Terminados**: en la nube con cuentas de Neon Auth y en este equipo sin cuentas; ver [Panel De Administración](#panel-de-administración) |
 | Funcionamiento del almacén sin YAML | **Terminado y comprobado** en un árbol sin YAML ni motor (ver [Independencia Del Almacén](#independencia-del-almacén)) |
@@ -165,8 +165,7 @@ y en los comentarios de los tipos TypeScript:
 - `x-engine` (si el motor actual lo usa): `conectado` solo con una prueba en
   `tests/test_business_config_engine_integration.py` que demuestra que cambiarlo cambia el prompt, la
   respuesta o la acción del motor (`CONNECTED_EVIDENCE`; una prueba exige que la lista coincida con las
-  marcas); `programado` si lo enviará la plataforma cuando exista el evento que lo dispara (hoy, el seguimiento a quien
-  no respondió; el pago confirmado ya sale cuando el equipo toca «Confirmar pago» en el chat); `solo panel` si es solo para el equipo y nunca va a la IA (la etiqueta de
+  marcas); `solo panel` si es solo para el equipo y nunca va a la IA (la etiqueta de
   una cuenta, el código de una variante); `pendiente` si está representado y conservado pero el motor no lo usa (hoy,
   ninguno).
 
@@ -177,7 +176,7 @@ Con esto la matriz distingue cuatro situaciones que no son equivalentes:
   campo por campo): 1161 desde el documento comercial, los datos de pago y los ajustes técnicos, y 45 desde la
   definición común del cierre.
 - **Configurable en la interfaz:** columna Interfaz (`pantalla`, `modelo` o `no`).
-- **Ejecutado por el motor:** `x-engine = conectado` (184 campos hoja; 2 `programado`, 2 `solo panel`, 0
+- **Ejecutado por el motor:** `x-engine = conectado` (todos menos 2 `solo panel`; 0
   `pendiente`). Las ventanas de conversación también las usa el motor, pero son ajustes técnicos: no cuentan aquí.
 
 Conectados hoy: sector, propuesta de valor, tipo de oferta, planes (id, nombre, precios por moneda,

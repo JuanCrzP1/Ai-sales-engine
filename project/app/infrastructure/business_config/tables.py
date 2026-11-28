@@ -162,11 +162,26 @@ conversations = Table(
     # Migración 0011: desde cuándo el cliente espera a una persona sin respuesta, y cuándo la IA retomó sola el chat.
     Column("customer_waiting_since", DateTime(timezone=True)),
     Column("ai_resumed_at", DateTime(timezone=True)),
+    # Migración 0024: el seguimiento a quien dejó de responder. A qué mensaje del cliente se refieren los enviados, cuántos pasaron
+    # y si se detuvo en este chat (y quién: el equipo o el cliente que dijo que no le interesa).
+    Column("follow_up_anchor", DateTime(timezone=True)),
+    Column("follow_up_sent", Integer, nullable=False, default=0, server_default="0"),
+    Column("follow_up_stopped_at", DateTime(timezone=True)),
+    Column("follow_up_stopped_by", Text),
     CheckConstraint("channel IN ('whatsapp', 'instagram', 'telegram', 'web', 'api', 'prueba')", name="conversations_channel_check"),
+    CheckConstraint(
+        "follow_up_stopped_by IS NULL OR follow_up_stopped_by IN ('team', 'customer')", name="conversations_follow_up_stopped_by_check"
+    ),
     CheckConstraint("stage IN ('new', 'interested', 'ready', 'payment', 'customer')", name="conversations_stage_check"),
     CheckConstraint("status IN ('open', 'closed')", name="conversations_status_check"),
     UniqueConstraint("tenant_id", "channel", "contact_ref", name="conversations_contact_key"),
     Index("conversations_tenant_recent_idx", "tenant_id", "last_message_at"),
+    Index(
+        "conversations_follow_up_idx",
+        "last_message_at",
+        postgresql_where=text("follow_up_stopped_at IS NULL AND channel IN ('whatsapp', 'telegram')"),
+        sqlite_where=text("follow_up_stopped_at IS NULL AND channel IN ('whatsapp', 'telegram')"),
+    ),
     Index(
         "conversations_waiting_idx",
         "customer_waiting_since",

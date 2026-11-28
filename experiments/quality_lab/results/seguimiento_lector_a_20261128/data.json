@@ -1,0 +1,1128 @@
+{
+ "experiment": "seguimiento_lector_a_20261128",
+ "model": "openai/gpt-4o-mini",
+ "samples": 5,
+ "rows": [
+  {
+   "case": 0,
+   "note": "preguntó el precio y no respondió",
+   "sample": 0,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "case": 0,
+   "note": "preguntó el precio y no respondió",
+   "sample": 1,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "case": 0,
+   "note": "preguntó el precio y no respondió",
+   "sample": 2,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "case": 0,
+   "note": "preguntó el precio y no respondió",
+   "sample": 3,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "case": 0,
+   "note": "preguntó el precio y no respondió",
+   "sample": 4,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "case": 1,
+   "note": "pidió información",
+   "sample": 0,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "case": 1,
+   "note": "pidió información",
+   "sample": 1,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "case": 1,
+   "note": "pidió información",
+   "sample": 2,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "case": 1,
+   "note": "pidió información",
+   "sample": 3,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "case": 1,
+   "note": "pidió información",
+   "sample": 4,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "case": 2,
+   "note": "lo va a pensar",
+   "sample": 0,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "case": 2,
+   "note": "lo va a pensar",
+   "sample": 1,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "case": 2,
+   "note": "lo va a pensar",
+   "sample": 2,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "case": 2,
+   "note": "lo va a pensar",
+   "sample": 3,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "case": 2,
+   "note": "lo va a pensar",
+   "sample": 4,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "case": 3,
+   "note": "lo consulta",
+   "sample": 0,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "case": 3,
+   "note": "lo consulta",
+   "sample": 1,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "case": 3,
+   "note": "lo consulta",
+   "sample": 2,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "case": 3,
+   "note": "lo consulta",
+   "sample": 3,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "case": 3,
+   "note": "lo consulta",
+   "sample": 4,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "case": 4,
+   "note": "pedido a mitad de camino",
+   "sample": 0,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "case": 4,
+   "note": "pedido a mitad de camino",
+   "sample": 1,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "case": 4,
+   "note": "pedido a mitad de camino",
+   "sample": 2,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "case": 4,
+   "note": "pedido a mitad de camino",
+   "sample": 3,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "case": 4,
+   "note": "pedido a mitad de camino",
+   "sample": 4,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "case": 5,
+   "note": "le ofrecieron separarla",
+   "sample": 0,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "case": 5,
+   "note": "le ofrecieron separarla",
+   "sample": 1,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "case": 5,
+   "note": "le ofrecieron separarla",
+   "sample": 2,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "case": 5,
+   "note": "le ofrecieron separarla",
+   "sample": 3,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "case": 5,
+   "note": "le ofrecieron separarla",
+   "sample": 4,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "case": 6,
+   "note": "iba a pagar",
+   "sample": 0,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "case": 6,
+   "note": "iba a pagar",
+   "sample": 1,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "case": 6,
+   "note": "iba a pagar",
+   "sample": 2,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "case": 6,
+   "note": "iba a pagar",
+   "sample": 3,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "case": 6,
+   "note": "iba a pagar",
+   "sample": 4,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "case": 7,
+   "note": "dijo ok y no siguió",
+   "sample": 0,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "case": 7,
+   "note": "dijo ok y no siguió",
+   "sample": 1,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "case": 7,
+   "note": "dijo ok y no siguió",
+   "sample": 2,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "case": 7,
+   "note": "dijo ok y no siguió",
+   "sample": 3,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "case": 7,
+   "note": "dijo ok y no siguió",
+   "sample": 4,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "case": 8,
+   "note": "escribe después",
+   "sample": 0,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "case": 8,
+   "note": "escribe después",
+   "sample": 1,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "case": 8,
+   "note": "escribe después",
+   "sample": 2,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "case": 8,
+   "note": "escribe después",
+   "sample": 3,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "case": 8,
+   "note": "escribe después",
+   "sample": 4,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "case": 9,
+   "note": "preguntó por envío",
+   "sample": 0,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "case": 9,
+   "note": "preguntó por envío",
+   "sample": 1,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "case": 9,
+   "note": "preguntó por envío",
+   "sample": 2,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "case": 9,
+   "note": "preguntó por envío",
+   "sample": 3,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "case": 9,
+   "note": "preguntó por envío",
+   "sample": 4,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "case": 10,
+   "note": "objeción de precio, sigue abierta",
+   "sample": 0,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "case": 10,
+   "note": "objeción de precio, sigue abierta",
+   "sample": 1,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "case": 10,
+   "note": "objeción de precio, sigue abierta",
+   "sample": 2,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "case": 10,
+   "note": "objeción de precio, sigue abierta",
+   "sample": 3,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "case": 10,
+   "note": "objeción de precio, sigue abierta",
+   "sample": 4,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "case": 11,
+   "note": "cita a mitad de camino",
+   "sample": 0,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "case": 11,
+   "note": "cita a mitad de camino",
+   "sample": 1,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "case": 11,
+   "note": "cita a mitad de camino",
+   "sample": 2,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "case": 11,
+   "note": "cita a mitad de camino",
+   "sample": 3,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "case": 11,
+   "note": "cita a mitad de camino",
+   "sample": 4,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "case": 12,
+   "note": "lo revisa",
+   "sample": 0,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "case": 12,
+   "note": "lo revisa",
+   "sample": 1,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "case": 12,
+   "note": "lo revisa",
+   "sample": 2,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "case": 12,
+   "note": "lo revisa",
+   "sample": 3,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "case": 12,
+   "note": "lo revisa",
+   "sample": 4,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "case": 13,
+   "note": "nunca respondió al saludo",
+   "sample": 0,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "case": 13,
+   "note": "nunca respondió al saludo",
+   "sample": 1,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "case": 13,
+   "note": "nunca respondió al saludo",
+   "sample": 2,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "case": 13,
+   "note": "nunca respondió al saludo",
+   "sample": 3,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "case": 13,
+   "note": "nunca respondió al saludo",
+   "sample": 4,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "case": 14,
+   "note": "le gustó",
+   "sample": 0,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "case": 14,
+   "note": "le gustó",
+   "sample": 1,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "case": 14,
+   "note": "le gustó",
+   "sample": 2,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "case": 14,
+   "note": "le gustó",
+   "sample": 3,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "case": 14,
+   "note": "le gustó",
+   "sample": 4,
+   "expected": true,
+   "read": true,
+   "verdict": "bien"
+  },
+  {
+   "case": 15,
+   "note": "no le interesa",
+   "sample": 0,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "case": 15,
+   "note": "no le interesa",
+   "sample": 1,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "case": 15,
+   "note": "no le interesa",
+   "sample": 2,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "case": 15,
+   "note": "no le interesa",
+   "sample": 3,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "case": 15,
+   "note": "no le interesa",
+   "sample": 4,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "case": 16,
+   "note": "compró en otro lado",
+   "sample": 0,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "case": 16,
+   "note": "compró en otro lado",
+   "sample": 1,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "case": 16,
+   "note": "compró en otro lado",
+   "sample": 2,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "case": 16,
+   "note": "compró en otro lado",
+   "sample": 3,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "case": 16,
+   "note": "compró en otro lado",
+   "sample": 4,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "case": 17,
+   "note": "que no le escriban",
+   "sample": 0,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "case": 17,
+   "note": "que no le escriban",
+   "sample": 1,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "case": 17,
+   "note": "que no le escriban",
+   "sample": 2,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "case": 17,
+   "note": "que no le escriban",
+   "sample": 3,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "case": 17,
+   "note": "que no le escriban",
+   "sample": 4,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "case": 18,
+   "note": "resuelto y se despidió",
+   "sample": 0,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "case": 18,
+   "note": "resuelto y se despidió",
+   "sample": 1,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "case": 18,
+   "note": "resuelto y se despidió",
+   "sample": 2,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "case": 18,
+   "note": "resuelto y se despidió",
+   "sample": 3,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "case": 18,
+   "note": "resuelto y se despidió",
+   "sample": 4,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "case": 19,
+   "note": "reclamo",
+   "sample": 0,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "case": 19,
+   "note": "reclamo",
+   "sample": 1,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "case": 19,
+   "note": "reclamo",
+   "sample": 2,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "case": 19,
+   "note": "reclamo",
+   "sample": 3,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "case": 19,
+   "note": "reclamo",
+   "sample": 4,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "case": 20,
+   "note": "no por precio",
+   "sample": 0,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "case": 20,
+   "note": "no por precio",
+   "sample": 1,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "case": 20,
+   "note": "no por precio",
+   "sample": 2,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "case": 20,
+   "note": "no por precio",
+   "sample": 3,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "case": 20,
+   "note": "no por precio",
+   "sample": 4,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "case": 21,
+   "note": "ya lo resolvió",
+   "sample": 0,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "case": 21,
+   "note": "ya lo resolvió",
+   "sample": 1,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "case": 21,
+   "note": "ya lo resolvió",
+   "sample": 2,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "case": 21,
+   "note": "ya lo resolvió",
+   "sample": 3,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "case": 21,
+   "note": "ya lo resolvió",
+   "sample": 4,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "case": 22,
+   "note": "número equivocado",
+   "sample": 0,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "case": 22,
+   "note": "número equivocado",
+   "sample": 1,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "case": 22,
+   "note": "número equivocado",
+   "sample": 2,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "case": 22,
+   "note": "número equivocado",
+   "sample": 3,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "case": 22,
+   "note": "número equivocado",
+   "sample": 4,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "case": 23,
+   "note": "que lo quiten",
+   "sample": 0,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "case": 23,
+   "note": "que lo quiten",
+   "sample": 1,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "case": 23,
+   "note": "que lo quiten",
+   "sample": 2,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "case": 23,
+   "note": "que lo quiten",
+   "sample": 3,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "case": 23,
+   "note": "que lo quiten",
+   "sample": 4,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "case": 24,
+   "note": "ya no lo necesita",
+   "sample": 0,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "case": 24,
+   "note": "ya no lo necesita",
+   "sample": 1,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "case": 24,
+   "note": "ya no lo necesita",
+   "sample": 2,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "case": 24,
+   "note": "ya no lo necesita",
+   "sample": 3,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "case": 24,
+   "note": "ya no lo necesita",
+   "sample": 4,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "case": 25,
+   "note": "no venden lo que busca",
+   "sample": 0,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "case": 25,
+   "note": "no venden lo que busca",
+   "sample": 1,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "case": 25,
+   "note": "no venden lo que busca",
+   "sample": 2,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "case": 25,
+   "note": "no venden lo que busca",
+   "sample": 3,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "case": 25,
+   "note": "no venden lo que busca",
+   "sample": 4,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "case": 26,
+   "note": "deja así (Colombia)",
+   "sample": 0,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "case": 26,
+   "note": "deja así (Colombia)",
+   "sample": 1,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "case": 26,
+   "note": "deja así (Colombia)",
+   "sample": 2,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "case": 26,
+   "note": "deja así (Colombia)",
+   "sample": 3,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "case": 26,
+   "note": "deja así (Colombia)",
+   "sample": 4,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "case": 27,
+   "note": "molesto",
+   "sample": 0,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "case": 27,
+   "note": "molesto",
+   "sample": 1,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "case": 27,
+   "note": "molesto",
+   "sample": 2,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "case": 27,
+   "note": "molesto",
+   "sample": 3,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  },
+  {
+   "case": 27,
+   "note": "molesto",
+   "sample": 4,
+   "expected": false,
+   "read": false,
+   "verdict": "bien"
+  }
+ ],
+ "gasto_usd": 0.0061
+}

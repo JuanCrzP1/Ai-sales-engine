@@ -61,7 +61,7 @@ CLASSES = {
 
 
 # Estados del motor de un campo del contrato (`x-engine`), en el orden de la tabla de la referencia.
-ENGINE_STATUSES = ("conectado", "programado", "solo panel", "pendiente")
+ENGINE_STATUSES = ("conectado", "solo panel", "pendiente")
 
 def _tenants() -> list[str]:
     return example_slugs()
@@ -269,12 +269,12 @@ def render_matrix() -> str:
         "- **Audiencia:** `cliente` (lo configura el negocio), `avanzado` (estrategia comercial detallada, opcional)",
         "  o `sistema`.",
         "- **Motor:** `conectado` (el motor actual lo usa; prueba en `tests/test_business_config_engine_integration.py`),",
-        "  `programado` (lo enviará la plataforma cuando exista el evento que lo dispara; no va a la IA), `solo panel`",
+        "  `solo panel`",
         "  (es solo para el equipo; nunca va a la IA) o `pendiente` (representado y conservado, sin uso en el motor actual).",
         "- **Origen:** campo de los YAML, `nuevo` (solo existe en el contrato) o `derivado` (lo crea la importación).",
         "",
-        "| Audiencia | Conectados | Programados | Solo panel | Pendientes |",
-        "|---|---|---|---|---|",
+        "| Audiencia | Conectados | Solo panel | Pendientes |",
+        "|---|---|---|---|",
         *[
             f"| {audience} | " + " | ".join(str(status[(audience, engine)]) for engine in ENGINE_STATUSES) + " |"
             for audience in ("cliente", "avanzado", "sistema")

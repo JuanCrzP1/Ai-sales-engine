@@ -27,6 +27,7 @@ from app.admin_api.schemas import (
     SendQuickReplyFile,
     SendReply,
     SetAssistant,
+    SetFollowUp,
     activity_payload,
     chat_message_payload,
     conversation_payload,
@@ -157,6 +158,12 @@ def send_quick_reply_file(
 def set_assistant(conversation_id: str, body: SetAssistant, user: CurrentUser, conversations: Conversations) -> dict[str, Any]:
     """Reanuda la IA en la conversación o la pausa para que la atienda el equipo."""
     return conversation_payload(conversations.set_assistant(user, conversation_id, active=body.active))
+
+
+@router.post("/conversations/{conversation_id}/follow-up")
+def set_follow_up(conversation_id: str, body: SetFollowUp, user: CurrentUser, conversations: Conversations) -> dict[str, Any]:
+    """Detiene el seguimiento automático para este cliente o lo reanuda."""
+    return conversation_payload(conversations.set_follow_up(user, conversation_id, active=body.active))
 
 
 @router.delete("/conversations/{conversation_id}", status_code=status.HTTP_204_NO_CONTENT)

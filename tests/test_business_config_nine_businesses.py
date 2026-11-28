@@ -260,7 +260,10 @@ def _with_commercial_fields(document: dict) -> dict:
     document["terms"]["policies"] = {"warranty": "30 días", "returns": "Cambios en 5 días", "cancellation": "Hasta un día antes"}
     document["sales"]["instructions"] = ["Ofrece primero lo más vendido."]
     document["response_style"].update(formality="neutral", emojis=False, instructions=["Sin tecnicismos."])
-    document["messages"].update(after_sale="Gracias", data_request="Tus datos", follow_up="¿Seguimos?", human_handoff="Te paso con alguien")
+    document["messages"].update(
+        after_sale="Gracias", data_request="Tus datos", human_handoff="Te paso con alguien",
+        follow_up={"enabled": True, "business_hours_only": False, "steps": [{"after_minutes": 60, "message": "¿Seguimos?"}]},
+    )
     document["knowledge"] = {"faqs": [{"question": "¿Atienden los domingos?", "answer": "Sí."}]}
     document["identity"]["opening_hours"] = [{"days": ["lunes", "martes"], "opens": "08:00", "closes": "18:00"}]
     for plan in document["offer"].get("plans") or []:

@@ -109,6 +109,15 @@ class ConversationsService:
         self._storage.set_ai_paused(conversation_id, not active)
         return self._storage.thread(conversation_id)[0]
 
+    def set_follow_up(self, principal: Principal, conversation_id: str, *, active: bool) -> ConversationSummary:
+        """Detiene el seguimiento automático para este cliente (no se le envía ninguno más) o lo reanuda."""
+        self._require(principal, conversation_id)
+        if active:
+            self._storage.resume_follow_up(conversation_id)
+        else:
+            self._storage.stop_follow_up(conversation_id, "team")
+        return self._storage.thread(conversation_id)[0]
+
     def mark_read(self, principal: Principal, conversation_id: str) -> None:
         self._require(principal, conversation_id)
         self._storage.mark_read(conversation_id)

@@ -10,16 +10,19 @@ from app.domain.business_config.engine_policy import (
     MAX_FAQ_ANSWER_CHARS,
     MAX_FAQ_QUESTION_CHARS,
     MAX_FAQS,
+    MAX_FOLLOW_UP_MINUTES,
+    MAX_FOLLOW_UP_STEPS,
     MAX_MESSAGE_CHARS,
     MAX_REPLY_DELAY_SECONDS,
     MAX_TONE_CHARS,
+    MIN_FOLLOW_UP_MINUTES,
     MIN_MAX_WORDS,
     RESPONSE_LENGTH_MAX_WORDS,
     RESPONSE_LENGTH_WORD_RANGES,
     ResponseLength,
 )
 from app.domain.business_config.payment_message import template_problem
-from app.domain.business_config.primitives import ADVANCED, CONNECTED, SCHEDULED, ContractModel, MessageText, Phrases, Text, ensure_unique
+from app.domain.business_config.primitives import ADVANCED, CONNECTED, ContractModel, MessageText, Phrases, Text, ensure_unique
 
 
 class ClosingMethods(ContractModel):
@@ -96,6 +99,46 @@ class WelcomeMessage(ContractModel):
         return self
 
 
+class FollowUpStep(ContractModel):
+    after_minutes: int = Field(
+        ge=MIN_FOLLOW_UP_MINUTES, le=MAX_FOLLOW_UP_MINUTES, description="Cuántos minutos después del último mensaje del cliente sale."
+    )
+    message: MessageText = Field(description="Lo que recibe el cliente, tal cual.")
+
+    @field_validator("message")
+    @classmethod
+    def _not_blank(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("escribe el mensaje del seguimiento")
+        return value
+
+
+class FollowUp(ContractModel):
+    """El seguimiento a un cliente que dejó de responder: una secuencia de mensajes que envía la plataforma (no la IA).
+
+    Cada mensaje sale `after_minutes` después del último mensaje del cliente, solo si no ha vuelto a escribir. Se detiene solo cuando
+    el cliente responde, compra o avisa un pago, pide una persona, el equipo lo atiende o dice que no le interesa (lo lee la IA antes
+    de cada envío). Ver `domain/business_config/follow_up.py`.
+    """
+
+    enabled: bool = Field(default=False, description="true: la plataforma envía los seguimientos. false: no envía ninguno (se conservan).")
+    business_hours_only: bool = Field(
+        default=True, description="true: solo salen dentro del horario del negocio (Mi negocio). false: a cualquier hora."
+    )
+    steps: list[FollowUpStep] = Field(
+        default_factory=list, max_length=MAX_FOLLOW_UP_STEPS, description="Los mensajes, del primero al último, cada uno con su tiempo."
+    )
+
+    @model_validator(mode="after")
+    def _coherent(self) -> "FollowUp":
+        if self.enabled and not self.steps:
+            raise ValueError("el seguimiento activo necesita al menos un mensaje")
+        times = [step.after_minutes for step in self.steps]
+        if any(later <= earlier for earlier, later in zip(times, times[1:])):
+            raise ValueError("cada seguimiento debe salir después del anterior")
+        return self
+
+
 class Messages(ContractModel):
     welcome: WelcomeMessage = Field(description="Saludo de cada conversación nueva: mensaje fijo o respuesta de la IA.", json_schema_extra=CONNECTED)
     payment_details: MessageText | None = Field(
@@ -116,10 +159,10 @@ class Messages(ContractModel):
         default=None, description="Mensaje después de una compra: la IA lo usa cuando el cliente escribe después de pagar.", json_schema_extra=CONNECTED
     )
     data_request: MessageText | None = Field(default=None, description="Mensaje para pedir los datos del cliente.", json_schema_extra=CONNECTED)
-    follow_up: MessageText | None = Field(
+    follow_up: FollowUp | None = Field(
         default=None,
-        description="Mensaje de seguimiento a un cliente que no respondió. Se guarda; lo enviará la plataforma cuando los canales puedan escribir primero.",
-        json_schema_extra=SCHEDULED,
+        description="Seguimiento a un cliente que dejó de responder: los mensajes que envía la plataforma y cuándo. Sin él, ninguno.",
+        json_schema_extra=CONNECTED,
     )
     human_handoff: MessageText | None = Field(default=None, description="Mensaje al pasar la conversación a una persona.", json_schema_extra=CONNECTED)
     after_hours: MessageText | None = Field(
@@ -138,6 +181,16 @@ class Messages(ContractModel):
         json_schema_extra=CONNECTED,
     )
 
+
+    @model_validator(mode="before")
+    @classmethod
+    def _read_single_follow_up(cls, data: object) -> object:
+        """Hasta el 27 nov 2026 el seguimiento era un solo texto que no se enviaba: se lee como un seguimiento apagado de un mensaje
+        al día siguiente, para que el negocio lo encuentre al encenderlo."""
+        if isinstance(data, dict) and isinstance(data.get("follow_up"), str):
+            text = data["follow_up"].strip()
+            data = {**data, "follow_up": {"enabled": False, "steps": [{"after_minutes": 24 * 60, "message": text}]} if text else None}
+        return data
 
     @field_validator("payment_details")
     @classmethod

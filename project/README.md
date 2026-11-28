@@ -20,6 +20,7 @@ El backend de AI Sales Engine (FastAPI). En la nube corre en Vercel con Neon; en
 | `POST /api/v1/channels/telegram/{webhook_id}` | Avisos del bot de Telegram de cada negocio (exige su firma) |
 | `POST /api/v1/assistant/messages` | API del asistente: otro sistema conversa con él con una clave de API del negocio |
 | `GET`/`POST /api/v1/internal/attention/run` | La IA retoma los chats que nadie atendió a tiempo (protegida con `CRON_SECRET`) |
+| `GET`/`POST /api/v1/internal/follow-up/run` | Salen los seguimientos a los clientes que dejaron de responder (protegida con `CRON_SECRET`) |
 | `/panel/api/...` | API del panel en la nube (solo con `NEON_AUTH_URL`) |
 
 ## Dónde está cada cosa

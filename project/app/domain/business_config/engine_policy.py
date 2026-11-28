@@ -41,6 +41,11 @@ DEFAULT_REPLY_DELAY_SECONDS = 8
 MAX_REPLY_DELAY_SECONDS = 20
 # Si el cliente sigue escribiendo sin parar, a los 30 segundos de su primer mensaje sin respuesta el asistente le responde igual.
 MAX_REPLY_WAIT_SECONDS = 30
+# El seguimiento a quien dejó de responder (Mensajes → Seguimiento, `follow_up.py`): hasta 5 mensajes, el primero como pronto media
+# hora después del último mensaje del cliente y el último como mucho a los 30 días.
+MAX_FOLLOW_UP_STEPS = 5
+MIN_FOLLOW_UP_MINUTES = 30
+MAX_FOLLOW_UP_MINUTES = 30 * 24 * 60
 
 DEFAULT_ACTIVE_WINDOW_MINUTES = 15
 DEFAULT_RESET_HOURS = 4

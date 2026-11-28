@@ -833,11 +833,15 @@ def test_the_periodic_check_needs_the_cron_secret(monkeypatch):
     assert ok.json() == {"status": "ok", "checked": 4, "resumed": 1}
 
 
-def test_vercel_runs_the_check_every_fifteen_minutes():
+def test_vercel_runs_the_checks_every_fifteen_minutes():
+    """La atención humana (la IA retoma los chats) y el seguimiento a quien dejó de responder."""
     from pathlib import Path
 
     config = json.loads((Path(__file__).resolve().parents[1] / "project" / "vercel.json").read_text(encoding="utf-8"))
-    assert config["schedules"] == {"atencion-humana": {"schedule": "*/15 * * * *", "path": "/api/v1/internal/attention/run"}}
+    assert config["schedules"] == {
+        "atencion-humana": {"schedule": "*/15 * * * *", "path": "/api/v1/internal/attention/run"},
+        "seguimiento": {"schedule": "*/15 * * * *", "path": "/api/v1/internal/follow-up/run"},
+    }
 
 
 def test_the_traffic_check_only_runs_in_vercel_or_when_asked(monkeypatch):

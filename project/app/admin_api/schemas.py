@@ -224,6 +224,8 @@ def conversation_payload(summary: ConversationSummary) -> dict[str, Any]:
         "ai_resumed_at": _iso(summary.ai_resumed_at),
         # Un pago avisado que nadie del equipo ha confirmado: el chat muestra «Confirmar pago».
         "payment_pending": payment_pending(summary),
+        # El seguimiento automático detenido en este chat: «team» (lo detuvo el equipo), «customer» (dijo que no le interesa) o None.
+        "follow_up_stopped_by": summary.follow_up_stopped_by,
     }
 
 
@@ -268,6 +270,12 @@ class ConfirmPayment(_Request):
     """«Confirmar pago» en el chat: el cliente recibe el mensaje de pago confirmado; con `sale`, la venta queda registrada."""
 
     sale: ConfirmSale | None = None
+
+
+class SetFollowUp(_Request):
+    """`active`: el seguimiento automático sigue en esta conversación; si no, se detiene para este cliente."""
+
+    active: bool
 
 
 class SetAssistant(_Request):

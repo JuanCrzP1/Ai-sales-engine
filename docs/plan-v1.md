@@ -44,7 +44,7 @@ publican). Ver `docs/architecture.md`, «Atención Humana».
 - Lo que el dueño escribe desde su celular en el chat de un cliente queda en la bandeja como respuesta del equipo y pausa la IA.
 - Migración `0011_human_attention.sql`. Lo cubren `tests/test_human_attention.py` (38), las pruebas del panel
   (`src/app/Attention.test.tsx`) y el laboratorio `exp_20261111_atencion_humana` (motor sin diferencias en las respuestas).
-- Falta en la nube: `RESEND_API_KEY` y `EMAIL_FROM` (correo) y `CRON_SECRET` (revisión cada 15 minutos) en el proyecto del motor.
+- Falta en la nube: `RESEND_API_KEY` y `EMAIL_FROM` (correo) en el proyecto del motor. `CRON_SECRET` ya está (la revisión cada 15 minutos responde 401 sin clave, 28 nov 2026).
   Sin ellas todo lo demás funciona y el panel dice que el correo no está activado.
 
 ## 1. Dónde estamos

@@ -76,6 +76,7 @@ project/app/application/assistant_service.py                    la puerta de los
 - `project/app/api/controllers/telegram_webhook.py`: entrada de Telegram, una ruta secreta por negocio.
 - `project/app/api/controllers/assistant_api.py`: la API del asistente, con la clave de API del negocio.
 - `project/app/api/controllers/attention_tasks.py`: la revisión periódica de los chats que esperan a una persona (`CRON_SECRET`).
+- `project/app/api/controllers/follow_up_tasks.py`: la revisión periódica del seguimiento a quien dejó de responder (`CRON_SECRET`).
 
 La capa HTTP no decide la respuesta. Su trabajo es recibir, validar, resolver tenant y delegar al runtime.
 
@@ -377,6 +378,32 @@ Además se derivan bloques como:
 Si el negocio no existe, no tiene versión publicada o el almacén falla, el motor no responde con datos viejos: el cliente recibe
 un mensaje neutro y queda la alerta `business_config_unavailable`. Los datos de pago se descifran solo al compilar y nunca llegan
 a la IA: el prompt nombra los medios y el motor entrega los datos cuando el cliente elige uno.
+
+## El Seguimiento A Quien Deja De Responder
+
+El negocio lo enciende en Mensajes → Seguimiento (`messages.follow_up`: encendido, solo en su horario y hasta 5 mensajes con su
+tiempo). Lo envía la plataforma, no la IA:
+
+```text
+Vercel cada 15 min (o el tráfico, como mucho cada 5 min por proceso)
+-> project/app/api/controllers/follow_up_tasks.py   /api/v1/internal/follow-up/run (CRON_SECRET)
+-> project/app/api/controllers/whatsapp_qr_webhook.py   build_follow_up_sweep
+-> project/app/application/follow_up/follow_up_sweep.py   FollowUpSweep.run
+   -> project/app/infrastructure/business_config/conversation_store.py   follow_up_candidates → claim_follow_up (o release / stop)
+   -> project/app/domain/business_config/follow_up.py   published_follow_up, due_step: cuál toca, nunca dos, nada viejo
+   -> project/app/application/follow_up/follow_up_reading.py   la IA del negocio: ¿el cliente dejó abierta la conversación?
+   -> project/app/application/channels/inbound.py   send_follow_up: sale por el canal, en la bandeja con intent `follow_up`
+   -> la memoria del motor (save_message, rol asistente): si el cliente responde, la IA sabe qué se le escribió
+```
+
+- **A quién:** chats de WhatsApp o Telegram en los que lo último es del negocio y el cliente lleva al menos media hora sin escribir.
+  Nunca si la IA está pausada o el chat espera a una persona, si avisó un pago o ya es cliente, ni si el seguimiento se detuvo.
+- **Una sola vez:** `claim_follow_up` anota en una sola operación cuántos pasaron desde el último mensaje del cliente
+  (`follow_up_anchor`, `follow_up_sent`, migración 0024), solo si nada cambió; probado con 8 revisiones a la vez en PostgreSQL
+  (`tests/test_follow_up_postgres.py`). Si el cliente vuelve a escribir, el ancla ya no coincide y la secuencia empieza de nuevo.
+- **Se detiene solo:** si la IA lee que el cliente cerró la conversación, `stop_follow_up(…, "customer")`; el equipo lo detiene o lo
+  reanuda desde el chat (`POST /api/conversations/{id}/follow-up`). Sin lectura, no sale nada y se intenta en la próxima revisión.
+- Un mensaje que el canal no entregó queda «no enviado» y no se reintenta.
 
 ## Confirmar Un Pago
 

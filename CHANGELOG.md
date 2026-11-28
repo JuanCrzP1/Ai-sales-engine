@@ -3,6 +3,17 @@
 Lo que cambió en AI Sales Engine, de lo más reciente a lo más antiguo. Cada entrada dice qué gana el negocio; el detalle técnico
 está en el historial de git y en `docs/plan-v1.md`.
 
+## 28 de noviembre de 2026
+
+**Seguimiento automático: le volvemos a escribir a quien dejó de responder**
+- En Mensajes → **Seguimiento** lo enciendes y ya viene armado con tres mensajes recomendados (a la hora, al día siguiente y a los
+  3 días), con tu trato y con o sin emojis. Si quieres, cambias los textos y los tiempos, agregas hasta 5 o eliges que salgan solo
+  en tu horario.
+- Se detiene solo cuando el cliente responde, compra o avisa un pago, pide una persona, tu equipo lo atiende o dice que no le
+  interesa: antes de cada mensaje, la IA lee el final del chat.
+- Nunca salen dos seguidos ni mensajes viejos: al encenderlo no se les escribe a quienes dejaron de responder hace semanas.
+- En el chat ves cada seguimiento marcado y lo detienes (o lo reanudas) para ese cliente. Funciona por WhatsApp y Telegram.
+
 ## 27 de noviembre de 2026
 
 **«Confirmar pago»: tu cliente se entera de que su pago llegó**

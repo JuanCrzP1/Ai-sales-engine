@@ -14,7 +14,7 @@ reinyectan en su posición original.
   (los mensajes que la IA usa al pedir datos, al pasar a una persona y después de una compra), el cobro anual de los planes, las
   características de cada producto y el precio propio de una variante. Un documento importado de sus YAML compila igual a ellos
   (ver `commercial_profile.py` y `comparable_with_yaml`).
-- Los mensajes que enviará la plataforma ante un evento (pago confirmado por el equipo, seguimiento) se compilan pero no van a la IA.
+- Los mensajes que envía la plataforma ante un evento (pago confirmado por el equipo, `config.follow_up`) se compilan pero no van a la IA.
 - Los planes y productos no disponibles no se compilan: el motor no los ofrece. Tampoco las cuentas ni los enlaces de
   pago inactivos, y por eso no hace falta poder leer sus datos para publicar.
 """
@@ -31,7 +31,7 @@ from app.domain.business_config.engine_policy import COMMON_CLOSING_POLICY
 SecretResolver = Callable[[SecretRef], str]
 
 # Claves de `config` que solo produce el contrato: los YAML no las tienen (ver `commercial_profile.py`).
-CONTRACT_ONLY_CONFIG_KEYS = ("profile", "knowledge", "messages", "attention_messages", "escalation")
+CONTRACT_ONLY_CONFIG_KEYS = ("profile", "knowledge", "messages", "attention_messages", "escalation", "follow_up")
 # Los mensajes de la atención humana: los envía la plataforma, no la IA (`domain/business_config/attention.py`).
 ATTENTION_MESSAGES = ("after_hours", "ai_resumed")
 
@@ -300,6 +300,9 @@ def _config(config: BusinessConfig) -> dict:
     attention = {key: text.strip() for key in ATTENTION_MESSAGES if (text := getattr(config.messages, key)) and text.strip()}
     if attention:
         section["attention_messages"] = attention
+    # El seguimiento a quien dejó de responder: lo envía la plataforma, no la IA (`domain/business_config/follow_up.py`).
+    if config.messages.follow_up is not None:
+        section["follow_up"] = config.messages.follow_up.model_dump()
     # «Cuándo pasar a una persona»: solo si el negocio cambió algo. Sin cambios, el asistente sigue la regla general de la plataforma.
     if config.escalation is not None and not config.escalation.is_default:
         section["escalation"] = config.escalation.model_dump(exclude_none=True)

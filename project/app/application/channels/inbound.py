@@ -41,6 +41,7 @@ from typing import Any, Protocol
 from app.application.channels.handoff_plan import plan_handoff
 from app.domain.business_config.attention import DEFAULT_RESUMED_NOTICE, AttentionSettings, HandoffPlan, published_attention
 from app.domain.business_config.channels import ChannelError, ChannelSecrets, IncomingMessage
+from app.domain.business_config.follow_up import FOLLOW_UP_INTENT
 from app.domain.business_config.conversations import MEDIA_KINDS, TYPING_SECONDS, AppendResult, MediaFile, NewMessage, PendingMessage
 from app.domain.business_config.payment_data import redact_payment_values
 from app.domain.business_config.reply_timing import DEFAULT_REPLY_DELAY_SECONDS, MAX_REPLY_WAIT_SECONDS, reply_delay
@@ -396,6 +397,11 @@ class ChannelInbound:
         return plan_handoff(slug, attention=self._attention, sections=self._sections, now=self._clock())
 
     # ------------------------------------------------------------------ la IA retoma un chat que nadie atendió
+
+    def send_follow_up(self, secrets: ChannelSecrets, phone: str, text: str) -> bool:
+        """Envía un seguimiento a un cliente que dejó de responder (`follow_up_sweep.py`): sale por su canal y queda en la bandeja
+        marcado como seguimiento (o «no enviado»). Dice si salió."""
+        return self._say(secrets, phone, text, FOLLOW_UP_INTENT)
 
     def continue_after_resume(self, secrets: ChannelSecrets, conversation_id: str, phone: str, pending_text: str) -> None:
         """La IA retomó el chat porque nadie del equipo respondió a tiempo: pide disculpas (con el mensaje del negocio, si lo escribió)

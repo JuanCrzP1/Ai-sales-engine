@@ -1151,6 +1151,7 @@ def test_the_api_only_has_the_routes_of_the_panel(api):
         ("POST", "/conversations/{conversation_id}/handoff/resolve"),
         ("GET", "/conversations/{conversation_id}/payment-confirmation"),
         ("POST", "/conversations/{conversation_id}/payment-confirmation"),
+        ("POST", "/conversations/{conversation_id}/follow-up"),
         ("GET", "/notifications"),
         ("POST", "/notifications/read"),
         # Atención humana y notificaciones del navegador (`attention_routes.py`).

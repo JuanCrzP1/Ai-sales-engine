@@ -123,12 +123,11 @@ def test_every_contract_field_has_an_audience_and_an_engine_status():
     assert len(fields) > 150
     for path, field in fields.items():
         assert field.audience in {"cliente", "avanzado", "sistema"}, path
-        assert field.engine in {"conectado", "pendiente", "programado", "solo panel"}, path
+        assert field.engine in {"conectado", "pendiente", "solo panel"}, path
     # Todo lo que el panel deja configurar llega al motor, salvo lo que es solo del equipo o lo enviará la plataforma ante un evento.
     assert {path: field.engine for path, field in fields.items() if field.engine != "conectado"} == {
         "payments[].transfer_methods[].label": "solo panel",
         "inventory.items[].variants[].sku": "solo panel",
-        "messages.follow_up": "programado",
     }
     # Los interruptores y el flujo de conversación son decisiones comerciales.
     assert all(fields[path].audience == "avanzado" for path in fields if path.startswith(("features.", "sales.conversation_flow.")))
@@ -211,11 +210,40 @@ def _with_every_contract_only_field(document: dict) -> dict:
     return document
 
 
-def test_the_follow_up_message_is_kept_for_the_platform_and_never_compiled_for_the_ai():
+def test_the_follow_up_reaches_the_platform_only_through_its_own_key():
+    """El seguimiento lo envía la plataforma, no la IA: se compila solo en `config.follow_up`."""
     base = _document("restaurant")
     document = copy.deepcopy(base)
-    document["messages"]["follow_up"] = "¿Seguimos?"
-    assert _compile(document, "restaurant") == _compile(base, "restaurant")
+    steps = [{"after_minutes": 60, "message": "¿Pudiste revisarlo?"}, {"after_minutes": 1440, "message": "¿Seguimos?"}]
+    document["messages"]["follow_up"] = {"enabled": True, "business_hours_only": False, "steps": steps}
+    compiled, plain = _compile(document, "restaurant"), _compile(base, "restaurant")
+    assert compiled["config"].pop("follow_up") == {"enabled": True, "business_hours_only": False, "steps": steps}
+    assert compiled == plain
+
+
+def test_a_follow_up_saved_as_a_single_text_is_read_as_one_message_turned_off():
+    """Hasta el 27 nov 2026 era un solo texto que no se enviaba: se lee como un seguimiento apagado, sin perder el texto."""
+    document = _document("restaurant")
+    document["messages"]["follow_up"] = "¿Seguimos con tu pedido?"
+    follow_up = BusinessConfig.model_validate(document).messages.follow_up
+    assert (follow_up.enabled, [(step.after_minutes, step.message) for step in follow_up.steps]) == (False, [(1440, "¿Seguimos con tu pedido?")])
+
+
+@pytest.mark.parametrize(
+    "follow_up",
+    [
+        {"enabled": True, "steps": []},
+        {"enabled": False, "steps": [{"after_minutes": 120, "message": "a"}, {"after_minutes": 60, "message": "b"}]},
+        {"enabled": False, "steps": [{"after_minutes": 10, "message": "muy pronto"}]},
+        {"enabled": False, "steps": [{"after_minutes": 60, "message": "  "}]},
+        {"enabled": False, "steps": [{"after_minutes": 60 * (i + 1), "message": "x"} for i in range(6)]},
+    ],
+)
+def test_a_follow_up_that_makes_no_sense_is_rejected(follow_up):
+    document = _document("restaurant")
+    document["messages"]["follow_up"] = follow_up
+    with pytest.raises(ValidationError):
+        BusinessConfig.model_validate(document)
 
 
 def test_contract_only_fields_reach_the_engine_only_through_their_own_keys():
